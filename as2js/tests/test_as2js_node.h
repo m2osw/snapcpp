@@ -46,6 +46,11 @@ class As2JsNodeUnitTests : public CPPUNIT_NS::TestFixture
         CPPUNIT_TEST( test_conversions );
         CPPUNIT_TEST( test_tree );
         CPPUNIT_TEST( test_param );
+        CPPUNIT_TEST( test_position );
+        CPPUNIT_TEST( test_links );
+        CPPUNIT_TEST( test_variables );
+        CPPUNIT_TEST( test_labels );
+        CPPUNIT_TEST( test_attributes );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -56,6 +61,11 @@ protected:
     void test_conversions();
     void test_tree();
     void test_param();
+    void test_position();
+    void test_links();
+    void test_variables();
+    void test_labels();
+    void test_attributes();
 };
 
 #endif

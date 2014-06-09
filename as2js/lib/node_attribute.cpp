@@ -120,11 +120,11 @@ void Node::set_attribute(attribute_t a, bool v)
  * This function verifies that f corresponds to a valid flag according
  * to the type of this Node object.
  *
- * \param[in] f  The flag or attribute to check.
+ * \param[in] a  The flag or attribute to check.
  */
-void Node::verify_attribute(attribute_t f) const
+void Node::verify_attribute(attribute_t a) const
 {
-    switch(f)
+    switch(a)
     {
     // member visibility
     case attribute_t::NODE_ATTR_PUBLIC:
@@ -166,23 +166,25 @@ void Node::verify_attribute(attribute_t f) const
     case attribute_t::NODE_ATTR_AUTOBREAK:
         // TBD -- we'll need to see whether we want to limit the attributes
         //        on a per node type basis and how we can do that properly
-        if(f_type == node_t::NODE_PROGRAM)
+        if(f_type != node_t::NODE_PROGRAM)
         {
-            throw exception_internal_error("attribute / type missmatch in Node::verify_attribute()");
+            return;
         }
         break;
 
     // attributes were defined
     case attribute_t::NODE_ATTR_DEFINED:
         // all nodes can receive this flag
-        break;
+        return;
 
-    case attribute_t::NODE_ATTRIBUTE_max:
-        throw exception_internal_error("invalid attribute / flag in Node::verify_attribute()");
+    case attribute_t::NODE_ATTR_max:
+        break;
 
     // default: -- do not define so the compiler can tell us if
     //             an enumeration is missing in this case
     }
+
+    throw exception_internal_error("attribute / type missmatch in Node::verify_attribute()");
 }
 
 
@@ -293,11 +295,15 @@ void Node::verify_exclusive_attributes(attribute_t a) const
         names = g_attribute_groups[ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION];
         break;
 
-    case attribute_t::NODE_ATTRIBUTE_max:
-        throw exception_internal_error("invalid attribute / flag in Node::verify_attribute()");
+    case attribute_t::NODE_ATTR_max:
+        // this should already have been caught in the verify_attribute() function
+        throw exception_internal_error("invalid attribute / flag in Node::verify_attribute()"); // LCOV_EXCL_LINE
 
     // default: -- do not define so the compiler can tell us if
     //             an enumeration is missing in this case
+    // note: verify_attribute(() is called before this function
+    //       and it catches completely invalid attribute numbers
+    //       (i.e. negative, larger than NODE_ATTR_max)
     }
 
     if(conflict)

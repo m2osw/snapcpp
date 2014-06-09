@@ -49,12 +49,114 @@ CPPUNIT_TEST_SUITE_REGISTRATION( As2JsNodeUnitTests );
 namespace
 {
 
+as2js::Node::flag_t const g_flags_none[] =
+{
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_catch[] =
+{
+    as2js::Node::flag_t::NODE_CATCH_FLAG_TYPED,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_directive_list[] =
+{
+    as2js::Node::flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_for[] =
+{
+    as2js::Node::flag_t::NODE_FOR_FLAG_FOREACH,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_function[] =
+{
+    as2js::Node::flag_t::NODE_FUNCTION_FLAG_GETTER,
+    as2js::Node::flag_t::NODE_FUNCTION_FLAG_SETTER,
+    as2js::Node::flag_t::NODE_FUNCTION_FLAG_OUT,
+    as2js::Node::flag_t::NODE_FUNCTION_FLAG_VOID,
+    as2js::Node::flag_t::NODE_FUNCTION_FLAG_NEVER,
+    as2js::Node::flag_t::NODE_FUNCTION_FLAG_NOPARAMS,
+    as2js::Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_identifier[] =
+{
+    as2js::Node::flag_t::NODE_IDENTIFIER_FLAG_WITH,
+    as2js::Node::flag_t::NODE_IDENTIFIER_FLAG_TYPED,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_import[] =
+{
+    as2js::Node::flag_t::NODE_IMPORT_FLAG_IMPLEMENTS,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_package[] =
+{
+    as2js::Node::flag_t::NODE_PACKAGE_FLAG_FOUND_LABELS,
+    as2js::Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_param_match[] =
+{
+    as2js::Node::flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_parameters[] =
+{
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_CONST,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_IN,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_OUT,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_NAMED,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_REST,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_UNCHECKED,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_REFERENCED,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_PARAMREF,
+    as2js::Node::flag_t::NODE_PARAMETERS_FLAG_CATCH,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_switch[] =
+{
+    as2js::Node::flag_t::NODE_SWITCH_FLAG_DEFAULT,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+as2js::Node::flag_t const g_flags_variable[] =
+{
+    as2js::Node::flag_t::NODE_VAR_FLAG_CONST,
+    as2js::Node::flag_t::NODE_VAR_FLAG_LOCAL,
+    as2js::Node::flag_t::NODE_VAR_FLAG_MEMBER,
+    as2js::Node::flag_t::NODE_VAR_FLAG_ATTRIBUTES,
+    as2js::Node::flag_t::NODE_VAR_FLAG_ENUM,
+    as2js::Node::flag_t::NODE_VAR_FLAG_COMPILED,
+    as2js::Node::flag_t::NODE_VAR_FLAG_INUSE,
+    as2js::Node::flag_t::NODE_VAR_FLAG_ATTRS,
+    as2js::Node::flag_t::NODE_VAR_FLAG_DEFINED,
+    as2js::Node::flag_t::NODE_VAR_FLAG_DEFINING,
+    as2js::Node::flag_t::NODE_VAR_FLAG_TOADD,
+    as2js::Node::flag_t::NODE_FLAG_max
+};
+
+
+
+
 struct node_type_info_t
 {
-    as2js::Node::node_t     f_type;
-    char const *            f_name;
-    char const *            f_operator;
-    uint64_t                f_flags;
+    as2js::Node::node_t         f_type;
+    char const *                f_name;
+    char const *                f_operator;
+    uint64_t                    f_flags;
+    as2js::Node::flag_t const * f_node_flags;
 };
 
 
@@ -74,7 +176,6 @@ uint64_t const              TEST_NODE_HAS_SIDE_EFFECTS   = 0x0000000000001000;
 uint64_t const              TEST_NODE_IS_PARAM_MATCH     = 0x0000000000002000;
 uint64_t const              TEST_NODE_IS_SWITCH_OPERATOR = 0x0000000000004000;
 
-
 // index from 0 to g_node_types_size - 1 to go through all the valid
 // node types
 #pragma GCC diagnostic push
@@ -86,865 +187,1009 @@ node_type_info_t g_node_types[] =
         .f_type = as2js::Node::node_t::NODE_EOF,
         .f_name = "EOF",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_UNKNOWN,
         .f_name = "UNKNOWN",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ADD,
         .f_name = "ADD",
         .f_operator = "+",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_BITWISE_AND,
         .f_name = "BITWISE_AND",
         .f_operator = "&",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_BITWISE_NOT,
         .f_name = "BITWISE_NOT",
         .f_operator = "~",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT,
         .f_name = "ASSIGNMENT",
         .f_operator = "=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_BITWISE_OR,
         .f_name = "BITWISE_OR",
         .f_operator = "|",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_BITWISE_XOR,
         .f_name = "BITWISE_XOR",
         .f_operator = "^",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CLOSE_CURVLY_BRACKET,
         .f_name = "CLOSE_CURVLY_BRACKET",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CLOSE_PARENTHESIS,
         .f_name = "CLOSE_PARENTHESIS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CLOSE_SQUARE_BRACKET,
         .f_name = "CLOSE_SQUARE_BRACKET",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_COLON,
         .f_name = "COLON",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_COMMA,
         .f_name = "COMMA",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CONDITIONAL,
         .f_name = "CONDITIONAL",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_DIVIDE,
         .f_name = "DIVIDE",
         .f_operator = "/",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_GREATER,
         .f_name = "GREATER",
         .f_operator = ">",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_LESS,
         .f_name = "LESS",
         .f_operator = "<",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_LOGICAL_NOT,
         .f_name = "LOGICAL_NOT",
         .f_operator = "!",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_MODULO,
         .f_name = "MODULO",
         .f_operator = "%",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_MULTIPLY,
         .f_name = "MULTIPLY",
         .f_operator = "*",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_OPEN_CURVLY_BRACKET,
         .f_name = "OPEN_CURVLY_BRACKET",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_OPEN_PARENTHESIS,
         .f_name = "OPEN_PARENTHESIS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_OPEN_SQUARE_BRACKET,
         .f_name = "OPEN_SQUARE_BRACKET",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_MEMBER,
         .f_name = "MEMBER",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_SEMICOLON,
         .f_name = "SEMICOLON",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_SUBTRACT,
         .f_name = "SUBTRACT",
         .f_operator = "-",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ARRAY,
         .f_name = "ARRAY",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ARRAY_LITERAL,
         .f_name = "ARRAY_LITERAL",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_AS,
         .f_name = "AS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_ADD,
         .f_name = "ASSIGNMENT_ADD",
         .f_operator = "+=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_AND,
         .f_name = "ASSIGNMENT_BITWISE_AND",
         .f_operator = "&=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR,
         .f_name = "ASSIGNMENT_BITWISE_OR",
         .f_operator = "|=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR,
         .f_name = "ASSIGNMENT_BITWISE_XOR",
         .f_operator = "^=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_DIVIDE,
         .f_name = "ASSIGNMENT_DIVIDE",
         .f_operator = "/=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND,
         .f_name = "ASSIGNMENT_LOGICAL_AND",
         .f_operator = "&&=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR,
         .f_name = "ASSIGNMENT_LOGICAL_OR",
         .f_operator = "||=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR,
         .f_name = "ASSIGNMENT_LOGICAL_XOR",
         .f_operator = "^^=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM,
         .f_name = "ASSIGNMENT_MAXIMUM",
         .f_operator = ">?=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM,
         .f_name = "ASSIGNMENT_MINIMUM",
         .f_operator = "<?=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_MODULO,
         .f_name = "ASSIGNMENT_MODULO",
         .f_operator = "%=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_MULTIPLY,
         .f_name = "ASSIGNMENT_MULTIPLY",
         .f_operator = "*=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_POWER,
         .f_name = "ASSIGNMENT_POWER",
         .f_operator = "**=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT,
         .f_name = "ASSIGNMENT_ROTATE_LEFT",
         .f_operator = "<!=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT,
         .f_name = "ASSIGNMENT_ROTATE_RIGHT",
         .f_operator = ">!=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT,
         .f_name = "ASSIGNMENT_SHIFT_LEFT",
         .f_operator = "<<=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT,
         .f_name = "ASSIGNMENT_SHIFT_RIGHT",
         .f_operator = ">>=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED,
         .f_name = "ASSIGNMENT_SHIFT_RIGHT_UNSIGNED",
         .f_operator = ">>>=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_SUBTRACT,
         .f_name = "ASSIGNMENT_SUBTRACT",
         .f_operator = "-=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ATTRIBUTES,
         .f_name = "ATTRIBUTES",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_AUTO,
         .f_name = "AUTO",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_BREAK,
         .f_name = "BREAK",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CALL,
         .f_name = "CALL",
         .f_operator = "()",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CASE,
         .f_name = "CASE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CATCH,
         .f_name = "CATCH",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_catch
     },
     {
         .f_type = as2js::Node::node_t::NODE_CLASS,
         .f_name = "CLASS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CONST,
         .f_name = "CONST",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_CONTINUE,
         .f_name = "CONTINUE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_DEBUGGER,
         .f_name = "DEBUGGER",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_DECREMENT,
         .f_name = "DECREMENT",
         .f_operator = "--x",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_DEFAULT,
         .f_name = "DEFAULT",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_DELETE,
         .f_name = "DELETE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_DIRECTIVE_LIST,
         .f_name = "DIRECTIVE_LIST",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_directive_list
     },
     {
         .f_type = as2js::Node::node_t::NODE_DO,
         .f_name = "DO",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ELSE,
         .f_name = "ELSE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_EMPTY,
         .f_name = "EMPTY",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ENUM,
         .f_name = "ENUM",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_EQUAL,
         .f_name = "EQUAL",
         .f_operator = "==",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_EXCLUDE,
         .f_name = "EXCLUDE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_EXTENDS,
         .f_name = "EXTENDS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_FALSE,
         .f_name = "FALSE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_BOOLEAN | TEST_NODE_IS_FALSE
+        .f_flags = TEST_NODE_IS_BOOLEAN | TEST_NODE_IS_FALSE,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_FINALLY,
         .f_name = "FINALLY",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_FLOAT64,
         .f_name = "FLOAT64",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NUMBER | TEST_NODE_IS_FLOAT64
+        .f_flags = TEST_NODE_IS_NUMBER | TEST_NODE_IS_FLOAT64,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_FOR,
         .f_name = "FOR",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_for
     },
     {
         .f_type = as2js::Node::node_t::NODE_FUNCTION,
         .f_name = "FUNCTION",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_function
     },
     {
         .f_type = as2js::Node::node_t::NODE_GOTO,
         .f_name = "GOTO",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_GREATER_EQUAL,
         .f_name = "GREATER_EQUAL",
         .f_operator = ">=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_IDENTIFIER,
         .f_name = "IDENTIFIER",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_IDENTIFIER | TEST_NODE_ACCEPT_STRING
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_IDENTIFIER | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_identifier
     },
     {
         .f_type = as2js::Node::node_t::NODE_IF,
         .f_name = "IF",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_IMPLEMENTS,
         .f_name = "IMPLEMENTS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_IMPORT,
         .f_name = "IMPORT",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_import
     },
     {
         .f_type = as2js::Node::node_t::NODE_IN,
         .f_name = "IN",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_INCLUDE,
         .f_name = "INCLUDE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_INCREMENT,
         .f_name = "INCREMENT",
         .f_operator = "++x",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_INSTANCEOF,
         .f_name = "INSTANCEOF",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_INT64,
         .f_name = "INT64",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NUMBER | TEST_NODE_IS_INT64
+        .f_flags = TEST_NODE_IS_NUMBER | TEST_NODE_IS_INT64,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_INTERFACE,
         .f_name = "INTERFACE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_IS,
         .f_name = "IS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_LABEL,
         .f_name = "LABEL",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_LESS_EQUAL,
         .f_name = "LESS_EQUAL",
         .f_operator = "<=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_LIST,
         .f_name = "LIST",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_LOGICAL_AND,
         .f_name = "LOGICAL_AND",
         .f_operator = "&&",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_LOGICAL_OR,
         .f_name = "LOGICAL_OR",
         .f_operator = "||",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_LOGICAL_XOR,
         .f_name = "LOGICAL_XOR",
         .f_operator = "^^",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_MATCH,
         .f_name = "MATCH",
         .f_operator = "~=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_MAXIMUM,
         .f_name = "MAXIMUM",
         .f_operator = ">?",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_MINIMUM,
         .f_name = "MINIMUM",
         .f_operator = "<?",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_NAME,
         .f_name = "NAME",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_NAMESPACE,
         .f_name = "NAMESPACE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_NEW,
         .f_name = "NEW",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_NOT_EQUAL,
         .f_name = "NOT_EQUAL",
         .f_operator = "!=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_NULL,
         .f_name = "NULL",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NULL
+        .f_flags = TEST_NODE_IS_NULL,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_OBJECT_LITERAL,
         .f_name = "OBJECT_LITERAL",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_PACKAGE,
         .f_name = "PACKAGE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_package
     },
     {
         .f_type = as2js::Node::node_t::NODE_PARAM,
         .f_name = "PARAM",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_variable
     },
     {
         .f_type = as2js::Node::node_t::NODE_PARAMETERS,
         .f_name = "PARAMETERS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_parameters
     },
     {
         .f_type = as2js::Node::node_t::NODE_PARAM_MATCH,
         .f_name = "PARAM_MATCH",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_PARAM_MATCH
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_PARAM_MATCH,
+        .f_node_flags = g_flags_param_match
     },
     {
         .f_type = as2js::Node::node_t::NODE_POST_DECREMENT,
         .f_name = "POST_DECREMENT",
         .f_operator = "x--",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_POST_INCREMENT,
         .f_name = "POST_INCREMENT",
         .f_operator = "x++",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_POWER,
         .f_name = "POWER",
         .f_operator = "**",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_PRIVATE,
         .f_name = "PRIVATE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_PROGRAM,
         .f_name = "PROGRAM",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_PUBLIC,
         .f_name = "PUBLIC",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_RANGE,
         .f_name = "RANGE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_REGULAR_EXPRESSION,
         .f_name = "REGULAR_EXPRESSION",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_REST,
         .f_name = "REST",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_RETURN,
         .f_name = "RETURN",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ROOT,
         .f_name = "ROOT",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ROTATE_LEFT,
         .f_name = "ROTATE_LEFT",
         .f_operator = "<!",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ROTATE_RIGHT,
         .f_name = "ROTATE_RIGHT",
         .f_operator = ">!",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_SCOPE,
         .f_name = "SCOPE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_SET,
         .f_name = "SET",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_SHIFT_LEFT,
         .f_name = "SHIFT_LEFT",
         .f_operator = "<<",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_SHIFT_RIGHT,
         .f_name = "SHIFT_RIGHT",
         .f_operator = ">>",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED,
         .f_name = "SHIFT_RIGHT_UNSIGNED",
         .f_operator = ">>>",
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_STRICTLY_EQUAL,
         .f_name = "STRICTLY_EQUAL",
         .f_operator = "===",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL,
         .f_name = "STRICTLY_NOT_EQUAL",
         .f_operator = "!==",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_SWITCH_OPERATOR,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_STRING,
         .f_name = "STRING",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_STRING | TEST_NODE_ACCEPT_STRING
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_STRING | TEST_NODE_ACCEPT_STRING,
+        .f_node_flags = g_flags_identifier
     },
     {
         .f_type = as2js::Node::node_t::NODE_SUPER,
         .f_name = "SUPER",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_SWITCH,
         .f_name = "SWITCH",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_switch
     },
     {
         .f_type = as2js::Node::node_t::NODE_THIS,
         .f_name = "THIS",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_THROW,
         .f_name = "THROW",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_TRUE,
         .f_name = "TRUE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_BOOLEAN | TEST_NODE_IS_TRUE
+        .f_flags = TEST_NODE_IS_BOOLEAN | TEST_NODE_IS_TRUE,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_TRY,
         .f_name = "TRY",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_TYPE,
         .f_name = "TYPE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_TYPEOF,
         .f_name = "TYPEOF",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_UNDEFINED,
         .f_name = "UNDEFINED",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_UNDEFINED
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_UNDEFINED,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_USE,
         .f_name = "USE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_VAR,
         .f_name = "VAR",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_variable
     },
     {
         .f_type = as2js::Node::node_t::NODE_VARIABLE,
         .f_name = "VARIABLE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_variable
     },
     {
         .f_type = as2js::Node::node_t::NODE_VAR_ATTRIBUTES,
         .f_name = "VAR_ATTRIBUTES",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_VIDENTIFIER,
         .f_name = "VIDENTIFIER",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_IDENTIFIER
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_IS_IDENTIFIER,
+        .f_node_flags = g_flags_identifier
     },
     {
         .f_type = as2js::Node::node_t::NODE_VOID,
         .f_name = "VOID",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_WHILE,
         .f_name = "WHILE",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_WITH,
         .f_name = "WITH",
         .f_operator = nullptr,
-        .f_flags = TEST_NODE_IS_NAN
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
     }
 };
 #pragma GCC diagnostic pop
@@ -961,7 +1206,7 @@ void As2JsNodeUnitTests::test_type()
     for(size_t i(0); i < g_node_types_size; ++i)
     {
         // define the type
-        as2js::Node::node_t node_type(g_node_types[i].f_type);
+        as2js::Node::node_t const node_type(g_node_types[i].f_type);
 
         if(static_cast<size_t>(node_type) > static_cast<size_t>(as2js::Node::node_t::NODE_max))
         {
@@ -1116,6 +1361,75 @@ void As2JsNodeUnitTests::test_type()
         {
             node->set_string("random test");
             CPPUNIT_ASSERT(node->get_string() == "random test");
+        }
+
+        // first test the flags that this type of node accepts
+        std::bitset<static_cast<int>(as2js::Node::flag_t::NODE_FLAG_max)> valid_flags;
+        for(as2js::Node::flag_t const *node_flags(g_node_types[i].f_node_flags);
+                                      *node_flags != as2js::Node::flag_t::NODE_FLAG_max;
+                                      ++node_flags)
+        {
+            // mark this specific flag as valid
+            valid_flags[static_cast<int>(*node_flags)] = true;
+
+            // before we set it, always false
+            CPPUNIT_ASSERT(!node->get_flag(*node_flags));
+            node->set_flag(*node_flags, true);
+            CPPUNIT_ASSERT(node->get_flag(*node_flags));
+            node->set_flag(*node_flags, false);
+            CPPUNIT_ASSERT(!node->get_flag(*node_flags));
+        }
+
+        // now test all the other flags
+        for(int j(-5); j <= static_cast<int>(as2js::Node::flag_t::NODE_FLAG_max) + 5; ++j)
+        {
+            if(j < 0
+            || j >= static_cast<int>(as2js::Node::flag_t::NODE_FLAG_max)
+            || !valid_flags[j])
+            {
+                CPPUNIT_ASSERT_THROW(node->get_flag(static_cast<as2js::Node::flag_t>(j)), as2js::exception_internal_error);
+                CPPUNIT_ASSERT_THROW(node->set_flag(static_cast<as2js::Node::flag_t>(j), true), as2js::exception_internal_error);
+                CPPUNIT_ASSERT_THROW(node->set_flag(static_cast<as2js::Node::flag_t>(j), false), as2js::exception_internal_error);
+            }
+        }
+
+        // test completely invalid attribute indices
+        for(int j(-5); j < 0; ++j)
+        {
+            CPPUNIT_ASSERT_THROW(node->get_attribute(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
+            CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), true), as2js::exception_internal_error);
+            CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), false), as2js::exception_internal_error);
+        }
+        for(int j(static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_max));
+                j <= static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_max) + 5;
+                ++j)
+        {
+            CPPUNIT_ASSERT_THROW(node->get_attribute(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
+            CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), true), as2js::exception_internal_error);
+            CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), false), as2js::exception_internal_error);
+        }
+
+        // attributes can be assigned to all types except NODE_PROGRAM
+        // which only accepts NODE_DEFINED
+        for(int j(0); j < static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_max); ++j)
+        {
+            if(node_type == as2js::Node::node_t::NODE_PROGRAM
+            && j != static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_DEFINED))
+            {
+                CPPUNIT_ASSERT_THROW(node->get_attribute(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
+                CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), true), as2js::exception_internal_error);
+                CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), false), as2js::exception_internal_error);
+            }
+            else
+            {
+                // before we set it, always false
+                CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(j)));
+                node->set_attribute(static_cast<as2js::Node::attribute_t>(j), true);
+                CPPUNIT_ASSERT(node->get_attribute(static_cast<as2js::Node::attribute_t>(j)));
+                // since we reset them all we won't have a problem with conflicts in this loop
+                node->set_attribute(static_cast<as2js::Node::attribute_t>(j), false);
+                CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(j)));
+            }
         }
     }
 
@@ -2180,6 +2494,287 @@ void As2JsNodeUnitTests::test_param()
         {
             CPPUNIT_ASSERT_THROW(match->get_param_index(i), std::out_of_range);
         }
+    }
+}
+
+
+void As2JsNodeUnitTests::test_position()
+{
+    as2js::Position pos;
+    pos.set_filename("file.js");
+    int total_line(1);
+    for(int page(1); page < 10; ++page)
+    {
+        int paragraphs(rand() % 10 + 10);
+        int page_line(1);
+        int paragraph(1);
+        for(int line(1); line < 100; ++line)
+        {
+            CPPUNIT_ASSERT(pos.get_page() == page);
+            CPPUNIT_ASSERT(pos.get_page_line() == page_line);
+            CPPUNIT_ASSERT(pos.get_paragraph() == paragraph);
+            CPPUNIT_ASSERT(pos.get_line() == total_line);
+
+            std::stringstream pos_str;
+            pos_str << pos;
+            std::stringstream test_str;
+            test_str << "file.js:" << total_line << ":";
+            CPPUNIT_ASSERT(pos_str.str() == test_str.str());
+
+            // create any valid type of node
+            size_t const idx(rand() % g_node_types_size);
+            as2js::Node::pointer_t node(new as2js::Node(g_node_types[idx].f_type));
+
+            // set our current position in there
+            node->set_position(pos);
+
+            // verify that the node position is equal to ours
+            as2js::Position const& node_pos(node->get_position());
+            CPPUNIT_ASSERT(node_pos.get_page() == page);
+            CPPUNIT_ASSERT(node_pos.get_page_line() == page_line);
+            CPPUNIT_ASSERT(node_pos.get_paragraph() == paragraph);
+            CPPUNIT_ASSERT(node_pos.get_line() == total_line);
+
+            std::stringstream node_pos_str;
+            node_pos_str << node_pos;
+            std::stringstream node_test_str;
+            node_test_str << "file.js:" << total_line << ":";
+            CPPUNIT_ASSERT(node_pos_str.str() == node_test_str.str());
+
+            // create a replacement now
+            size_t const idx_replacement(rand() % g_node_types_size);
+            as2js::Node::pointer_t replacement(node->create_replacement(g_node_types[idx_replacement].f_type));
+
+            // verify that the replacement position is equal to ours
+            // (and thus the node's)
+            as2js::Position const& replacement_pos(node->get_position());
+            CPPUNIT_ASSERT(replacement_pos.get_page() == page);
+            CPPUNIT_ASSERT(replacement_pos.get_page_line() == page_line);
+            CPPUNIT_ASSERT(replacement_pos.get_paragraph() == paragraph);
+            CPPUNIT_ASSERT(replacement_pos.get_line() == total_line);
+
+            std::stringstream replacement_pos_str;
+            replacement_pos_str << replacement_pos;
+            std::stringstream replacement_test_str;
+            replacement_test_str << "file.js:" << total_line << ":";
+            CPPUNIT_ASSERT(replacement_pos_str.str() == replacement_test_str.str());
+
+            // verify that the node position has not changed
+            as2js::Position const& node_pos2(node->get_position());
+            CPPUNIT_ASSERT(node_pos2.get_page() == page);
+            CPPUNIT_ASSERT(node_pos2.get_page_line() == page_line);
+            CPPUNIT_ASSERT(node_pos2.get_paragraph() == paragraph);
+            CPPUNIT_ASSERT(node_pos2.get_line() == total_line);
+
+            std::stringstream node_pos2_str;
+            node_pos2_str << node_pos2;
+            std::stringstream node_test2_str;
+            node_test2_str << "file.js:" << total_line << ":";
+            CPPUNIT_ASSERT(node_pos2_str.str() == node_test2_str.str());
+
+            // go to the next line, paragraph, etc.
+            if(line % paragraphs == 0)
+            {
+                pos.new_paragraph();
+                ++paragraph;
+            }
+            pos.new_line();
+            ++total_line;
+            ++page_line;
+        }
+        pos.new_page();
+    }
+
+}
+
+
+void As2JsNodeUnitTests::test_links()
+{
+    for(int i(0); i < 10; ++i)
+    {
+        // create any valid type of node
+        size_t const idx_node(rand() % g_node_types_size);
+        as2js::Node::pointer_t node(new as2js::Node(g_node_types[idx_node].f_type));
+
+        size_t const idx_bad_link(rand() % g_node_types_size);
+        as2js::Node::pointer_t bad_link(new as2js::Node(g_node_types[idx_bad_link].f_type));
+
+        // try with offsets that are too small
+        for(int j(-5); j < 0; ++j)
+        {
+            CPPUNIT_ASSERT_THROW(node->set_link(static_cast<as2js::Node::link_t>(j), bad_link), std::out_of_range);
+        }
+
+        // do it with valid offsets
+        as2js::Node::pointer_t links[static_cast<int>(as2js::Node::link_t::LINK_max)];
+        for(int j(0); j < static_cast<int>(as2js::Node::link_t::LINK_max); ++j)
+        {
+            // before setting anything we expect nullptr in a link
+            CPPUNIT_ASSERT(node->get_link(static_cast<as2js::Node::link_t>(j)) == as2js::Node::pointer_t());
+
+            size_t const idx_link(rand() % g_node_types_size);
+            links[j].reset(new as2js::Node(g_node_types[idx_link].f_type));
+            node->set_link(static_cast<as2js::Node::link_t>(j), links[j]);
+
+            // if already set, setting again fails
+            CPPUNIT_ASSERT_THROW(node->set_link(static_cast<as2js::Node::link_t>(j), bad_link), as2js::exception_already_defined);
+        }
+
+        // try with offsets that are too large
+        for(int j(static_cast<int>(as2js::Node::link_t::LINK_max)); j < static_cast<int>(as2js::Node::link_t::LINK_max) + 10; ++j)
+        {
+            CPPUNIT_ASSERT_THROW(node->set_link(static_cast<as2js::Node::link_t>(j), bad_link), std::out_of_range);
+        }
+
+        // try with offsets that are too small
+        for(int j(-5); j < 0; ++j)
+        {
+            CPPUNIT_ASSERT_THROW(node->get_link(static_cast<as2js::Node::link_t>(j)), std::out_of_range);
+        }
+
+        // then verify that the links are indeed valid
+        for(int j(0); j < static_cast<int>(as2js::Node::link_t::LINK_max); ++j)
+        {
+            CPPUNIT_ASSERT(node->get_link(static_cast<as2js::Node::link_t>(j)) == links[j]);
+        }
+
+        // try with offsets that are too large
+        for(int j(static_cast<int>(as2js::Node::link_t::LINK_max)); j < static_cast<int>(as2js::Node::link_t::LINK_max) + 10; ++j)
+        {
+            CPPUNIT_ASSERT_THROW(node->get_link(static_cast<as2js::Node::link_t>(j)), std::out_of_range);
+        }
+
+        // we can reset a link to set it to another pointer
+        for(int j(0); j < static_cast<int>(as2js::Node::link_t::LINK_max); ++j)
+        {
+            size_t const idx_link(rand() % g_node_types_size);
+            links[j].reset(new as2js::Node(g_node_types[idx_link].f_type));
+            // reset
+            node->set_link(static_cast<as2js::Node::link_t>(j), as2js::Node::pointer_t());
+            // set again
+            node->set_link(static_cast<as2js::Node::link_t>(j), links[j]);
+
+            // and again, if set, it fails
+            CPPUNIT_ASSERT_THROW(node->set_link(static_cast<as2js::Node::link_t>(j), bad_link), as2js::exception_already_defined);
+        }
+    }
+}
+
+
+void As2JsNodeUnitTests::test_variables()
+{
+    for(int i(0); i < 10; ++i)
+    {
+        // create any valid type of node
+        size_t const idx_node(rand() % g_node_types_size);
+        as2js::Node::pointer_t node(new as2js::Node(g_node_types[idx_node].f_type));
+
+        // create a node that is not a NODE_VARIABLE
+        size_t idx_bad_link;
+        do
+        {
+            idx_bad_link = rand() % g_node_types_size;
+        }
+        while(g_node_types[idx_bad_link].f_type == as2js::Node::node_t::NODE_VARIABLE);
+        as2js::Node::pointer_t not_variable(new as2js::Node(g_node_types[idx_bad_link].f_type));
+        CPPUNIT_ASSERT_THROW(node->add_variable(not_variable), as2js::exception_incompatible_node_type);
+
+        // add 10 valid variables
+        as2js::Node::pointer_t variables[10];
+        for(size_t j(0); j < 10; ++j)
+        {
+            CPPUNIT_ASSERT(node->get_variable_size() == j);
+
+            variables[j].reset(new as2js::Node(as2js::Node::node_t::NODE_VARIABLE));
+            node->add_variable(variables[j]);
+        }
+        CPPUNIT_ASSERT(node->get_variable_size() == 10);
+
+        // try with offsets that are too small
+        for(int j(-5); j < 0; ++j)
+        {
+            CPPUNIT_ASSERT_THROW(node->get_variable(j), std::out_of_range);
+        }
+
+        // then verify that the links are indeed valid
+        for(int j(0); j < static_cast<int>(as2js::Node::link_t::LINK_max); ++j)
+        {
+            CPPUNIT_ASSERT(node->get_variable(j) == variables[j]);
+        }
+
+        // try with offsets that are too large
+        for(int j(10); j < 20; ++j)
+        {
+            CPPUNIT_ASSERT_THROW(node->get_variable(j), std::out_of_range);
+        }
+    }
+}
+
+
+void As2JsNodeUnitTests::test_labels()
+{
+    for(int i(0); i < 10; ++i)
+    {
+        // create a NODE_FUNCTION
+        as2js::Node::pointer_t function(new as2js::Node(as2js::Node::node_t::NODE_FUNCTION));
+
+        // create a node that is not a NODE_LABEL
+        size_t idx_bad_label;
+        do
+        {
+            idx_bad_label = rand() % g_node_types_size;
+        }
+        while(g_node_types[idx_bad_label].f_type == as2js::Node::node_t::NODE_LABEL);
+        as2js::Node::pointer_t not_label(new as2js::Node(g_node_types[idx_bad_label].f_type));
+        CPPUNIT_ASSERT_THROW(function->add_label(not_label), as2js::exception_incompatible_node_type);
+
+        for(int j(0); j < 10; ++j)
+        {
+            // create a node that is not a NODE_LABEL
+            as2js::Node::pointer_t label(new as2js::Node(as2js::Node::node_t::NODE_LABEL));
+
+            // create a node that is not a NODE_FUNCTION
+            size_t idx_bad_function;
+            do
+            {
+                idx_bad_function = rand() % g_node_types_size;
+            }
+            while(g_node_types[idx_bad_function].f_type == as2js::Node::node_t::NODE_FUNCTION);
+            as2js::Node::pointer_t not_function(new as2js::Node(g_node_types[idx_bad_function].f_type));
+            CPPUNIT_ASSERT_THROW(not_function->add_label(label), as2js::exception_incompatible_node_type);
+
+            // labels need to have a name
+            CPPUNIT_ASSERT_THROW(function->add_label(label), as2js::exception_incompatible_node_data);
+
+            // save the label with a name
+            std::string label_name("label" + std::to_string(j));
+            label->set_string(label_name);
+            function->add_label(label);
+
+            // trying to add two labels (or the same) with the same name err
+            CPPUNIT_ASSERT_THROW(function->add_label(label), as2js::exception_already_defined);
+
+            // verify that we can find that label
+            CPPUNIT_ASSERT(function->find_label(label_name) == label);
+        }
+    }
+}
+
+
+void As2JsNodeUnitTests::test_attributes()
+{
+    for(int i(0); i < 10; ++i)
+    {
+        // create a node that is not a NODE_PROGRAM
+        size_t idx_node;
+        do
+        {
+            idx_node = rand() % g_node_types_size;
+        }
+        while(g_node_types[idx_node].f_type == as2js::Node::node_t::NODE_PROGRAM);
+        as2js::Node::pointer_t node(new as2js::Node(g_node_types[idx_node].f_type));
+
+        // need to test all combinatorial cases...
     }
 }
 

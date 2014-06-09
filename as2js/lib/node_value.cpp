@@ -151,7 +151,7 @@ void Node::set_float64(Float64 value)
  * Note that only a few types of nodes can be assigned a string:
  *
  * NODE_BREAK, NODE_CLASS, NODE_CONTINUE, NODE_IDENTIFIER, NODE_IMPORT,
- * NODE_NAMESPACE, NODE_PACKAGE, and NODE_STRING
+ * NODE_LABEL, NODE_NAMESPACE, NODE_PACKAGE, and NODE_STRING
  *
  * \exception exception_internal_error
  * This exception is raised if the set_string() function is called on a
@@ -169,6 +169,7 @@ void Node::set_string(String const& value)
     case node_t::NODE_CONTINUE:     // name of label
     case node_t::NODE_IDENTIFIER:   // the identifier string
     case node_t::NODE_IMPORT:       // name of package
+    case node_t::NODE_LABEL:        // name of label
     case node_t::NODE_NAMESPACE:    // name of namespace
     case node_t::NODE_PACKAGE:      // name of package
     case node_t::NODE_STRING:
@@ -287,7 +288,7 @@ Float64 Node::get_float64() const
  * Note that only a few types of nodes can be assigned a string:
  *
  * NODE_BREAK, NODE_CLASS, NODE_CONTINUE, NODE_IDENTIFIER, NODE_IMPORT,
- * NODE_NAMESPACE, NODE_PACKAGE, and NODE_STRING
+ * NODE_LABEL, NODE_NAMESPACE, NODE_PACKAGE, and NODE_STRING
  *
  * \exception exception_internal_error
  * This exception is raised if the get_string() function is called on a
@@ -305,6 +306,7 @@ String const& Node::get_string() const
     case node_t::NODE_CONTINUE:     // name of label
     case node_t::NODE_IDENTIFIER:   // the identifier string
     case node_t::NODE_IMPORT:       // name of package
+    case node_t::NODE_LABEL:        // name of label
     case node_t::NODE_NAMESPACE:    // name of namespace
     case node_t::NODE_PACKAGE:      // name of package
     case node_t::NODE_STRING:
