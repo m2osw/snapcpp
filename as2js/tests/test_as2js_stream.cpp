@@ -1201,7 +1201,12 @@ void As2JsStreamUnitTests::test_stdin()
         strncpy(filename, "/tmp/testXXXXXX.js", sizeof(filename));
         int fd(mkstemps(filename, 3));
         char const *input_data("This is\nthe\ninput data\nfor std::cin\n");
-        write(fd, input_data, strlen(input_data));
+        size_t const len(strlen(input_data));
+        if(write(fd, input_data, len) != static_cast<ssize_t>(len))
+        {
+            CPPUNIT_ASSERT(!"write failed");
+            return;
+        }
         close(fd);
 
         // 2. put that in std::cin
@@ -1241,7 +1246,12 @@ void As2JsStreamUnitTests::test_file()
         strncpy(filename, "/tmp/testXXXXXX.js", sizeof(filename));
         int fd(mkstemps(filename, 3));
         char const *input_data("This is\nthe\ninput data\nfor the file\n");
-        write(fd, input_data, strlen(input_data));
+        size_t const len(strlen(input_data));
+        if(write(fd, input_data, len) != static_cast<ssize_t>(len))
+        {
+            CPPUNIT_ASSERT(!"write failed");
+            return;
+        }
         close(fd);
 
         // 2. put that in a file
@@ -1302,7 +1312,11 @@ void As2JsStreamUnitTests::test_stdout()
         int fd(mkostemps(filename, 3, O_WRONLY));
 
         // 2. put that in std::cout
-        freopen(filename, "a", stdout);
+        if(freopen(filename, "a", stdout) == nullptr)
+        {
+            CPPUNIT_ASSERT(!"freopen() of stdout failed");
+            return;
+        }
 
         // 3. generate some data in the file
         as2js::String str("This is some test to send to stdout\n");
@@ -1331,7 +1345,11 @@ void As2JsStreamUnitTests::test_stdout()
         //    This freopen() works under Linux, on other systems, you may
         //    have to fiddle with the code; see:
         //    http://stackoverflow.com/questions/1908687/how-to-redirect-the-output-back-to-the-screen-after-freopenout-txt-a-stdo
-        freopen("/dev/tty", "a", stdout);
+        if(freopen("/dev/tty", "a", stdout) == nullptr)
+        {
+            CPPUNIT_ASSERT(!"freopen() to restore stdout failed");
+            return;
+        }
 
         CPPUNIT_ASSERT(assert0 && assert1 && assert2); // these are here because stdout is now restored
 
@@ -1357,10 +1375,15 @@ void As2JsStreamUnitTests::test_stdout_destructive()
         // 1. create an empty file
         char filename[256];
         strncpy(filename, "/tmp/testXXXXXX.js", sizeof(filename));
-        /*int fd =*/ mkostemps(filename, 3, O_WRONLY);
+        int fd(mkostemps(filename, 3, O_WRONLY));
+        close(fd);
 
         // 2. put that in std::cout
-        freopen(filename, "a", stdout);
+        if(freopen(filename, "a", stdout) == nullptr)
+        {
+            CPPUNIT_ASSERT(!"freopen() of stdout failed");
+            return;
+        }
         setbuf(stdout, nullptr); // with a buffer the write would not fail!
 
         // 3. generate some data in the file
@@ -1380,7 +1403,11 @@ void As2JsStreamUnitTests::test_stdout_destructive()
         //    This freopen() fails with error 22 (EINVAL).
         //    have to fiddle with the code; see:
         //    http://stackoverflow.com/questions/1908687/how-to-redirect-the-output-back-to-the-screen-after-freopenout-txt-a-stdo
-        freopen("/dev/tty", "a+", stdout);
+        if(freopen("/dev/tty", "a+", stdout) == nullptr)
+        {
+            CPPUNIT_ASSERT(!"freopen() of stdout failed");
+            return;
+        }
 
         unlink(filename);
     }
