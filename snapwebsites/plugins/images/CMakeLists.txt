@@ -37,9 +37,9 @@ project(plugin_images)
 
 find_package(ImageMagick
     COMPONENTS Magick++
-    )
+)
 if( NOT ImageMagick_FOUND )
-    message(ERROR "ImageMagic is required to build the image plugin")
+    message( FATAL_ERROR "ImageMagic is required to build the image plugin" )
 endif()
 
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
