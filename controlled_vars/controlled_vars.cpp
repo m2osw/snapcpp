@@ -79,16 +79,17 @@ uint32_t	FLAG_TYPE_INT		= 0x00000001;
 uint32_t	FLAG_TYPE_FLOAT		= 0x00000002;
 }
 
-struct TYPES {
-	const char	*name;
-	const char	*short_name;
-	const char	*long_name;
-	long		flags;
-	const char	*condition;
+struct TYPES
+{
+	char const *	name;
+	char const *	short_name;
+	char const *	long_name;
+	unit32_t	flags;
+	char const *	condition;
 };
 typedef struct TYPES	types_t;
 
-const types_t g_types[] =
+types_t const g_types[] =
 {
 	{ "bool",          "bool",        "int32_t",       FLAG_TYPE_INT,   0 }, /* this generates quite many problems as operator input */
 	{ "char",          "char",        "int32_t",       FLAG_TYPE_INT,   0 },
@@ -114,7 +115,7 @@ const types_t g_types[] =
 #define	TYPES_ALL	(sizeof(g_types) / sizeof(g_types[0]))
 
 
-const types_t g_ptr_types[] =
+types_t const g_ptr_types[] =
 {
 	{ "signed char",   "schar",       "int32_t",       FLAG_TYPE_INT,   0 },
 	{ "unsigned char", "uchar",       "int32_t",       FLAG_TYPE_INT,   0 },
@@ -156,13 +157,15 @@ uint32_t	FLAG_HAS_CONST    	= 0x01000000;
 }
 
 
-struct OP_T {
-	const char *name;
-	long flags;
+struct OP_T
+{
+	char const *	name;
+	uint32_t	flags;
 };
 typedef struct OP_T	op_t;
 
-const op_t g_generic_operators[] = {
+op_t const g_generic_operators[] =
+{
 	{ "=",   FLAG_HAS_NOINIT | FLAG_HAS_LIMITED },
 	{ "*=",  FLAG_HAS_LIMITED },
 	{ "/=",  FLAG_HAS_LIMITED },
@@ -194,7 +197,8 @@ const op_t g_generic_operators[] = {
 #define	GENERIC_OPERATORS_MAX		(sizeof(g_generic_operators) / sizeof(g_generic_operators[0]))
 
 
-const op_t g_generic_ptr_operators[] = {
+op_t const g_generic_ptr_operators[] =
+{
 	{ "=",   FLAG_HAS_NOINIT | FLAG_HAS_PTR },
 	{ "+=",  FLAG_HAS_RETURN_PRIMARY },
 	{ "-=",  FLAG_HAS_RETURN_PRIMARY },
