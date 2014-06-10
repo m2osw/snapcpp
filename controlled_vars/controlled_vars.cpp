@@ -84,7 +84,7 @@ struct TYPES
 	char const *	name;
 	char const *	short_name;
 	char const *	long_name;
-	unit32_t	flags;
+	uint32_t	flags;
 	char const *	condition;
 };
 typedef struct TYPES	types_t;
