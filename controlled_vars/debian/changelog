@@ -1,3 +1,9 @@
+controlledvars (1.4.2) sauce; urgency=low
+
+  * Applied a fix for the flags generating errors on the PPA.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 09 Jun 2014 22:03:35 -0700
+
 controlledvars (1.4.1) saucy; urgency=low
 
   * Applied a couple of fixes to avoid warnings.
