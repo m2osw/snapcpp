@@ -33,7 +33,7 @@ cmake_minimum_required(VERSION 2.8)
 ##
 set(IPLOCK_MAJOR 2)
 set(IPLOCK_MINOR 0)
-set(IPLOCK_PATCH 0)
+set(IPLOCK_PATCH 1)
 
 project(iplock)
 

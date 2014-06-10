@@ -1,3 +1,11 @@
+snapwebsites (0.1.55~saucy) saucy; urgency=low
+
+  [ Alexis Wilke ]
+  * Fixed snapinit when Cassandra is not running so it does not use 100%
+    of the CPU.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 09 Jun 2014 20:17:46 -0700
+
 snapwebsites (0.1.54~saucy) saucy; urgency=low
 
   [ Alexis Wilke ]

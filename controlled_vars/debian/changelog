@@ -1,4 +1,10 @@
-controlledvars (1.3.7) saucy; urgency=low
+controlledvars (1.4.1) saucy; urgency=low
+
+  * Applied a couple of fixes to avoid warnings.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 09 Jun 2014 19:59:40 -0700
+
+controlledvars (1.4.0) saucy; urgency=low
 
   * Added support for "enum" types.
   * Moved the bool typedef's to the enumeration headers.

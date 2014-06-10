@@ -34,7 +34,7 @@ cmake_minimum_required(VERSION 2.8)
 ##
 set(CONTROLLED_VARS_MAJOR 1)
 set(CONTROLLED_VARS_MINOR 4)
-set(CONTROLLED_VARS_PATCH 0)
+set(CONTROLLED_VARS_PATCH 1)
 
 ##
 ## Controlled Variables Generator
@@ -139,6 +139,7 @@ add_custom_target( controlled_vars_headers
 		#controlled_vars_limited_need_init.h
 		#controlled_vars_no_init.h
 		#controlled_vars_limited_no_init.h
+		# ... (and many others added since then)
 )
 
 ##
