@@ -365,10 +365,10 @@ public:
         NODE_ATTR_DEFINED,
 
         // max used to know the number of entries and define our bitset
-        NODE_ATTRIBUTE_max
+        NODE_ATTR_max
     };
 
-    typedef std::bitset<static_cast<int>(attribute_t::NODE_ATTRIBUTE_max)>     attribute_set_t;
+    typedef std::bitset<static_cast<int>(attribute_t::NODE_ATTR_max)>     attribute_set_t;
 
     enum class link_t : uint32_t
     {

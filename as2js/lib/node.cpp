@@ -356,6 +356,7 @@ void Node::set_switch_operator(node_t op)
  */
 Node::pointer_t Node::create_replacement(node_t type) const
 {
+    // TBD: should we limit the type of replacement nodes?
     Node::pointer_t n(new Node(type));
 
     // this is why we want to have a function instead of doing new Node().
@@ -446,7 +447,7 @@ Position const& Node::get_position() const
  * \exception exception_index_out_of_range
  * The index is out of range.
  *
- * \exception exception_internal_error
+ * \exception exception_already_defined
  * The link at that index is already defined and the function was called
  * anyway. This is an internal error because you should check whether the
  * value was already defined and if so use that value.
@@ -476,7 +477,7 @@ void Node::set_link(link_t index, pointer_t link)
         // link already set?
         if(f_link[static_cast<size_t>(index)])
         {
-            throw exception_internal_error("a link was set twice at the same offset");
+            throw exception_already_defined("a link was set twice at the same offset");
         }
 
         f_link[static_cast<size_t>(index)] = link;
@@ -613,6 +614,11 @@ Node::pointer_t Node::get_variable(int index) const
  * as the label parameter and a NODE_FUNCTION as 'this' parameter,
  * then this exception is raised.
  *
+ * \exception exception_incompatible_node_data
+ * If the node representing the label does not have a valid string
+ * attached to it (i.e. if it is empty) then this exception is
+ * raised.
+ *
  * \param[in] label  A smart pointer to the label node to add.
  */
 void Node::add_label(pointer_t label)
@@ -621,6 +627,14 @@ void Node::add_label(pointer_t label)
     || node_t::NODE_FUNCTION != f_type)
     {
         throw exception_incompatible_node_type("invalid type of node to call add_label() with");
+    }
+    if(label->f_str.empty())
+    {
+        throw exception_incompatible_node_data("a label without a valid name cannot be added to a function");
+    }
+    if(f_labels.find(label->f_str) != f_labels.end())
+    {
+        throw exception_already_defined("a label with the same name is already defined in this function.");
     }
 
     f_labels[label->f_str] = label;

@@ -101,23 +101,23 @@ void Node::verify_flag(flag_t f) const
     switch(f)
     {
     case flag_t::NODE_CATCH_FLAG_TYPED:
-        if(f_type != node_t::NODE_CATCH)
+        if(f_type == node_t::NODE_CATCH)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
     case flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES:
-        if(f_type != node_t::NODE_DIRECTIVE_LIST)
+        if(f_type == node_t::NODE_DIRECTIVE_LIST)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
     case flag_t::NODE_FOR_FLAG_FOREACH:
-        if(f_type != node_t::NODE_FOR)
+        if(f_type == node_t::NODE_FOR)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
@@ -128,41 +128,41 @@ void Node::verify_flag(flag_t f) const
     case flag_t::NODE_FUNCTION_FLAG_NEVER:
     case flag_t::NODE_FUNCTION_FLAG_NOPARAMS:
     case flag_t::NODE_FUNCTION_FLAG_OPERATOR:
-        if(f_type != node_t::NODE_FUNCTION)
+        if(f_type == node_t::NODE_FUNCTION)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
     case flag_t::NODE_IDENTIFIER_FLAG_WITH:
     case flag_t::NODE_IDENTIFIER_FLAG_TYPED:
-        if(f_type != node_t::NODE_IDENTIFIER
-        && f_type != node_t::NODE_VIDENTIFIER
-        && f_type != node_t::NODE_STRING)
+        if(f_type == node_t::NODE_IDENTIFIER
+        || f_type == node_t::NODE_VIDENTIFIER
+        || f_type == node_t::NODE_STRING)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
     case flag_t::NODE_IMPORT_FLAG_IMPLEMENTS:
-        if(f_type != node_t::NODE_IMPORT)
+        if(f_type == node_t::NODE_IMPORT)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
     case flag_t::NODE_PACKAGE_FLAG_FOUND_LABELS:
     case flag_t::NODE_PACKAGE_FLAG_REFERENCED:
-        if(f_type != node_t::NODE_PACKAGE)
+        if(f_type == node_t::NODE_PACKAGE)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
     case flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED:
-        if(f_type != node_t::NODE_PARAM_MATCH)
+        if(f_type == node_t::NODE_PARAM_MATCH)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
@@ -176,16 +176,16 @@ void Node::verify_flag(flag_t f) const
     case flag_t::NODE_PARAMETERS_FLAG_REFERENCED:    // referenced from a parameter or a variable
     case flag_t::NODE_PARAMETERS_FLAG_PARAMREF:      // referenced from another parameter
     case flag_t::NODE_PARAMETERS_FLAG_CATCH:         // a parameter defined in a catch()
-        if(f_type != node_t::NODE_PARAMETERS)
+        if(f_type == node_t::NODE_PARAMETERS)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
     case flag_t::NODE_SWITCH_FLAG_DEFAULT:           // we found a 'default:' label in that switch
-        if(f_type != node_t::NODE_SWITCH)
+        if(f_type == node_t::NODE_SWITCH)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
@@ -200,20 +200,24 @@ void Node::verify_flag(flag_t f) const
     case flag_t::NODE_VAR_FLAG_DEFINED:              // was already parsed
     case flag_t::NODE_VAR_FLAG_DEFINING:             // currently defining, can't read
     case flag_t::NODE_VAR_FLAG_TOADD:                // to be added in the directive list
-        if(f_type != node_t::NODE_VARIABLE
-        && f_type != node_t::NODE_VAR
-        && f_type != node_t::NODE_PARAM)
+        if(f_type == node_t::NODE_VARIABLE
+        || f_type == node_t::NODE_VAR
+        || f_type == node_t::NODE_PARAM)
         {
-            throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+            return;
         }
         break;
 
     case flag_t::NODE_FLAG_max:
-        throw exception_internal_error("invalid attribute / flag in Node::verify_flag()");
+        break;
 
     // default: -- do not define so the compiler can tell us if
     //             an enumeration is missing in this case
     }
+
+    // since we do not use 'default' completely invalid values are not caught
+    // in the switch...
+    throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
 }
 
 

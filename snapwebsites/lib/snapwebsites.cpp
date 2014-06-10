@@ -891,7 +891,7 @@ void server::prepare_qtapp( int argc, char *argv[] )
 void server::prepare_cassandra()
 {
     snap_cassandra cassandra;
-    cassandra.connect( &f_parameters );
+    cassandra.connect( f_parameters );
     cassandra.init_context();
     QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
     Q_ASSERT( context );

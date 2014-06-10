@@ -35,6 +35,8 @@
 #include "controlled_vars_limited_auto_enum_init.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <iostream>
 
 
 typedef controlled_vars::limited_auto_init<int, 0, 100, 50> percent_t;
@@ -63,17 +65,27 @@ int main(int /*argc*/, char * /*argv*/[])
 	// This test fails when using 123 directly because the compiler
 	// knows to convert the value to a bool! so we really have to
 	// trick it to get a value other than just 0 or 1
-	char boolean(123);
+// TODO: actually create a debug version! Right now _DEBUG does not get set
+#ifdef _DEBUG
+	// this works in debug but it gets optimized to the correct value
+	// in release (i.e. the 123 becomes 1 and is accepted by the
+	// assignment operator) so... I'm not too sure how to test this
+	// in release mode at this point
+	std::cerr << "info: test an invalid Boolean value (Debug version only)\n";
+	char const boolean(123);
+	bool bad_boolean;
+	memcpy(&bad_boolean, &boolean, 1);
 	try {
 		// this must throw because the check uses a template<class L>
 		// for the type instead of casting to bool first!
-		t.f_false = *reinterpret_cast<bool *>(&boolean);
-		fprintf(stderr, "error: expected t.f_false to throw an exception on 256.\n");
+		t.f_false = bad_boolean;
+		fprintf(stderr, "error: expected t.f_false to throw an exception on 123.\n");
 		e = 1;
 	}
 	catch(const controlled_vars::controlled_vars_error&) {
 		// it worked!
 	}
+#endif
 
 	if(t.f_true != true) {
 		fprintf(stderr, "error: expected t.f_true to be true.\n");

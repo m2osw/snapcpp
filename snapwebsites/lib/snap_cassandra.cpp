@@ -35,20 +35,18 @@ snap_cassandra::snap_cassandra()
     // empty
 }
 
-void snap_cassandra::connect( snap_config* config )
+void snap_cassandra::connect( snap_config const& config )
 {
-    Q_ASSERT( config );
-
     // This function connects to the Cassandra database, but it doesn't
     // keep the connection. We are the server and the connection would
     // not be shared properly between all the children.
-    f_cassandra_host = (*config)["cassandra_host"];
+    f_cassandra_host = config["cassandra_host"];
     if(f_cassandra_host.isEmpty())
     {
         f_cassandra_host = "localhost";
     }
     //
-    QString port_str( (*config)["cassandra_port"] );
+    QString port_str( config["cassandra_port"] );
     if(port_str.isEmpty())
     {
         port_str = "9160";
@@ -68,18 +66,22 @@ void snap_cassandra::connect( snap_config* config )
 
     // TODO:
     // We must stay "alive" waiting for the cassandra server to come up.
-    // This will take entries into the configuration file: check interval, and max_tries.
+    // This will take entries into the configuration file:
+    // wait_interval, and wait_max_tries.
     //
-    const int wait_interval  = (*config)["wait_interval"].toInt();
-    const int wait_max_tries = (*config)["wait_max_tries"].toInt();
+    int wait_interval  = config["wait_interval"].toInt();
+    if(wait_interval < 5)
+    {
+        wait_interval = 5;
+    }
+    int wait_max_tries = config["wait_max_tries"].toInt();
     f_cassandra = QtCassandra::QCassandra::create();
     Q_ASSERT(f_cassandra);
-    int timeout = wait_max_tries;
     while( !f_cassandra->connect(f_cassandra_host, f_cassandra_port) )
     {
-        // if timeout is 1 we're about to call exit(1) so we're not going
+        // if wait_max_tries is 1 we're about to call exit(1) so we're not going
         // to retry once more
-        if(timeout != 1)
+        if(wait_max_tries != 1)
         {
             SNAP_LOG_WARNING()
                 << "The connection to the Cassandra server failed ("
@@ -88,9 +90,9 @@ void snap_cassandra::connect( snap_config* config )
             sleep( wait_interval );
         }
         //
-        if( timeout > 0 )
+        if( wait_max_tries > 0 )
         {
-            if( --timeout <= 0 )
+            if( --wait_max_tries <= 0 )
             {
                 SNAP_LOG_FATAL() << "TIMEOUT: Could not connect to remote Cassandra server at ("
                     << f_cassandra_host << ":" << f_cassandra_port << ")!";
@@ -150,4 +152,4 @@ int32_t snap_cassandra::get_cassandra_port() const
 }
 // namespace snap
 
-// vim: ts=4 sw=4 et syntax=cpp.doxygen
+// vim: ts=4 sw=4 et

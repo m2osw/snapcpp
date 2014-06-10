@@ -86,6 +86,22 @@ public:
 };
 
 
+class exception_incompatible_node_data : public std::runtime_error
+{
+public:
+    exception_incompatible_node_data(char const *msg)        : runtime_error(msg) {}
+    exception_incompatible_node_data(std::string const& msg) : runtime_error(msg) {}
+};
+
+
+class exception_already_defined : public std::runtime_error
+{
+public:
+    exception_already_defined(char const *msg)        : runtime_error(msg) {}
+    exception_already_defined(std::string const& msg) : runtime_error(msg) {}
+};
+
+
 class exception_no_parent : public std::runtime_error
 {
 public:

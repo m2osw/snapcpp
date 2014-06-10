@@ -74,8 +74,8 @@ private:
     Input::char_t               input_getc();
     Input::char_t               getc();
     void                        ungetc(Input::char_t c);
-    int64_t                     read_hex(long max);
-    int64_t                     read_octal(Input::char_t c, long max);
+    int64_t                     read_hex(unsigned long max);
+    int64_t                     read_octal(Input::char_t c, unsigned long max);
     Input::char_t               escape_sequence();
     char_type_t                 char_type(Input::char_t c);
     Input::char_t               read(Input::char_t c, char_type_t flags, String& str);

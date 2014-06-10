@@ -508,7 +508,7 @@ snap_init::snap_init( int argc, char *argv[] )
         exit( 1 );
     }
 
-    f_cassandra.connect( &f_config );
+    f_cassandra.connect( f_config );
     //
     QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
     Q_ASSERT(context);

@@ -631,10 +631,10 @@ void create_unary_operators(const char *name, long flags)
 		if((flags & FLAG_HAS_LIMITS) != 0) {
 			// in this case we only need to check against one bound
 			if(i & 2) {
-				fprintf(out, " if(f_value - 1 < min)");
+				fprintf(out, " if(f_value <= min)");
 			}
 			else {
-				fprintf(out, " if(f_value + 1 > max)");
+				fprintf(out, " if(f_value >= max)");
 			}
 			fprintf(out, " throw controlled_vars_error_out_of_bounds(\"%s would render value out of bounds\");", i & 2 ? "--" : "++");
 			fprintf(out, " %sf_value;", i & 2 ? "--" : "++");
