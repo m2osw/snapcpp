@@ -1,4 +1,4 @@
-controlledvars (1.4.2) sauce; urgency=low
+controlledvars (1.4.2) saucy; urgency=high
 
   * Applied a fix for the flags generating errors on the PPA.
 
