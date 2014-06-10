@@ -788,7 +788,7 @@ void As2JsStringUnitTests::test_utf8()
 
         int32_t buf[2];
         buf[0] = i;
-        buf[2] = '\0';
+        buf[1] = '\0';
         as2js::String wcs(buf); // testing UTF-32 here!
         std::string mbs(wcstombs(wcs));
 
