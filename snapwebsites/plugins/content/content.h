@@ -296,9 +296,11 @@ public:
 
         // save in temporary XML for XSLT
         COMMAND_ELEMENT,                // + QDomElement
+        COMMAND_PATH_ELEMENT,           // + path to child element
         COMMAND_CHILD_ELEMENT,          // + child name
         COMMAND_NEW_CHILD_ELEMENT,      // + child name
         COMMAND_PARENT_ELEMENT,         // no parameters
+        COMMAND_ELEMENT_TEXT,           // no parameters
         COMMAND_ELEMENT_ATTR,           // + QDomElement
         COMMAND_RESULT,                 // + search_result_t
         COMMAND_LAST_RESULT_TO_VAR,     // + var name
@@ -312,6 +314,8 @@ public:
         COMMAND_GOTO,                   // + label number
         COMMAND_IF_FOUND,               // + label number
         COMMAND_IF_NOT_FOUND,           // + label number
+        COMMAND_IF_ELEMENT_NULL,        // + label number
+        COMMAND_IF_NOT_ELEMENT_NULL,    // + label number
         COMMAND_RESET,                  // no parameters
         COMMAND_WARNING                 // + warning message
     };
@@ -337,6 +341,7 @@ public:
                             cmd_info_t(command_t cmd, int64_t int_value);
                             cmd_info_t(command_t cmd, QtCassandra::QCassandraValue& value);
                             cmd_info_t(command_t cmd, QDomElement element);
+                            cmd_info_t(command_t cmd, QDomDocument element);
                             cmd_info_t(command_t cmd, search_result_t& result);
                             cmd_info_t(command_t cmd, path_info_t const& ipath);
 
@@ -367,6 +372,7 @@ public:
     field_search&       operator () (command_t cmd, int64_t int_value);
     field_search&       operator () (command_t cmd, QtCassandra::QCassandraValue value);
     field_search&       operator () (command_t cmd, QDomElement element);
+    field_search&       operator () (command_t cmd, QDomDocument element);
     field_search&       operator () (command_t cmd, search_result_t& result);
     field_search&       operator () (command_t cmd, path_info_t& ipath);
 

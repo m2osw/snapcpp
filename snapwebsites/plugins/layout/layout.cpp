@@ -673,8 +673,8 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
 //std::cout << "Header + Main XML is [" << doc.toString() << "]\n";
 
     // add boxes content
-    // if the "boxes" entry doesn't exist yet then we can create it now
-    // (i.e. we're creating a parent if the "boxes" element is not present;
+    // if the "boxes" entry does not exist yet then we can create it now
+    // (i.e. we are creating a parent if the "boxes" element is not present;
     //       although we should not get called recursively, this makes things
     //       safer!)
     if(handle_boxes && page.firstChildElement("boxes").isNull())
@@ -903,33 +903,86 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
     }
     page.appendChild(boxes);
 
-    // TODO -- check for boxes starting in the current page, then the
-    //         type and finally the layout; all of those are NOT
-    //         cumulative; at this point we only get the layout info
+    // Search for a list of boxes:
+    //
+    //   . Under "/snap/head/metadata/boxes" of the XML document
+    //   . Under current page branch[layout::boxes]
+    //   . Under the current page type (and parents) branch[layout::boxes]
+    //   . Under the theme path branch[layout::boxes]
+    //
     content::path_info_t boxes_ipath;
     boxes_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
+
+    // get the page type
+    //
+    // TODO: we probably want to also add a specificy tag for boxes
+    //       (i.e. a page_boxes link to a tree that defines boxes)
+    //
+    links::link_info type_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
+    QSharedPointer<links::link_context> type_ctxt(links::links::instance()->new_link_context(type_info));
+    links::link_info link_type;
+    QString type_key;
+    if(type_ctxt->next_link(link_type))
+    {
+        type_key = link_type.key();
+    }
+    content::path_info_t type_ipath;
+    if(!type_key.isEmpty())
+    {
+        type_ipath.set_path(type_key);
+    }
 
     content::field_search::search_result_t box_names;
     FIELD_SEARCH
         (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+
+        // /snap/head/metadata/boxes
+        (content::field_search::COMMAND_ELEMENT, doc)
+        (content::field_search::COMMAND_PATH_ELEMENT, "/snap/head/metadata/boxes")
+        // if boxes exist in doc then that is our result
+        (content::field_search::COMMAND_IF_ELEMENT_NULL, 1)
+        (content::field_search::COMMAND_ELEMENT_TEXT)
+        (content::field_search::COMMAND_RESULT, box_names)
+        (content::field_search::COMMAND_GOTO, 100)
+
+        // no boxes in source document
+        (content::field_search::COMMAND_LABEL, 1)
+
+        // check in this specific page for a layout::boxes field
+        (content::field_search::COMMAND_PATH_INFO_BRANCH, ipath)
+        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
+        (content::field_search::COMMAND_SELF)
+        (content::field_search::COMMAND_IF_FOUND, 100)
+
+        // check in the type or any parents
+        (content::field_search::COMMAND_PATH_INFO_BRANCH, type_ipath)
+        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
+        (content::field_search::COMMAND_PARENTS, content::get_name(content::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME))
+        (content::field_search::COMMAND_IF_FOUND, 100)
+
+        // check in the boxes path for a layout::boxes field
         (content::field_search::COMMAND_PATH_INFO_BRANCH, boxes_ipath)
         (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
         (content::field_search::COMMAND_SELF)
+
+        (content::field_search::COMMAND_LABEL, 100)
         (content::field_search::COMMAND_RESULT, box_names)
 
         // retrieve names of all the boxes
         ;
+
     int const max_names(box_names.size());
     if(max_names != 0)
     {
         if(max_names != 1)
         {
-            throw snap_logic_exception("expected zero or one entry from a COMMAND_SELF");
+            throw snap_logic_exception("expected zero or one entry from a COMMAND_SELF / COMMAND_ELEMENT_TEXT");
         }
         // an empty list is represented by a period because "" cannot be
         // properly saved in the database!
         QString box_list(box_names[0].stringValue());
-        if(box_list != ".")
+
+        if(!box_list.isEmpty() && box_list != ".")
         {
             QStringList names(box_list.split(","));
             QVector<QDomElement> dom_boxes;

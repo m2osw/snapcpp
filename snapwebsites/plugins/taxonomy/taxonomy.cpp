@@ -188,8 +188,7 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t& ipat
     links::link_info link_type;
     if(!type_ctxt->next_link(link_type))
     {
-        // this should never happen because we should always have a parent
-        // up until limit_name is found
+        // this should not happen assuming the pages are properly defined
         return not_found;
     }
     QString type_key(link_type.key());

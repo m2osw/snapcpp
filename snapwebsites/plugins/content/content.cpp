@@ -97,7 +97,7 @@ char const *get_name(name_t name)
         return "Content Types";
 
     case SNAP_NAME_CONTENT_CONTENT_TYPES_NAME:
-        return "content_types";
+        return "content-types";
 
     case SNAP_NAME_CONTENT_COPYRIGHTED:
         return "content::copyrighted";
@@ -439,6 +439,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd)
     switch(cmd)
     {
     case COMMAND_PARENT_ELEMENT:
+    case COMMAND_ELEMENT_TEXT:
     case COMMAND_RESET:
     case COMMAND_SELF:
         break;
@@ -473,6 +474,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
     case COMMAND_LINK:
     case COMMAND_DEFAULT_VALUE:
     case COMMAND_DEFAULT_VALUE_OR_NULL:
+    case COMMAND_PATH_ELEMENT:
     case COMMAND_CHILD_ELEMENT:
     case COMMAND_NEW_CHILD_ELEMENT:
     case COMMAND_ELEMENT_ATTR:
@@ -515,6 +517,8 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
     case COMMAND_GOTO:
     case COMMAND_IF_FOUND:
     case COMMAND_IF_NOT_FOUND:
+    case COMMAND_IF_ELEMENT_NULL:
+    case COMMAND_IF_NOT_ELEMENT_NULL:
         break;
 
     default:
@@ -524,7 +528,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
 }
 
 
-/** \brief Initialize an cmd_info_t object.
+/** \brief Initialize a cmd_info_t object.
  *
  * This function initializes the cmd_info_t. Note that the parameters
  * cannot be changed later (read-only.)
@@ -564,6 +568,33 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
     : f_cmd(static_cast<int>(cmd)) // XXX fix cast
     //, f_value() -- auto-init
     , f_element(element)
+    //, f_result(nullptr) -- auto-init
+    //, f_path_info() -- auto-init
+{
+    switch(cmd)
+    {
+    case COMMAND_ELEMENT:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a QCassandraValue").arg(static_cast<int>(cmd)));
+
+    }
+}
+
+
+/** \brief Initialize a cmd_info_t object.
+ *
+ * This function initializes the cmd_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
+ * \param[in] doc  The value attached to that instruction.
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomDocument doc)
+    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    //, f_value() -- auto-init
+    , f_element(doc.documentElement())
     //, f_result(nullptr) -- auto-init
     //, f_path_info() -- auto-init
 {
@@ -667,7 +698,9 @@ field_search::~field_search()
  * The following commands support this scheme:
  *
  * \li COMMAND_PARENT_ELEMENT
+ * \li COMMAND_ELEMENT_TEXT
  * \li COMMAND_RESET
+ * \li COMMAND_SELF
  *
  * \param[in] cmd  The command.
  *
@@ -691,6 +724,7 @@ field_search& field_search::operator () (field_search::command_t cmd)
  * \li COMMAND_LINK
  * \li COMMAND_DEFAULT_VALUE
  * \li COMMAND_DEFAULT_VALUE_OR_NULL
+ * \li COMMAND_PATH_ELEMENT
  * \li COMMAND_CHILD_ELEMENT
  * \li COMMAND_NEW_CHILD_ELEMENT
  * \li COMMAND_ELEMENT_ATTR
@@ -723,6 +757,7 @@ field_search& field_search::operator () (field_search::command_t cmd, char const
  * \li COMMAND_LINK
  * \li COMMAND_DEFAULT_VALUE
  * \li COMMAND_DEFAULT_VALUE_OR_NULL
+ * \li COMMAND_PATH_ELEMENT
  * \li COMMAND_CHILD_ELEMENT
  * \li COMMAND_NEW_CHILD_ELEMENT
  * \li COMMAND_ELEMENT_ATTR
@@ -751,6 +786,8 @@ field_search& field_search::operator () (field_search::command_t cmd, QString co
  * \li COMMAND_GOTO
  * \li COMMAND_IF_FOUND
  * \li COMMAND_IF_NOT_FOUND
+ * \li COMMAND_IF_ELEMENT_NULL
+ * \li COMMAND_IF_NOT_ELEMENT_NULL
  *
  * \param[in] cmd  The command.
  * \param[in] value  The integer attached to that command.
@@ -804,6 +841,25 @@ field_search& field_search::operator () (command_t cmd, QDomElement element)
 }
 
 
+/** \brief Add a command with a QDomDocument.
+ *
+ * The following commands support the QDomDocument:
+ *
+ * \li COMMAND_ELEMENT
+ *
+ * \param[in] cmd  The command.
+ * \param[in] element  The element attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search& field_search::operator () (command_t cmd, QDomDocument doc)
+{
+    field_search::cmd_info_t inst(cmd, doc);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
 /** \brief Add a command with a search_result_t reference.
  *
  * The following commands support the result reference:
@@ -823,11 +879,13 @@ field_search& field_search::operator () (command_t cmd, search_result_t& result)
 }
 
 
-/** \brief Add a command with a search_result_t reference.
+/** \brief Add a command with a path_info_t reference.
  *
- * The following commands support the result reference:
+ * The following commands support the path_info_t reference:
  *
- * \li COMMAND_RESULT
+ * \li COMMAND_PATH_INFO_GLOBAL
+ * \li COMMAND_PATH_INFO_BRANCH
+ * \li COMMAND_PATH_INFO_REVISION
  *
  * \param[in] cmd  The command.
  * \param[in] ipath  The ipath attached to that command.
@@ -1113,7 +1171,7 @@ void field_search::run()
 
         void cmd_parents(QString limit_path)
         {
-            // verify that a field name is defined
+            // verify that a field name is defined in self or any parent
             if(f_field_name.isEmpty())
             {
                 throw content_exception_invalid_sequence("the field_search cannot check COMMAND_PARENTS without first being given a COMMAND_FIELD_NAME");
@@ -1190,6 +1248,28 @@ void field_search::run()
             f_element = element;
         }
 
+        // retrieve an element given a path, element must exist, if
+        // not there it ends up being NULL; test with COMMAND_IF_ELEMENT_NULL
+        // and COMMAND_IF_NOT_ELEMENT_NULL
+        void cmd_path_element(QString const& child_name)
+        {
+            if(!f_element.isNull())
+            {
+                QStringList names(child_name.split("/"));
+                int const max_names(names.size());
+                for(int idx(0); idx < max_names && !f_element.isNull(); ++idx)
+                {
+                    QString name(names[idx]);
+                    if(name.isEmpty())
+                    {
+                        // happens when child_name starts/ends with '/'
+                        continue;
+                    }
+                    f_element = f_element.firstChildElement(name);
+                }
+            }
+        }
+
         void cmd_child_element(QString const& child_name)
         {
             if(!f_element.isNull())
@@ -1222,6 +1302,14 @@ void field_search::run()
             if(!f_element.isNull())
             {
                 f_element = f_element.parentNode().toElement();
+            }
+        }
+
+        void cmd_element_text()
+        {
+            if(!f_element.isNull())
+            {
+                f_result.push_back(f_element.text());
             }
         }
 
@@ -1352,6 +1440,14 @@ void field_search::run()
             }
         }
 
+        void cmd_if_element_null(int& i, int64_t label, bool equal)
+        {
+            if(f_element.isNull() == equal)
+            {
+                cmd_goto(i, label);
+            }
+        }
+
         void cmd_goto(int& i, int64_t label)
         {
             int const max_size(f_program.size());
@@ -1463,6 +1559,10 @@ void field_search::run()
                     cmd_element(f_program[i].get_element());
                     break;
 
+                case COMMAND_PATH_ELEMENT:
+                    cmd_path_element(f_program[i].get_string());
+                    break;
+
                 case COMMAND_CHILD_ELEMENT:
                     cmd_child_element(f_program[i].get_string());
                     break;
@@ -1473,6 +1573,10 @@ void field_search::run()
 
                 case COMMAND_PARENT_ELEMENT:
                     cmd_parent_element();
+                    break;
+
+                case COMMAND_ELEMENT_TEXT:
+                    cmd_element_text();
                     break;
 
                 case COMMAND_ELEMENT_ATTR:
@@ -1513,6 +1617,14 @@ void field_search::run()
 
                 case COMMAND_IF_NOT_FOUND:
                     cmd_if_found(i, f_program[i].get_int64(), true);
+                    break;
+
+                case COMMAND_IF_ELEMENT_NULL:
+                    cmd_if_element_null(i, f_program[i].get_int64(), true);
+                    break;
+
+                case COMMAND_IF_NOT_ELEMENT_NULL:
+                    cmd_if_element_null(i, f_program[i].get_int64(), false);
                     break;
 
                 case COMMAND_GOTO:
