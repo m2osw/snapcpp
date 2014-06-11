@@ -49,15 +49,29 @@ CPPUNIT_TEST_SUITE_REGISTRATION( As2JsMessageUnitTests );
 
 
 
+namespace
+{
 
 class test_callback : public as2js::MessageCallback
 {
 public:
+    test_callback()
+    {
+        as2js::Message::set_message_callback(this);
+    }
+
+    ~test_callback()
+    {
+        // make sure the pointer gets reset!
+        as2js::Message::set_message_callback(nullptr);
+    }
+
     // implementation of the output
     virtual void output(as2js::message_level_t message_level, as2js::err_code_t error_code, as2js::Position const& pos, std::string const& message)
     {
 
-//std::cerr<< "msg = " << pos.get_filename() << " / " << f_expected_pos.get_filename() << "\n";
+//std::cerr<< " filename = " << pos.get_filename() << " / " << f_expected_pos.get_filename() << "\n";
+//std::cerr<< " msg = [" << message << "] / [" << f_expected_message << "]\n";
 
         CPPUNIT_ASSERT(f_expected_call);
         CPPUNIT_ASSERT(message_level == f_expected_message_level);
@@ -87,12 +101,6 @@ public:
         f_got_called = true;
     }
 
-    ~test_callback()
-    {
-        // make sure the pointer gets reset!
-        as2js::Message::set_message_callback(nullptr);
-    }
-
     controlled_vars::tlbool_t   f_expected_call;
     controlled_vars::flbool_t   f_got_called;
     as2js::message_level_t      f_expected_message_level;
@@ -105,6 +113,10 @@ public:
 
 controlled_vars::zint32_t   test_callback::g_warning_count;
 controlled_vars::zint32_t   test_callback::g_error_count;
+
+}
+// no name namespace
+
 
 
 void As2JsMessageUnitTests::test_message()
@@ -126,7 +138,7 @@ void As2JsMessageUnitTests::test_message()
                 c.f_expected_error_code = j;
                 c.f_expected_pos.set_filename("unknown-file");
                 c.f_expected_pos.set_function("unknown-func");
-                as2js::Message::set_message_callback(&c);
+
                 for(as2js::message_level_t k(as2js::message_level_t::MESSAGE_LEVEL_OFF); k <= as2js::message_level_t::MESSAGE_LEVEL_TRACE; k = static_cast<as2js::message_level_t>(static_cast<int>(k) + 1))
                 {
                     as2js::Message::set_message_level(k);
@@ -180,7 +192,7 @@ void As2JsMessageUnitTests::test_message()
                         c.f_expected_pos = pos;
                         c.f_expected_pos.set_filename("file.js");
                         c.f_expected_pos.set_function("unknown-func");
-                        as2js::Message::set_message_callback(&c);
+
                         for(as2js::message_level_t k(as2js::message_level_t::MESSAGE_LEVEL_OFF); k <= as2js::message_level_t::MESSAGE_LEVEL_TRACE; k = static_cast<as2js::message_level_t>(static_cast<int>(k) + 1))
                         {
                             as2js::Message::set_message_level(k);
@@ -226,16 +238,20 @@ void As2JsMessageUnitTests::test_operator()
     c.f_expected_error_code = as2js::err_code_t::AS_ERR_CANNOT_COMPILE;
     c.f_expected_pos.set_filename("operator.js");
     c.f_expected_pos.set_function("compute");
-    as2js::Message::set_message_callback(&c);
     as2js::Message::set_message_level(as2js::message_level_t::MESSAGE_LEVEL_INFO);
 
     // test the copy constructor and operator
-    test_callback try_copy(c);
-    test_callback try_assignment;
-    try_assignment = c;
+    {
+        test_callback try_copy(c);
+        test_callback try_assignment;
+        try_assignment = c;
+    }
+    // this is required as the destructors called on the previous '}'
+    // will otherwise clear that pointer...
+    as2js::Message::set_message_callback(&c);
 
     as2js::Position pos;
-    pos.set_filename("file.js");
+    pos.set_filename("operator.js");
     pos.set_function("compute");
     c.f_expected_pos = pos;
 

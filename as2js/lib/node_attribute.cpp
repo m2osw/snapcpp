@@ -109,7 +109,14 @@ void Node::set_attribute(attribute_t a, bool v)
     verify_attribute(a);
     if(v)
     {
-        verify_exclusive_attributes(a);
+        // exclusive attributes do not generate an exception, instead
+        // we test the return value and if two exclusive attribute flags
+        // were to be set simultaneously, we prevent the second one from
+        // being set
+        if(!verify_exclusive_attributes(a))
+        {
+            return;
+        }
     }
     f_attributes[static_cast<size_t>(a)] = v;
 }
@@ -197,8 +204,10 @@ void Node::verify_attribute(attribute_t a) const
  * case the default applies.
  *
  * \param[in] a  The attribute being set.
+ *
+ * \return true if the flags are not in conflict.
  */
-void Node::verify_exclusive_attributes(attribute_t a) const
+bool Node::verify_exclusive_attributes(attribute_t a) const
 {
     bool conflict(false);
     char const *names;
@@ -215,7 +224,7 @@ void Node::verify_exclusive_attributes(attribute_t a) const
     case attribute_t::NODE_ATTR_INTRINSIC:
     case attribute_t::NODE_ATTR_UNUSED:
         // these attributes have no conflicts
-        return;
+        return true;
 
     // member visibility
     case attribute_t::NODE_ATTR_PUBLIC:
@@ -260,7 +269,7 @@ void Node::verify_exclusive_attributes(attribute_t a) const
 
     case attribute_t::NODE_ATTR_CONSTRUCTOR:
         conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
-                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)]
                 || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)];
         names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
@@ -311,7 +320,10 @@ void Node::verify_exclusive_attributes(attribute_t a) const
         // this can be a user error so we emit an error instead of throwing
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, f_position);
         msg << "Attributes " << names << " are mutually exclusive. Only one of them can be used.";
+        return false;
     }
+
+    return true;
 }
 
 

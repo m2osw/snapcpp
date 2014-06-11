@@ -37,6 +37,7 @@ SOFTWARE.
 #include    "test_as2js_main.h"
 
 #include    "as2js/node.h"
+#include    "as2js/message.h"
 #include    "as2js/exceptions.h"
 
 #include    <cstring>
@@ -181,7 +182,7 @@ uint64_t const              TEST_NODE_IS_SWITCH_OPERATOR = 0x0000000000004000;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 // pedantic because the .<field_name> is not accepted by default in C++
-node_type_info_t g_node_types[] =
+node_type_info_t const g_node_types[] =
 {
     {
         .f_type = as2js::Node::node_t::NODE_EOF,
@@ -1195,7 +1196,138 @@ node_type_info_t g_node_types[] =
 #pragma GCC diagnostic pop
 size_t const g_node_types_size(sizeof(g_node_types) / sizeof(g_node_types[0]));
 
+
+
+as2js::Node::attribute_t const g_group_member_visibility[] =
+{
+    as2js::Node::attribute_t::NODE_ATTR_PRIVATE,
+    as2js::Node::attribute_t::NODE_ATTR_PROTECTED,
+    as2js::Node::attribute_t::NODE_ATTR_PUBLIC,
+    as2js::Node::attribute_t::NODE_ATTR_max // end the list
+};
+
+as2js::Node::attribute_t const g_group_function_type[] =
+{
+    as2js::Node::attribute_t::NODE_ATTR_ABSTRACT,
+    as2js::Node::attribute_t::NODE_ATTR_CONSTRUCTOR,
+    as2js::Node::attribute_t::NODE_ATTR_STATIC,
+    as2js::Node::attribute_t::NODE_ATTR_VIRTUAL,
+    as2js::Node::attribute_t::NODE_ATTR_max // end the list
+};
+
+as2js::Node::attribute_t const g_group_switch_type[] =
+{
+    as2js::Node::attribute_t::NODE_ATTR_FOREACH,
+    as2js::Node::attribute_t::NODE_ATTR_NOBREAK,
+    as2js::Node::attribute_t::NODE_ATTR_AUTOBREAK,
+    as2js::Node::attribute_t::NODE_ATTR_max // end the list
+};
+
+as2js::Node::attribute_t const g_group_conditional_compilation[] =
+{
+    as2js::Node::attribute_t::NODE_ATTR_TRUE,
+    as2js::Node::attribute_t::NODE_ATTR_FALSE,
+    as2js::Node::attribute_t::NODE_ATTR_max // end the list
+};
+
+struct groups_attributes_t
+{
+    as2js::Node::attribute_t const *    f_attributes;
+    char const *                        f_names;
+};
+
+groups_attributes_t const g_groups_of_attributes[] =
+{
+    {
+        g_group_member_visibility,
+        "public, private, and protected"
+    },
+    {
+        g_group_function_type,
+        "static, abstract, virtual, and constructor"
+    },
+    {
+        g_group_switch_type,
+        "foreach, nobreak, and autobreak"
+    },
+    {
+        g_group_conditional_compilation,
+        "true and false"
+    }
+};
+size_t const g_groups_of_attributes_size(sizeof(g_groups_of_attributes) / sizeof(g_groups_of_attributes[0]));
+
+
+
+
+class test_callback : public as2js::MessageCallback
+{
+public:
+    test_callback()
+    {
+        as2js::Message::set_message_callback(this);
+        g_warning_count = as2js::Message::warning_count();
+        g_error_count = as2js::Message::error_count();
+    }
+
+    ~test_callback()
+    {
+        // make sure the pointer gets reset!
+        as2js::Message::set_message_callback(nullptr);
+    }
+
+    // implementation of the output
+    virtual void output(as2js::message_level_t message_level, as2js::err_code_t error_code, as2js::Position const& pos, std::string const& message)
+    {
+
+//std::cerr<< "msg = " << pos.get_filename() << " / " << f_expected_pos.get_filename() << "\n";
+
+        CPPUNIT_ASSERT(f_expected_call);
+        CPPUNIT_ASSERT(message_level == f_expected_message_level);
+        CPPUNIT_ASSERT(error_code == f_expected_error_code);
+        CPPUNIT_ASSERT(pos.get_filename() == f_expected_pos.get_filename());
+        CPPUNIT_ASSERT(pos.get_function() == f_expected_pos.get_function());
+        CPPUNIT_ASSERT(pos.get_page() == f_expected_pos.get_page());
+        CPPUNIT_ASSERT(pos.get_page_line() == f_expected_pos.get_page_line());
+        CPPUNIT_ASSERT(pos.get_paragraph() == f_expected_pos.get_paragraph());
+        CPPUNIT_ASSERT(pos.get_line() == f_expected_pos.get_line());
+        CPPUNIT_ASSERT(message == f_expected_message);
+
+        if(message_level == as2js::message_level_t::MESSAGE_LEVEL_WARNING)
+        {
+            ++g_warning_count;
+            CPPUNIT_ASSERT(g_warning_count == as2js::Message::warning_count());
+        }
+
+        if(message_level == as2js::message_level_t::MESSAGE_LEVEL_FATAL
+        || message_level == as2js::message_level_t::MESSAGE_LEVEL_ERROR)
+        {
+            ++g_error_count;
+//std::cerr << "error: " << g_error_count << " / " << as2js::Message::error_count() << "\n";
+            CPPUNIT_ASSERT(g_error_count == as2js::Message::error_count());
+        }
+
+        f_got_called = true;
+    }
+
+    controlled_vars::tlbool_t   f_expected_call;
+    controlled_vars::flbool_t   f_got_called;
+    as2js::message_level_t      f_expected_message_level;
+    as2js::err_code_t           f_expected_error_code;
+    as2js::Position             f_expected_pos;
+    std::string                 f_expected_message; // UTF-8 string
+    static controlled_vars::zint32_t   g_warning_count;
+    static controlled_vars::zint32_t   g_error_count;
+};
+
+controlled_vars::zint32_t   test_callback::g_warning_count;
+controlled_vars::zint32_t   test_callback::g_error_count;
+
+
+
+
 }
+// no name namespace
 
 
 
@@ -2766,6 +2898,7 @@ void As2JsNodeUnitTests::test_attributes()
     for(int i(0); i < 10; ++i)
     {
         // create a node that is not a NODE_PROGRAM
+        // (i.e. a node that accepts all attributes)
         size_t idx_node;
         do
         {
@@ -2775,6 +2908,70 @@ void As2JsNodeUnitTests::test_attributes()
         as2js::Node::pointer_t node(new as2js::Node(g_node_types[idx_node].f_type));
 
         // need to test all combinatorial cases...
+        for(size_t j(0); j < g_groups_of_attributes_size; ++j)
+        {
+            // go through the list of attributes that generate conflicts
+            for(as2js::Node::attribute_t const *attr_list(g_groups_of_attributes[j].f_attributes);
+                                         *attr_list != as2js::Node::attribute_t::NODE_ATTR_max;
+                                         ++attr_list)
+            {
+                // set that one attribute first
+                node->set_attribute(*attr_list, true);
+
+                // test against all the other attributes
+                for(int a(0); a < static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_max); ++a)
+                {
+                    // no need to test with itself, we do that earlier
+                    if(static_cast<as2js::Node::attribute_t>(a) == *attr_list)
+                    {
+                        continue;
+                    }
+
+                    // is attribute 'a' in conflict with attribute '*attr_list'?
+                    bool in_conflict(false);
+                    for(as2js::Node::attribute_t const *conflict_list(g_groups_of_attributes[j].f_attributes);
+                                                 *conflict_list != as2js::Node::attribute_t::NODE_ATTR_max;
+                                                 ++conflict_list)
+                    {
+                        if(static_cast<as2js::Node::attribute_t>(a) == *conflict_list)
+                        {
+                            in_conflict = true;
+                            break;
+                        }
+                    }
+
+                    if(in_conflict)
+                    {
+                        test_callback c;
+                        c.f_expected_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+                        c.f_expected_error_code = as2js::err_code_t::AS_ERR_INVALID_ATTRIBUTES;
+                        c.f_expected_pos.set_filename("unknown-file");
+                        c.f_expected_pos.set_function("unknown-func");
+                        c.f_expected_message = "Attributes " + std::string(g_groups_of_attributes[j].f_names) + " are mutually exclusive. Only one of them can be used.";
+
+                        // if in conflict, trying to set the flag generates
+                        // an error
+                        CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(a)));
+                        node->set_attribute(static_cast<as2js::Node::attribute_t>(a), true);
+                        // the set_attribute() did not change the attribute because it is
+                        // in conflict with another attribute which is set at this time...
+                        CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(a)));
+                    }
+                    else
+                    {
+                        // before we set it, always false
+                        CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(a)));
+                        node->set_attribute(static_cast<as2js::Node::attribute_t>(a), true);
+                        CPPUNIT_ASSERT(node->get_attribute(static_cast<as2js::Node::attribute_t>(a)));
+                        node->set_attribute(static_cast<as2js::Node::attribute_t>(a), false);
+                        CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(a)));
+                    }
+                }
+
+                // we are done with that loop, restore the attribute to the default
+                node->set_attribute(*attr_list, false);
+            }
+        }
     }
 }
 

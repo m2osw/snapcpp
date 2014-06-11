@@ -38,9 +38,9 @@ then
     echo "the version of test_as2js (`BUILD/tests/test_as2js --version`) is not equal to the project version ($MAJOR.$MINOR.$PATCH)"
     exit 1;
 fi
-BUILD/tests/test_as2js As2JsNodeUnitTests
-#BUILD/tests/test_as2js
-#BUILD/tests/test_as2js --destructive As2JsStreamUnitTests::test_stdout_destructive
+#BUILD/tests/test_as2js As2JsNodeUnitTests
+BUILD/tests/test_as2js
+BUILD/tests/test_as2js --destructive As2JsStreamUnitTests::test_stdout_destructive
 echo
 echo "***"
 echo "*** gcov/lcov"

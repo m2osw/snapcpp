@@ -141,7 +141,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT td (#PCDATA|%html-data;)*>
 <!ATTLIST td class CDATA #IMPLIED
-             width CDATA #IMPLIED>
+             width CDATA #IMPLIED
+             valign (top|middle|bottom) "middle">
 
 <!ELEMENT tr (%html-data;)*>
 <!ATTLIST tr class CDATA #IMPLIED>

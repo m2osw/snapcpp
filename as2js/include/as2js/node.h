@@ -495,7 +495,7 @@ private:
     // verify different parameters
     void                        verify_flag(flag_t f) const;
     void                        verify_attribute(attribute_t f) const;
-    void                        verify_exclusive_attributes(attribute_t f) const;
+    bool                        verify_exclusive_attributes(attribute_t f) const;
     void                        modifying() const;
 
     // output a node to out (on your end, use the << operator)
