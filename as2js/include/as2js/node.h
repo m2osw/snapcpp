@@ -268,36 +268,36 @@ public:
         NODE_PACKAGE_FLAG_FOUND_LABELS,
         NODE_PACKAGE_FLAG_REFERENCED,
 
+        // NODE_PARAM
+        NODE_PARAM_FLAG_CONST,
+        NODE_PARAM_FLAG_IN,
+        NODE_PARAM_FLAG_OUT,
+        NODE_PARAM_FLAG_NAMED,
+        NODE_PARAM_FLAG_REST,
+        NODE_PARAM_FLAG_UNCHECKED,
+        NODE_PARAM_FLAG_UNPROTOTYPED,
+        NODE_PARAM_FLAG_REFERENCED,         // referenced from a parameter or a variable
+        NODE_PARAM_FLAG_PARAMREF,           // referenced from another parameter
+        NODE_PARAM_FLAG_CATCH,              // a parameter defined in a catch()
+
         // NODE_PARAM_MATCH
         NODE_PARAM_MATCH_FLAG_UNPROTOTYPED,
-
-        // NODE_PARAMETERS
-        NODE_PARAMETERS_FLAG_CONST,
-        NODE_PARAMETERS_FLAG_IN,
-        NODE_PARAMETERS_FLAG_OUT,
-        NODE_PARAMETERS_FLAG_NAMED,
-        NODE_PARAMETERS_FLAG_REST,
-        NODE_PARAMETERS_FLAG_UNCHECKED,
-        NODE_PARAMETERS_FLAG_UNPROTOTYPED,
-        NODE_PARAMETERS_FLAG_REFERENCED,    // referenced from a parameter or a variable
-        NODE_PARAMETERS_FLAG_PARAMREF,      // referenced from another parameter
-        NODE_PARAMETERS_FLAG_CATCH,         // a parameter defined in a catch()
 
         // NODE_SWITCH
         NODE_SWITCH_FLAG_DEFAULT,           // we found a 'default:' label in that switch
 
-        // NODE_VARIABLE, NODE_VAR, NODE_PARAM
-        NODE_VAR_FLAG_CONST,
-        NODE_VAR_FLAG_LOCAL,
-        NODE_VAR_FLAG_MEMBER,
-        NODE_VAR_FLAG_ATTRIBUTES,
-        NODE_VAR_FLAG_ENUM,                 // there is a NODE_SET and it somehow needs to be copied
-        NODE_VAR_FLAG_COMPILED,             // Expression() was called on the NODE_SET
-        NODE_VAR_FLAG_INUSE,                // this variable was referenced
-        NODE_VAR_FLAG_ATTRS,                // currently being read for attributes (to avoid loops)
-        NODE_VAR_FLAG_DEFINED,              // was already parsed
-        NODE_VAR_FLAG_DEFINING,             // currently defining, can't read
-        NODE_VAR_FLAG_TOADD,                // to be added in the directive list
+        // NODE_VARIABLE, NODE_VAR_ATTRIBUTES
+        NODE_VARIABLE_FLAG_CONST,
+        NODE_VARIABLE_FLAG_LOCAL,
+        NODE_VARIABLE_FLAG_MEMBER,
+        NODE_VARIABLE_FLAG_ATTRIBUTES,
+        NODE_VARIABLE_FLAG_ENUM,            // there is a NODE_SET and it somehow needs to be copied
+        NODE_VARIABLE_FLAG_COMPILED,        // Expression() was called on the NODE_SET
+        NODE_VARIABLE_FLAG_INUSE,           // this variable was referenced
+        NODE_VARIABLE_FLAG_ATTRS,           // currently being read for attributes (to avoid loops)
+        NODE_VARIABLE_FLAG_DEFINED,         // was already parsed
+        NODE_VARIABLE_FLAG_DEFINING,        // currently defining, can't read
+        NODE_VARIABLE_FLAG_TOADD,           // to be added in the directive list
 
         NODE_FLAG_max
     };
@@ -409,6 +409,7 @@ public:
     bool                        to_call();
     bool                        to_int64();
     bool                        to_float64();
+    bool                        to_label();
     bool                        to_number();
     bool                        to_string();
     void                        to_videntifier();
@@ -485,8 +486,6 @@ public:
     static node_t               string_to_operator(String const& str);
 
     void                        display(std::ostream& out, int indent, char c) const;
-
-    String                      output() const;
 
 private:
     typedef std::vector<controlled_vars::zint32_t>  param_depth_t;

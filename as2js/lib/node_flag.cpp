@@ -94,6 +94,11 @@ void Node::set_flag(flag_t f, bool v)
  * This function verifies that \p f corresponds to a valid flag according
  * to the type of this Node object.
  *
+ * \todo
+ * Move some of the external tests to here because some flags are
+ * mutally exclusive and we should prevent such from being set
+ * simultaneously.
+ *
  * \param[in] f  The flag to check.
  */
 void Node::verify_flag(flag_t f) const
@@ -166,17 +171,17 @@ void Node::verify_flag(flag_t f) const
         }
         break;
 
-    case flag_t::NODE_PARAMETERS_FLAG_CONST:
-    case flag_t::NODE_PARAMETERS_FLAG_IN:
-    case flag_t::NODE_PARAMETERS_FLAG_OUT:
-    case flag_t::NODE_PARAMETERS_FLAG_NAMED:
-    case flag_t::NODE_PARAMETERS_FLAG_REST:
-    case flag_t::NODE_PARAMETERS_FLAG_UNCHECKED:
-    case flag_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED:
-    case flag_t::NODE_PARAMETERS_FLAG_REFERENCED:    // referenced from a parameter or a variable
-    case flag_t::NODE_PARAMETERS_FLAG_PARAMREF:      // referenced from another parameter
-    case flag_t::NODE_PARAMETERS_FLAG_CATCH:         // a parameter defined in a catch()
-        if(f_type == node_t::NODE_PARAMETERS)
+    case flag_t::NODE_PARAM_FLAG_CONST:
+    case flag_t::NODE_PARAM_FLAG_IN:
+    case flag_t::NODE_PARAM_FLAG_OUT:
+    case flag_t::NODE_PARAM_FLAG_NAMED:
+    case flag_t::NODE_PARAM_FLAG_REST:
+    case flag_t::NODE_PARAM_FLAG_UNCHECKED:
+    case flag_t::NODE_PARAM_FLAG_UNPROTOTYPED:
+    case flag_t::NODE_PARAM_FLAG_REFERENCED:    // referenced from a parameter or a variable
+    case flag_t::NODE_PARAM_FLAG_PARAMREF:      // referenced from another parameter
+    case flag_t::NODE_PARAM_FLAG_CATCH:         // a parameter defined in a catch()
+        if(f_type == node_t::NODE_PARAM)
         {
             return;
         }
@@ -189,20 +194,19 @@ void Node::verify_flag(flag_t f) const
         }
         break;
 
-    case flag_t::NODE_VAR_FLAG_CONST:
-    case flag_t::NODE_VAR_FLAG_LOCAL:
-    case flag_t::NODE_VAR_FLAG_MEMBER:
-    case flag_t::NODE_VAR_FLAG_ATTRIBUTES:
-    case flag_t::NODE_VAR_FLAG_ENUM:                 // there is a NODE_SET and it somehow needs to be copied
-    case flag_t::NODE_VAR_FLAG_COMPILED:             // Expression() was called on the NODE_SET
-    case flag_t::NODE_VAR_FLAG_INUSE:                // this variable was referenced
-    case flag_t::NODE_VAR_FLAG_ATTRS:                // currently being read for attributes (to avoid loops)
-    case flag_t::NODE_VAR_FLAG_DEFINED:              // was already parsed
-    case flag_t::NODE_VAR_FLAG_DEFINING:             // currently defining, can't read
-    case flag_t::NODE_VAR_FLAG_TOADD:                // to be added in the directive list
+    case flag_t::NODE_VARIABLE_FLAG_CONST:
+    case flag_t::NODE_VARIABLE_FLAG_LOCAL:
+    case flag_t::NODE_VARIABLE_FLAG_MEMBER:
+    case flag_t::NODE_VARIABLE_FLAG_ATTRIBUTES:
+    case flag_t::NODE_VARIABLE_FLAG_ENUM:                 // there is a NODE_SET and it somehow needs to be copied
+    case flag_t::NODE_VARIABLE_FLAG_COMPILED:             // Expression() was called on the NODE_SET
+    case flag_t::NODE_VARIABLE_FLAG_INUSE:                // this variable was referenced
+    case flag_t::NODE_VARIABLE_FLAG_ATTRS:                // currently being read for attributes (to avoid loops)
+    case flag_t::NODE_VARIABLE_FLAG_DEFINED:              // was already parsed
+    case flag_t::NODE_VARIABLE_FLAG_DEFINING:             // currently defining, can't read
+    case flag_t::NODE_VARIABLE_FLAG_TOADD:                // to be added in the directive list
         if(f_type == node_t::NODE_VARIABLE
-        || f_type == node_t::NODE_VAR
-        || f_type == node_t::NODE_PARAM)
+        || f_type == node_t::NODE_VAR_ATTRIBUTES)
         {
             return;
         }

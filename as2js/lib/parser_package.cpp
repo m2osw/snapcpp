@@ -150,7 +150,7 @@ void Parser::import(Node::pointer_t& node)
                 if(f_node->get_type() == Node::node_t::NODE_MEMBER)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                    msg << "a package name is either a string or a list of identifiers separated by periods (.); you can't mixed both";
+                    msg << "a package name is either a string or a list of identifiers separated by periods (.); you cannot mixed both";
                 }
             }
             else if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
@@ -169,7 +169,7 @@ void Parser::import(Node::pointer_t& node)
             name = first->get_string();
         }
 
-        int everything = 0;
+        int everything(0);
         while(f_node->get_type() == Node::node_t::NODE_MEMBER)
         {
             if(everything == 1)
@@ -195,12 +195,12 @@ void Parser::import(Node::pointer_t& node)
                     everything = 1;
                 }
             }
-            else if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
+            else if(f_node->get_type() != Node::node_t::NODE_IDENTIFIER)
             {
                 if(f_node->get_type() == Node::node_t::NODE_STRING)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                    msg << "a package name is either a string or a list of identifiers separated by periods (.); you can't mixed both";
+                    msg << "a package name is either a string or a list of identifiers separated by periods (.); you cannot mixed both";
                 }
                 else
                 {

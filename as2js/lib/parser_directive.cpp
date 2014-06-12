@@ -251,7 +251,7 @@ void Parser::directive(Node::pointer_t& node)
         // Note that we do not change the variable 'type' here!
     }
 
-    // check for directives which can't have attributes
+    // check for directives which cannot have attributes
     if(attr_count > 0)
     {
         switch(type)
@@ -262,7 +262,7 @@ void Parser::directive(Node::pointer_t& node)
                 break;
             }
             /*FALLTHROUGH*/
-            // pragma can't be annotated
+            // pragma cannot be annotated
         case Node::node_t::NODE_ARRAY_LITERAL:
         case Node::node_t::NODE_BREAK:
         case Node::node_t::NODE_CONTINUE:
@@ -481,6 +481,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_COLON:
         // the label was the last identifier in the
         // attributes which is now in f_node
+        f_node->to_label();
         directive_node = f_node;
         // we skip the identifier here
         get_token();

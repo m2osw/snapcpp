@@ -71,7 +71,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
     && f_node->get_string() == "unprototyped")
     {
         Node::pointer_t param(f_lexer->get_new_node(Node::node_t::NODE_PARAM));
-        param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED, true);
+        param->set_flag(Node::flag_t::NODE_PARAM_FLAG_UNPROTOTYPED, true);
         node->append_child(param);
         get_token();
         return;
@@ -92,19 +92,19 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
             switch(f_node->get_type())
             {
             case Node::node_t::NODE_REST:
-                param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST, true);
+                param->set_flag(Node::flag_t::NODE_PARAM_FLAG_REST, true);
                 invalid = false;
                 get_token();
                 break;
 
             case Node::node_t::NODE_CONST:
-                param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_CONST, true);
+                param->set_flag(Node::flag_t::NODE_PARAM_FLAG_CONST, true);
                 invalid = false;
                 get_token();
                 break;
 
             case Node::node_t::NODE_IN:
-                param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_IN, true);
+                param->set_flag(Node::flag_t::NODE_PARAM_FLAG_IN, true);
                 invalid = false;
                 get_token();
                 break;
@@ -118,7 +118,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
             case Node::node_t::NODE_IDENTIFIER:
                 if(f_node->get_string() == "out")
                 {
-                    param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_OUT, true);
+                    param->set_flag(Node::flag_t::NODE_PARAM_FLAG_OUT, true);
                     invalid = false;
                     get_token();
                     has_out = true; // for caller to know
@@ -126,14 +126,14 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
                 }
                 if(f_node->get_string() == "named")
                 {
-                    param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_NAMED, true);
+                    param->set_flag(Node::flag_t::NODE_PARAM_FLAG_NAMED, true);
                     invalid = false;
                     get_token();
                     break;
                 }
                 if(f_node->get_string() == "unchecked")
                 {
-                    param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_UNCHECKED, true);
+                    param->set_flag(Node::flag_t::NODE_PARAM_FLAG_UNCHECKED, true);
                     invalid = false;
                     get_token();
                     break;
@@ -149,12 +149,12 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
 
         if(has_out)
         {
-            if(f_node->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
+            if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
                 msg << "you cannot use the function parameter attribute 'out' with '...'";
             }
-            if(f_node->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_CONST))
+            if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_CONST))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
                 msg << "you cannot use the function attributes 'out' and 'const' together";
@@ -163,6 +163,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
 
         if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
         {
+            param->set_string(f_node->get_string());
             node->append_child(param);
             invalid = false;
             get_token();
@@ -179,7 +180,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
             if(f_node->get_type() == Node::node_t::NODE_ASSIGNMENT)
             {
                 // cannot accept when REST is set
-                if(f_node->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
+                if(f_node->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
                     msg << "you cannot assign a default value to '...'";
@@ -196,7 +197,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
                 }
             }
         }
-        else if(f_node->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
+        else if(f_node->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
         {
             node->append_child(param);
         }
@@ -233,7 +234,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
         }
         else
         {
-            if(f_node->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
+            if(f_node->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
                 msg << "no other parameters expected after '...'";

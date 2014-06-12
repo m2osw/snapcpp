@@ -51,6 +51,15 @@ class As2JsNodeUnitTests : public CPPUNIT_NS::TestFixture
         CPPUNIT_TEST( test_variables );
         CPPUNIT_TEST( test_labels );
         CPPUNIT_TEST( test_attributes );
+
+        // the display capability is for debug purposes but
+        // we test it to make sure that we display the right
+        // information
+        CPPUNIT_TEST( test_display_all_types );
+        CPPUNIT_TEST( test_display_unicode_string );
+        CPPUNIT_TEST( test_display_flags );
+        CPPUNIT_TEST( test_display_attributes );
+        CPPUNIT_TEST( test_display_tree );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -66,6 +75,11 @@ protected:
     void test_variables();
     void test_labels();
     void test_attributes();
+    void test_display_all_types();
+    void test_display_unicode_string();
+    void test_display_flags();
+    void test_display_attributes();
+    void test_display_tree();
 };
 
 #endif

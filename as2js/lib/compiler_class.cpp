@@ -140,7 +140,7 @@ void Compiler::check_member(Node::pointer_t ref, Node::pointer_t field, Node::po
     case Node::node_t::NODE_VARIABLE:
         // static const foo = 123; is fine
         err = !get_attribute(field, Node::attribute_t::NODE_ATTR_STATIC)
-           && !field->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST);
+           && !field->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST);
         break;
 
     default:

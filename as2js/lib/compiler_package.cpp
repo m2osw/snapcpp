@@ -753,7 +753,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         if(child->get_string() == id->get_string())
         {
             resolution = child;
-            resolution->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REFERENCED, true);
+            resolution->set_flag(Node::flag_t::NODE_PARAM_FLAG_REFERENCED, true);
             return true;
         }
         break;
@@ -779,7 +779,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         if(child->get_string() == id->get_string())
         {
             resolution = list;
-            resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
+            resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
             return true;
         }
 
@@ -794,7 +794,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
             {
                 // this can't be a function, right?
                 resolution = entry;
-                resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
+                resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
                 return true;
             }
         }
@@ -1294,7 +1294,7 @@ fprintf(stderr, "\n");
             if(id->get_string() == list->get_string())
             {
                 resolution = list;
-                resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
+                resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
                 return true;
             }
 
@@ -1313,7 +1313,7 @@ fprintf(stderr, "\n");
                     resolution = entry;
                     if(funcs_name(funcs, resolution))
                     {
-                        resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
+                        resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
                         return true;
                     }
                 }

@@ -269,12 +269,12 @@ fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
         {
             Node::pointer_t variable_node(directive_list_node->get_variable(idx));
             Node::pointer_t var_parent(variable_node->get_parent());
-            if(var_parent && var_parent->get_flag(Node::flag_t::NODE_VAR_FLAG_TOADD))
+            if(var_parent && var_parent->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_TOADD))
             {
                 // TBD: is that just the var declaration and no
                 //      assignment? because the assignment needs to
                 //      happen at the proper time!!!
-                var_parent->set_flag(Node::flag_t::NODE_VAR_FLAG_TOADD, false);
+                var_parent->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_TOADD, false);
                 directive_list_node->insert_child(0, var_parent); // insert at the start!
             }
         }

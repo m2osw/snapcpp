@@ -429,7 +429,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
                 if(var_node)
                 {
                     if((var_node->get_type() == Node::node_t::NODE_PARAM || var_node->get_type() == Node::node_t::NODE_VARIABLE)
-                    && var_node->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST))
+                    && var_node->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST))
                     {
                         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_OVERWRITE_CONST, expr->get_position());
                         msg << "cannot increment or decrement a constant variable or function parameters.";
@@ -1078,7 +1078,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             bool valid(false);
             if(resolution->get_type() == Node::node_t::NODE_VARIABLE)
             {
-                if(resolution->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST))
+                if(resolution->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST))
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_OVERWRITE_CONST, left->get_position());
                     msg << "you cannot assign a value to the constant variable '" << resolution->get_string() << "'.";
@@ -1090,7 +1090,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             }
             else if(resolution->get_type() == Node::node_t::NODE_PARAM)
             {
-                if(resolution->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_CONST))
+                if(resolution->get_flag(Node::flag_t::NODE_PARAM_FLAG_CONST))
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CANNOT_OVERWRITE_CONST, left->get_position());
                     msg << "you cannot assign a value to the constant function parameter '" << resolution->get_string() << "'.";
@@ -1123,8 +1123,8 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             Node::pointer_t variable_node;
             Node::pointer_t set;
             var_node = expr->create_replacement(Node::node_t::NODE_VAR);
-            var_node->set_flag(Node::flag_t::NODE_VAR_FLAG_TOADD, true);
-            var_node->set_flag(Node::flag_t::NODE_VAR_FLAG_DEFINING, true);
+            var_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_TOADD, true);
+            var_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_DEFINING, true);
             variable_node = expr->create_replacement(Node::node_t::NODE_VARIABLE);
             var_node->append_child(variable_node);
             variable_node->set_string(left->get_string());
@@ -1139,7 +1139,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
                 }
                 else if(parent->get_type() == Node::node_t::NODE_FUNCTION)
                 {
-                    variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_LOCAL, true);
+                    variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_LOCAL, true);
                     parent->add_variable(variable_node);
                     break;
                 }
@@ -1254,7 +1254,7 @@ std::cerr << "CAUGHT! setter...\n";
 
     if(var_node)
     {
-        var_node->set_flag(Node::flag_t::NODE_VAR_FLAG_DEFINING, false);
+        var_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_DEFINING, false);
     }
 
     Node::pointer_t type(left->get_link(Node::link_t::LINK_TYPE));

@@ -55,12 +55,13 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
         Node::pointer_t variable_node(f_lexer->get_new_node(Node::node_t::NODE_VARIABLE));
         if(constant)
         {
-            variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_CONST, true);
+            variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST, true);
         }
         node->append_child(variable_node);
 
         if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
         {
+            variable_node->set_string(f_node->get_string());
             get_token();
         }
         else

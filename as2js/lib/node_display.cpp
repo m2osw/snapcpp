@@ -104,16 +104,61 @@ void Node::display_data(std::ostream& out) const
 
     switch(f_type)
     {
-    case node_t::NODE_IDENTIFIER:
-    case node_t::NODE_VIDENTIFIER:
-    case node_t::NODE_STRING:
-    case node_t::NODE_GOTO:
-    case node_t::NODE_LABEL:
-    case node_t::NODE_IMPORT:
+    case node_t::NODE_BREAK:
     case node_t::NODE_CLASS:
-    case node_t::NODE_INTERFACE:
+    case node_t::NODE_CONTINUE:
     case node_t::NODE_ENUM:
+    case node_t::NODE_GOTO:
+    case node_t::NODE_INTERFACE:
+    case node_t::NODE_LABEL:
+    case node_t::NODE_NAMESPACE:
         sub_function::display_str(out, f_str);
+        break;
+
+    case node_t::NODE_CATCH:
+        out << ":";
+        if(f_flags[static_cast<size_t>(flag_t::NODE_CATCH_FLAG_TYPED)])
+        {
+            out << " TYPED";
+        }
+        break;
+
+    case node_t::NODE_DIRECTIVE_LIST:
+        out << ":";
+        if(f_flags[static_cast<size_t>(flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES)])
+        {
+            out << " NEW-VARIABLES";
+        }
+        break;
+
+    case node_t::NODE_FOR:
+        out << ":";
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FOR_FLAG_FOREACH)])
+        {
+            out << " FOREACH";
+        }
+        break;
+
+    case node_t::NODE_IDENTIFIER:
+    case node_t::NODE_STRING:
+    case node_t::NODE_VIDENTIFIER:
+        sub_function::display_str(out, f_str);
+        if(f_flags[static_cast<size_t>(flag_t::NODE_IDENTIFIER_FLAG_WITH)])
+        {
+            out << " WITH";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_IDENTIFIER_FLAG_TYPED)])
+        {
+            out << " TYPED";
+        }
+        break;
+
+    case node_t::NODE_IMPORT:
+        sub_function::display_str(out, f_str);
+        if(f_flags[static_cast<size_t>(flag_t::NODE_IMPORT_FLAG_IMPLEMENTS)])
+        {
+            out << " IMPLEMENTS";
+        }
         break;
 
     case node_t::NODE_PACKAGE:
@@ -121,6 +166,10 @@ void Node::display_data(std::ostream& out) const
         if(f_flags[static_cast<size_t>(flag_t::NODE_PACKAGE_FLAG_FOUND_LABELS)])
         {
             out << " FOUND-LABELS";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PACKAGE_FLAG_REFERENCED)])
+        {
+            out << " REFERENCED";
         }
         break;
 
@@ -142,45 +191,74 @@ void Node::display_data(std::ostream& out) const
         {
             out << " SETTER";
         }
-        break;
-
-    case node_t::NODE_PARAM:
-        sub_function::display_str(out, f_str);
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_CONST)])
-        {
-            out << " CONST";
-        }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_IN)])
-        {
-            out << " IN";
-        }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_OUT)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FUNCTION_FLAG_OUT)])
         {
             out << " OUT";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_NAMED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FUNCTION_FLAG_VOID)])
+        {
+            out << " VOID";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FUNCTION_FLAG_NEVER)])
+        {
+            out << " NEVER";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FUNCTION_FLAG_NOPARAMS)])
+        {
+            out << " NOPARAMS";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FUNCTION_FLAG_OPERATOR)])
+        {
+            out << " OPERATOR";
+        }
+        break;
+
+    case node_t::NODE_PARAM:
+        // THIS SEEMS WRONG, We do not save a string in
+        // the NODE_PARAM; so either it is wrong here or
+        // we miss the necessary call(s) when parsing the
+        // function list of parameters
+        //sub_function::display_str(out, f_str);
+        out << ":";
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_CONST)])
+        {
+            out << " CONST";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_IN)])
+        {
+            out << " IN";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_OUT)])
+        {
+            out << " OUT";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_NAMED)])
         {
             out << " NAMED";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_REST)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_REST)])
         {
             out << " REST";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_UNCHECKED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_UNCHECKED)])
         {
             out << " UNCHECKED";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_UNPROTOTYPED)])
         {
             out << " UNPROTOTYPED";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_REFERENCED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_REFERENCED)])
         {
             out << " REFERENCED";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAMETERS_FLAG_PARAMREF)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_PARAMREF)])
         {
             out << " PARAMREF";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_CATCH)])
+        {
+            out << " CATCH";
         }
         break;
 
@@ -192,50 +270,58 @@ void Node::display_data(std::ostream& out) const
         }
         break;
 
+    case node_t::NODE_SWITCH:
+        out << ":";
+        if(f_flags[static_cast<size_t>(flag_t::NODE_SWITCH_FLAG_DEFAULT)])
+        {
+            out << " DEFAULT";
+        }
+        break;
+
     case node_t::NODE_VARIABLE:
     case node_t::NODE_VAR_ATTRIBUTES:
         sub_function::display_str(out, f_str);
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_CONST)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_CONST)])
         {
             out << " CONST";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_LOCAL)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_LOCAL)])
         {
             out << " LOCAL";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_MEMBER)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_MEMBER)])
         {
             out << " MEMBER";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_ATTRIBUTES)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_ATTRIBUTES)])
         {
             out << " ATTRIBUTES";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_ENUM)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_ENUM)])
         {
             out << " ENUM";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_COMPILED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_COMPILED)])
         {
             out << " COMPILED";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_INUSE)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_INUSE)])
         {
             out << " INUSE";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_ATTRS)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_ATTRS)])
         {
             out << " ATTRS";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_DEFINED)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_DEFINED)])
         {
             out << " DEFINED";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_DEFINING)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_DEFINING)])
         {
             out << " DEFINING";
         }
-        if(f_flags[static_cast<size_t>(flag_t::NODE_VAR_FLAG_TOADD)])
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_TOADD)])
         {
             out << " TOADD";
         }
@@ -277,7 +363,7 @@ void Node::display_data(std::ostream& out) const
 void Node::display(std::ostream& out, int indent, char c) const
 {
     // this pointer
-    out << this << ": " << std::setfill('\0') << std::setw(2) << indent << std::setfill(' ') << c << std::setw(indent) << "";
+    out << this << ": " << std::setfill('0') << std::setw(2) << indent << std::setfill(' ') << c << std::setw(indent) << "";
 
     // display node data (integer, string, float, etc.)
     display_data(out);
@@ -307,23 +393,34 @@ void Node::display(std::ostream& out, int indent, char c) const
             display_attribute(attribute_t::NODE_ATTR_PUBLIC,         "PUBLIC"        );
             display_attribute(attribute_t::NODE_ATTR_PRIVATE,        "PRIVATE"       );
             display_attribute(attribute_t::NODE_ATTR_PROTECTED,      "PROTECTED"     );
+            display_attribute(attribute_t::NODE_ATTR_INTERNAL,       "INTERNAL"      );
+
             display_attribute(attribute_t::NODE_ATTR_STATIC,         "STATIC"        );
             display_attribute(attribute_t::NODE_ATTR_ABSTRACT,       "ABSTRACT"      );
             display_attribute(attribute_t::NODE_ATTR_VIRTUAL,        "VIRTUAL"       );
-            display_attribute(attribute_t::NODE_ATTR_INTERNAL,       "INTERNAL"      );
+            display_attribute(attribute_t::NODE_ATTR_ARRAY,          "ARRAY"         );
+
             display_attribute(attribute_t::NODE_ATTR_INTRINSIC,      "INTRINSIC"     );
+
             display_attribute(attribute_t::NODE_ATTR_DEPRECATED,     "DEPRECATED"    );
             display_attribute(attribute_t::NODE_ATTR_UNSAFE,         "UNSAFE"        );
+
             display_attribute(attribute_t::NODE_ATTR_CONSTRUCTOR,    "CONSTRUCTOR"   );
+
+            //display_attribute(attribute_t::NODE_ATTR_CONST,          "CONST"         ); -- this is a flag, not needed here
             display_attribute(attribute_t::NODE_ATTR_FINAL,          "FINAL"         );
             display_attribute(attribute_t::NODE_ATTR_ENUMERABLE,     "ENUMERABLE"    );
+
             display_attribute(attribute_t::NODE_ATTR_TRUE,           "TRUE"          );
             display_attribute(attribute_t::NODE_ATTR_FALSE,          "FALSE"         );
             display_attribute(attribute_t::NODE_ATTR_UNUSED,         "UNUSED"        );
+
             display_attribute(attribute_t::NODE_ATTR_DYNAMIC,        "DYNAMIC"       );
+
             display_attribute(attribute_t::NODE_ATTR_FOREACH,        "FOREACH"       );
             display_attribute(attribute_t::NODE_ATTR_NOBREAK,        "NOBREAK"       );
             display_attribute(attribute_t::NODE_ATTR_AUTOBREAK,      "AUTOBREAK"     );
+
             display_attribute(attribute_t::NODE_ATTR_DEFINED,        "DEFINED"       );
         }
 
@@ -331,12 +428,17 @@ void Node::display(std::ostream& out, int indent, char c) const
         {
             if(f_attributes[static_cast<size_t>(a)])
             {
+                if(f_first)
+                {
+                    f_first = false;
+                    f_out << " attrs:";
+                }
                 f_out << " " << n;
             }
         }
 
         std::ostream&               f_out;
-        controlled_vars::fbool_t    f_first;
+        controlled_vars::tbool_t    f_first;
         attribute_set_t             f_attributes;
     } display_attr(out, f_attributes);
 

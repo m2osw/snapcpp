@@ -59,8 +59,8 @@ void Compiler::parameters(Node::pointer_t parameters_node)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t param(parameters_node->get_child(idx));
-        param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REFERENCED, false);
-        param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_PARAMREF, false);
+        param->set_flag(Node::flag_t::NODE_PARAM_FLAG_REFERENCED, false);
+        param->set_flag(Node::flag_t::NODE_PARAM_FLAG_PARAMREF, false);
     }
 
     // verify unicity and compute the NODE_SET and parameter type
@@ -116,10 +116,10 @@ void Compiler::parameters(Node::pointer_t parameters_node)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t param(parameters_node->get_child(idx));
-        if(param->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REFERENCED))
+        if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REFERENCED))
         {
             // if referenced, we want to keep it so mark it as necessary
-            param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_PARAMREF, true);
+            param->set_flag(Node::flag_t::NODE_PARAM_FLAG_PARAMREF, true);
         }
     }
 }
@@ -460,7 +460,7 @@ Node::depth_t Compiler::match_type(Node::pointer_t t1, Node::pointer_t t2)
     // special case for function parameters
     if(t2->get_type() == Node::node_t::NODE_PARAM)
     {
-        if(t2->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_OUT))
+        if(t2->get_flag(Node::flag_t::NODE_PARAM_FLAG_OUT))
         {
             // t1 MUST be an identifier which references
             // a variable which we can set on exit
@@ -698,7 +698,7 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
     // check whether the user marked the function as unprototyped;
     // if so, then we are done
     Node::pointer_t unproto(parameters_node->get_child(0));
-    if(unproto->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_UNPROTOTYPED))
+    if(unproto->get_flag(Node::flag_t::NODE_PARAM_FLAG_UNPROTOTYPED))
     {
         // this function is marked to accept whatever
         match->set_flag(Node::flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED, true);
@@ -787,7 +787,7 @@ fprintf(stderr, ")\n");
             // if already used, make sure it is a REST node
             if(match->get_param_depth(j) != Node::MATCH_NOT_FOUND)
             {
-                if(fp->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
+                if(fp->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FIELD_NAME, function_node->get_position());
                     msg << "function parameter name '" << name << "' already used & not a 'rest' (...).";
@@ -819,7 +819,7 @@ std::cerr << "Found by name [" << name << "] at position " << j << "\n";
                 // check whether the last parameter
                 // is of type REST
                 fp = parameters_node->get_child(max_parameters - 1);
-                if(fp->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
+                if(fp->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
                 {
                     // parameters in the function list
                     // of params are all used up!
@@ -869,8 +869,8 @@ params->Display(stderr);
             match->set_param_index(idx, j);
             idx++;
             Node::pointer_t param(parameters_node->get_child(j));
-            if(param->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_UNCHECKED)
-            || param->get_flag(Node::flag_t::NODE_PARAMETERS_FLAG_REST))
+            if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_UNCHECKED)
+            || param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
             {
                 Node::pointer_t set;
                 size_t cnt(param->get_children_size());

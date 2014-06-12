@@ -370,6 +370,32 @@ bool Node::to_float64()
 }
 
 
+/** \brief Convert this node to a label.
+ *
+ * This function converts a NODE_IDENTIFIER node to a NODE_LABEL node.
+ *
+ * \return true if the conversion succeeded.
+ */
+bool Node::to_label()
+{
+    modifying();
+
+    switch(f_type)
+    {
+    case node_t::NODE_IDENTIFIER:
+        f_type = node_t::NODE_LABEL;
+        break;
+
+    default:
+        // failure (cannot convert)
+        return false;
+
+    }
+
+    return true;
+}
+
+
 /** \brief Convert this node to a number.
  *
  * This function converts the node to a number just like JavaScript would do.
@@ -421,7 +447,7 @@ bool Node::to_number()
         break;
 
     default:
-        // failure (can't convert)
+        // failure (cannot convert)
         return false;
 
     }

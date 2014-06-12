@@ -84,14 +84,14 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
             msg << "expected a valid expression after '" << f_node->get_type_name() << "'";
             //return; -- continue? -- it was before...
         }
-        // TODO: EXTENDS and IMPLEMENTS don't accept assignments.
-        // TODO: EXTENDS doesn't accept lists.
-        //     We need to test for that here.
+        // TODO: EXTENDS and IMPLEMENTS do not accept assignments.
+        // TODO: EXTENDS does not accept lists.
+        //       We need to test for that here.
     }
     // TODO: note that we only can accept one EXTENDS and
-    //     one IMPLEMENTS in that order. We need to check
-    //     that here. [that's according to the AS spec. is
-    //     that really important?]
+    //       one IMPLEMENTS in that order. We need to check
+    //       that here. [that's according to the AS spec. is
+    //       that really important?]
 
     if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
     {
@@ -182,8 +182,8 @@ void Parser::enum_declaration(Node::pointer_t& node)
         node->append_child(entry);
         if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
         {
-            entry->set_flag(Node::flag_t::NODE_VAR_FLAG_CONST, true);
-            entry->set_flag(Node::flag_t::NODE_VAR_FLAG_ENUM, true);
+            entry->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST, true);
+            entry->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_ENUM, true);
             current_name = f_node->get_string();
             get_token();
         }

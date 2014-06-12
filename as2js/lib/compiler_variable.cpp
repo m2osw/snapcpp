@@ -45,7 +45,7 @@ namespace as2js
 
 
 
-// we can simplify constant variables with their content whenever that's
+// we can simplify constant variables with their content whenever it is
 // a string, number or other non-dynamic constant
 bool Compiler::replace_constant_variable(Node::pointer_t& replace, Node::pointer_t resolution)
 {
@@ -54,7 +54,7 @@ bool Compiler::replace_constant_variable(Node::pointer_t& replace, Node::pointer
         return false;
     }
 
-    if(!resolution->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST))
+    if(!resolution->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST))
     {
         return false;
     }
@@ -139,12 +139,12 @@ void Compiler::variable(Node::pointer_t variable_node, bool const side_effects_o
     size_t const max_children(variable_node->get_children_size());
 
     // if we already have a type, we have been parsed
-    if(variable_node->get_flag(Node::flag_t::NODE_VAR_FLAG_DEFINED)
-    || variable_node->get_flag(Node::flag_t::NODE_VAR_FLAG_ATTRIBUTES))
+    if(variable_node->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_DEFINED)
+    || variable_node->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_ATTRIBUTES))
     {
         if(!side_effects_only)
         {
-            if(!variable_node->get_flag(Node::flag_t::NODE_VAR_FLAG_COMPILED))
+            if(!variable_node->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_COMPILED))
             {
                 for(size_t idx(0); idx < max_children; ++idx)
                 {
@@ -153,20 +153,20 @@ void Compiler::variable(Node::pointer_t variable_node, bool const side_effects_o
                     {
                         Node::pointer_t expr(child->get_child(0));
                         expression(expr);
-                        variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_COMPILED, true);
+                        variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_COMPILED, true);
                         break;
                     }
                 }
             }
-            variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
+            variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
         }
         return;
     }
 
-    variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_DEFINED, true);
-    variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, !side_effects_only);
+    variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_DEFINED, true);
+    variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, !side_effects_only);
 
-    bool const constant(variable_node->get_flag(Node::flag_t::NODE_VAR_FLAG_CONST));
+    bool const constant(variable_node->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST));
 
     // make sure to get the attributes before the node gets locked
     // (we know that the result is true in this case)
@@ -196,8 +196,8 @@ void Compiler::variable(Node::pointer_t variable_node, bool const side_effects_o
                      && (!side_effects_only || expr->has_side_effects()))
                 {
                     expression(expr);
-                    expr->set_flag(Node::flag_t::NODE_VAR_FLAG_COMPILED, true);
-                    expr->set_flag(Node::flag_t::NODE_VAR_FLAG_INUSE, true);
+                    variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_COMPILED, true);
+                    variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
                 }
                 ++set;
             }
@@ -265,7 +265,7 @@ void Compiler::add_variable(Node::pointer_t variable_node)
 
         case Node::node_t::NODE_FUNCTION:
             // mark the variable as local
-            variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_LOCAL, true);
+            variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_LOCAL, true);
             if(first)
             {
                 parent->add_variable(variable_node);
@@ -275,7 +275,7 @@ void Compiler::add_variable(Node::pointer_t variable_node)
         case Node::node_t::NODE_CLASS:
         case Node::node_t::NODE_INTERFACE:
             // mark the variable as a member of this class or interface
-            variable_node->set_flag(Node::flag_t::NODE_VAR_FLAG_MEMBER, true);
+            variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_MEMBER, true);
             if(first)
             {
                 parent->add_variable(variable_node);

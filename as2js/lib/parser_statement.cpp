@@ -249,10 +249,10 @@ void Parser::catch_directive(Node::pointer_t& node)
 /**********************************************************************/
 
 // NOTE: if default wasn't a keyword, then it could be used as a
-//     label like any user label!
+//       label like any user label!
 //
-//     The fact that it is a keyword allows us to forbid default with
-//     the goto instruction without having to do any extra work.
+//       The fact that it is a keyword allows us to forbid default with
+//       the goto instruction without having to do any extra work.
 //
 void Parser::default_directive(Node::pointer_t& node)
 {

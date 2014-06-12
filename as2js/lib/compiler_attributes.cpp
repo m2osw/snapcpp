@@ -239,15 +239,15 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
 
     // it is a variable, go through the list and call ourselves recursively
     // with each identifiers; but make sure we do not loop forever
-    if(resolution->get_flag(Node::flag_t::NODE_VAR_FLAG_ATTRS))
+    if(resolution->get_flag(Node::flag_t::NODE_VARIABLE_FLAG_ATTRS))
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_LOOPING_REFERENCE, a->get_position());
         msg << "the dynamic attribute variable '" << a->get_string() << "' is used circularly (it loops).";
         return;
     }
 
-    resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_ATTRS, true); // to avoid infinite loop
-    resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_ATTRIBUTES, true);
+    resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_ATTRS, true); // to avoid infinite loop
+    resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_ATTRIBUTES, true);
     NodeLock ln(resolution);
     size_t const max_children(resolution->get_children_size());
     for(size_t idx(0); idx < max_children; ++idx)
@@ -255,7 +255,7 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
         Node::pointer_t child(resolution->get_child(idx));
         variable_to_attrs(node, child);
     }
-    resolution->set_flag(Node::flag_t::NODE_VAR_FLAG_ATTRS, false);
+    resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_ATTRS, false);
 }
 
 

@@ -581,7 +581,7 @@ void Compiler::catch_directive(Node::pointer_t& catch_node)
     if(parameters_node->get_children_size() > 0)
     {
         Node::pointer_t param(parameters_node->get_child(0));
-        param->set_flag(Node::flag_t::NODE_PARAMETERS_FLAG_CATCH, true);
+        param->set_flag(Node::flag_t::NODE_PARAM_FLAG_CATCH, true);
     }
 
     directive_list(catch_node->get_child(1));
