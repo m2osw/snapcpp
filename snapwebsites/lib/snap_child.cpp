@@ -3219,7 +3219,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
             if(f_has_post)
             {
                 f_post[f_name] = snap_uri::urldecode(f_value, true);
-//fprintf(stderr, "(simple) f_post[\"%s\"] = \"%s\" (\"%s\");\n", f_name.toUtf8().data(), f_value.toUtf8().data(), f_post[f_name].toUtf8().data());
+//std::cerr << "(simple) f_post[\"" << f_name << "\"] = \"" << f_value << "\" (\"" << f_post[f_name] << "\");\n";
             }
             else
             {
@@ -5071,7 +5071,7 @@ bool snap_child::postenv_exists(const QString& name) const
  *
  * \return The value of that POST variable or the \p default_value.
  */
-QString snap_child::postenv(const QString& name, const QString& default_value) const
+QString snap_child::postenv(QString const& name, QString const& default_value) const
 {
     return f_post.value(name, default_value);
 }

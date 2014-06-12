@@ -1160,7 +1160,7 @@ void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessi
     static_cast<void>(info);
 
     QString widget_names(f_snap->postenv("_editor_widget_names"));
-std::cerr << "***\n*** Editor Processing POST... [" << ipath.get_key() << "::" << widget_names << "]\n***\n";
+//std::cerr << "***\n*** Editor Processing POST... [" << ipath.get_key() << "::" << widget_names << "]\n***\n";
 
     QStringList names(widget_names.split(","));
     for(int i(0); i < names.size(); ++i)
