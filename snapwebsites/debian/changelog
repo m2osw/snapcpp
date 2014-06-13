@@ -1,8 +1,30 @@
-snapwebsites (0.1.55~saucy) saucy; urgency=low
+snapwebsites (0.1.55~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
-  * Fixed snapinit when Cassandra is not running so it does not use 100%
-    of the CPU.
+  * 397dd68 Changed an std::cerr in a SNAP_LOG_TRACE() so we can see the
+    result in the logs (although that's commented out code by default)
+  * c900a0a Small cleanups.
+  * 2b9402a Fixed a bug in the set_attribute() test for mutual exclusion.
+  * ad20800 Implemented full search for layout boxes and tested the page
+  * layout::boxes field and it works.
+  * ab488ff Made the error, if ImageMagick is missing, a fatal error.
+  * c0936f7 Updated versions of the controlled_vars CMakeLists.txt and the
+    changelog.
+  * 1f3ba20 Fixed the snapinit very fast loop whenever Cassandra is not
+    running.
+  * ef65f1d Added support in the snapinit tool for --debug so we can have
+    debug output while running our server and backends.
+  * c6b64d3 Fixed the version of the different libraries that were updated.
+  * 85a6c33 Swapped a few include references to make sure we avoid potential
+    problems.
+  * 6196ba0 Fixed the logger after the last fix as it now creates a copy of
+    itself (before it would improperly use a stack version of a logger
+    instance, fixing that problem created a copy.)
+  * e39cb2b Fixed the editor so dropped file with preview widgets react like
+    image boxes.
+  * ee0d385 Added the images backend.
+  * 5e63e7c Added the missing images plugin to the list of plugins to be
+    loaded.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 09 Jun 2014 20:17:46 -0700
 
