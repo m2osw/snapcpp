@@ -1517,7 +1517,7 @@ bool list::run_list_check(content::path_info_t& list_ipath, content::path_info_t
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
         QtCassandra::QCassandraValue script(data_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
-        std::cerr << "script [" << script.stringValue() << "] result [" << (result.is_true() ? "true" : "false") << "]\n";
+        SNAP_LOG_TRACE() << "script [" << script.stringValue() << "] result [" << (result.is_true() ? "true" : "false") << "]\n";
     }
 #endif
 #endif
