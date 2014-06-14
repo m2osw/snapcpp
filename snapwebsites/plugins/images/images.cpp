@@ -734,7 +734,7 @@ void images::on_backend_action(QString const& action)
         int64_t more_work(0);
         for(;;)
         {
-            // verify that the site is ready, if not, do not process lists yet
+            // verify that the site is ready, if not, do not process images yet
             QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
             if(!threshold.nullValue())
             {
@@ -844,7 +844,7 @@ int64_t images::transform_images()
             }
 
             QString const image_key(QtCassandra::stringValue(key, sizeof(int64_t)));
-std::cerr << "image path from key [" << image_key << "]\n";
+SNAP_LOG_INFO() << "image path from key [" << image_key << "]\n";
 
             // print out the row being worked on
             // (if it crashes it is really good to know where)
@@ -1087,7 +1087,8 @@ Magick::Image images::apply_image_script(QString const& script, content::path_in
         }
 
         // transform variables (if any) to actual paths
-std::cerr << " ++ [" << params.f_command << "]\n";
+// for now keep a log to see what is happening
+SNAP_LOG_INFO() << " ++ [" << params.f_command << "]\n";
         for(int k(0); k < params.f_params.size(); ++k)
         {
             int start_pos(0);
@@ -1115,7 +1116,7 @@ std::cerr << " ++ [" << params.f_command << "]\n";
                     }
                 }
             }
-std::cerr << " -- param[" << k << "] = [" << params.f_params[k] << "]\n";
+SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]\n";
         }
 
         // call the command
