@@ -5289,7 +5289,7 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
 // This is not necessary anymore, but I want to keep it for documentation
 // purposes.
 //
-///* brief Change the result to just 0 or 1.
+// * brief Change the result to just 0 or 1.
 // *
 // * This function changes the result of a checkmark as the value 0 or 1
 // * instead of the HTML of the sub-objects. This value represents the
@@ -5297,7 +5297,7 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
 // *
 // * param {!Object} editor_widget  The concerned widget
 // * param {snapwebsites.EditorWidgetTypeBase.SaveData} data  The data object with the HTML and result parameters.
-// */
+// *
 //snapwebsites.EditorWidgetTypeCheckmark.prototype.saving = function(editor_widget, data) // virtual
 //{
 //    snapwebsites.EditorWidgetType.prototype.initializeWidget.apply(this, data);
