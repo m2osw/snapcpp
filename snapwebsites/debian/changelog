@@ -1,3 +1,16 @@
+snapwebsites (0.1.56~saucy) saucy; urgency=high
+
+  [ Alexis Wilke ]
+  * 382c80a Merge branch 'master' of git://git.code.sf.net/p/snapcpp/code
+  * b05cc9f Added a comment about the fact that the order in which plugins are
+  loaded is important.
+  * 3ef64bd Removed an invalid +1 that would skip one byte from an md5.
+  * 2eb26dc Added info on how to switch between UTC and localtime in the
+  log.conf file.
+  * bab4cbc Removed the --all from the INIT_OPTS in the git repository.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 17 Jun 2014 08:30:37 -0700
+
 snapwebsites (0.1.55~saucy) saucy; urgency=high
 
   [ Alexis Wilke ]
