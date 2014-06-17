@@ -456,7 +456,7 @@ logger::~logger()
     {
         // TBD: how should we really include the function name to the log4cplus messages?
         //
-        // Note: we permit ourselves to modify f_message since we're in the destructor
+        // Note: we permit ourselves to modify f_message since we are in the destructor
         //       about to leave this object anyway.
         f_message += QString(" (in function \"%1()\")").arg(f_func);
     }

@@ -9,5 +9,5 @@
 # Set to "yes" to enable the daemon
 SNAPSERVER_ENABLED="no"
 
-# Additional options that are passed to the server.
-INIT_OPTS="--all"
+# Additional options passed to snapinit.
+INIT_OPTS=""
