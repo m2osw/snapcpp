@@ -259,7 +259,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     else if(f_tableName == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
     {
         name = content_attachment_reference;
-        name += key_to_string( key.mid( content_attachment_reference.length()+1 ) );
+        name += key_to_string( key.mid( content_attachment_reference.length() ) );
     }
     else if((f_tableName == "files" && f_rowName == "javascripts")
          || (f_tableName == "files" && f_rowName == "css"))
