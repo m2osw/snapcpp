@@ -42,6 +42,7 @@ SOFTWARE.
 
 #include    <cstring>
 #include    <algorithm>
+#include    <iomanip>
 
 #include    <cppunit/config/SourcePrefix.h>
 CPPUNIT_TEST_SUITE_REGISTRATION( As2JsNodeUnitTests );
@@ -81,10 +82,10 @@ void As2JsNodeUnitTests::test_type()
 
         // get the name
         char const *name(node->get_type_name());
+//std::cerr << "type = " << static_cast<int>(node_type) << " / " << name << "\n";
         CPPUNIT_ASSERT(strcmp(name, g_node_types[i].f_name) == 0);
 
         // test functions determining general types
-//std::cerr << "type = " << static_cast<int>(node_type) << " / " << name << "\n";
         CPPUNIT_ASSERT(node->is_number() == false || node->is_number() == true);
         CPPUNIT_ASSERT(static_cast<as2js::Node const *>(node.get())->is_number() ^ ((g_node_types[i].f_flags & TEST_NODE_IS_NUMBER) == 0));
 
@@ -129,6 +130,18 @@ void As2JsNodeUnitTests::test_type()
             CPPUNIT_ASSERT(strcmp(g_node_types[i].f_operator, op) == 0);
             //std::cerr << " testing " << node->get_type_name() << " from " << op << std::endl;
             CPPUNIT_ASSERT(as2js::Node::string_to_operator(op) == g_node_types[i].f_type);
+
+            // check the special case for not equal
+            if(strcmp(g_node_types[i].f_operator, "!=") == 0)
+            {
+                CPPUNIT_ASSERT(as2js::Node::string_to_operator("<>") == g_node_types[i].f_type);
+            }
+
+            // check the special case for assignment
+            if(strcmp(g_node_types[i].f_operator, "=") == 0)
+            {
+                CPPUNIT_ASSERT(as2js::Node::string_to_operator(":=") == g_node_types[i].f_type);
+            }
         }
         else
         {
@@ -290,6 +303,7 @@ void As2JsNodeUnitTests::test_type()
         if(!valid_types[i])
         {
             as2js::Node::node_t node_type(static_cast<as2js::Node::node_t>(i));
+//std::cerr << "assert node type " << i << "\n";
             CPPUNIT_ASSERT_THROW(new as2js::Node(node_type), as2js::exception_incompatible_node_type);
         }
     }
@@ -960,42 +974,58 @@ void As2JsNodeUnitTests::test_tree()
 
             as2js::Node::pointer_t child(new TrackedNode(child_type, counter));
 
+//std::cerr << "parent " << parent->get_type_name() << " child " << child->get_type_name() << "\n";
             // some nodes cannot be parents...
             switch(parent_type)
             {
+            case as2js::Node::node_t::NODE_ABSTRACT:
             case as2js::Node::node_t::NODE_AUTO:
+            case as2js::Node::node_t::NODE_BOOLEAN:
             case as2js::Node::node_t::NODE_BREAK:
+            case as2js::Node::node_t::NODE_BYTE:
             case as2js::Node::node_t::NODE_CLOSE_CURVLY_BRACKET:
             case as2js::Node::node_t::NODE_CLOSE_PARENTHESIS:
             case as2js::Node::node_t::NODE_CLOSE_SQUARE_BRACKET:
+            case as2js::Node::node_t::NODE_CHAR:
             case as2js::Node::node_t::NODE_COLON:
             case as2js::Node::node_t::NODE_COMMA:
             case as2js::Node::node_t::NODE_CONST:
             case as2js::Node::node_t::NODE_CONTINUE:
             case as2js::Node::node_t::NODE_DEFAULT:
+            case as2js::Node::node_t::NODE_DOUBLE:
             case as2js::Node::node_t::NODE_ELSE:
+            case as2js::Node::node_t::NODE_THEN:
             case as2js::Node::node_t::NODE_EMPTY:
             case as2js::Node::node_t::NODE_EOF:
             case as2js::Node::node_t::NODE_IDENTIFIER:
             case as2js::Node::node_t::NODE_INT64:
             case as2js::Node::node_t::NODE_FALSE:
+            case as2js::Node::node_t::NODE_FINAL:
+            case as2js::Node::node_t::NODE_FLOAT:
             case as2js::Node::node_t::NODE_FLOAT64:
             case as2js::Node::node_t::NODE_GOTO:
+            case as2js::Node::node_t::NODE_LONG:
+            case as2js::Node::node_t::NODE_NATIVE:
             case as2js::Node::node_t::NODE_NULL:
             case as2js::Node::node_t::NODE_OPEN_CURVLY_BRACKET:
             case as2js::Node::node_t::NODE_OPEN_PARENTHESIS:
             case as2js::Node::node_t::NODE_OPEN_SQUARE_BRACKET:
             case as2js::Node::node_t::NODE_PRIVATE:
+            case as2js::Node::node_t::NODE_PROTECTED:
             case as2js::Node::node_t::NODE_PUBLIC:
             case as2js::Node::node_t::NODE_REGULAR_EXPRESSION:
             case as2js::Node::node_t::NODE_REST:
             case as2js::Node::node_t::NODE_SEMICOLON:
+            case as2js::Node::node_t::NODE_SHORT:
             case as2js::Node::node_t::NODE_STRING:
+            case as2js::Node::node_t::NODE_STATIC:
             case as2js::Node::node_t::NODE_THIS:
+            case as2js::Node::node_t::NODE_TRANSIENT:
             case as2js::Node::node_t::NODE_TRUE:
             case as2js::Node::node_t::NODE_UNDEFINED:
             case as2js::Node::node_t::NODE_VIDENTIFIER:
             case as2js::Node::node_t::NODE_VOID:
+            case as2js::Node::node_t::NODE_VOLATILE:
                 // append child to parent must fail
                 if(rand() & 1)
                 {
@@ -1016,6 +1046,7 @@ void As2JsNodeUnitTests::test_tree()
                 case as2js::Node::node_t::NODE_COLON:
                 case as2js::Node::node_t::NODE_COMMA:
                 case as2js::Node::node_t::NODE_ELSE:
+                case as2js::Node::node_t::NODE_THEN:
                 case as2js::Node::node_t::NODE_EOF:
                 case as2js::Node::node_t::NODE_OPEN_CURVLY_BRACKET:
                 case as2js::Node::node_t::NODE_OPEN_PARENTHESIS:
@@ -1683,6 +1714,14 @@ void As2JsNodeUnitTests::test_attributes()
                         }
                     }
 
+                    // we may get even more complicated stuff later, but for
+                    // now the abstract / native is the only exception...
+                    if((*attr_list == as2js::Node::attribute_t::NODE_ATTR_ABSTRACT && a == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_NATIVE))
+                    || (*attr_list == as2js::Node::attribute_t::NODE_ATTR_NATIVE && a == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_ABSTRACT)))
+                    {
+                        in_conflict = true;
+                    }
+
                     if(in_conflict)
                     {
                         test_callback c;
@@ -1692,6 +1731,7 @@ void As2JsNodeUnitTests::test_attributes()
                         c.f_expected_pos.set_function("unknown-func");
                         c.f_expected_message = "Attributes " + std::string(g_groups_of_attributes[j].f_names) + " are mutually exclusive. Only one of them can be used.";
 
+//std::cerr << "next conflict: " << c.f_expected_message << "\n";
                         // if in conflict, trying to set the flag generates
                         // an error
                         CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(a)));
@@ -1703,6 +1743,7 @@ void As2JsNodeUnitTests::test_attributes()
                     else
                     {
                         // before we set it, always false
+//std::cerr << "next valid attr: " << static_cast<int>(*attr_list) << " against " << a << "\n";
                         CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(a)));
                         node->set_attribute(static_cast<as2js::Node::attribute_t>(a), true);
                         CPPUNIT_ASSERT(node->get_attribute(static_cast<as2js::Node::attribute_t>(a)));

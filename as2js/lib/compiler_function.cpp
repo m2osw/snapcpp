@@ -305,7 +305,7 @@ void Compiler::function(Node::pointer_t function_node)
     // test for a return whenever necessary
     if(!end_list
     && directive_list_node
-    && (get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT) || get_attribute(function_node, Node::attribute_t::NODE_ATTR_INTRINSIC))
+    && (get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT) || get_attribute(function_node, Node::attribute_t::NODE_ATTR_NATIVE))
     && (function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID) || function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER)))
     {
         f_optimizer->optimize(directive_list_node);

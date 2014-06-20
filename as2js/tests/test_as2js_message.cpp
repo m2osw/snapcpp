@@ -344,12 +344,12 @@ void As2JsMessageUnitTests::test_operator()
     CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
 
     // test with char
-    for(int idx(0); idx <= 255; ++idx)
+    for(int idx(1); idx <= 255; ++idx)
     {
         char ci(static_cast<char>(idx));
         {
             std::stringstream str;
-            str << static_cast<int>(ci);
+            str << ci;
             c.f_expected_call = true;
             c.f_got_called = false;
             c.f_expected_message = str.str();

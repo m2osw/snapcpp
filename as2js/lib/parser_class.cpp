@@ -243,6 +243,48 @@ void Parser::enum_declaration(Node::pointer_t& node)
 }
 
 
+void Parser::contract_declaration(Node::pointer_t& node, Node::node_t type)
+{
+    Node::pointer_t contract(f_lexer->get_new_node(type));
+    node->append_child(contract);
+
+    // contract are labeled expressions
+    for(;;)
+    {
+        Node::pointer_t label(f_lexer->get_new_node(Node::node_t::NODE_LABEL));
+        contract->append_child(label);
+        if(f_node->get_type() != Node::node_t::NODE_IDENTIFIER)
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_LABEL, f_lexer->get_input()->get_position());
+            msg << "'" << contract->get_type_name() << "' must be followed by a list of labeled expressions";
+        }
+        else
+        {
+            label->set_string(f_node->get_string());
+            // skip the identifier
+            get_token();
+        }
+        if(f_node->get_type() != Node::node_t::NODE_COLON)
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "the '" << contract->get_type_name() << "' label must be followed by a colon (:)";
+        }
+        else
+        {
+            // skip the colon
+            get_token();
+        }
+        Node::pointer_t expr;
+        conditional_expression(expr, false);
+        label->append_child(expr);
+        if(f_node->get_type() != Node::node_t::NODE_COMMA)
+        {
+            break;
+        }
+        // skip the comma
+        get_token();
+    }
+}
 
 
 }

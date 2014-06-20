@@ -77,6 +77,7 @@ enum class err_code_t
     AS_ERR_DIVIDE_BY_ZERO,
     AS_ERR_DUPLICATES,
     AS_ERR_DYNAMIC,
+    AS_ERR_EXPRESSION_EXPECTED,
     AS_ERR_FINAL,
     AS_ERR_IMPROPER_STATEMENT,
     AS_ERR_INACCESSIBLE_STATEMENT,
@@ -85,7 +86,7 @@ enum class err_code_t
     AS_ERR_INSTALLATION,
     AS_ERR_INSTANCE_EXPECTED,
     AS_ERR_INTERNAL_ERROR,
-    AS_ERR_INTRINSIC,
+    AS_ERR_NATIVE,
     AS_ERR_INVALID_ARRAY_FUNCTION,
     AS_ERR_INVALID_ATTRIBUTES,
     AS_ERR_INVALID_CATCH,
@@ -105,6 +106,7 @@ enum class err_code_t
     AS_ERR_INVALID_LABEL,
     AS_ERR_INVALID_NAMESPACE,
     AS_ERR_INVALID_NODE,
+    AS_ERR_INVALID_NUMBER,
     AS_ERR_INVALID_OPERATOR,
     AS_ERR_INVALID_PACKAGE_NAME,
     AS_ERR_INVALID_PARAMETERS,
@@ -133,7 +135,7 @@ enum class err_code_t
     AS_ERR_TYPE_NOT_LINKED,
     AS_ERR_UNKNOWN_ESCAPE_SEQUENCE,
     AS_ERR_UNKNOWN_OPERATOR,
-    AS_ERR_UNTERMINTED_STRING,
+    AS_ERR_UNTERMINATED_STRING,
     AS_ERR_UNEXPECTED_PUNCTUATION,
     AS_ERR_UNEXPECTED_TOKEN,
     AS_ERR_UNEXPECTED_DATABASE,
@@ -162,6 +164,13 @@ public:
                         ~Message();
 
     Message&            operator = (Message const& rhs) = delete;
+
+    template<typename T>
+    Message&            operator << (T const& data)
+                        {
+                            static_cast<std::stringstream&>(*this) << data;
+                            return *this;
+                        }
 
     // internal types; you can add your own types with
     // Message& operator << (Message& os, <my-type>);

@@ -51,9 +51,8 @@ void Parser::pragma()
 {
     while(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
-        String const name = f_node->get_string();
+        String const name(f_node->get_string());
         Node::pointer_t argument;
-        bool prima = false;
         get_token();
         if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
         {
@@ -62,11 +61,11 @@ void Parser::pragma()
             // accept an empty argument '()'
             if(f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
-                bool negative = false;
-                if(f_node->get_type() == Node::node_t::NODE_SUBTRACT)
+                bool const negative(f_node->get_type() == Node::node_t::NODE_SUBTRACT);
+                if(negative)
                 {
+                    // skip the '-' sign
                     get_token();
-                    negative = true;
                 }
                 switch(f_node->get_type())
                 {
@@ -75,7 +74,6 @@ void Parser::pragma()
                 case Node::node_t::NODE_TRUE:
                     if(negative)
                     {
-                        negative = false;
                         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
                         msg << "invalid negative argument for a pragma";
                     }
@@ -102,11 +100,13 @@ void Parser::pragma()
                     break;
 
                 case Node::node_t::NODE_CLOSE_PARENTHESIS:
-                {
-                    // we cannot negate "nothingness"
-                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
-                    msg << "a pragma argument cannot just be '-'";
-                }
+                    if(negative)
+                    {
+                        // we cannot negate "nothingness"
+                        // (i.e. use blah(-); is not valid)
+                        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+                        msg << "a pragma argument cannot just be '-'";
+                    }
                     break;
 
                 default:
@@ -128,9 +128,10 @@ void Parser::pragma()
                 get_token();
             }
         }
-        if(f_node->get_type() == Node::node_t::NODE_CONDITIONAL)
+        bool const prima(f_node->get_type() == Node::node_t::NODE_CONDITIONAL);
+        if(prima)
         {
-            prima = true;
+            // skip the '?'
             get_token();
         }
 
@@ -139,20 +140,38 @@ void Parser::pragma()
         //
         //    name        The pragma name
         //    argument    The pragma argument (unknown by default)
-        //    prima        True if pragma name followed by '?'
+        //    prima       True if pragma name followed by '?'
         //
-        // NOTE: pragmas that we don't recognize are simply
+        // NOTE: pragmas that we do not recognize are simply
         //       being ignored.
         //
         Options::option_value_t value(1);
         Options::option_t option = Options::option_t::OPTION_UNKNOWN;
-        if(name == "extended_operators")
+        if(name == "allow_with")
         {
-            option = Options::option_t::OPTION_EXTENDED_OPERATORS;
+            option = Options::option_t::OPTION_ALLOW_WITH;
         }
-        else if(name == "no_extended_operators")
+        else if(name == "no_allow_with")
         {
-            option = Options::option_t::OPTION_EXTENDED_OPERATORS;
+            option = Options::option_t::OPTION_ALLOW_WITH;
+            value = 0;
+        }
+        if(name == "binary")
+        {
+            option = Options::option_t::OPTION_BINARY;
+        }
+        else if(name == "no_binary")
+        {
+            option = Options::option_t::OPTION_BINARY;
+            value = 0;
+        }
+        else if(name == "debug")
+        {
+            option = Options::option_t::OPTION_DEBUG;
+        }
+        else if(name == "no_debug")
+        {
+            option = Options::option_t::OPTION_DEBUG;
             value = 0;
         }
         else if(name == "extended_escape_sequences")
@@ -162,6 +181,24 @@ void Parser::pragma()
         else if(name == "no_extended_escape_sequences")
         {
             option = Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES;
+            value = 0;
+        }
+        if(name == "extended_operators")
+        {
+            option = Options::option_t::OPTION_EXTENDED_OPERATORS;
+        }
+        else if(name == "no_extended_operators")
+        {
+            option = Options::option_t::OPTION_EXTENDED_OPERATORS;
+            value = 0;
+        }
+        if(name == "extended_statements")
+        {
+            option = Options::option_t::OPTION_EXTENDED_STATEMENTS;
+        }
+        else if(name == "no_extended_statements")
+        {
+            option = Options::option_t::OPTION_EXTENDED_STATEMENTS;
             value = 0;
         }
         else if(name == "octal")
@@ -182,15 +219,6 @@ void Parser::pragma()
             option = Options::option_t::OPTION_STRICT;
             value = 0;
         }
-        else if(name == "trace_to_object")
-        {
-            option = Options::option_t::OPTION_TRACE_TO_OBJECT;
-        }
-        else if(name == "no_trace_to_object")
-        {
-            option = Options::option_t::OPTION_TRACE_TO_OBJECT;
-            value = 0;
-        }
         else if(name == "trace")
         {
             option = Options::option_t::OPTION_TRACE;
@@ -198,6 +226,15 @@ void Parser::pragma()
         else if(name == "no_trace")
         {
             option = Options::option_t::OPTION_TRACE;
+            value = 0;
+        }
+        else if(name == "trace_to_object")
+        {
+            option = Options::option_t::OPTION_TRACE_TO_OBJECT;
+        }
+        else if(name == "no_trace_to_object")
+        {
+            option = Options::option_t::OPTION_TRACE_TO_OBJECT;
             value = 0;
         }
         if(option != Options::option_t::OPTION_UNKNOWN)

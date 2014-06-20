@@ -52,8 +52,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
     has_out = false;
 
     // accept function stuff(void) { ... } as in C/C++
-    // XXX: determine whether the identifier should be checked case insensitively
-    //      (because just "Void" seems strange to me now)
+    // Note that we also accept Void (void is a keyword, Void is a type)
     if(f_node->get_type() == Node::node_t::NODE_VOID
     || (f_node->get_type() == Node::node_t::NODE_IDENTIFIER && f_node->get_string() == "Void"))
     {
@@ -377,6 +376,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
     case Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::node_t::NODE_COMPARE:
     case Node::node_t::NODE_DECREMENT:
     case Node::node_t::NODE_EQUAL:
     case Node::node_t::NODE_GREATER_EQUAL:
@@ -389,6 +389,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     case Node::node_t::NODE_MAXIMUM:
     case Node::node_t::NODE_MINIMUM:
     case Node::node_t::NODE_NOT_EQUAL:
+    case Node::node_t::NODE_NOT_MATCH:
     case Node::node_t::NODE_POST_DECREMENT:
     case Node::node_t::NODE_POST_INCREMENT:
     case Node::node_t::NODE_POWER:
@@ -511,6 +512,75 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             conditional_expression(expr, false);
             node->append_child(expr);
         }
+    }
+
+    // throws exceptions?
+    if(f_node->get_type() == Node::node_t::NODE_THROWS)
+    {
+        // skip the THROWS keyword
+        get_token();
+        Node::pointer_t throws(f_lexer->get_new_node(Node::node_t::NODE_THROWS));
+        node->append_child(throws);
+
+        // exceptions are types
+        for(;;)
+        {
+            Node::pointer_t expr;
+            conditional_expression(expr, false);
+            throws->append_child(expr);
+            if(f_node->get_type() != Node::node_t::NODE_COMMA)
+            {
+                break;
+            }
+            // skip the comma
+            get_token();
+        }
+    }
+
+    // any requirement?
+    if(f_node->get_type() == Node::node_t::NODE_REQUIRE)
+    {
+        // skip the REQUIRES keyword
+        get_token();
+        bool const has_else(f_node->get_type() == Node::node_t::NODE_ELSE);
+        if(has_else)
+        {
+            // require else ... is an "or" (i.e. parent function require
+            // may be negative, then this require comes to the rescue)
+            // without the else, it is not valid to redeclare a require
+            // skip the ELSE keyword
+            get_token();
+        }
+        Node::pointer_t require;
+        contract_declaration(require, Node::node_t::NODE_REQUIRE);
+        if(has_else)
+        {
+            require->set_attribute(Node::attribute_t::NODE_ATTR_REQUIRE_ELSE, true);
+        }
+        node->append_child(require);
+    }
+
+    // any insurance?
+    if(f_node->get_type() == Node::node_t::NODE_ENSURE)
+    {
+        // skip the ENSURE keyword
+        get_token();
+        bool const has_then(f_node->get_type() == Node::node_t::NODE_THEN);
+        if(has_then)
+        {
+            // ensure then ... is an "and" (i.e. it is additional to
+            // the parent function ensure to be valid)
+            // without the then, it is not valid to redeclare an ensure
+            // skip the THEN keyword
+            get_token();
+        }
+        Node::pointer_t ensure;
+        contract_declaration(ensure, Node::node_t::NODE_ENSURE);
+        if(has_then)
+        {
+            ensure->set_attribute(Node::attribute_t::NODE_ATTR_ENSURE_THEN, true);
+        }
+        node->append_child(ensure);
     }
 
     if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)

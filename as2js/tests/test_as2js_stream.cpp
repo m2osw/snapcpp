@@ -199,7 +199,7 @@ void As2JsStreamUnitTests::test_filter_utf8()
                         // invalid characters must return an error
                         CPPUNIT_ASSERT(filter->getc() == as2js::Input::INPUT_ERR);
                     }
-                    else if(wc != as2js::String::STRING_BOM)
+                    else //if(wc != as2js::String::STRING_BOM)
                     {
                         as2js::as_char_t get_wc(filter->getc());
 //std::cerr << "got " << get_wc << ", expected " << wc << "\n";
@@ -245,7 +245,7 @@ void As2JsStreamUnitTests::test_filter_utf8()
             {
                 filter->putc(buf[idx]);
             }
-            if(wc != as2js::String::STRING_BOM)
+            //if(wc != as2js::String::STRING_BOM)
             {
                 result += wc;
             }
@@ -494,17 +494,17 @@ void As2JsStreamUnitTests::test_filter_utf16()
                 filter_le->putc(trail >> 8);
                 CPPUNIT_ASSERT(filter_le->getc() == wc);
             }
-            else if(wc == as2js::String::STRING_BOM)
-            {
-                // the BOM is never returned
-                filter_be->putc(wc >> 8);
-                filter_be->putc(wc & 255);
-                CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_EOF);
+            //else if(wc == as2js::String::STRING_BOM)
+            //{
+            //    // the BOM is never returned
+            //    filter_be->putc(wc >> 8);
+            //    filter_be->putc(wc & 255);
+            //    CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_EOF);
 
-                filter_le->putc(wc & 255);
-                filter_le->putc(wc >> 8);
-                CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_EOF);
-            }
+            //    filter_le->putc(wc & 255);
+            //    filter_le->putc(wc >> 8);
+            //    CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_EOF);
+            //}
             else
             {
                 filter_be->putc(wc >> 8);
@@ -573,19 +573,19 @@ void As2JsStreamUnitTests::test_filter_utf16()
                 filter_le->putc(trail >> 8);
                 CPPUNIT_ASSERT(filter_le->getc() == wc);
             }
-            else if(wc == as2js::String::STRING_BOM)
-            {
-                // the BOM is never returned
-                filter_be->putc(wc >> 8);
-                CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_NAC);
-                filter_be->putc(wc & 255);
-                CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_EOF);
+            //else if(wc == as2js::String::STRING_BOM)
+            //{
+            //    // the BOM is never returned
+            //    filter_be->putc(wc >> 8);
+            //    CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_NAC);
+            //    filter_be->putc(wc & 255);
+            //    CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_EOF);
 
-                filter_le->putc(wc & 255);
-                CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_NAC);
-                filter_le->putc(wc >> 8);
-                CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_EOF);
-            }
+            //    filter_le->putc(wc & 255);
+            //    CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_NAC);
+            //    filter_le->putc(wc >> 8);
+            //    CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_EOF);
+            //}
             else
             {
                 filter_be->putc(wc >> 8);
@@ -669,11 +669,11 @@ void As2JsStreamUnitTests::test_filter_utf16()
             CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_ERR);
             as2js::as_char_t get_wc(filter_be->getc());
 //std::cerr << "got " << get_wc << ", expected " << extra1 << "\n";
-            if(extra1 == as2js::String::STRING_BOM)
-            {
-                CPPUNIT_ASSERT(get_wc == as2js::Input::INPUT_EOF);
-            }
-            else
+            //if(extra1 == as2js::String::STRING_BOM)
+            //{
+            //    CPPUNIT_ASSERT(get_wc == as2js::Input::INPUT_EOF);
+            //}
+            //else
             {
                 CPPUNIT_ASSERT(get_wc == extra1);
             }
@@ -686,11 +686,11 @@ void As2JsStreamUnitTests::test_filter_utf16()
             CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_NAC);
             filter_le->putc(extra1 >> 8);
             CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_ERR);
-            if(extra1 == as2js::String::STRING_BOM)
-            {
-                CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_EOF);
-            }
-            else
+            //if(extra1 == as2js::String::STRING_BOM)
+            //{
+            //    CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_EOF);
+            //}
+            //else
             {
                 CPPUNIT_ASSERT(filter_le->getc() == extra1);
             }
@@ -736,11 +736,11 @@ void As2JsStreamUnitTests::test_filter_utf32()
             filter_be->putc((wc >>  8) & 255);
             CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_NAC);
             filter_be->putc((wc >>  0) & 255);
-            if(wc == as2js::String::STRING_BOM)
-            {
-                CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_EOF);
-            }
-            else
+            //if(wc == as2js::String::STRING_BOM)
+            //{
+            //    CPPUNIT_ASSERT(filter_be->getc() == as2js::Input::INPUT_EOF);
+            //}
+            //else
             {
                 CPPUNIT_ASSERT(filter_be->getc() == (err ? as2js::Input::INPUT_ERR : wc));
             }
@@ -753,11 +753,11 @@ void As2JsStreamUnitTests::test_filter_utf32()
             filter_le->putc((wc >> 16) & 255);
             CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_NAC);
             filter_le->putc((wc >> 24) & 255);
-            if(wc == as2js::String::STRING_BOM)
-            {
-                CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_EOF);
-            }
-            else
+            //if(wc == as2js::String::STRING_BOM)
+            //{
+            //    CPPUNIT_ASSERT(filter_le->getc() == as2js::Input::INPUT_EOF);
+            //}
+            //else
             {
                 CPPUNIT_ASSERT(filter_le->getc() == (err ? as2js::Input::INPUT_ERR : wc));
             }
@@ -783,7 +783,7 @@ void As2JsStreamUnitTests::test_filter_utf32()
         {
             as2js::as_char_t wc(((rand() << 16) ^ rand()) & 0x1FFFFF);
 
-            if(wc != as2js::String::STRING_BOM)
+            //if(wc != as2js::String::STRING_BOM)
             {
                 result.push_back(wc);
             }

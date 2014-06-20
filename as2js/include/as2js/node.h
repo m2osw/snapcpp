@@ -109,6 +109,7 @@ public:
         // (operators, keywords, strings, numbers...)
         NODE_other = 1000,
 
+        NODE_ABSTRACT,
         NODE_ARRAY,
         NODE_ARRAY_LITERAL,
         NODE_AS,
@@ -133,11 +134,15 @@ public:
         NODE_ASSIGNMENT_SUBTRACT,
         NODE_ATTRIBUTES,
         NODE_AUTO,
+        NODE_BOOLEAN,
         NODE_BREAK,
+        NODE_BYTE,
         NODE_CALL,
         NODE_CASE,
         NODE_CATCH,
+        NODE_CHAR,
         NODE_CLASS,
+        NODE_COMPARE,
         NODE_CONST,
         NODE_CONTINUE,
         NODE_DEBUGGER,
@@ -146,15 +151,20 @@ public:
         NODE_DELETE,
         NODE_DIRECTIVE_LIST,
         NODE_DO,
+        NODE_DOUBLE,
         NODE_ELSE,
         NODE_EMPTY,
+        NODE_ENSURE,
         NODE_ENUM,
         NODE_EQUAL,
         NODE_EXCLUDE,
         NODE_EXTENDS,
+        NODE_EXPORT,
         NODE_FALSE,
+        NODE_FINAL,
         NODE_FINALLY,
-        NODE_FLOAT64,
+        NODE_FLOAT,     // "float" keyword
+        NODE_FLOAT64,   // a literal float (i.e. 3.14159)
         NODE_FOR,
         NODE_FUNCTION,
         NODE_GOTO,
@@ -169,6 +179,7 @@ public:
         NODE_INSTANCEOF,
         NODE_INT64,
         NODE_INTERFACE,
+        NODE_INVARIANT,
         NODE_IS,
         NODE_LABEL,
         NODE_LESS_EQUAL,
@@ -176,13 +187,16 @@ public:
         NODE_LOGICAL_AND,
         NODE_LOGICAL_OR,
         NODE_LOGICAL_XOR,
+        NODE_LONG,
         NODE_MATCH,
         NODE_MAXIMUM,
         NODE_MINIMUM,
         NODE_NAME,
         NODE_NAMESPACE,
+        NODE_NATIVE,
         NODE_NEW,
         NODE_NOT_EQUAL,
+        NODE_NOT_MATCH,
         NODE_NULL,
         NODE_OBJECT_LITERAL,
         NODE_PACKAGE,
@@ -194,9 +208,11 @@ public:
         NODE_POWER,
         NODE_PRIVATE,
         NODE_PROGRAM,
+        NODE_PROTECTED,
         NODE_PUBLIC,
         NODE_RANGE,
         NODE_REGULAR_EXPRESSION,
+        NODE_REQUIRE,
         NODE_REST,
         NODE_RETURN,
         NODE_ROOT,
@@ -207,13 +223,20 @@ public:
         NODE_SHIFT_LEFT,
         NODE_SHIFT_RIGHT,
         NODE_SHIFT_RIGHT_UNSIGNED,
+        NODE_SHORT,
+        NODE_SMART_MATCH,
+        NODE_STATIC,
         NODE_STRICTLY_EQUAL,
         NODE_STRICTLY_NOT_EQUAL,
         NODE_STRING,
         NODE_SUPER,
         NODE_SWITCH,
+        NODE_SYNCHRONIZED,
+        NODE_THEN,
         NODE_THIS,
         NODE_THROW,
+        NODE_THROWS,
+        NODE_TRANSIENT,
         NODE_TRUE,
         NODE_TRY,
         NODE_TYPE,
@@ -225,8 +248,10 @@ public:
         NODE_VAR_ATTRIBUTES,
         NODE_VIDENTIFIER,
         NODE_VOID,
+        NODE_VOLATILE,
         NODE_WHILE,
         NODE_WITH,
+        NODE_YIELD,
 
         NODE_max     // mark the limit
     };
@@ -316,6 +341,8 @@ public:
         NODE_ATTR_PRIVATE,
         NODE_ATTR_PROTECTED,
         NODE_ATTR_INTERNAL,
+        NODE_ATTR_TRANSIENT, // variables only, skip when serializing a class
+        NODE_ATTR_VOLATILE, // variable only
 
         // function member type
         NODE_ATTR_STATIC,
@@ -323,10 +350,14 @@ public:
         NODE_ATTR_VIRTUAL,
         NODE_ATTR_ARRAY,
 
+        // function contract
+        NODE_ATTR_REQUIRE_ELSE,
+        NODE_ATTR_ENSURE_THEN,
+
         // function/variable is defined in your system (execution env.)
         // you won't find a body for these functions; the variables
         // will likely be read-only
-        NODE_ATTR_INTRINSIC,
+        NODE_ATTR_NATIVE,
 
         // function/variable is still defined, but should not be used
         // (using generates a "foo deprecated" warning)

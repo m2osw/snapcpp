@@ -27,15 +27,39 @@
 # THE SOFTWARE.
 #
 
-##
-## as2js tests
-##
-
 find_package( CppUnit )
 find_package( Qt4 4.8.0 COMPONENTS QtCore QtGui ) # TODO: we really want to find qxcppunitd and qxrunnerd, should probably be part of CppUnit
 if(QT_FOUND)
     include( ${QT_USE_FILE} )
 endif(QT_FOUND)
+find_package( ICU )
+
+##
+## Unicode character determination (helper executable)
+##
+project(unicode_characters)
+
+add_definitions( ${QT_DEFINITIONS} )
+add_executable(${PROJECT_NAME}
+    unicode_characters.cpp
+)
+include_directories(
+    SYSTEM
+        ${QT_INCLUDES}
+        ${ICU_INCLUDE_DIRS}
+)
+target_link_libraries( ${PROJECT_NAME}
+    ${QT_LIBRARIES}
+    ${ICU_LIBRARIES}
+    ${ICU_I18N_LIBRARIES}
+)
+
+
+
+##
+## as2js tests
+##
+
 
 # All the tests require cppunit
 if(CPPUNIT_FOUND)
@@ -84,13 +108,17 @@ if(QT_FOUND)
 endif(QT_FOUND)
 
 include_directories(
-    ${CONTROLLEDVARS_INCLUDE_DIRS}
-    ${ADVGETOPT_INCLUDE_DIRS}
+    SYSTEM
+        ${QT_INCLUDES}
+        ${ICU_INCLUDE_DIRS}
+        ${CPPUNIT_INCLUDE_DIR}
+)
+include_directories(
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/src
-    ${CPPUNIT_INCLUDE_DIR}
-    ${QT_INCLUDES}
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${ADVGETOPT_INCLUDE_DIRS}
 )
 add_executable(${PROJECT_NAME}
     test_as2js_main.cpp
@@ -100,6 +128,7 @@ add_executable(${PROJECT_NAME}
     test_as2js_message.cpp
     test_as2js_node.cpp
     test_as2js_node_display.cpp
+    test_as2js_lexer.cpp
     test_as2js_options.cpp
     test_as2js_position.cpp
     test_as2js_stream.cpp
@@ -116,6 +145,8 @@ target_link_libraries( ${PROJECT_NAME}
     as2js
     ${ADVGETOPT_LIBRARIES}
     ${QT_LIBRARIES}
+    ${ICU_LIBRARIES}
+    ${ICU_I18N_LIBRARIES}
     ${CPPUNIT_LIBRARIES}
     ${CPPUNIT_QT4}
 )

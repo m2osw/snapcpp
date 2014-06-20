@@ -374,7 +374,8 @@ void Parser::equality_expression(Node::pointer_t& node)
     while(f_node->get_type() == Node::node_t::NODE_EQUAL
        || f_node->get_type() == Node::node_t::NODE_NOT_EQUAL
        || f_node->get_type() == Node::node_t::NODE_STRICTLY_EQUAL
-       || f_node->get_type() == Node::node_t::NODE_STRICTLY_NOT_EQUAL)
+       || f_node->get_type() == Node::node_t::NODE_STRICTLY_NOT_EQUAL
+       || f_node->get_type() == Node::node_t::NODE_SMART_MATCH)
     {
         f_node->append_child(node);
         node = f_node;
@@ -397,7 +398,6 @@ void Parser::relational_expression(Node::pointer_t& node)
        || f_node->get_type() == Node::node_t::NODE_GREATER_EQUAL
        || f_node->get_type() == Node::node_t::NODE_IS
        || f_node->get_type() == Node::node_t::NODE_AS
-       || f_node->get_type() == Node::node_t::NODE_MATCH
        || f_node->get_type() == Node::node_t::NODE_IN
        || f_node->get_type() == Node::node_t::NODE_INSTANCEOF)
     {
@@ -461,9 +461,27 @@ void Parser::additive_expression(Node::pointer_t& node)
 }
 
 
-void Parser::multiplicative_expression(Node::pointer_t& node)
+void Parser::match_expression(Node::pointer_t& node)
 {
     power_expression(node);
+
+    while(f_node->get_type() == Node::node_t::NODE_MATCH
+       || f_node->get_type() == Node::node_t::NODE_NOT_MATCH)
+    {
+        f_node->append_child(node);
+        node = f_node;
+
+        get_token();
+        Node::pointer_t right;
+        power_expression(right);
+        node->append_child(right);
+    }
+}
+
+
+void Parser::multiplicative_expression(Node::pointer_t& node)
+{
+    match_expression(node);
 
     while(f_node->get_type() == Node::node_t::NODE_MULTIPLY
        || f_node->get_type() == Node::node_t::NODE_DIVIDE
@@ -531,6 +549,26 @@ void Parser::unary_expression(Node::pointer_t& node)
         Node::pointer_t unary;
         unary_expression(unary);
         node->append_child(unary);
+    }
+        break;
+
+    case Node::node_t::NODE_SMART_MATCH:
+    {
+        // we support the ~~ for Smart Match, but if found as a unary
+        // operator the user had to mean '~' and '~' separated as in:
+        //     a = ~ ~ b
+        // so here we generate two bitwise not (DO NOT OPTIMIZE, if one
+        // writes a = ~~b it is NOT the same as a = b because JavaScript
+        // forces a conversion of b to a 32 bit integer when applying the
+        // bitwise not operator.)
+        //
+        node = f_lexer->get_new_node(Node::node_t::NODE_BITWISE_NOT);
+        Node::pointer_t child(f_lexer->get_new_node(Node::node_t::NODE_BITWISE_NOT));
+        node->append_child(child);
+        get_token();
+        Node::pointer_t unary;
+        unary_expression(unary);
+        child->append_child(unary);
     }
         break;
 

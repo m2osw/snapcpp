@@ -164,23 +164,24 @@ void Node::set_string(String const& value)
     // only the corresponding node type accepts a set() call
     switch(f_type)
     {
-    case node_t::NODE_BREAK:            // name of label: BREAK [IDENTIFIER | DEFAULT];
-    case node_t::NODE_CLASS:            // name of class: CLASS IDENTIFIER
-    case node_t::NODE_CONTINUE:         // name of label: CONTINUE [IDENTIFIER | DEFAULT];
-    case node_t::NODE_ENUM:             // name of enumeration: ENUM [IDENTIFIER] ...;
-    case node_t::NODE_FUNCTION:         // name of function: FUNCTION [[GET | SET] IDENTIFIER | STRING] ...;
-    case node_t::NODE_GOTO:             // name of label: GOTO IDENTIFIER;
-    case node_t::NODE_IDENTIFIER:       // the identifier string: IDENTIFIER
-    case node_t::NODE_IMPORT:           // name of package: IMPORT [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
-    case node_t::NODE_INTERFACE:        // name of interface: INTERFACE IDENTIFIER
-    case node_t::NODE_LABEL:            // name of label: IDENTIFIER ':'
-    case node_t::NODE_NAMESPACE:        // name of namespace: NAMESPACE IDENTIFIER
-    case node_t::NODE_PACKAGE:          // name of package: PACKAGE [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
-    case node_t::NODE_PARAM:            // name of parameter: FUNCTION '(' IDENTIFIER ... ')' ...
-    case node_t::NODE_STRING:           // the string itself: STRING
-    case node_t::NODE_VARIABLE:         // name of variable: VAR <name> [':' type_expr] ['=' expression], ...;
-    case node_t::NODE_VAR_ATTRIBUTES:   // name of variable: VAR <name> [':' type_expr] ['=' expression], ...; (transformed to VAR_ATTRIBUTES)
-    case node_t::NODE_VIDENTIFIER:      // the identifier string: IDENTIFIER (transformed to VIDENTIFIER)
+    case node_t::NODE_BREAK:                // name of label: BREAK [IDENTIFIER | DEFAULT];
+    case node_t::NODE_CLASS:                // name of class: CLASS IDENTIFIER
+    case node_t::NODE_CONTINUE:             // name of label: CONTINUE [IDENTIFIER | DEFAULT];
+    case node_t::NODE_ENUM:                 // name of enumeration: ENUM [IDENTIFIER] ...;
+    case node_t::NODE_FUNCTION:             // name of function: FUNCTION [[GET | SET] IDENTIFIER | STRING] ...;
+    case node_t::NODE_GOTO:                 // name of label: GOTO IDENTIFIER;
+    case node_t::NODE_IDENTIFIER:           // the identifier string: IDENTIFIER
+    case node_t::NODE_IMPORT:               // name of package: IMPORT [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
+    case node_t::NODE_INTERFACE:            // name of interface: INTERFACE IDENTIFIER
+    case node_t::NODE_LABEL:                // name of label: IDENTIFIER ':'
+    case node_t::NODE_NAMESPACE:            // name of namespace: NAMESPACE IDENTIFIER
+    case node_t::NODE_PACKAGE:              // name of package: PACKAGE [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
+    case node_t::NODE_PARAM:                // name of parameter: FUNCTION '(' IDENTIFIER ... ')' ...
+    case node_t::NODE_REGULAR_EXPRESSION:   // name of parameter: `...` or /.../...
+    case node_t::NODE_STRING:               // the string itself: STRING
+    case node_t::NODE_VARIABLE:             // name of variable: VAR <name> [':' type_expr] ['=' expression], ...;
+    case node_t::NODE_VAR_ATTRIBUTES:       // name of variable: VAR <name> [':' type_expr] ['=' expression], ...; (transformed to VAR_ATTRIBUTES)
+    case node_t::NODE_VIDENTIFIER:          // the identifier string: IDENTIFIER (transformed to VIDENTIFIER)
         break;
 
     default:
@@ -309,23 +310,24 @@ String const& Node::get_string() const
     // only the corresponding node type accepts a get() call
     switch(f_type)
     {
-    case node_t::NODE_BREAK:            // name of label: BREAK [IDENTIFIER | DEFAULT];
-    case node_t::NODE_CLASS:            // name of class: CLASS IDENTIFIER
-    case node_t::NODE_CONTINUE:         // name of label: CONTINUE [IDENTIFIER | DEFAULT];
-    case node_t::NODE_ENUM:             // name of enumeration: ENUM [IDENTIFIER] ...;
-    case node_t::NODE_FUNCTION:         // name of function: FUNCTION [[GET | SET] IDENTIFIER | STRING] ...;
-    case node_t::NODE_GOTO:             // name of label: GOTO IDENTIFIER;
-    case node_t::NODE_IDENTIFIER:       // the identifier string: IDENTIFIER
-    case node_t::NODE_IMPORT:           // name of package: IMPORT [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
-    case node_t::NODE_INTERFACE:        // name of interface: INTERFACE IDENTIFIER
-    case node_t::NODE_LABEL:            // name of label: IDENTIFIER ':'
-    case node_t::NODE_NAMESPACE:        // name of namespace: NAMESPACE IDENTIFIER
-    case node_t::NODE_PACKAGE:          // name of package: PACKAGE [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
-    case node_t::NODE_PARAM:            // name of parameter: FUNCTION '(' IDENTIFIER ... ')' ...
-    case node_t::NODE_STRING:           // the string itself: STRING
-    case node_t::NODE_VARIABLE:         // name of variable: VAR <name> [':' type_expr] ['=' expression], ...;
-    case node_t::NODE_VAR_ATTRIBUTES:   // name of variable: VAR <name> [':' type_expr] ['=' expression], ...; (transformed to VAR_ATTRIBUTES)
-    case node_t::NODE_VIDENTIFIER:      // the identifier string: IDENTIFIER (transformed to VIDENTIFIER)
+    case node_t::NODE_BREAK:                // name of label: BREAK [IDENTIFIER | DEFAULT];
+    case node_t::NODE_CLASS:                // name of class: CLASS IDENTIFIER
+    case node_t::NODE_CONTINUE:             // name of label: CONTINUE [IDENTIFIER | DEFAULT];
+    case node_t::NODE_ENUM:                 // name of enumeration: ENUM [IDENTIFIER] ...;
+    case node_t::NODE_FUNCTION:             // name of function: FUNCTION [[GET | SET] IDENTIFIER | STRING] ...;
+    case node_t::NODE_GOTO:                 // name of label: GOTO IDENTIFIER;
+    case node_t::NODE_IDENTIFIER:           // the identifier string: IDENTIFIER
+    case node_t::NODE_IMPORT:               // name of package: IMPORT [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
+    case node_t::NODE_INTERFACE:            // name of interface: INTERFACE IDENTIFIER
+    case node_t::NODE_LABEL:                // name of label: IDENTIFIER ':'
+    case node_t::NODE_NAMESPACE:            // name of namespace: NAMESPACE IDENTIFIER
+    case node_t::NODE_PACKAGE:              // name of package: PACKAGE [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
+    case node_t::NODE_PARAM:                // name of parameter: FUNCTION '(' IDENTIFIER ... ')' ...
+    case node_t::NODE_REGULAR_EXPRESSION:   // name of parameter: `...` or /.../...
+    case node_t::NODE_STRING:               // the string itself: "..." or '...'
+    case node_t::NODE_VARIABLE:             // name of variable: VAR <name> [':' type_expr] ['=' expression], ...;
+    case node_t::NODE_VAR_ATTRIBUTES:       // name of variable: VAR <name> [':' type_expr] ['=' expression], ...; (transformed to VAR_ATTRIBUTES)
+    case node_t::NODE_VIDENTIFIER:          // the identifier string: IDENTIFIER (transformed to VIDENTIFIER)
         break;
 
     default:

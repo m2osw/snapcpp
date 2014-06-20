@@ -224,7 +224,7 @@ Message& Message::operator << (String const& s)
 
 /** \brief Append a char value.
  *
- * This function appends a char value to the message.
+ * This function appends a character to the message.
  *
  * \param[in] v  A char value.
  *
@@ -232,7 +232,7 @@ Message& Message::operator << (String const& s)
  */
 Message& Message::operator << (char const v)
 {
-    static_cast<std::stringstream&>(*this) << static_cast<int>(v);
+    static_cast<std::stringstream&>(*this) << v;
     return *this;
 }
 

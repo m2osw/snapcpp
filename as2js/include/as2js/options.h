@@ -61,6 +61,7 @@ public:
         OPTION_UNKNOWN = 0,
 
         OPTION_ALLOW_WITH,          // we do NOT allow with() statements by default
+        OPTION_BINARY,
         OPTION_DEBUG,
         OPTION_DEBUG_LEXER,
         OPTION_EXTENDED_ESCAPE_SEQUENCES,

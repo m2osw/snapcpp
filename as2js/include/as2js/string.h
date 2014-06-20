@@ -58,6 +58,8 @@ public:
 
     // Unicode BOM character
     static as_char_t const  STRING_BOM = 0xFEFF;
+    // Represents a continuation character (i.e. '\' + LineTerminatorSequence)
+    static as_char_t const  STRING_CONTINUATION = -2;
 
     enum class conversion_result_t
     {

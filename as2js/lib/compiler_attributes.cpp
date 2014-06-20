@@ -58,6 +58,7 @@ void Compiler::variable_to_attrs(Node::pointer_t node, Node::pointer_t var_node)
     case Node::node_t::NODE_FALSE:
     case Node::node_t::NODE_IDENTIFIER:
     case Node::node_t::NODE_PRIVATE:
+    case Node::node_t::NODE_PROTECTED:
     case Node::node_t::NODE_PUBLIC:
     case Node::node_t::NODE_TRUE:
         node_to_attrs(node, a);
@@ -97,11 +98,6 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
     switch(identifier[0])
     {
     case 'a':
-        if(identifier == "abstract")
-        {
-            node->set_attribute(Node::attribute_t::NODE_ATTR_ABSTRACT, true);
-            return;
-        }
         if(identifier == "array")
         {
             node->set_attribute(Node::attribute_t::NODE_ATTR_ARRAY, true);
@@ -144,11 +140,6 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
         break;
 
     case 'f':
-        if(identifier == "final")
-        {
-            node->set_attribute(Node::attribute_t::NODE_ATTR_FINAL, true);
-            return;
-        }
         if(identifier == "foreach")
         {
             node->set_attribute(Node::attribute_t::NODE_ATTR_FOREACH, true);
@@ -162,33 +153,12 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
             node->set_attribute(Node::attribute_t::NODE_ATTR_INTERNAL, true);
             return;
         }
-        if(identifier == "intrinsic")
-        {
-            node->set_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC, true);
-            return;
-        }
         break;
 
     case 'n':
         if(identifier == "nobreak")
         {
             node->set_attribute(Node::attribute_t::NODE_ATTR_NOBREAK, true);
-            return;
-        }
-        break;
-
-    case 'p':
-        if(identifier == "protected")
-        {
-            node->set_attribute(Node::attribute_t::NODE_ATTR_PROTECTED, true);
-            return;
-        }
-        break;
-
-    case 's':
-        if(identifier == "static")
-        {
-            node->set_attribute(Node::attribute_t::NODE_ATTR_STATIC, true);
             return;
         }
         break;
@@ -261,25 +231,54 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
 
 void Compiler::node_to_attrs(Node::pointer_t node, Node::pointer_t a)
 {
-    switch(a->get_type()) {
+    switch(a->get_type())
+    {
+    case Node::node_t::NODE_ABSTRACT:
+        node->set_attribute(Node::attribute_t::NODE_ATTR_ABSTRACT, true);
+        break;
+
     case Node::node_t::NODE_FALSE:
         node->set_attribute(Node::attribute_t::NODE_ATTR_FALSE, true);
+        break;
+
+    case Node::node_t::NODE_FINAL:
+        node->set_attribute(Node::attribute_t::NODE_ATTR_FINAL, true);
         break;
 
     case Node::node_t::NODE_IDENTIFIER:
         identifier_to_attrs(node, a);
         break;
 
+    case Node::node_t::NODE_NATIVE: // Note: I called this one INTRINSIC before
+        node->set_attribute(Node::attribute_t::NODE_ATTR_NATIVE, true);
+        break;
+
     case Node::node_t::NODE_PRIVATE:
         node->set_attribute(Node::attribute_t::NODE_ATTR_PRIVATE, true);
+        break;
+
+    case Node::node_t::NODE_PROTECTED:
+        node->set_attribute(Node::attribute_t::NODE_ATTR_PROTECTED, true);
         break;
 
     case Node::node_t::NODE_PUBLIC:
         node->set_attribute(Node::attribute_t::NODE_ATTR_PUBLIC, true);
         break;
 
+    case Node::node_t::NODE_STATIC:
+        node->set_attribute(Node::attribute_t::NODE_ATTR_STATIC, true);
+        break;
+
+    case Node::node_t::NODE_TRANSIENT:
+        node->set_attribute(Node::attribute_t::NODE_ATTR_TRANSIENT, true);
+        break;
+
     case Node::node_t::NODE_TRUE:
         node->set_attribute(Node::attribute_t::NODE_ATTR_TRUE, true);
+        break;
+
+    case Node::node_t::NODE_VOLATILE:
+        node->set_attribute(Node::attribute_t::NODE_ATTR_VOLATILE, true);
         break;
 
     default:
@@ -327,7 +326,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
 
     // check whether intrinsic is already set
     // (in which case it is probably an error)
-    bool const has_direct_intrinsic(node->get_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC));
+    bool const has_direct_native(node->get_attribute(Node::attribute_t::NODE_ATTR_NATIVE));
 
     // Note: we already returned if it is equal
     //       to program; here it is just documentation
@@ -362,7 +361,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
             }
 
             // inherit
-            node->set_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC,  parent->get_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC));
+            node->set_attribute(Node::attribute_t::NODE_ATTR_NATIVE,     parent->get_attribute(Node::attribute_t::NODE_ATTR_NATIVE));
             node->set_attribute(Node::attribute_t::NODE_ATTR_ENUMERABLE, parent->get_attribute(Node::attribute_t::NODE_ATTR_ENUMERABLE));
 
             // false has priority
@@ -381,7 +380,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
     }
 
     // a function which has a body cannot be intrinsic
-    if(node->get_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC)
+    if(node->get_attribute(Node::attribute_t::NODE_ATTR_NATIVE)
     && node->get_type() != Node::node_t::NODE_FUNCTION)
     {
         NodeLock ln(node);
@@ -394,12 +393,12 @@ void Compiler::prepare_attributes(Node::pointer_t node)
                 // it is an error if the user defined
                 // it directly on the function; it is
                 // fine if it comes from the parent
-                if(has_direct_intrinsic)
+                if(has_direct_native)
                 {
-                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTRINSIC, node->get_position());
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NATIVE, node->get_position());
                     msg << "'intrinsic' is not permitted on a function with a body.";
                 }
-                node->set_attribute(Node::attribute_t::NODE_ATTR_INTRINSIC, false);
+                node->set_attribute(Node::attribute_t::NODE_ATTR_NATIVE, false);
                 break;
             }
         }

@@ -158,14 +158,17 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_CASE:
     case node_t::NODE_CATCH:
     case node_t::NODE_CLASS:
+    case node_t::NODE_COMPARE:
     case node_t::NODE_DEBUGGER:
     case node_t::NODE_DECREMENT:
     case node_t::NODE_DELETE:
     case node_t::NODE_DIRECTIVE_LIST:
     case node_t::NODE_DO:
+    case node_t::NODE_ENSURE:
     case node_t::NODE_ENUM:
     case node_t::NODE_EQUAL:
     case node_t::NODE_EXCLUDE:
+    case node_t::NODE_EXPORT:
     case node_t::NODE_EXTENDS:
     case node_t::NODE_FINALLY:
     case node_t::NODE_FOR:
@@ -179,6 +182,7 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_INCREMENT:
     case node_t::NODE_INSTANCEOF:
     case node_t::NODE_INTERFACE:
+    case node_t::NODE_INVARIANT:
     case node_t::NODE_IS:
     case node_t::NODE_LABEL:
     case node_t::NODE_LESS_EQUAL:
@@ -193,6 +197,7 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_NAMESPACE:
     case node_t::NODE_NEW:
     case node_t::NODE_NOT_EQUAL:
+    case node_t::NODE_NOT_MATCH:
     case node_t::NODE_OBJECT_LITERAL:
     case node_t::NODE_PACKAGE:
     case node_t::NODE_PARAM:
@@ -203,6 +208,7 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_POWER:
     case node_t::NODE_PROGRAM:
     case node_t::NODE_RANGE:
+    case node_t::NODE_REQUIRE:
     case node_t::NODE_RETURN:
     case node_t::NODE_ROOT:
     case node_t::NODE_ROTATE_LEFT:
@@ -212,11 +218,14 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_SHIFT_LEFT:
     case node_t::NODE_SHIFT_RIGHT:
     case node_t::NODE_SHIFT_RIGHT_UNSIGNED:
+    case node_t::NODE_SMART_MATCH:
     case node_t::NODE_STRICTLY_EQUAL:
     case node_t::NODE_STRICTLY_NOT_EQUAL:
     case node_t::NODE_SUPER:
     case node_t::NODE_SWITCH:
+    case node_t::NODE_SYNCHRONIZED:
     case node_t::NODE_THROW:
+    case node_t::NODE_THROWS:
     case node_t::NODE_TRY:
     case node_t::NODE_TYPE:
     case node_t::NODE_TYPEOF:
@@ -226,11 +235,16 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_VAR_ATTRIBUTES:
     case node_t::NODE_WHILE:
     case node_t::NODE_WITH:
+    case node_t::NODE_YIELD:
         break;
 
     // All those node types are assumed to never support a child
+    case node_t::NODE_ABSTRACT:
     case node_t::NODE_AUTO:
+    case node_t::NODE_BOOLEAN:
     case node_t::NODE_BREAK:
+    case node_t::NODE_BYTE:
+    case node_t::NODE_CHAR:
     case node_t::NODE_CLOSE_CURVLY_BRACKET:
     case node_t::NODE_CLOSE_PARENTHESIS:
     case node_t::NODE_CLOSE_SQUARE_BRACKET:
@@ -239,29 +253,40 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_CONST:
     case node_t::NODE_CONTINUE:
     case node_t::NODE_DEFAULT:
+    case node_t::NODE_DOUBLE:
     case node_t::NODE_ELSE:
     case node_t::NODE_EMPTY:
     case node_t::NODE_EOF:
+    case node_t::NODE_FINAL:
+    case node_t::NODE_FLOAT:
     case node_t::NODE_IDENTIFIER:
     case node_t::NODE_INT64:
     case node_t::NODE_FALSE:
     case node_t::NODE_FLOAT64:
     case node_t::NODE_GOTO:
+    case node_t::NODE_LONG:
+    case node_t::NODE_NATIVE:
     case node_t::NODE_NULL:
     case node_t::NODE_OPEN_CURVLY_BRACKET:
     case node_t::NODE_OPEN_PARENTHESIS:
     case node_t::NODE_OPEN_SQUARE_BRACKET:
     case node_t::NODE_PRIVATE:
+    case node_t::NODE_PROTECTED:
     case node_t::NODE_PUBLIC:
     case node_t::NODE_REGULAR_EXPRESSION:
     case node_t::NODE_REST:
     case node_t::NODE_SEMICOLON:
+    case node_t::NODE_SHORT:
+    case node_t::NODE_STATIC:
     case node_t::NODE_STRING:
+    case node_t::NODE_THEN:
     case node_t::NODE_THIS:
+    case node_t::NODE_TRANSIENT:
     case node_t::NODE_TRUE:
     case node_t::NODE_UNDEFINED:
     case node_t::NODE_VIDENTIFIER:
     case node_t::NODE_VOID:
+    case node_t::NODE_VOLATILE:
     case node_t::NODE_other:        // for completeness
     case node_t::NODE_max:          // for completeness
         // ERROR: some values are not valid as a type
@@ -278,6 +303,7 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_COLON:
     case node_t::NODE_COMMA:
     case node_t::NODE_ELSE:
+    case node_t::NODE_THEN:
     case node_t::NODE_EOF:
     case node_t::NODE_OPEN_CURVLY_BRACKET:
     case node_t::NODE_OPEN_PARENTHESIS:

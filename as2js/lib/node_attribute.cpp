@@ -57,13 +57,15 @@ enum
 {
     ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION,
     ATTRIBUTES_GROUP_FUNCTION_TYPE,
+    ATTRIBUTES_GROUP_FUNCTION_CONTRACT,
     ATTRIBUTES_GROUP_SWITCH_TYPE,
     ATTRIBUTES_GROUP_MEMBER_VISIBILITY
 };
 char const *g_attribute_groups[] =
 {
     [ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION] = "true and false",
-    [ATTRIBUTES_GROUP_FUNCTION_TYPE] = "static, abstract, virtual, and constructor",
+    [ATTRIBUTES_GROUP_FUNCTION_TYPE] = "static, abstract, virtual, and constructor; also abstract and native",
+    [ATTRIBUTES_GROUP_FUNCTION_CONTRACT] = "require else and ensure then",
     [ATTRIBUTES_GROUP_SWITCH_TYPE] = "foreach, nobreak, and autobreak",
     [ATTRIBUTES_GROUP_MEMBER_VISIBILITY] = "public, private, and protected"
 };
@@ -138,6 +140,8 @@ void Node::verify_attribute(attribute_t a) const
     case attribute_t::NODE_ATTR_PRIVATE:
     case attribute_t::NODE_ATTR_PROTECTED:
     case attribute_t::NODE_ATTR_INTERNAL:
+    case attribute_t::NODE_ATTR_TRANSIENT:
+    case attribute_t::NODE_ATTR_VOLATILE:
 
     // function member type
     case attribute_t::NODE_ATTR_STATIC:
@@ -145,8 +149,12 @@ void Node::verify_attribute(attribute_t a) const
     case attribute_t::NODE_ATTR_VIRTUAL:
     case attribute_t::NODE_ATTR_ARRAY:
 
+    // function contracts
+    case attribute_t::NODE_ATTR_REQUIRE_ELSE:
+    case attribute_t::NODE_ATTR_ENSURE_THEN:
+
     // function/variable is defined in your system (execution env.)
-    case attribute_t::NODE_ATTR_INTRINSIC:
+    case attribute_t::NODE_ATTR_NATIVE:
 
     // function/variable will be removed in future releases, do not use
     case attribute_t::NODE_ATTR_DEPRECATED:
@@ -214,17 +222,33 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
     switch(a)
     {
     case attribute_t::NODE_ATTR_ARRAY:
-    case attribute_t::NODE_ATTR_DEPRECATED:
-    case attribute_t::NODE_ATTR_UNSAFE:
     case attribute_t::NODE_ATTR_DEFINED:
+    case attribute_t::NODE_ATTR_DEPRECATED:
     case attribute_t::NODE_ATTR_DYNAMIC:
     case attribute_t::NODE_ATTR_ENUMERABLE:
     case attribute_t::NODE_ATTR_FINAL:
     case attribute_t::NODE_ATTR_INTERNAL:
-    case attribute_t::NODE_ATTR_INTRINSIC:
+    case attribute_t::NODE_ATTR_TRANSIENT:
+    case attribute_t::NODE_ATTR_UNSAFE:
     case attribute_t::NODE_ATTR_UNUSED:
+    case attribute_t::NODE_ATTR_VOLATILE:
         // these attributes have no conflicts
         return true;
+
+    case attribute_t::NODE_ATTR_REQUIRE_ELSE:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ENSURE_THEN)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_CONTRACT];
+        break;
+
+    case attribute_t::NODE_ATTR_ENSURE_THEN:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_REQUIRE_ELSE)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_CONTRACT];
+        break;
+
+    case attribute_t::NODE_ATTR_NATIVE:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
 
     // member visibility
     case attribute_t::NODE_ATTR_PUBLIC:
@@ -256,7 +280,8 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
     case attribute_t::NODE_ATTR_ABSTRACT:
         conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
                 || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
-                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)];
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_NATIVE)];
         names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
 

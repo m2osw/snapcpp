@@ -369,6 +369,11 @@ void Parser::directive(Node::pointer_t& node)
         enum_declaration(directive_node);
         break;
 
+    case Node::node_t::NODE_INVARIANT:
+        get_token();
+        contract_declaration(directive_node, type);
+        break;
+
     // *** FUNCTION DEFINITION ***
     case Node::node_t::NODE_FUNCTION:
         get_token();
@@ -421,6 +426,11 @@ void Parser::directive(Node::pointer_t& node)
         catch_directive(directive_node);
         break;
 
+    case Node::node_t::NODE_DEBUGGER:    // just not handled yet...
+        get_token();
+        debugger(directive_node);
+        break;
+
     case Node::node_t::NODE_DEFAULT:
         get_token();
         default_directive(directive_node);
@@ -467,6 +477,11 @@ void Parser::directive(Node::pointer_t& node)
         switch_directive(directive_node);
         break;
 
+    case Node::node_t::NODE_SYNCHRONIZED:
+        get_token();
+        synchronized(directive_node);
+        break;
+
     case Node::node_t::NODE_THROW:
         get_token();
         throw_directive(directive_node);
@@ -476,6 +491,11 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_WHILE:
         get_token();
         with_while(directive_node, type);
+        break;
+
+    case Node::node_t::NODE_YIELD:
+        get_token();
+        yield(directive_node);
         break;
 
     case Node::node_t::NODE_COLON:
@@ -502,6 +522,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_NULL:
     case Node::node_t::NODE_OBJECT_LITERAL:
     case Node::node_t::NODE_PRIVATE:
+    case Node::node_t::NODE_PROTECTED:
     case Node::node_t::NODE_PUBLIC:
     case Node::node_t::NODE_UNDEFINED:
     case Node::node_t::NODE_REGULAR_EXPRESSION:
@@ -552,13 +573,23 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
     case Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::node_t::NODE_BITWISE_AND:
+    case Node::node_t::NODE_BITWISE_XOR:
+    case Node::node_t::NODE_BITWISE_OR:
+    case Node::node_t::NODE_CLOSE_PARENTHESIS:
+    case Node::node_t::NODE_CLOSE_SQUARE_BRACKET:
+    case Node::node_t::NODE_COMMA:
+    case Node::node_t::NODE_COMPARE:
     case Node::node_t::NODE_CONDITIONAL:
+    case Node::node_t::NODE_DIVIDE:
     case Node::node_t::NODE_EQUAL:
+    case Node::node_t::NODE_GREATER:
     case Node::node_t::NODE_GREATER_EQUAL:
     case Node::node_t::NODE_IMPLEMENTS:
     case Node::node_t::NODE_INSTANCEOF:
     case Node::node_t::NODE_IN:
     case Node::node_t::NODE_IS:
+    case Node::node_t::NODE_LESS:
     case Node::node_t::NODE_LESS_EQUAL:
     case Node::node_t::NODE_LOGICAL_AND:
     case Node::node_t::NODE_LOGICAL_OR:
@@ -567,7 +598,10 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_MAXIMUM:
     case Node::node_t::NODE_MEMBER:
     case Node::node_t::NODE_MINIMUM:
+    case Node::node_t::NODE_MODULO:
+    case Node::node_t::NODE_MULTIPLY:
     case Node::node_t::NODE_NOT_EQUAL:
+    case Node::node_t::NODE_NOT_MATCH:
     case Node::node_t::NODE_POWER:
     case Node::node_t::NODE_RANGE:
     case Node::node_t::NODE_REST:
@@ -577,20 +611,10 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_SHIFT_LEFT:
     case Node::node_t::NODE_SHIFT_RIGHT:
     case Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
+    case Node::node_t::NODE_SMART_MATCH:
     case Node::node_t::NODE_STRICTLY_EQUAL:
     case Node::node_t::NODE_STRICTLY_NOT_EQUAL:
     case Node::node_t::NODE_VARIABLE:
-    case Node::node_t::NODE_CLOSE_PARENTHESIS:
-    case Node::node_t::NODE_MULTIPLY:
-    case Node::node_t::NODE_DIVIDE:
-    case Node::node_t::NODE_COMMA:
-    case Node::node_t::NODE_MODULO:
-    case Node::node_t::NODE_BITWISE_AND:
-    case Node::node_t::NODE_BITWISE_XOR:
-    case Node::node_t::NODE_BITWISE_OR:
-    case Node::node_t::NODE_LESS:
-    case Node::node_t::NODE_GREATER:
-    case Node::node_t::NODE_CLOSE_SQUARE_BRACKET:
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
         msg << "unexpected operator";
@@ -598,9 +622,11 @@ void Parser::directive(Node::pointer_t& node)
     }
         break;
 
-    case Node::node_t::NODE_DEBUGGER:    // just not handled yet...
     case Node::node_t::NODE_ELSE:
+    case Node::node_t::NODE_ENSURE:
     case Node::node_t::NODE_EXTENDS:
+    case Node::node_t::NODE_REQUIRE:
+    case Node::node_t::NODE_THEN:
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_KEYWORD, f_lexer->get_input()->get_position());
         msg << "unexpected keyword";
@@ -612,17 +638,27 @@ void Parser::directive(Node::pointer_t& node)
     // These should never happen since they should be caught
     // before this switch is reached or it can't be a node
     // read by the lexer.
+    case Node::node_t::NODE_ABSTRACT:
     case Node::node_t::NODE_ARRAY:
     case Node::node_t::NODE_ATTRIBUTES:
     case Node::node_t::NODE_AUTO:
+    case Node::node_t::NODE_BOOLEAN:
+    case Node::node_t::NODE_BYTE:
     case Node::node_t::NODE_CALL:
+    case Node::node_t::NODE_CHAR:
     case Node::node_t::NODE_DIRECTIVE_LIST:
+    case Node::node_t::NODE_DOUBLE:
     case Node::node_t::NODE_EMPTY:
     case Node::node_t::NODE_EXCLUDE:
+    case Node::node_t::NODE_EXPORT:
+    case Node::node_t::NODE_FINAL:
+    case Node::node_t::NODE_FLOAT:
     case Node::node_t::NODE_INCLUDE:
     case Node::node_t::NODE_LABEL:
     case Node::node_t::NODE_LIST:
+    case Node::node_t::NODE_LONG:
     case Node::node_t::NODE_NAME:
+    case Node::node_t::NODE_NATIVE:
     case Node::node_t::NODE_PARAM:
     case Node::node_t::NODE_PARAMETERS:
     case Node::node_t::NODE_PARAM_MATCH:
@@ -631,9 +667,14 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_PROGRAM:
     case Node::node_t::NODE_ROOT:
     case Node::node_t::NODE_SET:
+    case Node::node_t::NODE_SHORT:
+    case Node::node_t::NODE_STATIC:
+    case Node::node_t::NODE_THROWS:
+    case Node::node_t::NODE_TRANSIENT:
     case Node::node_t::NODE_TYPE:
     case Node::node_t::NODE_UNKNOWN:    // ?!
     case Node::node_t::NODE_VAR_ATTRIBUTES:
+    case Node::node_t::NODE_VOLATILE:
     case Node::node_t::NODE_other:      // no node should be of this type
     case Node::node_t::NODE_max:        // no node should be of this type
         {

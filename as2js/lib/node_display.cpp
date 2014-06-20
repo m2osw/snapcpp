@@ -73,7 +73,12 @@ void Node::display_data(std::ostream& out) const
             out << ": '";
             for(as_char_t const *s(str.c_str()); *s != '\0'; ++s)
             {
-                if(*s < 0x7f)
+                if(*s < 0x20)
+                {
+                    // show controls as ^<letter>
+                    out << '^' << static_cast<char>(*s + '@');
+                }
+                else if(*s < 0x7f)
                 {
                     if(*s == '\'')
                     {
@@ -84,9 +89,17 @@ void Node::display_data(std::ostream& out) const
                         out << static_cast<char>(*s);
                     }
                 }
+                else if(*s < 0x100)
+                {
+                    out << "\\x" << std::hex << *s << std::dec;
+                }
+                else if(*s < 0x10000)
+                {
+                    out << "\\u" << std::hex << std::setfill('0') << std::setw(4) << *s << std::dec;
+                }
                 else
                 {
-                    out << "\\U+" << std::hex << *s << std::dec;
+                    out << "\\U" << std::hex << std::setfill('0') << std::setw(8) << *s << std::dec;
                 }
             }
             out << "'";
@@ -112,6 +125,7 @@ void Node::display_data(std::ostream& out) const
     case node_t::NODE_INTERFACE:
     case node_t::NODE_LABEL:
     case node_t::NODE_NAMESPACE:
+    case node_t::NODE_REGULAR_EXPRESSION:
         sub_function::display_str(out, f_str);
         break;
 
@@ -394,13 +408,18 @@ void Node::display(std::ostream& out, int indent, char c) const
             display_attribute(attribute_t::NODE_ATTR_PRIVATE,        "PRIVATE"       );
             display_attribute(attribute_t::NODE_ATTR_PROTECTED,      "PROTECTED"     );
             display_attribute(attribute_t::NODE_ATTR_INTERNAL,       "INTERNAL"      );
+            display_attribute(attribute_t::NODE_ATTR_TRANSIENT,      "TRANSIENT"     );
+            display_attribute(attribute_t::NODE_ATTR_VOLATILE,       "VOLATILE"      );
 
             display_attribute(attribute_t::NODE_ATTR_STATIC,         "STATIC"        );
             display_attribute(attribute_t::NODE_ATTR_ABSTRACT,       "ABSTRACT"      );
             display_attribute(attribute_t::NODE_ATTR_VIRTUAL,        "VIRTUAL"       );
             display_attribute(attribute_t::NODE_ATTR_ARRAY,          "ARRAY"         );
 
-            display_attribute(attribute_t::NODE_ATTR_INTRINSIC,      "INTRINSIC"     );
+            display_attribute(attribute_t::NODE_ATTR_REQUIRE_ELSE,   "REQUIRE_ELSE"  );
+            display_attribute(attribute_t::NODE_ATTR_ENSURE_THEN,    "ENSURE_THEN"   );
+
+            display_attribute(attribute_t::NODE_ATTR_NATIVE,         "NATIVE"        );
 
             display_attribute(attribute_t::NODE_ATTR_DEPRECATED,     "DEPRECATED"    );
             display_attribute(attribute_t::NODE_ATTR_UNSAFE,         "UNSAFE"        );

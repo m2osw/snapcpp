@@ -82,29 +82,17 @@ void DecodingFilter::putc(unsigned char c)
  *
  * If there is no data, then Input::INPUT_EOF is returned.
  *
- * This function never returns the String::STRING_BOM character so we
- * do not have to handle it anywhere else.
- *
  * \return The next character available or one of the Input::INPUT_...
  *         result (EOF, NAC, ERR).
  */
 Input::char_t DecodingFilter::getc()
 {
-    Input::char_t c;
-    do
+    if(f_buffer.empty())
     {
-        if(f_buffer.empty())
-        {
-            return Input::INPUT_EOF;
-        }
-
-        c = get_char();
+        return Input::INPUT_EOF;
     }
-    while(c == String::STRING_BOM);
 
-    // return a valid character except the BOM, or one of:
-    // Input::INPUT_ERR, Input::INPUT_NAC, or Input::INPUT_EOF
-    return c;
+    return get_char();
 }
 
 
@@ -584,6 +572,7 @@ Input::char_t Input::getc()
 void Input::ungetc(char_t c)
 {
     // silently avoid ungetting special values such as INPUT_EOF
+    // (TBD: maybe we should check surrogates?)
     if(c > 0 && c < 0x110000)
     {
         f_unget.push_back(c);

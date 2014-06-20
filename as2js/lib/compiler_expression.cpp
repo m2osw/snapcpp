@@ -416,7 +416,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
 
     Node::pointer_t op_type(resolution->get_link(Node::link_t::LINK_TYPE));
 
-    if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_INTRINSIC))
+    if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_NATIVE))
     {
         switch(expr->get_type())
         {
@@ -626,7 +626,7 @@ void Compiler::binary_operator(Node::pointer_t& expr)
 
     Node::pointer_t op_type(resolution->get_link(Node::link_t::LINK_TYPE));
 
-    if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_INTRINSIC))
+    if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_NATIVE))
     {
         // we keep intrinsic operators as is
         expr->set_link(Node::link_t::LINK_INSTANCE, resolution);

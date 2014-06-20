@@ -90,6 +90,8 @@ private:
     void                catch_directive(Node::pointer_t& node);
     void                class_declaration(Node::pointer_t& node, Node::node_t type);
     void                conditional_expression(Node::pointer_t& node, bool assignment);
+    void                contract_declaration(Node::pointer_t& node, Node::node_t type);
+    void                debugger(Node::pointer_t& node);
     void                default_directive(Node::pointer_t& node);
     void                directive(Node::pointer_t& node);
     void                directive_list(Node::pointer_t& node);
@@ -106,6 +108,7 @@ private:
     void                logical_and_expression(Node::pointer_t& node);
     void                logical_or_expression(Node::pointer_t& node);
     void                logical_xor_expression(Node::pointer_t& node);
+    void                match_expression(Node::pointer_t& node);
     void                min_max_expression(Node::pointer_t& node);
     void                multiplicative_expression(Node::pointer_t& node);
     void                namespace_block(Node::pointer_t& node);
@@ -122,12 +125,14 @@ private:
     void                return_directive(Node::pointer_t& node);
     void                shift_expression(Node::pointer_t& node);
     void                switch_directive(Node::pointer_t& node);
+    void                synchronized(Node::pointer_t& node);
     void                throw_directive(Node::pointer_t& node);
     void                try_finally(Node::pointer_t& node, Node::node_t type);
     void                unary_expression(Node::pointer_t& node);
     void                use_namespace(Node::pointer_t& node);
     void                variable(Node::pointer_t& node, bool const constant);
     void                with_while(Node::pointer_t& node, Node::node_t type);
+    void                yield(Node::pointer_t& node);
 
     Lexer::pointer_t            f_lexer;
     Options::pointer_t          f_options;

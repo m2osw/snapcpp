@@ -240,6 +240,16 @@ void Parser::catch_directive(Node::pointer_t& node)
 
 
 
+/**********************************************************************/
+/**********************************************************************/
+/***  PARSER DEBBUGER  ************************************************/
+/**********************************************************************/
+/**********************************************************************/
+
+void Parser::debugger(Node::pointer_t& node)
+{
+    node = f_lexer->get_new_node(Node::node_t::NODE_DEBUGGER);
+}
 
 
 /**********************************************************************/
@@ -616,8 +626,6 @@ void Parser::try_finally(Node::pointer_t& node, Node::node_t type)
 
 void Parser::switch_directive(Node::pointer_t& node)
 {
-    bool has_open;
-
     if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
     {
         node = f_lexer->get_new_node(Node::node_t::NODE_SWITCH);
@@ -641,7 +649,7 @@ void Parser::switch_directive(Node::pointer_t& node)
         if(f_node->get_type() == Node::node_t::NODE_WITH)
         {
             get_token();
-            has_open = f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS;
+            bool const has_open(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS);
             if(has_open)
             {
                 get_token();
@@ -722,6 +730,54 @@ void Parser::switch_directive(Node::pointer_t& node)
 
 /**********************************************************************/
 /**********************************************************************/
+/***  PARSER SYNCHRONIZED  ********************************************/
+/**********************************************************************/
+/**********************************************************************/
+
+void Parser::synchronized(Node::pointer_t& node)
+{
+    if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
+    {
+        node = f_lexer->get_new_node(Node::node_t::NODE_SYNCHRONIZED);
+        get_token();
+
+        // retrieve the object being synchronized
+        Node::pointer_t expr;
+        expression(expr);
+        node->append_child(expr);
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
+        {
+            get_token();
+        }
+        else
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "')' expected to end the 'synchronized' expression";
+        }
+        if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
+        {
+            get_token();
+            Node::pointer_t one_block;
+            block(one_block);
+            node->append_child(one_block);
+        }
+        else
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "'{' expected after the 'synchronized' expression";
+        }
+    }
+    else
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'(' expected after the 'synchronized' keyword";
+    }
+}
+
+
+
+/**********************************************************************/
+/**********************************************************************/
 /***  PARSER THROW  ***************************************************/
 /**********************************************************************/
 /**********************************************************************/
@@ -778,6 +834,31 @@ void Parser::with_while(Node::pointer_t& node, Node::node_t type)
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'(' expected after the '" << inst << "' keyword";
+    }
+}
+
+
+
+/**********************************************************************/
+/**********************************************************************/
+/***  PARSER YIELD  ***************************************************/
+/**********************************************************************/
+/**********************************************************************/
+
+void Parser::yield(Node::pointer_t& node)
+{
+    if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)
+    {
+        node = f_lexer->get_new_node(Node::node_t::NODE_YIELD);
+
+        Node::pointer_t expr;
+        expression(expr);
+        node->append_child(expr);
+    }
+    else
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_EXPRESSION_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "yield is expected to be followed by an expression";
     }
 }
 

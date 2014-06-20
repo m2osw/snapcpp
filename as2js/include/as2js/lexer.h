@@ -75,8 +75,9 @@ private:
     Input::char_t               getc();
     void                        ungetc(Input::char_t c);
     int64_t                     read_hex(unsigned long max);
+    int64_t                     read_binary(unsigned long max);
     int64_t                     read_octal(Input::char_t c, unsigned long max);
-    Input::char_t               escape_sequence();
+    Input::char_t               escape_sequence(bool accept_continuation);
     char_type_t                 char_type(Input::char_t c);
     Input::char_t               read(Input::char_t c, char_type_t flags, String& str);
     void                        read_identifier(Input::char_t c);
@@ -84,6 +85,7 @@ private:
     void                        read_string(Input::char_t quote);
     bool                        has_option_set(Options::option_t option) const;
 
+    std::vector<Input::char_t>  f_unget;
     Input::pointer_t            f_input;
     Options::pointer_t          f_options;
     zchar_type_t                f_char_type;    // type of the last character read

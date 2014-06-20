@@ -99,6 +99,7 @@ void As2JsNodeUnitTests::test_display_all_types()
         case as2js::Node::node_t::NODE_LABEL:
         case as2js::Node::node_t::NODE_NAMESPACE:
         case as2js::Node::node_t::NODE_PACKAGE:
+        case as2js::Node::node_t::NODE_REGULAR_EXPRESSION:
         case as2js::Node::node_t::NODE_STRING:
         case as2js::Node::node_t::NODE_VARIABLE:
         case as2js::Node::node_t::NODE_VAR_ATTRIBUTES:
@@ -140,7 +141,7 @@ void As2JsNodeUnitTests::test_display_all_types()
 void As2JsNodeUnitTests::test_display_unicode_string()
 {
     int got_all(0);
-    for(int idx(0); idx < 100 || got_all != 7; ++idx)
+    for(size_t idx(0); idx < 100 || got_all != 7; ++idx)
     {
         // get a string node
         as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_STRING));
@@ -350,6 +351,11 @@ void As2JsNodeUnitTests::test_display_attributes()
                             break;
                         }
                     }
+                    if((*attr_list == as2js::Node::attribute_t::NODE_ATTR_ABSTRACT && a == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_NATIVE))
+                    || (*attr_list == as2js::Node::attribute_t::NODE_ATTR_NATIVE && a == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_ABSTRACT)))
+                    {
+                        in_conflict = true;
+                    }
 
                     // if in conflict we do not care much here because the
                     // display is going to be exactly the same
@@ -464,7 +470,7 @@ void As2JsNodeUnitTests::test_display_tree()
     as2js::Node::pointer_t member(new as2js::Node(as2js::Node::node_t::NODE_MEMBER));
     as2js::Node::pointer_t identifier_math(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
     identifier_math->set_string("Math");
-    identifier_math->set_attribute(as2js::Node::attribute_t::NODE_ATTR_INTRINSIC, true);
+    identifier_math->set_attribute(as2js::Node::attribute_t::NODE_ATTR_NATIVE, true);
     as2js::Node::pointer_t math_type(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
     math_type->set_string("Math");
     identifier_math->set_link(as2js::Node::link_t::LINK_TYPE, math_type);
@@ -552,7 +558,7 @@ void As2JsNodeUnitTests::test_display_tree()
     // IDENTIFIER MATH
     expected << identifier_math << ": " << std::setfill('0') << std::setw(2) << 7 << std::setfill(' ') << '-' << std::setw(7) << ""
              << std::setw(4) << std::setfill('0') << static_cast<int>(static_cast<as2js::Node::node_t>(as2js::Node::node_t::NODE_IDENTIFIER))
-             << std::setfill('\0') << ": IDENTIFIER: 'Math' Lnk: [0]=" << math_instance << " [1]=" << math_type << " attrs: INTRINSIC"
+             << std::setfill('\0') << ": IDENTIFIER: 'Math' Lnk: [0]=" << math_instance << " [1]=" << math_type << " attrs: NATIVE"
              << " (" << identifier_math->get_position() << ")" << std::endl;
 
     // IDENTIFIER E
