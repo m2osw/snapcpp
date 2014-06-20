@@ -231,12 +231,16 @@ DTD of the XSLT 2.0.
 <!ELEMENT td ANY>
 <!ATTLIST td class CDATA #IMPLIED
              colspan CDATA #IMPLIED
-             width CDATA #IMPLIED
-             valign (top|middle|bottom) "middle">
+             rowspan CDATA #IMPLIED
+             valign (top|middle|bottom) "middle"
+             width CDATA #IMPLIED>
 
 <!ELEMENT th ANY>
 <!ATTLIST th class CDATA #IMPLIED
-             colspan CDATA #IMPLIED>
+             colspan CDATA #IMPLIED
+             rowspan CDATA #IMPLIED
+             valign (top|middle|bottom) "middle"
+             width CDATA #IMPLIED>
 
 <!ELEMENT thead ANY>
 <!ATTLIST thead class CDATA #IMPLIED>
