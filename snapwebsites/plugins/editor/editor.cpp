@@ -932,6 +932,22 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         revision_row->cell(field_name)->setValue(c);
                         current_value = QString("%1").arg(c);
                     }
+                    else if(widget_auto_save == "double")
+                    {
+                        double dbl;
+                        bool ok(false);
+                        dbl = post_value.toDouble(&ok);
+                        if(!ok)
+                        {
+                            f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
+                                QString("field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
+                                        .arg(widget_name).arg(post_value),
+                                "The double number looks wrong to Qt.");
+                            NOTREACHED();
+                        }
+                        revision_row->cell(field_name)->setValue(dbl);
+                        current_value = QString("%1").arg(dbl);
+                    }
                     else if(widget_auto_save == "ms-date-us")
                     {
                         // convert a US date to 64 bit value in micro seconds
@@ -992,8 +1008,13 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                             }
                             else
                             {
-                                current_value = QString("%1").arg(current_value);
+                                current_value = QString("%1").arg(v);
                             }
+                        }
+                        else if(widget_auto_save == "double")
+                        {
+                            double const v(value.doubleValue());
+                            current_value = QString("%1").arg(v);
                         }
                         else if(widget_auto_save == "string"
                              || widget_auto_save == "html")
@@ -2664,8 +2685,18 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                     }
                     else
                     {
-                        current_value = QString("%1").arg(current_value);
+                        current_value = QString("%1").arg(v);
                     }
+                }
+            }
+            else if(widget_auto_save == "double")
+            {
+                // if the value is null, it's as if it were not defined
+                // (we actually make sure there is at least one double)
+                if(static_cast<size_t>(value.size()) >= sizeof(double))
+                {
+                    double const v(value.doubleValue());
+                    current_value = QString("%1").arg(v);
                 }
             }
             else if(widget_auto_save == "ms-date-us")
