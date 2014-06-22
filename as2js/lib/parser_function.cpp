@@ -201,11 +201,13 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
             node->append_child(param);
         }
 
+        // reached the end of the list?
         if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
         {
             return;
         }
-        else if(f_node->get_type() != Node::node_t::NODE_COMMA)
+
+        if(f_node->get_type() != Node::node_t::NODE_COMMA)
         {
             if(!invalid)
             {
@@ -218,6 +220,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
             case Node::node_t::NODE_SEMICOLON:
             case Node::node_t::NODE_OPEN_CURVLY_BRACKET:
             case Node::node_t::NODE_CLOSE_CURVLY_BRACKET:
+                // we are probably past the end of the list
                 return;
 
             default:

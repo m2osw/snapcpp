@@ -45,9 +45,10 @@ class As2JsLexerUnitTests : public CPPUNIT_NS::TestFixture
         CPPUNIT_TEST( test_tokens );
         CPPUNIT_TEST( test_valid_strings );
         CPPUNIT_TEST( test_invalid_strings );
-        CPPUNIT_TEST( test_invalid_integers );
+        CPPUNIT_TEST( test_invalid_numbers );
         CPPUNIT_TEST( test_identifiers );
         CPPUNIT_TEST( test_invalid_input );
+        CPPUNIT_TEST( test_mixed_tokens );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -57,9 +58,10 @@ protected:
     void test_tokens();
     void test_valid_strings();
     void test_invalid_strings();
-    void test_invalid_integers();
+    void test_invalid_numbers();
     void test_identifiers();
     void test_invalid_input();
+    void test_mixed_tokens();
 };
 
 #endif

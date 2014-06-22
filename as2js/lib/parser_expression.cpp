@@ -375,6 +375,7 @@ void Parser::equality_expression(Node::pointer_t& node)
        || f_node->get_type() == Node::node_t::NODE_NOT_EQUAL
        || f_node->get_type() == Node::node_t::NODE_STRICTLY_EQUAL
        || f_node->get_type() == Node::node_t::NODE_STRICTLY_NOT_EQUAL
+       || f_node->get_type() == Node::node_t::NODE_COMPARE
        || f_node->get_type() == Node::node_t::NODE_SMART_MATCH)
     {
         f_node->append_child(node);
@@ -461,12 +462,13 @@ void Parser::additive_expression(Node::pointer_t& node)
 }
 
 
-void Parser::match_expression(Node::pointer_t& node)
+void Parser::multiplicative_expression(Node::pointer_t& node)
 {
-    power_expression(node);
+    match_expression(node);
 
-    while(f_node->get_type() == Node::node_t::NODE_MATCH
-       || f_node->get_type() == Node::node_t::NODE_NOT_MATCH)
+    while(f_node->get_type() == Node::node_t::NODE_MULTIPLY
+       || f_node->get_type() == Node::node_t::NODE_DIVIDE
+       || f_node->get_type() == Node::node_t::NODE_MODULO)
     {
         f_node->append_child(node);
         node = f_node;
@@ -479,13 +481,12 @@ void Parser::match_expression(Node::pointer_t& node)
 }
 
 
-void Parser::multiplicative_expression(Node::pointer_t& node)
+void Parser::match_expression(Node::pointer_t& node)
 {
-    match_expression(node);
+    power_expression(node);
 
-    while(f_node->get_type() == Node::node_t::NODE_MULTIPLY
-       || f_node->get_type() == Node::node_t::NODE_DIVIDE
-       || f_node->get_type() == Node::node_t::NODE_MODULO)
+    while(f_node->get_type() == Node::node_t::NODE_MATCH
+       || f_node->get_type() == Node::node_t::NODE_NOT_MATCH)
     {
         f_node->append_child(node);
         node = f_node;

@@ -81,9 +81,9 @@ public:
         // here are all the punctuation as themselves
         // (i.e. '<', '>', '=', '+', '-', etc.)
         NODE_ADD                    = '+',      // 0x2B
+        NODE_ASSIGNMENT             = '=',      // 0x3D
         NODE_BITWISE_AND            = '&',      // 0x26
         NODE_BITWISE_NOT            = '~',      // 0x7E
-        NODE_ASSIGNMENT             = '=',      // 0x3D
         NODE_BITWISE_OR             = '|',      // 0x7C
         NODE_BITWISE_XOR            = '^',      // 0x5E
         NODE_CLOSE_CURVLY_BRACKET   = '}',      // 0x7D

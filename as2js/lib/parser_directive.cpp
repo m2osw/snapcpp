@@ -227,6 +227,7 @@ void Parser::directive(Node::pointer_t& node)
         {
             last_attr = attr_list->get_child(attr_count - 1);
             unget_token(f_node);
+            f_node = last_attr;
             --attr_count;
             attr_list->delete_child(attr_count);
             if(type != Node::node_t::NODE_COLON)
@@ -335,6 +336,20 @@ void Parser::directive(Node::pointer_t& node)
             get_token();
             use_namespace(directive_node);
             break;
+        }
+        if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
+        {
+            Node::pointer_t name(f_node);
+            get_token();
+            if(f_node->get_type() == Node::node_t::NODE_AS)
+            {
+                // creating a numeric type
+                numeric_type(directive_node, name);
+                break;
+            }
+            // not a numeric type, must be a pragma
+            unget_token(f_node);
+            f_node = name;
         }
         // TODO? Pragmas are not part of the tree
         //

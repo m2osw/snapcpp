@@ -1656,9 +1656,9 @@ void Lexer::read_number(Input::char_t c)
     // TODO: accept '_' within the number (between digits) like Java 7
     if(c == '.')
     {
-        // in case the strtod() doesn't support a missing 0
-        // at the start of the string
-        number = "0.";
+        // in case the std::stod() does not support a missing 0
+        // at the start of a floating point
+        number = "0";
     }
     else if(c == '0')
     {
@@ -1696,41 +1696,131 @@ void Lexer::read_number(Input::char_t c)
         c = read(c, CHAR_DIGIT, number);
     }
 
+    // TODO: we may want to support 32 bits floats as well
+    //       JavaScript really only supports 64 bit floats
+    //       and nothing else...
+    f_result_type = Node::node_t::NODE_FLOAT64;
     if(c == '.')
     {
-        // TODO: we may want to support 32 bits floats as well
-        f_result_type = Node::node_t::NODE_FLOAT64;
-        c = getc(); // re-read the '.' character
+        getc(); // re-read the '.' character
 
+        Input::char_t f(getc()); // check the following character
+        if(f != '.' && (f_char_type & CHAR_DIGIT) != 0)
+        {
+            ungetc(f);
+
+            Input::char_t q(read(c, CHAR_DIGIT, number));
+            if(q == 'e' || q == 'E')
+            {
+                getc();        // skip the 'e'
+                c = getc();    // get the character after!
+                if(c == '-' || c == '+' || (c >= '0' && c <= '9'))
+                {
+                    number += 'e';
+                    c = read(c, CHAR_DIGIT, number);
+                }
+                else
+                {
+                    ungetc(c);
+                    ungetc(q);
+                    f_char_type = char_type(q); // restore this character type, we'll most certainly get an error
+                }
+            }
+            // TODO: detect whether an error was detected in the conversion
+            f_result_float64 = number.to_float64();
+            return;
+        }
+        if(f == 'e' || f == 'E')
+        {
+            Input::char_t s(getc());
+            if(s == '+' || s == '-')
+            {
+                Input::char_t e(getc());
+                if((f_char_type & CHAR_DIGIT) != 0)
+                {
+                    // considered floating point
+                    number += 'e';
+                    number += s;
+                    c = read(e, CHAR_DIGIT, number);
+                    f_result_float64 = number.to_float64();
+                    return;
+                }
+                ungetc(e);
+            }
+            // TODO:
+            // Here we could check to know whether this really
+            // represents a decimal number or whether the decimal
+            // point is a member operator. This can be very tricky.
+            //
+            // This is partially done now, we still fail in cases
+            // were someone was to use a member name such as e4z
+            // because we would detect 'e' as exponent and multiply
+            // the value by 10000... then fail on the 'z'
+            if((f_char_type & CHAR_DIGIT) != 0)
+            {
+                // considered floating point
+                number += 'e';
+                c = read(s, CHAR_DIGIT, number);
+                f_result_float64 = number.to_float64();
+                return;
+            }
+            ungetc(s);
+        }
+        // restore the '.' and following character (another '.' or a letter)
+        // this means we allow for 33.length and 3..5
+        ungetc(f);
+        ungetc('.');
+        f_char_type = char_type('.');
+    }
+    else if(c == 'e' || c == 'E')
+    {
+        getc(); // re-read the 'e'
+
+        Input::char_t s(getc());
+        if(s == '+' || s == '-')
+        {
+            Input::char_t e(getc());
+            if((f_char_type & CHAR_DIGIT) != 0)
+            {
+                // considered floating point
+                number += 'e';
+                number += s;
+                c = read(e, CHAR_DIGIT, number);
+                f_result_float64 = number.to_float64();
+                return;
+            }
+            ungetc(e);
+        }
         // TODO:
         // Here we could check to know whether this really
         // represents a decimal number or whether the decimal
         // point is a member operator. This can be very tricky.
-
-        c = read(c, CHAR_DIGIT, number);
-        if(c == 'e' || c == 'E')
+        //
+        // This is partially done now, we still fail in cases
+        // were someone was to use a member name such as e4z
+        // because we would detect 'e' as exponent and multiply
+        // the value by 10000... then fail on the 'z'
+        if((f_char_type & CHAR_DIGIT) != 0)
         {
+            // considered floating point
             number += 'e';
-            getc();        // skip the 'e'
-            c = getc();    // get the character after!
-            if(c == '-' || c == '+' || (c >= '0' && c <= '9'))
-            {
-                c = read(c, CHAR_DIGIT, number);
-            }
+            c = read(s, CHAR_DIGIT, number);
+            f_result_float64 = number.to_float64();
+            return;
         }
-        // TODO: detect whether an error was detected in the conversion
-        f_result_float64 = number.to_float64();
+        ungetc(s);
     }
-    else
-    {
-        // TODO: Support 8, 16, 32 bits, unsigned thereof?
-        //       (we have NODE_BYTE and NODE_SHORT, but not really a 32bit
-        //       definition yet; NODE_LONG should be 64 bits I think,
-        //       although really all of those are types, not literals.)
-        f_result_type = Node::node_t::NODE_INT64;
-        // TODO: detect whether an error was detected in the conversion
-        f_result_int64 = strtoll(number.to_utf8().c_str(), nullptr, 10);
-    }
+
+
+    // TODO: Support 8, 16, 32 bits, unsigned thereof?
+    //       (we have NODE_BYTE and NODE_SHORT, but not really a 32bit
+    //       definition yet; NODE_LONG should be 64 bits I think,
+    //       although really all of those are types, not literals.)
+    f_result_type = Node::node_t::NODE_INT64;
+
+    // TODO: detect whether an error was detected in the conversion
+    //       (this would mainly be overflows)
+    f_result_int64 = std::stoull(number.to_utf8(), nullptr, 10);
 }
 
 
@@ -1923,6 +2013,18 @@ void Lexer::get_token()
             }
             if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
             {
+                if(c == '%')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT;
+                        return;
+                    }
+                    ungetc(c);
+                    f_result_type = Node::node_t::NODE_ROTATE_LEFT;
+                    return;
+                }
                 if(c == '>')
                 {
                     f_result_type = Node::node_t::NODE_NOT_EQUAL;
@@ -1978,6 +2080,18 @@ void Lexer::get_token()
             }
             if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
             {
+                if(c == '%')
+                {
+                    c = getc();
+                    if(c == '=')
+                    {
+                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT;
+                        return;
+                    }
+                    ungetc(c);
+                    f_result_type = Node::node_t::NODE_ROTATE_RIGHT;
+                    return;
+                }
                 if(c == '?')
                 {
                     c = getc();
@@ -2003,30 +2117,6 @@ void Lexer::get_token()
                 {
                     // http://perldoc.perl.org/perlop.html#Binding-Operators
                     f_result_type = Node::node_t::NODE_NOT_MATCH;
-                    return;
-                }
-                if(c == '<')
-                {
-                    c = getc();
-                    if(c == '=')
-                    {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT;
-                        return;
-                    }
-                    ungetc(c);
-                    f_result_type = Node::node_t::NODE_ROTATE_LEFT;
-                    return;
-                }
-                if(c == '>')
-                {
-                    c = getc();
-                    if(c == '=')
-                    {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT;
-                        return;
-                    }
-                    ungetc(c);
-                    f_result_type = Node::node_t::NODE_ROTATE_RIGHT;
                     return;
                 }
             }
@@ -2241,10 +2331,11 @@ void Lexer::get_token()
             }
             if(c == '=')
             {
+                // the '=' was ungotten, so skip it again
+                getc();
                 f_result_type = Node::node_t::NODE_ASSIGNMENT_DIVIDE;
                 return;
             }
-            ungetc(c);
             f_result_type = Node::node_t::NODE_DIVIDE;
             return;
 
@@ -2341,6 +2432,7 @@ void Lexer::get_token()
             {
                 // this is probably a valid float
                 ungetc(c);
+                ungetc('.');
                 read_number('.');
                 return;
             }
@@ -2394,6 +2486,14 @@ void Lexer::get_token()
 
         case ',':
             f_result_type = Node::node_t::NODE_COMMA;
+            return;
+
+        case 0x221E: // INFINITY
+            // unicode infinity character which is viewed as a punctuation
+            // otherwise so we can reinterpret it safely (it could not be
+            // part of an identifier)
+            f_result_type = Node::node_t::NODE_FLOAT64;
+            f_result_float64.set_infinity();
             return;
 
         default:

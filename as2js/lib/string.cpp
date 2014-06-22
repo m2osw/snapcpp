@@ -988,8 +988,8 @@ Int64::int64_type String::to_int64() const
     {
         // Check whether it is an hexadecimal number, because if so
         // we use base 16. We want to force the base because we do
-        // not support base 8 which strtoll() could otherwise switch
-        // to when we have a number that starts with zero.
+        // not support base 8 which std::stoll() could otherwise
+        // switch to when we have a number that starts with zero.
         as_char_t const *s(c_str());
         if(*s == '+' || *s == '-')
         {
@@ -998,9 +998,9 @@ Int64::int64_type String::to_int64() const
         if(s[0] == '0' && (s[1] == 'x' || s[1] == 'X'))
         {
             // the strtoll() function supports the sign
-            return strtoll(to_utf8().c_str(), nullptr, 16);
+            return std::stoll(to_utf8(), nullptr, 16);
         }
-        return strtoll(to_utf8().c_str(), nullptr, 10);
+        return std::stoll(to_utf8(), nullptr, 10);
     }
 
     // this is invalid
@@ -1031,7 +1031,7 @@ Float64::float64_type String::to_float64() const
 
     if(is_float64())
     {
-        return strtod(to_utf8().c_str(), 0);
+        return std::stod(to_utf8(), 0);
     }
 
     return std::numeric_limits<double>::quiet_NaN();

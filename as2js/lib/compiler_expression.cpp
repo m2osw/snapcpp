@@ -995,10 +995,10 @@ void Compiler::type_expr(Node::pointer_t expr)
         if(!instance)
         {
             // TODO: resolve that if not done yet (it should
-            //     always already be at this time)
+            //       always already be at this time)
             Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, expr->get_position());
             msg << "type is missing when it should not.";
-            throw exception_exit(1, "type is missing when it should not.");
+            throw exception_exit(1, "missing a required type.");
         }
         expr->set_link(Node::link_t::LINK_TYPE, instance);
     }

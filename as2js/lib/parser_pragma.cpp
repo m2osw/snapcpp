@@ -156,7 +156,7 @@ void Parser::pragma()
             option = Options::option_t::OPTION_ALLOW_WITH;
             value = 0;
         }
-        if(name == "binary")
+        else if(name == "binary")
         {
             option = Options::option_t::OPTION_BINARY;
         }
@@ -183,7 +183,7 @@ void Parser::pragma()
             option = Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES;
             value = 0;
         }
-        if(name == "extended_operators")
+        else if(name == "extended_operators")
         {
             option = Options::option_t::OPTION_EXTENDED_OPERATORS;
         }
@@ -192,7 +192,7 @@ void Parser::pragma()
             option = Options::option_t::OPTION_EXTENDED_OPERATORS;
             value = 0;
         }
-        if(name == "extended_statements")
+        else if(name == "extended_statements")
         {
             option = Options::option_t::OPTION_EXTENDED_STATEMENTS;
         }

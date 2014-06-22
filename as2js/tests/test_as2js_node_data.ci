@@ -350,6 +350,13 @@ node_type_info_t const g_node_types[] =
         .f_node_flags = g_flags_none
     },
     {
+        .f_type = as2js::Node::node_t::NODE_ASSIGNMENT,
+        .f_name = "ASSIGNMENT",
+        .f_operator = "=",
+        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
+        .f_node_flags = g_flags_none
+    },
+    {
         .f_type = as2js::Node::node_t::NODE_BITWISE_AND,
         .f_name = "BITWISE_AND",
         .f_operator = "&",
@@ -361,13 +368,6 @@ node_type_info_t const g_node_types[] =
         .f_name = "BITWISE_NOT",
         .f_operator = "~",
         .f_flags = TEST_NODE_IS_NAN,
-        .f_node_flags = g_flags_none
-    },
-    {
-        .f_type = as2js::Node::node_t::NODE_ASSIGNMENT,
-        .f_name = "ASSIGNMENT",
-        .f_operator = "=",
-        .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
         .f_node_flags = g_flags_none
     },
     {
@@ -632,14 +632,14 @@ node_type_info_t const g_node_types[] =
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT,
         .f_name = "ASSIGNMENT_ROTATE_LEFT",
-        .f_operator = "!<=",
+        .f_operator = "<%=",
         .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
         .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT,
         .f_name = "ASSIGNMENT_ROTATE_RIGHT",
-        .f_operator = "!>=",
+        .f_operator = ">%=",
         .f_flags = TEST_NODE_IS_NAN | TEST_NODE_HAS_SIDE_EFFECTS,
         .f_node_flags = g_flags_none
     },
@@ -1262,14 +1262,14 @@ node_type_info_t const g_node_types[] =
     {
         .f_type = as2js::Node::node_t::NODE_ROTATE_LEFT,
         .f_name = "ROTATE_LEFT",
-        .f_operator = "!<",
+        .f_operator = "<%",
         .f_flags = TEST_NODE_IS_NAN,
         .f_node_flags = g_flags_none
     },
     {
         .f_type = as2js::Node::node_t::NODE_ROTATE_RIGHT,
         .f_name = "ROTATE_RIGHT",
-        .f_operator = "!>",
+        .f_operator = ">%",
         .f_flags = TEST_NODE_IS_NAN,
         .f_node_flags = g_flags_none
     },

@@ -72,6 +72,7 @@ add_library( as2js SHARED
     parser_directive.cpp
     parser_expression.cpp
     parser_function.cpp
+    parser_numeric_type.cpp
     parser_package.cpp
     parser_pragma.cpp
     parser_program.cpp

@@ -271,6 +271,20 @@ result_t const g_result_float64__33[] =
     }
 };
 
+result_t const g_result_float64__330000[] =
+{
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 330000.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_UNKNOWN,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    }
+};
+
 result_t const g_result_add[] =
 {
     {
@@ -714,7 +728,7 @@ result_t const g_result_rotate_left[] =
         g_option_extended_operators
     },
     {
-        as2js::Node::node_t::NODE_LOGICAL_NOT,
+        as2js::Node::node_t::NODE_LESS,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -733,7 +747,7 @@ result_t const g_result_assignment_rotate_left[] =
         g_option_extended_operators
     },
     {
-        as2js::Node::node_t::NODE_LOGICAL_NOT,
+        as2js::Node::node_t::NODE_LESS,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -879,7 +893,7 @@ result_t const g_result_rotate_right[] =
         g_option_extended_operators
     },
     {
-        as2js::Node::node_t::NODE_LOGICAL_NOT,
+        as2js::Node::node_t::NODE_GREATER,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -898,7 +912,7 @@ result_t const g_result_assignment_rotate_right[] =
         g_option_extended_operators
     },
     {
-        as2js::Node::node_t::NODE_LOGICAL_NOT,
+        as2js::Node::node_t::NODE_GREATER,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -2473,6 +2487,34 @@ token_t const g_tokens[] =
         ".33",
         g_result_float64__33
     },
+    {
+        "33e4",
+        g_result_float64__330000
+    },
+    {
+        "33e+4",
+        g_result_float64__330000
+    },
+    {
+        "330000000e-3",
+        g_result_float64__330000
+    },
+    {
+        "33.e4",
+        g_result_float64__330000
+    },
+    {
+        "33.e+4",
+        g_result_float64__330000
+    },
+    {
+        "330000000.e-3",
+        g_result_float64__330000
+    },
+    {
+        "\xE2\x88\x9E", // 0x221E -- INFINITY
+        g_result_keyword_infinity
+    },
 
     /******************
      * OPERATORS      *
@@ -2598,11 +2640,11 @@ token_t const g_tokens[] =
         g_result_assignment_minimum
     },
     {
-        "!<",
+        "<%",
         g_result_rotate_left
     },
     {
-        "!<=",
+        "<%=",
         g_result_assignment_rotate_left
     },
     {
@@ -2638,11 +2680,11 @@ token_t const g_tokens[] =
         g_result_assignment_maximum
     },
     {
-        "!>",
+        ">%",
         g_result_rotate_right
     },
     {
-        "!>=",
+        ">%=",
         g_result_assignment_rotate_right
     },
     {
@@ -3192,7 +3234,8 @@ void As2JsLexerUnitTests::test_tokens()
         // (i.e. a nullptr as the Options pointer)
         for(int opt(0); opt <= (1 << g_options_size); ++opt)
         {
-            as2js::String str(g_tokens[idx].f_input);
+            as2js::String str;
+            str.from_utf8(g_tokens[idx].f_input);
             as2js::Input::pointer_t input(new as2js::StringInput(str));
             as2js::Options::pointer_t options;
             std::map<as2js::Options::option_t, bool> option_map;
@@ -3241,8 +3284,8 @@ void As2JsLexerUnitTests::test_tokens()
                 }
                 if(found)
                 {
-//std::cerr << "\n" << opt << " @ Working on " << *token << " -> " << token->get_type_name()
-//                << " [" << g_tokens[idx].f_input << "]\n";;
+//std::cerr << "\n" << opt << " @ Working on " << *token << " -> from input: ["
+//                << g_tokens[idx].f_input << "]\n";;
 
                     // got a match of all the special options or the entry
                     // with a nullptr was reached, use this entry to test
@@ -4000,7 +4043,7 @@ void As2JsLexerUnitTests::test_invalid_strings()
 }
 
 
-void As2JsLexerUnitTests::test_invalid_integers()
+void As2JsLexerUnitTests::test_invalid_numbers()
 {
     // 0x, 0X, 0b, 0B by themsevles are not valid numbers
     {
@@ -4131,6 +4174,28 @@ void As2JsLexerUnitTests::test_invalid_integers()
         CPPUNIT_ASSERT(token->get_int64().get() == -1);
     }
     {
+        as2js::String str("6em");
+
+        test_callback::expected_t expected;
+        expected.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+        expected.f_error_code = as2js::err_code_t::AS_ERR_INVALID_NUMBER;
+        expected.f_pos.set_filename("unknown-file");
+        expected.f_pos.set_function("unknown-func");
+        expected.f_message = "unexpected letter after an integer";
+
+        test_callback tc;
+        tc.f_expected.push_back(expected);
+
+        as2js::Input::pointer_t input(new as2js::StringInput(str));
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        CPPUNIT_ASSERT(lexer->get_input() == input);
+        as2js::Node::pointer_t token(lexer->get_next_token());
+        tc.got_called();
+        CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_INT64);
+        CPPUNIT_ASSERT(token->get_children_size() == 0);
+        CPPUNIT_ASSERT(token->get_int64().get() == -1);
+    }
+    {
         as2js::String str("3.5in");
 
         test_callback::expected_t expected;
@@ -4155,7 +4220,106 @@ void As2JsLexerUnitTests::test_invalid_integers()
         CPPUNIT_ASSERT(token->get_float64().get() == -1.0);
 #pragma GCC diagnostic pop
     }
+    {
+        as2js::String str("10.1em");
+
+        test_callback::expected_t expected;
+        expected.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+        expected.f_error_code = as2js::err_code_t::AS_ERR_INVALID_NUMBER;
+        expected.f_pos.set_filename("unknown-file");
+        expected.f_pos.set_function("unknown-func");
+        expected.f_message = "unexpected letter after a floating point number";
+
+        test_callback tc;
+        tc.f_expected.push_back(expected);
+
+        as2js::Input::pointer_t input(new as2js::StringInput(str));
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        CPPUNIT_ASSERT(lexer->get_input() == input);
+        as2js::Node::pointer_t token(lexer->get_next_token());
+        tc.got_called();
+        CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_FLOAT64);
+        CPPUNIT_ASSERT(token->get_children_size() == 0);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        CPPUNIT_ASSERT(token->get_float64().get() == -1.0);
+#pragma GCC diagnostic pop
+    }
+    {
+        as2js::String str("9.1e+j");
+
+        test_callback::expected_t expected;
+        expected.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+        expected.f_error_code = as2js::err_code_t::AS_ERR_INVALID_NUMBER;
+        expected.f_pos.set_filename("unknown-file");
+        expected.f_pos.set_function("unknown-func");
+        expected.f_message = "unexpected letter after a floating point number";
+
+        test_callback tc;
+        tc.f_expected.push_back(expected);
+
+        as2js::Input::pointer_t input(new as2js::StringInput(str));
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        CPPUNIT_ASSERT(lexer->get_input() == input);
+        as2js::Node::pointer_t token(lexer->get_next_token());
+        tc.got_called();
+        CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_FLOAT64);
+        CPPUNIT_ASSERT(token->get_children_size() == 0);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        CPPUNIT_ASSERT(token->get_float64().get() == -1.0);
+#pragma GCC diagnostic pop
+    }
+    {
+        as2js::String str("9.1e-k");
+
+        test_callback::expected_t expected;
+        expected.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+        expected.f_error_code = as2js::err_code_t::AS_ERR_INVALID_NUMBER;
+        expected.f_pos.set_filename("unknown-file");
+        expected.f_pos.set_function("unknown-func");
+        expected.f_message = "unexpected letter after a floating point number";
+
+        test_callback tc;
+        tc.f_expected.push_back(expected);
+
+        as2js::Input::pointer_t input(new as2js::StringInput(str));
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        CPPUNIT_ASSERT(lexer->get_input() == input);
+        as2js::Node::pointer_t token(lexer->get_next_token());
+        tc.got_called();
+        CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_FLOAT64);
+        CPPUNIT_ASSERT(token->get_children_size() == 0);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        CPPUNIT_ASSERT(token->get_float64().get() == -1.0);
+#pragma GCC diagnostic pop
+    }
+    {
+        as2js::String str("91e+j");
+
+        test_callback::expected_t expected;
+        expected.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+        expected.f_error_code = as2js::err_code_t::AS_ERR_INVALID_NUMBER;
+        expected.f_pos.set_filename("unknown-file");
+        expected.f_pos.set_function("unknown-func");
+        expected.f_message = "unexpected letter after an integer";
+
+        test_callback tc;
+        tc.f_expected.push_back(expected);
+
+        as2js::Input::pointer_t input(new as2js::StringInput(str));
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        CPPUNIT_ASSERT(lexer->get_input() == input);
+        as2js::Node::pointer_t token(lexer->get_next_token());
+        tc.got_called();
+        CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_INT64);
+        CPPUNIT_ASSERT(token->get_children_size() == 0);
+        CPPUNIT_ASSERT(token->get_int64().get() == -1);
+    }
 }
+
+
 
 
 // we test directly against the Unicode implementation
@@ -4479,6 +4643,2286 @@ void As2JsLexerUnitTests::test_invalid_input()
         as2js::String expected_identifier;
         expected_identifier += "invalid";
         CPPUNIT_ASSERT(token->get_string() == expected_identifier);
+    }
+}
+
+
+namespace
+{
+
+char const g_mixed_tokens_one[] =
+    /* LINE 1 */    "This is a 'long list' __LINE__ of tokens\n"
+    /* LINE 2 */    "so we can __LINE__ better test that\n"
+    /* LINE 3 */    "the lexer works as __LINE__ expected.\n"
+
+    //
+    // All operators (in order found in node.h):
+    //   + = & ~ | ^ } ) ] : , ? / > < ! % * { ( [ . ; -
+    //   += &= |= ^= /= &&= ||= ^^= >?= <?= %= *= **= <%= >%= <<= >>= >>>= -=
+    //   () <=> --x == >= ++x <= && || ^^ ~= >? <? != !~ x++ x-- ** <% >% << >> >>> ~~ === !==
+    //
+                    // all operators should work the same with and without spaces
+    /* LINE 4 */    "var a = __LINE__ + 1000 * 34 / 2 << 3 % 5.01;\n"
+    /* LINE 5 */    "var a=__LINE__+1000*34/2<<3%5.01;\n"
+    /* LINE 6 */    "use binary(1); use octal(1); var $ &= - __LINE__ += 0b1111101000 *= 0x22 /= 02 <<= 03 %= 5.01;\n"
+    /* LINE 7 */    "var $&=-__LINE__+=0b1111101000*=0x22/=02<<=03%=5.01;\n"
+    /* LINE 8 */    "var _$_ |= ~ __LINE__ ^ 0b1010101010 & 0x10201 - 02 >> 03710 ? 5.01 : 6.02;\n"
+    /* LINE 9 */    "var _$_|=~__LINE__^0b1010101010&0x10201-02>>03710?5.01:6.02;\n"
+    /* LINE 10 */   "use extended_operators(1); var $_ **= ! __LINE__ ^= 0b1010101010 ~= 0x10201 -= 02 >>= 03710 ~~ 5.01;\n"
+    /* LINE 11 */   "var $_**=!__LINE__^=0b1010101010~=0x10201-=02>>=03710~~5.01;\n"
+    /* LINE 12 */   "var f_field <?= $ . foo(__LINE__, a ++ >? $) ^ $_ [ 0b1111111111 ] ** 0xFF10201000 >>> 0112 ^^ 3710 == 5.01;\n"
+    /* LINE 13 */   "var f_field<?=$.foo(__LINE__,a++>?$)^$_[0b1111111111]**0xFF10201000>>>0112^^3710==5.01;\n"
+    /* LINE 14 */   "{ var f_field >?= \xEF\xBC\x91 . foo ( __LINE__, -- a <? $ ) != $_ [ 0b11111011111 ] <=> 0xFF10201000 >>>= 0112 ^^= 3710 === 5.01; }\n"
+    /* LINE 15 */   "{var f_field>?=\xEF\xBC\x91.foo(__LINE__,--a<?$)!=$_[0b11111011111]<=>0xFF10201000>>>=0112^^=3710===5.01;}\n"
+    /* LINE 16 */   "var b &&= __LINE__ && 1000 || 34 <% 2 >% 3 !== 5.01 , a --;\n"
+    /* LINE 17 */   "var b&&=__LINE__&&1000||34<%2>%3!==5.01,a--;\n"
+    /* LINE 18 */   "var c ||= __LINE__ <= 1000 >= 34 <%= 2 >%= 3 !== 5.01 , ++ a;\n"
+    /* LINE 19 */   "var c||=__LINE__<=1000>=34<%=2>%=3!==5.01,++a;\n"
+    /* LINE 20 */   "var c |= __LINE__ | 1000 > 34 < 2 !~ 3 .. 5 . length;\n"
+    /* LINE 21 */   "var c|=__LINE__|1000>34<2!~3..5.length;\n"
+
+    /* LINE 22 */   "abstract function long_shot(a: String, b: Number, c: double, ...);\n"
+    /* LINE 23 */   "var q = 91.e+j;\n"
+;
+
+result_t const g_mixed_results_one[] =
+{
+    // LINE 1 --    "This is a 'long list' __LINE__ of tokens\n"
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "This", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_STRING,
+        CHECK_VALUE_STRING, 0, 0.0, "long list", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1, 0.0, "of", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "of", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "tokens", false,
+        nullptr
+    },
+
+    // LINE 2 --    "so we can __LINE__ better test that\n"
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "so", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "we", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "can", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "better", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "test", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "that", false,
+        nullptr
+    },
+
+    // LINE 3 --    "the lexer works as __LINE__ expected.\n"
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "the", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "lexer", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "works", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_AS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "expected", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MEMBER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 4 --    "var a = __LINE__ + 1000 * 34 / 2 << 3 % 5.01;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 4, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ADD,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MULTIPLY,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_DIVIDE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SHIFT_LEFT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MODULO,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 5 --    "var a=__LINE__+1000*34/2<<3%5.01;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 5, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ADD,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MULTIPLY,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_DIVIDE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SHIFT_LEFT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MODULO,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 6 --    "use binary(1); use octal(1); var $ &= - __LINE__ += 0b1111101000 *= 0x22 /= 2 <<= 3 %= 5.01;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_AND,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SUBTRACT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 6, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_ADD,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_MULTIPLY,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_DIVIDE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_MODULO,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 7 --    "var $&=-__LINE__+=1000*=34/=2<<=3%=5.01;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_AND,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SUBTRACT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 7, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_ADD,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_MULTIPLY,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_DIVIDE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_MODULO,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 8 --    "var _$_ |= ~ __LINE__ ^ 0b1010101010 & 0x10201 - 02 >> 03710 ? 5.01 : 6.02;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "_$_", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_NOT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 8, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 682, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_AND,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 66049, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SUBTRACT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SHIFT_RIGHT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1992, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CONDITIONAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 6.02, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 9 --    "var _$_|=~__LINE__^0b1010101010&0x10201-02>>03710?5.01:6.02;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "_$_", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_NOT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 9, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 682, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_AND,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 66049, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SUBTRACT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SHIFT_RIGHT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1992, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CONDITIONAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 6.02, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 10 --   "use extended_operators(1); var $_ **= ! __LINE__ ^= 0b1010101010 ~= 0x10201 -= 02 >>= 03710 ~~ 5.01;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$_", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_POWER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LOGICAL_NOT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 10, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 682, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MATCH,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 66049, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_SUBTRACT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1992, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SMART_MATCH,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 11 --   "var $_**=!__LINE__^=0b1010101010~=0x10201-=02>>=03710~~5.01;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$_", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_POWER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LOGICAL_NOT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 11, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 682, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MATCH,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 66049, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_SUBTRACT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1992, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SMART_MATCH,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 12 --   "var f_field <?= $.foo(__LINE__, a >? $) ^ $_ [ 0b1111111111 ] ** 0xFF10201000 >>> 0112 ^^ 3710 == 5.01;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "f_field", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MEMBER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "foo", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 12, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INCREMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MAXIMUM,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$_", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_SQUARE_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1023, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_SQUARE_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_POWER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1095487197184, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 74, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LOGICAL_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3710, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 13 --   "var f_field<?=$.foo(__LINE__,a>?$)^$_[0b1111111111]**0xFF10201000>>>0112^^3710==5.01;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "f_field", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MEMBER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "foo", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 13, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INCREMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MAXIMUM,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$_", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_SQUARE_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1023, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_SQUARE_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_POWER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1095487197184, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 74, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LOGICAL_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3710, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 14 --   "{ var f_field >?= \xFF11.foo(__LINE__, --a <? $) != $_ [ 0b11111011111 ] <=> 0xFF10201000 >>>= 0112 ^^ 3710 == 5.01; }\n"
+    {
+        as2js::Node::node_t::NODE_OPEN_CURVLY_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "f_field", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "\xEF\xBC\x91", false, // char 0xFF11
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MEMBER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "foo", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 14, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_DECREMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MINIMUM,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_NOT_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$_", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_SQUARE_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2015, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_SQUARE_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMPARE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1095487197184, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 74, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3710, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_STRICTLY_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_CURVLY_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 15 --   "{var f_field>?=\xFF11.foo(__LINE__,--a<?$)!=$_[0b11111011111]<=>0xFF10201000>>>=0112^^=3710===5.01;}\n"
+    {
+        as2js::Node::node_t::NODE_OPEN_CURVLY_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "f_field", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "\xEF\xBC\x91", false, // char 0xFF11
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MEMBER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "foo", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 15, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_DECREMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MINIMUM,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_NOT_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "$_", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_SQUARE_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2015, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_SQUARE_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMPARE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1095487197184, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 74, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3710, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_STRICTLY_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_CURVLY_BRACKET,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 16 --   "var b &&= __LINE__ && 1000 || 34 <% 2 >% 3 !== 5.01 , a --;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "b", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 16, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LOGICAL_AND,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LOGICAL_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ROTATE_LEFT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ROTATE_RIGHT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_DECREMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 17 --   "var b&&=__LINE__&&1000||34<%2>%3!==5.01,a--;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "b", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 17, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LOGICAL_AND,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LOGICAL_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ROTATE_LEFT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ROTATE_RIGHT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_DECREMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 18 --   "var c ||= __LINE__ <= 1000 >= 34 <%= 2 >%= 3 !== 5.01 , ++ a;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "c", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 18, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LESS_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_GREATER_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INCREMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 19 --   "var c||=__LINE__<=1000>=34<%=2>%=3!==5.01,++a;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "c", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 19, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LESS_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_GREATER_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FLOAT64,
+        CHECK_VALUE_FLOATING_POINT, 0, 5.01, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INCREMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 20 --   "var c |= __LINE__ | 1000 > 34 < 2 !~ 3 .. 5 . length;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "c", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 20, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_GREATER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LESS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_NOT_MATCH,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_RANGE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 5, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MEMBER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "length", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 21 --   "var c|=__LINE__|1000>34<2!~3..5.length;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "c", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 21, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_BITWISE_OR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 1000, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_GREATER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 34, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_LESS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 2, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_NOT_MATCH,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 3, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_RANGE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 5, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MEMBER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "length", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 22 --   "abstract function long_shot(a: String, b: Number, c: double, ...);\n"
+    {
+        as2js::Node::node_t::NODE_ABSTRACT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_FUNCTION,
+        CHECK_VALUE_STRING, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "long_shot", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_OPEN_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "a", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "String", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "b", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "Number", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "c", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_DOUBLE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_COMMA,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_REST,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_CLOSE_PARENTHESIS,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // LINE 23 --   "var q = 91.e+j;\n"
+    {
+        as2js::Node::node_t::NODE_VAR,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "q", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ASSIGNMENT,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_INT64,
+        CHECK_VALUE_INTEGER, 91, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_MEMBER,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "e", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_ADD,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_IDENTIFIER,
+        CHECK_VALUE_STRING, 0, 0.0, "j", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_SEMICOLON,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+
+    // Test over
+    {
+        as2js::Node::node_t::NODE_EOF,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_UNKNOWN,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    }
+};
+
+token_t const g_mixed_tokens[] =
+{
+    { g_mixed_tokens_one, g_mixed_results_one }
+};
+size_t const g_mixed_tokens_size = sizeof(g_mixed_tokens) / sizeof(g_mixed_tokens[0]);
+
+}
+// no name namespace
+
+
+void As2JsLexerUnitTests::test_mixed_tokens()
+{
+    for(size_t idx(0); idx < g_mixed_tokens_size; ++idx)
+    {
+//std::cerr << "IN:{" << g_mixed_tokens[idx].f_input << "}\n";
+        as2js::String input_string;
+        input_string.from_utf8(g_mixed_tokens[idx].f_input);
+        as2js::Input::pointer_t input(new as2js::StringInput(input_string));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
+        CPPUNIT_ASSERT(lexer->get_input() == input);
+
+        // contrary to the type test here we do not mess around with the
+        // options and we know exactly what we're expecting and thus we
+        // only need one result per entry and that's exactly what we get
+        // (at least for now, the truth is that we could still check each
+        // list of options... we may add that later!)
+        for(result_t const *results(g_mixed_tokens[idx].f_results);
+                            results->f_token != as2js::Node::node_t::NODE_UNKNOWN;
+                            ++results)
+        {
+            as2js::Node::pointer_t token(lexer->get_next_token());
+//std::cerr << *token;
+
+            // handle pragma just like the parser
+            while(token->get_type() == as2js::Node::node_t::NODE_USE)
+            {
+                // must be followed by an identifier
+                token = lexer->get_next_token();
+                CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_IDENTIFIER);
+                as2js::String const pragma_name(token->get_string());
+                token = lexer->get_next_token();
+                CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_OPEN_PARENTHESIS);
+                token = lexer->get_next_token();
+                CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_INT64);
+                as2js::Options::option_t opt(as2js::Options::option_t::OPTION_UNKNOWN);
+                if(pragma_name == "binary")
+                {
+                    opt = as2js::Options::option_t::OPTION_BINARY;
+                }
+                else if(pragma_name == "extended_escape_sequences")
+                {
+                    opt = as2js::Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES;
+                }
+                else if(pragma_name == "extended_operators")
+                {
+                    opt = as2js::Options::option_t::OPTION_EXTENDED_OPERATORS;
+                }
+                else if(pragma_name == "octal")
+                {
+                    opt = as2js::Options::option_t::OPTION_OCTAL;
+                }
+                CPPUNIT_ASSERT(opt != as2js::Options::option_t::OPTION_UNKNOWN);
+//std::cerr << "  use " << static_cast<int>(opt) << " = " << token->get_int64().get() << "\n";
+                options->set_option(opt, token->get_int64().get());
+                token = lexer->get_next_token();
+                CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_CLOSE_PARENTHESIS);
+                token = lexer->get_next_token();
+                CPPUNIT_ASSERT(token->get_type() == as2js::Node::node_t::NODE_SEMICOLON);
+
+                // get the next token, it can be another option
+                token = lexer->get_next_token();
+//std::cerr << *token;
+            }
+
+
+            // token match
+            CPPUNIT_ASSERT(token->get_type() == results->f_token);
+
+            // no children
+            CPPUNIT_ASSERT(token->get_children_size() == 0);
+
+            // no links
+            for(as2js::Node::link_t link(as2js::Node::link_t::LINK_INSTANCE);
+                       link < as2js::Node::link_t::LINK_max;
+                       link = static_cast<as2js::Node::link_t>(static_cast<int>(link) + 1))
+            {
+                CPPUNIT_ASSERT(!token->get_link(link));
+            }
+
+            // no variables
+            CPPUNIT_ASSERT(token->get_variable_size() == 0);
+
+            // no parent
+            CPPUNIT_ASSERT(!token->get_parent());
+
+            // no parameters
+            CPPUNIT_ASSERT(token->get_param_size() == 0);
+
+            // not locked
+            CPPUNIT_ASSERT(!token->is_locked());
+
+            // default switch operator
+            if(token->get_type() == as2js::Node::node_t::NODE_SWITCH)
+            {
+                CPPUNIT_ASSERT(token->get_switch_operator() == as2js::Node::node_t::NODE_UNKNOWN);
+            }
+
+            // ignore flags here, they were tested in the node test already
+
+            // no attributes
+            if(token->get_type() != as2js::Node::node_t::NODE_PROGRAM)
+            {
+                for(as2js::Node::attribute_t attr(as2js::Node::attribute_t::NODE_ATTR_PUBLIC);
+                                attr < as2js::Node::attribute_t::NODE_ATTR_max;
+                                attr = static_cast<as2js::Node::attribute_t>(static_cast<int>(attr) + 1))
+                {
+                    CPPUNIT_ASSERT(!token->get_attribute(attr));
+                }
+            }
+
+            if(results->f_check_value == CHECK_VALUE_INTEGER)
+            {
+//std::cerr << "int " << token->get_int64().get() << " vs " << results->f_integer;
+                CPPUNIT_ASSERT(token->get_int64().get() == results->f_integer);
+            }
+            else
+            {
+                CPPUNIT_ASSERT_THROW(token->get_int64().get() == results->f_integer, as2js::exception_internal_error);
+            }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(results->f_check_value == CHECK_VALUE_FLOATING_POINT)
+            {
+                if(std::isnan(results->f_floating_point))
+                {
+                    CPPUNIT_ASSERT(token->get_float64().is_NaN());
+                }
+                else
+                {
+                    CPPUNIT_ASSERT(token->get_float64().get() == results->f_floating_point);
+                }
+            }
+            else
+            {
+                CPPUNIT_ASSERT_THROW(token->get_float64().get() == results->f_integer, as2js::exception_internal_error);
+            }
+#pragma GCC diagnostic pop
+
+            if(results->f_check_value == CHECK_VALUE_STRING)
+            {
+//std::cerr << "  --> [" << token->get_string() << "]\n";
+                as2js::String str;
+                str.from_utf8(results->f_string);
+                CPPUNIT_ASSERT(token->get_string() == str);
+            }
+            else
+            {
+                // no need to convert the results->f_string should should be ""
+                CPPUNIT_ASSERT_THROW(token->get_string() == results->f_string, as2js::exception_internal_error);
+            }
+
+            if(results->f_check_value == CHECK_VALUE_BOOLEAN)
+            {
+                CPPUNIT_ASSERT(token->get_boolean() == results->f_boolean);
+            }
+            else
+            {
+                CPPUNIT_ASSERT_THROW(token->get_boolean() == results->f_boolean, as2js::exception_internal_error);
+            }
+        }
     }
 }
 

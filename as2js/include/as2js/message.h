@@ -65,6 +65,7 @@ enum class err_code_t
     AS_ERR_NONE = 0,
 
     AS_ERR_ABSTRACT,
+    AS_ERR_BAD_NUMERIC_TYPE,
     AS_ERR_BAD_PRAGMA,
     AS_ERR_CANNOT_COMPILE,
     AS_ERR_CANNOT_MATCH,
