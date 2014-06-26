@@ -9,19 +9,19 @@
 
 # Handle command line
 #
-if [ -z "$1" ]
-then
-    echo "usage: $0 package-dir"
-    exit 1
-fi
-
-PKGDIR=$1
-if [ ! -e "${PKGDIR}" ]
-then
-    echo "Directory '${PKGDIR}' does not exist!"
-    exit 1
-fi
-cd ${PKGDIR}
+#if [ -z "$1" ]
+#then
+#    echo "usage: $0 package-dir"
+#    exit 1
+#fi
+#
+#PKGDIR=$1
+#if [ ! -e "${PKGDIR}" ]
+#then
+#    echo "Directory '${PKGDIR}' does not exist!"
+#    exit 1
+#fi
+#cd ${PKGDIR}
 
 if [ ! -e debian/changelog ]
 then
@@ -32,7 +32,7 @@ fi
 VERSION=`dpkg-parsechangelog --show-field Version`
 NAME=`dpkg-parsechangelog --show-field Source`
 
-dput ppa:snapcpp/ppa ${NAME}_${VERSION}_source.changes
+dput ppa:snapcpp/ppa ../${NAME}_${VERSION}_source.changes
 if [ "$?" != 0 ]
 then
 	echo "Error running dput! Aborting..."

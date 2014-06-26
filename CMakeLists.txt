@@ -61,6 +61,8 @@ set( CMAKE_MODULE_PATH
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapBuild        REQUIRED )
 
+find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
 
 ################################################################################
 # Third party libraries
@@ -160,19 +162,24 @@ ConfigureMakeProject( PROJECT_NAME cassview
         -DSNAPWEBSITES_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libsnapwebsites.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS snapCMakeModules snapwebsites controlled_vars
-)
+    )
 
 
-get_property( BUILD_TARGETS GLOBAL PROPERTY BUILD_TARGETS )
-get_property( CLEAN_TARGETS GLOBAL PROPERTY CLEAN_TARGETS )
+get_property( BUILD_TARGETS   GLOBAL PROPERTY BUILD_TARGETS   )
+get_property( CLEAN_TARGETS   GLOBAL PROPERTY CLEAN_TARGETS   )
+get_property( PACKAGE_TARGETS GLOBAL PROPERTY PACKAGE_TARGETS )
+
 add_custom_target( build-all ALL
     DEPENDS ${BUILD_TARGETS}
-)
+    )
 add_custom_target( clean-all
     COMMAND rm -rf ${CMAKE_BINARY_DIR}/recipes
     COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
     DEPENDS ${CLEAN_TARGETS}
-)
+    )
+add_custom_target( debuild
+    DEPENDS ${PACKAGE_TARGETS}
+    )
 
 #option( BUILD_RECIPES "Build source tarballs based on launchpad recipes." OFF )
 #if( ${BUILD_RECIPES} )
