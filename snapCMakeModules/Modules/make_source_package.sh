@@ -35,7 +35,8 @@ INCVER=`echo ${CURVER} | perl -pe 's/^((\d+\.)*)(\d+)(.*)$/$1.($3+1).$4/e'`
 
 # Write a new changelog entry, but using "~dist".
 #
-if ! dch --newversion ${INCVER}~${DIST} --urgency high --distribution ${DIST} Nightly build.
+dch --newversion ${INCVER}~${DIST} --urgency high --distribution ${DIST} Nightly build.
+if [ "$?" != 0 ]
 then
 	echo "Error running dch! Aborting..."
 	exit 1;
@@ -45,6 +46,11 @@ fi
 # of the CWD.
 #
 debuild -S -sa
+if [ "$?" != 0 ]
+then
+	echo "Error running debuild! Aborting..."
+    exit $?
+fi
 
 exit 0
 
