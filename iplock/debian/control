@@ -1,0 +1,19 @@
+Source: iplock
+Section: net
+Priority: optional
+Maintainer: Alexis Wilke <alexis@m2osw.com>
+Build-Depends: debhelper, cmake, snapcmakemodules (>= 0.1.8~saucy)
+Standards-Version: 3.9.4
+Homepage: http://www.snapwebsites.org/
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+
+Package: iplock
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Add or remove IP addresses from your iptables firewall.
+ The iplock tool is a very simple executable used to add or remove IP addresses
+ to your iptables firewall to protect your services such as Apache and Postfix.
+ .
+ The tool reads a configuration file (/etc/network/iplock.conf) where iptables
+ commands and ports are defined. It is used by the tool to generate the
+ iptables commands to run in order to block or unblock a set of IP addresses.
