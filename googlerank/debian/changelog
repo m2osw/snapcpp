@@ -1,3 +1,9 @@
+googlerank (1.0.3~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 26 Jun 2014 18:29:15 -0700
+
 googlerank (1.0.2) saucy; urgency=low
 
   * Update to support the new version of controlled_vars.

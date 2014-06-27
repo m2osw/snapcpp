@@ -24,8 +24,17 @@ fi
 
 # Use the build server email and name. This will appear in the changelog.
 #
-export NAME="Build Server" 
-export DEBEMAIL=build@m2osw.com
+if [ -z "${DEBEMAIL}" ]
+then
+    export DEBEMAIL="Build Server <build@m2osw.com>"
+fi
+
+# Clean up the old files
+#
+NAME=`dpkg-parsechangelog --show-field Source`
+VERSION=`dpkg-parsechangelog --show-field Version`
+FULLNAME=${NAME}_${VERSION}
+rm -f ../${FULLNAME}.dsc ../${FULLNAME}_source.* ../${FULLNAME}.tar.gz
 
 # Get the current version from the change log, get rid of everything past the tilde "~",
 # and increment the version number.
@@ -49,7 +58,7 @@ debuild -S -sa
 if [ "$?" != 0 ]
 then
 	echo "Error running debuild! Aborting..."
-    exit $?
+    exit 1
 fi
 
 exit 0

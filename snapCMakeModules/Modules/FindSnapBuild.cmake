@@ -137,16 +137,24 @@ function( ConfigureMakeProject )
 	# RDB: Thu Jun 26 13:45:46 PDT 2014
 	# Adding "debuild" target.
 	#
+	set( DEBUILD_PLATFORM "saucy"                          CACHE STRING "Name of the Debian/Ubuntu platform to build against." )
+	set( DEBUILD_EMAIL    "Build Server <build@m2osw.com>" CACHE STRING "Email address of the package signer."                 )
+	set( EMAIL_ADDY ${DEBUILD_EMAIL} )
+	separate_arguments( EMAIL_ADDY )
+	#
 	add_custom_target(
 		${ARG_PROJECT_NAME}-debuild
-		COMMAND ${MAKE_SOURCE_SCRIPT} saucy
+		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${DEBUILD_PLATFORM}
 			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_debuild.log
-			2> ${BUILD_DIR}/${ARG_PROJECT_NAME}_debuild.err
-		COMMAND ${MAKE_DPUT_SCRIPT}
-			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_dput.log
-			2> ${BUILD_DIR}/${ARG_PROJECT_NAME}_dput.err
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Building debian package for ${ARG_PROJECT_NAME}"
+		)
+	add_custom_target(
+		${ARG_PROJECT_NAME}-dput
+		COMMAND ${MAKE_DPUT_SCRIPT}
+			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_dput.log
+		WORKING_DIRECTORY ${SRC_DIR}
+		COMMENT "Dputting debian package ${ARG_PROJECT_NAME} to launchpad."
 		)
 
 	add_custom_target(
@@ -162,6 +170,7 @@ function( ConfigureMakeProject )
 	set_property( GLOBAL APPEND PROPERTY BUILD_TARGETS   ${ARG_PROJECT_NAME}         )
 	set_property( GLOBAL APPEND PROPERTY CLEAN_TARGETS   ${ARG_PROJECT_NAME}-clean   )
 	set_property( GLOBAL APPEND PROPERTY PACKAGE_TARGETS ${ARG_PROJECT_NAME}-debuild )
+	set_property( GLOBAL APPEND PROPERTY DPUT_TARGETS    ${ARG_PROJECT_NAME}-dput    )
 endfunction()
 
 # vim: ts=4 sw=4 noexpandtab

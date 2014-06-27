@@ -168,23 +168,20 @@ ConfigureMakeProject( PROJECT_NAME cassview
 get_property( BUILD_TARGETS   GLOBAL PROPERTY BUILD_TARGETS   )
 get_property( CLEAN_TARGETS   GLOBAL PROPERTY CLEAN_TARGETS   )
 get_property( PACKAGE_TARGETS GLOBAL PROPERTY PACKAGE_TARGETS )
+get_property( DPUT_TARGETS    GLOBAL PROPERTY DPUT_TARGETS    )
 
 add_custom_target( build-all ALL
     DEPENDS ${BUILD_TARGETS}
     )
 add_custom_target( clean-all
-    COMMAND rm -rf ${CMAKE_BINARY_DIR}/recipes
     COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
     DEPENDS ${CLEAN_TARGETS}
     )
 add_custom_target( debuild
     DEPENDS ${PACKAGE_TARGETS}
     )
-
-#option( BUILD_RECIPES "Build source tarballs based on launchpad recipes." OFF )
-#if( ${BUILD_RECIPES} )
-#    add_subdirectory( recipes )
-#endif()
-
+add_custom_target( dput
+    DEPENDS ${DPUT_TARGETS}
+    )
 
 # vim: ts=4 sw=4 et nocindent
