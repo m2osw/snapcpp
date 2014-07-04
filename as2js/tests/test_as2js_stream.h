@@ -53,6 +53,7 @@ class As2JsStreamUnitTests : public CPPUNIT_NS::TestFixture
         CPPUNIT_TEST( test_bad_impl );
         CPPUNIT_TEST( test_stdout );
         CPPUNIT_TEST( test_output );
+        CPPUNIT_TEST( test_string_output );
 
         // keep this one last because we lose stdout after that...
         // (we may be able to fix the problem with a fork()...)
@@ -74,6 +75,7 @@ protected:
     void test_bad_impl();
     void test_stdout();
     void test_output();
+    void test_string_output();
 
     // keep this one last because we lose stdout after that...
     void test_stdout_destructive();

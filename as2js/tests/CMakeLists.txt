@@ -116,6 +116,7 @@ include_directories(
 include_directories(
     ${as2js_compiler_BINARY_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/include
+    ${as2js_compiler_SOURCE_DIR}/lib
     ${as2js_compiler_SOURCE_DIR}/src
     ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${ADVGETOPT_INCLUDE_DIRS}
@@ -125,12 +126,14 @@ add_executable(${PROJECT_NAME}
 
     test_as2js_float64.cpp
     test_as2js_int64.cpp
+    test_as2js_json.cpp
     test_as2js_message.cpp
     test_as2js_node.cpp
     test_as2js_node_display.cpp
     test_as2js_lexer.cpp
     test_as2js_options.cpp
     test_as2js_position.cpp
+    test_as2js_rc.cpp
     test_as2js_stream.cpp
     test_as2js_string.cpp
     test_as2js_version.cpp

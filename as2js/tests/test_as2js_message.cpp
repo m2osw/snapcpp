@@ -58,6 +58,8 @@ public:
     test_callback()
     {
         as2js::Message::set_message_callback(this);
+        g_warning_count = as2js::Message::warning_count();
+        g_error_count = as2js::Message::error_count();
     }
 
     ~test_callback()

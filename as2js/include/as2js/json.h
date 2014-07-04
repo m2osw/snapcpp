@@ -37,6 +37,8 @@ SOFTWARE.
 
 #include    "as2js/lexer.h"
 
+#include    <controlled_vars/controlled_vars_auto_enum_init.h>
+
 
 namespace as2js
 {
@@ -112,27 +114,40 @@ public:
         String              to_string() const;
 
     private:
-        safe_type_t const   f_type;
-        Position            f_position;
+        class saving_t
+        {
+        public:
+            saving_t(JSONValue const& value);
+            ~saving_t();
 
-        Int64               f_integer;
-        Float64             f_float;
-        String              f_string;
-        array_t             f_array;
-        object_t            f_object;
+        private:
+            JSONValue&          f_value;
+        };
+        friend class saving_t;
+
+        safe_type_t const           f_type;
+        Position                    f_position;
+        controlled_vars::fbool_t    f_saving;
+
+        Int64                       f_integer;
+        Float64                     f_float;
+        String                      f_string;
+        array_t                     f_array;
+        object_t                    f_object;
     };
 
-    JSONValue::pointer_t    load(String const& filename, Options::pointer_t options = Options::pointer_t(new Options));
-    JSONValue::pointer_t    parse(Input::pointer_t in, Options::pointer_t options = Options::pointer_t(new Options));
+    JSONValue::pointer_t    load(String const& filename);
+    JSONValue::pointer_t    parse(Input::pointer_t in);
     bool                    save(String const& filename, String const& header) const;
     bool                    output(Output::pointer_t out, String const& header) const;
 
                             operator bool () const { return f_value.operator bool(); }
 
+    void                    set_value(JSONValue::pointer_t value);
     JSONValue::pointer_t    get_value() const;
 
 private:
-    JSONValue::pointer_t    read_json_value();
+    JSONValue::pointer_t    read_json_value(Node::pointer_t n);
 
     Lexer::pointer_t        f_lexer;
     JSONValue::pointer_t    f_value;

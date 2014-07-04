@@ -318,25 +318,25 @@ void Database::save() const
     // if it has been loaded, save it
     if(f_json)
     {
-        String header("# Database used by the AS2JS Compiler (as2js)\n"
-                      "# DO NOT EDIT UNLESS YOU KNOW WHAT YOU ARE DOING\n"
-                      "# Copyright (c) 2005-2014 by Made to Order Software Corp.\n"
-                      "# This file is written in UTF-8\n"
-                      "# You can safely modify it with an editor supporting UTF-8\n"
-                      "# The format is JSON:\n"
-                      "#\n"
-                      "# {\n"
-                      "#   \"package_name\": {\n"
-                      "#     \"element_name\": {\n"
-                      "#       \"filename\": \"<full path filename>\",\n"
-                      "#       \"type\": \"<type name>\",\n"
-                      "#       \"line\": <line number>\n"
-                      "#     },\n"
-                      "#     <...other elements...>\n"
-                      "#   },\n"
-                      "#   <...other packages...>\n"
-                      "# }\n"
-                      "#\n");
+        String const header("// Database used by the AS2JS Compiler (as2js)\n"
+                            "// DO NOT EDIT UNLESS YOU KNOW WHAT YOU ARE DOING\n"
+                            "// Copyright (c) 2005-2014 by Made to Order Software Corp.\n"
+                            "// This file is written in UTF-8\n"
+                            "// You can safely modify it with an editor supporting UTF-8\n"
+                            "// The format is JSON:\n"
+                            "//\n"
+                            "// {\n"
+                            "//   \"package_name\": {\n"
+                            "//     \"element_name\": {\n"
+                            "//       \"filename\": \"<full path filename>\",\n"
+                            "//       \"type\": \"<type name>\",\n"
+                            "//       \"line\": <line number>\n"
+                            "//     },\n"
+                            "//     <...other elements...>\n"
+                            "//   },\n"
+                            "//   <...other packages...>\n"
+                            "// }\n"
+                            "//\n");
         f_json->save(f_filename, header);
     }
 }

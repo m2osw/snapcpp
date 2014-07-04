@@ -285,6 +285,20 @@ protected:
 };
 
 
+class StringOutput : public Output
+{
+public:
+    typedef std::shared_ptr<StringOutput>       pointer_t;
+
+    String const&           get_string() const;
+
+private:
+    virtual void            internal_write(String const& data);
+
+    String                  f_string;
+};
+
+
 }
 // namespace as2js
 #endif

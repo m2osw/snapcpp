@@ -111,7 +111,7 @@ void rc_t::init_rc(bool const accept_if_missing)
                 // no valid $HOME variable
                 continue;
             }
-            buffer << home << "/" << (dir + 2) << "/as2js.rc";
+            buffer << home << "/" << (*dir + 2) << "/as2js.rc";
         }
         else
         {
@@ -149,27 +149,23 @@ void rc_t::init_rc(bool const accept_if_missing)
         // null is accepted, in which case we keep the defaults
         if(type != JSON::JSONValue::type_t::JSON_TYPE_NULL)
         {
-            Position pos;
-            pos.set_filename(rcfilename);
-
             if(type != JSON::JSONValue::type_t::JSON_TYPE_OBJECT)
             {
-                Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_UNEXPECTED_RC, pos);
-                msg << "A resource file (.rc) must be defined as a JSON object, or set to 'null'";
-                throw exception_exit(1, "A resource file (.rc) must be defined as a JSON object, or set to 'null'");
+                Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_UNEXPECTED_RC, root->get_position());
+                msg << "A resource file (.rc) must be defined as a JSON object, or set to 'null'.";
+                throw exception_exit(1, "A resource file (.rc) must be defined as a JSON object, or set to 'null'.");
             }
 
             JSON::JSONValue::object_t const& obj(root->get_object());
             for(JSON::JSONValue::object_t::const_iterator it(obj.begin()); it != obj.end(); ++it)
             {
-                // the only type of value that we expect are objects within the
-                // main object; each one represents a package
+                // the only type of values in the resource files are strings
                 JSON::JSONValue::type_t sub_type(it->second->get_type());
                 if(sub_type != JSON::JSONValue::type_t::JSON_TYPE_STRING)
                 {
-                    Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_UNEXPECTED_RC, pos);
+                    Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_UNEXPECTED_RC, it->second->get_position());
                     msg << "A resource file is expected to be an object of string elements.";
-                    throw exception_exit(1, "A resource file (.rc) must be defined as a JSON object, or set to 'null'");
+                    throw exception_exit(1, "A resource file is expected to be an object of string elements.");
                 }
 
                 String parameter_name(it->first);

@@ -1438,7 +1438,7 @@ void As2JsStreamUnitTests::test_output()
             // at the start the position is expected to be 1
             CPPUNIT_ASSERT(output->get_position().get_line() == 1);
 
-            // The filename for the StandardOutput is set to "-" by default
+            // The filename for the FileOutput is set to the file filename as passed to open()
             CPPUNIT_ASSERT(output->get_position().get_filename() == filename);
 
             CPPUNIT_ASSERT(output->get_position().get_line() == 1);
@@ -1448,7 +1448,7 @@ void As2JsStreamUnitTests::test_output()
             // the write() has no effect over the position
             CPPUNIT_ASSERT(static_cast<as2js::Output const *>(output.get())->get_position().get_line() == 1);
         }
-        // now StandardOutput is closed, verify the contents of the file
+        // now FileOutput is closed, verify the contents of the file
 
         int fd(open(filename, O_RDONLY));
 
@@ -1504,7 +1504,7 @@ void As2JsStreamUnitTests::test_output()
             // the write() has no effect over the position
             CPPUNIT_ASSERT(static_cast<as2js::Output const *>(output.get())->get_position().get_line() == 1);
         }
-        // now StandardOutput is closed, verify the contents of the file
+        // now FileOutput is closed, verify the contents of the file
 
         int fd(open(filename, O_RDONLY));
 
@@ -1514,6 +1514,34 @@ void As2JsStreamUnitTests::test_output()
 
         close(fd);
         unlink(filename);
+    }
+}
+
+
+void As2JsStreamUnitTests::test_string_output()
+{
+    {
+        as2js::String str("This is\nsome test\nto send\nto \"filename\".\n");
+
+        as2js::StringOutput::pointer_t output(new as2js::StringOutput);
+
+        // at the start the position is expected to be 1
+        CPPUNIT_ASSERT(output->get_position().get_line() == 1);
+
+        // The filename for the StringOutput is always ""
+        CPPUNIT_ASSERT(output->get_position().get_filename() == "");
+
+        CPPUNIT_ASSERT(output->get_position().get_line() == 1);
+
+        output->write(str);
+
+        // the write() has no effect over the position
+        CPPUNIT_ASSERT(static_cast<as2js::Output const *>(output.get())->get_position().get_line() == 1);
+
+        CPPUNIT_ASSERT(output->get_string() == str);
+
+        output->write(str);
+        CPPUNIT_ASSERT(output->get_string() == str + str);
     }
 }
 

@@ -955,6 +955,38 @@ void FileOutput::internal_write(String const& data)
 }
 
 
+/**********************************************************************/
+/**********************************************************************/
+/***  OUTPUT STRING  **************************************************/
+/**********************************************************************/
+/**********************************************************************/
+
+
+/** \brief Retrieve a copy of the output string.
+ *
+ * This function is used to retrieve the output string used as a buffer
+ * each time the write() function is called.
+ *
+ * \return A reference to the internal string.
+ */
+String const& StringOutput::get_string() const
+{
+    return f_string;
+}
+
+
+/** \brief Write to the output string.
+ *
+ * This function writes the specified \d data string to this output string.
+ *
+ * \param[in] data  The string to write to the output file.
+ */
+void StringOutput::internal_write(String const& data)
+{
+    f_string += data;
+}
+
+
 }
 // namespace as2js
 

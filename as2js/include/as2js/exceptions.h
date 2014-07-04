@@ -78,6 +78,14 @@ public:
 };
 
 
+class exception_invalid_index : public std::runtime_error
+{
+public:
+    exception_invalid_index(char const *msg)        : runtime_error(msg) {}
+    exception_invalid_index(std::string const& msg) : runtime_error(msg) {}
+};
+
+
 class exception_incompatible_node_type : public std::runtime_error
 {
 public:
@@ -91,6 +99,14 @@ class exception_incompatible_node_data : public std::runtime_error
 public:
     exception_incompatible_node_data(char const *msg)        : runtime_error(msg) {}
     exception_incompatible_node_data(std::string const& msg) : runtime_error(msg) {}
+};
+
+
+class exception_invalid_data : public std::runtime_error
+{
+public:
+    exception_invalid_data(char const *msg)        : runtime_error(msg) {}
+    exception_invalid_data(std::string const& msg) : runtime_error(msg) {}
 };
 
 
@@ -131,6 +147,14 @@ class exception_file_already_open : public std::logic_error
 public:
     exception_file_already_open(char const *msg)        : logic_error(msg) {}
     exception_file_already_open(std::string const& msg) : logic_error(msg) {}
+};
+
+
+class exception_cyclical_structure : public std::logic_error
+{
+public:
+    exception_cyclical_structure(char const *msg)        : logic_error(msg) {}
+    exception_cyclical_structure(std::string const& msg) : logic_error(msg) {}
 };
 
 
