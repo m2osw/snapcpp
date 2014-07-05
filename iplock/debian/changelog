@@ -1,0 +1,17 @@
+iplock (2.0.3~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 26 Jun 2014 18:28:43 -0700
+
+iplock (2.0.2~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 26 Jun 2014 18:01:04 -0700
+
+iplock (2.0.1) saucy; urgency=high
+
+  * Initial release
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 26 Jun 2014 17:49:19 -0700

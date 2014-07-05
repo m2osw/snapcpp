@@ -1,3 +1,9 @@
+controlledvars (1.4.3~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Thu, 26 Jun 2014 18:28:49 -0700
+
 controlledvars (1.4.2) saucy; urgency=high
 
   * Applied a fix for the flags generating errors on the PPA.
