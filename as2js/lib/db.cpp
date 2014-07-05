@@ -124,7 +124,8 @@ void Database::Element::set_filename(String const& filename)
 void Database::Element::set_line(Position::counter_t line)
 {
     f_line = line;
-    f_element->set_member("line", JSON::JSONValue::pointer_t(new JSON::JSONValue(f_element->get_position(), static_cast<int64_t>(f_line))));
+    Int64 integer(f_line);
+    f_element->set_member("line", JSON::JSONValue::pointer_t(new JSON::JSONValue(f_element->get_position(), integer)));
 }
 
 
@@ -179,12 +180,13 @@ Database::Package::Package(String const& package_name, JSON::JSONValue::pointer_
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_DATABASE, it->second->get_position());
             msg << "A database is expected to be an object of object packages composed of object elements.";
-            return;
         }
-
-        String element_name(it->first);
-        Element::pointer_t e(new Element(element_name, it->second));
-        f_elements[element_name] = e;
+        else
+        {
+            String element_name(it->first);
+            Element::pointer_t e(new Element(element_name, it->second));
+            f_elements[element_name] = e;
+        }
     }
 }
 
@@ -258,7 +260,12 @@ bool Database::load(String const& filename)
     FileInput::pointer_t in(new FileInput());
     if(!in->open(filename))
     {
-        // no db yet... that's okay
+        // no db yet... it is okay
+        Position pos;
+        pos.set_filename(filename);
+        JSON::JSONValue::object_t obj_database;
+        f_value.reset(new JSON::JSONValue(pos, obj_database));
+        f_json->set_value(f_value);
         return true;
     }
 
@@ -282,7 +289,7 @@ bool Database::load(String const& filename)
         Position pos;
         pos.set_filename(filename);
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_DATABASE, pos);
-        msg << "A database must be defined as a JSON object, or set to 'null'";
+        msg << "A database must be defined as a JSON object, or set to 'null'.";
         return false;
     }
 
@@ -336,7 +343,7 @@ void Database::save() const
                             "//   },\n"
                             "//   <...other packages...>\n"
                             "// }\n"
-                            "//\n");
+                            "//");
         f_json->save(f_filename, header);
     }
 }
@@ -386,6 +393,7 @@ Database::Package::pointer_t Database::add_package(String const& package_name)
         {
             JSON::JSONValue::object_t obj_database;
             f_value.reset(new JSON::JSONValue(pos, obj_database));
+            f_json->set_value(f_value);
         }
 
         JSON::JSONValue::object_t obj_package;
@@ -420,7 +428,7 @@ bool Database::match_pattern(String const& name, String const& pattern)
                     {
                         return true;
                     }
-                    while(*pattern != '\0')
+                    while(*name != '\0')
                     {
                         if(do_match(name, pattern)) // recursive call
                         {

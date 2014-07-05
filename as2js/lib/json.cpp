@@ -613,11 +613,17 @@ bool JSON::output(Output::pointer_t out, String const& header) const
         throw exception_invalid_data("this JSON has no value to output");
     }
 
+    // start with a BOM so the file is clearly marked as being UTF-8
+    as2js::String bom;
+    bom += String::STRING_BOM;
+    out->write(bom);
+
     if(!header.empty())
     {
         out->write(header);
         out->write("\n");
     }
+
     out->write(f_value->to_string());
 
     return true;

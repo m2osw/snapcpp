@@ -45,11 +45,10 @@ namespace as2js
 //
 // {
 //   "<package_name>": {
-//     {
-//       "e": <element_name>,
-//       "t": <type>,
-//       "f": <filename>,
-//       "l": <line>
+//     "<element name>": {
+//       "type": <type>,
+//       "filename": <filename>,
+//       "line": <line>
 //     },
 //     // ... repeat for each element ...
 //   },
@@ -85,7 +84,7 @@ public:
         String const                f_element_name;
         String                      f_type;
         String                      f_filename;
-        Position::counter_t         f_line;
+        Position::zcounter_t        f_line;
 
         JSON::JSONValue::pointer_t  f_element;
     };

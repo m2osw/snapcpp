@@ -124,6 +124,7 @@ include_directories(
 add_executable(${PROJECT_NAME}
     test_as2js_main.cpp
 
+    test_as2js_db.cpp
     test_as2js_float64.cpp
     test_as2js_int64.cpp
     test_as2js_json.cpp
