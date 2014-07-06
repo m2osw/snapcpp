@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.10
+ * Version: 0.1.0.26
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -51,6 +51,81 @@ snapwebsites.Popup = function()
  * This class does not inherit from any other classes.
  */
 snapwebsites.base(snapwebsites.Popup);
+
+
+/** \brief The type definition for the popup structure.
+ *
+ * The Popup class makes use of a popup structure called PopupData.
+ * This is an object passed to most of the Popup object functions
+ * that holds the current state of your popup.
+ *
+ * \li id -- the identifier of the popup DOM object; it has to be unique,
+ *           if undefined, the Popup library generates one automatically.
+ * \li path -- the path to a page to display in the popup; in this case
+ *             the Popup object uses an IFRAME to display the content.
+ * \li html -- The HTML to display in the IFRAME, this is exclusive from
+ *             the path usage.
+ * \li noClose -- do not create a close button for the popup; this is
+ *                particularly useful for popup windows that ask a question
+ *                and cannot really safely have a close button (because the
+ *                meaning of that close button is not known).
+ * \li top -- the top position; if undefined, the popup will be vertically
+ *            centered.
+ * \li left -- the left position; if undefined, the popup will be horizontally
+ *             centered.
+ * \li width -- the width to use for the popup; this is a required parameter.
+ * \li height -- the height to use for the popup; this is a required parameter.
+ * \li darken -- the amount of time it will take to darken the screen behind
+ *               the popup; null or undefined prevents any darkening; zero
+ *               makes the dark overlay appear instantely.
+ * \li position -- "absolute" to get the popup to scroll with the window; this
+ *                 is useful if you are to have very tall popups; you may also
+ *                 use "fixed" to get a popup that doesn't scroll at all;
+ *                 the default is "fixed".
+ * \li title -- a title for the popup; if empty no popup.
+ * \li open -- a callback called once the popup is open, it gets called with
+ *             a reference to this popup.
+ * \li show -- a callback called once the popup is fully visible (i.e. if
+ *             fading in, this callback is called after the fade in is
+ *             over); it has no parameters.
+ * \li beforeHide -- a callback called before the popup gets hidden; this
+ *                   gives your code a chance to cancel a click on the close
+ *                   button or equivalent; the callback is called with a
+ *                   PopupData object.
+ * \li hide -- a callback called once the popup is fully hidden; which means
+ *             after the fade out is over; it is called without any
+ *             parameters.
+ * \li hideNow -- a callback defined by the Popup class in case the
+ *                beforeHide is used; that function should be called by
+ *                the beforeHide callback in the event the user decided
+ *                to anyway close the popup; it takes no parameters.
+ * \li widget -- this parameter is defined by the system; it is set to the
+ *               jQuery widget using the id parameter.
+ *
+ * \note
+ * The width and height could be calculated with different euristic math
+ * and propbably will at some point. The current version requires these
+ * parameters to be defined if you want to get a valid popup.
+ *
+ * @typedef {{id: ?string,
+ *            path: ?string,
+ *            html: ?string,
+ *            noClose: ?boolean,
+ *            top: ?number,
+ *            left: ?number,
+ *            width: number,
+ *            height: number,
+ *            darken: ?number,
+ *            position: string,
+ *            title: ?string,
+ *            open: ?function(Object),
+ *            show: ?function(),
+ *            beforeHide: ?function(Object),
+ *            hide: ?function(),
+ *            hideNow: ?function(),
+ *            widget: ?Object}}
+ */
+snapwebsites.Popup.PopupData;
 
 
 /** \brief A unique identifier.
@@ -165,7 +240,7 @@ snapwebsites.Popup.prototype.darkenPage = function(show, wait)
  *               rest of the screen, the default is to not darken
  *               if undefined (0)
  * \li position -- we accept absolute (scrolls up and down) and fixed
- *                 (doesn't scroll and default)
+ *                 (does not scroll and default)
  * \li title -- a title shown at the top, may be HTML, added inside
  *              a \<div\> tag (i.e. if you want an header tag, you have
  *              to include it in the title)
@@ -184,16 +259,13 @@ snapwebsites.Popup.prototype.darkenPage = function(show, wait)
  * \li widget -- the jQuery object referencing the popup is saved in
  *               this variable member
  *
- * @param {{id: ?string, path: string, html: string,
- *          top: number, left: number, width: number, height: number,
- *          darken: number, position: string, title: string,
- *          open: function(Object), show: function(Object), hide: function(Object),
- *          widget: Object}} popup  The settings to create the popup.
+ * @param {snapwebsites.Popup.PopupData} popup  The settings to create
+ *                                              the popup.
  * @return {jQuery}
  */
 snapwebsites.Popup.prototype.open = function(popup)
 {
-    var i, b, f, p, t, w, y;
+    var i, b, f, p, t, w, y, that = this;
 
     if(!popup.id)
     {
@@ -205,14 +277,21 @@ snapwebsites.Popup.prototype.open = function(popup)
     popup.widget = jQuery("#" + popup.id);
     if(popup.widget.length === 0)
     {
-        jQuery("<div class='snap-popup' id='" + popup.id + "' style='position:fixed;display:none;'><div class='close-popup'></div><div class='inside-popup'><div class='popup-title'></div><div class='popup-body'></div></div></div>")
+        jQuery("<div class='snap-popup' id='" + popup.id + "' style='position:fixed;display:none;'>"
+             + (popup.noClose ? "" : "<div class='close-popup'></div>")
+             + "<div class='inside-popup'><div class='popup-title'></div><div class='popup-body'></div></div></div>")
                 .appendTo("body");
         popup.widget = jQuery("#" + popup.id);
     }
     popup.widget.show();
-    popup.widget.children(".close-popup").click(function(){
-        snapwebsites.PopupInstance.hide(popup);
-    });
+
+    // here we cannot be sure whether the click() event was still here
+    // so we unbind() it first
+    popup.widget.children(".close-popup").unbind('click').click(function()
+        {
+            that.hide(popup);
+        });
+
     i = popup.widget.children(".inside-popup");
     t = i.children(".popup-title");
     b = i.children(".popup-body");
@@ -314,27 +393,24 @@ snapwebsites.Popup.prototype.open = function(popup)
  * This function shows a popup that was just created with the open()
  * function or got hidden with the hide() function.
  *
- * @param {{id: ?string, path: string, html: string,
- *          top: number, left: number, width: number, height: number,
- *          darken: number, position: string, title: string,
- *          open: function(Object), show: function(Object), hide: function(Object),
- *          widget: Object}} popup  The popup to show.
+ * @param {snapwebsites.Popup.PopupData} popup  The settings to create
+ *                                              the popup.
  */
 snapwebsites.Popup.prototype.show = function(popup)
 {
-    if(popup.id && popup.widget)
+    if(popup.id)
     {
         popup.widget = jQuery("#" + popup.id);
         if(popup.widget && !popup.widget.is(":visible"))
         {
-            popup.widget.fadeIn(150);
-            if(popup.show)
-            {
-                popup.show(popup.widget);
-            }
+            popup.widget.fadeIn(
+                {
+                    duration: 150,
+                    complete: popup.show
+                });
             if(popup.darken > 0)
             {
-                this.darkenPage(popup.darken, false);
+                this.darkenPage(/** @type {number} */ (popup.darken), false);
             }
             popup.widget.css("z-index", 1);
             popup.widget.css("z-index", jQuery("body").children().maxZIndex() + 1);
@@ -351,44 +427,86 @@ snapwebsites.Popup.prototype.show = function(popup)
  * This is often referenced as a soft-close. After this call the popup
  * is still available in the DOM, it is just hidden (display: none).
  *
- * @param {{id: ?string, path: string, html: string,
- *          top: number, left: number, width: number, height: number,
- *          darken: number, position: string, title: string,
- *          open: function(Object), show: function(Object), hide: function(Object),
- *          widget: Object}} popup  The popup to hide.
+ * If your popup gets hidden, then the hide() function gets called.
+ * Note that the hide() function is called after the popup is completely
+ * hidden so depending on the animation timing it may take more or less
+ * time.
+ *
+ * Note that the hide() function is called if the popup is already
+ * hidden to make sure that your code knows that it is indeed hidden.
+ * However, if the popup object defines a beforeHide() function which
+ * never calls the call back (the hideNow() function) then the
+ * hide() function will never be called.
+ *
+ * @param {snapwebsites.Popup.PopupData} popup  The settings to create
+ *                                              the popup.
  */
 snapwebsites.Popup.prototype.hide = function(popup)
 {
-    if(popup.id && popup.widget)
+    var that = this;
+
+    if(popup.id)
     {
         popup.widget = jQuery("#" + popup.id);
         if(popup.widget && popup.widget.is(":visible"))
         {
-            popup.widget.fadeOut(150);
-            if(popup.hide)
+            if(popup.beforeHide)
             {
-                popup.hide(popup.widget);
+                // the beforeHide() function does not return immediately
+                // as it may open a confirmation popup and thus need to
+                // offer a callback to process the confirmation
+                popup.hideNow = function() { that.hideNow_(popup); };
+                popup.beforeHide(popup);
+                return;
             }
-            if(popup.darken > 0)
-            {
-                this.darkenPage(-popup.darken, false);
-            }
+            // no beforeHide(), immediate close
+            that.hideNow_(popup);
+            return;
         }
+    }
+
+    // it was already hidden, make sure the hide() function gets called
+    if(popup.hide)
+    {
+        popup.hide();
+    }
+};
+
+
+/** \brief Actual hides the popup.
+ *
+ * This function actually hides the Popup. It is separate from the hide()
+ * function so one can make use of a beforeHide() which requires a callback
+ * If you have a beforeHide() you must call the popup.hideNow() function
+ * once your are done and if you want to proceed with hiding
+ * the popup.
+ *
+ * @param {snapwebsites.Popup.PopupData} popup  The settings to create
+ *                                              the popup.
+ * @private
+ */
+snapwebsites.Popup.prototype.hideNow_ = function(popup)
+{
+    popup.widget.fadeOut(
+        {
+            duration: 150,
+            complete: popup.hide
+        });
+    if(popup.darken > 0)
+    {
+        this.darkenPage(-popup.darken, false);
     }
 };
 
 
 /** \brief Remove a popup from the DOM.
  *
- * This function removes the popup from the DOM. It doesn't first
+ * This function removes the popup from the DOM. It does not first
  * fade out the popup. This function immediately removes the elements
- * from the DOM.
+ * from the DOM. You may want to first close then forget.
  *
- * @param {{id: ?string, path: string, html: string,
- *          top: number, left: number, width: number, height: number,
- *          darken: number, position: string, title: string,
- *          open: function(Object), show: function(Object), hide: function(Object),
- *          widget: Object}} popup  The popup object to forget.
+ * @param {snapwebsites.Popup.PopupData} popup  The settings to create
+ *                                              the popup.
  */
 snapwebsites.Popup.prototype.forget = function(popup)
 {
@@ -397,6 +515,75 @@ snapwebsites.Popup.prototype.forget = function(popup)
         popup.widget.remove();
         popup.widget = null;
     }
+};
+
+
+/** \brief Create a message box.
+ *
+ * This function is used to create an HTML message box. It expects a
+ * structure that includes a message (in HTML) and any number of
+ * buttons in an array. A click on any button closes the box and
+ * calls your callback with the name of that button.
+ *
+ * A button has a label and a name.
+ *
+ * The callback is a function that should accept the name of the button
+ * as its parameter. If you have a single button, it will generally not
+ * be necessary to accept the name.
+ *
+ * The popup has a Close button which is always viewed as a button in
+ * that dialog. When clicked, the callback function is called with the
+ * string parameter set to "close_button".
+ *
+ * @param {{title: string,
+ *          message: string,
+ *          buttons: Object.<{name: string, label: string}>,
+ *          callback: function(string)}} msg  The message object with
+ *    the message itself, buttons, and a callback function.
+ */
+snapwebsites.Popup.prototype.messageBox = function(msg)
+{
+    var popup = /** @type {snapwebsites.Popup.PopupData} */ (new Object),
+        counter = 0,
+        that = this,
+        key;
+
+    popup.id = msg.id;
+    popup.noClose = true;
+    popup.top = msg.top > 0 ? msg.top : 10;
+    if(msg.left > 0)
+    {
+        popup.left = msg.left;
+    }
+    popup.width = msg.width > 0 ? msg.width : 450;
+    popup.height = msg.height > 0 ? msg.height : 250;
+    popup.darken = 150;
+    popup.title = msg.title;
+    popup.html = "<div class=\"message-box\">" + msg.message + "</div><div class=\"message-box-buttons\">";
+    for(key in msg.buttons)
+    {
+        if(msg.buttons.hasOwnProperty(key))
+        {
+            ++counter;
+            popup.html += "<a class=\"message-button\" name=\""
+                    + msg.buttons[key].name
+                    + "\" href=\"#\">" + msg.buttons[key].label + "</a>";
+        }
+    }
+    popup.html += "</div>";
+
+    this.open(popup);
+    this.show(popup);
+
+    popup.widget.find(".message-button").click(function()
+        {
+            var button = jQuery(this),
+                name = /** @type {string} */ (button.attr("name"));
+
+            // always hide that popup once a button was clicked
+            that.hide(popup);
+            msg.callback(name);
+        });
 };
 
 

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.192
+ * Version: 0.0.3.195
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -2016,6 +2016,7 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      final function wasModified(recheck_opt: boolean) : boolean;
  *      final function saving() : SaveData;
  *      final function saved(data: SaveData) : boolean;
+ *      final function discard();
  *      function getEditorForm() : EditorForm;
  *      function getEditorBase() : EditorBase;
  *      final function getWidget() : jQuery;
@@ -2322,11 +2323,6 @@ snapwebsites.EditorWidget.prototype.saving = function()
  * This function reset the original data and modified flags when called.
  * It is expected to be called on a successful save.
  *
- * \todo
- * Fix as we want to set the originalData_ value to what was saved
- * which may not be 100% equivalent to what is currently defined in
- * the DOM.
- *
  * @param {snapwebsites.EditorWidgetTypeBase.SaveData} data  The data that was
  *        saved (what saving() returned.)
  *
@@ -2339,6 +2335,21 @@ snapwebsites.EditorWidget.prototype.saved = function(data)
 {
     this.originalData_ = data.html;
     return this.wasModified(true);
+};
+
+
+/** \brief Generally called when you want to ignore changes in a widget.
+ *
+ * This function resets the original data from the current data. This is
+ * useful to pretend that the widget was saved or you want to ignore the
+ * changes.
+ *
+ * @final
+ */
+snapwebsites.EditorWidget.prototype.discard = function()
+{
+    this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
+    this.wasModified(true);
 };
 
 
@@ -2562,12 +2573,12 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  *      virtual function serverAccessError(result);
  *      virtual function serverAccessComplete(result);
  *
- * private:
- *      SAVE_MODE_PUBLISH: string;
- *      SAVE_MODE_SAVE: string;
- *      SAVE_MODE_SAVE_NEW_BRANCH: string;
- *      SAVE_MODE_SAVE_DRAFT: string;
+ *      static SAVE_MODE_PUBLISH: string;
+ *      static SAVE_MODE_SAVE: string;
+ *      static SAVE_MODE_SAVE_NEW_BRANCH: string;
+ *      static SAVE_MODE_SAVE_DRAFT: string;
  *
+ * private:
  *      editorBase_: EditorBase;
  *      formWidget_: jQuery;
  * };
@@ -2615,7 +2626,7 @@ snapwebsites.inherits(snapwebsites.EditorFormBase, snapwebsites.ServerAccessCall
  * @type {string}
  * @const
  */
-snapwebsites.EditorFormBase.prototype.SAVE_MODE_PUBLISH = "publish";
+snapwebsites.EditorFormBase.SAVE_MODE_PUBLISH = "publish";
 
 
 /** \brief Save the data in a new revision.
@@ -2630,7 +2641,7 @@ snapwebsites.EditorFormBase.prototype.SAVE_MODE_PUBLISH = "publish";
  * @type {string}
  * @const
  */
-snapwebsites.EditorFormBase.prototype.SAVE_MODE_SAVE = "save";
+snapwebsites.EditorFormBase.SAVE_MODE_SAVE = "save";
 
 
 /** \brief Create a new branch.
@@ -2646,7 +2657,7 @@ snapwebsites.EditorFormBase.prototype.SAVE_MODE_SAVE = "save";
  * @type {string}
  * @const
  */
-snapwebsites.EditorFormBase.prototype.SAVE_MODE_SAVE_NEW_BRANCH = "save-new-branch";
+snapwebsites.EditorFormBase.SAVE_MODE_SAVE_NEW_BRANCH = "save-new-branch";
 
 
 /** \brief Save the data as a draft.
@@ -2661,7 +2672,7 @@ snapwebsites.EditorFormBase.prototype.SAVE_MODE_SAVE_NEW_BRANCH = "save-new-bran
  * @type {string}
  * @const
  */
-snapwebsites.EditorFormBase.prototype.SAVE_MODE_SAVE_DRAFT = "save-draft";
+snapwebsites.EditorFormBase.SAVE_MODE_SAVE_DRAFT = "save-draft";
 
 
 /** \brief A reference to the base editor object.
@@ -2858,7 +2869,7 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
 
     jQuery("#snap_editor_publish")
         .click(function(){
-            that.editorForm_.saveData(snapwebsites.EditorFormBase.prototype.SAVE_MODE_PUBLISH);
+            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_PUBLISH);
         });
     jQuery("#snap_editor_save")
         .click(function(){
@@ -2870,7 +2881,7 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
         });
     jQuery("#snap_editor_save_draft")
         .click(function(){
-            that.editorForm_.saveData(snapwebsites.EditorFormBase.prototype.SAVE_MODE_SAVE_DRAFT);
+            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_SAVE_DRAFT);
         });
 
     // while creating a new page, the page is kept under "admin/drafts"
@@ -3017,6 +3028,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function getSaveDialog() : EditorSaveDialog;
  *      function newTypeRegistered();
  *      function wasModified(recheck: boolean) : boolean;
+ *      function earlyClose() : boolean;
  *      static function titleToURI(title: string) : string;
  *
  * private:
@@ -3033,7 +3045,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      var toolbarAutoVisible: boolean;        // whether to show the toolbar automatically
  *      var modified_: boolean;                 // one or more fields changed
  *      var saveFunctionOnSuccess_: function(); // function called in case the save succeeded
- *      var savedData_: Object;                 // a set of object to know whether things changed while saving
+ *      var savedData_: Object;                 // a set of objects to know whether things changed while saving
  *      var serverAccess_: ServerAccess;        // a ServerAccess object to send the AJAX
  * };
  * \endcode
@@ -3841,6 +3853,93 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
     }
 
     return false;
+};
+
+
+/** \brief Close this form early.
+ *
+ * This function handles the case when a form is to be closed before the
+ * window as a whole is to be closed. You can choose whether the form
+ * is to react with a confirmation dialog or not.
+ *
+ * This is particularly useful in the beforeClose() callback of a popup
+ * when that popup is used with a form.
+ *
+ * The 'message' parameter defines a message to show to the client in case
+ * there were modifications. If the message is undefined, then the system
+ * just saves the changes and returns.
+ *
+ * If earlyClose() is to automatically call saveData() ('auto_save' or one
+ * of the buttons named 'save' gets clicked,) then the save_mode is used
+ * to call saveData(). In most cases it should be set to SAVE_MODE_PUBLISH
+ * or SAVE_MODE_SAVE.
+ *
+ * @param {{save_mode: string,
+ *          title: string,
+ *          message: string,
+ *          buttons: Object.<{name: string, label: string}>,
+ *          callback: function(string)}} early_close  The message object with
+ *    the message itself, buttons, and a callback function.
+ */
+snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
+{
+    var org_callback = early_close.callback,
+        that = this;
+
+    if(this.toBeSaved()
+    && this.wasModified(true))
+    {
+        if(!early_close.message)
+        {
+            this.saveData(early_close.save_mode);
+        }
+        else
+        {
+            // our specialized callback for the message box
+            early_close.callback = function(name)
+                {
+                    var key;
+
+                    if(name == "save")
+                    {
+                        if(early_close.save)
+                        {
+                            early_close.save(that);
+                        }
+                        else
+                        {
+                            that.saveData(early_close.save_mode);
+                        }
+                    }
+                    else if(name == "discard")
+                    {
+                        // copy the data to make it look like it was saved
+                        for(key in that.editorWidgets_)
+                        {
+                            if(that.editorWidgets_.hasOwnProperty(key))
+                            {
+                                that.editorWidgets_[key].discard();
+                            }
+                        }
+                        that.getSaveDialog().close();
+                    }
+                    if(org_callback)
+                    {
+                        // call the user callback too
+                        org_callback(name);
+                    }
+                };
+            snapwebsites.PopupInstance.messageBox(early_close);
+        }
+    }
+    else
+    {
+        // nothing needs to be saved
+        if(early_close.callback)
+        {
+            early_close.callback("no-save");
+        }
+    }
 };
 
 

@@ -1,6 +1,6 @@
 /*
  * Name: output
- * Version: 0.0.4
+ * Version: 0.0.5
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -39,6 +39,7 @@ iframe
 	background: white;
 	border-radius: 10px;
 	padding: 10px;
+	box-shadow: 3px 3px 6px 0px #444444;
 }
 
 .snap-popup .close-popup
