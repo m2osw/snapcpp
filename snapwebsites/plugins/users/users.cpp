@@ -144,6 +144,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_LOGOUT_ON:
         return "users::logout_on";
 
+    case SNAP_NAME_USERS_MULTIUSER:
+        return "users::multiuser";
+
     case SNAP_NAME_USERS_NAME:
         return "users::name";
 
@@ -321,7 +324,7 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 4, 1, 0, 28, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 7, 7, 2, 9, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -485,7 +488,7 @@ void users::on_process_cookies()
             random_key = parameters[1];
         }
         sessions::sessions::instance()->load_session(session_key, *f_info, false);
-        const QString path(f_info->get_object_path());
+        QString const path(f_info->get_object_path());
         if(f_info->get_session_type() == sessions::sessions::session_info::SESSION_INFO_VALID
         && f_info->get_session_id() == USERS_SESSION_ID_LOG_IN_SESSION
         && f_info->get_session_random() == random_key.toInt()
@@ -494,7 +497,7 @@ void users::on_process_cookies()
         {
             // this session qualifies as a log in session
             // so now verify the user
-            const QString key(path.mid(6));
+            QString const key(path.mid(6));
             // not authenticated user?
             if(!key.isEmpty())
             {
@@ -630,18 +633,19 @@ void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynami
     //
     //    See users::on_path_execute() instead.
     //
-    if(ipath.get_cpath() == "user"                      // list of (public) users
-    || ipath.get_cpath().left(5) == "user/"             // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
-    || ipath.get_cpath() == "profile"                   // the logged in user profile
-    || ipath.get_cpath() == "login"                     // form to log user in
-    || ipath.get_cpath() == "logout"                    // log user out
-    || ipath.get_cpath() == "register"                  // form to let new users register
-    || ipath.get_cpath() == "verify-credentials"        // re-log user in
-    || ipath.get_cpath() == "verify"                    // verification form so the user can enter his code
-    || ipath.get_cpath().left(7) == "verify/"           // link to verify user's email; and verify/resend form
-    || ipath.get_cpath() == "forgot-password"           // form for users to reset their password
-    || ipath.get_cpath() == "new-password"              // form for users to enter their forgotten password verification code
-    || ipath.get_cpath().left(13) == "new-password/")   // form for users to enter their forgotten password verification code
+    QString cpath(ipath.get_cpath());
+    if(cpath == "user"                      // list of (public) users
+    || cpath.left(5) == "user/"             // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
+    || cpath == "profile"                   // the logged in user profile
+    || cpath == "login"                     // form to log user in
+    || cpath == "logout"                    // log user out
+    || cpath == "register"                  // form to let new users register
+    || cpath == "verify-credentials"        // re-log user in
+    || cpath == "verify"                    // verification form so the user can enter his code
+    || cpath.left(7) == "verify/"           // link to verify user's email; and verify/resend form
+    || cpath == "forgot-password"           // form for users to reset their password
+    || cpath == "new-password"              // form for users to enter their forgotten password verification code
+    || cpath.left(13) == "new-password/")   // form for users to enter their forgotten password verification code
     {
         // tell the path plugin that this is ours
         plugin_info.set_plugin(this);
@@ -1263,12 +1267,53 @@ void users::prepare_new_password_form()
  */
 void users::verify_user(content::path_info_t& ipath)
 {
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+
     if(!f_user_key.isEmpty())
     {
-        // user is logged in already, just send him to his profile
-        // (if logged in he was verified in some way!)
-        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
-        NOTREACHED();
+        QtCassandra::QCassandraValue multiuser(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_MULTIUSER)));
+        if(multiuser.nullValue() || !multiuser.signedCharValue())
+        {
+            // user is logged in already, just send him to his profile
+            // (if logged in he was verified in some way!)
+            f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+            NOTREACHED();
+        }
+
+        // this computer is expected to be used by multiple users, the
+        // link to /verify/### and /verify/send may be followed on a
+        // computer with a logged in user (because we provide those
+        // in the email we send just after registration)
+        //
+        // So in this case we want to log out the current user and
+        // process the form as if no one had been logged in.
+        f_info->set_object_path("/user/");
+        f_info->set_time_to_live(86400 * 5);  // 5 days
+        bool const new_random(f_info->get_date() + 60 * 5 * 1000000 < f_snap->get_start_date());
+        sessions::sessions::instance()->save_session(*f_info, new_random);
+
+        QString const user_cookie_name(get_user_cookie_name());
+        http_cookie cookie(
+                f_snap,
+                user_cookie_name,
+                QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random())
+            );
+        cookie.set_expire_in(86400 * 5);  // 5 days
+        cookie.set_http_only(); // make it a tad bit safer
+        f_snap->set_cookie(cookie);
+
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_key));
+
+        // Save the date when the user logged out
+        QtCassandra::QCassandraValue value;
+        value.setInt64Value(f_snap->get_start_date());
+        row->cell(get_name(SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
+
+        // Save the user IP address when logged out
+        value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+        row->cell(get_name(SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
+
+        f_user_key.clear();
     }
 
     QString session_id(ipath.get_cpath().mid(7));
@@ -1304,7 +1349,6 @@ void users::verify_user(content::path_info_t& ipath)
     // it looks like the session is valid, get the user email and verify
     // that the account exists in the database
     QString const email(path.mid(6));
-    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(!users_table->exists(email))
     {
         // This should never happen...

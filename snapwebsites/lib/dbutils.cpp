@@ -408,6 +408,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     }
     else if(n == "content::prevent_delete"
          || n == "permissions::dynamic"
+         || n == "users::multiuser"
          || (f_tableName == "list" && f_rowName != "*standalone*")
          || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
