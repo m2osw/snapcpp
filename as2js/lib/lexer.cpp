@@ -686,7 +686,9 @@ Input::char_t Lexer::getc()
 
 void Lexer::ungetc(Input::char_t c)
 {
-    // WARNING: we do not use the f_input ungetc() because
+    // WARNING: we do not use the f_input ungetc() because otherwise
+    //          it would count lines, paragraphs, or pages twice,
+    //          which is a problem...
     if(c > 0 && c < 0x110000)
     {
         // unget only if not an invalid characters (especially not EOF)

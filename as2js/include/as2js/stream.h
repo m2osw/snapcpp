@@ -1,6 +1,6 @@
 #ifndef AS2JS_STREAM_H
 #define AS2JS_STREAM_H
-/* stream.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* as2js/stream.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 

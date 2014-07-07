@@ -35,6 +35,8 @@ SOFTWARE.
 
 #include "as2js/parser.h"
 
+#include "as2js/message.h"
+
 
 namespace as2js
 {
@@ -75,7 +77,7 @@ void Parser::get_token()
 {
     bool const reget(!f_unget.empty());
 
-    if(f_unget.size() > 0)
+    if(reget)
     {
         f_node = f_unget.back();
         f_unget.pop_back();
@@ -88,7 +90,8 @@ void Parser::get_token()
     if(f_options
     && f_options->get_option(Options::option_t::OPTION_DEBUG_LEXER) != 0)
     {
-        std::cerr << (reget ? "RE-TOKEN" : "TOKEN") << ": " << f_node << std::endl;
+        Message msg(message_level_t::MESSAGE_LEVEL_TRACE, err_code_t::AS_ERR_NONE, f_node->get_position());
+        msg << (reget ? "RE-TOKEN" : "TOKEN") << ": " << *f_node;
     }
 }
 

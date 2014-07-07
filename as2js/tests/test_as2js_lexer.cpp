@@ -3106,6 +3106,7 @@ as2js::Options::option_t g_options[] =
 {
     as2js::Options::option_t::OPTION_ALLOW_WITH,
     as2js::Options::option_t::OPTION_BINARY,
+    as2js::Options::option_t::OPTION_COVERAGE,
     as2js::Options::option_t::OPTION_DEBUG,
     as2js::Options::option_t::OPTION_DEBUG_LEXER,
     as2js::Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES,
@@ -3232,7 +3233,7 @@ void As2JsLexerUnitTests::test_tokens()
         // this represents 2^(# of options) which right now is 2048
         // we also check with entry 2048 to allow a test with the default
         // (i.e. a nullptr as the Options pointer)
-        for(int opt(0); opt <= (1 << g_options_size); ++opt)
+        for(size_t opt(0); opt <= (1 << g_options_size); ++opt)
         {
             as2js::String str;
             str.from_utf8(g_tokens[idx].f_input);

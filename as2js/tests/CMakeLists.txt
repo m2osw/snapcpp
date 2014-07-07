@@ -133,6 +133,7 @@ add_executable(${PROJECT_NAME}
     test_as2js_node_display.cpp
     test_as2js_lexer.cpp
     test_as2js_options.cpp
+    test_as2js_parser.cpp
     test_as2js_position.cpp
     test_as2js_rc.cpp
     test_as2js_stream.cpp

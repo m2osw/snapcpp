@@ -60,11 +60,18 @@ void Parser::attributes(Node::pointer_t& node)
     {
         switch(f_node->get_type())
         {
+        case Node::node_t::NODE_ABSTRACT:
         case Node::node_t::NODE_FALSE:
+        case Node::node_t::NODE_FINAL:
         case Node::node_t::NODE_IDENTIFIER:
+        case Node::node_t::NODE_NATIVE:
         case Node::node_t::NODE_PRIVATE:
+        case Node::node_t::NODE_PROTECTED:
         case Node::node_t::NODE_PUBLIC:
+        case Node::node_t::NODE_STATIC:
+        case Node::node_t::NODE_TRANSIENT:
         case Node::node_t::NODE_TRUE:
+        case Node::node_t::NODE_VOLATILE:
             // TODO: Check that we don't find the same type twice...
             //       We may also want to enforce an order in some cases?
             break;
@@ -134,7 +141,7 @@ void Parser::directive(Node::pointer_t& node)
     // then they are added to the directive as the last entry
     Node::pointer_t attr_list;
     attributes(attr_list);
-    size_t attr_count(attr_list->get_children_size());
+    size_t attr_count(attr_list ? attr_list->get_children_size() : 0);
     Node::node_t type(f_node->get_type());
     Node::pointer_t last_attr;
 
@@ -702,7 +709,7 @@ void Parser::directive(Node::pointer_t& node)
     if(directive_node)
     {
         // if there are attributes link them to the directive
-        if(attr_list->get_children_size() > 0)
+        if(attr_list && attr_list->get_children_size() > 0)
         {
             directive_node->set_link(Node::link_t::LINK_ATTRIBUTES, attr_list);
         }
@@ -763,7 +770,7 @@ void Parser::directive(Node::pointer_t& node)
         {
             get_token();
         }
-        // we need to skip one semi-color here
+        // we need to skip one semi-colon here
         // in case we're not in a directive_list()
         if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
         {

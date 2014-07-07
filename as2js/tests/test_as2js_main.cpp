@@ -62,6 +62,7 @@ std::string     g_tmp_dir;
 std::string     g_as2js_compiler;
 bool            g_gui = false;
 bool            g_run_stdout_destructive = false;
+bool            g_save_parser_tests = false;
 
 }
 
@@ -209,6 +210,14 @@ int unittest_main(int argc, char *argv[])
             advgetopt::getopt::required_argument
         },
         {
+            '\0',
+            0,
+            "save-parser-tests",
+            nullptr,
+            "save the JSON used to test the parser",
+            advgetopt::getopt::no_argument
+        },
+        {
             't',
             0,
             "tmp",
@@ -278,6 +287,8 @@ int unittest_main(int argc, char *argv[])
         exit(1);
     }
     as2js_test::g_run_stdout_destructive = opt.is_defined("destructive");
+
+    as2js_test::g_save_parser_tests = opt.is_defined("save-parser-tests");
 
     // by default we get a different seed each time; that really helps
     // in detecting errors! (I know, I wrote loads of tests before)

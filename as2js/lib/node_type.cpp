@@ -56,7 +56,7 @@ namespace
 struct type_name_t
 {
     Node::node_t    f_type;
-    const char *    f_name;
+    char const *    f_name;
     int             f_line;
 };
 

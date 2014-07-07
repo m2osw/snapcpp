@@ -1,6 +1,6 @@
-#ifndef TEST_AS2JS_MAIN_H
-#define TEST_AS2JS_MAIN_H
-/* test_as2js_main.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+#ifndef TEST_AS2JS_PARSER_H
+#define TEST_AS2JS_PARSER_H
+/* test_as2js_parser.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -34,44 +34,23 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 */
-#include <string>
-#include <cstring>
-#include <cstdlib>
 
 
-namespace as2js_test
+#include <cppunit/extensions/HelperMacros.h>
+
+
+class As2JsParserUnitTests : public CPPUNIT_NS::TestFixture
 {
+    CPPUNIT_TEST_SUITE( As2JsParserUnitTests );
+        CPPUNIT_TEST( test_basics );
+    CPPUNIT_TEST_SUITE_END();
 
-extern  std::string     g_tmp_dir;
-extern  std::string     g_as2js_compiler;
-extern  bool            g_gui;
-extern  bool            g_run_stdout_destructive;
-extern  bool            g_save_parser_tests;
-
-class obj_setenv
-{
 public:
-	obj_setenv(const std::string& var)
-		: f_copy(strdup(var.c_str()))
-	{
-		putenv(f_copy);
-		std::string::size_type p(var.find_first_of('='));
-		f_name = var.substr(0, p);
-	}
-	~obj_setenv()
-	{
-		putenv(strdup((f_name + "=").c_str()));
-		free(f_copy);
-	}
+    //virtual void setUp();
 
-private:
-	char *		f_copy;
-	std::string	f_name;
+protected:
+    void test_basics();
 };
 
-}
-// namespace as2js_test
 #endif
-// #ifdef TEST_AS2JS_MAIN_H
-
 // vim: ts=4 sw=4 et

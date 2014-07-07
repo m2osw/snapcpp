@@ -165,6 +165,15 @@ void Parser::pragma()
             option = Options::option_t::OPTION_BINARY;
             value = 0;
         }
+        else if(name == "coverage")
+        {
+            option = Options::option_t::OPTION_COVERAGE;
+        }
+        else if(name == "no_coverage")
+        {
+            option = Options::option_t::OPTION_COVERAGE;
+            value = 0;
+        }
         else if(name == "debug")
         {
             option = Options::option_t::OPTION_DEBUG;

@@ -1448,7 +1448,9 @@ void As2JsJSONUnitTests::test_json()
         {
             create_array(data);
         }
-        as2js::String expected(header);
+        as2js::String expected;
+        expected += 0xFEFF; // BOM
+        expected += header;
         if(!header.empty())
         {
             expected += '\n';
@@ -1496,7 +1498,9 @@ void As2JsJSONUnitTests::test_json()
 
         CPPUNIT_ASSERT(json->get_value() == data.f_value);
         // make sure the tree is also correct:
-        as2js::String expected_tree(header);
+        as2js::String expected_tree;
+        expected_tree += 0xFEFF; // BOM
+        expected_tree += header;
         if(!header.empty())
         {
             expected_tree += '\n';
@@ -1510,7 +1514,9 @@ void As2JsJSONUnitTests::test_json()
         // the copy gets the exact same value pointer...
         CPPUNIT_ASSERT(copy.get_value() == data.f_value);
         // make sure the tree is also correct:
-        as2js::String expected_copy(header);
+        as2js::String expected_copy;
+        expected_copy += 0xFEFF; // BOM
+        expected_copy += header;
         if(!header.empty())
         {
             expected_copy += '\n';
