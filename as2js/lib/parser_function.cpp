@@ -179,7 +179,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
             if(f_node->get_type() == Node::node_t::NODE_ASSIGNMENT)
             {
                 // cannot accept when REST is set
-                if(f_node->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
+                if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
                     msg << "you cannot assign a default value to '...'";
@@ -196,7 +196,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
                 }
             }
         }
-        else if(f_node->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
+        else if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
         {
             node->append_child(param);
         }
@@ -236,7 +236,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
         }
         else
         {
-            if(f_node->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
+            if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
                 msg << "no other parameters expected after '...'";
@@ -294,7 +294,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             else if(f_node->get_type() == Node::node_t::NODE_OPEN_PARENTHESIS)
             {
                 // not a getter or setter when only get() or set()
-                if(f_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER))
+                if(node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER))
                 {
                     node->set_string("get");
                 }
@@ -302,8 +302,8 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
                 {
                     node->set_string("set");
                 }
-                f_node->set_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER, false);
-                f_node->set_flag(Node::flag_t::NODE_FUNCTION_FLAG_SETTER, false);
+                node->set_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER, false);
+                node->set_flag(Node::flag_t::NODE_FUNCTION_FLAG_SETTER, false);
                 etter = "";
             }
             else if(!expression_function)
@@ -478,7 +478,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             if(f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
-                msg << "')' expected to close the 'function' parameters";
+                msg << "')' expected to close the list of parameters of this function.";
             }
             else
             {
@@ -502,7 +502,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             node->set_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID, true);
             get_token();
         }
-        else if(f_node->get_type() == Node::node_t::NODE_VOID && f_node->get_string() == "Never")
+        else if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER && f_node->get_string() == "Never")
         {
             // function is not expected to return
             node->set_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER, true);
@@ -543,7 +543,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     // any requirement?
     if(f_node->get_type() == Node::node_t::NODE_REQUIRE)
     {
-        // skip the REQUIRES keyword
+        // skip the REQUIRE keyword
         get_token();
         bool const has_else(f_node->get_type() == Node::node_t::NODE_ELSE);
         if(has_else)
@@ -551,6 +551,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             // require else ... is an "or" (i.e. parent function require
             // may be negative, then this require comes to the rescue)
             // without the else, it is not valid to redeclare a require
+            //
             // skip the ELSE keyword
             get_token();
         }

@@ -165,6 +165,15 @@ public:
             return;
         }
 
+        if(f_expected.empty())
+        {
+            std::cerr << "\n*** STILL NECESSARY ***\n";
+            std::cerr << "filename = " << pos.get_filename() << "\n";
+            std::cerr << "msg = " << message << "\n";
+            std::cerr << "page = " << pos.get_page() << "\n";
+            std::cerr << "error_code = " << static_cast<int>(error_code) << "\n";
+        }
+
         CPPUNIT_ASSERT(!f_expected.empty());
 
 //std::cerr << "filename = " << pos.get_filename() << " / " << f_expected[0].f_pos.get_filename() << "\n";
@@ -366,22 +375,52 @@ as2js::err_code_t str_to_error_code(as2js::String const& error_name)
 void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::pointer_t node)
 {
     as2js::String node_type_string;
-    node_type_string.from_utf8("node_type");
+    node_type_string.from_utf8("node type");
     as2js::String children_string;
     children_string.from_utf8("children");
+    as2js::String label_string;
+    label_string.from_utf8("label");
+    as2js::String integer_string;
+    integer_string.from_utf8("integer");
 
     CPPUNIT_ASSERT(expected->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT);
     as2js::JSON::JSONValue::object_t const& child_object(expected->get_object());
 
     as2js::JSON::JSONValue::pointer_t node_type_value(child_object.find(node_type_string)->second);
+std::cerr << "*** Comparing " << node->get_type_name() << " (node) vs " << node_type_value->get_string() << " (JSON)\n";
     CPPUNIT_ASSERT(node->get_type_name() == node_type_value->get_string());
 
-    as2js::JSON::JSONValue::object_t::const_iterator it(child_object.find(children_string));
-    if(it != child_object.end())
+    as2js::JSON::JSONValue::object_t::const_iterator it_label(child_object.find(label_string));
+    if(it_label != child_object.end())
+    {
+        // we expect a string in this object
+        CPPUNIT_ASSERT(node->get_string() == it_label->second->get_string());
+    }
+    else
+    {
+        // the node cannot have a string otherwise, so we expect a throw
+        CPPUNIT_ASSERT_THROW(node->get_string(), as2js::exception_internal_error);
+    }
+
+    as2js::JSON::JSONValue::object_t::const_iterator it_integer(child_object.find(integer_string));
+    if(it_integer != child_object.end())
+    {
+        // we expect a string in this object
+        CPPUNIT_ASSERT(node->get_int64().get() == it_integer->second->get_int64().get());
+    }
+    else
+    {
+        // the node cannot have an integer otherwise, so we expect a throw
+        CPPUNIT_ASSERT_THROW(node->get_int64(), as2js::exception_internal_error);
+    }
+
+    as2js::JSON::JSONValue::object_t::const_iterator it_children(child_object.find(children_string));
+    if(it_children != child_object.end())
     {
         // the children value must be an array
-        as2js::JSON::JSONValue::array_t const& array(it->second->get_array());
+        as2js::JSON::JSONValue::array_t const& array(it_children->second->get_array());
         size_t const max_children(array.size());
+std::cerr << "   Expecting " << max_children << " children, we have " << node->get_children_size() << " in the node\n";
         CPPUNIT_ASSERT(max_children == node->get_children_size());
         for(size_t idx(0); idx < max_children; ++idx)
         {
@@ -410,7 +449,7 @@ char const g_data[] =
         "\"name\": \"empty program\","
         "\"program\": \"\","
         "\"result\": {"
-            "\"node_type\": \"PROGRAM\""
+            "\"node type\": \"PROGRAM\""
         "}"
     "},"
 
@@ -419,7 +458,7 @@ char const g_data[] =
         "\"name\": \"empty program with comments\","
         "\"program\": \"// a comment is just ignored\\n/* and the program is still just empty */\","
         "\"result\": {"
-            "\"node_type\": \"PROGRAM\""
+            "\"node type\": \"PROGRAM\""
         "}"
     "},"
 
@@ -428,10 +467,10 @@ char const g_data[] =
         "\"name\": \"empty program with semi-colons\","
         "\"program\": \";;;;;;;;;;\","
         "\"result\": {"
-            "\"node_type\": \"PROGRAM\","
+            "\"node type\": \"PROGRAM\","
             "\"children\": ["
                 "{"
-                    "\"node_type\": \"DIRECTIVE_LIST\""
+                    "\"node type\": \"DIRECTIVE_LIST\""
                 "}"
             "]"
         "}"
@@ -450,10 +489,10 @@ char const g_data[] =
             "}"
         "],"
         "\"result\": {"
-            "\"node_type\": \"PROGRAM\","
+            "\"node type\": \"PROGRAM\","
             "\"children\": ["
                 "{"
-                    "\"node_type\": \"DIRECTIVE_LIST\""
+                    "\"node type\": \"DIRECTIVE_LIST\""
                 "}"
             "]"
         "}"
@@ -472,10 +511,10 @@ char const g_data[] =
             "}"
         "],"
         "\"result\": {"
-            "\"node_type\": \"PROGRAM\","
+            "\"node type\": \"PROGRAM\","
             "\"children\": ["
                 "{"
-                    "\"node_type\": \"DIRECTIVE_LIST\""
+                    "\"node type\": \"DIRECTIVE_LIST\""
                 "}"
             "]"
         "}"
@@ -486,16 +525,196 @@ char const g_data[] =
         "\"name\": \"empty package\","
         "\"program\": \"package name { }\","
         "\"result\": {"
-            "\"node_type\": \"PROGRAM\","
+            "\"node type\": \"PROGRAM\","
             "\"children\": ["
                 "{"
-                    "\"node_type\": \"DIRECTIVE_LIST\","
+                    "\"node type\": \"DIRECTIVE_LIST\","
                     "\"children\": ["
                         "{"
-                            "\"node_type\": \"PACKAGE\","
+                            "\"node type\": \"PACKAGE\","
+                            "\"label\": \"name\","
                             "\"children\": ["
                                 "{"
-                                    "\"node_type\": \"DIRECTIVE_LIST\""
+                                    "\"node type\": \"DIRECTIVE_LIST\""
+                                "}"
+                            "]"
+                        "}"
+                    "]"
+                "}"
+            "]"
+        "}"
+    "},"
+
+    // Try an 'a+b' function
+    "{"
+        "\"name\": \"'a+b' function\","
+        "\"program\": \"package addition {"
+                            "function a_plus_b(a: integer, b: integer = 213)"
+                                " : integer"
+                                " throws RangeError"
+                                " require positive: a >= 0 && b >= 0"
+                                " ensure positive: result >= 0"
+                            "{"
+                                "  return a + b;"
+                            "}"
+                        " }\","
+        "\"result\": {"
+            "\"node type\": \"PROGRAM\","
+            "\"children\": ["
+                "{"
+                    "\"node type\": \"DIRECTIVE_LIST\","
+                    "\"children\": ["
+                        "{"
+                            "\"node type\": \"PACKAGE\","
+                            "\"label\": \"addition\","
+                            "\"children\": ["
+                                "{"
+                                    "\"node type\": \"DIRECTIVE_LIST\","
+                                    "\"children\": ["
+                                        "{"
+                                            "\"node type\": \"FUNCTION\","
+                                            "\"label\": \"a_plus_b\","
+                                            "\"children\": ["
+                                                "{"
+                                                    "\"node type\": \"PARAMETERS\","
+                                                    "\"children\": ["
+                                                        "{"
+                                                            "\"node type\": \"PARAM\","
+                                                            "\"label\": \"a\","
+                                                            "\"children\": ["
+                                                                "{"
+                                                                    "\"node type\": \"IDENTIFIER\","
+                                                                    "\"label\": \"integer\""
+                                                                "}"
+                                                            "]"
+                                                        "},"
+                                                        "{"
+                                                            "\"node type\": \"PARAM\","
+                                                            "\"label\": \"b\","
+                                                            "\"children\": ["
+                                                                "{"
+                                                                    "\"node type\": \"IDENTIFIER\","
+                                                                    "\"label\": \"integer\""
+                                                                "},"
+                                                                "{"
+                                                                    "\"node type\": \"SET\","
+                                                                    "\"children\": ["
+                                                                        "{"
+                                                                            "\"node type\": \"INT64\","
+                                                                            "\"integer\": 213"
+                                                                        "}"
+                                                                    "]"
+                                                                "}"
+                                                            "]"
+                                                        "}"
+                                                    "]"
+                                                "},"
+                                                "{"
+                                                    // TODO: we most certainly want to add a type for this data
+                                                    "\"node type\": \"IDENTIFIER\","
+                                                    "\"label\": \"integer\""
+                                                "},"
+                                                "{"
+                                                    "\"node type\": \"THROWS\","
+                                                    "\"children\": ["
+                                                        "{"
+                                                            "\"node type\": \"IDENTIFIER\","
+                                                            "\"label\": \"RangeError\""
+                                                        "}"
+                                                    "]"
+                                                "},"
+                                                "{"
+                                                    "\"node type\": \"REQUIRE\","
+                                                    "\"children\": ["
+                                                        "{"
+                                                            "\"node type\": \"LABEL\","
+                                                            "\"label\": \"positive\","
+                                                            "\"children\": ["
+                                                                "{"
+                                                                    "\"node type\": \"LOGICAL_AND\","
+                                                                    "\"children\": ["
+                                                                        "{"
+                                                                            "\"node type\": \"GREATER_EQUAL\","
+                                                                            "\"children\": ["
+                                                                                "{"
+                                                                                    "\"node type\": \"IDENTIFIER\","
+                                                                                    "\"label\": \"a\""
+                                                                                "},"
+                                                                                "{"
+                                                                                    "\"node type\": \"INT64\","
+                                                                                    "\"integer\": 0"
+                                                                                "}"
+                                                                            "]"
+                                                                        "},"
+                                                                        "{"
+                                                                            "\"node type\": \"GREATER_EQUAL\","
+                                                                            "\"children\": ["
+                                                                                "{"
+                                                                                    "\"node type\": \"IDENTIFIER\","
+                                                                                    "\"label\": \"b\""
+                                                                                "},"
+                                                                                "{"
+                                                                                    "\"node type\": \"INT64\","
+                                                                                    "\"integer\": 0"
+                                                                                "}"
+                                                                            "]"
+                                                                        "}"
+                                                                    "]"
+                                                                "}"
+                                                            "]"
+                                                        "}"
+                                                    "]"
+                                                "},"
+                                                "{"
+                                                    "\"node type\": \"ENSURE\","
+                                                    "\"children\": ["
+                                                        "{"
+                                                            "\"node type\": \"LABEL\","
+                                                            "\"label\": \"positive\","
+                                                            "\"children\": ["
+                                                                "{"
+                                                                    "\"node type\": \"GREATER_EQUAL\","
+                                                                    "\"children\": ["
+                                                                        "{"
+                                                                            "\"node type\": \"IDENTIFIER\","
+                                                                            "\"label\": \"result\""
+                                                                        "},"
+                                                                        "{"
+                                                                            "\"node type\": \"INT64\","
+                                                                            "\"integer\": 0"
+                                                                        "}"
+                                                                    "]"
+                                                                "}"
+                                                            "]"
+                                                        "}"
+                                                    "]"
+                                                "},"
+                                                "{"
+                                                    "\"node type\": \"DIRECTIVE_LIST\","
+                                                    "\"children\": ["
+                                                        "{"
+                                                            "\"node type\": \"RETURN\","
+                                                            "\"children\": ["
+                                                                "{"
+                                                                    "\"node type\": \"ADD\","
+                                                                    "\"children\": ["
+                                                                        "{"
+                                                                            "\"node type\": \"IDENTIFIER\","
+                                                                            "\"label\": \"a\""
+                                                                        "},"
+                                                                        "{"
+                                                                            "\"node type\": \"IDENTIFIER\","
+                                                                            "\"label\": \"b\""
+                                                                        "}"
+                                                                    "]"
+                                                                "}"
+                                                            "]"
+                                                        "}"
+                                                    "]"
+                                                "}"
+                                            "]"
+                                        "}"
+                                    "]"
                                 "}"
                             "]"
                         "}"
