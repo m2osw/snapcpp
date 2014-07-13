@@ -61,9 +61,6 @@ set( CMAKE_MODULE_PATH
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapBuild        REQUIRED )
 
-find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
-find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
-
 ################################################################################
 # Third party libraries
 #

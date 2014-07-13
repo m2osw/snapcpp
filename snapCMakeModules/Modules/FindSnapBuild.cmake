@@ -30,6 +30,9 @@
 #
 include( CMakeParseArguments )
 
+find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
+
 function( ConfigureMakeProject )
 	set( options        USE_CONFIGURE_SCRIPT )
 	set( oneValueArgs   PROJECT_NAME VERSION DISTFILE_PATH )
@@ -75,6 +78,7 @@ function( ConfigureMakeProject )
 		file( MAKE_DIRECTORY ${BUILD_DIR} )
 	endif()
 
+	#set_property( GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST ${ARG_DEPENDS} )
 	add_custom_target( ${ARG_PROJECT_NAME}-depends DEPENDS ${ARG_DEPENDS} )
 
 	if( ARG_USE_CONFIGURE_SCRIPT )
