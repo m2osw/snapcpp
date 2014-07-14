@@ -264,7 +264,7 @@ int unittest_main(int argc, char *argv[])
 
     if(opt.is_defined("help"))
     {
-        opt.usage(advgetopt::getopt::no_error, "Usage: unittest [--opt] [test-name]");
+        opt.usage(advgetopt::getopt::no_error, "Usage: test_as2js [--opt] [test-name]");
         /*NOTREACHED*/
     }
 

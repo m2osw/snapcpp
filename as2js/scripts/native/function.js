@@ -1,6 +1,4 @@
-#ifndef TEST_AS2JS_PARSER_H
-#define TEST_AS2JS_PARSER_H
-/* test_as2js_parser.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* function.js -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,22 +33,23 @@ SOFTWARE.
 
 */
 
-
-#include <cppunit/extensions/HelperMacros.h>
-
-
-class As2JsParserUnitTests : public CPPUNIT_NS::TestFixture
+native package Global
 {
-    CPPUNIT_TEST_SUITE( As2JsParserUnitTests );
-        CPPUNIT_TEST( test_parser );
-    CPPUNIT_TEST_SUITE_END();
 
-public:
-    //virtual void setUp();
+class Function : public Object
+{
+    function Function() : Function;
+    function Function(var in value: Function) : Function;
 
-protected:
-    void test_parser();
+    function toString(Void) : String;
+    function apply(var in thisArg: Object, var in argArray: Array) : Object;
+    function call(var in thisArg: Object, var in ... args) : Object;
+    function bind(var in thisArg: Object, var in ... args) : Function;
+
+    var length; /* number of arguments defined */
 };
 
-#endif
+
+}
+
 // vim: ts=4 sw=4 et

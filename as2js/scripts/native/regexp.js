@@ -1,6 +1,4 @@
-#ifndef TEST_AS2JS_PARSER_H
-#define TEST_AS2JS_PARSER_H
-/* test_as2js_parser.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* regexp.js -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,22 +33,28 @@ SOFTWARE.
 
 */
 
-
-#include <cppunit/extensions/HelperMacros.h>
-
-
-class As2JsParserUnitTests : public CPPUNIT_NS::TestFixture
+native package Global
 {
-    CPPUNIT_TEST_SUITE( As2JsParserUnitTests );
-        CPPUNIT_TEST( test_parser );
-    CPPUNIT_TEST_SUITE_END();
 
-public:
-    //virtual void setUp();
 
-protected:
-    void test_parser();
+class RegExp : public Object
+{
+    function RegExp(Void) : RegExp;
+    function RegExp(var in value: RegExp, var in flags: String) : RegExp;
+    function RegExp(var in value: String) : RegExp;
+
+    function exec(var in string: String) : Array;
+    function test(var in string: String) : Boolean;
+    function toString(Void) : String;
+
+    var const source: String;
+    var const global: Boolean;
+    var const ignoreCase: Boolean;
+    var const multiline: Boolean;
+    var lastIndex: Number;
 };
 
-#endif
+
+}
+
 // vim: ts=4 sw=4 et

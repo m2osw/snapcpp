@@ -100,7 +100,8 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
         // *** DECLARATION ***
         if(f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
-            Node::pointer_t directive_list_node(f_lexer->get_new_node(Node::node_t::NODE_DIRECTIVE_LIST));
+            Node::pointer_t directive_list_node;
+            directive_list(directive_list_node);
             node->append_child(directive_list_node);
         }
 

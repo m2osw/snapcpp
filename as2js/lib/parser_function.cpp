@@ -49,8 +49,6 @@ namespace as2js
 
 void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
 {
-    has_out = false;
-
     // accept function stuff(void) { ... } as in C/C++
     // Note that we also accept Void (void is a keyword, Void is a type)
     if(f_node->get_type() == Node::node_t::NODE_VOID
@@ -84,6 +82,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
         // get all the attributes for the parameters
         // (var, const, in, out, named, unchecked, ...)
         bool more(true);
+        bool param_has_out(false);
         do
         {
             // TODO: it seems that any one flag should only be accepted
@@ -121,6 +120,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
                     invalid = false;
                     get_token();
                     has_out = true; // for caller to know
+                    param_has_out = true;
                     break;
                 }
                 if(f_node->get_string() == "named")
@@ -146,17 +146,17 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
         }
         while(more); 
 
-        if(has_out)
+        if(param_has_out)
         {
             if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
-                msg << "you cannot use the function parameter attribute 'out' with '...'";
+                msg << "you cannot use the function parameter attribute 'out' with '...'.";
             }
             if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_CONST))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
-                msg << "you cannot use the function attributes 'out' and 'const' together";
+                msg << "you cannot use the function attributes 'out' and 'const' together.";
             }
         }
 
@@ -172,8 +172,10 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
                 //      the following parameters need to be
                 //      of that type?
                 get_token();
-                Node::pointer_t type;
-                conditional_expression(type, false);
+                Node::pointer_t expr;
+                conditional_expression(expr, false);
+                Node::pointer_t type(f_lexer->get_new_node(Node::node_t::NODE_TYPE));
+                type->append_child(expr);
                 param->append_child(type);
             }
             if(f_node->get_type() == Node::node_t::NODE_ASSIGNMENT)
@@ -182,18 +184,19 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
                 if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
-                    msg << "you cannot assign a default value to '...'";
+                    msg << "you cannot assign a default value to '...'.";
+                    // we still parse the initializer so we get to the right
+                    // place; but since we had an error anyway, the compiler
+                    // won't kick in so we are fine
                 }
-                else
-                {
-                    // initializer
-                    get_token();
-                    Node::pointer_t initializer(f_lexer->get_new_node(Node::node_t::NODE_SET));
-                    Node::pointer_t expr;
-                    conditional_expression(expr, false);
-                    initializer->append_child(expr);
-                    param->append_child(initializer);
-                }
+
+                // initializer
+                get_token();
+                Node::pointer_t initializer(f_lexer->get_new_node(Node::node_t::NODE_SET));
+                Node::pointer_t expr;
+                conditional_expression(expr, false);
+                initializer->append_child(expr);
+                param->append_child(initializer);
             }
         }
         else if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
@@ -212,7 +215,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
             if(!invalid)
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
-                msg << "expected an identifier as the parameter name (not token " << f_node->get_type_name() << ")";
+                msg << "expected ')' or ',' after a parameter declaration (not token " << f_node->get_type_name() << ").";
             }
             switch(f_node->get_type())
             {
@@ -239,7 +242,7 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
             if(param->get_flag(Node::flag_t::NODE_PARAM_FLAG_REST))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PARAMETERS, f_lexer->get_input()->get_position());
-                msg << "no other parameters expected after '...'";
+                msg << "no other parameters expected after '...'.";
             }
             get_token();
         }
@@ -287,7 +290,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
                 if(Node::string_to_operator(node->get_string()) != Node::node_t::NODE_UNKNOWN)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
-                    msg << "operator override cannot be marked as a getter nor a setter function";
+                    msg << "operator override cannot be marked as a getter nor a setter function.";
                 }
                 get_token();
             }
@@ -309,12 +312,12 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             else if(!expression_function)
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
-                msg << "getter and setter functions require a name";
+                msg << "getter and setter functions require a name.";
             }
             if(expression_function && !etter.empty())
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
-                msg << "expression functions cannot be getter nor setter functions";
+                msg << "expression functions cannot be getter nor setter functions.";
             }
         }
         else
@@ -326,8 +329,8 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             {
                 // Ooops? this could be that the user misspelled get or set
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
-                msg << "only one name is expected for a function (misspelled get or set?)";
-                get_token();
+                msg << "only one name is expected for a function (misspelled get or set? missing '(' before a parameter?)";
+                get_token(); // <- TBD: is that really a good idea?
             }
         }
     }
@@ -448,7 +451,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
         if(!expression_function)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
-            msg << "function declarations are required to be named";
+            msg << "function declarations are required to be named.";
         }
         break;
 
@@ -461,7 +464,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
         {
             // read params
             Node::pointer_t params;
-            bool has_out;
+            bool has_out(false);
             parameter_list(params, has_out);
             if(has_out)
             {
@@ -513,7 +516,9 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             // normal type definition
             Node::pointer_t expr;
             conditional_expression(expr, false);
-            node->append_child(expr);
+            Node::pointer_t type(f_lexer->get_new_node(Node::node_t::NODE_TYPE));
+            type->append_child(expr);
+            node->append_child(type);
         }
     }
 
@@ -604,7 +609,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
         if(f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "'}' expected to close the 'function' block";
+            msg << "'}' expected to close the 'function' block.";
         }
         else
         {

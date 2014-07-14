@@ -67,7 +67,7 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
         else
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_VARIABLE, f_lexer->get_input()->get_position());
-            msg << "expected an identifier as the variable name";
+            msg << "expected an identifier as the " << (constant ? "const" : "variable") << " name.";
         }
 
         if(f_node->get_type() == Node::node_t::NODE_COLON)
@@ -102,7 +102,7 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
                 && f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS);
         }
 
-        if(f_node->get_type() == Node::node_t::NODE_COMMA)
+        if(f_node->get_type() != Node::node_t::NODE_COMMA)
         {
             return;
         }

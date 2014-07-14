@@ -1490,6 +1490,13 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
             {
                 expression(child); // recursive!
             }
+            // TODO:
+            // Do we want/have to do the following?
+            //else if(child->get_children_size() > 0)
+            //{
+            //    Node::pointer_t sub_expr(child->get_child(0));
+            //    expression(sub_expr);
+            //}
         }
     }
 
