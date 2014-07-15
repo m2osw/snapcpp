@@ -1227,7 +1227,7 @@
     {
         //"\"verbose\": true,"
         "name": "invalid \"out\" with \"...\" in function parameter list",
-        "program": "function(out a: integer, out ... named_and_typed_rest: Complex);",
+        "program": "function bad_out(out a: integer, out ... named_and_typed_rest: Complex);",
         "expected messages": [
             {
                 "message level": 2,
@@ -1244,7 +1244,7 @@
                     "children": [
                         {
                             "node type": "FUNCTION",
-                            "label": "",
+                            "label": "bad_out",
                             "flags": "FUNCTION_FLAG_OUT",
                             "children": [
                                 {
@@ -1296,7 +1296,7 @@
     {
         //"verbose": true,
         "name": "invalid \"out\" with \"const\" in function parameter list",
-        "program": "function(const in a: integer, const out b: String);",
+        "program": "function bad_out_with_const(const in a: integer, const out b: String);",
         "expected messages": [
             {
                 "message level": 2,
@@ -1313,7 +1313,7 @@
                     "children": [
                         {
                             "node type": "FUNCTION",
-                            "label": "",
+                            "label": "bad_out_with_const",
                             "flags": "FUNCTION_FLAG_OUT",
                             "children": [
                                 {
@@ -1365,7 +1365,7 @@
     {
         //"verbose": true,
         "name": "invalid assignment to \"...\" in function parameter list",
-        "program": "function(out bottom: integer, ... power: Complex = {a:1, b:4});",
+        "program": "function bad_assignment(out bottom: integer, ... power: Complex = {a:1, b:4});",
         "expected messages": [
             {
                 "message level": 2,
@@ -1382,7 +1382,7 @@
                     "children": [
                         {
                             "node type": "FUNCTION",
-                            "label": "",
+                            "label": "bad_assignment",
                             "flags": "FUNCTION_FLAG_OUT",
                             "children": [
                                 {
@@ -1699,13 +1699,13 @@
         "expected messages": [
             {
                 "message level": 2,
-                "error code": "INVALID_PARAMETERS",
+                "error code": "INVALID_FUNCTION",
                 "line #": 1,
                 "message": "operator override cannot be marked as a getter nor a setter function."
             },
             {
                 "message level": 2,
-                "error code": "INVALID_PARAMETERS",
+                "error code": "INVALID_FUNCTION",
                 "line #": 2,
                 "message": "operator override cannot be marked as a getter nor a setter function."
             }
@@ -2054,6 +2054,64 @@
                 },
                 {
                     "node type": "DIRECTIVE_LIST"
+                }
+            ]
+        }
+    },
+
+    // A stand along else in a directive list fails
+    {
+        //"verbose": true,
+        "name": "two parameters separated by < and > instead of a comma",
+        "program": "function bad_params(a < > b) { return 3.3; }",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INVALID_PARAMETERS",
+                "line #": 1,
+                "message": "expected ')' or ',' after a parameter declaration (not token LESS)."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FUNCTION",
+                            "label": "bad_params",
+                            "children": [
+                                {
+                                    "node type": "PARAMETERS",
+                                    "children": [
+                                        {
+                                            "node type": "PARAM",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "PARAM",
+                                            "label": "b"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "RETURN",
+                                            "children": [
+                                                {
+                                                    "node type": "FLOAT64",
+                                                    "float": 3.3
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         }

@@ -287,7 +287,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
                 // a getter or setter which is also an
                 // operator overload though...
                 node->set_string(etter + f_node->get_string());
-                if(Node::string_to_operator(node->get_string()) != Node::node_t::NODE_UNKNOWN)
+                if(Node::string_to_operator(f_node->get_string()) != Node::node_t::NODE_UNKNOWN)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FUNCTION, f_lexer->get_input()->get_position());
                     msg << "operator override cannot be marked as a getter nor a setter function.";
@@ -350,19 +350,8 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
         break;
 
     // all the operators which can be overloaded as is
-    case Node::node_t::NODE_LOGICAL_NOT:
-    case Node::node_t::NODE_MODULO:
-    case Node::node_t::NODE_BITWISE_AND:
-    case Node::node_t::NODE_MULTIPLY:
     case Node::node_t::NODE_ADD:
-    case Node::node_t::NODE_SUBTRACT:
-    case Node::node_t::NODE_DIVIDE:
-    case Node::node_t::NODE_LESS:
     case Node::node_t::NODE_ASSIGNMENT:
-    case Node::node_t::NODE_GREATER:
-    case Node::node_t::NODE_BITWISE_XOR:
-    case Node::node_t::NODE_BITWISE_OR:
-    case Node::node_t::NODE_BITWISE_NOT:
     case Node::node_t::NODE_ASSIGNMENT_ADD:
     case Node::node_t::NODE_ASSIGNMENT_BITWISE_AND:
     case Node::node_t::NODE_ASSIGNMENT_BITWISE_OR:
@@ -382,18 +371,28 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
     case Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::node_t::NODE_BITWISE_AND:
+    case Node::node_t::NODE_BITWISE_XOR:
+    case Node::node_t::NODE_BITWISE_OR:
+    case Node::node_t::NODE_BITWISE_NOT:
     case Node::node_t::NODE_COMPARE:
     case Node::node_t::NODE_DECREMENT:
+    case Node::node_t::NODE_DIVIDE:
     case Node::node_t::NODE_EQUAL:
+    case Node::node_t::NODE_GREATER:
     case Node::node_t::NODE_GREATER_EQUAL:
     case Node::node_t::NODE_INCREMENT:
+    case Node::node_t::NODE_LESS:
     case Node::node_t::NODE_LESS_EQUAL:
     case Node::node_t::NODE_LOGICAL_AND:
+    case Node::node_t::NODE_LOGICAL_NOT:
     case Node::node_t::NODE_LOGICAL_OR:
     case Node::node_t::NODE_LOGICAL_XOR:
     case Node::node_t::NODE_MATCH:
     case Node::node_t::NODE_MAXIMUM:
     case Node::node_t::NODE_MINIMUM:
+    case Node::node_t::NODE_MODULO:
+    case Node::node_t::NODE_MULTIPLY:
     case Node::node_t::NODE_NOT_EQUAL:
     case Node::node_t::NODE_NOT_MATCH:
     case Node::node_t::NODE_POST_DECREMENT:
@@ -406,6 +405,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     case Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
     case Node::node_t::NODE_STRICTLY_EQUAL:
     case Node::node_t::NODE_STRICTLY_NOT_EQUAL:
+    case Node::node_t::NODE_SUBTRACT:
     {
         // save the operator type in the node to be able
         // to get the string
@@ -416,7 +416,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
         break;
 
     // this is a complicated one because () can
-    // be used for the parameters too
+    // be used as the "()" operator or for the parameters
     case Node::node_t::NODE_OPEN_PARENTHESIS:
     {
         Node::pointer_t restore(f_node);
@@ -431,6 +431,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
                 // this is taken as the "()" operator!
                 node->set_string("()");
                 node->set_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR, true);
+                break;
             }
             else
             {
@@ -445,8 +446,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             f_node = restore;
         }
     }
-        break;
-
+        /*FALLTHROUGH*/
     default:
         if(!expression_function)
         {

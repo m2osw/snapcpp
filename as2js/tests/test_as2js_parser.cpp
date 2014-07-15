@@ -1027,6 +1027,8 @@ void As2JsParserUnitTests::test_parser()
 
             as2js::Node::pointer_t root(parser->parse());
 
+            tc.got_called();
+
             bool verbose(false);
             as2js::JSON::JSONValue::object_t::const_iterator verbose_it(prog.find(verbose_string));
             if(verbose_it != prog.end())

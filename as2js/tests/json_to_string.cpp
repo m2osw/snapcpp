@@ -230,6 +230,11 @@ int main(int argc, char **argv)
                                 // keep the comments, but not inside the JSON strings
                                 out->write(indent);
                                 out->write(str);
+                                if(str[str.length() - 1] == '\\')
+                                {
+                                    // we add a $ when str ends with a '\'
+                                    out->write("$");
+                                }
                                 out->write("\n");
                                 indent.clear();
                                 str.clear();
