@@ -584,7 +584,7 @@ void Parser::if_directive(Node::pointer_t& node)
 void Parser::return_directive(Node::pointer_t& node)
 {
     node = f_lexer->get_new_node(Node::node_t::NODE_RETURN);
-    if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
+    if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)
     {
         Node::pointer_t expr;
         expression(expr);

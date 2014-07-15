@@ -58,7 +58,8 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
 {
     if(node)
     {
-        throw exception_internal_error("list_expression() called with a non-null node pointer");
+        // should not happen, if it does, we have got a really bad internal error
+        throw exception_internal_error("list_expression() called with a non-null node pointer"); // LCOV_EXCL_LINE
     }
 
     if(empty && f_node->get_type() == Node::node_t::NODE_COMMA)
@@ -840,7 +841,7 @@ void Parser::object_literal_expression(Node::pointer_t& node)
     node = f_lexer->get_new_node(Node::node_t::NODE_OBJECT_LITERAL);
     for(;;)
     {
-        name = f_lexer->get_new_node(Node::node_t::NODE_TYPE);
+        name = f_lexer->get_new_node(Node::node_t::NODE_NAME);
         type = f_node->get_type();
         switch(type)
         {
@@ -848,7 +849,6 @@ void Parser::object_literal_expression(Node::pointer_t& node)
         {
             // We keep the '(' so an identifier becomes
             // a VIDENTIFIER and thus remains dynamic.
-            //GetToken();
             Node::pointer_t expr;
             expression(expr);
             name->append_child(expr);
@@ -876,13 +876,13 @@ and_scope:
                 else
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_SCOPE, f_lexer->get_input()->get_position());
-                    msg << "'::' is expected to be followed by an identifier";
+                    msg << "'::' is expected to always be followed by an identifier.";
                 }
             }
             else if(type != Node::node_t::NODE_IDENTIFIER)
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FIELD_NAME, f_lexer->get_input()->get_position());
-                msg << "'public' or 'private' cannot be used as a field name, '::' was expected";
+                msg << "'public' or 'private' or a dynamic scope cannot be used as a field name, '::' was expected.";
             }
             break;
 
@@ -895,7 +895,7 @@ and_scope:
 
         default:
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FIELD, f_lexer->get_input()->get_position());
-            msg << "the name of a field was expected";
+            msg << "the name of a field was expected.";
             break;
 
         }
@@ -943,9 +943,11 @@ and_scope:
         // valid tree from here on
         node->append_child(name);
 
+        Node::pointer_t set(f_lexer->get_new_node(Node::node_t::NODE_SET));
         Node::pointer_t value;
         assignment_expression(value);
-        node->append_child(value);
+        set->append_child(value);
+        node->append_child(set);
 
         if(f_node->get_type() != Node::node_t::NODE_COMMA)
         {

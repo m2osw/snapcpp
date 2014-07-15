@@ -57,6 +57,38 @@ target_link_libraries( ${PROJECT_NAME}
 
 
 ##
+## JSON to C++ string
+##
+project(json_to_string)
+
+include_directories(
+    ${as2js_compiler_BINARY_DIR}/include
+    ${as2js_compiler_SOURCE_DIR}/include
+    ${as2js_compiler_SOURCE_DIR}/lib
+    ${as2js_compiler_SOURCE_DIR}/src
+    ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${ADVGETOPT_INCLUDE_DIRS}
+)
+add_executable(${PROJECT_NAME}
+    json_to_string.cpp
+
+    # Stick a copy of the tools license in the test utilities
+    ../src/license.cpp
+)
+target_link_libraries( ${PROJECT_NAME}
+    as2js
+    ${ADVGETOPT_LIBRARIES}
+)
+
+
+add_custom_command(OUTPUT ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
+    COMMAND json_to_string -o ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser.json
+    DEPENDS json_to_string ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser.json
+    COMMENT "Generating test_as2js_parser.ci"
+)
+
+
+##
 ## as2js tests
 ##
 
@@ -115,6 +147,7 @@ include_directories(
 )
 include_directories(
     ${as2js_compiler_BINARY_DIR}/include
+    ${as2js_compiler_BINARY_DIR}/tests
     ${as2js_compiler_SOURCE_DIR}/include
     ${as2js_compiler_SOURCE_DIR}/lib
     ${as2js_compiler_SOURCE_DIR}/src
@@ -134,6 +167,7 @@ add_executable(${PROJECT_NAME}
     test_as2js_lexer.cpp
     test_as2js_options.cpp
     test_as2js_parser.cpp
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
     test_as2js_position.cpp
     test_as2js_rc.cpp
     test_as2js_stream.cpp

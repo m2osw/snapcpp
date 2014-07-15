@@ -165,12 +165,23 @@ public:
             return;
         }
 
+        if(f_expected.empty())
+        {
+            std::cerr << "\n*** STILL NECESSARY ***\n";
+            std::cerr << "filename = " << pos.get_filename() << "\n";
+            std::cerr << "msg = " << message << "\n";
+            std::cerr << "page = " << pos.get_page() << "\n";
+            std::cerr << "line = " << pos.get_line() << "\n";
+            std::cerr << "error_code = " << static_cast<int>(error_code) << "\n";
+        }
+
         CPPUNIT_ASSERT(!f_expected.empty());
 
 //std::cerr << "filename = " << pos.get_filename() << " / " << f_expected[0].f_pos.get_filename() << "\n";
 //std::cerr << "msg = " << message << " / " << f_expected[0].f_message << "\n";
 //std::cerr << "page = " << pos.get_page() << " / " << f_expected[0].f_pos.get_page() << "\n";
 //std::cerr << "line = " << pos.get_line() << " / " << f_expected[0].f_pos.get_line() << "\n";
+//std::cerr << "page line = " << pos.get_page_line() << " / " << f_expected[0].f_pos.get_page_line() << "\n";
 //std::cerr << "error_code = " << static_cast<int>(error_code) << " / " << static_cast<int>(f_expected[0].f_error_code) << "\n";
 
         CPPUNIT_ASSERT(f_expected[0].f_call);
@@ -363,149 +374,523 @@ as2js::err_code_t str_to_error_code(as2js::String const& error_name)
 }
 
 
-void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::pointer_t node)
+
+struct flg_to_string_t
+{
+    as2js::Node::flag_t     f_flag;
+    char const *            f_name;
+    int                     f_line;
+};
+
+#define    FLAG_NAME(flg)     { as2js::Node::flag_t::NODE_##flg, TO_STR_sub(flg), __LINE__ }
+
+flg_to_string_t const g_flag_table[] =
+{
+    FLAG_NAME(CATCH_FLAG_TYPED),
+    FLAG_NAME(DIRECTIVE_LIST_FLAG_NEW_VARIABLES),
+    FLAG_NAME(FOR_FLAG_FOREACH),
+    FLAG_NAME(FUNCTION_FLAG_GETTER),
+    FLAG_NAME(FUNCTION_FLAG_SETTER),
+    FLAG_NAME(FUNCTION_FLAG_OUT),
+    FLAG_NAME(FUNCTION_FLAG_VOID),
+    FLAG_NAME(FUNCTION_FLAG_NEVER),
+    FLAG_NAME(FUNCTION_FLAG_NOPARAMS),
+    FLAG_NAME(FUNCTION_FLAG_OPERATOR),
+    FLAG_NAME(IDENTIFIER_FLAG_WITH),
+    FLAG_NAME(IDENTIFIER_FLAG_TYPED),
+    FLAG_NAME(IMPORT_FLAG_IMPLEMENTS),
+    FLAG_NAME(PACKAGE_FLAG_FOUND_LABELS),
+    FLAG_NAME(PACKAGE_FLAG_REFERENCED),
+    FLAG_NAME(PARAM_FLAG_CONST),
+    FLAG_NAME(PARAM_FLAG_IN),
+    FLAG_NAME(PARAM_FLAG_OUT),
+    FLAG_NAME(PARAM_FLAG_NAMED),
+    FLAG_NAME(PARAM_FLAG_REST),
+    FLAG_NAME(PARAM_FLAG_UNCHECKED),
+    FLAG_NAME(PARAM_FLAG_UNPROTOTYPED),
+    FLAG_NAME(PARAM_FLAG_REFERENCED),
+    FLAG_NAME(PARAM_FLAG_PARAMREF),
+    FLAG_NAME(PARAM_FLAG_CATCH),
+    FLAG_NAME(PARAM_MATCH_FLAG_UNPROTOTYPED),
+    FLAG_NAME(SWITCH_FLAG_DEFAULT),
+    FLAG_NAME(VARIABLE_FLAG_CONST),
+    FLAG_NAME(VARIABLE_FLAG_LOCAL),
+    FLAG_NAME(VARIABLE_FLAG_MEMBER),
+    FLAG_NAME(VARIABLE_FLAG_ATTRIBUTES),
+    FLAG_NAME(VARIABLE_FLAG_ENUM),
+    FLAG_NAME(VARIABLE_FLAG_COMPILED),
+    FLAG_NAME(VARIABLE_FLAG_INUSE),
+    FLAG_NAME(VARIABLE_FLAG_ATTRS),
+    FLAG_NAME(VARIABLE_FLAG_DEFINED),
+    FLAG_NAME(VARIABLE_FLAG_DEFINING),
+    FLAG_NAME(VARIABLE_FLAG_TOADD)
+};
+size_t const g_flag_table_size = sizeof(g_flag_table) / sizeof(g_flag_table[0]);
+
+
+as2js::Node::flag_t str_to_flag_code(as2js::String const& flag_name)
+{
+    for(size_t idx(0); idx < g_flag_table_size; ++idx)
+    {
+        if(flag_name == g_flag_table[idx].f_name)
+        {
+            return g_flag_table[idx].f_flag;
+        }
+    }
+    CPPUNIT_ASSERT(!"flag code not found, test_as2js_parser.cpp bug");
+    return as2js::Node::flag_t::NODE_FLAG_max;
+}
+
+
+as2js::String flag_to_str(as2js::Node::flag_t& flg)
+{
+    for(size_t idx(0); idx < g_flag_table_size; ++idx)
+    {
+        if(flg == g_flag_table[idx].f_flag)
+        {
+            return g_flag_table[idx].f_name;
+        }
+    }
+    CPPUNIT_ASSERT(!"flag code not found, test_as2js_parser.cpp bug");
+    return "";
+}
+
+
+
+
+void verify_flags(as2js::Node::pointer_t node, as2js::String const& flags_set, bool verbose)
+{
+    // list of flags that have to be set
+    std::vector<as2js::Node::flag_t> flgs;
+    as2js::as_char_t const *f(flags_set.c_str());
+    as2js::as_char_t const *s(f);
+    for(;;)
+    {
+        if(*f == ',' || *f == '\0')
+        {
+            if(s == f)
+            {
+                break;
+            }
+            as2js::String name(s, f - s);
+//std::cerr << "Checking " << name << " -> " << static_cast<int>(str_to_flag_code(name)) << "\n";
+            flgs.push_back(str_to_flag_code(name));
+            if(*f == '\0')
+            {
+                break;
+            }
+            do // skip commas
+            {
+                ++f;
+            }
+            while(*f == ',');
+            s = f;
+        }
+        else
+        {
+            ++f;
+        }
+    }
+
+    // list of flags that must be checked
+    std::vector<as2js::Node::flag_t> flgs_to_check;
+    switch(node->get_type())
+    {
+    case as2js::Node::node_t::NODE_CATCH:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_CATCH_FLAG_TYPED);
+        break;
+
+    case as2js::Node::node_t::NODE_DIRECTIVE_LIST:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES);
+        break;
+
+    case as2js::Node::node_t::NODE_FOR:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FOR_FLAG_FOREACH);
+        break;
+
+    case as2js::Node::node_t::NODE_FUNCTION:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FUNCTION_FLAG_GETTER);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FUNCTION_FLAG_NEVER);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FUNCTION_FLAG_NOPARAMS);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FUNCTION_FLAG_OUT);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FUNCTION_FLAG_SETTER);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FUNCTION_FLAG_VOID);
+        break;
+
+    case as2js::Node::node_t::NODE_IDENTIFIER:
+    case as2js::Node::node_t::NODE_VIDENTIFIER:
+    case as2js::Node::node_t::NODE_STRING:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_IDENTIFIER_FLAG_WITH);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_IDENTIFIER_FLAG_TYPED);
+        break;
+
+    case as2js::Node::node_t::NODE_IMPORT:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_IMPORT_FLAG_IMPLEMENTS);
+        break;
+
+    case as2js::Node::node_t::NODE_PACKAGE:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PACKAGE_FLAG_FOUND_LABELS);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED);
+        break;
+
+    case as2js::Node::node_t::NODE_PARAM_MATCH:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_MATCH_FLAG_UNPROTOTYPED);
+        break;
+
+    case as2js::Node::node_t::NODE_PARAM:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_CATCH);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_CONST);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_IN);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_OUT);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_NAMED);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_PARAMREF);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_REFERENCED);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_REST);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_UNCHECKED);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_PARAM_FLAG_UNPROTOTYPED);
+        break;
+
+    case as2js::Node::node_t::NODE_SWITCH:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_SWITCH_FLAG_DEFAULT);
+        break;
+
+    case as2js::Node::node_t::NODE_VARIABLE:
+    case as2js::Node::node_t::NODE_VAR_ATTRIBUTES:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_CONST);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_LOCAL);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_MEMBER);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_ATTRIBUTES);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_ENUM);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_COMPILED);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_INUSE);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_ATTRS);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_DEFINED);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_DEFINING);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_TOADD);
+        break;
+
+    default:
+        // no flags supported
+        break;
+
+    }
+
+    CPPUNIT_ASSERT(flgs.size() <= flgs_to_check.size());
+
+    for(size_t idx(0); idx < flgs_to_check.size(); ++idx)
+    {
+        as2js::Node::flag_t flg(flgs_to_check[idx]);
+        std::vector<as2js::Node::flag_t>::iterator it(std::find(flgs.begin(), flgs.end(), flg));
+        if(it == flgs.end())
+        {
+            // expected to be unset
+            if(verbose && node->get_flag(flg))
+            {
+                std::cerr << "*** Comparing flags " << flag_to_str(flg) << " (should not be set)\n";
+            }
+            CPPUNIT_ASSERT(!node->get_flag(flg));
+        }
+        else
+        {
+            // expected to be set
+            flgs.erase(it);
+            if(verbose && !node->get_flag(flg))
+            {
+                std::cerr << "*** Comparing flags " << flag_to_str(flg) << " (it should be set in this case)\n";
+            }
+            CPPUNIT_ASSERT(node->get_flag(flg));
+        }
+    }
+
+    CPPUNIT_ASSERT(flgs.empty());
+}
+
+
+
+
+struct attr_to_string_t
+{
+    as2js::Node::attribute_t    f_attribute;
+    char const *                f_name;
+    int                         f_line;
+};
+
+#define    ATTRIBUTE_NAME(attr)      { as2js::Node::attribute_t::NODE_ATTR_##attr, TO_STR_sub(attr), __LINE__ }
+
+attr_to_string_t const g_attribute_table[] =
+{
+    ATTRIBUTE_NAME(PUBLIC),
+    ATTRIBUTE_NAME(PRIVATE),
+    ATTRIBUTE_NAME(PROTECTED),
+    ATTRIBUTE_NAME(INTERNAL),
+    ATTRIBUTE_NAME(TRANSIENT),
+    ATTRIBUTE_NAME(VOLATILE),
+    ATTRIBUTE_NAME(STATIC),
+    ATTRIBUTE_NAME(ABSTRACT),
+    ATTRIBUTE_NAME(VIRTUAL),
+    ATTRIBUTE_NAME(ARRAY),
+    ATTRIBUTE_NAME(REQUIRE_ELSE),
+    ATTRIBUTE_NAME(ENSURE_THEN),
+    ATTRIBUTE_NAME(NATIVE),
+    ATTRIBUTE_NAME(DEPRECATED),
+    ATTRIBUTE_NAME(UNSAFE),
+    ATTRIBUTE_NAME(CONSTRUCTOR),
+    ATTRIBUTE_NAME(FINAL),
+    ATTRIBUTE_NAME(ENUMERABLE),
+    ATTRIBUTE_NAME(TRUE),
+    ATTRIBUTE_NAME(FALSE),
+    ATTRIBUTE_NAME(UNUSED),
+    ATTRIBUTE_NAME(DYNAMIC),
+    ATTRIBUTE_NAME(FOREACH),
+    ATTRIBUTE_NAME(NOBREAK),
+    ATTRIBUTE_NAME(AUTOBREAK),
+    ATTRIBUTE_NAME(DEFINED)
+};
+size_t const g_attribute_table_size = sizeof(g_attribute_table) / sizeof(g_attribute_table[0]);
+
+
+as2js::Node::attribute_t str_to_attribute_code(as2js::String const& attr_name)
+{
+    for(size_t idx(0); idx < g_attribute_table_size; ++idx)
+    {
+        if(attr_name == g_attribute_table[idx].f_name)
+        {
+            return g_attribute_table[idx].f_attribute;
+        }
+    }
+    CPPUNIT_ASSERT(!"attribute code not found, test_as2js_parser.cpp bug");
+    return as2js::Node::attribute_t::NODE_ATTR_max;
+}
+
+
+as2js::String attribute_to_str(as2js::Node::attribute_t& attr)
+{
+    for(size_t idx(0); idx < g_attribute_table_size; ++idx)
+    {
+        if(attr == g_attribute_table[idx].f_attribute)
+        {
+            return g_attribute_table[idx].f_name;
+        }
+    }
+    CPPUNIT_ASSERT(!"attribute code not found, test_as2js_parser.cpp bug");
+    return "";
+}
+
+
+
+
+void verify_attributes(as2js::Node::pointer_t node, as2js::String const& attributes_set, bool verbose)
+{
+    // list of attributes that have to be set
+    std::vector<as2js::Node::attribute_t> attrs;
+    as2js::as_char_t const *a(attributes_set.c_str());
+    as2js::as_char_t const *s(a);
+    for(;;)
+    {
+        if(*a == ',' || *a == '\0')
+        {
+            if(s == a)
+            {
+                break;
+            }
+            as2js::String name(s, a - s);
+            attrs.push_back(str_to_attribute_code(name));
+            if(*a == '\0')
+            {
+                break;
+            }
+            do // skip commas
+            {
+                ++a;
+            }
+            while(*a == ',');
+            s = a;
+        }
+        else
+        {
+            ++a;
+        }
+    }
+
+    // list of attributes that must be checked
+    std::vector<as2js::Node::attribute_t> attrs_to_check;
+
+    if(node->get_type() != as2js::Node::node_t::NODE_PROGRAM)
+    {
+        // except for PROGRAM, all attributes always apply
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_PUBLIC);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_PRIVATE);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_PROTECTED);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_INTERNAL);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_TRANSIENT);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_VOLATILE);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_STATIC);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_ABSTRACT);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_VIRTUAL);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_ARRAY);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_REQUIRE_ELSE);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_ENSURE_THEN);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_NATIVE);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_DEPRECATED);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_UNSAFE);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_CONSTRUCTOR);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_FINAL);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_ENUMERABLE);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_TRUE);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_FALSE);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_UNUSED);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_DYNAMIC);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_FOREACH);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_NOBREAK);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_AUTOBREAK);
+        attrs_to_check.push_back(as2js::Node::attribute_t::NODE_ATTR_DEFINED);
+    }
+
+    CPPUNIT_ASSERT(attrs.size() <= attrs_to_check.size());
+
+    for(size_t idx(0); idx < attrs_to_check.size(); ++idx)
+    {
+        as2js::Node::attribute_t attr(attrs_to_check[idx]);
+        std::vector<as2js::Node::attribute_t>::iterator it(std::find(attrs.begin(), attrs.end(), attr));
+        if(it == attrs.end())
+        {
+            // expected to be unset
+            if(verbose && node->get_attribute(attr))
+            {
+                std::cerr << "*** Comparing attributes " << attribute_to_str(attr) << " (should not be set)\n";
+            }
+            CPPUNIT_ASSERT(!node->get_attribute(attr));
+        }
+        else
+        {
+            // expected to be set
+            attrs.erase(it);
+            if(verbose && !node->get_attribute(attr))
+            {
+                std::cerr << "*** Comparing attributes " << attribute_to_str(attr) << " (it should be set in this case)\n";
+            }
+            CPPUNIT_ASSERT(node->get_attribute(attr));
+        }
+    }
+
+    CPPUNIT_ASSERT(attrs.empty());
+}
+
+
+
+
+void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::pointer_t node, bool verbose)
 {
     as2js::String node_type_string;
-    node_type_string.from_utf8("node_type");
+    node_type_string.from_utf8("node type");
     as2js::String children_string;
     children_string.from_utf8("children");
+    as2js::String label_string;
+    label_string.from_utf8("label");
+    as2js::String flags_string;
+    flags_string.from_utf8("flags");
+    as2js::String attributes_string;
+    attributes_string.from_utf8("attributes");
+    as2js::String integer_string;
+    integer_string.from_utf8("integer");
 
     CPPUNIT_ASSERT(expected->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT);
     as2js::JSON::JSONValue::object_t const& child_object(expected->get_object());
 
     as2js::JSON::JSONValue::pointer_t node_type_value(child_object.find(node_type_string)->second);
+    if(verbose)
+    {
+        std::cerr << "*** Comparing " << node->get_type_name() << " (node) vs " << node_type_value->get_string() << " (JSON)\n";
+    }
     CPPUNIT_ASSERT(node->get_type_name() == node_type_value->get_string());
 
-    as2js::JSON::JSONValue::object_t::const_iterator it(child_object.find(children_string));
-    if(it != child_object.end())
+    as2js::JSON::JSONValue::object_t::const_iterator it_label(child_object.find(label_string));
+    if(it_label != child_object.end())
+    {
+        // we expect a string in this object
+        CPPUNIT_ASSERT(node->get_string() == it_label->second->get_string());
+    }
+    else
+    {
+        // the node cannot have a string otherwise, so we expect a throw
+        CPPUNIT_ASSERT_THROW(node->get_string(), as2js::exception_internal_error);
+    }
+
+    as2js::JSON::JSONValue::object_t::const_iterator it_flags(child_object.find(flags_string));
+    if(it_flags != child_object.end())
+    {
+        // the tester declared as set of flags that are expected to be set
+        verify_flags(node, it_flags->second->get_string(), verbose);
+    }
+    else
+    {
+        // all flags must be unset
+        verify_flags(node, "", verbose);
+    }
+
+    as2js::JSON::JSONValue::object_t::const_iterator it_attributes(child_object.find(attributes_string));
+    if(it_attributes != child_object.end())
+    {
+        // the tester declared as set of attributes that are expected to be set
+        verify_attributes(node, it_attributes->second->get_string(), verbose);
+    }
+    else
+    {
+        // all attributes must be unset
+        verify_attributes(node, "", verbose);
+    }
+
+    as2js::JSON::JSONValue::object_t::const_iterator it_integer(child_object.find(integer_string));
+    if(it_integer != child_object.end())
+    {
+        // we expect a string in this object
+        CPPUNIT_ASSERT(node->get_int64().get() == it_integer->second->get_int64().get());
+    }
+    else
+    {
+        // the node cannot have an integer otherwise, so we expect a throw
+        CPPUNIT_ASSERT_THROW(node->get_int64(), as2js::exception_internal_error);
+    }
+
+    as2js::JSON::JSONValue::object_t::const_iterator it_children(child_object.find(children_string));
+    if(it_children != child_object.end())
     {
         // the children value must be an array
-        as2js::JSON::JSONValue::array_t const& array(it->second->get_array());
+        as2js::JSON::JSONValue::array_t const& array(it_children->second->get_array());
         size_t const max_children(array.size());
+        if(verbose && max_children != node->get_children_size())
+        {
+            std::cerr << "   Expecting " << max_children << " children, we have " << node->get_children_size() << " in the node\n";
+        }
         CPPUNIT_ASSERT(max_children == node->get_children_size());
         for(size_t idx(0); idx < max_children; ++idx)
         {
             as2js::JSON::JSONValue::pointer_t children_value(array[idx]);
-            verify_result(children_value, node->get_child(idx));
+            verify_result(children_value, node->get_child(idx), verbose);
         }
     }
     else
     {
         // no children defined in the JSON, no children expected in the node
+        if(verbose && node->get_children_size() != 0)
+        {
+            std::cerr << "   Expecting no children, we have " << node->get_children_size() << " in the node\n";
+        }
         CPPUNIT_ASSERT(node->get_children_size() == 0);
     }
 }
 
 
 // JSON data used to test the parser, most of the work is in this table
-// this is one long JSON string
+// this is one long JSON string! It is actually generated using the
+// json_to_string tool and the test_as2js_parser.json as the source
+// file.
 //
-// Note: the top is an array so we can execute each program in the order
-//       we define it...
+// Note: the top is entry an array so we can execute programs in the
+//       order we define them...
 char const g_data[] =
-    "[" // start
-
-    // Empty program
-    "{"
-        "\"name\": \"empty program\","
-        "\"program\": \"\","
-        "\"result\": {"
-            "\"node_type\": \"PROGRAM\""
-        "}"
-    "},"
-
-    // Empty program with comments
-    "{"
-        "\"name\": \"empty program with comments\","
-        "\"program\": \"// a comment is just ignored\\n/* and the program is still just empty */\","
-        "\"result\": {"
-            "\"node_type\": \"PROGRAM\""
-        "}"
-    "},"
-
-    // Empty program with semi-colons
-    "{"
-        "\"name\": \"empty program with semi-colons\","
-        "\"program\": \";;;;;;;;;;\","
-        "\"result\": {"
-            "\"node_type\": \"PROGRAM\","
-            "\"children\": ["
-                "{"
-                    "\"node_type\": \"DIRECTIVE_LIST\""
-                "}"
-            "]"
-        "}"
-    "},"
-
-    // Unexpected ELSE instruction
-    "{"
-        "\"name\": \"unexpected \\\"else\\\" instruction\","
-        "\"program\": \"else\","
-        "\"expected messages\": ["
-            "{"
-                "\"message level\": 2,"
-                "\"error code\": \"INVALID_KEYWORD\","
-                "\"line #\": 1,"
-                "\"message\": \"'else' not expected without an 'if' keyword.\""
-            "}"
-        "],"
-        "\"result\": {"
-            "\"node_type\": \"PROGRAM\","
-            "\"children\": ["
-                "{"
-                    "\"node_type\": \"DIRECTIVE_LIST\""
-                "}"
-            "]"
-        "}"
-    "},"
-
-    // Unexpected }
-    "{"
-        "\"name\": \"unexpected \\\"}\\\" character\","
-        "\"program\": \"}\","
-        "\"expected messages\": ["
-            "{"
-                "\"message level\": 2,"
-                "\"error code\": \"CURVLY_BRAKETS_EXPECTED\","
-                "\"line #\": 1,"
-                "\"message\": \"'}' not expected without a '{'.\""
-            "}"
-        "],"
-        "\"result\": {"
-            "\"node_type\": \"PROGRAM\","
-            "\"children\": ["
-                "{"
-                    "\"node_type\": \"DIRECTIVE_LIST\""
-                "}"
-            "]"
-        "}"
-    "},"
-
-    // Try an empty package
-    "{"
-        "\"name\": \"empty package\","
-        "\"program\": \"package name { }\","
-        "\"result\": {"
-            "\"node_type\": \"PROGRAM\","
-            "\"children\": ["
-                "{"
-                    "\"node_type\": \"DIRECTIVE_LIST\","
-                    "\"children\": ["
-                        "{"
-                            "\"node_type\": \"PACKAGE\","
-                            "\"children\": ["
-                                "{"
-                                    "\"node_type\": \"DIRECTIVE_LIST\""
-                                "}"
-                            "]"
-                        "}"
-                    "]"
-                "}"
-            "]"
-        "}"
-    "}"
-
-    "]" // end
+#include "test_as2js_parser.ci"
 ;
 
 
@@ -529,7 +914,7 @@ char const g_data[] =
 //}
 
 
-void As2JsParserUnitTests::test_basics()
+void As2JsParserUnitTests::test_parser()
 {
     as2js::String input_data;
     input_data.from_utf8(g_data);
@@ -555,6 +940,8 @@ void As2JsParserUnitTests::test_basics()
     name_string.from_utf8("name");
     as2js::String program_string;
     program_string.from_utf8("program");
+    as2js::String verbose_string;
+    verbose_string.from_utf8("verbose");
     as2js::String result_string;
     result_string.from_utf8("result");
     as2js::String expected_messages_string;
@@ -572,7 +959,7 @@ void As2JsParserUnitTests::test_basics()
 
         // got a program, try to compile it with all the possible options
         as2js::JSON::JSONValue::pointer_t name(prog.find(name_string)->second);
-        std::cout << "  -- working on \"" << name->get_string() << "\" ... ";
+        std::cout << "  -- working on \"" << name->get_string() << "\" ... " << std::flush;
 
         for(size_t opt(0); opt <= (1 << g_options_size); ++opt)
         {
@@ -593,6 +980,7 @@ void As2JsParserUnitTests::test_basics()
 
             as2js::JSON::JSONValue::pointer_t program_value(prog.find(program_string)->second);
             as2js::String program_source(program_value->get_string());
+//std::cerr << "prog = [" << program_source << "]\n";
             as2js::StringInput::pointer_t prog_text(new as2js::StringInput(program_source));
             as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, options));
 
@@ -623,6 +1011,15 @@ void As2JsParserUnitTests::test_basics()
                     {
                         expected.f_pos.set_function(func_it->second->get_string());
                     }
+                    as2js::JSON::JSONValue::object_t::const_iterator line_it(message.find("line #"));
+                    if(line_it != message.end())
+                    {
+                        int64_t lines(line_it->second->get_int64().get());
+                        for(int64_t l(1); l < lines; ++l)
+                        {
+                            expected.f_pos.new_line();
+                        }
+                    }
                     expected.f_message = message.find("message")->second->get_string();
                     tc.f_expected.push_back(expected);
                 }
@@ -630,9 +1027,16 @@ void As2JsParserUnitTests::test_basics()
 
             as2js::Node::pointer_t root(parser->parse());
 
+            bool verbose(false);
+            as2js::JSON::JSONValue::object_t::const_iterator verbose_it(prog.find(verbose_string));
+            if(verbose_it != prog.end())
+            {
+                verbose = verbose_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_TRUE;
+            }
+
             // the result is object which can have children
             // which are represented by an array of objects
-            verify_result(prog.find(result_string)->second, root);
+            verify_result(prog.find(result_string)->second, root, verbose);
         }
 
         std::cout << "OK\n";

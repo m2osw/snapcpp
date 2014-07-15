@@ -1,6 +1,4 @@
-#ifndef TEST_AS2JS_PARSER_H
-#define TEST_AS2JS_PARSER_H
-/* test_as2js_parser.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* error.js -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -35,22 +33,57 @@ SOFTWARE.
 
 */
 
-
-#include <cppunit/extensions/HelperMacros.h>
-
-
-class As2JsParserUnitTests : public CPPUNIT_NS::TestFixture
+native package Global
 {
-    CPPUNIT_TEST_SUITE( As2JsParserUnitTests );
-        CPPUNIT_TEST( test_parser );
-    CPPUNIT_TEST_SUITE_END();
 
-public:
-    //virtual void setUp();
 
-protected:
-    void test_parser();
+class Error : public Object
+{
+    function Error(var in e: Error) : Error;
+    function Error(var in message: String := undefined) : Error;
+
+    function toString(Void) : String;
+
+    var name: String;
+    var message: String;
 };
 
-#endif
+
+class NativeError : public Error
+{
+};
+
+
+class EvalError : public NativeError
+{
+};
+
+
+class RangeError : public NativeError
+{
+};
+
+
+class ReferenceError : public NativeError
+{
+};
+
+
+class SyntaxError : public NativeError
+{
+};
+
+
+class TypeError : public NativeError
+{
+};
+
+
+class URIError : public NativeError
+{
+};
+
+
+}
+
 // vim: ts=4 sw=4 et

@@ -174,6 +174,7 @@ void Node::set_string(String const& value)
     case node_t::NODE_IMPORT:               // name of package: IMPORT [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
     case node_t::NODE_INTERFACE:            // name of interface: INTERFACE IDENTIFIER
     case node_t::NODE_LABEL:                // name of label: IDENTIFIER ':'
+    case node_t::NODE_NAME:                 // name of object field: { IDENTIFIER ':' ... }
     case node_t::NODE_NAMESPACE:            // name of namespace: NAMESPACE IDENTIFIER
     case node_t::NODE_PACKAGE:              // name of package: PACKAGE [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
     case node_t::NODE_PARAM:                // name of parameter: FUNCTION '(' IDENTIFIER ... ')' ...
@@ -320,6 +321,7 @@ String const& Node::get_string() const
     case node_t::NODE_IMPORT:               // name of package: IMPORT [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
     case node_t::NODE_INTERFACE:            // name of interface: INTERFACE IDENTIFIER
     case node_t::NODE_LABEL:                // name of label: IDENTIFIER ':'
+    case node_t::NODE_NAME:                 // name of object field: { IDENTIFIER ':' ... }
     case node_t::NODE_NAMESPACE:            // name of namespace: NAMESPACE IDENTIFIER
     case node_t::NODE_PACKAGE:              // name of package: PACKAGE [IDENTIFIER ('.' IDENTIFIER)* | STRING] ...;
     case node_t::NODE_PARAM:                // name of parameter: FUNCTION '(' IDENTIFIER ... ')' ...

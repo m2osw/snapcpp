@@ -142,6 +142,7 @@ void Parser::directive(Node::pointer_t& node)
     Node::pointer_t attr_list;
     attributes(attr_list);
     size_t attr_count(attr_list ? attr_list->get_children_size() : 0);
+    Node::pointer_t instruction_node(f_node);
     Node::node_t type(f_node->get_type());
     Node::pointer_t last_attr;
 
@@ -639,7 +640,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_VARIABLE:
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
-        msg << "unexpected operator";
+        msg << "unexpected operator \"" << instruction_node->get_type_name() << "\".";
         get_token();
     }
         break;
@@ -651,7 +652,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_THEN:
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_KEYWORD, f_lexer->get_input()->get_position());
-        msg << "unexpected keyword";
+        msg << "unexpected keyword \"" << instruction_node->get_type_name() << "\".";
         get_token();
     }
         break;
@@ -760,10 +761,11 @@ void Parser::directive(Node::pointer_t& node)
         && f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SEMICOLON_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "';' was expected";
+            msg << "';' was expected after '" << instruction_node->get_type_name() << "'.";
         }
         // skip all that whatever up to the next end of this
         while(f_node->get_type() != Node::node_t::NODE_SEMICOLON
+           && f_node->get_type() != Node::node_t::NODE_OPEN_CURVLY_BRACKET
            && f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET
            && f_node->get_type() != Node::node_t::NODE_ELSE
            && f_node->get_type() != Node::node_t::NODE_EOF)

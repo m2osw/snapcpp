@@ -127,12 +127,12 @@ void Node::verify_flag(flag_t f) const
         break;
 
     case flag_t::NODE_FUNCTION_FLAG_GETTER:
-    case flag_t::NODE_FUNCTION_FLAG_SETTER:
-    case flag_t::NODE_FUNCTION_FLAG_OUT:
-    case flag_t::NODE_FUNCTION_FLAG_VOID:
     case flag_t::NODE_FUNCTION_FLAG_NEVER:
     case flag_t::NODE_FUNCTION_FLAG_NOPARAMS:
     case flag_t::NODE_FUNCTION_FLAG_OPERATOR:
+    case flag_t::NODE_FUNCTION_FLAG_OUT:
+    case flag_t::NODE_FUNCTION_FLAG_SETTER:
+    case flag_t::NODE_FUNCTION_FLAG_VOID:
         if(f_type == node_t::NODE_FUNCTION)
         {
             return;
@@ -171,16 +171,16 @@ void Node::verify_flag(flag_t f) const
         }
         break;
 
+    case flag_t::NODE_PARAM_FLAG_CATCH:         // a parameter defined in a catch()
     case flag_t::NODE_PARAM_FLAG_CONST:
     case flag_t::NODE_PARAM_FLAG_IN:
     case flag_t::NODE_PARAM_FLAG_OUT:
     case flag_t::NODE_PARAM_FLAG_NAMED:
+    case flag_t::NODE_PARAM_FLAG_PARAMREF:      // referenced from another parameter
+    case flag_t::NODE_PARAM_FLAG_REFERENCED:    // referenced from a parameter or a variable
     case flag_t::NODE_PARAM_FLAG_REST:
     case flag_t::NODE_PARAM_FLAG_UNCHECKED:
     case flag_t::NODE_PARAM_FLAG_UNPROTOTYPED:
-    case flag_t::NODE_PARAM_FLAG_REFERENCED:    // referenced from a parameter or a variable
-    case flag_t::NODE_PARAM_FLAG_PARAMREF:      // referenced from another parameter
-    case flag_t::NODE_PARAM_FLAG_CATCH:         // a parameter defined in a catch()
         if(f_type == node_t::NODE_PARAM)
         {
             return;
