@@ -1,3 +1,15 @@
+libtld (1.4.11~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 16 Jul 2014 14:34:24 -0700
+
+libtld (1.4.10~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 16 Jul 2014 14:29:46 -0700
+
 libtld (1.4.9~saucy) saucy; urgency=high
 
   * Nightly build.

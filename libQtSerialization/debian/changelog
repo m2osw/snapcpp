@@ -1,3 +1,15 @@
+libqtserialization (0.1.7~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 16 Jul 2014 14:35:00 -0700
+
+libqtserialization (0.1.6~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 16 Jul 2014 14:30:22 -0700
+
 libqtserialization (0.1.5~saucy) saucy; urgency=high
 
   * Nightly build.
