@@ -111,14 +111,14 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
         }
         else
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "'}' expected to close the 'class' definition";
         }
     }
     else if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)
     {
         // accept empty class definitions (for typedef's and forward declaration)
-        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'{' expected to start the 'class' definition";
     }
 }
@@ -158,7 +158,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
             // empty enumeration (i.e. forward declaration)
             return;
         }
-        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'{' expected to start the 'enum' definition";
         return;
     }
@@ -238,7 +238,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
     }
     else
     {
-        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'}' expected to close the 'enum' definition";
     }
 }

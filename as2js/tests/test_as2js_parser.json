@@ -67,7 +67,7 @@
         "expected messages": [
             {
                 "message level": 2,
-                "error code": "CURVLY_BRAKETS_EXPECTED",
+                "error code": "CURVLY_BRACKETS_EXPECTED",
                 "line #": 1,
                 "message": "'}' not expected without a '{'."
             }
@@ -112,7 +112,7 @@
     {
         //"verbose": true,
         "name": "'a+b' function",
-        "program": "package addition {\n\
+        "program": "package advanced.addition {\n\
     function a_plus_b(a: integer, b: integer = 213)\n\
      : integer\n\
        throws RangeError\n\
@@ -139,7 +139,7 @@
                     "children": [
                         {
                             "node type": "PACKAGE",
-                            "label": "addition",
+                            "label": "advanced.addition",
                             "children": [
                                 {
                                     "node type": "DIRECTIVE_LIST",
@@ -494,7 +494,7 @@
     {
         //"verbose": true,
         "name": "'a+b' operator",
-        "program": "package addition\n\
+        "program": "package \"power.addition\"\n\
 {\n\
     class add\n\
     {\n\
@@ -516,7 +516,7 @@
                     "children": [
                         {
                             "node type": "PACKAGE",
-                            "label": "addition",
+                            "label": "power.addition",
                             "children": [
                                 {
                                     "node type": "DIRECTIVE_LIST",
@@ -2018,7 +2018,7 @@
         "expected messages": [
             {
                 "message level": 2,
-                "error code": "CURVLY_BRAKETS_EXPECTED",
+                "error code": "CURVLY_BRACKETS_EXPECTED",
                 "line #": 1,
                 "message": "'}' expected to close the 'function' block."
             },
@@ -2030,7 +2030,7 @@
             },
             {
                 "message level": 2,
-                "error code": "CURVLY_BRAKETS_EXPECTED",
+                "error code": "CURVLY_BRACKETS_EXPECTED",
                 "line #": 1,
                 "message": "'}' not expected without a '{'."
             }
@@ -2104,6 +2104,440 @@
                                                 {
                                                     "node type": "FLOAT64",
                                                     "float": 3.3
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A variable definition missing the variable name
+    {
+        //"verbose": true,
+        "name": "variable missing its name",
+        "program": "var = 'oops';\nconst = 'hola!';\n",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INVALID_VARIABLE",
+                "line #": 1,
+                "message": "expected an identifier as the variable name."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_VARIABLE",
+                "line #": 2,
+                "message": "expected an identifier as the const name."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "VAR",
+                            "children": [
+                                {
+                                    "node type": "VARIABLE",
+                                    "label": "",
+                                    "children": [
+                                        {
+                                            "node type": "SET",
+                                            "children": [
+                                                {
+                                                    "node type": "STRING",
+                                                    "label": "oops"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "VAR",
+                            "children": [
+                                {
+                                    "node type": "VARIABLE",
+                                    "label": "",
+                                    "flags": "VARIABLE_FLAG_CONST",
+                                    "children": [
+                                        {
+                                            "node type": "SET",
+                                            "children": [
+                                                {
+                                                    "node type": "STRING",
+                                                    "label": "hola!"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A variable of attributes
+    {
+        //"verbose": true,
+        "name": "variable of attributes",
+        "program": "const var attr_list = autobreak constructor deprecated;\n",
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "VAR",
+                            "children": [
+                                {
+                                    "node type": "VARIABLE",
+                                    "label": "attr_list",
+                                    "flags": "VARIABLE_FLAG_CONST",
+                                    "children": [
+                                        {
+                                            "node type": "SET",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "autobreak"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "SET",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "constructor"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "SET",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "deprecated"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A package declaration must include a '{' after its name
+    {
+        //"verbose": true,
+        "name": "'{' missing after package name",
+        "program": "package the.grand_package.name var prog = 13.9; }\n",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'{' expected after the package name."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "PACKAGE",
+                            "label": "the.grand_package.name",
+                            "children": [
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "VAR",
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "prog",
+                                                    "children": [
+                                                        {
+                                                            "node type": "SET",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "FLOAT64",
+                                                                    "float": 13.9
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A package declaration must end with a '}' after its list of directives
+    {
+        //"verbose": true,
+        "name": "'}' missing after package directives",
+        "program": "package the.funky_package.name { var pi = 3.14159;\n",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 2,
+                "message": "'}' expected after the package declaration."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "PACKAGE",
+                            "label": "the.funky_package.name",
+                            "children": [
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "VAR",
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "pi",
+                                                    "children": [
+                                                        {
+                                                            "node type": "SET",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "FLOAT64",
+                                                                    "float": 3.14159
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A package name not in a string must be identifiers separated by periods
+    {
+        //"verbose": true,
+        "name": "invalid package name (ends with an identifier)",
+        "program": "package the.private.name { function a(b) { if(b) console.log('\"b\" is true'); } }\n",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INVALID_PACKAGE_NAME",
+                "line #": 1,
+                "message": "invalid package name (expected an identifier after the last '.')."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "PACKAGE",
+                            "label": "the.name",
+                            "children": [
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                            "label": "a",
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "b"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IF",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "b"
+                                                                },
+                                                                {
+                                                                    "node type": "DIRECTIVE_LIST",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "CALL",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "MEMBER",
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "node type": "IDENTIFIER",
+                                                                                            "label": "console"
+                                                                                        },
+                                                                                        {
+                                                                                            "node type": "IDENTIFIER",
+                                                                                            "label": "log"
+                                                                                        }
+                                                                                    ]
+                                                                                },
+                                                                                {
+                                                                                    "node type": "LIST",
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "node type": "STRING",
+                                                                                            "label": "\"b\" is true"
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A package name not in a string must be identifiers separated by periods
+    {
+        //"verbose": true,
+        "name": "invalid package name (ends with 'private')",
+        "program": "package the.private { function a(b) { if(b) console.log('\"b\" is true'); } }\n",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INVALID_PACKAGE_NAME",
+                "line #": 1,
+                "message": "invalid package name (expected an identifier after the last '.')."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "PACKAGE",
+                            "label": "the",
+                            "children": [
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                            "label": "a",
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "b"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IF",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "b"
+                                                                },
+                                                                {
+                                                                    "node type": "DIRECTIVE_LIST",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "CALL",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "MEMBER",
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "node type": "IDENTIFIER",
+                                                                                            "label": "console"
+                                                                                        },
+                                                                                        {
+                                                                                            "node type": "IDENTIFIER",
+                                                                                            "label": "log"
+                                                                                        }
+                                                                                    ]
+                                                                                },
+                                                                                {
+                                                                                    "node type": "LIST",
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "node type": "STRING",
+                                                                                            "label": "\"b\" is true"
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
                                                 }
                                             ]
                                         }

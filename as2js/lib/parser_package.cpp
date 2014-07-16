@@ -64,11 +64,20 @@ void Parser::package(Node::pointer_t& node)
             {
                 // unexpected token/missing name
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                msg << "invalid package name (expected an identifier after the last '.')";
-                break;
+                msg << "invalid package name (expected an identifier after the last '.').";
+                if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET
+                || f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET
+                || f_node->get_type() == Node::node_t::NODE_SEMICOLON)
+                {
+                    break;
+                }
+                // try some more...
             }
-            name += ".";
-            name += f_node->get_string();
+            else
+            {
+                name += ".";
+                name += f_node->get_string();
+            }
             get_token();
         }
     }
@@ -91,8 +100,8 @@ void Parser::package(Node::pointer_t& node)
     }
     else
     {
-        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-        msg << "'{' expected after the package name";
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'{' expected after the package name.";
         // TODO: should we return and not try to read the package?
     }
 
@@ -107,8 +116,8 @@ void Parser::package(Node::pointer_t& node)
     }
     else
     {
-        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-        msg << "'}' expected after the package declaration";
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'}' expected after the package declaration.";
     }
 }
 
