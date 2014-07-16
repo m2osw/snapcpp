@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 #
-#print "count=".$#ARGV."\n";
-
 die "You must specify at least 3 arguments!\n" unless $#ARGV > 1;
 
 use Cwd;
