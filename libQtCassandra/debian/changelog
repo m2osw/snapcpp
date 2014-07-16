@@ -1,3 +1,9 @@
+libqtcassandra (0.5.9~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 16 Jul 2014 14:20:50 -0700
+
 libqtcassandra (0.5.8~saucy) saucy; urgency=high
 
   * Nightly build.

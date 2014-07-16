@@ -1,3 +1,9 @@
+snapmanager (1.0.2m2osw1~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Wed, 16 Jul 2014 14:21:19 -0700
+
 snapmanager (1.0.1m2osw1~saucy) saucy; urgency=high
 
   * Nightly build.
