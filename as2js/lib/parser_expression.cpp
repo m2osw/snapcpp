@@ -708,7 +708,7 @@ void Parser::postfix_expression(Node::pointer_t& node)
             }
             else
             {
-                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SQUARE_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SQUARE_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
                 msg << "']' expected to end the list of element references or declarations";
             }
         }
@@ -794,7 +794,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         }
         else
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SQUARE_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SQUARE_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "']' expected to match the '[' of this array";
         }
     }
@@ -810,7 +810,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         }
         else
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "'}' expected to match the '{' of this object literal";
         }
     }

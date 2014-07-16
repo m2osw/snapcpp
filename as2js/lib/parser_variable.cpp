@@ -80,9 +80,19 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
 
         if(f_node->get_type() == Node::node_t::NODE_ASSIGNMENT)
         {
+            // TBD: should we avoid the NODE_SET on each attribute?
+            //      at this time we get one expression per attribute...
             get_token();
             do
             {
+                // TODO: to really support all attributes we need to have
+                //       a switch here to include all the keyword based
+                //       attributes (i.e. private, abstract, etc.)
+                //
+                //       [however, we must make sure we do not interfere with
+                //       other uses of those keywords in expressions, private
+                //       and public are understood as scoping keywords!]
+                //
                 Node::pointer_t initializer(f_lexer->get_new_node(Node::node_t::NODE_SET));
                 Node::pointer_t expr;
                 conditional_expression(expr, false);

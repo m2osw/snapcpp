@@ -142,7 +142,8 @@ int32_t generate_string(as2js::String& str, bool ascii)
 class test_callback : public as2js::MessageCallback
 {
 public:
-    test_callback()
+    test_callback(bool verbose)
+        : f_verbose(verbose)
     {
         as2js::Message::set_message_callback(this);
         g_warning_count = as2js::Message::warning_count();
@@ -177,12 +178,15 @@ public:
 
         CPPUNIT_ASSERT(!f_expected.empty());
 
-//std::cerr << "filename = " << pos.get_filename() << " / " << f_expected[0].f_pos.get_filename() << "\n";
-//std::cerr << "msg = " << message << " / " << f_expected[0].f_message << "\n";
-//std::cerr << "page = " << pos.get_page() << " / " << f_expected[0].f_pos.get_page() << "\n";
-//std::cerr << "line = " << pos.get_line() << " / " << f_expected[0].f_pos.get_line() << "\n";
-//std::cerr << "page line = " << pos.get_page_line() << " / " << f_expected[0].f_pos.get_page_line() << "\n";
-//std::cerr << "error_code = " << static_cast<int>(error_code) << " / " << static_cast<int>(f_expected[0].f_error_code) << "\n";
+        if(f_verbose)
+        {
+            std::cerr << "filename = " << pos.get_filename() << " / " << f_expected[0].f_pos.get_filename() << "\n";
+            std::cerr << "msg = " << message << " / " << f_expected[0].f_message << "\n";
+            std::cerr << "page = " << pos.get_page() << " / " << f_expected[0].f_pos.get_page() << "\n";
+            std::cerr << "line = " << pos.get_line() << " / " << f_expected[0].f_pos.get_line() << "\n";
+            std::cerr << "page line = " << pos.get_page_line() << " / " << f_expected[0].f_pos.get_page_line() << "\n";
+            std::cerr << "error_code = " << static_cast<int>(error_code) << " / " << static_cast<int>(f_expected[0].f_error_code) << "\n";
+        }
 
         CPPUNIT_ASSERT(f_expected[0].f_call);
         CPPUNIT_ASSERT(message_level == f_expected[0].f_message_level);
@@ -235,6 +239,7 @@ public:
     };
 
     std::vector<expected_t>     f_expected;
+    controlled_vars::fbool_t    f_verbose;
 
     static controlled_vars::zint32_t   g_warning_count;
     static controlled_vars::zint32_t   g_error_count;
@@ -287,7 +292,7 @@ err_to_string_t const g_error_table[] =
     ERROR_NAME(CASE_LABEL),
     ERROR_NAME(COLON_EXPECTED),
     ERROR_NAME(COMMA_EXPECTED),
-    ERROR_NAME(CURVLY_BRAKETS_EXPECTED),
+    ERROR_NAME(CURVLY_BRACKETS_EXPECTED),
     ERROR_NAME(DEFAULT_LABEL),
     ERROR_NAME(DIVIDE_BY_ZERO),
     ERROR_NAME(DUPLICATES),
@@ -344,7 +349,7 @@ err_to_string_t const g_error_table[] =
     ERROR_NAME(PARENTHESIS_EXPECTED),
     ERROR_NAME(PRAGMA_FAILED),
     ERROR_NAME(SEMICOLON_EXPECTED),
-    ERROR_NAME(SQUARE_BRAKETS_EXPECTED),
+    ERROR_NAME(SQUARE_BRACKETS_EXPECTED),
     ERROR_NAME(STRING_EXPECTED),
     ERROR_NAME(STATIC),
     ERROR_NAME(TYPE_NOT_LINKED),
@@ -984,7 +989,14 @@ void As2JsParserUnitTests::test_parser()
             as2js::StringInput::pointer_t prog_text(new as2js::StringInput(program_source));
             as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, options));
 
-            test_callback tc;
+            bool verbose(false);
+            as2js::JSON::JSONValue::object_t::const_iterator verbose_it(prog.find(verbose_string));
+            if(verbose_it != prog.end())
+            {
+                verbose = verbose_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_TRUE;
+            }
+
+            test_callback tc(verbose);
 
             as2js::JSON::JSONValue::object_t::const_iterator expected_msg_it(prog.find(expected_messages_string));
             if(expected_msg_it != prog.end())
@@ -1027,12 +1039,7 @@ void As2JsParserUnitTests::test_parser()
 
             as2js::Node::pointer_t root(parser->parse());
 
-            bool verbose(false);
-            as2js::JSON::JSONValue::object_t::const_iterator verbose_it(prog.find(verbose_string));
-            if(verbose_it != prog.end())
-            {
-                verbose = verbose_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_TRUE;
-            }
+            tc.got_called();
 
             // the result is object which can have children
             // which are represented by an array of objects

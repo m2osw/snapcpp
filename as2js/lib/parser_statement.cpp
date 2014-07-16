@@ -57,7 +57,7 @@ void Parser::block(Node::pointer_t& node)
 
     if(f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
     {
-        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'}' expected to close a block";
     }
     else
@@ -220,7 +220,7 @@ void Parser::catch_directive(Node::pointer_t& node)
             }
             else
             {
-                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
                 msg << "'{' expected after the 'catch' parameter";
             }
         }
@@ -611,7 +611,7 @@ void Parser::try_finally(Node::pointer_t& node, Node::node_t type)
     }
     else
     {
-        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
         msg << "'{' expected after the '" << (type == Node::node_t::NODE_TRY ? "try" : "finally") << "' keyword";
     }
 }
@@ -715,7 +715,7 @@ void Parser::switch_directive(Node::pointer_t& node)
         }
         else
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "'{' expected after the 'switch' expression";
         }
     }
@@ -763,7 +763,7 @@ void Parser::synchronized(Node::pointer_t& node)
         }
         else
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRAKETS_EXPECTED, f_lexer->get_input()->get_position());
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
             msg << "'{' expected after the 'synchronized' expression";
         }
     }
