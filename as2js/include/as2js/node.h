@@ -270,6 +270,9 @@ public:
         // NODE_DIRECTIVE_LIST
         NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES,
 
+        // NODE_ENUM
+        NODE_ENUM_FLAG_CLASS,
+
         // NODE_FOR
         NODE_FOR_FLAG_FOREACH,
 

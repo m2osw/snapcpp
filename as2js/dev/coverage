@@ -1,12 +1,24 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
+
+if test $1 = "--full"
+then
+    FULL=true
+    shift
+else
+    FULL=false
+fi
+
 start_date=`date`
 SOURCE=`pwd`
 MAJOR=`grep AS2JS_VERSION_MAJOR CMakeLists.txt | sed -e 's/^.*set(.*AS2JS_VERSION_MAJOR.*\([0-9]\+\).*$/\1/'`
 MINOR=`grep AS2JS_VERSION_MINOR CMakeLists.txt | sed -e 's/^.*set(.*AS2JS_VERSION_MINOR.*\([0-9]\+\).*$/\1/'`
 PATCH=`grep AS2JS_VERSION_PATCH CMakeLists.txt | sed -e 's/^.*set(.*AS2JS_VERSION_PATCH.*\([0-9]\+\).*$/\1/'`
-echo "as2js coverage for version $MAJOR.$MINOR.$PATCH"
+VERSION="$MAJOR.$MINOR.$PATCH"
+echo "***"
+echo "*** as2js coverage for version $VERSION"
+echo "***"
 mkdir -p tmp/coverage
 rm -rf tmp/coverage/*
 cd tmp/coverage
@@ -33,15 +45,29 @@ echo "***"
 echo "*** run"
 echo "***"
 # TODO add a test of the version here against the version in include/as2js/as2js.h.in
-if test `BUILD/tests/test_as2js --version` != "$MAJOR.$MINOR.$PATCH"
+if test `BUILD/tests/test_as2js --version` != "$VERSION"
 then
-    echo "the version of test_as2js (`BUILD/tests/test_as2js --version`) is not equal to the project version ($MAJOR.$MINOR.$PATCH)"
+    echo "the version of test_as2js (`BUILD/tests/test_as2js --version`) is not equal to the project version ($VERSION)"
     exit 1;
 fi
-BUILD/tests/test_as2js As2JsParserUnitTests
-#BUILD/tests/test_as2js
-#BUILD/tests/test_as2js --destructive As2JsStreamUnitTests::test_stdout_destructive
-#BUILD/tests/test_as2js As2JsRCUnitTests::test_empty_home
+if $FULL
+then
+    # We test the pipe status on exit to detect whether the test failed
+    echo "Start running the tests on `date`" >test_log.txt
+    echo >>test_log.txt
+    BUILD/tests/test_as2js 2>&1 | tee -a test_log.txt; test ${PIPESTATUS[0]} -eq 0
+    echo >>test_log.txt
+    BUILD/tests/test_as2js --destructive As2JsStreamUnitTests::test_stdout_destructive 2>&1 | tee -a test_log.txt; test ${PIPESTATUS[0]} -eq 0
+    echo >>test_log.txt
+    BUILD/tests/test_as2js As2JsRCUnitTests::test_empty_home 2>&1 | tee -a test_log.txt; test ${PIPESTATUS[0]} -eq 0
+    echo >>test_log.txt
+    echo "Finished running the tests on `date`" >>test_log.txt
+else
+    # brief test while working on a specific test
+    BUILD/tests/test_as2js As2JsParserUnitTests
+    # just in case, remove the log file if there is one
+    rm -f test_log.txt
+fi
 echo
 echo "***"
 echo "*** gcov/lcov"
@@ -64,7 +90,41 @@ mkdir -p html
 genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.info --output-directory html
 
 
+end_date=`date`
+
+if test -f test_log.txt
+then
+    echo "***"
+    echo "*** publication to lcov.as2js.org"
+    echo "***"
+
+    # Statistics
+    echo "<html><head><title>as2js $VERSION statistics</title></head><body>" >html/statistics.html
+    echo "<h3>Statistics of the as2js $VERSION code</h3><pre>" >>html/statistics.html
+    cloc $SOURCE/include/ $SOURCE/lib/ $SOURCE/src/ >>html/statistics.html
+    echo "</pre><h3>Statistics of the as2js $VERSION tests</h3><pre>" >>html/statistics.html
+    cloc $SOURCE/tests/ >>html/statistics.html
+    echo "</pre><h3>Statistics of as2js scripts $VERSION</h3><pre>" >>html/statistics.html
+    cloc $SOURCE/scripts/ >>html/statistics.html
+    echo "</pre></body></html>" >>html/statistics.html
+
+    # Test output (Logs)
+    echo "<html><head><title>as2js $VERSION test logs</title></head><body><h3>Logs for the as2js $VERSION tests</h3><p>Tests started on $start_date and finished on $end_date</p><pre>" >html/test_log.html
+    cat test_log.txt >>html/test_log.html
+    echo "</pre></body></html>" >>html/test_log.html
+
+    # For publication, if that directory does not exist, you probably don't
+    # have a website to display this data
+    if test -d /usr/clients/www/lcov.as2js.org/public_html
+    then
+            cp $SOURCE/dev/index.php /usr/clients/www/lcov.as2js.org/public_html/.
+            mkdir -p /usr/clients/www/lcov.as2js.org/public_html/as2js-$VERSION
+            cp -r html/* /usr/clients/www/lcov.as2js.org/public_html/as2js-$VERSION/.
+            #cp html/statistics.html /usr/clients/www/lcov.as2js.org/public_html/as2js-$VERSION/.
+    fi
+fi
+
 echo "Process started  on $start_date"
-echo "Process finished on `date`"
+echo "Process finished on $end_date"
 
 # vim: ts=4 sw=4 et

@@ -321,6 +321,7 @@ err_to_string_t const g_error_table[] =
     ERROR_NAME(INVALID_FRAME),
     ERROR_NAME(INVALID_FUNCTION),
     ERROR_NAME(INVALID_GOTO),
+    ERROR_NAME(INVALID_IMPORT),
     ERROR_NAME(INVALID_INPUT_STREAM),
     ERROR_NAME(INVALID_KEYWORD),
     ERROR_NAME(INVALID_LABEL),
@@ -393,6 +394,7 @@ flg_to_string_t const g_flag_table[] =
 {
     FLAG_NAME(CATCH_FLAG_TYPED),
     FLAG_NAME(DIRECTIVE_LIST_FLAG_NEW_VARIABLES),
+    FLAG_NAME(ENUM_FLAG_CLASS),
     FLAG_NAME(FOR_FLAG_FOREACH),
     FLAG_NAME(FUNCTION_FLAG_GETTER),
     FLAG_NAME(FUNCTION_FLAG_SETTER),
@@ -507,6 +509,10 @@ void verify_flags(as2js::Node::pointer_t node, as2js::String const& flags_set, b
 
     case as2js::Node::node_t::NODE_DIRECTIVE_LIST:
         flgs_to_check.push_back(as2js::Node::flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES);
+        break;
+
+    case as2js::Node::node_t::NODE_ENUM:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_ENUM_FLAG_CLASS);
         break;
 
     case as2js::Node::node_t::NODE_FOR:
@@ -791,6 +797,12 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     node_type_string.from_utf8("node type");
     as2js::String children_string;
     children_string.from_utf8("children");
+    as2js::String link_strings[static_cast<int>(as2js::Node::link_t::LINK_max)];
+    link_strings[0].from_utf8("link instance");
+    link_strings[1].from_utf8("link type");
+    link_strings[2].from_utf8("link attributes");
+    link_strings[3].from_utf8("link goto exit");
+    link_strings[4].from_utf8("link goto enter");
     as2js::String label_string;
     label_string.from_utf8("label");
     as2js::String flags_string;
@@ -814,6 +826,10 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     if(it_label != child_object.end())
     {
         // we expect a string in this object
+        if(verbose && node->get_string() != it_label->second->get_string())
+        {
+            std::cerr << "   Expecting string \"" << it_label->second->get_string() << "\", node has \"" << node->get_string() << "\"\n";
+        }
         CPPUNIT_ASSERT(node->get_string() == it_label->second->get_string());
     }
     else
@@ -834,6 +850,9 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
         verify_flags(node, "", verbose);
     }
 
+    // WARNING: these attributes are what we call IMMEDIATE ATTRIBUTES in case
+    //          of the parser because the parser also makes use of a
+    //          LINK_ATTRIBUTES which represents a list of attributes
     as2js::JSON::JSONValue::object_t::const_iterator it_attributes(child_object.find(attributes_string));
     if(it_attributes != child_object.end())
     {
@@ -858,6 +877,108 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
         CPPUNIT_ASSERT_THROW(node->get_int64(), as2js::exception_internal_error);
     }
 
+    // List of links are tested just like children, only the list starts somewhere else
+    for(int link_idx(0); link_idx < static_cast<int>(as2js::Node::link_t::LINK_max); ++link_idx)
+    {
+        as2js::String link_name;
+        switch(static_cast<as2js::Node::link_t>(link_idx))
+        {
+        case as2js::Node::link_t::LINK_INSTANCE:
+            link_name = "instance";
+            break;
+
+        case as2js::Node::link_t::LINK_TYPE:
+            link_name = "type";
+            break;
+
+        case as2js::Node::link_t::LINK_ATTRIBUTES:
+            link_name = "attributes";
+            break;
+
+        case as2js::Node::link_t::LINK_GOTO_EXIT:
+            link_name = "goto-exit";
+            break;
+
+        case as2js::Node::link_t::LINK_GOTO_ENTER:
+            link_name = "goto-enter";
+            break;
+
+        case as2js::Node::link_t::LINK_max:
+            CPPUNIT_ASSERT(!"LINK_max reached when getting the link type");
+            break;
+
+        }
+        as2js::JSON::JSONValue::object_t::const_iterator it_link(child_object.find(link_strings[link_idx]));
+        as2js::Node::pointer_t link_node(node->get_link(static_cast<as2js::Node::link_t>(link_idx)));
+        if(link_node)
+        {
+            // make sure root node is of the right type
+            switch(static_cast<as2js::Node::link_t>(link_idx))
+            {
+            case as2js::Node::link_t::LINK_INSTANCE:
+                CPPUNIT_ASSERT(!"parser does not use LINK_INSTANCE");
+                break;
+
+            case as2js::Node::link_t::LINK_TYPE:
+                CPPUNIT_ASSERT(!"parser does not use LINK_TYPE");
+                break;
+
+            case as2js::Node::link_t::LINK_ATTRIBUTES:
+                CPPUNIT_ASSERT(link_node->get_type() == as2js::Node::node_t::NODE_ATTRIBUTES);
+                break;
+
+            case as2js::Node::link_t::LINK_GOTO_EXIT:
+                CPPUNIT_ASSERT(!"parser does not use LINK_GOTO_EXIT");
+                break;
+
+            case as2js::Node::link_t::LINK_GOTO_ENTER:
+                CPPUNIT_ASSERT(!"parser does not use LINK_GOTO_ENTER");
+                break;
+
+            case as2js::Node::link_t::LINK_max:
+                CPPUNIT_ASSERT(!"LINK_max reached when testing the link_node type");
+                break;
+
+            }
+        }
+        if(it_link != child_object.end())
+        {
+            // the children value must be an array
+            as2js::JSON::JSONValue::array_t const& array(it_link->second->get_array());
+            size_t const max_links(array.size());
+            if(link_node)
+            {
+                if(verbose && max_links != link_node->get_children_size())
+                {
+                    std::cerr << "   Expecting " << max_links << " " << link_name << ", we have " << link_node->get_children_size() << " in the node\n";
+                }
+                CPPUNIT_ASSERT(max_links == link_node->get_children_size());
+                for(size_t idx(0); idx < max_links; ++idx)
+                {
+                    as2js::JSON::JSONValue::pointer_t link_value(array[idx]);
+                    verify_result(link_value, link_node->get_child(idx), verbose); // recursive
+                }
+            }
+            else
+            {
+                if(verbose && max_links != 0)
+                {
+                    std::cerr << "   Expecting " << max_links << " " << link_name << ", we have no " << link_name << " at all in the node\n";
+                }
+                CPPUNIT_ASSERT(max_links == 0);
+            }
+        }
+        else
+        {
+            // no children defined in the JSON, no children expected in the node
+            if(verbose && link_node && link_node->get_children_size() != 0)
+            {
+                std::cerr << "   Expecting no " << link_name << " list, we have " << link_node->get_children_size() << " " << link_name << " in the node\n";
+            }
+            CPPUNIT_ASSERT(!link_node || link_node->get_children_size() == 0);
+        }
+    }
+
     as2js::JSON::JSONValue::object_t::const_iterator it_children(child_object.find(children_string));
     if(it_children != child_object.end())
     {
@@ -872,7 +993,7 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
         for(size_t idx(0); idx < max_children; ++idx)
         {
             as2js::JSON::JSONValue::pointer_t children_value(array[idx]);
-            verify_result(children_value, node->get_child(idx), verbose);
+            verify_result(children_value, node->get_child(idx), verbose); // recursive
         }
     }
     else

@@ -120,7 +120,6 @@ void Node::display_data(std::ostream& out) const
     case node_t::NODE_BREAK:
     case node_t::NODE_CLASS:
     case node_t::NODE_CONTINUE:
-    case node_t::NODE_ENUM:
     case node_t::NODE_GOTO:
     case node_t::NODE_INTERFACE:
     case node_t::NODE_LABEL:
@@ -142,6 +141,14 @@ void Node::display_data(std::ostream& out) const
         if(f_flags[static_cast<size_t>(flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES)])
         {
             out << " NEW-VARIABLES";
+        }
+        break;
+
+    case node_t::NODE_ENUM:
+        sub_function::display_str(out, f_str);
+        if(f_flags[static_cast<size_t>(flag_t::NODE_ENUM_FLAG_CLASS)])
+        {
+            out << " CLASS";
         }
         break;
 

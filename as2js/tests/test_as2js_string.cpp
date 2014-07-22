@@ -1553,6 +1553,13 @@ void As2JsStringUnitTests::test_number()
     {
         std::stringstream str;
         str << i;
+        if(str.str().find('e') != std::string::npos
+        || str.str().find('E') != std::string::npos)
+        {
+            // this happens with numbers very close to zero and the
+            // system decides to write them as '1e-12' for example
+            continue;
+        }
         std::string value1(str.str());
         as2js::String str1(value1);
         int64_t integer1(lrint(i));
@@ -1569,7 +1576,11 @@ void As2JsStringUnitTests::test_number()
             CPPUNIT_ASSERT_THROW(str1.to_int64(), as2js::exception_internal_error);
         }
         CPPUNIT_ASSERT(close_double(str1.to_float64(), i, 0.01));
-        CPPUNIT_ASSERT(str1.is_true() ^ close_double(i, 0.0, 0.0001));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        CPPUNIT_ASSERT(str1.is_true() ^ (i == 0.0));
+#pragma GCC diagnostic pop
 
         // add x 1000 as an exponent
         str << "e" << (rand() & 1 ? "+" : "") << "3";
@@ -1581,7 +1592,11 @@ void As2JsStringUnitTests::test_number()
         CPPUNIT_ASSERT(str2.is_number());
         CPPUNIT_ASSERT_THROW(str2.to_int64(), as2js::exception_internal_error);
         CPPUNIT_ASSERT(close_double(str2.to_float64(), i * 1000.0, 0.01));
-        CPPUNIT_ASSERT(str2.is_true() ^ close_double(i, 0.0, 0.0001));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        CPPUNIT_ASSERT(str2.is_true() ^ (i == 0.0));
+#pragma GCC diagnostic pop
 
         // add x 1000 as an exponent
         str.str(""); // reset the string
@@ -1594,7 +1609,11 @@ void As2JsStringUnitTests::test_number()
         CPPUNIT_ASSERT(str3.is_number());
         CPPUNIT_ASSERT_THROW(str3.to_int64(), as2js::exception_internal_error);
         CPPUNIT_ASSERT(close_double(str3.to_float64(), i / 1000.0, 0.00001));
-        CPPUNIT_ASSERT(str3.is_true() ^ close_double(i, 0.0, 0.0001));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        CPPUNIT_ASSERT(str3.is_true() ^ (i == 0.0));
+#pragma GCC diagnostic pop
     }
 
     // a few more using random

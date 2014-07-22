@@ -136,6 +136,13 @@ void Parser::enum_declaration(Node::pointer_t& node)
 {
     node = f_lexer->get_new_node(Node::node_t::NODE_ENUM);
 
+    bool const is_class(f_node->get_type() == Node::node_t::NODE_CLASS);
+    if(is_class)
+    {
+        get_token();
+        node->set_flag(Node::flag_t::NODE_ENUM_FLAG_CLASS, true);
+    }
+
     // enumerations can be unamed
     if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
@@ -143,11 +150,14 @@ void Parser::enum_declaration(Node::pointer_t& node)
         get_token();
     }
 
-    // in case the name was not specified, we can still have a type (?)
+    // in case the name was not specified, we can still have a type
     if(f_node->get_type() == Node::node_t::NODE_COLON)
     {
-        Node::pointer_t type;
-        expression(type);
+        get_token();
+        Node::pointer_t expr;
+        expression(expr);
+        Node::pointer_t type(f_lexer->get_new_node(Node::node_t::NODE_TYPE));
+        type->append_child(expr);
         node->append_child(type);
     }
 
@@ -156,10 +166,15 @@ void Parser::enum_declaration(Node::pointer_t& node)
         if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
         {
             // empty enumeration (i.e. forward declaration)
+            if(node->get_string().empty())
+            {
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ENUM, f_lexer->get_input()->get_position());
+                msg << "a forward enumeration must be named.";
+            }
             return;
         }
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
-        msg << "'{' expected to start the 'enum' definition";
+        msg << "'{' expected to start the 'enum' definition.";
         return;
     }
 
@@ -167,6 +182,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
 
     Node::pointer_t previous(f_lexer->get_new_node(Node::node_t::NODE_NULL));
     while(f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET
+       && f_node->get_type() != Node::node_t::NODE_SEMICOLON
        && f_node->get_type() != Node::node_t::NODE_EOF)
     {
         if(f_node->get_type() == Node::node_t::NODE_COMMA)
@@ -175,7 +191,7 @@ void Parser::enum_declaration(Node::pointer_t& node)
             get_token();
 
             Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_UNEXPECTED_PUNCTUATION, f_lexer->get_input()->get_position());
-            msg << "',' unexpected without a name";
+            msg << "',' unexpected without a name.";
             continue;
         }
         String current_name("null");
@@ -186,12 +202,21 @@ void Parser::enum_declaration(Node::pointer_t& node)
             entry->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST, true);
             entry->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_ENUM, true);
             current_name = f_node->get_string();
+            entry->set_string(current_name);
             get_token();
         }
         else
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_ENUM, f_lexer->get_input()->get_position());
-            msg << "each 'enum' entry needs to include an identifier";
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ENUM, f_lexer->get_input()->get_position());
+            msg << "each 'enum' entry needs to include an identifier.";
+            if(f_node->get_type() != Node::node_t::NODE_ASSIGNMENT
+            && f_node->get_type() != Node::node_t::NODE_COMMA
+            && f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
+            {
+                // skip that token otherwise we'd loop forever doing
+                // nothing more than generate errors
+                get_token();
+            }
         }
         Node::pointer_t expr;
         if(f_node->get_type() == Node::node_t::NODE_ASSIGNMENT)
@@ -210,7 +235,9 @@ void Parser::enum_declaration(Node::pointer_t& node)
             expr = f_lexer->get_new_node(Node::node_t::NODE_ADD);
             expr->append_child(previous); // left handside
             Node::pointer_t one(f_lexer->get_new_node(Node::node_t::NODE_INT64));
-            one->set_int64(1);
+            Int64 int64_one;
+            int64_one.set(1);
+            one->set_int64(int64_one);
             expr->append_child(one);
         }
 
@@ -221,14 +248,15 @@ void Parser::enum_declaration(Node::pointer_t& node)
         previous = f_lexer->get_new_node(Node::node_t::NODE_IDENTIFIER);
         previous->set_string(current_name);
 
-        if(f_node->get_type() == Node::node_t::NODE_NULL)
+        if(f_node->get_type() == Node::node_t::NODE_COMMA)
         {
             get_token();
         }
-        else if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
+        else if(f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET
+             && f_node->get_type() != Node::node_t::NODE_SEMICOLON)
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_UNEXPECTED_PUNCTUATION, f_lexer->get_input()->get_position());
-            msg << "',' expected between enumeration elements";
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_COMMA_EXPECTED, f_lexer->get_input()->get_position());
+            msg << "',' expected between enumeration elements.";
         }
     }
 
@@ -238,8 +266,8 @@ void Parser::enum_declaration(Node::pointer_t& node)
     }
     else
     {
-        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
-        msg << "'}' expected to close the 'enum' definition";
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
+        msg << "'}' expected to close the 'enum' definition.";
     }
 }
 

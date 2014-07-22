@@ -156,10 +156,12 @@ void Parser::import(Node::pointer_t& node)
             {
                 name = f_node->get_string();
                 get_token();
-                if(f_node->get_type() == Node::node_t::NODE_MEMBER)
+                if(f_node->get_type() == Node::node_t::NODE_MEMBER
+                || f_node->get_type() == Node::node_t::NODE_RANGE
+                || f_node->get_type() == Node::node_t::NODE_REST)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                    msg << "a package name is either a string or a list of identifiers separated by periods (.); you cannot mixed both";
+                    msg << "a package name is either a string or a list of identifiers separated by periods (.); you cannot mixed both.";
                 }
             }
             else if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
@@ -170,7 +172,7 @@ void Parser::import(Node::pointer_t& node)
             else
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                msg << "the name of a package was expected";
+                msg << "the name of a package was expected.";
             }
         }
         else
@@ -179,13 +181,21 @@ void Parser::import(Node::pointer_t& node)
         }
 
         int everything(0);
-        while(f_node->get_type() == Node::node_t::NODE_MEMBER)
+        while(f_node->get_type() == Node::node_t::NODE_MEMBER
+           || f_node->get_type() == Node::node_t::NODE_RANGE
+           || f_node->get_type() == Node::node_t::NODE_REST)
         {
+            if(f_node->get_type() == Node::node_t::NODE_RANGE
+            || f_node->get_type() == Node::node_t::NODE_REST)
+            {
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
+                msg << "the name of a package is expected to be separated by single periods (.).";
+            }
             if(everything == 1)
             {
                 everything = 2;
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                msg << "the * notation can only be used once at the end of a name";
+                msg << "the * notation can only be used once at the end of a name.";
             }
             name += ".";
             get_token();
@@ -194,7 +204,7 @@ void Parser::import(Node::pointer_t& node)
                 if(is_renaming && everything == 0)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                    msg << "the * notation cannot be used when renaming an import";
+                    msg << "the * notation cannot be used when renaming an import.";
                     everything = 2;
                 }
                 // everything in that directory
@@ -209,12 +219,21 @@ void Parser::import(Node::pointer_t& node)
                 if(f_node->get_type() == Node::node_t::NODE_STRING)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                    msg << "a package name is either a string or a list of identifiers separated by periods (.); you cannot mixed both";
+                    msg << "a package name is either a string or a list of identifiers separated by periods (.); you cannot mixed both.";
+                    // skip the string, just in case
+                    get_token();
                 }
                 else
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                    msg << "the name of a package was expected";
+                    msg << "the name of a package was expected.";
+                }
+                if(f_node->get_type() == Node::node_t::NODE_MEMBER
+                || f_node->get_type() == Node::node_t::NODE_RANGE
+                || f_node->get_type() == Node::node_t::NODE_REST)
+                {
+                    // in case of another '.' (or a few other '.')
+                    continue;
                 }
                 break;
             }
@@ -236,7 +255,7 @@ void Parser::import(Node::pointer_t& node)
     else
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-        msg << "a composed name or a string was expected after 'import'";
+        msg << "a composed name or a string was expected after 'import'.";
         if(f_node->get_type() != Node::node_t::NODE_SEMICOLON && f_node->get_type() != Node::node_t::NODE_COMMA)
         {
             get_token();
@@ -267,8 +286,8 @@ void Parser::import(Node::pointer_t& node)
             {
                 if(include_exclude == 2)
                 {
-                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                    msg << "include and exclude are mutually exclusive";
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_IMPORT, f_lexer->get_input()->get_position());
+                    msg << "include and exclude are mutually exclusive.";
                     include_exclude = 3;
                 }
                 else if(include_exclude == 0)
@@ -287,8 +306,8 @@ void Parser::import(Node::pointer_t& node)
             {
                 if(include_exclude == 1)
                 {
-                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                    msg << "include and exclude are mutually exclusive";
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_IMPORT, f_lexer->get_input()->get_position());
+                    msg << "include and exclude are mutually exclusive.";
                     include_exclude = 3;
                 }
                 else if(include_exclude == 0)
@@ -305,9 +324,14 @@ void Parser::import(Node::pointer_t& node)
             }
             else
             {
-                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_PACKAGE_NAME, f_lexer->get_input()->get_position());
-                msg << "namespace, include or exclude was expected after the comma";
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_IMPORT, f_lexer->get_input()->get_position());
+                msg << "namespace, include or exclude was expected after the comma.";
             }
+        }
+        else if(f_node->get_type() == Node::node_t::NODE_COMMA)
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_IMPORT, f_lexer->get_input()->get_position());
+            msg << "two commas in a row is not allowed while describing an import.";
         }
     }
 }
@@ -332,19 +356,54 @@ void Parser::use_namespace(Node::pointer_t& node)
 
 
 
-void Parser::namespace_block(Node::pointer_t& node)
+void Parser::namespace_block(Node::pointer_t& node, Node::pointer_t& attr_list)
 {
+    node = f_lexer->get_new_node(Node::node_t::NODE_NAMESPACE);
+
     if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         // save the name of the namespace
-        node = f_lexer->get_new_node(Node::node_t::NODE_NAMESPACE);
         node->set_string(f_node->get_string());
         get_token();
     }
     else
     {
+        bool has_private(false);
+        if(!attr_list)
+        {
+            attr_list = f_lexer->get_new_node(Node::node_t::NODE_ATTRIBUTES);
+        }
+        else
+        {
+            size_t const max_attrs(attr_list->get_children_size());
+            for(size_t idx(0); idx < max_attrs; ++idx)
+            {
+                if(attr_list->get_child(idx)->get_type() == Node::node_t::NODE_PRIVATE)
+                {
+                    // already set, so we do not need to add another private attribute
+                    has_private = true;
+                    break;
+                }
+            }
+        }
+        if(!has_private)
+        {
+            Node::pointer_t private_node(f_lexer->get_new_node(Node::node_t::NODE_PRIVATE));
+            attr_list->append_child(private_node);
+        }
+    }
+
+    if(f_node->get_type() != Node::node_t::NODE_OPEN_CURVLY_BRACKET)
+    {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_NAMESPACE, f_lexer->get_input()->get_position());
-        msg << "the 'namespace' declaration expects an identifier";
+        msg << "'{' missing after the name of this namespace.";
+        // TODO: write code to search for the next ';'?
+    }
+    else
+    {
+        Node::pointer_t directives;
+        directive_list(directives);
+        node->append_child(directives);
     }
 }
 

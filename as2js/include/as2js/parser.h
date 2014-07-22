@@ -111,7 +111,7 @@ private:
     void                match_expression(Node::pointer_t& node);
     void                min_max_expression(Node::pointer_t& node);
     void                multiplicative_expression(Node::pointer_t& node);
-    void                namespace_block(Node::pointer_t& node);
+    void                namespace_block(Node::pointer_t& node, Node::pointer_t& attr_list);
     void                numeric_type(Node::pointer_t& numeric_type_node, Node::pointer_t& name);
     void                object_literal_expression(Node::pointer_t& node);
     void                parameter_list(Node::pointer_t& node, bool& has_out);

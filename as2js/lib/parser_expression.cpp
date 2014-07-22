@@ -825,7 +825,7 @@ void Parser::primary_expression(Node::pointer_t& node)
 
     default:
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, f_lexer->get_input()->get_position());
-        msg << "unexpected token found in an expression";
+        msg << "unexpected token \"" << f_node->get_type_name() << "\" found in an expression";
         break;
 
     }

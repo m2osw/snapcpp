@@ -904,6 +904,11 @@ bool String::is_int64() const
  *
  * \li A floating point number: [-+]?[0-9]+(\.[0-9]+)?([eE]?[0-9]+)?
  *
+ * \todo
+ * Ameliorate the test so if no digits are present where required then
+ * an error is emitted (i.e. you may have '0.', '.0' but not just '.';
+ * same problem with exponent).
+ *
  * \return true if the string represents a floating point number.
  */
 bool String::is_float64() const

@@ -3440,7 +3440,7 @@ void As2JsLexerUnitTests::test_valid_strings()
     // and Extended Unicode (U)
     for(as2js::as_char_t c(0); c < 0x110000; ++c)
     {
-        if(c % 100000 == 0)
+        if(c % 50000 == 0)
         {
             std::cout << "." << std::flush;
         }

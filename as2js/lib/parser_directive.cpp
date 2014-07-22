@@ -81,8 +81,6 @@ void Parser::attributes(Node::pointer_t& node)
 
         }
 
-        // TBD: necessary test?
-        //      (this function gets called from many places... so watch out)
         if(!node)
         {
             node = f_lexer->get_new_node(Node::node_t::NODE_ATTRIBUTES);
@@ -101,6 +99,12 @@ void Parser::attributes(Node::pointer_t& node)
 
 void Parser::directive_list(Node::pointer_t& node)
 {
+    if(node)
+    {
+        // should not happen, if it does, we have got a really bad internal error
+        throw exception_internal_error("directive_list() called with a non-null node pointer"); // LCOV_EXCL_LINE
+    }
+
     node = f_lexer->get_new_node(Node::node_t::NODE_DIRECTIVE_LIST);
     for(;;)
     {
@@ -487,7 +491,7 @@ void Parser::directive(Node::pointer_t& node)
 
     case Node::node_t::NODE_NAMESPACE:
         get_token();
-        namespace_block(directive_node);
+        namespace_block(directive_node, attr_list);
         break;
 
     case Node::node_t::NODE_RETURN:
@@ -734,7 +738,6 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_IMPORT:
     case Node::node_t::NODE_INCREMENT:
     case Node::node_t::NODE_INT64:
-    case Node::node_t::NODE_NAMESPACE:
     case Node::node_t::NODE_NEW:
     case Node::node_t::NODE_NULL:
     case Node::node_t::NODE_OBJECT_LITERAL:

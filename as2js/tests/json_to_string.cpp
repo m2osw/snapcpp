@@ -41,6 +41,8 @@ SOFTWARE.
 
 #include    <advgetopt/advgetopt.h>
 
+#include    <unistd.h>
+
 
 class messages : public as2js::MessageCallback
 {
@@ -282,6 +284,13 @@ int main(int argc, char **argv)
         {
             err = 1;
         }
+    }
+
+    if(err == 1)
+    {
+        // on error make sure to delete because otherwise cmake thinks
+        // that the target is all good.
+        unlink(opt.get_string("output").c_str());
     }
 
     return err;
