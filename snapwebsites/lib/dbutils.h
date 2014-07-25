@@ -57,6 +57,7 @@ private:
         CT_time_seconds,
         CT_time_microseconds_and_string,
         CT_float32_value,
+        CT_float64_value,
         CT_uint32_value,
         CT_int8_value,
         CT_uint8_value,

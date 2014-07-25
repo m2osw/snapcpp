@@ -979,7 +979,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     {
                         // like a string, but convert inline images too
                         QString value(post_value);
-                        QString const widget_force_filename(widget.attribute("force-filename", "string")); // this one is #IMPLIED
+                        QString const widget_force_filename(widget.attribute("force-filename", "")); // this one is #IMPLIED
                         parse_out_inline_img(ipath, value, widget_force_filename);
                         revision_row->cell(field_name)->setValue(value);
                         current_value = value;
@@ -1250,8 +1250,8 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
             || script_parts[1].isEmpty())
             {
                 f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
-                    QString("Layout name \"%1\" is not valid. Names on both sides of the slash (/) must be defined.").arg(script),
-                    "The layout name is not composed of two valid names separated by a slash (/) but it does contain a slash.");
+                    QString("Editor layout name \"%1\" is not valid. Names on both sides of the slash (/) must be defined.").arg(script),
+                    "The editor layout name is not composed of two valid names separated by a slash (/) but it does contain a slash.");
                 NOTREACHED();
             }
             script = script_parts[1];
@@ -1259,8 +1259,8 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
         else if(script_parts.size() != 1)
         {
             f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
-                QString("Layout name \"%1\" is not valid.").arg(script),
-                "The layout name is not composed of exactly one or two names.");
+                QString("Editor layout name \"%1\" is not valid.").arg(script),
+                "The editor layout name is not composed of exactly one or two names.");
             NOTREACHED();
         }
         if(script != "default")
@@ -1282,10 +1282,32 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
                 editor_widgets.setContent(parser_xml);
             }
         }
+        dynamic_editor_widget(ipath, script, editor_widgets);
         g_cached_form[cpath] = editor_widgets;
     }
 
     return g_cached_form[cpath];
+}
+
+
+/** \brief Allow other plugins to dynamically add widgets.
+ *
+ * This message is sent to the plugins to give them a chance to dynamically
+ * add dynamic widgets to a list of editor widgets.
+ *
+ * \param[in,out] ipath  The path to the page being handled.
+ * \param[in] name  The name of the editor layout being loaded for this page.
+ * \param[in,out] editor_widgets  The DOM with the editor widgets.
+ *
+ * \return true if the event should be processed.
+ */
+bool editor::dynamic_editor_widget_impl(content::path_info_t& ipath, QString const& name, QDomDocument& editor_widgets)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(name);
+    static_cast<void>(editor_widgets);
+
+    return true;
 }
 
 

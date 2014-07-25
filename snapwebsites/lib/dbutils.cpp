@@ -361,6 +361,13 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // 32 bit float
         return CT_float32_value;
     }
+    else if((n.startsWith("finball::data_") && n.endsWith("_count")) // TODO -- remove at some point since that is a cutomer's field
+         || (n.startsWith("finball::data_") && n.endsWith("_amount")) // TODO -- remove at some point since that is a cutomer's field
+         )
+    {
+        // 64 bit float
+        return CT_float64_value;
+    }
     else if(n.startsWith("content::attachment::reference::")
          || n == "content::attachment::revision_control::last_branch"
          || n.startsWith("content::attachment::revision_control::last_revision::")
@@ -410,7 +417,9 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "permissions::dynamic"
          || n == "users::multiuser"
          || (f_tableName == "list" && f_rowName != "*standalone*")
-         || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
+         || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::number_of_cashiers" // TODO -- remove at some point since that is a cutomer's field
          )
     {
         // signed 8 bit value
@@ -521,6 +530,14 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             {
                 // 32 bit float
                 float value(c->value().floatValue());
+                v = QString("%1").arg(value);
+            }
+            break;
+
+            case CT_float64_value:
+            {
+                // 64 bit float
+                double value(c->value().doubleValue());
                 v = QString("%1").arg(value);
             }
             break;
@@ -716,6 +733,12 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
         case CT_float32_value:
         {
             cvalue.setFloatValue( v.toFloat() );
+        }
+        break;
+
+        case CT_float64_value:
+        {
+            cvalue.setFloatValue( v.toDouble() );
         }
         break;
 

@@ -190,9 +190,14 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT legend ANY>
 
+<!--
+  we use the 'value' attribute in dropdown selection
+  we use the 'for' attribute in tabs to indicate which block to display
+-->
 <!ELEMENT li ANY>
 <!ATTLIST li class CDATA #IMPLIED
-             value CDATA #IMPLIED>
+             value CDATA #IMPLIED
+             for CDATA #IMPLIED>
 
 <!ELEMENT link EMPTY>
 <!ATTLIST link href CDATA #REQUIRED
@@ -209,6 +214,7 @@ DTD of the XSLT 2.0.
                property CDATA #IMPLIED>
 
 <!ELEMENT p ANY>
+<!ATTLIST p class CDATA #IMPLIED>
 
 <!ELEMENT script ANY>
 <!ATTLIST script type CDATA #REQUIRED>

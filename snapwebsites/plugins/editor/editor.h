@@ -145,6 +145,7 @@ public:
     SNAP_SIGNAL(validate_editor_post_for_widget, (content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, QString const& value, bool const is_secret), (ipath, info, widget, widget_name, widget_type, value, is_secret));
     SNAP_SIGNAL(replace_uri_token, (editor_uri_token& token_info), (token_info));
     SNAP_SIGNAL(editor_process_post_result, (content::path_info_t& ipath, bool const succeeded), (ipath, succeeded));
+    SNAP_SIGNAL(dynamic_editor_widget, (content::path_info_t& cpath, QString const& name, QDomDocument& editor_widgets), (cpath, name, editor_widgets));
     SNAP_SIGNAL(init_editor_widget, (content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row), (ipath, field_id, field_type, widget, row));
 
 private:
