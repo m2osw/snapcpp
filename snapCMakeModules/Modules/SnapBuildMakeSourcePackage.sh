@@ -34,6 +34,7 @@ fi
 NAME=`dpkg-parsechangelog --show-field Source`
 VERSION=`dpkg-parsechangelog --show-field Version`
 FULLNAME=${NAME}_${VERSION}
+echo "Building source package for '${FULLNAME}'"
 rm -f ../${FULLNAME}.dsc ../${FULLNAME}_source.* ../${FULLNAME}.tar.gz
 
 # Get the current version from the change log, get rid of everything past the tilde "~",

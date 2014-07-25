@@ -30,6 +30,10 @@
 #
 include( CMakeParseArguments )
 
+find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
+find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
+find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
+
 function( ConfigureMakeProject )
 	set( options        USE_CONFIGURE_SCRIPT )
 	set( oneValueArgs   PROJECT_NAME VERSION DISTFILE_PATH )
@@ -75,6 +79,7 @@ function( ConfigureMakeProject )
 		file( MAKE_DIRECTORY ${BUILD_DIR} )
 	endif()
 
+	#set_property( GLOBAL PROPERTY ${ARG_PROJECT_NAME}_DEPENDS_LIST ${ARG_DEPENDS} )
 	add_custom_target( ${ARG_PROJECT_NAME}-depends DEPENDS ${ARG_DEPENDS} )
 
 	if( ARG_USE_CONFIGURE_SCRIPT )
@@ -142,11 +147,22 @@ function( ConfigureMakeProject )
 	set( EMAIL_ADDY ${DEBUILD_EMAIL} )
 	separate_arguments( EMAIL_ADDY )
 	#
+	if( ARG_DEPENDS )
+		add_custom_target(
+			${ARG_PROJECT_NAME}-incdeps
+			COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_PROJECT_NAME} ${ARG_DEPENDS}
+			WORKING_DIRECTORY ${SRC_DIR}
+			COMMENT "Incrementing dependencies for debian package ${ARG_PROJECT_NAME}"
+			)
+	else()
+		add_custom_target( ${ARG_PROJECT_NAME}-incdeps )
+	endif()
 	add_custom_target(
 		${ARG_PROJECT_NAME}-debuild
 		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${DEBUILD_PLATFORM}
 			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_debuild.log
 		WORKING_DIRECTORY ${SRC_DIR}
+		DEPENDS ${ARG_PROJECT_NAME}-incdeps
 		COMMENT "Building debian package for ${ARG_PROJECT_NAME}"
 		)
 	add_custom_target(
