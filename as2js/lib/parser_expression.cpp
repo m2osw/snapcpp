@@ -84,10 +84,10 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
 
     if(f_node->get_type() == Node::node_t::NODE_COMMA)
     {
-        Node::pointer_t item(node);
+        Node::pointer_t first_item(node);
 
-        node = f_lexer->get_new_node(Node::node_t::NODE_EMPTY);
-        node->append_child(item);
+        node = f_lexer->get_new_node(Node::node_t::NODE_LIST);
+        node->append_child(first_item);
 
         int has_rest = 0;
         while(f_node->get_type() == Node::node_t::NODE_COMMA)
@@ -119,6 +119,7 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
             }
             else
             {
+                Node::pointer_t item;
                 assignment_expression(item);
 
                 // accept named parameters
@@ -616,7 +617,7 @@ void Parser::postfix_expression(Node::pointer_t& node)
             else
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_SCOPE, f_lexer->get_input()->get_position());
-                msg << "scope operator '::' is expected to be followed by an identifier";
+                msg << "scope operator '::' is expected to be followed by an identifier.";
             }
             // don't repeat scope (it seems)
             return;
@@ -681,7 +682,7 @@ void Parser::postfix_expression(Node::pointer_t& node)
             else
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
-                msg << "')' expected to end the list of arguments";
+                msg << "')' expected to end the list of arguments.";
             }
         }
             break;
@@ -709,7 +710,7 @@ void Parser::postfix_expression(Node::pointer_t& node)
             else
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SQUARE_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
-                msg << "']' expected to end the list of element references or declarations";
+                msg << "']' expected to end the list of element references or declarations.";
             }
         }
             break;
@@ -775,7 +776,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         else
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PARENTHESIS_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "')' expected to match the '('";
+            msg << "')' expected to match the '('.";
         }
     }
         break;
@@ -795,7 +796,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         else
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SQUARE_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "']' expected to match the '[' of this array";
+            msg << "']' expected to match the '[' of this array.";
         }
     }
         break;
@@ -811,7 +812,7 @@ void Parser::primary_expression(Node::pointer_t& node)
         else
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "'}' expected to match the '{' of this object literal";
+            msg << "'}' expected to match the '{' of this object literal.";
         }
     }
         break;
@@ -825,7 +826,7 @@ void Parser::primary_expression(Node::pointer_t& node)
 
     default:
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, f_lexer->get_input()->get_position());
-        msg << "unexpected token \"" << f_node->get_type_name() << "\" found in an expression";
+        msg << "unexpected token \"" << f_node->get_type_name() << "\" found in an expression.";
         break;
 
     }

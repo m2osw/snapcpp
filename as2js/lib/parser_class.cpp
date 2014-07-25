@@ -49,19 +49,34 @@ namespace as2js
 
 void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
 {
+    node = f_lexer->get_new_node(type);
+
+    // *** NAME ***
     if(f_node->get_type() != Node::node_t::NODE_IDENTIFIER)
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
-        msg << "the name of the class is expected after the keyword 'class'";
-        return;
+        msg << "the name of the class is expected after the keyword 'class'.";
+
+        switch(f_node->get_type())
+        {
+        case Node::node_t::NODE_EXTENDS:
+        case Node::node_t::NODE_IMPLEMENTS:
+        case Node::node_t::NODE_OPEN_CURVLY_BRACKET:
+        //case Node::node_t::NODE_SEMICOLON: -- not necessary here
+            break;
+
+        default:
+            return;
+
+        }
+    }
+    else
+    {
+        node->set_string(f_node->get_string());
+        get_token();
     }
 
-    // *** NAME ***
-    node = f_lexer->get_new_node(type);
-    node->set_string(f_node->get_string());
-
     // *** INHERITANCE ***
-    get_token();
     while(f_node->get_type() == Node::node_t::NODE_EXTENDS
        || f_node->get_type() == Node::node_t::NODE_IMPLEMENTS)
     {
@@ -74,6 +89,7 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
         expression(expr);
         if(expr)
         {
+            // TODO: EXTENDS and IMPLEMENTS do not accept assignments.
             inherits->append_child(expr);
         }
         else
@@ -81,17 +97,10 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
             // TBD: we may not need this error since the expression() should
             //      already generate an error as required
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
-            msg << "expected a valid expression after '" << f_node->get_type_name() << "'";
+            msg << "expected a valid expression after '" << inherits->get_type_name() << "'.";
             //return; -- continue? -- it was before...
         }
-        // TODO: EXTENDS and IMPLEMENTS do not accept assignments.
-        // TODO: EXTENDS does not accept lists.
-        //       We need to test for that here.
     }
-    // TODO: note that we only can accept one EXTENDS and
-    //       one IMPLEMENTS in that order. We need to check
-    //       that here. [that's according to the AS spec. is
-    //       that really important?]
 
     if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
     {
@@ -104,6 +113,13 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
             directive_list(directive_list_node);
             node->append_child(directive_list_node);
         }
+        else
+        {
+            // this is important to distinguish an empty node from
+            // a forward declaration
+            Node::pointer_t empty_node(f_lexer->get_new_node(Node::node_t::NODE_EMPTY));
+            node->append_child(empty_node);
+        }
 
         if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
@@ -112,15 +128,15 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
         else
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "'}' expected to close the 'class' definition";
+            msg << "'}' expected to close the 'class' definition.";
         }
     }
     else if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)
     {
-        // accept empty class definitions (for typedef's and forward declaration)
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
-        msg << "'{' expected to start the 'class' definition";
+        msg << "'{' expected to start the 'class' definition.";
     }
+    // else -- accept empty class definitions (for typedef's and forward declaration)
 }
 
 
@@ -284,7 +300,7 @@ void Parser::contract_declaration(Node::pointer_t& node, Node::node_t type)
         if(f_node->get_type() != Node::node_t::NODE_IDENTIFIER)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_LABEL, f_lexer->get_input()->get_position());
-            msg << "'" << node->get_type_name() << "' must be followed by a list of labeled expressions";
+            msg << "'" << node->get_type_name() << "' must be followed by a list of labeled expressions.";
         }
         else
         {
@@ -295,7 +311,7 @@ void Parser::contract_declaration(Node::pointer_t& node, Node::node_t type)
         if(f_node->get_type() != Node::node_t::NODE_COLON)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_COLON_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "the '" << node->get_type_name() << "' label must be followed by a colon (:)";
+            msg << "the '" << node->get_type_name() << "' label must be followed by a colon (:).";
         }
         else
         {

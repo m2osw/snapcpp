@@ -1,0 +1,4 @@
+
+. JSON only accepts " and not ' for strings
+. JSON only accepts \n and \r as line terminators
+
