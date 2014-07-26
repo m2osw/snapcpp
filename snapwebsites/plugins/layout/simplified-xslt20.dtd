@@ -125,6 +125,7 @@ DTD of the XSLT 2.0.
             title CDATA "">
 
 <!ELEMENT b ANY>
+<!ELEMENT br EMPTY>
 <!ELEMENT body ANY>
 
 <!ELEMENT div ANY>
