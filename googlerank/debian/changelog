@@ -1,3 +1,15 @@
+googlerank (1.0.8~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 26 Jul 2014 23:24:29 -0700
+
+googlerank (1.0.7~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 26 Jul 2014 07:04:01 -0700
+
 googlerank (1.0.6~saucy) saucy; urgency=high
 
   * Nightly build.

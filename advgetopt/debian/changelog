@@ -1,3 +1,15 @@
+advgetopt (1.0.8~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 26 Jul 2014 23:24:13 -0700
+
+advgetopt (1.0.7~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Sat, 26 Jul 2014 07:03:45 -0700
+
 advgetopt (1.0.6~saucy) saucy; urgency=high
 
   * Nightly build.
