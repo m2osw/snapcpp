@@ -420,6 +420,7 @@ flg_to_string_t const g_flag_table[] =
     FLAG_NAME(PARAM_FLAG_CATCH),
     FLAG_NAME(PARAM_MATCH_FLAG_UNPROTOTYPED),
     FLAG_NAME(SWITCH_FLAG_DEFAULT),
+    FLAG_NAME(TYPE_FLAG_MODULO),
     FLAG_NAME(VARIABLE_FLAG_CONST),
     FLAG_NAME(VARIABLE_FLAG_LOCAL),
     FLAG_NAME(VARIABLE_FLAG_MEMBER),
@@ -564,6 +565,10 @@ void verify_flags(as2js::Node::pointer_t node, as2js::String const& flags_set, b
 
     case as2js::Node::node_t::NODE_SWITCH:
         flgs_to_check.push_back(as2js::Node::flag_t::NODE_SWITCH_FLAG_DEFAULT);
+        break;
+
+    case as2js::Node::node_t::NODE_TYPE:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_TYPE_FLAG_MODULO);
         break;
 
     case as2js::Node::node_t::NODE_VARIABLE:
@@ -811,6 +816,8 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     attributes_string.from_utf8("attributes");
     as2js::String integer_string;
     integer_string.from_utf8("integer");
+    as2js::String float_string;
+    float_string.from_utf8("float");
 
     CPPUNIT_ASSERT(expected->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT);
     as2js::JSON::JSONValue::object_t const& child_object(expected->get_object());
@@ -875,6 +882,21 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     {
         // the node cannot have an integer otherwise, so we expect a throw
         CPPUNIT_ASSERT_THROW(node->get_int64(), as2js::exception_internal_error);
+    }
+
+    as2js::JSON::JSONValue::object_t::const_iterator it_float(child_object.find(float_string));
+    if(it_float != child_object.end())
+    {
+        // we expect a string in this object
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        CPPUNIT_ASSERT(node->get_float64().get() == it_float->second->get_float64().get());
+#pragma GCC diagnostic pop
+    }
+    else
+    {
+        // the node cannot have a float otherwise, so we expect a throw
+        CPPUNIT_ASSERT_THROW(node->get_float64(), as2js::exception_internal_error);
     }
 
     // List of links are tested just like children, only the list starts somewhere else

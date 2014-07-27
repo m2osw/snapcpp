@@ -299,6 +299,14 @@ void Node::display_data(std::ostream& out) const
         }
         break;
 
+    case node_t::NODE_TYPE:
+        out << ":";
+        if(f_flags[static_cast<size_t>(flag_t::NODE_TYPE_FLAG_MODULO)])
+        {
+            out << " MODULO";
+        }
+        break;
+
     case node_t::NODE_VARIABLE:
     case node_t::NODE_VAR_ATTRIBUTES:
         sub_function::display_str(out, f_str);

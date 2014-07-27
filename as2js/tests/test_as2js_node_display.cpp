@@ -121,6 +121,7 @@ void As2JsNodeUnitTests::test_display_all_types()
         case as2js::Node::node_t::NODE_PARAM:
         case as2js::Node::node_t::NODE_PARAM_MATCH:
         case as2js::Node::node_t::NODE_SWITCH:
+        case as2js::Node::node_t::NODE_TYPE:
             expected << ":";
             break;
 
@@ -416,6 +417,7 @@ void As2JsNodeUnitTests::test_display_attributes()
                         case as2js::Node::node_t::NODE_PARAM:
                         case as2js::Node::node_t::NODE_PARAM_MATCH:
                         case as2js::Node::node_t::NODE_SWITCH:
+                        case as2js::Node::node_t::NODE_TYPE:
                             expected << ":";
                             break;
 

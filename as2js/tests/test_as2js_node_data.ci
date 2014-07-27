@@ -252,6 +252,18 @@ flags_per_node_t const g_flags_switch[] =
     }
 };
 
+flags_per_node_t const g_flags_type[] =
+{
+    {
+        as2js::Node::flag_t::NODE_TYPE_FLAG_MODULO,
+        "MODULO"
+    },
+    {
+        as2js::Node::flag_t::NODE_FLAG_max,
+        nullptr
+    }
+};
+
 flags_per_node_t const g_flags_variable[] =
 {
     {
@@ -1437,7 +1449,7 @@ node_type_info_t const g_node_types[] =
         .f_name = "TYPE",
         .f_operator = nullptr,
         .f_flags = TEST_NODE_IS_NAN,
-        .f_node_flags = g_flags_none
+        .f_node_flags = g_flags_type
     },
     {
         .f_type = as2js::Node::node_t::NODE_TYPEOF,
