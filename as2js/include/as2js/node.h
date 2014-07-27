@@ -314,6 +314,9 @@ public:
         // NODE_SWITCH
         NODE_SWITCH_FLAG_DEFAULT,           // we found a 'default:' label in that switch
 
+        // NODE_TYPE
+        NODE_TYPE_FLAG_MODULO,              // modulo numeric type
+
         // NODE_VARIABLE, NODE_VAR_ATTRIBUTES
         NODE_VARIABLE_FLAG_CONST,
         NODE_VARIABLE_FLAG_LOCAL,

@@ -201,6 +201,13 @@ void Node::verify_flag(flag_t f) const
         }
         break;
 
+    case flag_t::NODE_TYPE_FLAG_MODULO:             // type ... as mod ...;
+        if(f_type == node_t::NODE_TYPE)
+        {
+            return;
+        }
+        break;
+
     case flag_t::NODE_VARIABLE_FLAG_CONST:
     case flag_t::NODE_VARIABLE_FLAG_LOCAL:
     case flag_t::NODE_VARIABLE_FLAG_MEMBER:
