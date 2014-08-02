@@ -727,7 +727,11 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
  */
 void list::on_backend_action(QString const& action)
 {
+    content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+
     if(action == get_name(SNAP_NAME_LIST_PAGELIST))
     {
         snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
@@ -757,6 +761,10 @@ void list::on_backend_action(QString const& action)
             QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
             if(!threshold.nullValue())
             {
+                list_table->clearCache();
+                content_table->clearCache();
+                data_table->clearCache();
+
                 // work as long as there is work to do
                 int did_work(1);
                 while(did_work != 0)
@@ -1332,8 +1340,8 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
     if(!content_table->exists(page_ipath.get_key())
     || !content_table->row(page_ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
     {
-        // the page is not ready yet, let it be for a little long, it will be
-        // taken in account by the standard process
+        // the page is not ready yet, let it be for a little longer, it will
+        // be taken in account by the standard process
         // (at this point we may not even have the branch/revision data)
         return 0;
     }
@@ -1367,9 +1375,14 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
         if(page_branch_row->exists(list_key_in_page))
         {
             // check to see whether the current key changed
+            // note that if the destination does not exist, we still attempt
+            // the drop + create (that happens when there is a change that
+            // affects the key and you get a duplicate which is corrected
+            // later--but we probably need to fix duplicates at some point)
             QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
             QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
-            if(current_item_key_full != new_item_key_full)
+            if(current_item_key_full != new_item_key_full
+            || !page_branch_row->exists(new_item_key_full))
             {
                 // it changed, we have to delete the old one and
                 // create a new one
