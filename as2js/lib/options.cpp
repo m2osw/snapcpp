@@ -41,29 +41,50 @@ namespace as2js
 
 
 
+/** \brief Initialize an options object.
+ *
+ * The default constructor initializes the options array to the maximum
+ * number of options. The options are all set to the default, zero (0).
+ *
+ * To change the option value, use the set_option() function. At this
+ * point pretty much all the options accept either 0 or 1 as their
+ * value, although any number of than 0 is considered to represent "set".
+ */
 Options::Options()
     : f_options(static_cast<size_t>(option_t::OPTION_max))
 {
-    // we are always in strict mode
-    set_option(option_t::OPTION_STRICT, 1);
 }
 
 
+/** \brief Set an option to the specified value.
+ *
+ * This function sets the option to the specified value.
+ *
+ * At this point, all options expect the value to be 0 or 1, although
+ * the system does not enforce that at this point. Any value is thus
+ * accepted.
+ *
+ * Options make use of an int64_t so any 64 bit values works.
+ *
+ * \param[in] option  The option to set.
+ * \param[in] value  The new 64 bit value for this option.
+ */
 void Options::set_option(option_t option, option_value_t value)
 {
-    // TODO: verify that we really want that here, we may prefer
-    //       to give the user non-strict access to his code...
-
-    // we are always in strict mode
-    if(option == option_t::OPTION_STRICT)
-    {
-        value = 1;
-    }
-
     f_options[static_cast<size_t>(option)] = value;
 }
 
 
+/** \brief Retrieve the current value of an option.
+ *
+ * This function is used to retrieve the current value of an option.
+ * At this point, all options are expected to be zero (0), the default,
+ * or one (1). It is possible to set options to other values, though.
+ *
+ * \param[in] option  The option to retrieve.
+ *
+ * \return The current value of this option.
+ */
 Options::option_value_t Options::get_option(option_t option)
 {
     return f_options[static_cast<size_t>(option)];

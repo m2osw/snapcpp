@@ -77,6 +77,7 @@ public:
 private:
     void                get_token();
     void                unget_token(Node::pointer_t& data);
+    bool                has_option_set(Options::option_t option) const;
 
     void                additive_expression(Node::pointer_t& node);
     void                assignment_expression(Node::pointer_t& node);
@@ -101,6 +102,7 @@ private:
     void                expression(Node::pointer_t& node);
     void                function(Node::pointer_t& node, bool const expression);
     void                for_directive(Node::pointer_t& node);
+    void                forced_block(Node::pointer_t& node, Node::pointer_t statement);
     void                goto_directive(Node::pointer_t& node);
     void                if_directive(Node::pointer_t& node);
     void                import(Node::pointer_t& node);

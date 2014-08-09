@@ -91,8 +91,16 @@ flags_per_node_t const g_flags_enum[] =
 flags_per_node_t const g_flags_for[] =
 {
     {
+        as2js::Node::flag_t::NODE_FOR_FLAG_CONST,
+        "CONST"
+    },
+    {
         as2js::Node::flag_t::NODE_FOR_FLAG_FOREACH,
         "FOREACH"
+    },
+    {
+        as2js::Node::flag_t::NODE_FOR_FLAG_IN,
+        "IN"
     },
     {
         as2js::Node::flag_t::NODE_FLAG_max,

@@ -135,7 +135,7 @@ void Parser::numeric_type(Node::pointer_t& numeric_type_node, Node::pointer_t& n
     if(f_node->get_type() != Node::node_t::NODE_RANGE)
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_NUMERIC_TYPE, f_lexer->get_input()->get_position());
-        msg << "invalid numeric type declaration, the range must use '..' to separate the minimum and maximum boundaries (unexpected \"" << f_node->get_type_name() << "\").";
+        msg << "invalid numeric type declaration, the range must use '..' to separate the minimum and maximum boundaries (unexpected '" << f_node->get_type_name() << "').";
 
         // in case the user put '...' instead of '..'
         if(f_node->get_type() == Node::node_t::NODE_REST)

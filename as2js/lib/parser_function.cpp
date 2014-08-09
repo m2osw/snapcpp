@@ -205,7 +205,8 @@ void Parser::parameter_list(Node::pointer_t& node, bool& has_out)
         }
 
         // reached the end of the list?
-        if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
+        if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS
+        || f_node->get_type() == Node::node_t::NODE_IF) // special case for catch(e if e instanceof RangeError) ...
         {
             return;
         }
@@ -350,6 +351,26 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
         break;
 
     // all the operators which can be overloaded as is
+    case Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
+    case Node::node_t::NODE_ASSIGNMENT_MINIMUM:
+    case Node::node_t::NODE_ASSIGNMENT_POWER:
+    case Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+    case Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+    case Node::node_t::NODE_COMPARE:
+    case Node::node_t::NODE_LOGICAL_XOR:
+    case Node::node_t::NODE_MATCH:
+    case Node::node_t::NODE_MAXIMUM:
+    case Node::node_t::NODE_MINIMUM:
+    case Node::node_t::NODE_NOT_MATCH:
+    case Node::node_t::NODE_POWER:
+    case Node::node_t::NODE_ROTATE_LEFT:
+    case Node::node_t::NODE_ROTATE_RIGHT:
+    case Node::node_t::NODE_SMART_MATCH:
+        if(!has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_ALLOWED, f_lexer->get_input()->get_position());
+            msg << "the '" << f_node->get_type_name() << "' operator is only available when extended operators are authorized (use extended_operators;).";
+        }
     case Node::node_t::NODE_ADD:
     case Node::node_t::NODE_ASSIGNMENT:
     case Node::node_t::NODE_ASSIGNMENT_ADD:
@@ -360,13 +381,8 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     case Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND:
     case Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR:
     case Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
-    case Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
-    case Node::node_t::NODE_ASSIGNMENT_MINIMUM:
     case Node::node_t::NODE_ASSIGNMENT_MODULO:
     case Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
-    case Node::node_t::NODE_ASSIGNMENT_POWER:
-    case Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
-    case Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
@@ -375,7 +391,6 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     case Node::node_t::NODE_BITWISE_XOR:
     case Node::node_t::NODE_BITWISE_OR:
     case Node::node_t::NODE_BITWISE_NOT:
-    case Node::node_t::NODE_COMPARE:
     case Node::node_t::NODE_DECREMENT:
     case Node::node_t::NODE_DIVIDE:
     case Node::node_t::NODE_EQUAL:
@@ -387,19 +402,11 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
     case Node::node_t::NODE_LOGICAL_AND:
     case Node::node_t::NODE_LOGICAL_NOT:
     case Node::node_t::NODE_LOGICAL_OR:
-    case Node::node_t::NODE_LOGICAL_XOR:
-    case Node::node_t::NODE_MATCH:
-    case Node::node_t::NODE_MAXIMUM:
-    case Node::node_t::NODE_MINIMUM:
     case Node::node_t::NODE_MODULO:
     case Node::node_t::NODE_MULTIPLY:
     case Node::node_t::NODE_NOT_EQUAL:
-    case Node::node_t::NODE_NOT_MATCH:
     case Node::node_t::NODE_POST_DECREMENT:
     case Node::node_t::NODE_POST_INCREMENT:
-    case Node::node_t::NODE_POWER:
-    case Node::node_t::NODE_ROTATE_LEFT:
-    case Node::node_t::NODE_ROTATE_RIGHT:
     case Node::node_t::NODE_SHIFT_LEFT:
     case Node::node_t::NODE_SHIFT_RIGHT:
     case Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:

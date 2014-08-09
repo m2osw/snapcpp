@@ -180,7 +180,7 @@ public:
 
         if(f_verbose)
         {
-            std::cerr << "filename = " << pos.get_filename() << " / " << f_expected[0].f_pos.get_filename() << "\n";
+            std::cerr << "filename = " << pos.get_filename() << " (node) / " << f_expected[0].f_pos.get_filename() << " (JSON)\n";
             std::cerr << "msg = " << message << " / " << f_expected[0].f_message << "\n";
             std::cerr << "page = " << pos.get_page() << " / " << f_expected[0].f_pos.get_page() << "\n";
             std::cerr << "line = " << pos.get_line() << " / " << f_expected[0].f_pos.get_line() << "\n";
@@ -251,20 +251,110 @@ controlled_vars::zint32_t   test_callback::g_error_count;
 controlled_vars::zint32_t   g_empty_home_too_late;
 
 
-as2js::Options::option_t g_options[] =
+//
+// we have two special pragmas that accept 0, 1, 2, or 3
+// namely, those are:
+//
+//  . OPTION_EXTENDED_STATEMENTS -- force '{' ... '}' in
+//    blocks for: if, while, do, for, with...
+//
+//  . OPTION_EXTENDED_OPERATORS -- force ':=' instead of '='
+//
+// for this reason we support and f_value which is viewed
+// as a set of flags
+//
+struct named_options
 {
-    as2js::Options::option_t::OPTION_ALLOW_WITH,
-    as2js::Options::option_t::OPTION_BINARY,
-    as2js::Options::option_t::OPTION_DEBUG,
-    //as2js::Options::option_t::OPTION_DEBUG_LEXER, -- we have a separate test to test that one properly
-    as2js::Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES,
-    as2js::Options::option_t::OPTION_EXTENDED_OPERATORS,
-    as2js::Options::option_t::OPTION_EXTENDED_STATEMENTS,
-    as2js::Options::option_t::OPTION_JSON,
-    as2js::Options::option_t::OPTION_OCTAL,
-    as2js::Options::option_t::OPTION_STRICT,
-    as2js::Options::option_t::OPTION_TRACE,
-    as2js::Options::option_t::OPTION_TRACE_TO_OBJECT
+    as2js::Options::option_t    f_option;
+    char const *                f_name;
+    char const *                f_neg_name;
+    int                         f_value;
+};
+named_options const g_options[] =
+{
+    {
+        as2js::Options::option_t::OPTION_ALLOW_WITH,
+        "allow_with",
+        "no_allow_with",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_BINARY,
+        "binary",
+        "no_binary",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_COVERAGE,
+        "coverage",
+        "no_coverage",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_DEBUG,
+        "debug",
+        "no_debug",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES,
+        "extended_escape_sequences",
+        "no_extended_escape_sequences",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_EXTENDED_OPERATORS,
+        "extended_operators",
+        "no_extended_operators",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_EXTENDED_OPERATORS,
+        "extended_operators_safe",
+        "no_extended_operators_safe",
+        2
+    },
+    {
+        as2js::Options::option_t::OPTION_EXTENDED_STATEMENTS,
+        "extended_statements",
+        "no_extended_statements",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_EXTENDED_STATEMENTS,
+        "extended_statements_safe",
+        "no_extended_statements_safe",
+        2
+    },
+    //{ -- this one does not make sense here
+    //    as2js::Options::option_t::OPTION_JSON,
+    //    "json",
+    //    "no_json"
+    //},
+    {
+        as2js::Options::option_t::OPTION_OCTAL,
+        "octal",
+        "no_octal",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_STRICT,
+        "strict",
+        "no_strict",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_TRACE,
+        "trace",
+        "no_trace",
+        1
+    },
+    {
+        as2js::Options::option_t::OPTION_UNSAFE_MATH,
+        "unsafe_math",
+        "no_unsafe_math",
+        1
+    }
 };
 size_t const g_options_size(sizeof(g_options) / sizeof(g_options[0]));
 
@@ -344,6 +434,8 @@ err_to_string_t const g_error_table[] =
     ERROR_NAME(MISMATCH_FUNC_VAR),
     ERROR_NAME(MISSSING_VARIABLE_NAME),
     ERROR_NAME(NEED_CONST),
+    ERROR_NAME(NOT_ALLOWED),
+    ERROR_NAME(NOT_ALLOWED_IN_STRICT_MODE),
     ERROR_NAME(NOT_FOUND),
     ERROR_NAME(NOT_SUPPORTED),
     ERROR_NAME(OBJECT_MEMBER_DEFINED_TWICE),
@@ -395,7 +487,9 @@ flg_to_string_t const g_flag_table[] =
     FLAG_NAME(CATCH_FLAG_TYPED),
     FLAG_NAME(DIRECTIVE_LIST_FLAG_NEW_VARIABLES),
     FLAG_NAME(ENUM_FLAG_CLASS),
+    FLAG_NAME(FOR_FLAG_CONST),
     FLAG_NAME(FOR_FLAG_FOREACH),
+    FLAG_NAME(FOR_FLAG_IN),
     FLAG_NAME(FUNCTION_FLAG_GETTER),
     FLAG_NAME(FUNCTION_FLAG_SETTER),
     FLAG_NAME(FUNCTION_FLAG_OUT),
@@ -517,7 +611,9 @@ void verify_flags(as2js::Node::pointer_t node, as2js::String const& flags_set, b
         break;
 
     case as2js::Node::node_t::NODE_FOR:
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FOR_FLAG_CONST);
         flgs_to_check.push_back(as2js::Node::flag_t::NODE_FOR_FLAG_FOREACH);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_FOR_FLAG_IN);
         break;
 
     case as2js::Node::node_t::NODE_FUNCTION:
@@ -822,7 +918,13 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     CPPUNIT_ASSERT(expected->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT);
     as2js::JSON::JSONValue::object_t const& child_object(expected->get_object());
 
-    as2js::JSON::JSONValue::pointer_t node_type_value(child_object.find(node_type_string)->second);
+    as2js::JSON::JSONValue::object_t::const_iterator it_node_type(child_object.find(node_type_string));
+    if(it_node_type == child_object.end())
+    {
+        std::cerr << "\nerror: \"node type\" is mandatory in your JSON.\n";
+        exit(1);
+    }
+    as2js::JSON::JSONValue::pointer_t node_type_value(it_node_type->second);
     if(verbose)
     {
         std::cerr << "*** Comparing " << node->get_type_name() << " (node) vs " << node_type_value->get_string() << " (JSON)\n";
@@ -1090,6 +1192,8 @@ void As2JsParserUnitTests::test_parser()
     program_string.from_utf8("program");
     as2js::String verbose_string;
     verbose_string.from_utf8("verbose");
+    as2js::String slow_string;
+    slow_string.from_utf8("slow");
     as2js::String result_string;
     result_string.from_utf8("result");
     as2js::String expected_messages_string;
@@ -1105,12 +1209,31 @@ void As2JsParserUnitTests::test_parser()
         CPPUNIT_ASSERT(prog_obj->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_OBJECT);
         as2js::JSON::JSONValue::object_t const& prog(prog_obj->get_object());
 
+        bool verbose(false);
+        as2js::JSON::JSONValue::object_t::const_iterator verbose_it(prog.find(verbose_string));
+        if(verbose_it != prog.end())
+        {
+            verbose = verbose_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_TRUE;
+        }
+
+        bool slow(false);
+        as2js::JSON::JSONValue::object_t::const_iterator slow_it(prog.find(slow_string));
+        if(slow_it != prog.end())
+        {
+            slow = slow_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_TRUE;
+        }
+
         // got a program, try to compile it with all the possible options
         as2js::JSON::JSONValue::pointer_t name(prog.find(name_string)->second);
-        std::cout << "  -- working on \"" << name->get_string() << "\" ... " << std::flush;
+        std::cout << "  -- working on \"" << name->get_string() << "\" " << (slow ? "" : "...") << std::flush;
 
         for(size_t opt(0); opt <= (1 << g_options_size); ++opt)
         {
+            if(slow && ((opt + 1) % 250) == 0)
+            {
+                std::cout << "." << std::flush;
+            }
+//std::cerr << "\n***\n*** OPTIONS:";
             as2js::Options::pointer_t options;
             if(opt != (1 << g_options_size))
             {
@@ -1121,23 +1244,19 @@ void As2JsParserUnitTests::test_parser()
                 {
                     if((opt & (1 << o)) != 0)
                     {
-                        options->set_option(g_options[o], 1);
+                        options->set_option(g_options[o].f_option,
+                                options->get_option(g_options[o].f_option) | g_options[o].f_value);
+//std::cerr << " " << g_options[o].f_name << "=" << g_options[o].f_value;
                     }
                 }
             }
+//std::cerr << "\n***\n";
 
             as2js::JSON::JSONValue::pointer_t program_value(prog.find(program_string)->second);
             as2js::String program_source(program_value->get_string());
 //std::cerr << "prog = [" << program_source << "]\n";
             as2js::StringInput::pointer_t prog_text(new as2js::StringInput(program_source));
             as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, options));
-
-            bool verbose(false);
-            as2js::JSON::JSONValue::object_t::const_iterator verbose_it(prog.find(verbose_string));
-            if(verbose_it != prog.end())
-            {
-                verbose = verbose_it->second->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_TRUE;
-            }
 
             test_callback tc(verbose);
 
@@ -1153,30 +1272,104 @@ void As2JsParserUnitTests::test_parser()
                     as2js::JSON::JSONValue::pointer_t message_value(msg_array[j]);
                     as2js::JSON::JSONValue::object_t const& message(message_value->get_object());
 
-                    test_callback::expected_t expected;
-                    expected.f_message_level = static_cast<as2js::message_level_t>(message.find("message level")->second->get_int64().get());
-                    expected.f_error_code = str_to_error_code(message.find("error code")->second->get_string());
-                    expected.f_pos.set_filename("unknown-file");
-                    as2js::JSON::JSONValue::object_t::const_iterator func_it(message.find("function name"));
-                    if(func_it == message.end())
+                    bool ignore_message(false);
+
+                    as2js::JSON::JSONValue::object_t::const_iterator const message_options_iterator(message.find("options"));
+                    if(message_options_iterator != message.end())
                     {
-                        expected.f_pos.set_function("unknown-func");
-                    }
-                    else
-                    {
-                        expected.f_pos.set_function(func_it->second->get_string());
-                    }
-                    as2js::JSON::JSONValue::object_t::const_iterator line_it(message.find("line #"));
-                    if(line_it != message.end())
-                    {
-                        int64_t lines(line_it->second->get_int64().get());
-                        for(int64_t l(1); l < lines; ++l)
+//{
+//as2js::JSON::JSONValue::object_t::const_iterator line_it(message.find("line #"));
+//if(line_it != message.end())
+//{
+//    int64_t lines(line_it->second->get_int64().get());
+//std::cerr << "_________\nLine #" << lines << "\n";
+//}
+//else
+//std::cerr << "_________\nLine #<undefined>\n";
+//}
+                        as2js::String const message_options(message_options_iterator->second->get_string());
+                        for(as2js::as_char_t const *s(message_options.c_str()), *start(s);; ++s)
                         {
-                            expected.f_pos.new_line();
+                            if(*s == ',' || *s == '|' || *s == '\0')
+                            {
+                                as2js::String opt_name(start, s - start);
+                                for(size_t o(0); o < g_options_size; ++o)
+                                {
+                                    if(g_options[o].f_name == opt_name)
+                                    {
+                                        ignore_message = (opt & (1 << o)) != 0;
+//std::cerr << "+++ pos option [" << opt_name << "] " << ignore_message << "\n";
+                                        goto found_option;
+                                    }
+                                    else if(g_options[o].f_neg_name == opt_name)
+                                    {
+                                        ignore_message = (opt & (1 << o)) == 0;
+//std::cerr << "+++ neg option [" << opt_name << "] " << ignore_message << "\n";
+                                        goto found_option;
+                                    }
+                                }
+                                std::cerr << "Option \"" << opt_name << "\" not found in our list of valid options\n";
+                                CPPUNIT_ASSERT(!"option name from JSON not found in g_options");
+
+found_option:
+                                if(*s == '\0')
+                                {
+                                    break;
+                                }
+                                if(*s == '|')
+                                {
+                                    if(ignore_message)
+                                    {
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    if(!ignore_message)
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                // skip commas
+                                do
+                                {
+                                    ++s;
+                                }
+                                while(*s == ',' || *s == '|');
+                                start = s;
+                            }
                         }
                     }
-                    expected.f_message = message.find("message")->second->get_string();
-                    tc.f_expected.push_back(expected);
+
+                    if(!ignore_message)
+                    {
+                        test_callback::expected_t expected;
+                        expected.f_message_level = static_cast<as2js::message_level_t>(message.find("message level")->second->get_int64().get());
+                        expected.f_error_code = str_to_error_code(message.find("error code")->second->get_string());
+                        expected.f_pos.set_filename("unknown-file");
+                        as2js::JSON::JSONValue::object_t::const_iterator func_it(message.find("function name"));
+                        if(func_it == message.end())
+                        {
+                            expected.f_pos.set_function("unknown-func");
+                        }
+                        else
+                        {
+                            expected.f_pos.set_function(func_it->second->get_string());
+                        }
+                        as2js::JSON::JSONValue::object_t::const_iterator line_it(message.find("line #"));
+                        if(line_it != message.end())
+                        {
+                            int64_t lines(line_it->second->get_int64().get());
+                            for(int64_t l(1); l < lines; ++l)
+                            {
+                                expected.f_pos.new_line();
+                            }
+                        }
+                        expected.f_message = message.find("message")->second->get_string();
+//std::cerr << "    --- message [" << expected.f_message << "]\n";
+                        tc.f_expected.push_back(expected);
+                    }
                 }
             }
 
@@ -1189,7 +1382,7 @@ void As2JsParserUnitTests::test_parser()
             verify_result(prog.find(result_string)->second, root, verbose);
         }
 
-        std::cout << "OK\n";
+        std::cout << " OK\n";
     }
 }
 

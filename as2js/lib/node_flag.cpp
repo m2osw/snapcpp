@@ -126,7 +126,9 @@ void Node::verify_flag(flag_t f) const
         }
         break;
 
+    case flag_t::NODE_FOR_FLAG_CONST:
     case flag_t::NODE_FOR_FLAG_FOREACH:
+    case flag_t::NODE_FOR_FLAG_IN:
         if(f_type == node_t::NODE_FOR)
         {
             return;

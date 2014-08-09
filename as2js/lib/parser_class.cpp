@@ -87,19 +87,9 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
 
         Node::pointer_t expr;
         expression(expr);
-        if(expr)
-        {
-            // TODO: EXTENDS and IMPLEMENTS do not accept assignments.
-            inherits->append_child(expr);
-        }
-        else
-        {
-            // TBD: we may not need this error since the expression() should
-            //      already generate an error as required
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CLASS, f_lexer->get_input()->get_position());
-            msg << "expected a valid expression after '" << inherits->get_type_name() << "'.";
-            //return; -- continue? -- it was before...
-        }
+        // TODO: EXTENDS and IMPLEMENTS do not accept assignments.
+        //       verify that expr does not include any
+        inherits->append_child(expr);
     }
 
     if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)

@@ -276,52 +276,53 @@ void Parser::directive(Node::pointer_t& node)
             }
             /*FALLTHROUGH*/
             // pragma cannot be annotated
+        case Node::node_t::NODE_ADD:
         case Node::node_t::NODE_ARRAY_LITERAL:
+        case Node::node_t::NODE_BITWISE_NOT:
         case Node::node_t::NODE_BREAK:
         case Node::node_t::NODE_CONTINUE:
         case Node::node_t::NODE_CASE:
         case Node::node_t::NODE_CATCH:
+        case Node::node_t::NODE_COLON:
+        case Node::node_t::NODE_DECREMENT:
         case Node::node_t::NODE_DEFAULT:
+        case Node::node_t::NODE_DELETE:
         case Node::node_t::NODE_DO:
+        case Node::node_t::NODE_FALSE:
+        case Node::node_t::NODE_FLOAT64:
         case Node::node_t::NODE_FOR:
         case Node::node_t::NODE_FINALLY:
         case Node::node_t::NODE_GOTO:
-        case Node::node_t::NODE_IF:
-        case Node::node_t::NODE_RETURN:
-        case Node::node_t::NODE_SWITCH:
-        case Node::node_t::NODE_THROW:
-        case Node::node_t::NODE_TRY:
-        case Node::node_t::NODE_WITH:
-        case Node::node_t::NODE_WHILE:
-        case Node::node_t::NODE_DECREMENT:
-        case Node::node_t::NODE_DELETE:
-        case Node::node_t::NODE_FLOAT64:
         case Node::node_t::NODE_IDENTIFIER:
+        case Node::node_t::NODE_IF:
         case Node::node_t::NODE_INCREMENT:
         case Node::node_t::NODE_INT64:
+        case Node::node_t::NODE_LOGICAL_NOT:
         case Node::node_t::NODE_NEW:
         case Node::node_t::NODE_NULL:
         case Node::node_t::NODE_OBJECT_LITERAL:
-        case Node::node_t::NODE_UNDEFINED:
-        case Node::node_t::NODE_REGULAR_EXPRESSION:
-        case Node::node_t::NODE_STRING:
-        case Node::node_t::NODE_SUPER:    // will accept commas too even in expressions
-        case Node::node_t::NODE_THIS:
-        case Node::node_t::NODE_TYPEOF:
-        case Node::node_t::NODE_VIDENTIFIER:
-        case Node::node_t::NODE_VOID:
-        case Node::node_t::NODE_LOGICAL_NOT:
-        case Node::node_t::NODE_ADD:
-        case Node::node_t::NODE_SUBTRACT:
         case Node::node_t::NODE_OPEN_PARENTHESIS:
         case Node::node_t::NODE_OPEN_SQUARE_BRACKET:
-        case Node::node_t::NODE_BITWISE_NOT:
-        case Node::node_t::NODE_COLON:
-        case Node::node_t::NODE_SEMICOLON:
+        case Node::node_t::NODE_REGULAR_EXPRESSION:
+        case Node::node_t::NODE_RETURN:
+        case Node::node_t::NODE_SEMICOLON: // annotated empty statements are not allowed
+        case Node::node_t::NODE_STRING:
+        case Node::node_t::NODE_SUBTRACT:
+        case Node::node_t::NODE_SUPER:    // will accept commas too even in expressions
+        case Node::node_t::NODE_SWITCH:
+        case Node::node_t::NODE_THIS:
+        case Node::node_t::NODE_THROW:
+        case Node::node_t::NODE_TRUE:
+        case Node::node_t::NODE_TRY:
+        case Node::node_t::NODE_TYPEOF:
+        case Node::node_t::NODE_UNDEFINED:
+        case Node::node_t::NODE_VIDENTIFIER:
+        case Node::node_t::NODE_VOID:
+        case Node::node_t::NODE_WITH:
+        case Node::node_t::NODE_WHILE:
         {
-            // annotated empty statements are not allowed
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, f_lexer->get_input()->get_position());
-            msg << "no attributes were expected here (statements, expressions and pragmas can't be annotated)";
+            msg << "no attributes were expected here (statements, expressions and pragmas cannot be annotated).";
             attr_list.reset();
             attr_count = 0;
         }
@@ -432,8 +433,8 @@ void Parser::directive(Node::pointer_t& node)
         // empty statements are just skipped
         //
         // NOTE: we reach here only when we find attributes
-        //     which aren't identifiers and this means
-        //     we will have gotten an error.
+        //       which are not identifiers and this means
+        //       we will have gotten an error.
         get_token();
         break;
 
@@ -644,7 +645,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_VARIABLE:
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
-        msg << "unexpected operator \"" << instruction_node->get_type_name() << "\".";
+        msg << "unexpected operator '" << instruction_node->get_type_name() << "'.";
         get_token();
     }
         break;
@@ -661,11 +662,32 @@ void Parser::directive(Node::pointer_t& node)
     }
         break;
 
+    case Node::node_t::NODE_ABSTRACT:
+    //case Node::node_t::NODE_FALSE:
+    case Node::node_t::NODE_FINAL:
+    case Node::node_t::NODE_NATIVE:
+    //case Node::node_t::NODE_PRIVATE:
+    //case Node::node_t::NODE_PROTECTED:
+    //case Node::node_t::NODE_PUBLIC:
+    case Node::node_t::NODE_STATIC:
+    case Node::node_t::NODE_TRANSIENT:
+    //case Node::node_t::NODE_TRUE:
+    case Node::node_t::NODE_VOLATILE:
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, f_lexer->get_input()->get_position());
+        msg << "a statement with only attributes (" << Node::type_to_string(type) << ") is not allowed.";
+        attr_list.reset();
+        attr_count = 0;
+
+        // skip that attribute which we cannot do anything with
+        get_token();
+    }
+        break;
+
     // *** NOT POSSIBLE ***
     // These should never happen since they should be caught
     // before this switch is reached or it can't be a node
     // read by the lexer.
-    case Node::node_t::NODE_ABSTRACT:
     case Node::node_t::NODE_ARRAY:
     case Node::node_t::NODE_ATTRIBUTES:
     case Node::node_t::NODE_AUTO:
@@ -678,14 +700,12 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_EMPTY:
     case Node::node_t::NODE_EXCLUDE:
     case Node::node_t::NODE_EXPORT:
-    case Node::node_t::NODE_FINAL:
     case Node::node_t::NODE_FLOAT:
     case Node::node_t::NODE_INCLUDE:
     case Node::node_t::NODE_LABEL:
     case Node::node_t::NODE_LIST:
     case Node::node_t::NODE_LONG:
     case Node::node_t::NODE_NAME:
-    case Node::node_t::NODE_NATIVE:
     case Node::node_t::NODE_PARAM:
     case Node::node_t::NODE_PARAMETERS:
     case Node::node_t::NODE_PARAM_MATCH:
@@ -695,20 +715,17 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_ROOT:
     case Node::node_t::NODE_SET:
     case Node::node_t::NODE_SHORT:
-    case Node::node_t::NODE_STATIC:
     case Node::node_t::NODE_THROWS:
-    case Node::node_t::NODE_TRANSIENT:
     case Node::node_t::NODE_TYPE:
     case Node::node_t::NODE_UNKNOWN:    // ?!
     case Node::node_t::NODE_VAR_ATTRIBUTES:
-    case Node::node_t::NODE_VOLATILE:
     case Node::node_t::NODE_other:      // no node should be of this type
     case Node::node_t::NODE_max:        // no node should be of this type
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, f_lexer->get_input()->get_position());
-            msg << "INTERNAL ERROR: invalid node (" << Node::operator_to_string(type) << ") in directive_list.";
+            Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, f_lexer->get_input()->get_position()); // LCOV_EXCL_LINE
+            msg << "INTERNAL ERROR: invalid node (" << Node::type_to_string(type) << ") in directive_list."; // LCOV_EXCL_LINE
         }
-        throw exception_internal_error("unexpected node type found while parsing directives");
+        throw exception_internal_error("unexpected node type found while parsing directives"); // LCOV_EXCL_LINE
 
     }
     if(directive_node)

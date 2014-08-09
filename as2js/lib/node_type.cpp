@@ -287,15 +287,20 @@ Node::node_t Node::get_type() const
 }
 
 
-/** \breif Convert the type of 'this' node to a string.
+/** \breif Convert the specified type to a string.
  *
  * The type of the node (NODE_...) can be retrieved as a string using this
  * function. In pretty much all cases this is done whenever an error occurs
  * and not in normal circumstances. It is also used to debug the node tree.
  *
+ * Note that if you have a node, you probably want to call get_type_name()
+ * instead.
+ *
  * \return A null terminated C-like string with the node name.
+ *
+ * \sa get_type_name()
  */
-char const *Node::get_type_name() const
+char const *Node::type_to_string(node_t type)
 {
 #if defined(_DEBUG) || defined(DEBUG)
     {
@@ -332,7 +337,7 @@ char const *Node::get_type_name() const
     while(i < j)
     {
         p = (j - i) / 2 + i;
-        r = static_cast<int>(g_node_type_name[p].f_type) - static_cast<int>(static_cast<node_t>(f_type));
+        r = static_cast<int>(g_node_type_name[p].f_type) - static_cast<int>(static_cast<node_t>(type));
         if(r == 0)
         {
             return g_node_type_name[p].f_name;
@@ -348,6 +353,26 @@ char const *Node::get_type_name() const
     }
 
     throw exception_internal_error("INTERNAL ERROR: node type name not found!?."); // LCOV_EXCL_LINE
+}
+
+
+/** \brief Retrieve the type of this node.
+ *
+ * This function retrieves the type of this node.
+ *
+ * This function is equivalent to:
+ *
+ * \code
+ *      char const *name(Node::type_to_string(node->get_type()));
+ * \endcode
+ *
+ * \return The type of this node as a string.
+ *
+ * \sa type_to_string()
+ */
+char const *Node::get_type_name() const
+{
+    return type_to_string(f_type);
 }
 
 

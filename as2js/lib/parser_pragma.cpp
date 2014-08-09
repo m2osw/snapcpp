@@ -67,6 +67,7 @@ void Parser::pragma()
                     // skip the '-' sign
                     get_token();
                 }
+                // TODO: add support for 'positive'?
                 switch(f_node->get_type())
                 {
                 case Node::node_t::NODE_FALSE:
@@ -75,7 +76,7 @@ void Parser::pragma()
                     if(negative)
                     {
                         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
-                        msg << "invalid negative argument for a pragma";
+                        msg << "invalid negative argument for a pragma.";
                     }
                     argument = f_node;
                     get_token();
@@ -105,23 +106,23 @@ void Parser::pragma()
                         // we cannot negate "nothingness"
                         // (i.e. use blah(-); is not valid)
                         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
-                        msg << "a pragma argument cannot just be '-'";
+                        msg << "a pragma argument cannot just be '-'.";
                     }
                     break;
 
                 default:
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
-                    msg << "invalid argument type for a pragma";
+                    msg << "invalid argument type for a pragma.";
                 }
                     break;
 
                 }
             }
-            if(f_node->get_type() == Node::node_t::NODE_CLOSE_PARENTHESIS)
+            if(f_node->get_type() != Node::node_t::NODE_CLOSE_PARENTHESIS)
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
-                msg << "invalid argument for a pragma";
+                msg << "invalid argument for a pragma.";
             }
             else
             {
@@ -223,7 +224,7 @@ void Parser::pragma()
         {
             option = Options::option_t::OPTION_STRICT;
         }
-        else if(name == "not_strict")
+        else if(name == "no_strict")
         {
             option = Options::option_t::OPTION_STRICT;
             value = 0;
@@ -237,18 +238,34 @@ void Parser::pragma()
             option = Options::option_t::OPTION_TRACE;
             value = 0;
         }
-        else if(name == "trace_to_object")
+        else if(name == "unsafe_math")
         {
-            option = Options::option_t::OPTION_TRACE_TO_OBJECT;
+            option = Options::option_t::OPTION_UNSAFE_MATH;
         }
-        else if(name == "no_trace_to_object")
+        else if(name == "no_unsafe_math")
         {
-            option = Options::option_t::OPTION_TRACE_TO_OBJECT;
+            option = Options::option_t::OPTION_UNSAFE_MATH;
             value = 0;
         }
         if(option != Options::option_t::OPTION_UNKNOWN)
         {
             pragma_option(option, prima, argument, value);
+        }
+
+        if(f_node->get_type() == Node::node_t::NODE_COMMA)
+        {
+            get_token();
+        }
+        else if(f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+            msg << "pragmas must be separated by commas.";
+        }
+        else if(f_node->get_type() != Node::node_t::NODE_SEMICOLON)
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_BAD_PRAGMA, f_lexer->get_input()->get_position());
+            msg << "pragmas must be separated by commas and ended by a semicolon.";
+            // no need for a break since the while() will exit already
         }
     }
 }
@@ -257,11 +274,10 @@ void Parser::pragma()
 
 void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t& argument, Options::option_value_t value)
 {
-    // did we get any option object?
-    if(f_options == 0)
+    // did we get any option object? create one if not
+    if(!f_options)
     {
-        // TBD: should we create one since we're dealing with options now?
-        return;
+        f_options.reset(new Options);
     }
 
     // user overloaded the value?
@@ -273,20 +289,20 @@ void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t
         break;
 
     case Node::node_t::NODE_INT64:
-        value = argument->get_int64().get() != 0;
+        value = argument->get_int64().get();
         break;
 
     case Node::node_t::NODE_FLOAT64:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-        value = argument->get_float64().get() != 0.0;
-#pragma GCC diagnostic pop
+        // should we round up instead of using floor()?
+        value = static_cast<Options::option_value_t>(argument->get_float64().get());
         break;
 
     case Node::node_t::NODE_STRING:
     {
+        // TBD: we could try to convert the string, but is that really
+        //      necessary?
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INCOMPATIBLE_PRAGMA_ARGUMENT, f_lexer->get_input()->get_position());
-        msg << "incompatible pragma argument";
+        msg << "incompatible pragma argument.";
     }
         break;
 
@@ -301,7 +317,7 @@ void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t
         if(f_options->get_option(option) != value)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_PRAGMA_FAILED, f_lexer->get_input()->get_position());
-            msg << "prima pragma failed";
+            msg << "prima pragma failed.";
         }
         return;
     }

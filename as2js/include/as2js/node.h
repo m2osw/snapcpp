@@ -274,7 +274,9 @@ public:
         NODE_ENUM_FLAG_CLASS,
 
         // NODE_FOR
+        NODE_FOR_FLAG_CONST,
         NODE_FOR_FLAG_FOREACH,
+        NODE_FOR_FLAG_IN,
 
         // NODE_FUNCTION
         NODE_FUNCTION_FLAG_GETTER,
@@ -425,6 +427,7 @@ public:
 
     node_t                      get_type() const;
     char const *                get_type_name() const;
+    static char const *         type_to_string(node_t type);
 
     bool                        is_number() const;
     bool                        is_nan() const;

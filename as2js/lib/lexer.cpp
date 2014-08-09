@@ -2003,8 +2003,7 @@ void Lexer::get_token()
             if(c == '=')
             {
                 c = getc();
-                if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
-                && c == '>')
+                if(c == '>')
                 {
                     f_result_type = Node::node_t::NODE_COMPARE;
                     return;
@@ -2013,37 +2012,42 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_LESS_EQUAL;
                 return;
             }
-            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
+            if(c == '%')
             {
-                if(c == '%')
+                c = getc();
+                if(c == '=')
                 {
-                    c = getc();
-                    if(c == '=')
-                    {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT;
-                        return;
-                    }
-                    ungetc(c);
-                    f_result_type = Node::node_t::NODE_ROTATE_LEFT;
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT;
                     return;
                 }
-                if(c == '>')
+                ungetc(c);
+                f_result_type = Node::node_t::NODE_ROTATE_LEFT;
+                return;
+            }
+            if(c == '>')
+            {
+                // unfortunately we cannot know whether '<>' or '!=' was used
+                // once this function returns so in this very specific case
+                // the extended operator has to be checked here
+                if(!has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
                 {
-                    f_result_type = Node::node_t::NODE_NOT_EQUAL;
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_ALLOWED, f_input->get_position());
+                    msg << "the '<>' operator is only available when extended operators are authorized (use extended_operators;).";
+                }
+                f_result_type = Node::node_t::NODE_NOT_EQUAL;
+                return;
+            }
+            if(c == '?')
+            {
+                c = getc();
+                if(c == '=')
+                {
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_MINIMUM;
                     return;
                 }
-                if(c == '?')
-                {
-                    c = getc();
-                    if(c == '=')
-                    {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_MINIMUM;
-                        return;
-                    }
-                    ungetc(c);
-                    f_result_type = Node::node_t::NODE_MINIMUM;
-                    return;
-                }
+                ungetc(c);
+                f_result_type = Node::node_t::NODE_MINIMUM;
+                return;
             }
             ungetc(c);
             f_result_type = Node::node_t::NODE_LESS;
@@ -2080,32 +2084,29 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_GREATER_EQUAL;
                 return;
             }
-            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
+            if(c == '%')
             {
-                if(c == '%')
+                c = getc();
+                if(c == '=')
                 {
-                    c = getc();
-                    if(c == '=')
-                    {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT;
-                        return;
-                    }
-                    ungetc(c);
-                    f_result_type = Node::node_t::NODE_ROTATE_RIGHT;
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT;
                     return;
                 }
-                if(c == '?')
+                ungetc(c);
+                f_result_type = Node::node_t::NODE_ROTATE_RIGHT;
+                return;
+            }
+            if(c == '?')
+            {
+                c = getc();
+                if(c == '=')
                 {
-                    c = getc();
-                    if(c == '=')
-                    {
-                        f_result_type = Node::node_t::NODE_ASSIGNMENT_MAXIMUM;
-                        return;
-                    }
-                    ungetc(c);
-                    f_result_type = Node::node_t::NODE_MAXIMUM;
+                    f_result_type = Node::node_t::NODE_ASSIGNMENT_MAXIMUM;
                     return;
                 }
+                ungetc(c);
+                f_result_type = Node::node_t::NODE_MAXIMUM;
+                return;
             }
             ungetc(c);
             f_result_type = Node::node_t::NODE_GREATER;
@@ -2113,14 +2114,11 @@ void Lexer::get_token()
 
         case '!':
             c = getc();
-            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
+            if(c == '~')
             {
-                if(c == '~')
-                {
-                    // http://perldoc.perl.org/perlop.html#Binding-Operators
-                    f_result_type = Node::node_t::NODE_NOT_MATCH;
-                    return;
-                }
+                // http://perldoc.perl.org/perlop.html#Binding-Operators
+                f_result_type = Node::node_t::NODE_NOT_MATCH;
+                return;
             }
             if(c == '=')
             {
@@ -2152,15 +2150,32 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_EQUAL;
                 return;
             }
+            if(f_options
+            && (f_options->get_option(Options::option_t::OPTION_EXTENDED_OPERATORS) & 2) != 0)
+            {
+                // This one most people will not understand it...
+                // The '=' operator by itself is often missused and thus a
+                // big source of bugs. By forbiding it, we only allow :=
+                // and == (and ===) which makes it safer to use the language.
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_ALLOWED, f_input->get_position());
+                msg << "the '=' operator is not available when extended operators value bit 1 is set (use extended_operators(2);).";
+            }
             ungetc(c);
             f_result_type = Node::node_t::NODE_ASSIGNMENT;
             return;
 
         case ':':
             c = getc();
-            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
-            && c == '=')
+            if(c == '=')
             {
+                // unfortunately we cannot know whether ':=' or '=' was used
+                // once this function returns so in this very specific case
+                // the extended operator has to be checked here
+                if(!has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
+                {
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_ALLOWED, f_input->get_position());
+                    msg << "the ':=' operator is only available when extended operators are authorized (use extended_operators;).";
+                }
                 f_result_type = Node::node_t::NODE_ASSIGNMENT;
                 return;
             }
@@ -2174,29 +2189,26 @@ void Lexer::get_token()
             return;
 
         case '~':
-            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS))
+            c = getc();
+            if(c == '=')
             {
-                c = getc();
-                if(c == '=')
-                {
-                    // http://perldoc.perl.org/perlop.html#Binding-Operators
-                    // Note that we inverse it (perl uses =~) because otherwise
-                    // we may interfer with a valid expression:
-                    //    a = ~b;  <=>  a=~b;
-                    f_result_type = Node::node_t::NODE_MATCH;
-                    return;
-                }
-                if(c == '~')
-                {
-                    // http://perldoc.perl.org/perlop.html#Smartmatch-Operator
-                    // WARNING: if ~~ is used as a unary, then it may get
-                    //          converted back to two BITWISE NOT by the
-                    //          parser (so 'a = ~~b;' works as expected).
-                    f_result_type = Node::node_t::NODE_SMART_MATCH;
-                    return;
-                }
-                ungetc(c);
+                // http://perldoc.perl.org/perlop.html#Binding-Operators
+                // Note that we inverse it (perl uses =~) because otherwise
+                // we may interfer with a valid expression:
+                //    a = ~b;  <=>  a=~b;
+                f_result_type = Node::node_t::NODE_MATCH;
+                return;
             }
+            if(c == '~')
+            {
+                // http://perldoc.perl.org/perlop.html#Smartmatch-Operator
+                // WARNING: if ~~ is used as a unary, then it may get
+                //          converted back to two BITWISE NOT by the
+                //          parser (so 'a = ~~b;' works as expected).
+                f_result_type = Node::node_t::NODE_SMART_MATCH;
+                return;
+            }
+            ungetc(c);
             f_result_type = Node::node_t::NODE_BITWISE_NOT;
             return;
 
@@ -2239,8 +2251,7 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_ASSIGNMENT_MULTIPLY;
                 return;
             }
-            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
-            && c == '*')
+            if(c == '*')
             {
                 c = getc();
                 if(c == '=')
@@ -2366,8 +2377,7 @@ void Lexer::get_token()
             if(c == '&')
             {
                 c = getc();
-                if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
-                && c == '=')
+                if(c == '=')
                 {
                     f_result_type = Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND;
                     return;
@@ -2387,8 +2397,7 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR;
                 return;
             }
-            if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
-            && c == '^')
+            if(c == '^')
             {
                 c = getc();
                 if(c == '=')
@@ -2414,8 +2423,7 @@ void Lexer::get_token()
             if(c == '|')
             {
                 c = getc();
-                if(has_option_set(Options::option_t::OPTION_EXTENDED_OPERATORS)
-                && c == '=')
+                if(c == '=')
                 {
                     f_result_type = Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR;
                     return;

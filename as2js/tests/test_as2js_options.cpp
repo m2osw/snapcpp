@@ -53,17 +53,10 @@ void As2JsOptionsUnitTests::test_options()
 {
     as2js::Options::pointer_t opt(new as2js::Options);
 
-    // verify that all options, except strict, are set to zero by default
+    // verify that all options are set to zero by default
     for(as2js::Options::option_t o(as2js::Options::option_t::OPTION_UNKNOWN); o < as2js::Options::option_t::OPTION_max; o = static_cast<as2js::Options::option_t>(static_cast<int>(o) + 1))
     {
-        if(o == as2js::Options::option_t::OPTION_STRICT)
-        {
-            CPPUNIT_ASSERT(opt->get_option(o) == 1);
-        }
-        else
-        {
-            CPPUNIT_ASSERT(opt->get_option(o) == 0);
-        }
+        CPPUNIT_ASSERT(opt->get_option(o) == 0);
     }
 
     for(as2js::Options::option_t o(as2js::Options::option_t::OPTION_UNKNOWN); o < as2js::Options::option_t::OPTION_max; o = static_cast<as2js::Options::option_t>(static_cast<int>(o) + 1))
@@ -75,15 +68,7 @@ void As2JsOptionsUnitTests::test_options()
                         ^ (static_cast<int64_t>(rand()) << 16)
                         ^ (static_cast<int64_t>(rand()) <<  0));
             opt->set_option(o, value);
-            if(o == as2js::Options::option_t::OPTION_STRICT)
-            {
-                // this is a special case: strict is always forced to 1
-                CPPUNIT_ASSERT(opt->get_option(o) == 1);
-            }
-            else
-            {
-                CPPUNIT_ASSERT(opt->get_option(o) == value);
-            }
+            CPPUNIT_ASSERT(opt->get_option(o) == value);
         }
     }
 }

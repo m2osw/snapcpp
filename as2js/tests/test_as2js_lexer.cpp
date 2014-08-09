@@ -668,11 +668,6 @@ result_t const g_result_extended_not_equal[] =
     {
         as2js::Node::node_t::NODE_NOT_EQUAL,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LESS,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -686,11 +681,6 @@ result_t const g_result_minimum[] =
 {
     {
         as2js::Node::node_t::NODE_MINIMUM,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LESS,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -706,11 +696,6 @@ result_t const g_result_assignment_minimum[] =
     {
         as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LESS,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -725,11 +710,6 @@ result_t const g_result_rotate_left[] =
     {
         as2js::Node::node_t::NODE_ROTATE_LEFT,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LESS,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -743,11 +723,6 @@ result_t const g_result_assignment_rotate_left[] =
 {
     {
         as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LESS,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -819,11 +794,6 @@ result_t const g_result_compare[] =
     {
         as2js::Node::node_t::NODE_COMPARE,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LESS_EQUAL,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -852,11 +822,6 @@ result_t const g_result_maximum[] =
     {
         as2js::Node::node_t::NODE_MAXIMUM,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_GREATER,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -870,11 +835,6 @@ result_t const g_result_assignment_maximum[] =
 {
     {
         as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_GREATER,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -890,11 +850,6 @@ result_t const g_result_rotate_right[] =
     {
         as2js::Node::node_t::NODE_ROTATE_RIGHT,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_GREATER,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -908,11 +863,6 @@ result_t const g_result_assignment_rotate_right[] =
 {
     {
         as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_GREATER,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -984,11 +934,6 @@ result_t const g_result_extended_assignment[] =
     {
         as2js::Node::node_t::NODE_ASSIGNMENT,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_COLON,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -1017,11 +962,6 @@ result_t const g_result_match[] =
     {
         as2js::Node::node_t::NODE_MATCH,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_BITWISE_NOT,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -1036,11 +976,6 @@ result_t const g_result_not_match[] =
     {
         as2js::Node::node_t::NODE_NOT_MATCH,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LOGICAL_NOT,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -1054,11 +989,6 @@ result_t const g_result_smart_match[] =
 {
     {
         as2js::Node::node_t::NODE_SMART_MATCH,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_BITWISE_NOT,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -1144,11 +1074,6 @@ result_t const g_result_power[] =
     {
         as2js::Node::node_t::NODE_POWER,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_MULTIPLY,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -1162,11 +1087,6 @@ result_t const g_result_assignment_power[] =
 {
     {
         as2js::Node::node_t::NODE_ASSIGNMENT_POWER,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_MULTIPLY,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -1238,11 +1158,6 @@ result_t const g_result_assignment_logical_and[] =
     {
         as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LOGICAL_AND,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -1271,11 +1186,6 @@ result_t const g_result_logical_xor[] =
     {
         as2js::Node::node_t::NODE_LOGICAL_XOR,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_BITWISE_XOR,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
     {
@@ -1289,11 +1199,6 @@ result_t const g_result_assignment_logical_xor[] =
 {
     {
         as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_BITWISE_XOR,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -1336,11 +1241,6 @@ result_t const g_result_assignment_logical_or[] =
 {
     {
         as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR,
-        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
-        g_option_extended_operators
-    },
-    {
-        as2js::Node::node_t::NODE_LOGICAL_OR,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,
         nullptr
     },
@@ -3108,7 +3008,6 @@ as2js::Options::option_t g_options[] =
     as2js::Options::option_t::OPTION_BINARY,
     as2js::Options::option_t::OPTION_COVERAGE,
     as2js::Options::option_t::OPTION_DEBUG,
-    as2js::Options::option_t::OPTION_DEBUG_LEXER,
     as2js::Options::option_t::OPTION_EXTENDED_ESCAPE_SEQUENCES,
     as2js::Options::option_t::OPTION_EXTENDED_OPERATORS,
     as2js::Options::option_t::OPTION_EXTENDED_STATEMENTS,
@@ -3116,7 +3015,7 @@ as2js::Options::option_t g_options[] =
     as2js::Options::option_t::OPTION_OCTAL,
     as2js::Options::option_t::OPTION_STRICT,
     as2js::Options::option_t::OPTION_TRACE,
-    as2js::Options::option_t::OPTION_TRACE_TO_OBJECT
+    as2js::Options::option_t::OPTION_UNSAFE_MATH
 };
 size_t const g_options_size(sizeof(g_options) / sizeof(g_options[0]));
 
@@ -3225,7 +3124,7 @@ void As2JsLexerUnitTests::test_tokens()
 {
     for(size_t idx(0); idx < g_tokens_size; ++idx)
     {
-        if((idx % 10) == 0)
+        if((idx % 5) == 0)
         {
             std::cout << "." << std::flush;
         }
@@ -6808,6 +6707,9 @@ void As2JsLexerUnitTests::test_mixed_tokens()
                 }
                 else if(pragma_name == "extended_operators")
                 {
+                    // we do need this one here because we have '<>' and ':='
+                    // that are extended operators to be forbidden unless
+                    // this is turned on
                     opt = as2js::Options::option_t::OPTION_EXTENDED_OPERATORS;
                 }
                 else if(pragma_name == "octal")

@@ -154,9 +154,17 @@ void Node::display_data(std::ostream& out) const
 
     case node_t::NODE_FOR:
         out << ":";
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FOR_FLAG_CONST)])
+        {
+            out << " CONST";
+        }
         if(f_flags[static_cast<size_t>(flag_t::NODE_FOR_FLAG_FOREACH)])
         {
             out << " FOREACH";
+        }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_FOR_FLAG_IN)])
+        {
+            out << " IN";
         }
         break;
 

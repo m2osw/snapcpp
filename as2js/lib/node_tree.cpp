@@ -430,6 +430,10 @@ void Node::delete_child(int index)
  */
 void Node::append_child(pointer_t child)
 {
+    if(!child)
+    {
+        throw exception_invalid_data("cannot append a child if its pointer is null");
+    }
     child->set_parent(shared_from_this());
 }
 

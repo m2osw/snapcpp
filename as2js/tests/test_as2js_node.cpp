@@ -943,6 +943,11 @@ void As2JsNodeUnitTests::test_tree()
         CPPUNIT_ASSERT_THROW(parent->get_child(0), std::out_of_range);
         CPPUNIT_ASSERT_THROW(parent->get_child(1), std::out_of_range);
 
+        // now we properly test whether the append_child() function is used
+        // with a null pointer (which is considered illegal)
+        as2js::Node::pointer_t null_pointer;
+        CPPUNIT_ASSERT_THROW(parent->append_child(null_pointer), as2js::exception_invalid_data);
+
         for(int i(0); i < 20; ++i)
         {
             as2js::Node::pointer_t child(new TrackedNode(as2js::Node::node_t::NODE_DIRECTIVE_LIST, counter));

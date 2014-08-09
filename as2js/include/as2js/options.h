@@ -64,20 +64,19 @@ public:
         OPTION_BINARY,
         OPTION_COVERAGE,
         OPTION_DEBUG,
-        OPTION_DEBUG_LEXER,
         OPTION_EXTENDED_ESCAPE_SEQUENCES,
-        OPTION_EXTENDED_OPERATORS,
-        OPTION_EXTENDED_STATEMENTS,
+        OPTION_EXTENDED_OPERATORS,  // 1 support extended, 2 or 3 support extended and prevent '=' (use ':=' instead)
+        OPTION_EXTENDED_STATEMENTS, // 1 support extended, 2 or 3 support extended and prevent if()/else/for()/while() ... without the '{' ... '}'
         OPTION_JSON,
         OPTION_OCTAL,
         OPTION_STRICT,
         OPTION_TRACE,
-        OPTION_TRACE_TO_OBJECT,
+        OPTION_UNSAFE_MATH,         // optimize even what can be considered unsafe (see http://stackoverflow.com/questions/6430448/why-doesnt-gcc-optimize-aaaaaa-to-aaaaaa )
 
         OPTION_max
     };
 
-    typedef long        option_value_t;
+    typedef int64_t                 option_value_t;
     typedef controlled_vars::auto_init<option_value_t, 0>   zoption_value_t;
 
                                     Options();

@@ -73,8 +73,10 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
         if(f_node->get_type() == Node::node_t::NODE_COLON)
         {
             get_token();
-            Node::pointer_t type;
-            conditional_expression(type, false);
+            Node::pointer_t type(f_lexer->get_new_node(Node::node_t::NODE_TYPE));
+            Node::pointer_t expr;
+            conditional_expression(expr, false);
+            type->append_child(expr);
             variable_node->append_child(type);
         }
 

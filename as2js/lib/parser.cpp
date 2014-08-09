@@ -86,13 +86,6 @@ void Parser::get_token()
     {
         f_node = f_lexer->get_next_token();
     }
-
-    if(f_options
-    && f_options->get_option(Options::option_t::OPTION_DEBUG_LEXER) != 0)
-    {
-        Message msg(message_level_t::MESSAGE_LEVEL_TRACE, err_code_t::AS_ERR_NONE, f_node->get_position());
-        msg << (reget ? "RE-TOKEN" : "TOKEN") << ": " << *f_node;
-    }
 }
 
 
@@ -101,6 +94,33 @@ void Parser::unget_token(Node::pointer_t& node)
     f_unget.push_back(node);
 }
 
+
+
+/** \brief Check whether a given option is set.
+ *
+ * Because the parser checks options in many places, it makes use of this
+ * helper function to avoid having to check the f_options pointer
+ * every single time.
+ *
+ * This function checks whether the specified option is set. If so,
+ * then it returns true, otherwise it returns false.
+ *
+ * If no option were specified when the Parser object was created,
+ * then the function always returns false.
+ *
+ * \param[in] option  The option to check.
+ *
+ * \return true if the option was set, false otherwise.
+ */
+bool Parser::has_option_set(Options::option_t option) const
+{
+    if(f_options)
+    {
+        return f_options->get_option(option) != 0;
+    }
+
+    return false;
+}
 
 
 
