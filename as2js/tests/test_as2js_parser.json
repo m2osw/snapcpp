@@ -9790,6 +9790,476 @@ use debug() extended_operators();\n",
         }
     },
 
+    // While with a broken block case 2
+    {
+        //"verbose": true,
+        "name": "'while' with a broken block v2",
+        "program": "while(a ? a.color : false) a.color = rand(seed: 33)",
+        "expected messages": [
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'{' expected to open the 'WHILE' block."
+            },
+            {
+                "options": "no_extended_operators_safe",
+                "message level": 2,
+                "error code": "NOT_ALLOWED",
+                "line #": 1,
+                "message": "the '=' operator is not available when extended operators value bit 1 is set (use extended_operators(2);)."
+            },
+            {
+                "message level": 2,
+                "error code": "SEMICOLON_EXPECTED",
+                "line #": 1,
+                "message": "';' was expected after 'MEMBER'."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "WHILE",
+                            "children": [
+                                {
+                                    "node type": "CONDITIONAL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "MEMBER",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                },
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "color"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "FALSE"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "ASSIGNMENT",
+                                            "children": [
+                                                {
+                                                    "node type": "MEMBER",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "a"
+                                                        },
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "color"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "CALL",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "rand"
+                                                        },
+                                                        {
+                                                            "node type": "LIST",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "NAME",
+                                                                    "label": "seed",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "INT64",
+                                                                            "integer": 33
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // While with a broken block case 3
+    {
+        //"verbose": true,
+        "name": "'while' with a broken block v3",
+        "program": "while(a ? a.color : false) a.color = rand(seed: 33) }",
+        "expected messages": [
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'{' expected to open the 'WHILE' block."
+            },
+            {
+                "options": "no_extended_operators_safe",
+                "message level": 2,
+                "error code": "NOT_ALLOWED",
+                "line #": 1,
+                "message": "the '=' operator is not available when extended operators value bit 1 is set (use extended_operators(2);)."
+            },
+            {
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'}' not expected without a '{'."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "WHILE",
+                            "children": [
+                                {
+                                    "node type": "CONDITIONAL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "MEMBER",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                },
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "color"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "FALSE"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "ASSIGNMENT",
+                                            "children": [
+                                                {
+                                                    "node type": "MEMBER",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "a"
+                                                        },
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "color"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "CALL",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "rand"
+                                                        },
+                                                        {
+                                                            "node type": "LIST",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "NAME",
+                                                                    "label": "seed",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "INT64",
+                                                                            "integer": 33
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // While with a broken block case 4
+    {
+        //"verbose": true,
+        "name": "'while' with a broken block v4",
+        "program": "while(a ? a.color : false) a.color = rand(seed: 33); volatile",
+        "expected messages": [
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'{' expected to open the 'WHILE' block."
+            },
+            {
+                "options": "no_extended_operators_safe",
+                "message level": 2,
+                "error code": "NOT_ALLOWED",
+                "line #": 1,
+                "message": "the '=' operator is not available when extended operators value bit 1 is set (use extended_operators(2);)."
+            },
+            {
+                "message level": 2,
+                "error code": "UNEXPECTED_EOF",
+                "line #": 1,
+                "message": "unexpected end of file reached."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "WHILE",
+                            "children": [
+                                {
+                                    "node type": "CONDITIONAL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "MEMBER",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                },
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "color"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "FALSE"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "ASSIGNMENT",
+                                            "children": [
+                                                {
+                                                    "node type": "MEMBER",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "a"
+                                                        },
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "color"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "CALL",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "rand"
+                                                        },
+                                                        {
+                                                            "node type": "LIST",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "NAME",
+                                                                    "label": "seed",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "INT64",
+                                                                            "integer": 33
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // While with a broken block case 5
+    {
+        //"verbose": true,
+        "name": "'while' with a broken block v5",
+        "program": "while(a ? a.color : false) a.color = rand(seed: 33); volatile }",
+        "expected messages": [
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'{' expected to open the 'WHILE' block."
+            },
+            {
+                "options": "no_extended_operators_safe",
+                "message level": 2,
+                "error code": "NOT_ALLOWED",
+                "line #": 1,
+                "message": "the '=' operator is not available when extended operators value bit 1 is set (use extended_operators(2);)."
+            },
+            //{
+            //    "message level": 2,
+            //    "error code": "CURVLY_BRACKETS_EXPECTED",
+            //    "line #": 1,
+            //    "message": "unexpected '}'."
+            //},
+            {
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'}' not expected without a '{'."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "WHILE",
+                            "children": [
+                                {
+                                    "node type": "CONDITIONAL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "MEMBER",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                },
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "color"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "FALSE"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "ASSIGNMENT",
+                                            "children": [
+                                                {
+                                                    "node type": "MEMBER",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "a"
+                                                        },
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "color"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "CALL",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "rand"
+                                                        },
+                                                        {
+                                                            "node type": "LIST",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "NAME",
+                                                                    "label": "seed",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "INT64",
+                                                                            "integer": 33
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
     // 'switch' 'with' 'break' 'continue'
     {
         //"verbose": true,
@@ -13715,6 +14185,374 @@ private volatile;\n",
                         },
                         {
                             "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // unexpected colon
+    {
+        //"verbose": true,
+        //"slow": true,
+        "name": "colon by itself or with attributes",
+        "program": "invalid_colon;\n\
+: ;\n\
+abstract: invalid_label;\n\
+public: valid_in_a_class;\n\
+protected: valid_in_a_class_too;\n\
+private: test_for_the_class;\n",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INVALID_OPERATOR",
+                "line #": 2,
+                "message": "unexpected ':' without an identifier."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_OPERATOR",
+                "line #": 3,
+                "message": "unexpected ':' without a valid label."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "invalid_colon"
+                        },
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "invalid_label"
+                        },
+                        {
+                            "node type": "LABEL",
+                            "label": "public"
+                        },
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "valid_in_a_class"
+                        },
+                        {
+                            "node type": "LABEL",
+                            "label": "protected"
+                        },
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "valid_in_a_class_too"
+                        },
+                        {
+                            "node type": "LABEL",
+                            "label": "private"
+                        },
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "test_for_the_class"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // legal empty statements
+    {
+        //"verbose": true,
+        //"slow": true,
+        "name": "legal empty statements",
+        "program": "for(i = 0; i < 100; ++i);\n\
+while(v)\n\
+{\n\
+    ;\n\
+}\n",
+        "expected messages": [
+            {
+                "options": "no_extended_operators_safe",
+                "message level": 2,
+                "error code": "NOT_ALLOWED",
+                "line #": 1,
+                "message": "the '=' operator is not available when extended operators value bit 1 is set (use extended_operators(2);)."
+            },
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'{' expected to open the 'FOR' block."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FOR",
+                            "children": [
+                                {
+                                    "node type": "ASSIGNMENT",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "i"
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 0
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LESS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "i"
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 100
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "INCREMENT",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "i"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST"
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "WHILE",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "v"
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "DIRECTIVE_LIST"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // illegal keywords in statements
+    {
+        //"verbose": true,
+        //"slow": true,
+        "name": "illegal keywords in statements",
+        "program": "for(i = 0; i < 100; ++i) else;\n\
+while(v) ensure;\n\
+do extends while(q);\n\
+if(s) require;\n\
+with(obj) then;\n",
+        "expected messages": [
+            {
+                "options": "no_extended_operators_safe",
+                "message level": 2,
+                "error code": "NOT_ALLOWED",
+                "line #": 1,
+                "message": "the '=' operator is not available when extended operators value bit 1 is set (use extended_operators(2);)."
+            },
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'{' expected to open the 'FOR' block."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_KEYWORD",
+                "line #": 1,
+                "message": "unexpected keyword 'ELSE'."
+            },
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 2,
+                "message": "'{' expected to open the 'WHILE' block."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_KEYWORD",
+                "line #": 2,
+                "message": "unexpected keyword 'ENSURE'."
+            },
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 3,
+                "message": "'{' expected to open the 'DO' block."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_KEYWORD",
+                "line #": 3,
+                "message": "unexpected keyword 'EXTENDS'."
+            },
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 4,
+                "message": "'{' expected to open the 'IF' block."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_KEYWORD",
+                "line #": 4,
+                "message": "unexpected keyword 'REQUIRE'."
+            },
+            {
+                "options": "allow_with",
+                "message level": 2,
+                "error code": "NOT_ALLOWED",
+                "line #": 5,
+                "message": "'WITH' is not allowed; you may authorize it with a pragam (use allow_with;) but it is not recommended."
+            },
+            {
+                "options": "no_allow_with|no_strict",
+                "message level": 2,
+                "error code": "NOT_ALLOWED_IN_STRICT_MODE",
+                "line #": 5,
+                "message": "'WITH' is not allowed in strict mode."
+            },
+            {
+                "options": "no_extended_statements_safe",
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 5,
+                "message": "'{' expected to open the 'WITH' block."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_KEYWORD",
+                "line #": 5,
+                "message": "unexpected keyword 'THEN'."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FOR",
+                            "children": [
+                                {
+                                    "node type": "ASSIGNMENT",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "i"
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 0
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LESS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "i"
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 100
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "INCREMENT",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "i"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST"
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "WHILE",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "v"
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST"
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "DO",
+                            "children": [
+                                {
+                                    "node type": "DIRECTIVE_LIST"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "q"
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "IF",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "s"
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST"
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "WITH",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "obj"
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST"
+                                }
+                            ]
                         }
                     ]
                 }

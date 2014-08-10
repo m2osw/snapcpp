@@ -256,6 +256,49 @@ bool Node::to_call()
 }
 
 
+/** \brief Convert this node to a NODE_IDENTIFIER.
+ *
+ * This function converts the node to an identifier. This is used to
+ * transform some keywords back to an identifier.
+ *
+ * \li NODE_PRIVATE -- "private"
+ * \li NODE_PROTECTED -- "protected"
+ * \li NODE_PUBLIC -- "public"
+ *
+ * At this point this is used to transform these keywords in labels.
+ *
+ * \return true if the conversion succeeded.
+ */
+bool Node::to_identifier()
+{
+    modifying();
+
+    switch(f_type)
+    {
+    case node_t::NODE_PRIVATE:
+        f_type = node_t::NODE_IDENTIFIER;
+        set_string("private");
+        return true;
+
+    case node_t::NODE_PROTECTED:
+        f_type = node_t::NODE_IDENTIFIER;
+        set_string("protected");
+        return true;
+
+    case node_t::NODE_PUBLIC:
+        f_type = node_t::NODE_IDENTIFIER;
+        set_string("public");
+        return true;
+
+    default:
+        // failure (cannot convert)
+        return false;
+
+    }
+    /*NOTREACHED*/
+}
+
+
 /** \brief Convert this node to a NODE_INT64.
  *
  * This function converts the node to an integer number,

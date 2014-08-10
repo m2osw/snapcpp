@@ -447,6 +447,7 @@ public:
     node_t                      to_boolean_type_only() const;
     bool                        to_boolean();
     bool                        to_call();
+    bool                        to_identifier();
     bool                        to_int64();
     bool                        to_float64();
     bool                        to_label();

@@ -128,6 +128,7 @@ void Parser::directive_list(Node::pointer_t& node)
 
         }
     }
+    /*NOTREACHED*/
 }
 
 
@@ -158,17 +159,29 @@ void Parser::directive(Node::pointer_t& node)
         if(attr_count == 0)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
-            msg << "unexpected ':' without an identifier";
-            break;
+            msg << "unexpected ':' without an identifier.";
+            // skip the spurious colon and return
+            get_token();
+            return;
         }
         last_attr = attr_list->get_child(attr_count - 1);
         if(last_attr->get_type() != Node::node_t::NODE_IDENTIFIER)
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
-            msg << "unexpected ':' without an identifier";
-            break;
+            // special cases of labels in classes
+            if(last_attr->get_type() != Node::node_t::NODE_PRIVATE
+            && last_attr->get_type() != Node::node_t::NODE_PROTECTED
+            && last_attr->get_type() != Node::node_t::NODE_PUBLIC)
+            {
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_OPERATOR, f_lexer->get_input()->get_position());
+                msg << "unexpected ':' without a valid label.";
+                // skip the spurious colon and return
+                get_token();
+                return;
+            }
+            last_attr->to_identifier();
         }
         /*FALLTHROUGH*/
+    case Node::node_t::NODE_ADD:
     case Node::node_t::NODE_AS:
     case Node::node_t::NODE_ASSIGNMENT:
     case Node::node_t::NODE_ASSIGNMENT_ADD:
@@ -190,15 +203,22 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
     case Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
     case Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+    case Node::node_t::NODE_BITWISE_AND:
+    case Node::node_t::NODE_BITWISE_OR:
+    case Node::node_t::NODE_BITWISE_XOR:
+    case Node::node_t::NODE_COMMA:
     case Node::node_t::NODE_CONDITIONAL:
     case Node::node_t::NODE_DECREMENT:
+    case Node::node_t::NODE_DIVIDE:
     case Node::node_t::NODE_EQUAL:
+    case Node::node_t::NODE_GREATER:
     case Node::node_t::NODE_GREATER_EQUAL:
     case Node::node_t::NODE_IMPLEMENTS:
     case Node::node_t::NODE_INSTANCEOF:
     case Node::node_t::NODE_IN:
     case Node::node_t::NODE_INCREMENT:
     case Node::node_t::NODE_IS:
+    case Node::node_t::NODE_LESS:
     case Node::node_t::NODE_LESS_EQUAL:
     case Node::node_t::NODE_LOGICAL_AND:
     case Node::node_t::NODE_LOGICAL_OR:
@@ -207,7 +227,11 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_MAXIMUM:
     case Node::node_t::NODE_MEMBER:
     case Node::node_t::NODE_MINIMUM:
+    case Node::node_t::NODE_MODULO:
+    case Node::node_t::NODE_MULTIPLY:
     case Node::node_t::NODE_NOT_EQUAL:
+    case Node::node_t::NODE_OPEN_PARENTHESIS:
+    case Node::node_t::NODE_OPEN_SQUARE_BRACKET:
     case Node::node_t::NODE_POWER:
     case Node::node_t::NODE_PRIVATE:
     case Node::node_t::NODE_PUBLIC:
@@ -216,25 +240,13 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_ROTATE_LEFT:
     case Node::node_t::NODE_ROTATE_RIGHT:
     case Node::node_t::NODE_SCOPE:
+    case Node::node_t::NODE_SEMICOLON:
     case Node::node_t::NODE_SHIFT_LEFT:
     case Node::node_t::NODE_SHIFT_RIGHT:
     case Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
     case Node::node_t::NODE_STRICTLY_EQUAL:
     case Node::node_t::NODE_STRICTLY_NOT_EQUAL:
-    case Node::node_t::NODE_MULTIPLY:
-    case Node::node_t::NODE_DIVIDE:
-    case Node::node_t::NODE_COMMA:
-    case Node::node_t::NODE_MODULO:
-    case Node::node_t::NODE_BITWISE_AND:
-    case Node::node_t::NODE_BITWISE_XOR:
-    case Node::node_t::NODE_BITWISE_OR:
-    case Node::node_t::NODE_LESS:
-    case Node::node_t::NODE_GREATER:
-    case Node::node_t::NODE_ADD:
     case Node::node_t::NODE_SUBTRACT:
-    case Node::node_t::NODE_OPEN_PARENTHESIS:
-    case Node::node_t::NODE_SEMICOLON:
-    case Node::node_t::NODE_OPEN_SQUARE_BRACKET:
         if(attr_count > 0)
         {
             last_attr = attr_list->get_child(attr_count - 1);
@@ -572,7 +584,19 @@ void Parser::directive(Node::pointer_t& node)
 
     // *** TERMINATOR ***
     case Node::node_t::NODE_EOF:
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_EOF, f_lexer->get_input()->get_position());
+        msg << "unexpected end of file reached.";
+    }
+        return;
+
     case Node::node_t::NODE_CLOSE_CURVLY_BRACKET:
+        // this error does not seem required at this point
+        // we get the error from the program already
+    //{
+    //    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_CURVLY_BRACKETS_EXPECTED, f_lexer->get_input()->get_position());
+    //    msg << "unexpected '}'.";
+    //}
         return;
 
     // *** INVALID ***
@@ -657,7 +681,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_THEN:
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_KEYWORD, f_lexer->get_input()->get_position());
-        msg << "unexpected keyword \"" << instruction_node->get_type_name() << "\".";
+        msg << "unexpected keyword '" << instruction_node->get_type_name() << "'.";
         get_token();
     }
         break;
