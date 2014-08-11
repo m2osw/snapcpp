@@ -604,7 +604,7 @@ bool Node::to_string()
  * \code
  *    (a).field      // a becomes a NODE_VIDENTIFIER
  *    a.field
- * \code
+ * \endcode
  *
  * In the first case, (a) is transform with the content of variable
  * 'a' and that is used to access 'field'.

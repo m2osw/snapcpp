@@ -209,8 +209,8 @@ Input::char_t DecodingFilterUTF8::get_char()
  * meaning that more data is necessary and the function needs to be called
  * again to proceed.
  *
- * \param[2] c  Two byte value representing a Unicode character or a UTF-16
- *              surrogate.
+ * \param[in] c  Two byte value representing a Unicode character or a UTF-16
+ *               surrogate.
  *
  * \return The following character, Input::INPUT_NAC, or Input::INPUT_ERR.
  */
@@ -935,7 +935,7 @@ bool FileOutput::open(String const& filename)
 
 /** \brief Write to the output file.
  *
- * This function writes the specified \d data string to this output file.
+ * This function writes the specified \p data string to this output file.
  *
  * If an error occurs, the process writes a fatal error in stderr and
  * exists.
@@ -977,7 +977,7 @@ String const& StringOutput::get_string() const
 
 /** \brief Write to the output string.
  *
- * This function writes the specified \d data string to this output string.
+ * This function writes the specified \p data string to this output string.
  *
  * \param[in] data  The string to write to the output file.
  */

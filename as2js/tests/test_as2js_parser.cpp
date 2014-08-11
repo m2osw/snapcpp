@@ -1156,50 +1156,42 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
 }
 
 
-// JSON data used to test the parser, most of the work is in this table
-// this is one long JSON string! It is actually generated using the
-// json_to_string tool and the test_as2js_parser.json as the source
-// file.
 //
-// Note: the top is entry an array so we can execute programs in the
+// JSON data used to test the parser, most of the work is in this table
+// these are long JSON strings! It is actually generated using the
+// json_to_string tool and the test_as2js_parser_*.json source files.
+//
+// Note: the top entries are arrays so we can execute programs in the
 //       order we define them...
+//
+char const g_basics[] =
+#include "test_as2js_parser_basics.ci"
+;
 char const g_data[] =
 #include "test_as2js_parser.ci"
 ;
 
 
 
-}
-// no name namespace
 
 
 
 
-// These will be required in the compiler, not here
-// because the parser & below do not use the rc/db
-// stuff... only the compiler
-//void As2JsParserUnitTests::setUp()
-//{
-//}
-//
-//
-//void As2JsParserUnitTests::tearDown()
-//{
-//}
 
-
-void As2JsParserUnitTests::test_parser()
+// This function runs all the tests defined in the
+// string 'data'
+void run_tests(char const *data, char const *filename)
 {
     as2js::String input_data;
-    input_data.from_utf8(g_data);
+    input_data.from_utf8(data);
 
     if(as2js_test::g_save_parser_tests)
     {
         std::ofstream json_file;
-        json_file.open("test_parser.json");
+        json_file.open(filename);
         CPPUNIT_ASSERT(json_file.is_open());
         json_file << "// To properly indent this JSON you may use http://json-indent.appspot.com/"
-                << std::endl << g_data << std::endl;
+                << std::endl << data << std::endl;
     }
 
     as2js::StringInput::pointer_t in(new as2js::StringInput(input_data));
@@ -1408,6 +1400,25 @@ found_option:
 
         std::cout << " OK\n";
     }
+}
+
+
+}
+// no name namespace
+
+
+
+
+
+void As2JsParserUnitTests::test_parser_basics()
+{
+    run_tests(g_basics, "test_parser_basics.json");
+}
+
+
+void As2JsParserUnitTests::test_parser()
+{
+    run_tests(g_data, "test_parser.json");
 }
 
 

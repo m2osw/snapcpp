@@ -78,6 +78,7 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 #
 find_package( AdvGetOpt        REQUIRED )
 find_package( ControlledVars   REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
@@ -91,7 +92,7 @@ endif()
 add_subdirectory( include )
 add_subdirectory( lib )
 add_subdirectory( src )
-#add_subdirectory( doc )
+add_subdirectory( doc )
 add_subdirectory( tests )
 #add_subdirectory( package )
 

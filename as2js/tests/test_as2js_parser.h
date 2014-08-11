@@ -42,6 +42,7 @@ SOFTWARE.
 class As2JsParserUnitTests : public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE( As2JsParserUnitTests );
+        CPPUNIT_TEST( test_parser_basics );
         CPPUNIT_TEST( test_parser );
     CPPUNIT_TEST_SUITE_END();
 
@@ -49,6 +50,7 @@ public:
     //virtual void setUp();
 
 protected:
+    void test_parser_basics();
     void test_parser();
 };
 

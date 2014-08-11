@@ -41,6 +41,24 @@ SOFTWARE.
 
 #include    <advgetopt/advgetopt.h>
 
+
+/** \file
+ * \brief This file is the actual as2js compiler.
+ *
+ * The project includes a library which does 99% of the work. This is
+ * the implementation of the as2js command line tool that handles
+ * command line options and initializes an Option object with those
+ * before starting compiling various .js files.
+ */
+
+
+
+
+/** \brief Private implementations of the as2js compiler, the actual tool.
+ *
+ * This namespace is used to hide all the tool private functions to
+ * avoid any conflicts.
+ */
 namespace
 {
     /** \brief List of configuration files.

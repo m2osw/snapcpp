@@ -570,7 +570,7 @@ Node::pointer_t Node::get_child(int index) const
  * with the specified \p type. This can be used to quickly scan a
  * list of children for the first node with a specific type.
  *
- * \node
+ * \note
  * This function calls the find_next_child() with a null pointer in
  * the child parameter.
  *

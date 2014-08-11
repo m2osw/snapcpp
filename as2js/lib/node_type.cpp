@@ -287,7 +287,7 @@ Node::node_t Node::get_type() const
 }
 
 
-/** \breif Convert the specified type to a string.
+/** \brief Convert the specified type to a string.
  *
  * The type of the node (NODE_...) can be retrieved as a string using this
  * function. In pretty much all cases this is done whenever an error occurs

@@ -81,6 +81,13 @@ target_link_libraries( ${PROJECT_NAME}
 )
 
 
+add_custom_command(OUTPUT ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci
+    COMMAND json_to_string -o ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser_basics.json
+    DEPENDS json_to_string ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser_basics.json
+    COMMENT "Generating test_as2js_parser_basics.ci"
+)
+
+
 add_custom_command(OUTPUT ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
     COMMAND json_to_string -o ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser.json
     DEPENDS json_to_string ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser.json
@@ -161,12 +168,13 @@ add_executable(${PROJECT_NAME}
     test_as2js_float64.cpp
     test_as2js_int64.cpp
     test_as2js_json.cpp
+    test_as2js_lexer.cpp
     test_as2js_message.cpp
     test_as2js_node.cpp
     test_as2js_node_display.cpp
-    test_as2js_lexer.cpp
     test_as2js_options.cpp
     test_as2js_parser.cpp
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
     test_as2js_position.cpp
     test_as2js_rc.cpp

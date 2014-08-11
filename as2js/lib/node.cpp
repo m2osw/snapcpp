@@ -45,6 +45,17 @@ SOFTWARE.
 #include    <iomanip>
 
 
+/** \file
+ * \brief Implement the basic node functions.
+ *
+ * This file includes the node allocation, switch operator, position,
+ * links, variables, and label.
+ *
+ * Other parts are in other files. It was broken up as the Node object
+ * implementation is quite large.
+ */
+
+
 namespace as2js
 {
 
@@ -377,6 +388,15 @@ void Node::set_switch_operator(node_t op)
  * replacement of this node.
  *
  * Note that this node does not get modified by this call.
+ *
+ * This is similar to creating a node directly and then setting up the
+ * position of the new node to the position information of this node.
+ * In other words, a short hand for this:
+ *
+ * \code
+ *      Node::pointer_t n(new Node(type));
+ *      n->set_position(node->get_position());
+ * \endcode
  *
  * \param[in] type  The type of the new node.
  *

@@ -422,7 +422,18 @@ public:
 
                                 Node(node_t type);
 
+    /** \brief Do not allow direct copies of nodes.
+     *
+     * It is not safe to just copy a node because a node is part of a
+     * tree (parent, child, siblings...) and a copy would not work.
+     */
                                 Node(Node const&) = delete;
+
+    /** \brief Do not allow direct copies of nodes.
+     *
+     * It is not safe to just copy a node because a node is part of a
+     * tree (parent, child, siblings...) and a copy would not work.
+     */
     Node&                       operator = (Node const&) = delete;
 
     node_t                      get_type() const;

@@ -146,7 +146,7 @@ Message::~Message()
  *
  * This function appends an char string to the message.
  *
- * \param[in] v  A character string.
+ * \param[in] s  A character string.
  *
  * \return A reference to the message.
  */
@@ -162,7 +162,7 @@ Message& Message::operator << (char const *s)
  *
  * This function appends an wchar_t string to the message.
  *
- * \param[in] v  A wchar_t string.
+ * \param[in] s  A wchar_t string.
  *
  * \return A reference to the message.
  */
@@ -179,7 +179,7 @@ Message& Message::operator << (wchar_t const *s)
  *
  * This function appends an std::string value to the message.
  *
- * \param[in] v  An std::string value.
+ * \param[in] s  An std::string value.
  *
  * \return A reference to the message.
  */
@@ -194,7 +194,7 @@ Message& Message::operator << (std::string const& s)
  *
  * This function appends an std::wstring value to the message.
  *
- * \param[in] v  An std::wstring value.
+ * \param[in] s  An std::wstring value.
  *
  * \return A reference to the message.
  */
@@ -211,7 +211,7 @@ Message& Message::operator << (std::wstring const& s)
  *
  * This function appends a String value to the message.
  *
- * \param[in] v  A String value.
+ * \param[in] s  A String value.
  *
  * \return A reference to the message.
  */
@@ -376,7 +376,7 @@ Message& Message::operator << (signed long long const v)
  *
  * This function appends the value saved in an Int64 value.
  *
- * \parm[in] v  An as2js::Int64 value.
+ * \param[in] v  An as2js::Int64 value.
  */
 Message& Message::operator << (Int64 const v)
 {
@@ -434,7 +434,7 @@ Message& Message::operator << (double const v)
  *
  * This function appends the value saved in an Float64 value.
  *
- * \parm[in] v  An as2js::Float64 value.
+ * \param[in] v  An as2js::Float64 value.
  */
 Message& Message::operator << (Float64 const v)
 {
@@ -497,6 +497,8 @@ void Message::set_message_level(message_level_t max_level)
  * This function returns the number of warnings that were
  * processed so far.
  *
+ * Note that this number is a global counter and it cannot be reset.
+ *
  * \return The number of warnings that were processed so far.
  */
 int Message::warning_count()
@@ -509,6 +511,8 @@ int Message::warning_count()
  *
  * This function returns the number of errors and fatal errors that were
  * processed so far.
+ *
+ * Note that this number is a global counter and it cannot be reset.
  *
  * \return The number of errors that were processed so far.
  */
