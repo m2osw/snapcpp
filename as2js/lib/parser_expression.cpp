@@ -74,6 +74,17 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
         // empty at the start of the array
         node = f_lexer->get_new_node(Node::node_t::NODE_EMPTY);
     }
+    else if(rest && f_node->get_type() == Node::node_t::NODE_REST)
+    {
+        // the '...' in a function call is used to mean pass
+        // my own rest down to the callee
+        node = f_lexer->get_new_node(Node::node_t::NODE_REST);
+        get_token();
+        has_rest = 1;
+        // note: we expect ')' here but we
+        // let the user put ',' <expr> still
+        // and err in case it happens
+    }
     else if(rest && f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         // identifiers ':' -> named parameter
@@ -93,10 +104,7 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
                 Node::pointer_t rest_of_args(f_lexer->get_new_node(Node::node_t::NODE_REST));
                 node->append_child(rest_of_args);
                 get_token();
-                if(has_rest == 0)
-                {
-                    has_rest = 1;
-                }
+                has_rest = 1;
                 // note: we expect ')' here but we
                 // let the user put ',' <expr> still
                 // and err in case it happens

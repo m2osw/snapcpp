@@ -14776,7 +14776,8 @@ call.func4(n: 4, param * 3, rest: ...);\n\
 call.func5(count: this.length, param: 3, rest: ..., and: invalid);\n\
 call.func6('here', r1: ..., r2: ..., r3: ...);\n\
 call.func7(first: ..., oops);\n\
-call.func8(one, ...);\n",
+call.func8(one, ...);\n\
+call.func9(...);\n",
         "expected messages": [
             {
                 "message level": 2,
@@ -15185,6 +15186,32 @@ call.func8(one, ...);\n",
                                             "node type": "IDENTIFIER",
                                             "label": "one"
                                         },
+                                        {
+                                            "node type": "REST"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func9"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
                                         {
                                             "node type": "REST"
                                         }
