@@ -17,7 +17,7 @@ MINOR=`grep AS2JS_VERSION_MINOR CMakeLists.txt | sed -e 's/^.*set(.*AS2JS_VERSIO
 PATCH=`grep AS2JS_VERSION_PATCH CMakeLists.txt | sed -e 's/^.*set(.*AS2JS_VERSION_PATCH.*\([0-9]\+\).*$/\1/'`
 VERSION="$MAJOR.$MINOR.$PATCH"
 echo "***"
-echo "*** as2js coverage for version $VERSION"
+echo "*** as2js coverage for version $VERSION (`date`)"
 echo "***"
 mkdir -p tmp/coverage
 rm -rf tmp/coverage/*
@@ -37,12 +37,12 @@ cmake -DCMAKE_INSTALL_PREFIX:PATH=$dist \
 cd ..
 echo
 echo "***"
-echo "*** compile"
+echo "*** compile (`date`)"
 echo "***"
 VERBOSE=1 make -C BUILD
 echo
 echo "***"
-echo "*** run"
+echo "*** run (`date`)"
 echo "***"
 # TODO add a test of the version here against the version in include/as2js/as2js.h.in
 if test `BUILD/tests/test_as2js --version` != "$VERSION"
@@ -70,7 +70,7 @@ else
 fi
 echo
 echo "***"
-echo "*** gcov/lcov"
+echo "*** gcov/lcov (`date`)"
 echo "***"
 
 # Choose one of the following gcov commands
@@ -95,7 +95,7 @@ end_date=`date`
 if test -f test_log.txt
 then
     echo "***"
-    echo "*** publication to lcov.as2js.org"
+    echo "*** publication to lcov.as2js.org (`date`)"
     echo "***"
 
     # Statistics

@@ -68,23 +68,45 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
         throw exception_internal_error("list_expression() called with a non-null node pointer"); // LCOV_EXCL_LINE
     }
 
+    int has_rest(0);
     if(empty && f_node->get_type() == Node::node_t::NODE_COMMA)
     {
+        // empty at the start of the array
         node = f_lexer->get_new_node(Node::node_t::NODE_EMPTY);
     }
     else if(rest && f_node->get_type() == Node::node_t::NODE_IDENTIFIER)
     {
         // identifiers ':' -> named parameter
         Node::pointer_t save(f_node);
+        // skip the identifier
         get_token();
         if(f_node->get_type() == Node::node_t::NODE_COLON)
         {
+            // skip the ':'
             get_token();
             node = f_lexer->get_new_node(Node::node_t::NODE_NAME);
             node->set_string(save->get_string());
-            Node::pointer_t value;
-            assignment_expression(value);
-            node->append_child(value);
+            if(f_node->get_type() == Node::node_t::NODE_REST)
+            {
+                // the '...' in a function call is used to mean pass
+                // my own rest down to the callee
+                Node::pointer_t rest_of_args(f_lexer->get_new_node(Node::node_t::NODE_REST));
+                node->append_child(rest_of_args);
+                get_token();
+                if(has_rest == 0)
+                {
+                    has_rest = 1;
+                }
+                // note: we expect ')' here but we
+                // let the user put ',' <expr> still
+                // and err in case it happens
+            }
+            else
+            {
+                Node::pointer_t value;
+                assignment_expression(value);
+                node->append_child(value);
+            }
         }
         else
         {
@@ -105,18 +127,24 @@ void Parser::list_expression(Node::pointer_t& node, bool rest, bool empty)
         node = f_lexer->get_new_node(Node::node_t::NODE_LIST);
         node->append_child(first_item);
 
-        int has_rest = 0;
         while(f_node->get_type() == Node::node_t::NODE_COMMA)
         {
             get_token();
             if(has_rest == 1)
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_REST, f_lexer->get_input()->get_position());
-                msg << "'...' was expected to be the last expression only.";
+                msg << "'...' was expected to be the last expression in this function call.";
                 has_rest = 2;
             }
             if(empty && f_node->get_type() == Node::node_t::NODE_COMMA)
             {
+                // empty inside the array
+                Node::pointer_t empty_node(f_lexer->get_new_node(Node::node_t::NODE_EMPTY));
+                node->append_child(empty_node);
+            }
+            else if(empty && f_node->get_type() == Node::node_t::NODE_CLOSE_SQUARE_BRACKET)
+            {
+                // empty at the end of the array
                 Node::pointer_t empty_node(f_lexer->get_new_node(Node::node_t::NODE_EMPTY));
                 node->append_child(empty_node);
             }
@@ -614,7 +642,7 @@ void Parser::unary_expression(Node::pointer_t& node)
 {
     if(node)
     {
-        throw exception_internal_error("unary_expression() called with a non-null node pointer");
+        throw exception_internal_error("unary_expression() called with a non-null node pointer");  // LCOV_EXCL_LINE
     }
 
     switch(f_node->get_type())
@@ -1003,15 +1031,16 @@ void Parser::object_literal_expression(Node::pointer_t& node)
             goto and_scope;
 
         case Node::node_t::NODE_IDENTIFIER:     // <name> or <namespace>::<name>
-        case Node::node_t::NODE_PRIVATE:        // private::<name> only
-        case Node::node_t::NODE_PROTECTED:      // protected::<name> only
-        case Node::node_t::NODE_PUBLIC:         // public::<name> only
             // NOTE: an IDENTIFIER here remains NODE_IDENTIFIER
             //       so it does not look like the previous expression
             //       (i.e. an expression literal can be just an
             //       identifier but it will be marked as
             //       NODE_VIDENTIFIER instead)
             name->set_string(f_node->get_string());
+            /*FALLTHROUGH*/
+        case Node::node_t::NODE_PRIVATE:        // private::<name> only
+        case Node::node_t::NODE_PROTECTED:      // protected::<name> only
+        case Node::node_t::NODE_PUBLIC:         // public::<name> only
             get_token();
 and_scope:
             if(f_node->get_type() == Node::node_t::NODE_SCOPE)
@@ -1042,7 +1071,7 @@ and_scope:
             else if(type != Node::node_t::NODE_IDENTIFIER)
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_FIELD_NAME, f_lexer->get_input()->get_position());
-                msg << "'public' or 'private' or a dynamic scope cannot be used as a field name, '::' was expected.";
+                msg << "'public', 'protected', or 'private' or a dynamic scope cannot be used as a field name, '::' was expected.";
             }
             break;
 
@@ -1070,14 +1099,10 @@ and_scope:
             msg << "':' expected after the name of a field.";
 
             // if we have a closing brace here, the programmer
-            // tried to end his list with a comma; we just
+            // tried to end his list improperly; we just
             // accept that one silently! (like in C/C++)
-            if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
-            {
-                break;
-            }
-
-            if(f_node->get_type() == Node::node_t::NODE_SEMICOLON)
+            if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET
+            || f_node->get_type() == Node::node_t::NODE_SEMICOLON)
             {
                 // this is probably the end...
                 return;
@@ -1085,14 +1110,14 @@ and_scope:
 
             // if we have a comma here, the programmer
             // just forgot a few things...
-            if(f_node->get_type() == Node::node_t::NODE_COLON)
+            if(f_node->get_type() == Node::node_t::NODE_COMMA)
             {
                 get_token();
                 // we accept a comma at the end here too!
                 if(f_node->get_type() == Node::node_t::NODE_CLOSE_CURVLY_BRACKET
                 || f_node->get_type() == Node::node_t::NODE_SEMICOLON)
                 {
-                    break;
+                    return;
                 }
                 continue;
             }
@@ -1130,6 +1155,7 @@ and_scope:
             get_token();
         }
     }
+    /*NOTREACHED*/
 }
 
 

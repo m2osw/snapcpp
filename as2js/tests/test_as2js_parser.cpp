@@ -139,6 +139,136 @@ int32_t generate_string(as2js::String& str, bool ascii)
 }
 
 
+struct err_to_string_t
+{
+    as2js::err_code_t       f_code;
+    char const *            f_name;
+    int                     f_line;
+};
+
+#define    TO_STR_sub(s)            #s
+#define    ERROR_NAME(err)     { as2js::err_code_t::AS_ERR_##err, TO_STR_sub(err), __LINE__ }
+
+err_to_string_t const g_error_table[] =
+{
+    ERROR_NAME(NONE),
+    ERROR_NAME(ABSTRACT),
+    ERROR_NAME(BAD_NUMERIC_TYPE),
+    ERROR_NAME(BAD_PRAGMA),
+    ERROR_NAME(CANNOT_COMPILE),
+    ERROR_NAME(CANNOT_MATCH),
+    ERROR_NAME(CANNOT_OVERLOAD),
+    ERROR_NAME(CANNOT_OVERWRITE_CONST),
+    ERROR_NAME(CASE_LABEL),
+    ERROR_NAME(COLON_EXPECTED),
+    ERROR_NAME(COMMA_EXPECTED),
+    ERROR_NAME(CURVLY_BRACKETS_EXPECTED),
+    ERROR_NAME(DEFAULT_LABEL),
+    ERROR_NAME(DIVIDE_BY_ZERO),
+    ERROR_NAME(DUPLICATES),
+    ERROR_NAME(DYNAMIC),
+    ERROR_NAME(EXPRESSION_EXPECTED),
+    ERROR_NAME(FINAL),
+    ERROR_NAME(IMPROPER_STATEMENT),
+    ERROR_NAME(INACCESSIBLE_STATEMENT),
+    ERROR_NAME(INCOMPATIBLE),
+    ERROR_NAME(INCOMPATIBLE_PRAGMA_ARGUMENT),
+    ERROR_NAME(INSTALLATION),
+    ERROR_NAME(INSTANCE_EXPECTED),
+    ERROR_NAME(INTERNAL_ERROR),
+    ERROR_NAME(NATIVE),
+    ERROR_NAME(INVALID_ARRAY_FUNCTION),
+    ERROR_NAME(INVALID_ATTRIBUTES),
+    ERROR_NAME(INVALID_CATCH),
+    ERROR_NAME(INVALID_CLASS),
+    ERROR_NAME(INVALID_CONDITIONAL),
+    ERROR_NAME(INVALID_DEFINITION),
+    ERROR_NAME(INVALID_DO),
+    ERROR_NAME(INVALID_ENUM),
+    ERROR_NAME(INVALID_EXPRESSION),
+    ERROR_NAME(INVALID_FIELD),
+    ERROR_NAME(INVALID_FIELD_NAME),
+    ERROR_NAME(INVALID_FRAME),
+    ERROR_NAME(INVALID_FUNCTION),
+    ERROR_NAME(INVALID_GOTO),
+    ERROR_NAME(INVALID_IMPORT),
+    ERROR_NAME(INVALID_INPUT_STREAM),
+    ERROR_NAME(INVALID_KEYWORD),
+    ERROR_NAME(INVALID_LABEL),
+    ERROR_NAME(INVALID_NAMESPACE),
+    ERROR_NAME(INVALID_NODE),
+    ERROR_NAME(INVALID_NUMBER),
+    ERROR_NAME(INVALID_OPERATOR),
+    ERROR_NAME(INVALID_PACKAGE_NAME),
+    ERROR_NAME(INVALID_PARAMETERS),
+    ERROR_NAME(INVALID_REST),
+    ERROR_NAME(INVALID_RETURN_TYPE),
+    ERROR_NAME(INVALID_SCOPE),
+    ERROR_NAME(INVALID_TRY),
+    ERROR_NAME(INVALID_TYPE),
+    ERROR_NAME(INVALID_UNICODE_ESCAPE_SEQUENCE),
+    ERROR_NAME(INVALID_VARIABLE),
+    ERROR_NAME(IO_ERROR),
+    ERROR_NAME(LABEL_NOT_FOUND),
+    ERROR_NAME(LOOPING_REFERENCE),
+    ERROR_NAME(MISMATCH_FUNC_VAR),
+    ERROR_NAME(MISSSING_VARIABLE_NAME),
+    ERROR_NAME(NEED_CONST),
+    ERROR_NAME(NOT_ALLOWED),
+    ERROR_NAME(NOT_ALLOWED_IN_STRICT_MODE),
+    ERROR_NAME(NOT_FOUND),
+    ERROR_NAME(NOT_SUPPORTED),
+    ERROR_NAME(OBJECT_MEMBER_DEFINED_TWICE),
+    ERROR_NAME(PARENTHESIS_EXPECTED),
+    ERROR_NAME(PRAGMA_FAILED),
+    ERROR_NAME(SEMICOLON_EXPECTED),
+    ERROR_NAME(SQUARE_BRACKETS_EXPECTED),
+    ERROR_NAME(STRING_EXPECTED),
+    ERROR_NAME(STATIC),
+    ERROR_NAME(TYPE_NOT_LINKED),
+    ERROR_NAME(UNKNOWN_ESCAPE_SEQUENCE),
+    ERROR_NAME(UNKNOWN_OPERATOR),
+    ERROR_NAME(UNTERMINATED_STRING),
+    ERROR_NAME(UNEXPECTED_EOF),
+    ERROR_NAME(UNEXPECTED_PUNCTUATION),
+    ERROR_NAME(UNEXPECTED_TOKEN),
+    ERROR_NAME(UNEXPECTED_DATABASE),
+    ERROR_NAME(UNEXPECTED_RC)
+};
+size_t const g_error_table_size = sizeof(g_error_table) / sizeof(g_error_table[0]);
+
+
+as2js::err_code_t str_to_error_code(as2js::String const& error_name)
+{
+    for(size_t idx(0); idx < g_error_table_size; ++idx)
+    {
+        if(error_name == g_error_table[idx].f_name)
+        {
+            return g_error_table[idx].f_code;
+        }
+    }
+    std::cerr << "Error name \"" << error_name << "\" not found.\n";
+    CPPUNIT_ASSERT(!"error name not found, test_as2js_parser.cpp bug");
+    return as2js::err_code_t::AS_ERR_NONE;
+}
+
+
+char const *error_code_to_str(as2js::err_code_t const& error_code)
+{
+    for(size_t idx(0); idx < g_error_table_size; ++idx)
+    {
+        if(error_code == g_error_table[idx].f_code)
+        {
+            return g_error_table[idx].f_name;
+        }
+    }
+    std::cerr << "Error code \"" << static_cast<int>(error_code) << "\" not found.\n";
+    CPPUNIT_ASSERT(!"error code not found, test_as2js_parser.cpp bug");
+    return "unknown";
+}
+
+
+
 class test_callback : public as2js::MessageCallback
 {
 public:
@@ -173,7 +303,7 @@ public:
             std::cerr << "msg = " << message << "\n";
             std::cerr << "page = " << pos.get_page() << "\n";
             std::cerr << "line = " << pos.get_line() << "\n";
-            std::cerr << "error_code = " << static_cast<int>(error_code) << "\n";
+            std::cerr << "error_code = " << static_cast<int>(error_code) << " (" << error_code_to_str(error_code) << ")\n";
         }
 
         CPPUNIT_ASSERT(!f_expected.empty());
@@ -185,7 +315,7 @@ public:
             std::cerr << "page = " << pos.get_page() << " / " << f_expected[0].f_pos.get_page() << "\n";
             std::cerr << "line = " << pos.get_line() << " / " << f_expected[0].f_pos.get_line() << "\n";
             std::cerr << "page line = " << pos.get_page_line() << " / " << f_expected[0].f_pos.get_page_line() << "\n";
-            std::cerr << "error_code = " << static_cast<int>(error_code) << " / " << static_cast<int>(f_expected[0].f_error_code) << "\n";
+            std::cerr << "error_code = " << static_cast<int>(error_code) << " (" << error_code_to_str(error_code) << ") / " << static_cast<int>(f_expected[0].f_error_code) << " (" << error_code_to_str(f_expected[0].f_error_code) << ")\n";
         }
 
         CPPUNIT_ASSERT(f_expected[0].f_call);
@@ -357,120 +487,6 @@ named_options const g_options[] =
     }
 };
 size_t const g_options_size(sizeof(g_options) / sizeof(g_options[0]));
-
-
-struct err_to_string_t
-{
-    as2js::err_code_t       f_code;
-    char const *            f_name;
-    int                     f_line;
-};
-
-#define    TO_STR_sub(s)            #s
-#define    ERROR_NAME(err)     { as2js::err_code_t::AS_ERR_##err, TO_STR_sub(err), __LINE__ }
-
-err_to_string_t const g_error_table[] =
-{
-    ERROR_NAME(NONE),
-    ERROR_NAME(ABSTRACT),
-    ERROR_NAME(BAD_NUMERIC_TYPE),
-    ERROR_NAME(BAD_PRAGMA),
-    ERROR_NAME(CANNOT_COMPILE),
-    ERROR_NAME(CANNOT_MATCH),
-    ERROR_NAME(CANNOT_OVERLOAD),
-    ERROR_NAME(CANNOT_OVERWRITE_CONST),
-    ERROR_NAME(CASE_LABEL),
-    ERROR_NAME(COLON_EXPECTED),
-    ERROR_NAME(COMMA_EXPECTED),
-    ERROR_NAME(CURVLY_BRACKETS_EXPECTED),
-    ERROR_NAME(DEFAULT_LABEL),
-    ERROR_NAME(DIVIDE_BY_ZERO),
-    ERROR_NAME(DUPLICATES),
-    ERROR_NAME(DYNAMIC),
-    ERROR_NAME(EXPRESSION_EXPECTED),
-    ERROR_NAME(FINAL),
-    ERROR_NAME(IMPROPER_STATEMENT),
-    ERROR_NAME(INACCESSIBLE_STATEMENT),
-    ERROR_NAME(INCOMPATIBLE),
-    ERROR_NAME(INCOMPATIBLE_PRAGMA_ARGUMENT),
-    ERROR_NAME(INSTALLATION),
-    ERROR_NAME(INSTANCE_EXPECTED),
-    ERROR_NAME(INTERNAL_ERROR),
-    ERROR_NAME(NATIVE),
-    ERROR_NAME(INVALID_ARRAY_FUNCTION),
-    ERROR_NAME(INVALID_ATTRIBUTES),
-    ERROR_NAME(INVALID_CATCH),
-    ERROR_NAME(INVALID_CLASS),
-    ERROR_NAME(INVALID_CONDITIONAL),
-    ERROR_NAME(INVALID_DEFINITION),
-    ERROR_NAME(INVALID_DO),
-    ERROR_NAME(INVALID_ENUM),
-    ERROR_NAME(INVALID_EXPRESSION),
-    ERROR_NAME(INVALID_FIELD),
-    ERROR_NAME(INVALID_FIELD_NAME),
-    ERROR_NAME(INVALID_FRAME),
-    ERROR_NAME(INVALID_FUNCTION),
-    ERROR_NAME(INVALID_GOTO),
-    ERROR_NAME(INVALID_IMPORT),
-    ERROR_NAME(INVALID_INPUT_STREAM),
-    ERROR_NAME(INVALID_KEYWORD),
-    ERROR_NAME(INVALID_LABEL),
-    ERROR_NAME(INVALID_NAMESPACE),
-    ERROR_NAME(INVALID_NODE),
-    ERROR_NAME(INVALID_NUMBER),
-    ERROR_NAME(INVALID_OPERATOR),
-    ERROR_NAME(INVALID_PACKAGE_NAME),
-    ERROR_NAME(INVALID_PARAMETERS),
-    ERROR_NAME(INVALID_REST),
-    ERROR_NAME(INVALID_RETURN_TYPE),
-    ERROR_NAME(INVALID_SCOPE),
-    ERROR_NAME(INVALID_TRY),
-    ERROR_NAME(INVALID_TYPE),
-    ERROR_NAME(INVALID_UNICODE_ESCAPE_SEQUENCE),
-    ERROR_NAME(INVALID_VARIABLE),
-    ERROR_NAME(IO_ERROR),
-    ERROR_NAME(LABEL_NOT_FOUND),
-    ERROR_NAME(LOOPING_REFERENCE),
-    ERROR_NAME(MISMATCH_FUNC_VAR),
-    ERROR_NAME(MISSSING_VARIABLE_NAME),
-    ERROR_NAME(NEED_CONST),
-    ERROR_NAME(NOT_ALLOWED),
-    ERROR_NAME(NOT_ALLOWED_IN_STRICT_MODE),
-    ERROR_NAME(NOT_FOUND),
-    ERROR_NAME(NOT_SUPPORTED),
-    ERROR_NAME(OBJECT_MEMBER_DEFINED_TWICE),
-    ERROR_NAME(PARENTHESIS_EXPECTED),
-    ERROR_NAME(PRAGMA_FAILED),
-    ERROR_NAME(SEMICOLON_EXPECTED),
-    ERROR_NAME(SQUARE_BRACKETS_EXPECTED),
-    ERROR_NAME(STRING_EXPECTED),
-    ERROR_NAME(STATIC),
-    ERROR_NAME(TYPE_NOT_LINKED),
-    ERROR_NAME(UNKNOWN_ESCAPE_SEQUENCE),
-    ERROR_NAME(UNKNOWN_OPERATOR),
-    ERROR_NAME(UNTERMINATED_STRING),
-    ERROR_NAME(UNEXPECTED_EOF),
-    ERROR_NAME(UNEXPECTED_PUNCTUATION),
-    ERROR_NAME(UNEXPECTED_TOKEN),
-    ERROR_NAME(UNEXPECTED_DATABASE),
-    ERROR_NAME(UNEXPECTED_RC)
-};
-size_t const g_error_table_size = sizeof(g_error_table) / sizeof(g_error_table[0]);
-
-
-as2js::err_code_t str_to_error_code(as2js::String const& error_name)
-{
-    for(size_t idx(0); idx < g_error_table_size; ++idx)
-    {
-        if(error_name == g_error_table[idx].f_name)
-        {
-            return g_error_table[idx].f_code;
-        }
-    }
-    CPPUNIT_ASSERT(!"error code not found, test_as2js_parser.cpp bug");
-    return as2js::err_code_t::AS_ERR_NONE;
-}
-
 
 
 struct flg_to_string_t
@@ -978,6 +994,10 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     if(it_integer != child_object.end())
     {
         // we expect a string in this object
+        if(node->get_int64().get() != it_integer->second->get_int64().get())
+        {
+            std::cerr << "   Expecting " << it_integer->second->get_int64().get() << ", got " << node->get_int64().get() << " in the node\n";
+        }
         CPPUNIT_ASSERT(node->get_int64().get() == it_integer->second->get_int64().get());
     }
     else
@@ -992,6 +1012,10 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
         // we expect a string in this object
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
+        if(node->get_float64().get() != it_float->second->get_float64().get())
+        {
+            std::cerr << "   Expecting " << it_float->second->get_float64().get() << ", got " << node->get_float64().get() << " in the node\n";
+        }
         CPPUNIT_ASSERT(node->get_float64().get() == it_float->second->get_float64().get());
 #pragma GCC diagnostic pop
     }
