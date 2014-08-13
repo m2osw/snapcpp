@@ -33,6 +33,10 @@ include( CMakeParseArguments )
 find_program( MAKE_SOURCE_SCRIPT SnapBuildMakeSourcePackage.sh PATHS ${CMAKE_MODULE_PATH} )
 find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MODULE_PATH} )
 find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
+find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
+
+set( PBUILDER_RESULT_DIR "$ENV{HOME}/pbuilder"            CACHE PATH "Path where deb packages go." )
+set( PBUILDER_REPO_DIR   "$ENV{HOME}/pbuilder/local_repo" CACHE PATH "Local package source dir."   )
 
 function( ConfigureMakeProject )
 	set( options        USE_CONFIGURE_SCRIPT )
@@ -172,6 +176,15 @@ function( ConfigureMakeProject )
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Dputting debian package ${ARG_PROJECT_NAME} to launchpad."
 		)
+	add_custom_target(
+		${ARG_PROJECT_NAME}-pbuilder
+		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} 
+			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_pbuilder.log
+		COMMAND cp ${PBUILDER_RESULT_DIR}/${DEBUILD_PLATFORM}_result/*.deb ${PBUILDER_REPO_DIR}
+		DEPENDS ${ARG_PROJECT_NAME}-incdeps
+		WORKING_DIRECTORY ${SRC_DIR}
+		COMMENT "Building debian package ${ARG_PROJECT_NAME} with pbuilder-dist."
+		)
 
 	add_custom_target(
 		${ARG_PROJECT_NAME}-clean
@@ -183,10 +196,11 @@ function( ConfigureMakeProject )
 		DEPENDS ${ARG_PROJECT_NAME}-install
 		)
 
-	set_property( GLOBAL APPEND PROPERTY BUILD_TARGETS   ${ARG_PROJECT_NAME}         )
-	set_property( GLOBAL APPEND PROPERTY CLEAN_TARGETS   ${ARG_PROJECT_NAME}-clean   )
-	set_property( GLOBAL APPEND PROPERTY PACKAGE_TARGETS ${ARG_PROJECT_NAME}-debuild )
-	set_property( GLOBAL APPEND PROPERTY DPUT_TARGETS    ${ARG_PROJECT_NAME}-dput    )
+	set_property( GLOBAL APPEND PROPERTY BUILD_TARGETS    ${ARG_PROJECT_NAME}          )
+	set_property( GLOBAL APPEND PROPERTY CLEAN_TARGETS    ${ARG_PROJECT_NAME}-clean    )
+	set_property( GLOBAL APPEND PROPERTY PACKAGE_TARGETS  ${ARG_PROJECT_NAME}-debuild  )
+	set_property( GLOBAL APPEND PROPERTY DPUT_TARGETS     ${ARG_PROJECT_NAME}-dput     )
+	set_property( GLOBAL APPEND PROPERTY PBUILDER_TARGETS ${ARG_PROJECT_NAME}-pbuilder )
 endfunction()
 
 # vim: ts=4 sw=4 noexpandtab

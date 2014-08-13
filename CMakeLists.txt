@@ -162,10 +162,11 @@ ConfigureMakeProject( PROJECT_NAME cassview
     )
 
 
-get_property( BUILD_TARGETS   GLOBAL PROPERTY BUILD_TARGETS   )
-get_property( CLEAN_TARGETS   GLOBAL PROPERTY CLEAN_TARGETS   )
-get_property( PACKAGE_TARGETS GLOBAL PROPERTY PACKAGE_TARGETS )
-get_property( DPUT_TARGETS    GLOBAL PROPERTY DPUT_TARGETS    )
+get_property( BUILD_TARGETS    GLOBAL PROPERTY BUILD_TARGETS    )
+get_property( CLEAN_TARGETS    GLOBAL PROPERTY CLEAN_TARGETS    )
+get_property( PACKAGE_TARGETS  GLOBAL PROPERTY PACKAGE_TARGETS  )
+get_property( DPUT_TARGETS     GLOBAL PROPERTY DPUT_TARGETS     )
+get_property( PBUILDER_TARGETS GLOBAL PROPERTY PBUILDER_TARGETS )
 
 add_custom_target( build-all ALL
     DEPENDS ${BUILD_TARGETS}
@@ -179,6 +180,9 @@ add_custom_target( debuild
     )
 add_custom_target( dput
     DEPENDS ${DPUT_TARGETS}
+    )
+add_custom_target( pbuilder
+    DEPENDS ${PBUILDER_TARGETS}
     )
 
 # vim: ts=4 sw=4 et nocindent
