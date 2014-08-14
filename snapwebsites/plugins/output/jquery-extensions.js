@@ -1,6 +1,6 @@
 /*
  * Name: jquery-extensions
- * Version: 1.0.1
+ * Version: 1.0.2
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery (1.10)
@@ -52,43 +52,70 @@ jQuery.expr[':'].any = jQuery.expr.createPseudo(function(selector){
 });
 
 
-/** \brief Function to find the largest z-index in a group of div.
- *
- * This function applies a search on the current list of DOM items
- * and returns the maximum z-index value found.
- *
- * Usage:
- *
- * \code
- * var maxz;
- *
- * maxz = $("<selector>").maxZIndex();
- * \endcode
- *
- * This function should be used to assign a z-index to your popup windows
- * instead of randomly assigning numbers and hoping everything appears in
- * the correct order.
- *
- * The function always returns a valid integer. If it finds no valid z-index,
- * it returns zero (0).
- *
- * Source: http://stackoverflow.com/questions/5680770/jquery-find-the-highest-z-index
- *
- * \return The largest z-index found within the DOM items found in
- *         the \<selector\>.
- */
 jQuery.fn.extend({
-    maxZIndex: function(){
-        return Math.max.apply(null, jQuery(this).map(function(){
-            var z;
-
-            z = jQuery(this).css("z-index");
-            if(z == "auto")
+    /** \brief Function to find the largest z-index in a group of div.
+     *
+     * This function applies a search on the current list of DOM items
+     * and returns the maximum z-index value found.
+     *
+     * Usage:
+     *
+     * \code
+     * var maxz;
+     *
+     * maxz = $("<selector>").maxZIndex();
+     * \endcode
+     *
+     * This function should be used to assign a z-index to your popup windows
+     * instead of randomly assigning numbers and hoping everything appears in
+     * the correct order.
+     *
+     * The function always returns a valid integer. If it finds no valid
+     * z-index, it returns zero (0).
+     *
+     * Source: http://stackoverflow.com/questions/5680770/jquery-find-the-highest-z-index
+     *
+     * \return The largest z-index found within the DOM items found in
+     *         \<selector\> elements.
+     */
+    maxZIndex: function()
+    {
+        return Math.max.apply(null, jQuery(this).map(
+            function()
             {
-                return 0;
-            }
-            return parseInt(z, 10);
-        }));
+                var z;
+
+                z = jQuery(this).css("z-index");
+                if(z == "auto")
+                {
+                    return 0;
+                }
+                return parseInt(z, 10);
+            }));
+    },
+
+    /** \brief Check whether this jQuery object has items.
+     *
+     * This function returns true if the specified jQuery object has
+     * items attached to it.
+     *
+     * For example:
+     *
+     * \code
+     *      var items = jQuery("<selector>");
+     *
+     *      if(!items.exists())
+     *      {
+     *          alert("items missing...");
+     *          return;
+     *      }
+     * \endcode
+     *
+     * @return {boolean}  true if the jQuery object references at least one element.
+     */
+    exists: function()
+    {
+        return this.length !== 0;
     }
 });
 

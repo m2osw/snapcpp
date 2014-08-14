@@ -128,6 +128,27 @@ snapwebsites.base(snapwebsites.Popup);
 snapwebsites.Popup.PopupData;
 
 
+/** \brief The type used to create a message box.
+ *
+ * This type definition is used by the snapwebsites.Popup.messageBox()
+ * function.
+ *
+ * \li id -- the identifier for the message box popup.
+ *
+ * @typedef {{id: string,
+ *          title: string,
+ *          message: string,
+ *          buttons: Object.<{name: string, label: string}>,
+ *          top: !number,
+ *          left: !number,
+ *          width: !number,
+ *          height: !number,
+ *          html: !string,
+ *          callback: function(string)}}
+ */
+snapwebsites.Popup.PopupMessage;
+
+
 /** \brief A unique identifier.
  *
  * Each time a new popup is created it is given a new unique
@@ -535,10 +556,7 @@ snapwebsites.Popup.prototype.forget = function(popup)
  * that dialog. When clicked, the callback function is called with the
  * string parameter set to "close_button".
  *
- * @param {{title: string,
- *          message: string,
- *          buttons: Object.<{name: string, label: string}>,
- *          callback: function(string)}} msg  The message object with
+ * @param {snapwebsites.Popup.PopupMessage} msg  The message object with
  *    the message itself, buttons, and a callback function.
  */
 snapwebsites.Popup.prototype.messageBox = function(msg)

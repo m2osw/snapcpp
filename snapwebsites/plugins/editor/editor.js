@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.195
+ * Version: 0.0.3.197
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -714,6 +714,29 @@ snapwebsites.EditorSelection =
  * This base class already implements a few things that are common to
  * all widgets.
  *
+ * \code
+ *  class EditorWidgetTypeBase extends ServerAccessCallbacks
+ *  {
+ *  public:
+ *      EditorWidgetTypeBase();
+ *
+ *      // structure of data getting saved
+ *      class SaveData
+ *      {
+ *          html: string;
+ *          result: string;
+ *      };
+ *
+ *      virtual function serverAccessSuccess(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
+ *      virtual function serverAccessError(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
+ *      virtual function serverAccessComplete(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
+ *      abstract function getType() : string;
+ *      abstract function initializeWidget(editor_widget: Object) : void;
+ *      virtual function saving(editor_widget: Object, data: EditorWidgetTypeBase.SaveData) : void;
+ *      virtual function setValue(editor_widget: Object, value: Object) : void;
+ *  };
+ * \endcode
+ *
  * @constructor
  * @extends snapwebsites.ServerAccessCallbacks
  * @struct
@@ -866,6 +889,34 @@ snapwebsites.EditorWidgetTypeBase.prototype.saving = function(editor_widget, dat
 {
     // by default we do nothing (the defaults created by the
     // snapwebsites.EditorWidget.saving() function are good enough.)
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Save a new value in the specified editor widget.
+ *
+ * This function offers a way for programmers to dynamically change the
+ * value of a widget. You should never call the editor widget type
+ * function, instead use the setValue() function of the widget you
+ * want to change the value of (it will make sure that the modified
+ * flag is properly set.)
+ *
+ * Depending on the type, the value may be a string, a number, of some
+ * other type, this is why here it is marked as an object.
+ *
+ * @param {!Object} editor_widget  The concerned widget
+ * @param {!Object} value  The value to be saved.
+ *
+ * @return {boolean}  true if the value got set.
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.setValue = function(editor_widget, value) // virtual
+{
+    // by default we do nothing here, which means nothing gets set by
+    // default... a type must overload this function so something
+    // happens
+
+    return false;
 };
 /*jslint unparam: false */
 
@@ -2023,6 +2074,8 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      final function getWidgetContent() : jQuery;
  *      final function checkForBackgroundValue();
  *      static final function isEmptyBlock(html: string|jQuery) : boolean;
+ *      function getValue() : string;
+ *      function setValue(value: Object, changed: boolean) : Void;
  *
  * private:
  *      var editorBase_: EditorBase = null;
@@ -2456,6 +2509,74 @@ snapwebsites.EditorWidget.isEmptyBlock = function(html) // static
     //          the regex would return false on the empty string
     //
     return html.replace(/^(<br *\/?>| |\t|\n|\r|&nbsp;)+$/, "").length === 0;
+};
+
+
+/** \brief Retrieve the current value of this widget.
+ *
+ * This function returns the current value of the widget.
+ * Note that some widget do not really have a string as a value, you may
+ * want to check out the widget type you are handling to know what it
+ * returns.
+ *
+ * This is a helper function that is a replacement to the following:
+ *
+ * \code
+ *      // get the value at once
+ *      var value = widget.getValue();
+ *
+ *      // get the value and raw data
+ *      var data = widget.saving();
+ *      var value = data.result;
+ * \endcode
+ *
+ * @return {string}  The value of this widget.
+ */
+snapwebsites.EditorWidget.prototype.getValue = function()
+{
+    var data = this.saving();
+    return data.result;
+};
+
+
+/** \brief Set the value of the widget.
+ *
+ * This function sets the specified value as the new value of the widget.
+ *
+ * If the parameters 'changed' is set to true and the new value is
+ * different from the existing value, then the widget is marked as
+ * modified, otherwise the modified flag is not changed (it may
+ * actually get reset if you restore the value in this way.)
+ *
+ * @param {!Object} value  The new widget value.
+ * @param {!boolean} changed  Whether to mark the widget as modified.
+ *
+ * @return {boolean}  true if the value got set.
+ */
+snapwebsites.EditorWidget.prototype.setValue = function(value, changed)
+{
+    var data;
+
+    if(!this.widgetType_.setValue(this, value))
+    {
+        // could not even change the value
+        return false;
+    }
+    if(changed)
+    {
+        this.wasModified(true);
+    }
+    else
+    {
+        // programmer views this change as a 'current status' so we
+        // prevent the wasModified() from being true in this case
+        data = this.saving();
+        this.saved(data);
+    }
+    this.checkForBackgroundValue();
+
+    // it was set, whether it was modified is not our concern when returning
+    return true;
 };
 
 
@@ -3008,7 +3129,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
 /** \brief Snap EditorForm constructor.
  *
  * \code
- * class EditorForm : public EditorFormBase
+ * class EditorForm extends EditorFormBase
  * {
  * public:
  *      function EditorForm() : EditorForm;
@@ -3951,7 +4072,7 @@ snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
  * gets initialized automatically when this editor.js file gets included.
  *
  * \code
- * class Editor : public EditorBase
+ * class Editor extends EditorBase
  * {
  * public:
  *      function Editor() : Editor;
@@ -4345,6 +4466,22 @@ snapwebsites.Editor.prototype.registerWidgetType = function(widget_type) // virt
  * This base class already implements a few things that are common to
  * all widgets.
  *
+ * \code
+ *  class EditorWidgetType extends EditorWidgetTypeBase
+ *  {
+ *  public:
+ *      function EditorWidgetType();
+ *      virtual function initializeWidget(widget: Object) : void;
+ *      virtual function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
+ *      abstract function droppedImage(e: ProgressEvent, img: Image) : void;
+ *      abstract function droppedAttachment(e: ProgressEvent) : void;
+ *
+ *  private:
+ *      function droppedImageConvert_(e: ProgressEvent) : void;
+ *      function droppedFile_(e: ProgressEvent) : void;
+ *  };
+ * \endcode
+ *
  * @constructor
  * @extends {snapwebsites.EditorWidgetTypeBase}
  * @struct
@@ -4587,117 +4724,6 @@ snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget
 /*jslint unparam: false */ // noempty: true -- not support in current version
 
 
-
-/** \brief The constructor of the widget type Content Editable.
- *
- * This intermediate type offers an "Edit" button for the user to enter
- * editing mode on an area which by default won't be editable.
- *
- * Note that widgets can be marked as immediate in order to force the
- * editing capability of the widget and bypass this "Edit" button.
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetType}
- * @struct
- */
-snapwebsites.EditorWidgetTypeContentEditable = function()
-{
-    snapwebsites.EditorWidgetTypeContentEditable.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief EditorWidgetTypeContentEditable inherits from EditorWidgetType.
- *
- * This call ensures proper inheritance between the two classes.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites.EditorWidgetType);
-
-
-/** \brief Initialize an "Edit" button.
- *
- * This function adds an "Edit" button to the specified \p editor_widget.
- * By default most widgets don't get an edit button because they are
- * automatically editable (if not disabled or marked as read-only.)
- *
- * This is especially necessary on editable text areas where links would
- * otherwise not react to clicks since editable areas accept focus instead.
- *
- * @param {snapwebsites.EditorWidget} editor_widget  The widget being
- *                                                   initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = function(editor_widget)
-{
-    var w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
-        html,
-        edit_button_popup;
-
-    if(w.is(".immediate"))
-    {
-        // editor is immediately made available
-        // (most usual in editor forms)
-        c.attr("contenteditable", "true");
-        return;
-    }
-
-    // get the HTML of the "Edit" button
-    html = this.getEditButton();
-    if(!html)
-    {
-        return;
-    }
-
-    jQuery(/** @type {string} */ (html)).prependTo(w);
-
-    edit_button_popup = w.children(".editor-edit-button");
-
-    // user has to click Edit to activate the editor
-    edit_button_popup.children(".activate-editor").click(function()
-        {
-            // simulate a mouseleave so the edit button form gets hidden
-            // then remove the hover events
-            w.mouseleave().off("mouseenter mouseleave");
-
-            // make the child editable and give it the focus
-            // TODO: either select all or at least place the cursor at the
-            //       end in some cases...
-            c.attr("contenteditable", "true").focus();
-        });
-
-    // this adds the mouseenter and mouseleave events
-    w.hover(
-        function()  // mouseenter
-        {
-            edit_button_popup.fadeIn(150);
-        },
-        function()  // mouseleave
-        {
-            edit_button_popup.fadeOut(150);
-        });
-};
-
-
-/** \brief The HTML representing the "Edit" button.
- *
- * This function returns the default "Edit" button HTML. It can be
- * overridden in order to change the button.
- *
- * \note
- * If the function returns an empty string or false then it is assumed
- * that the object does not want an edit button (i.e. a checkmark object.)
- *
- * @return {!string|!boolean}  A string representing the HTML of the "Edit"
- *                             button or false.
- */
-snapwebsites.EditorWidgetType.prototype.getEditButton = function() // virtual
-{
-    return "<div class='editor-edit-button'><a class='activate-editor' href='#'>Edit</a></div>";
-};
-
-
 /** \brief Got the content of a dropped file.
  *
  * This function analyze the dropped file content. If recognized then we
@@ -4882,10 +4908,14 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
  *
  * This function handles an image as it was just dropped.
  *
+ * The default function is abstract (to simulate the abstractness, we throw
+ * here.) Only widgets with a type that overloads this function understand
+ * images.
+ *
  * @param {ProgressEvent} e  The reader data.
  * @param {Image} img  The image te user dropped.
  */
-snapwebsites.EditorWidgetType.prototype.droppedImage = function(e, img) // virtual
+snapwebsites.EditorWidgetType.prototype.droppedImage = function(e, img) // abstract
 {
     throw new Error("snapwebsites.EditorWidgetType.prototype.droppedImage() not overridden and thus it cannot handle the dropped image.");
 };
@@ -4899,11 +4929,132 @@ snapwebsites.EditorWidgetType.prototype.droppedImage = function(e, img) // virtu
  *
  * @param {ProgressEvent} e  The event.
  */
-snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // virtual
+snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // abstract
 {
     throw new Error("snapwebsites.EditorWidgetType.prototype.droppedAttachment() not overridden and thus it cannot handle the dropped attachment.");
 };
 /*jslint unparam: false */
+
+
+
+/** \brief The constructor of the widget type Content Editable.
+ *
+ * This intermediate type offers an "Edit" button for the user to enter
+ * editing mode on an area which by default won't be editable.
+ *
+ * Note that widgets can be marked as immediate in order to force the
+ * editing capability of the widget and bypass this "Edit" button.
+ *
+ * \code
+ *  class EditorWidgetTypeContentEditable extends EditorWidgetType
+ *  {
+ *  public:
+ *      function EditorWidgetTypeContentEditable();
+ *      function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
+ *      function getEditButton() : string;
+ *  };
+ * \endcode
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetType}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeContentEditable = function()
+{
+    snapwebsites.EditorWidgetTypeContentEditable.superClass_.constructor.call(this);
+
+    return this;
+};
+
+
+/** \brief EditorWidgetTypeContentEditable inherits from EditorWidgetType.
+ *
+ * This call ensures proper inheritance between the two classes.
+ */
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites.EditorWidgetType);
+
+
+/** \brief Initialize an "Edit" button.
+ *
+ * This function adds an "Edit" button to the specified \p editor_widget.
+ * By default most widgets don't get an edit button because they are
+ * automatically editable (if not disabled or marked as read-only.)
+ *
+ * This is especially necessary on editable text areas where links would
+ * otherwise not react to clicks since editable areas accept focus instead.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget being
+ *                                                   initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = function(editor_widget)
+{
+    var w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        html,
+        edit_button_popup;
+
+    if(w.is(".immediate"))
+    {
+        // editor is immediately made available
+        // (most usual in editor forms)
+        c.attr("contenteditable", "true");
+        return;
+    }
+
+    // get the HTML of the "Edit" button
+    html = this.getEditButton();
+    if(!html)
+    {
+        return;
+    }
+
+    jQuery(/** @type {string} */ (html)).prependTo(w);
+
+    edit_button_popup = w.children(".editor-edit-button");
+
+    // user has to click Edit to activate the editor
+    edit_button_popup.children(".activate-editor").click(function()
+        {
+            // simulate a mouseleave so the edit button form gets hidden
+            // then remove the hover events
+            w.mouseleave().off("mouseenter mouseleave");
+
+            // make the child editable and give it the focus
+            // TODO: either select all or at least place the cursor at the
+            //       end in some cases...
+            c.attr("contenteditable", "true").focus();
+        });
+
+    // this adds the mouseenter and mouseleave events
+    w.hover(
+        function()  // mouseenter
+        {
+            edit_button_popup.fadeIn(150);
+        },
+        function()  // mouseleave
+        {
+            edit_button_popup.fadeOut(150);
+        });
+};
+
+
+/** \brief The HTML representing the "Edit" button.
+ *
+ * This function returns the default "Edit" button HTML. It can be
+ * overridden in order to change the button.
+ *
+ * \note
+ * If the function returns an empty string or false then it is assumed
+ * that the object does not want an edit button (i.e. a checkmark object.)
+ *
+ * @return {!string|!boolean}  A string representing the HTML of the "Edit"
+ *                             button or false.
+ */
+snapwebsites.EditorWidgetTypeContentEditable.prototype.getEditButton = function() // virtual
+{
+    return "<div class='editor-edit-button'><a class='activate-editor' href='#'>Edit</a></div>";
+};
 
 
 
@@ -4912,6 +5063,15 @@ snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // virtu
  * This widget defines hidden elements in the editor forms. This is
  * an equivalent to the hidden input element of a standard form, although
  * our hidden widgets can include any type of text.
+ *
+ * \code
+ *  class EditorWidgetTypeHidden extends EditorWidgetType
+ *  {
+ *  public:
+ *      virtual function getType() : string;
+ *      virtual function initializeWidget(widget: Object) : void;
+ *  };
+ * \endcode
  *
  * @constructor
  * @extends {snapwebsites.EditorWidgetType}
@@ -5019,6 +5179,38 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
                 e.stopPropagation();
             }
         });
+};
+
+
+/** \brief Save a new value in the specified editor widget.
+ *
+ * This function offers a way for programmers to dynamically change the
+ * value of a widget. You should never call the editor widget type
+ * function, instead use the setValue() function of the widget you
+ * want to change the value of (it will make sure that the modified
+ * flag is properly set.)
+ *
+ * Depending on the type, the value may be a string, a number, of some
+ * other type, this is why here it is marked as an object.
+ *
+ * @param {!Object} widget  The concerned widget.
+ * @param {!Object|string|number} value  The value to be saved.
+ *
+ * @return {boolean}  true if the value gets changed.
+ */
+snapwebsites.EditorWidgetTypeTextEdit.prototype.setValue = function(widget, value)
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        c = editor_widget.getWidgetContent();
+
+    if(c.html() !== value)
+    {
+        c.empty();
+        c.append(/** @type {string} */ (value));
+        return true;
+    }
+
+    return false;
 };
 
 
@@ -5195,7 +5387,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 that.openDropdown_ = d;
 
                 // setup z-index
-                // (reset itself first so we don't just +1 each time)
+                // (reset itself first so we do not just +1 each time)
                 d.css("z-index", 0);
                 z = jQuery("div.zordered").maxZIndex() + 1;
                 d.css("z-index", z);
@@ -5236,7 +5428,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                 else
                 {
                     // canonicalize the undefined value
-                    value = null;
+                    value = null; // TBD should it be value = c.text(); ?
                     c.removeAttr("value");
                 }
 
@@ -5281,6 +5473,115 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
         this.openDropdown_.fadeOut(150);
         this.openDropdown_ = null;
     }
+};
+
+
+/** \brief Save a new value in the specified editor widget.
+ *
+ * This function offers a way for programmers to dynamically change the
+ * value of a dropdown widget. You should never call the editor widget
+ * type function, instead use the setValue() function of the widget you
+ * want to change the value of (it will make sure that the modified
+ * flag is properly set.)
+ *
+ * For a dropdown, the value parameter is expected to be one of the strings
+ * found in the list of items or a number. If it is a number, then that
+ * item gets selected (we use floor() to round any number down). If it
+ * is a string it searches the list of items for it and selects that item.
+ * If two or more items have the same label, then the first one is selected.
+ *
+ * If the index number is too large or the specified string is not found
+ * in the existing items, then nothing happens.
+ *
+ * @param {!Object} widget  The concerned widget.
+ * @param {!Object|string|number} value  The value to be saved.
+ *
+ * @return {boolean}  true if the value gets changed.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, value)
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        d = w.children(".dropdown-items"),
+        item = d.children(".dropdown-selection").children(".dropdown-item"),
+        that_item,
+        item_value,
+        widget_change;
+
+    if(typeof value === "number")
+    {
+        that_item = item.eq(value);
+    }
+    else
+    {
+        // Note: the filter may return more than one item, in that case
+        //       we simply ignore the extra items
+        that_item = item.filter(function()
+            {
+                var e = jQuery(this),
+                    attr = e.attr("value");
+
+                // note: if the value attribute is "" (an empty string)
+                //       then we algorithm fails here and anywhere else
+                //       we use that technique.
+                if(attr)
+                {
+                    // if we have an attribute, match that
+                    return attr === value;
+                }
+
+                // no 'value' attribute, attempt to match the HTML data
+                return e.html() === value;
+            }).eq(0);
+    }
+
+    // TODO: if this Dropdown supports editing (i.e. not just read-only)
+    //       then this value has to become the new value anyway.
+
+    // if already selected, in effect we are not changing anything
+    if(that_item.exists() && !that_item.hasClass("selected"))
+    {
+        item.removeClass("selected");
+        that_item.addClass("selected");
+
+        // then copy the item label to the "content" (line edit)
+        c.empty();
+        c.append(that_item.html());
+
+        // finally, get the resulting value if there is one
+        item_value = that_item.attr("value");
+        if(item_value)
+        {
+            c.attr("value", snapwebsites.castToString(value, "dropdown item value attribute"));
+        }
+        else
+        {
+            // canonicalize the undefined value
+            item_value = null; // TBD should it be item_value = value; ?
+            c.removeAttr("value");
+        }
+
+        // make that dropdown the currently active object
+        c.focus();
+        editor_widget.getEditorBase().setActiveElement(c);
+
+        // send an event for each change because the user
+        // make want to know even if the value was not actually
+        // modified
+        widget_change = jQuery.Event("widgetchange",
+            {
+                widget: editor_widget,
+                value: item_value
+            });
+        w.trigger(widget_change);
+
+        editor_widget.getEditorBase().checkModified();
+
+        return true;
+    }
+
+    return false;
 };
 
 

@@ -278,5 +278,20 @@ DTD of the XSLT 2.0.
 <!ELEMENT tooltip ANY>
 <!ATTLIST tooltip foo CDATA #REQUIRED>
 
+
+<!-- TODO: I'm not too sure how I can handle "special" tags used in
+           variable .xsl files; that .xsl file should declare those
+           in some way, but I do not know of a valid way to do that
+           for a DTD... -->
+
+<!ELEMENT sales-total-amount ANY>
+<!ELEMENT sales-total-count ANY>
+<!ELEMENT cpm-sales-total-amount ANY>
+<!ELEMENT cpm-sales-total-count ANY>
+<!ELEMENT coupons-total-amount ANY>
+<!ELEMENT labor-total-amount ANY>
+<!ELEMENT labor-total-count ANY>
+<!ELEMENT computed ANY>
+
 <!-- vim: ts=4 sw=4 et
 -->
