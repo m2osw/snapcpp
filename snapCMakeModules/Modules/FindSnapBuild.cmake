@@ -35,9 +35,6 @@ find_program( MAKE_DPUT_SCRIPT   SnapBuildDputPackage.sh       PATHS ${CMAKE_MOD
 find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MODULE_PATH} )
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
-set( PBUILDER_RESULT_DIR "$ENV{HOME}/pbuilder"            CACHE PATH "Path where deb packages go." )
-set( PBUILDER_REPO_DIR   "$ENV{HOME}/pbuilder/local_repo" CACHE PATH "Local package source dir."   )
-
 function( ConfigureMakeProject )
 	set( options        USE_CONFIGURE_SCRIPT )
 	set( oneValueArgs   PROJECT_NAME VERSION DISTFILE_PATH )
@@ -151,7 +148,13 @@ function( ConfigureMakeProject )
 	set( EMAIL_ADDY ${DEBUILD_EMAIL} )
 	separate_arguments( EMAIL_ADDY )
 	#
+	unset( PBUILDER_DEPS )
+	unset( DPUT_DEPS     )
 	if( ARG_DEPENDS )
+		foreach( DEP ${ARG_DEPENDS} )
+			list( APPEND PBUILDER_DEPS ${DEP}-pbuilder )
+			list( APPEND DPUT_DEPS     ${DEP}-dput     )
+		endforeach()
 		add_custom_target(
 			${ARG_PROJECT_NAME}-incdeps
 			COMMAND ${INC_DEPS_SCRIPT} ${CMAKE_SOURCE_DIR} ${ARG_PROJECT_NAME} ${ARG_DEPENDS}
@@ -173,6 +176,7 @@ function( ConfigureMakeProject )
 		${ARG_PROJECT_NAME}-dput
 		COMMAND ${MAKE_DPUT_SCRIPT}
 			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_dput.log
+		DEPENDS ${DPUT_DEPS}
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Dputting debian package ${ARG_PROJECT_NAME} to launchpad."
 		)
@@ -180,8 +184,7 @@ function( ConfigureMakeProject )
 		${ARG_PROJECT_NAME}-pbuilder
 		COMMAND ${PBUILDER_SCRIPT} ${DEBUILD_PLATFORM} 
 			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_pbuilder.log
-		COMMAND cp ${PBUILDER_RESULT_DIR}/${DEBUILD_PLATFORM}_result/*.deb ${PBUILDER_REPO_DIR}
-		DEPENDS ${ARG_PROJECT_NAME}-incdeps
+		DEPENDS ${PBUILDER_DEPS}
 		WORKING_DIRECTORY ${SRC_DIR}
 		COMMENT "Building debian package ${ARG_PROJECT_NAME} with pbuilder-dist."
 		)
