@@ -63,6 +63,7 @@ public:
     void                        create_ajax_result(content::path_info_t& ipath, bool const success);
     void                        ajax_output();
 
+    void                        ajax_failure();
     void                        ajax_redirect(QString const& uri, QString const& target = "");
     void                        ajax_append_data(QString const& name, QByteArray const& data);
 

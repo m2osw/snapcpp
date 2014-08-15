@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.11
+ * Version: 0.1.5.12
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -596,7 +596,7 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
 
     if(msg.length == 0)
     {
-        // that <div> does not exist yet so create it
+        // that <div class="user-messages"> does not exist yet so create it
         jQuery("body").append("<div class='user-messages zordered'><div class='close-button'><img src='/images/snap/close-button.png'/></div></div>");
         msg = jQuery("div.user-messages");
         call_handle = true;
@@ -609,6 +609,10 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
         {
             // remove old errors
             msg.empty();
+
+            // TODO: we probably want to not delete the close button instead
+            //       of re-adding it each time...
+            msg.append("<div class='close-button'><img src='/images/snap/close-button.png'/></div>");
         }
     }
 

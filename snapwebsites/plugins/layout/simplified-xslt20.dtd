@@ -126,7 +126,10 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT b ANY>
 <!ELEMENT br EMPTY>
+
 <!ELEMENT body ANY>
+<!ATTLIST body class CDATA #IMPLIED
+               popup CDATA #IMPLIED>
 
 <!ELEMENT div ANY>
 <!ATTLIST div class CDATA #IMPLIED

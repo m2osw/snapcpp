@@ -21,26 +21,26 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:xs="http://www.w3.org/2001/XMLSchema"
 															xmlns:fn="http://www.w3.org/2005/xpath-functions"
 															xmlns:snap="snap:snap">
-  <!-- include system data -->
-  <xsl:include href="functions"/>
-  <xsl:include href="html-header"/>
+	<!-- include system data -->
+	<xsl:include href="functions"/>
+	<xsl:include href="html-header"/>
 
-  <!-- some special variables to define the theme -->
+	<!-- some special variables to define the theme -->
 	<xsl:param name="layout-name">no-theme</xsl:param>
 	<xsl:param name="layout-area">theme</xsl:param>
-	<xsl:param name="layout-modified">2014-03-27 21:43:58</xsl:param>
+	<xsl:param name="layout-modified">2014-08-15 15:19:58</xsl:param>
 
 	<xsl:template match="snap">
 		<html>
-      <xsl:call-template name="snap:html-attributes"/>
+			<xsl:call-template name="snap:html-attributes"/>
 			<head>
-        <xsl:call-template name="snap:html-header"/>
+				<xsl:call-template name="snap:html-header"/>
 			</head>
 			<xsl:apply-templates select="page/body"/>
 		</html>
 	</xsl:template>
 	<xsl:template match="page/body">
-		<body>
+		<body popup="popup">
 			<xsl:call-template name="snap:body-attributes"/>
 			<div class="page">
 				<div class="header"><h1><xsl:choose>

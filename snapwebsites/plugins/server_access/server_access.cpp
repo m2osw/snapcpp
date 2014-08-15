@@ -352,6 +352,45 @@ void server_access::ajax_output()
 }
 
 
+/** \brief Change the request in a failure.
+ *
+ * This function changes an AJAX request in a failure. It does nothing
+ * if the request is already marked as such.
+ *
+ * This function is particularly useful when the create_ajax_result() is
+ * called and the on_process_ajax_result() signal generates an error.
+ * From the on_process_ajax_result() you cannot call create_ajax_result(),
+ * since it would generate an infinite loop.
+ *
+ * \note
+ * At this point there is no function to go the other way around.
+ *
+ * \note
+ * If the ajax_redirect() function was called earlier, then the redirect
+ * gets removed by this ajax_failure() function.
+ *
+ * \note
+ * The create_ajax_result() function can only be called once. The second
+ * time it throws an error.
+ */
+void server_access::ajax_failure()
+{
+    if(f_success)
+    {
+        // it is currently a success, change it to a failure
+        f_success = false;
+
+        // make sure no redirect is in place
+        QDomElement snap_tag(f_ajax.documentElement());
+        QDomElement redirect_tag(snap_dom::get_child_element(snap_tag, "redirect"));
+        if(!redirect_tag.isNull())
+        {
+            snap_tag.removeChild(redirect_tag);
+        }
+    }
+}
+
+
 /** \brief Setup a redirect.
  *
  * This function defines an AJAX redirect.
