@@ -49,8 +49,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             test="$action = 'edit'">snap-editor </xsl:if>editable dropped-file-with-preview-box <xsl:value-of
             select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
             test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
-            test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of
-            select="classes"/></xsl:attribute>
+            test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
+            select="concat(' ', classes)"/></xsl:attribute>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" objects have "display: none"
                a script shows them on load once ready AND if the value is empty
@@ -117,7 +117,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             select="$name"/><xsl:if test="@drop or /editor-form/drop"> drop</xsl:if><xsl:if
             test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
             test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of
-            select="classes"/></xsl:attribute>
+            select="concat(' ', classes)"/></xsl:attribute>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" objects have "display: none"
                a script shows them on load once ready AND if the value is empty
@@ -173,7 +173,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div field_type="dropdown">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of select="classes"/> dropdown <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of
+          select="classes"/> dropdown <xsl:value-of select="$name"/><xsl:if
+          test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+          test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
+          test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" has "display: none"
                a script shows them on load once ready AND if the value is empty
@@ -261,7 +265,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div field_type="checkmark">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of select="classes"/> checkmark <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of
+          select="classes"/> checkmark <xsl:value-of select="$name"/><xsl:if
+          test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+          test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
+          test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
@@ -317,7 +325,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:attribute name="class"><xsl:if
               test="$action = 'edit'">snap-editor </xsl:if>editable text-edit <xsl:value-of select="$name"/><xsl:if
               test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
-              test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/><xsl:if
+              test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
+              select="concat(' ', classes)"/><xsl:if
               test="state = 'disabled'"> disabled</xsl:if><xsl:if
               test="state = 'read-only'"> read-only</xsl:if></xsl:attribute>
         <xsl:if test="@state = 'read-only' or @state = 'disabled'">
@@ -387,7 +396,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <div field_type="line-edit">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
-        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable line-edit <xsl:value-of select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of select="classes"/><xsl:if test="state = 'disabled'"> disabled</xsl:if><xsl:if test="state = 'read-only'"> read-only</xsl:if></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable line-edit <xsl:value-of
+          select="$name"/><xsl:if test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+          test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
+          select="concat(' ', classes)"/><xsl:if test="state = 'disabled'"> disabled</xsl:if><xsl:if
+          test="state = 'read-only'"> read-only</xsl:if></xsl:attribute>
         <xsl:if test="@state = 'read-only' or @state = 'disabled'">
           <!-- avoid spellcheck of non-editable widgets -->
           <xsl:attribute name="spellcheck">false</xsl:attribute>
@@ -455,7 +468,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <widget path="{$path}">
       <a field_type="button">
         <!-- name required as a field name? xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute-->
-        <xsl:attribute name="class"><xsl:value-of select="classes"/> button <xsl:value-of select="$name"/><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <xsl:attribute name="class"><xsl:value-of select="classes"/> button <xsl:value-of
+          select="$name"/><xsl:if test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
+          test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
           <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
         </xsl:if>
