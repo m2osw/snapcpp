@@ -777,6 +777,41 @@ bool operator == (char const *str, String const& string)
 }
 
 
+/** \brief Compare this String against a char const * string.
+ *
+ * This function compares an ISO-8859-1 string against this String.
+ * If you have a UTF-8 string, make sure to use from_utf8() first
+ * and then compare two String's against each other.
+ *
+ * \param[in] str  The string to compare as ISO-8859-1.
+ *
+ * \return true if both strings are not equal.
+ */
+bool String::operator != (char const *str) const
+{
+    String s(str);
+    return *this != s;
+}
+
+
+/** \brief Compare a String against a char const * string.
+ *
+ * This function compares an ISO-8859-1 string against a String.
+ * If you have a UTF-8 string, make sure to use from_utf8() first
+ * and then compare two String's against each other.
+ *
+ * \param[in] str  The string to compare as ISO-8859-1.
+ * \param[in] string  The String to compare with.
+ *
+ * \return true if both strings are not equal.
+ */
+bool operator != (char const *str, String const& string)
+{
+    String s(str);
+    return s != string;
+}
+
+
 /** \brief Check validity of the string.
  *
  * This function checks all the characters for validity. This is based

@@ -291,6 +291,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str1.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str1);
         CPPUNIT_ASSERT(str1 == "");
+        CPPUNIT_ASSERT(!("" != str1));
+        CPPUNIT_ASSERT(!(str1 != ""));
         CPPUNIT_ASSERT(str1.valid());
 
         as2js::String str2("");
@@ -299,6 +301,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str2.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str2);
         CPPUNIT_ASSERT(str2 == "");
+        CPPUNIT_ASSERT(!("" != str2));
+        CPPUNIT_ASSERT(!(str2 != ""));
         CPPUNIT_ASSERT(str2.valid());
 
         as2js::String str3(str1); // and a copy
@@ -307,6 +311,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str3.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str3);
         CPPUNIT_ASSERT(str3 == "");
+        CPPUNIT_ASSERT(!("" != str3));
+        CPPUNIT_ASSERT(!(str3 != ""));
         CPPUNIT_ASSERT(str3.valid());
 
         std::string std_empty;
@@ -316,6 +322,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str4.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str4);
         CPPUNIT_ASSERT(str4 == "");
+        CPPUNIT_ASSERT(!("" != str4));
+        CPPUNIT_ASSERT(!(str4 != ""));
         CPPUNIT_ASSERT(str4.valid());
 
         as2js::String str5;
@@ -325,6 +333,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str5.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str5);
         CPPUNIT_ASSERT(str5 == "");
+        CPPUNIT_ASSERT(!("" != str5));
+        CPPUNIT_ASSERT(!(str5 != ""));
         CPPUNIT_ASSERT(str5.valid());
 
         as2js::String str6;
@@ -334,6 +344,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str6.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str6);
         CPPUNIT_ASSERT(str6 == "");
+        CPPUNIT_ASSERT(!("" != str6));
+        CPPUNIT_ASSERT(!(str6 != ""));
         CPPUNIT_ASSERT(str6.valid());
 
         as2js::String str7;
@@ -343,6 +355,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str7.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str7);
         CPPUNIT_ASSERT(str7 == "");
+        CPPUNIT_ASSERT(!("" != str7));
+        CPPUNIT_ASSERT(!(str7 != ""));
         CPPUNIT_ASSERT(str7.valid());
 
         as2js::String str8;
@@ -352,6 +366,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str8.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str8);
         CPPUNIT_ASSERT(str8 == "");
+        CPPUNIT_ASSERT(!("" != str8));
+        CPPUNIT_ASSERT(!(str8 != ""));
         CPPUNIT_ASSERT(str8.valid());
 
         char const *null_char_ptr(nullptr);
@@ -360,8 +376,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str9.empty());
         CPPUNIT_ASSERT(str9.length() == 0);
         CPPUNIT_ASSERT(str9.utf8_length() == 0);
-        CPPUNIT_ASSERT("" == str9);
-        CPPUNIT_ASSERT(str9 == "");
+        CPPUNIT_ASSERT(!("" != str9));
+        CPPUNIT_ASSERT(!(str9 != ""));
         CPPUNIT_ASSERT(str9.valid());
 
         as2js::String str10;
@@ -372,6 +388,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(str10.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str10);
         CPPUNIT_ASSERT(str10 == "");
+        CPPUNIT_ASSERT(!("" != str10));
+        CPPUNIT_ASSERT(!(str10 != ""));
         CPPUNIT_ASSERT(str10.valid());
     }
 
@@ -384,7 +402,9 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bad_start) == str1.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bad_start, str1.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bad_start == str1);
+        CPPUNIT_ASSERT(!(iso8859_1_bad_start != str1));
         CPPUNIT_ASSERT(str1 == iso8859_1_bad_start);
+        CPPUNIT_ASSERT(!(str1 != iso8859_1_bad_start));
         CPPUNIT_ASSERT(str1.valid());
 
         // then copy operator
@@ -392,7 +412,9 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bad_start) == str2.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bad_start, str2.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bad_start == str2);
+        CPPUNIT_ASSERT(!(iso8859_1_bad_start != str2));
         CPPUNIT_ASSERT(str2 == iso8859_1_bad_start);
+        CPPUNIT_ASSERT(!(str2 != iso8859_1_bad_start));
         CPPUNIT_ASSERT(str2.valid());
 
         // copy from std::string
@@ -401,7 +423,9 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bad_start) == str3.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bad_start, str3.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bad_start == str3);
+        CPPUNIT_ASSERT(!(iso8859_1_bad_start != str3));
         CPPUNIT_ASSERT(str3 == iso8859_1_bad_start);
+        CPPUNIT_ASSERT(!(str3 != iso8859_1_bad_start));
         CPPUNIT_ASSERT(str3.valid());
 
         as2js::String str4;
@@ -409,14 +433,18 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bad_start) == str4.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bad_start, str4.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bad_start == str4);
+        CPPUNIT_ASSERT(!(iso8859_1_bad_start != str4));
         CPPUNIT_ASSERT(str4 == iso8859_1_bad_start);
+        CPPUNIT_ASSERT(!(str4 != iso8859_1_bad_start));
         CPPUNIT_ASSERT(str4.valid());
 
         as2js::String str5;
         CPPUNIT_ASSERT(&(str5 = iso8859_1_bad_start) == &str5);
         CPPUNIT_ASSERT(strlen(iso8859_1_bad_start) == str5.length());
         CPPUNIT_ASSERT(iso8859_1_bad_start == str5);
+        CPPUNIT_ASSERT(!(iso8859_1_bad_start != str5));
         CPPUNIT_ASSERT(str5 == iso8859_1_bad_start);
+        CPPUNIT_ASSERT(!(str5 != iso8859_1_bad_start));
         CPPUNIT_ASSERT(str5.valid());
     }
 
@@ -427,7 +455,9 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bom_and_bad_start) == str1.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bom_and_bad_start, str1.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bom_and_bad_start == str1);
+        CPPUNIT_ASSERT(!(iso8859_1_bom_and_bad_start != str1));
         CPPUNIT_ASSERT(str1 == iso8859_1_bom_and_bad_start);
+        CPPUNIT_ASSERT(!(str1 != iso8859_1_bom_and_bad_start));
         CPPUNIT_ASSERT(str1.valid());
 
         // then copy operator
@@ -435,7 +465,9 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bom_and_bad_start) == str2.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bom_and_bad_start, str2.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bom_and_bad_start == str2);
+        CPPUNIT_ASSERT(!(iso8859_1_bom_and_bad_start != str2));
         CPPUNIT_ASSERT(str2 == iso8859_1_bom_and_bad_start);
+        CPPUNIT_ASSERT(!(str2 != iso8859_1_bom_and_bad_start));
         CPPUNIT_ASSERT(str2.valid());
 
         // copy from std::string
@@ -444,7 +476,9 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bom_and_bad_start) == str3.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bom_and_bad_start, str3.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bom_and_bad_start == str3);
+        CPPUNIT_ASSERT(!(iso8859_1_bom_and_bad_start != str3));
         CPPUNIT_ASSERT(str3 == iso8859_1_bom_and_bad_start);
+        CPPUNIT_ASSERT(!(str3 != iso8859_1_bom_and_bad_start));
         CPPUNIT_ASSERT(str3.valid());
 
         as2js::String str4;
@@ -452,7 +486,7 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bom_and_bad_start) == str4.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bom_and_bad_start, str4.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bom_and_bad_start == str4);
-        CPPUNIT_ASSERT(str4 == iso8859_1_bom_and_bad_start);
+        CPPUNIT_ASSERT(!(str4 != iso8859_1_bom_and_bad_start));
         CPPUNIT_ASSERT(str4.valid());
 
         as2js::String str5;
@@ -460,7 +494,9 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(strlen(iso8859_1_bom_and_bad_start) == str5.length());
         CPPUNIT_ASSERT(compare_chars(iso8859_1_bom_and_bad_start, str5.c_str()));
         CPPUNIT_ASSERT(iso8859_1_bom_and_bad_start == str5);
+        CPPUNIT_ASSERT(!(iso8859_1_bom_and_bad_start != str5));
         CPPUNIT_ASSERT(str5 == iso8859_1_bom_and_bad_start);
+        CPPUNIT_ASSERT(!(str5 != iso8859_1_bom_and_bad_start));
         CPPUNIT_ASSERT(str5.valid());
     }
 
@@ -480,6 +516,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(compare_chars(buf, str1.c_str()));
         CPPUNIT_ASSERT(buf == str1);
         CPPUNIT_ASSERT(str1 == buf);
+        CPPUNIT_ASSERT(!(buf != str1));
+        CPPUNIT_ASSERT(!(str1 != buf));
         CPPUNIT_ASSERT(str1.valid());
 
         // then copy operator
@@ -488,6 +526,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(compare_chars(buf, str1.c_str()));
         CPPUNIT_ASSERT(buf == str2);
         CPPUNIT_ASSERT(str2 == buf);
+        CPPUNIT_ASSERT(!(buf != str2));
+        CPPUNIT_ASSERT(!(str2 != buf));
         CPPUNIT_ASSERT(str2.valid());
 
         // copy from std::string
@@ -497,6 +537,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(compare_chars(buf, str3.c_str()));
         CPPUNIT_ASSERT(buf == str3);
         CPPUNIT_ASSERT(str3 == buf);
+        CPPUNIT_ASSERT(!(buf != str3));
+        CPPUNIT_ASSERT(!(str3 != buf));
         CPPUNIT_ASSERT(str3.valid());
 
         as2js::String str4;
@@ -505,6 +547,8 @@ void As2JsStringUnitTests::test_iso88591()
         CPPUNIT_ASSERT(compare_chars(buf, str4.c_str()));
         CPPUNIT_ASSERT(buf == str4);
         CPPUNIT_ASSERT(str4 == buf);
+        CPPUNIT_ASSERT(!(buf != str4));
+        CPPUNIT_ASSERT(!(str4 != buf));
         CPPUNIT_ASSERT(str4.valid());
     }
 
@@ -539,6 +583,8 @@ void As2JsStringUnitTests::test_iso88591()
             CPPUNIT_ASSERT(compare_chars(buf, str1.c_str()));
             CPPUNIT_ASSERT(buf == str1);
             CPPUNIT_ASSERT(str1 == buf);
+            CPPUNIT_ASSERT(!(buf != str1));
+            CPPUNIT_ASSERT(!(str1 != buf));
             CPPUNIT_ASSERT(str1.valid());
 
             {
@@ -555,6 +601,8 @@ void As2JsStringUnitTests::test_iso88591()
             CPPUNIT_ASSERT(compare_chars(buf, str1.c_str()));
             CPPUNIT_ASSERT(buf == str2);
             CPPUNIT_ASSERT(str2 == buf);
+            CPPUNIT_ASSERT(!(buf != str2));
+            CPPUNIT_ASSERT(!(str2 != buf));
             CPPUNIT_ASSERT(str2.valid());
 
             // copy from std::string
@@ -564,6 +612,8 @@ void As2JsStringUnitTests::test_iso88591()
             CPPUNIT_ASSERT(compare_chars(buf, str3.c_str()));
             CPPUNIT_ASSERT(buf == str3);
             CPPUNIT_ASSERT(str3 == buf);
+            CPPUNIT_ASSERT(!(buf != str3));
+            CPPUNIT_ASSERT(!(str3 != buf));
             CPPUNIT_ASSERT(str3.valid());
 
             // also test the from_char(), should get the same result
@@ -573,6 +623,8 @@ void As2JsStringUnitTests::test_iso88591()
             CPPUNIT_ASSERT(compare_chars(buf, str4.c_str()));
             CPPUNIT_ASSERT(buf == str4);
             CPPUNIT_ASSERT(str4 == buf);
+            CPPUNIT_ASSERT(!(buf != str4));
+            CPPUNIT_ASSERT(!(str4 != buf));
             CPPUNIT_ASSERT(str4.valid());
 
             // also test the from_char(), should get the same result
@@ -582,6 +634,8 @@ void As2JsStringUnitTests::test_iso88591()
             CPPUNIT_ASSERT(compare_chars(buf, str5.c_str()));
             CPPUNIT_ASSERT(buf == str5);
             CPPUNIT_ASSERT(str5 == buf);
+            CPPUNIT_ASSERT(!(buf != str5));
+            CPPUNIT_ASSERT(!(str5 != buf));
             CPPUNIT_ASSERT(str5.valid());
 
             // try truncation the input string
@@ -599,6 +653,8 @@ void As2JsStringUnitTests::test_iso88591()
                 CPPUNIT_ASSERT(compare_chars(buf, str1_1.c_str()));
                 CPPUNIT_ASSERT(buf == str1_1);
                 CPPUNIT_ASSERT(str1_1 == buf);
+                CPPUNIT_ASSERT(!(buf != str1_1));
+                CPPUNIT_ASSERT(!(str1_1 != buf));
                 buf[end] = save1_1;
                 CPPUNIT_ASSERT(str1_1.valid());
 
@@ -610,6 +666,8 @@ void As2JsStringUnitTests::test_iso88591()
                 CPPUNIT_ASSERT(compare_chars(buf, str1_2.c_str()));
                 CPPUNIT_ASSERT(buf == str1_2);
                 CPPUNIT_ASSERT(str1_2 == buf);
+                CPPUNIT_ASSERT(!(buf != str1_2));
+                CPPUNIT_ASSERT(!(str1_2 != buf));
                 buf[end] = save1_2;
                 CPPUNIT_ASSERT(str1_2.valid());
             }
@@ -630,6 +688,8 @@ void As2JsStringUnitTests::test_iso88591()
                 CPPUNIT_ASSERT(compare_chars(buf, str1.c_str()));
                 CPPUNIT_ASSERT(buf == str1);
                 CPPUNIT_ASSERT(str1 == buf);
+                CPPUNIT_ASSERT(!(buf != str1));
+                CPPUNIT_ASSERT(!(str1 != buf));
                 CPPUNIT_ASSERT(str1.valid());
 
                 char buf2_2[64 * 1024 + 10];
@@ -642,6 +702,8 @@ void As2JsStringUnitTests::test_iso88591()
                 CPPUNIT_ASSERT(compare_chars(buf2_2, str2_2.c_str()));
                 CPPUNIT_ASSERT(buf2_2 == str2_2);
                 CPPUNIT_ASSERT(str2_2 == buf2_2);
+                CPPUNIT_ASSERT(!(buf2_2 != str2_2));
+                CPPUNIT_ASSERT(!(str2_2 != buf2_2));
                 CPPUNIT_ASSERT(str2_2.valid());
 
                 as2js::String str2_3("foo: ");
@@ -652,6 +714,8 @@ void As2JsStringUnitTests::test_iso88591()
                 CPPUNIT_ASSERT(compare_chars(buf2_2, str2_3.c_str()));
                 CPPUNIT_ASSERT(buf2_2 == str2_3);
                 CPPUNIT_ASSERT(str2_3 == buf2_2);
+                CPPUNIT_ASSERT(!(buf2_2 != str2_3));
+                CPPUNIT_ASSERT(!(str2_3 != buf2_2));
                 CPPUNIT_ASSERT(str2_3.valid());
             }
         }
@@ -675,6 +739,8 @@ void As2JsStringUnitTests::test_utf8()
         CPPUNIT_ASSERT(str1.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str1);
         CPPUNIT_ASSERT(str1 == "");
+        CPPUNIT_ASSERT(!("" != str1));
+        CPPUNIT_ASSERT(!(str1 != ""));
         CPPUNIT_ASSERT(str1.valid());
     }
 
@@ -705,6 +771,8 @@ void As2JsStringUnitTests::test_utf8()
             CPPUNIT_ASSERT(max_chars == str1.length());
             CPPUNIT_ASSERT(buf == str1);
             CPPUNIT_ASSERT(str1 == buf);
+            CPPUNIT_ASSERT(!(buf != str1));
+            CPPUNIT_ASSERT(!(str1 != buf));
             CPPUNIT_ASSERT(str1.valid());
             CPPUNIT_ASSERT(str1.utf8_length() == static_cast<ssize_t>(mbs.length()));
             CPPUNIT_ASSERT(mbs == str1.to_utf8());
@@ -714,6 +782,8 @@ void As2JsStringUnitTests::test_utf8()
             CPPUNIT_ASSERT(max_chars == str2.length());
             CPPUNIT_ASSERT(buf == str2);
             CPPUNIT_ASSERT(str2 == buf);
+            CPPUNIT_ASSERT(!(buf != str2));
+            CPPUNIT_ASSERT(!(str2 != buf));
             CPPUNIT_ASSERT(str2.valid());
             CPPUNIT_ASSERT(str2.utf8_length() == static_cast<ssize_t>(mbs.length()));
             CPPUNIT_ASSERT(mbs == str2.to_utf8());
@@ -749,6 +819,8 @@ void As2JsStringUnitTests::test_utf8()
                     CPPUNIT_ASSERT(out.length() == str3.length());
                     CPPUNIT_ASSERT(out == str3);
                     CPPUNIT_ASSERT(str3 == out);
+                    CPPUNIT_ASSERT(!(out != str3));
+                    CPPUNIT_ASSERT(!(str3 != out));
                     CPPUNIT_ASSERT(str3.valid());
                     CPPUNIT_ASSERT(str3.utf8_length() == static_cast<ssize_t>(k));
                     CPPUNIT_ASSERT(mbs.substr(0, k) == str3.to_utf8());
@@ -760,6 +832,8 @@ void As2JsStringUnitTests::test_utf8()
                     CPPUNIT_ASSERT(compare_chars("", str3.c_str()));
                     CPPUNIT_ASSERT("" == str3);
                     CPPUNIT_ASSERT(str3 == "");
+                    CPPUNIT_ASSERT(!("" != str3));
+                    CPPUNIT_ASSERT(!(str3 != ""));
                     CPPUNIT_ASSERT(str3.valid());
                     CPPUNIT_ASSERT(str3.utf8_length() == 0);
                     CPPUNIT_ASSERT("" == str3.to_utf8());
@@ -798,6 +872,8 @@ void As2JsStringUnitTests::test_utf8()
             CPPUNIT_ASSERT(1 == str1.length());
             CPPUNIT_ASSERT(buf == str1);
             CPPUNIT_ASSERT(str1 == buf);
+            CPPUNIT_ASSERT(!(buf != str1));
+            CPPUNIT_ASSERT(!(str1 != buf));
             CPPUNIT_ASSERT(str1.valid());
             CPPUNIT_ASSERT(str1.utf8_length() == static_cast<ssize_t>(mbs.length()));
             CPPUNIT_ASSERT(mbs == str1.to_utf8());
@@ -807,6 +883,8 @@ void As2JsStringUnitTests::test_utf8()
             CPPUNIT_ASSERT(1 == str2.length());
             CPPUNIT_ASSERT(buf == str2);
             CPPUNIT_ASSERT(str2 == buf);
+            CPPUNIT_ASSERT(!(buf != str2));
+            CPPUNIT_ASSERT(!(str2 != buf));
             CPPUNIT_ASSERT(str2.valid());
             CPPUNIT_ASSERT(str2.utf8_length() == static_cast<ssize_t>(mbs.length()));
             CPPUNIT_ASSERT(mbs == str2.to_utf8());
@@ -953,6 +1031,7 @@ void As2JsStringUnitTests::test_utf8()
         CPPUNIT_ASSERT(str2.from_utf8(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str2.length() == 9); // not modified
         CPPUNIT_ASSERT(str2 == "old value"); // not modified
+        CPPUNIT_ASSERT(!(str2 != "old value")); // not modified
     }
 
     // any value that represents a negative number (int32_t) is
@@ -987,6 +1066,8 @@ void As2JsStringUnitTests::test_utf16()
         CPPUNIT_ASSERT(str1.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str1);
         CPPUNIT_ASSERT(str1 == "");
+        CPPUNIT_ASSERT(!("" != str1));
+        CPPUNIT_ASSERT(!(str1 != ""));
         CPPUNIT_ASSERT(str1.valid());
 
         as2js::String str2;
@@ -997,6 +1078,8 @@ void As2JsStringUnitTests::test_utf16()
         CPPUNIT_ASSERT(str2.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str2);
         CPPUNIT_ASSERT(str2 == "");
+        CPPUNIT_ASSERT(!("" != str2));
+        CPPUNIT_ASSERT(!(str2 != ""));
         CPPUNIT_ASSERT(str2.valid());
     }
 
@@ -1047,6 +1130,7 @@ void As2JsStringUnitTests::test_utf16()
             as2js::String str2(str1);
             CPPUNIT_ASSERT(1 == str2.length());
             CPPUNIT_ASSERT(str1 == str2);
+            CPPUNIT_ASSERT(!(str1 != str2));
             CPPUNIT_ASSERT(str2.valid());
 
             // now test the += of a wchar_t
@@ -1068,6 +1152,7 @@ void As2JsStringUnitTests::test_utf16()
             CPPUNIT_ASSERT(&(str6 = str2) == &str6);
             CPPUNIT_ASSERT(1 == str6.length());
             CPPUNIT_ASSERT(str2 == str6);
+            CPPUNIT_ASSERT(!(str2 != str6));
             CPPUNIT_ASSERT(str6.valid());
         }
 
@@ -1087,6 +1172,7 @@ void As2JsStringUnitTests::test_utf16()
                 as2js::String str4(str3);
                 CPPUNIT_ASSERT(1 == str4.length());
                 CPPUNIT_ASSERT(str3 == str4);
+                CPPUNIT_ASSERT(!(str3 != str4));
                 CPPUNIT_ASSERT(str4.valid());
 
                 std::wstring wstr(utf16_to_append);
@@ -1148,6 +1234,9 @@ void As2JsStringUnitTests::test_utf16()
                 CPPUNIT_ASSERT(str9 == str9);
                 CPPUNIT_ASSERT(str9 == str_cmp);
                 CPPUNIT_ASSERT(str_cmp == str_cmp);
+                CPPUNIT_ASSERT(!(str9 != str9));
+                CPPUNIT_ASSERT(!(str9 != str_cmp));
+                CPPUNIT_ASSERT(!(str_cmp != str_cmp));
                 CPPUNIT_ASSERT(str9.valid());
 
                 std::wstring wstd(buf);
@@ -1157,6 +1246,9 @@ void As2JsStringUnitTests::test_utf16()
                 CPPUNIT_ASSERT(str10 == str10);
                 CPPUNIT_ASSERT(str10 == str_cmp);
                 CPPUNIT_ASSERT(str_cmp == str_cmp);
+                CPPUNIT_ASSERT(!(str10 != str10));
+                CPPUNIT_ASSERT(!(str10 != str_cmp));
+                CPPUNIT_ASSERT(!(str_cmp != str_cmp));
                 CPPUNIT_ASSERT(str10.valid());
             }
         }
@@ -1181,12 +1273,14 @@ void As2JsStringUnitTests::test_utf16()
             CPPUNIT_ASSERT(str7.from_wchar(buf) == as2js::String::conversion_result_t::STRING_END);
             CPPUNIT_ASSERT(8 == str7.length());
             CPPUNIT_ASSERT("original" == str7);
+            CPPUNIT_ASSERT(!("original" != str7));
             CPPUNIT_ASSERT(str7.valid());
 
             as2js::String str8("original");
             CPPUNIT_ASSERT(str8.from_wchar(buf, 6) == as2js::String::conversion_result_t::STRING_END);
             CPPUNIT_ASSERT(8 == str8.length());
             CPPUNIT_ASSERT("original" == str8);
+            CPPUNIT_ASSERT(!("original" != str8));
             CPPUNIT_ASSERT(str8.valid());
         }
 
@@ -1202,6 +1296,7 @@ void As2JsStringUnitTests::test_utf16()
             CPPUNIT_ASSERT(str7.from_wchar(buf) == as2js::String::conversion_result_t::STRING_BAD);
             CPPUNIT_ASSERT(8 == str7.length());
             CPPUNIT_ASSERT("original" == str7);
+            CPPUNIT_ASSERT(!("original" != str7));
             CPPUNIT_ASSERT(str7.valid());
 
             buf[2] = rand();
@@ -1216,6 +1311,7 @@ void As2JsStringUnitTests::test_utf16()
             CPPUNIT_ASSERT(str11.from_wchar(buf, rand() % 8 + 2) == as2js::String::conversion_result_t::STRING_BAD);
             CPPUNIT_ASSERT(8 == str11.length());
             CPPUNIT_ASSERT("original" == str11);
+            CPPUNIT_ASSERT(!("original" != str11));
             CPPUNIT_ASSERT(str11.valid());
         }
     }
@@ -1233,6 +1329,8 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(str1.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str1);
         CPPUNIT_ASSERT(str1 == "");
+        CPPUNIT_ASSERT(!("" != str1));
+        CPPUNIT_ASSERT(!(str1 != ""));
         CPPUNIT_ASSERT(str1.valid());
 
         as2js::String str2;
@@ -1243,6 +1341,8 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(str2.utf8_length() == 0);
         CPPUNIT_ASSERT("" == str2);
         CPPUNIT_ASSERT(str2 == "");
+        CPPUNIT_ASSERT(!("" != str2));
+        CPPUNIT_ASSERT(!(str2 != ""));
         CPPUNIT_ASSERT(str2.valid());
     }
 
@@ -1276,12 +1376,14 @@ void As2JsStringUnitTests::test_utf32()
             CPPUNIT_ASSERT(1 == str1.length());
             CPPUNIT_ASSERT(buf == str1);
             CPPUNIT_ASSERT(str1 == buf);
+            CPPUNIT_ASSERT(!(str1 != buf));
             CPPUNIT_ASSERT(str1.valid());
 
             // try copies of strings created from wchar_t characters
             as2js::String str2(str1);
             CPPUNIT_ASSERT(1 == str2.length());
             CPPUNIT_ASSERT(str1 == str2);
+            CPPUNIT_ASSERT(!(str1 != str2));
             CPPUNIT_ASSERT(str2.valid());
 
             // now test the += of a wchar_t
@@ -1323,6 +1425,8 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(255 == str1.length());
         CPPUNIT_ASSERT(buf == str1);
         CPPUNIT_ASSERT(str1 == buf);
+        CPPUNIT_ASSERT(!(buf != str1));
+        CPPUNIT_ASSERT(!(str1 != buf));
         CPPUNIT_ASSERT(str1.valid());
 
         // try again with the from_as_char()
@@ -1330,6 +1434,8 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(255 == str1.length());
         CPPUNIT_ASSERT(buf == str1);
         CPPUNIT_ASSERT(str1 == buf);
+        CPPUNIT_ASSERT(!(buf != str1));
+        CPPUNIT_ASSERT(!(str1 != buf));
         CPPUNIT_ASSERT(str1.valid());
 
         // now test different sizes
@@ -1344,6 +1450,8 @@ void As2JsStringUnitTests::test_utf32()
             buf[size] = '\0';
             CPPUNIT_ASSERT(buf == str2);
             CPPUNIT_ASSERT(str2 == buf);
+            CPPUNIT_ASSERT(!(buf != str2));
+            CPPUNIT_ASSERT(!(str2 != buf));
             CPPUNIT_ASSERT(str2.valid());
             buf[size] = save_a;
 
@@ -1354,6 +1462,8 @@ void As2JsStringUnitTests::test_utf32()
             buf[size] = '\0';
             CPPUNIT_ASSERT(buf == str2);
             CPPUNIT_ASSERT(str2 == buf);
+            CPPUNIT_ASSERT(!(buf != str2));
+            CPPUNIT_ASSERT(!(str2 != buf));
             CPPUNIT_ASSERT(str2.valid());
             buf[size] = save_b;
 
@@ -1373,6 +1483,8 @@ void As2JsStringUnitTests::test_utf32()
                 CPPUNIT_ASSERT(size + 255 == str3.length());
                 CPPUNIT_ASSERT(buf2 == str3);
                 CPPUNIT_ASSERT(str3 == buf2);
+                CPPUNIT_ASSERT(!(buf2 != str3));
+                CPPUNIT_ASSERT(!(str3 != buf2));
                 CPPUNIT_ASSERT(str3.valid());
 
                 // and make sure that str2 was indeed untouched
@@ -1381,6 +1493,8 @@ void As2JsStringUnitTests::test_utf32()
                 buf[size] = '\0';
                 CPPUNIT_ASSERT(buf == str2);
                 CPPUNIT_ASSERT(str2 == buf);
+                CPPUNIT_ASSERT(!(buf != str2));
+                CPPUNIT_ASSERT(!(str2 != buf));
                 CPPUNIT_ASSERT(str2.valid());
                 buf[size] = save_c;
             }
@@ -1400,6 +1514,8 @@ void As2JsStringUnitTests::test_utf32()
             CPPUNIT_ASSERT(str4.empty());
             CPPUNIT_ASSERT("" == str4);
             CPPUNIT_ASSERT(str4 == "");
+            CPPUNIT_ASSERT(!("" != str4));
+            CPPUNIT_ASSERT(!(str4 != ""));
             CPPUNIT_ASSERT(str4.valid());
             buf[bad_pos] = save_d;
 
@@ -1437,6 +1553,8 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(str2.from_as_char(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str2.length() == 9); // not modified
         CPPUNIT_ASSERT(str2 == "old value"); // not modified
+        CPPUNIT_ASSERT(!(str2 != "old value")); // not modified
+        CPPUNIT_ASSERT(str2 != "new value");
 
         as2js::String str3;
         CPPUNIT_ASSERT(str3.from_as_char(buf, 1) == as2js::String::conversion_result_t::STRING_INVALID);
@@ -1446,6 +1564,8 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(str4.from_as_char(buf, 1) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str4.length() == 9); // not modified
         CPPUNIT_ASSERT(str4 == "old value"); // not modified
+        CPPUNIT_ASSERT(!(str4 != "old value")); // not modified
+        CPPUNIT_ASSERT(str4 != "new value");
     }
 
     // characters over 0x10FFFF are all invalid
@@ -1478,6 +1598,8 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(str2.from_as_char(buf) == as2js::String::conversion_result_t::STRING_INVALID);
         CPPUNIT_ASSERT(str2.length() == 9); // not modified
         CPPUNIT_ASSERT(str2 == "old value"); // not modified
+        CPPUNIT_ASSERT(!(str2 != "old value")); // not modified
+        CPPUNIT_ASSERT(str2 != "new value");
     }
 }
 
@@ -1685,12 +1807,19 @@ void As2JsStringUnitTests::test_concatenation()
     as2js::String str3(str1 + str2); // here!
     CPPUNIT_ASSERT(str3.length() == 7);
     CPPUNIT_ASSERT(str3 == "blahfoo");
+    CPPUNIT_ASSERT(!(str3 != "blahfoo"));
+    CPPUNIT_ASSERT(str3 != "blah");
+    CPPUNIT_ASSERT(str3 != "foo");
     CPPUNIT_ASSERT(str3 == str1 + str2);
+    CPPUNIT_ASSERT(!(str3 != str1 + str2));
 
     as2js::String str4;
     str4 = str2 + str1;
     CPPUNIT_ASSERT(str4.length() == 7);
     CPPUNIT_ASSERT(str4 == "fooblah");
+    CPPUNIT_ASSERT(!(str4 != "fooblah"));
+    CPPUNIT_ASSERT(str4 != "foo");
+    CPPUNIT_ASSERT(str4 != "blah");
     CPPUNIT_ASSERT(str4 == str2 + str1);
 }
 

@@ -80,19 +80,21 @@ target_link_libraries( ${PROJECT_NAME}
     ${ADVGETOPT_LIBRARIES}
 )
 
+function(json_to_cpp TARGET_NAME)
+    add_custom_command(OUTPUT ${as2js_compiler_BINARY_DIR}/tests/test_as2js_${TARGET_NAME}.ci
+        COMMAND json_to_string -o ${as2js_compiler_BINARY_DIR}/tests/test_as2js_${TARGET_NAME}.ci ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_${TARGET_NAME}.json
+        DEPENDS json_to_string ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_${TARGET_NAME}.json
+        COMMENT "Generating test_as2js_parser_basics.ci")
+endfunction(json_to_cpp)
 
-add_custom_command(OUTPUT ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci
-    COMMAND json_to_string -o ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser_basics.json
-    DEPENDS json_to_string ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser_basics.json
-    COMMENT "Generating test_as2js_parser_basics.ci"
-)
+
+json_to_cpp(parser_basics)
+json_to_cpp(parser)
 
 
-add_custom_command(OUTPUT ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
-    COMMAND json_to_string -o ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser.json
-    DEPENDS json_to_string ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_parser.json
-    COMMENT "Generating test_as2js_parser.ci"
-)
+json_to_cpp(optimizer_additive)
+json_to_cpp(optimizer_logical)
+
 
 
 ##
@@ -172,8 +174,11 @@ add_executable(${PROJECT_NAME}
     test_as2js_message.cpp
     test_as2js_node.cpp
     test_as2js_node_display.cpp
+    test_as2js_optimizer.cpp
     test_as2js_options.cpp
     test_as2js_parser.cpp
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_additive.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_logical.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
     test_as2js_position.cpp

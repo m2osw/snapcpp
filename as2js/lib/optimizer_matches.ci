@@ -1,4 +1,4 @@
-/* compiler.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* optimizer_matches.ci -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -33,64 +33,72 @@ SOFTWARE.
 
 */
 
-#include    "as2js/compiler.h"
-
-
 namespace as2js
 {
-
-
-
-
-
-
-
-Compiler::Compiler()
-    : f_time(time(nullptr))
-    //, f_optimizer(nullptr) -- auto-init
-    //, f_options(nullptr) -- auto-init
-    //, f_program(nullptr) -- auto-init
-    //, f_input_retriever(nullptr) -- auto-init
-    //, f_err_flags(0) -- auto-init
-    //, f_scope(nullptr) -- auto-init
-    //, f_modules() -- auto-init
+namespace optimizer_details
 {
-    internal_imports();
-}
 
 
-Compiler::~Compiler()
+Node::node_t const g_optimizer_match_add[]
 {
-}
+    Node::node_t::NODE_ADD
+};
 
 
-InputRetriever::pointer_t Compiler::set_input_retriever(InputRetriever::pointer_t retriever)
+Node::node_t const g_optimizer_match_any_literal[]
 {
-    InputRetriever::pointer_t old(f_input_retriever);
+    Node::node_t::NODE_FALSE,
+    Node::node_t::NODE_FLOAT64,
+    Node::node_t::NODE_INT64,
+    Node::node_t::NODE_NULL,
+    Node::node_t::NODE_STRING,
+    Node::node_t::NODE_TRUE,
+    Node::node_t::NODE_UNDEFINED
+};
 
-    f_input_retriever = retriever;
 
-    return old;
-}
-
-
-void Compiler::set_options(Options::pointer_t options)
+Node::node_t const g_optimizer_match_false[]
 {
-    f_options = options;
-}
+    Node::node_t::NODE_FALSE
+};
 
 
-
-
-
-bool Compiler::isspace(int c)
+Node::node_t const g_optimizer_match_logical_not[]
 {
-    return c == ' ' || c == '\t';
+    Node::node_t::NODE_LOGICAL_NOT
+};
+
+
+Node::node_t const g_optimizer_match_numbers[]
+{
+    Node::node_t::NODE_INT64,
+    Node::node_t::NODE_FLOAT64
+};
+
+
+Node::node_t const g_optimizer_match_string[]
+{
+    Node::node_t::NODE_STRING
+};
+
+
+Node::node_t const g_optimizer_match_subtract[]
+{
+    Node::node_t::NODE_SUBTRACT
+};
+
+
+Node::node_t const g_optimizer_match_true[]
+{
+    Node::node_t::NODE_TRUE
+};
+
+
+
+
+
 }
-
-
-
-
+// namespace optimizer_details
 }
 // namespace as2js
 

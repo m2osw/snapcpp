@@ -37,6 +37,7 @@ SOFTWARE.
 
 #include    "as2js/optimizer.h"
 #include    "as2js/stream.h"
+#include    "as2js/options.h"
 
 #include    <controlled_vars/controlled_vars_need_init.h>
 

@@ -241,6 +241,25 @@ void Node::verify_flag(flag_t f) const
 }
 
 
+/** \brief Compare a set of flags with the current flags of this node.
+ *
+ * This function compares the specified set of flags with the node's
+ * flags. If the sets are equal, then the function returns true.
+ * Otherwise the function returns false.
+ *
+ * This function compares all the flags, whether or not they are
+ * valid for the current node type.
+ *
+ * \param[in] s  The set of flags to compare with.
+ *
+ * \return true if \p s is equal to the node flags.
+ */
+bool Node::compare_all_flags(flag_set_t const& s) const
+{
+    return f_flags == s;
+}
+
+
 }
 // namespace as2js
 

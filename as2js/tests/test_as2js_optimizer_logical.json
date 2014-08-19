@@ -1,0 +1,446 @@
+// logical
+[
+
+    // !true => false
+    {
+        //"verbose": true,
+        "name": "!true -> false",
+        "program": "!true;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "TRUE"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !false => true
+    {
+        //"verbose": true,
+        "name": "!false -> true",
+        "program": "!false;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "FALSE"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !null => true
+    {
+        //"verbose": true,
+        "name": "!null -> true",
+        "program": "!null;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "NULL"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !undefined => true
+    {
+        //"verbose": true,
+        "name": "!undefined -> true",
+        "program": "!undefined;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "UNDEFINED"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !0 => true
+    {
+        //"verbose": true,
+        "name": "!0 -> true",
+        "program": "!0;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !65 => false
+    {
+        //"verbose": true,
+        "name": "!65 -> false",
+        "program": "!65;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 65
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !0.0 => true
+    {
+        //"verbose": true,
+        "name": "!0.0 -> true",
+        "program": "!0.0;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 0.0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !65 => false
+    {
+        //"verbose": true,
+        "name": "!6.5 -> false",
+        "program": "!6.5;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 6.5
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !"" => true
+    {
+        //"verbose": true,
+        "name": "!\"\" -> true",
+        "program": "!\"\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": ""
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !"empty" => false
+    {
+        //"verbose": true,
+        "name": "!\"empty\" -> false",
+        "program": "!\"empty\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "empty"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !!!a => !a
+    {
+        //"verbose": true,
+        "name": "!!!a -> !a",
+        "program": "!!!a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "LOGICAL_NOT",
+                                    "children": [
+                                        {
+                                            "node type": "LOGICAL_NOT",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+]
+// vim: ts=4 sw=4 et

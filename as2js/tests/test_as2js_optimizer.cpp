@@ -1,4 +1,4 @@
-/* test_as2js_parser.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_optimizer.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -33,9 +33,10 @@ SOFTWARE.
 
 */
 
-#include    "test_as2js_parser.h"
+#include    "test_as2js_optimizer.h"
 #include    "test_as2js_main.h"
 
+#include    "as2js/optimizer.h"
 #include    "as2js/parser.h"
 #include    "as2js/exceptions.h"
 #include    "as2js/message.h"
@@ -51,92 +52,10 @@ SOFTWARE.
 #include    <iomanip>
 
 #include    <cppunit/config/SourcePrefix.h>
-CPPUNIT_TEST_SUITE_REGISTRATION( As2JsParserUnitTests );
+CPPUNIT_TEST_SUITE_REGISTRATION( As2JsOptimizerUnitTests );
 
 namespace
 {
-
-
-int32_t generate_string(as2js::String& str, bool ascii)
-{
-    as2js::as_char_t c;
-    int32_t used(0);
-    int ctrl(rand() % 7);
-    int const max_chars(rand() % 25 + 20);
-    for(int j(0); j < max_chars; ++j)
-    {
-        do
-        {
-            c = rand() & 0x1FFFFF;
-            if(ascii)
-            {
-                c &= 0x7F;
-            }
-            if(ctrl == 0)
-            {
-                ctrl = rand() % 7;
-                if((ctrl & 3) == 1)
-                {
-                    c = c & 1 ? '"' : '\'';
-                }
-                else
-                {
-                    c &= 0x1F;
-                }
-            }
-            else
-            {
-                --ctrl;
-            }
-        }
-        while(c >= 0x110000
-           || (c >= 0xD800 && c <= 0xDFFF)
-           || ((c & 0xFFFE) == 0xFFFE)
-           || c == '\0');
-        str += c;
-        switch(c)
-        {
-        case '\b':
-            used |= 0x01;
-            break;
-
-        case '\f':
-            used |= 0x02;
-            break;
-
-        case '\n':
-            used |= 0x04;
-            break;
-
-        case '\r':
-            used |= 0x08;
-            break;
-
-        case '\t':
-            used |= 0x10;
-            break;
-
-        case '"':
-            used |= 0x20;
-            break;
-
-        case '\'':
-            used |= 0x40;
-            break;
-
-        default:
-            if(c < 0x0020)
-            {
-                // other controls must be escaped using Unicode
-                used |= 0x80;
-            }
-            break;
-
-        }
-    }
-
-    return used;
-}
 
 
 struct err_to_string_t
@@ -941,7 +860,7 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
         exit(1);
     }
     as2js::JSON::JSONValue::pointer_t node_type_value(it_node_type->second);
-    if(verbose)
+    if(verbose || node->get_type_name() != node_type_value->get_string())
     {
         std::cerr << "*** Comparing " << node->get_type_name() << " (node) vs " << node_type_value->get_string() << " (JSON)\n";
     }
@@ -951,7 +870,7 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     if(it_label != child_object.end())
     {
         // we expect a string in this object
-        if(verbose && node->get_string() != it_label->second->get_string())
+        if(node->get_string() != it_label->second->get_string())
         {
             std::cerr << "   Expecting string \"" << it_label->second->get_string() << "\", node has \"" << node->get_string() << "\"\n";
         }
@@ -1017,7 +936,7 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
         }
         else
         {
-            // we expect a floating point number in this object
+            // we expect a floating point in this object
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             if(node->get_float64().get() != it_float->second->get_float64().get())
@@ -1179,11 +1098,11 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
 // Note: the top entries are arrays so we can execute programs in the
 //       order we define them...
 //
-char const g_basics[] =
-#include "test_as2js_parser_basics.ci"
+char const g_optimizer_additive[] =
+#include "test_as2js_optimizer_additive.ci"
 ;
-char const g_data[] =
-#include "test_as2js_parser.ci"
+char const g_optimizer_logical[] =
+#include "test_as2js_optimizer_logical.ci"
 ;
 
 
@@ -1225,8 +1144,10 @@ void run_tests(char const *data, char const *filename)
     verbose_string.from_utf8("verbose");
     as2js::String slow_string;
     slow_string.from_utf8("slow");
-    as2js::String result_string;
-    result_string.from_utf8("result");
+    as2js::String parser_result_string;
+    parser_result_string.from_utf8("parser result");
+    as2js::String optimizer_result_string;
+    optimizer_result_string.from_utf8("optimizer result");
     as2js::String expected_messages_string;
     expected_messages_string.from_utf8("expected messages");
 
@@ -1258,39 +1179,26 @@ void run_tests(char const *data, char const *filename)
         as2js::JSON::JSONValue::pointer_t name(prog.find(name_string)->second);
         std::cout << "  -- working on \"" << name->get_string() << "\" " << (slow ? "" : "...") << std::flush;
 
-        for(size_t opt(0); opt <= (1 << g_options_size); ++opt)
         {
-            if(slow && ((opt + 1) % 250) == 0)
-            {
-                std::cout << "." << std::flush;
-            }
-//std::cerr << "\n***\n*** OPTIONS:";
-            as2js::Options::pointer_t options;
-            if(opt != (1 << g_options_size))
-            {
-                // if not equal to max. then create an actual options
-                // object; otherwise we use the default (nullptr)
-                options.reset(new as2js::Options);
-                for(size_t o(0); o < g_options_size; ++o)
-                {
-                    if((opt & (1 << o)) != 0)
-                    {
-                        options->set_option(g_options[o].f_option,
-                                options->get_option(g_options[o].f_option) | g_options[o].f_value);
-//std::cerr << " " << g_options[o].f_name << "=" << g_options[o].f_value;
-                    }
-                }
-            }
-//std::cerr << "\n***\n";
-
             as2js::JSON::JSONValue::pointer_t program_value(prog.find(program_string)->second);
             as2js::String program_source(program_value->get_string());
 //std::cerr << "prog = [" << program_source << "]\n";
             as2js::StringInput::pointer_t prog_text(new as2js::StringInput(program_source));
-            as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, options));
+            as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, nullptr));
 
             test_callback tc(verbose);
 
+            // no errors exepected while parsing (if you want to test errors
+            // in the parser, use the test_as2js_parser.cpp test instead)
+            as2js::Node::pointer_t root(parser->parse());
+
+            // verify the parser result, that way we can make sure we are
+            // testing the tree we want to test in the optimizer
+            verify_result(prog.find(parser_result_string)->second, root, verbose);
+
+            // now the optimizer may end up generating messages...
+            // (there are not many, mainly things like division by zero
+            // and illegal operation.)
             as2js::JSON::JSONValue::object_t::const_iterator expected_msg_it(prog.find(expected_messages_string));
             if(expected_msg_it != prog.end())
             {
@@ -1302,8 +1210,6 @@ void run_tests(char const *data, char const *filename)
                 {
                     as2js::JSON::JSONValue::pointer_t message_value(msg_array[j]);
                     as2js::JSON::JSONValue::object_t const& message(message_value->get_object());
-
-                    bool ignore_message(false);
 
                     as2js::JSON::JSONValue::object_t::const_iterator const message_options_iterator(message.find("options"));
                     if(message_options_iterator != message.end())
@@ -1318,63 +1224,6 @@ void run_tests(char const *data, char const *filename)
 //else
 //std::cerr << "_________\nLine #<undefined>\n";
 //}
-                        as2js::String const message_options(message_options_iterator->second->get_string());
-                        for(as2js::as_char_t const *s(message_options.c_str()), *start(s);; ++s)
-                        {
-                            if(*s == ',' || *s == '|' || *s == '\0')
-                            {
-                                as2js::String opt_name(start, s - start);
-                                for(size_t o(0); o < g_options_size; ++o)
-                                {
-                                    if(g_options[o].f_name == opt_name)
-                                    {
-                                        ignore_message = (opt & (1 << o)) != 0;
-//std::cerr << "+++ pos option [" << opt_name << "] " << ignore_message << "\n";
-                                        goto found_option;
-                                    }
-                                    else if(g_options[o].f_neg_name == opt_name)
-                                    {
-                                        ignore_message = (opt & (1 << o)) == 0;
-//std::cerr << "+++ neg option [" << opt_name << "] " << ignore_message << "\n";
-                                        goto found_option;
-                                    }
-                                }
-                                std::cerr << "Option \"" << opt_name << "\" not found in our list of valid options\n";
-                                CPPUNIT_ASSERT(!"option name from JSON not found in g_options");
-
-found_option:
-                                if(*s == '\0')
-                                {
-                                    break;
-                                }
-                                if(*s == '|')
-                                {
-                                    if(ignore_message)
-                                    {
-                                        break;
-                                    }
-                                }
-                                else
-                                {
-                                    if(!ignore_message)
-                                    {
-                                        break;
-                                    }
-                                }
-
-                                // skip commas
-                                do
-                                {
-                                    ++s;
-                                }
-                                while(*s == ',' || *s == '|');
-                                start = s;
-                            }
-                        }
-                    }
-
-                    if(!ignore_message)
-                    {
                         test_callback::expected_t expected;
                         expected.f_message_level = static_cast<as2js::message_level_t>(message.find("message level")->second->get_int64().get());
                         expected.f_error_code = str_to_error_code(message.find("error code")->second->get_string());
@@ -1404,13 +1253,15 @@ found_option:
                 }
             }
 
-            as2js::Node::pointer_t root(parser->parse());
+            // try the optimizer
+            as2js::Optimizer optimizer;
+            optimizer.optimize(root);
 
             tc.got_called();
 
             // the result is object which can have children
             // which are represented by an array of objects
-            verify_result(prog.find(result_string)->second, root, verbose);
+            verify_result(prog.find(optimizer_result_string)->second, root, verbose);
         }
 
         std::cout << " OK\n";
@@ -1425,16 +1276,73 @@ found_option:
 
 
 
-void As2JsParserUnitTests::test_parser_basics()
+void As2JsOptimizerUnitTests::test_optimizer_invalid_nodes()
 {
-    run_tests(g_basics, "test_parser_basics.json");
+    // empty node does nothing, return false
+    {
+        as2js::Node::pointer_t node;
+        as2js::Optimizer optimizer;
+        CPPUNIT_ASSERT(!optimizer.optimize(node));
+    }
+
+    // unknown node does nothing, return false
+    {
+        as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_UNKNOWN));
+        as2js::Optimizer optimizer;
+        CPPUNIT_ASSERT(!optimizer.optimize(node));
+        CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_UNKNOWN);
+        CPPUNIT_ASSERT(node->get_children_size() == 0);
+    }
+
+    // a special case where an optimization occurs on a node without a parent
+    // (something that should not occur in a real tree)
+    {
+        // ADD
+        //   INT64 = 3
+        //   INT64 = 20
+        as2js::Node::pointer_t node_add(new as2js::Node(as2js::Node::node_t::NODE_ADD));
+
+        as2js::Node::pointer_t node_three(new as2js::Node(as2js::Node::node_t::NODE_INT64));
+        as2js::Int64 three;
+        three.set(3);
+        node_three->set_int64(three);
+        node_add->append_child(node_three);
+
+        as2js::Node::pointer_t node_twenty(new as2js::Node(as2js::Node::node_t::NODE_INT64));
+        as2js::Int64 twenty;
+        twenty.set(20);
+        node_twenty->set_int64(twenty);
+        node_add->append_child(node_twenty);
+
+        // optimization does not happen
+        as2js::Optimizer optimizer;
+        CPPUNIT_ASSERT_THROW(!optimizer.optimize(node_add), as2js::exception_internal_error);
+
+        // verify that nothing changed
+        CPPUNIT_ASSERT(node_add->get_type() == as2js::Node::node_t::NODE_ADD);
+        CPPUNIT_ASSERT(node_add->get_children_size() == 2);
+        CPPUNIT_ASSERT(node_three->get_type() == as2js::Node::node_t::NODE_INT64);
+        CPPUNIT_ASSERT(node_three->get_children_size() == 0);
+        CPPUNIT_ASSERT(node_three->get_int64().compare(three) == as2js::compare_t::COMPARE_EQUAL);
+        CPPUNIT_ASSERT(node_twenty->get_type() == as2js::Node::node_t::NODE_INT64);
+        CPPUNIT_ASSERT(node_twenty->get_children_size() == 0);
+        CPPUNIT_ASSERT(node_twenty->get_int64().compare(twenty) == as2js::compare_t::COMPARE_EQUAL);
+    }
 }
 
 
-void As2JsParserUnitTests::test_parser()
+void As2JsOptimizerUnitTests::test_optimizer_additive()
 {
-    run_tests(g_data, "test_parser.json");
+    run_tests(g_optimizer_additive, "test_parser_additive.json");
 }
+
+void As2JsOptimizerUnitTests::test_optimizer_logical()
+{
+    run_tests(g_optimizer_logical, "test_parser_logical.json");
+}
+
+
+
 
 
 

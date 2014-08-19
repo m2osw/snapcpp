@@ -805,7 +805,7 @@ void Parser::directive(Node::pointer_t& node)
         && f_node->get_type() != Node::node_t::NODE_CLOSE_CURVLY_BRACKET)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_SEMICOLON_EXPECTED, f_lexer->get_input()->get_position());
-            msg << "';' was expected after '" << instruction_node->get_type_name() << "'.";
+            msg << "';' was expected after '" << instruction_node->get_type_name() << "' (current token: '" << f_node->get_type_name() << "').";
         }
         // skip all that whatever up to the next end of this
         while(f_node->get_type() != Node::node_t::NODE_SEMICOLON

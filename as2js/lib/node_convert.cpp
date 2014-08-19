@@ -310,6 +310,8 @@ bool Node::to_identifier()
  * \li NODE_TRUE -- convert to 1
  * \li NODE_FALSE -- convert to 0
  * \li NODE_NULL -- convert to 0
+ * \li NODE_STRING -- convert to integer if valid, zero otherwise (NaN is
+ *                    not possible in an integer)
  * \li NODE_UNDEFINED -- convert to 0 (NaN is not possible in an integer)
  *
  * This function does not convert strings. You may use the to_number()
@@ -334,7 +336,7 @@ bool Node::to_int64()
         return true;
 
     case node_t::NODE_FLOAT64:
-        f_int.set(f_float.get());
+        f_int.set(f_float.get()); // C-like cast to integer with a floor() (no rounding)
         break;
 
     case node_t::NODE_TRUE:
@@ -345,6 +347,17 @@ bool Node::to_int64()
     case node_t::NODE_FALSE:
     case node_t::NODE_UNDEFINED: // should return NaN, not possible with an integer...
         f_int.set(0);
+        break;
+
+    case node_t::NODE_STRING:
+        if(f_str.is_int64())
+        {
+            f_int.set(f_str.to_int64());
+        }
+        else
+        {
+            f_int.set(0);
+        }
         break;
 
     default:
@@ -369,6 +382,7 @@ bool Node::to_int64()
  * \li NODE_TRUE -- convert to 1.0
  * \li NODE_FALSE -- convert to 0.0
  * \li NODE_NULL -- convert to 0.0
+ * \li NODE_STRING -- convert to float if valid, otherwise NaN
  * \li NODE_UNDEFINED -- convert to NaN
  *
  * This function does not convert strings. You may use the to_number()
@@ -396,6 +410,10 @@ bool Node::to_float64()
     case node_t::NODE_NULL:
     case node_t::NODE_FALSE:
         f_float.set(0.0);
+        break;
+
+    case node_t::NODE_STRING:
+        f_float.set(f_str.to_float64());
         break;
 
     case node_t::NODE_UNDEFINED:
@@ -577,6 +595,17 @@ bool Node::to_string()
         else
         {
             f_str = std::to_string(value);
+            if(f_str.find('.') != f_str.npos)
+            {
+                while(f_str.back() == '0')
+                {
+                    f_str.pop_back();
+                }
+                if(f_str.back() == '.')
+                {
+                    f_str.pop_back();
+                }
+            }
         }
     }
 #pragma GCC diagnostic pop

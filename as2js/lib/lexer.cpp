@@ -33,9 +33,9 @@ SOFTWARE.
 
 */
 
-#include "as2js/lexer.h"
+#include    "as2js/lexer.h"
 
-#include "as2js/message.h"
+#include    "as2js/message.h"
 
 #include    <iomanip>
 
@@ -44,17 +44,45 @@ namespace as2js
 {
 
 
+/** \brief The Lexer private functions to handle character types.
+ *
+ * This unnamed namespace is used by the lexer to define a set of
+ * private functions and tables used to handle the characters
+ * and tokens.
+ */
 namespace
 {
 
-// one valid range
+/** \brief Define one valid range of characters.
+ *
+ * This structure defines the range of characters that represent
+ * letters viewed as being valid in EMCAScript version 5.
+ *
+ * The range is defined as min/max pairs. The two values are inclusive.
+ */
 struct identifier_characters_t
 {
     as_char_t   f_min;
     as_char_t   f_max;
 };
 
-// generated with tests/unicode_characters.cpp
+
+/** \brief List of characters that are considered to be letters.
+ *
+ * The ECMAScript version 5 document defines the letters supported in
+ * its identifiers in terms of Unicode characters. This includes many
+ * characters that represent either letters or punctuation.
+ *
+ * The following table includes ranges (min/max) that include characters
+ * that are considered letters in JavaScript code.
+ *
+ * The table was generated using the code in:
+ *
+ * tests/unicode_characters.cpp
+ *
+ * The number of items in the table is defined as
+ * g_identifier_characters_size (see below).
+ */
 identifier_characters_t g_identifier_characters[] =
 {
     // The ASCII characters are already handled by the time we reach the
@@ -577,6 +605,13 @@ identifier_characters_t g_identifier_characters[] =
     { 0x2f800, 0x2fa1d },
     { 0xe0100, 0xe01ef }
 };
+
+/** \brief The size of the character table.
+ *
+ * When defining the type of a character, the Lexer uses the
+ * character table. This parameter defines the number of
+ * entries defined in the table.
+ */
 size_t const g_identifier_characters_size = sizeof(g_identifier_characters) / sizeof(g_identifier_characters[0]);
 
 
@@ -590,6 +625,18 @@ size_t const g_identifier_characters_size = sizeof(g_identifier_characters) / si
 /**********************************************************************/
 
 
+/** \brief Initialize the lexer object.
+ *
+ * The constructor of the Lexer expect a valid pointer of an Input
+ * stream.
+ *
+ * It optionally accepts an Options pointer. If the pointer is null,
+ * then all the options are assumed to be set to zero (0). So all
+ * extensions are turned off.
+ *
+ * \param[in] input  The input stream.
+ * \param[in] options  A set of options, may be null.
+ */
 Lexer::Lexer(Input::pointer_t input, Options::pointer_t options)
     : f_input(input)
     , f_options(options)
@@ -604,6 +651,12 @@ Lexer::Lexer(Input::pointer_t input, Options::pointer_t options)
 
 
 
+/** \brief Retrieve the input stream pointer.
+ *
+ * This function returns the input stream pointer of the Lexer object.
+ *
+ * \return The input pointer as specified when creating the Lexer object.
+ */
 Input::pointer_t Lexer::get_input() const
 {
     return f_input;
@@ -613,6 +666,26 @@ Input::pointer_t Lexer::get_input() const
 /** \brief Retrieve the next character of input.
  *
  * This function reads one character of input and returns it.
+ *
+ * If the character is a newline, linefeed, etc. it affects the current
+ * line number, page number, etc. as required. The following characters
+ * have such an effect:
+ *
+ * \li '\\n' -- the newline character adds a new line
+ * \li '\\r' -- the carriage return character adds a new line; if followed
+ *              by a '\n', remove it too; always return '\\n' and not '\\r'
+ * \li '\\f' -- the formfeed adds a new page
+ * \li LINE SEPARATOR (0x2028) -- add a new line
+ * \li PARAGRAPH SEPARATOR (0x2029) -- add a new paragraph
+ *
+ * If the ungetc() function was called before a call to getc(), then
+ * that last character is returned instead of a new character from the
+ * input stream. In that case, the character has no effect on the line
+ * number, page number, etc.
+ *
+ * \internal
+ *
+ * \return The next Unicode character.
  */
 Input::char_t Lexer::getc()
 {
@@ -684,6 +757,26 @@ Input::char_t Lexer::getc()
 }
 
 
+/** \brief Unget a character.
+ *
+ * Whenever reading a token, it is most often that the end of the token
+ * is discovered by reading one too many character. This function is
+ * used to push that character back in the input stream.
+ *
+ * Also the stream implementation also includes an unget, we do not use
+ * that unget. The reason is that the getc() function needs to know
+ * whether the character is a brand new character from that input stream
+ * or the last ungotten character. The difference is important to know
+ * whether the character has to have an effect on the line number,
+ * page number, etc.
+ *
+ * The getc() function first returns the last character sent via
+ * ungetc() (i.e. LIFO).
+ *
+ * \internal
+ *
+ * \param[in] c  The input character to "push back in the stream".
+ */
 void Lexer::ungetc(Input::char_t c)
 {
     // WARNING: we do not use the f_input ungetc() because otherwise
@@ -697,9 +790,35 @@ void Lexer::ungetc(Input::char_t c)
 }
 
 
+/** \brief Determine the type of a character.
+ *
+ * This function determines the type of a character.
+ *
+ * The function first uses a switch for most of the characters used in
+ * JavaScript are ASCII characters and thus are well defined and can
+ * have their type defined in a snap.
+ *
+ * Unicode characters make use of a table to convert the character in
+ * a type. Unicode character are either viewed as letters (CHAR_LETTER)
+ * or as punctuation (CHAR_PUNCTUATION).
+ *
+ * The exceptions are the characters viewed as either line terminators
+ * or white space characters. Those are captured by the switch.
+ *
+ * \important
+ * Each character type is is a flag that can be used to check whether
+ * the character is of a certain category, or a set of categories all
+ * at once (i.e. (CHAR_LETTER | CHAR_DIGIT) means any character which
+ * represents a letter or a digit.)
+ *
+ * \internal
+ *
+ * \param[in] c  The character of which the type is to be determined.
+ *
+ * \return The character type (one of the CHAR_...)
+ */
 Lexer::char_type_t Lexer::char_type(Input::char_t c)
 {
-    // TODO: this needs a HUGE improvement to be conformant...
     switch(c) {
     case '\0':   // NULL (NUL)
     case String::STRING_CONTINUATION: // ( '\' + line terminator )
@@ -831,6 +950,23 @@ Lexer::char_type_t Lexer::char_type(Input::char_t c)
 
 
 
+/** \brief Read an hexadecimal number.
+ *
+ * This function reads 0's and 1's up until another character is found
+ * or \p max digits were read. That other character is ungotten so the
+ * next call to getc() will return that non-binary character.
+ *
+ * Since the function is called without an introducing digit, the
+ * number could end up being empty. If that happens, an error is
+ * generated and the function returns -1 (although -1 is a valid
+ * number assuming you accept all 64 bits.)
+ *
+ * \internal
+ *
+ * \param[in] max  The maximum number of digits to read.
+ *
+ * \return The number just read as an integer (64 bit).
+ */
 int64_t Lexer::read_hex(unsigned long max)
 {
     int64_t result(0);
@@ -868,6 +1004,23 @@ int64_t Lexer::read_hex(unsigned long max)
 }
 
 
+/** \brief Read a binary number.
+ *
+ * This function reads 0's and 1's up until another character is found
+ * or \p max digits were read. That other character is ungotten so the
+ * next call to getc() will return that non-binary character.
+ *
+ * Since the function is called without an introducing digit, the
+ * number could end up being empty. If that happens, an error is
+ * generated and the function returns -1 (although -1 is a valid
+ * number assuming you accept all 64 bits.)
+ *
+ * \internal
+ *
+ * \param[in] max  The maximum number of digits to read.
+ *
+ * \return The number just read as an integer (64 bit).
+ */
 int64_t Lexer::read_binary(unsigned long max)
 {
     int64_t result(0);
@@ -891,6 +1044,20 @@ int64_t Lexer::read_binary(unsigned long max)
 }
 
 
+/** \brief Read an octal number.
+ *
+ * This function reads octal digits up until a character other than a
+ * valid octal digit or \p max digits were read. That character is
+ * ungotten so the next call to getc() will return that non-octal
+ * character.
+ *
+ * \internal
+ *
+ * \param[in] c  The character that triggered a call to read_octal().
+ * \param[in] max  The maximum number of digits to read.
+ *
+ * \return The number just read as an integer (64 bit).
+ */
 int64_t Lexer::read_octal(Input::char_t c, unsigned long max)
 {
     int64_t result(c - '0');
@@ -905,6 +1072,44 @@ int64_t Lexer::read_octal(Input::char_t c, unsigned long max)
 }
 
 
+/** \brief Read characters representing an escape sequence.
+ *
+ * This function reads the next few characters transforming them in one
+ * escape sequence character.
+ *
+ * Some characters are extensions and require the extended escape
+ * sequences to be turned on in order to be accepted. These are marked
+ * as an extension in the list below.
+ *
+ * The function supports:
+ *
+ * \li \\u#### -- the 4 digit Unicode character
+ * \li \\U######## -- the 8 digit Unicode character, this is an extension
+ * \li \\x## or \\X## -- the 2 digit ISO-8859-1 character
+ * \li \\' -- escape the single quote (') character
+ * \li \\" -- escape the double quote (") character
+ * \li \\\\ -- escape the backslash (\) character
+ * \li \\b -- the backspace character
+ * \li \\e -- the escape character, this is an extension
+ * \li \\f -- the formfeed character
+ * \li \\n -- the newline character
+ * \li \\r -- the carriage return character
+ * \li \\t -- the tab character
+ * \li \\v -- the vertical tab character
+ * \li \\\<newline> or \\\<#x2028> or \\\<#x2029> -- continuation characters
+ * \li \\### -- 1 to 3 octal digit ISO-8859-1 character, this is an extension
+ * \li \\0 -- the NUL character
+ *
+ * Any other character generates an error message if appearing after a
+ * backslash (\).
+ *
+ * \internal
+ *
+ * \param[in] accept_continuation  Whether the backslash + newline combination
+ *                                 is acceptable in this token.
+ *
+ * \return The escape character if valid, '?' otherwise.
+ */
 Input::char_t Lexer::escape_sequence(bool accept_continuation)
 {
     Input::char_t c(getc());
@@ -1005,6 +1210,28 @@ Input::char_t Lexer::escape_sequence(bool accept_continuation)
 }
 
 
+/** \brief Read a set of characters as defined by \p flags.
+ *
+ * This function reads all the characters as long as their type match
+ * the specified flags. The result is saved in the \p str parameter.
+ *
+ * At the time the function is called, \p c is expected to be the first
+ * character to be added to \p str.
+ *
+ * The first character that does not satisfy the flags is pushed back
+ * in the input stream so one can call getc() again to retrieve it.
+ *
+ * \param[in] c  The character that prompted this call and which ends up
+ *               first in \p str.
+ * \param[in] flags  The flags that must match each character, including
+ *                   \p c character type.
+ * \param[in,out] str  The resulting string. It is expected to be empty on
+ *                     call but does not need to (it does not get cleared.)
+ *
+ * \internal
+ *
+ * \return The next character, although it was also ungotten.
+ */
 Input::char_t Lexer::read(Input::char_t c, char_type_t flags, String& str)
 {
     do
@@ -1104,15 +1331,18 @@ Input::char_t Lexer::read(Input::char_t c, char_type_t flags, String& str)
  * \li as -- from ActionScript, to do a cast
  * \li is -- from ActionScript, to check a value type
  * \li namespace -- to encompass many declarations in a namespace
- * \li use -- to avoid having to declare certain namespaces
+ * \li use -- to avoid having to declare certain namespaces, declare number
+ *            types, change pragma (options) value
  *
  * We also support the special names:
  *
  * \li Infinity, which is supposed to be a global variable
  * \li NaN, which is supposed to be a global variable
  * \li undefined, which is supposed to never be defined
- * \li __FILE__, which gets transform to the filename of the input stream;
- * \li __LINE__, which gets transform to the current line number.
+ * \li __FILE__, which gets transformed to the filename of the input stream
+ * \li __LINE__, which gets transformed to the current line number
+ *
+ * \internal
  *
  * \param[in] c  The current character representing the first identifier character.
  */
@@ -1651,6 +1881,30 @@ void Lexer::read_identifier(Input::char_t c)
 }
 
 
+/** \brief Read one number from the input stream.
+ *
+ * This function is called whenever a digit is found in the input
+ * stream. It may also be called if a period was read (the rules
+ * are a little more complicated for the period.)
+ *
+ * The function checks the following character, if it is:
+ *
+ * \li 'x' or 'X' -- it reads an hexadecimal number, see read_hex()
+ * \li 'b' or 'B' -- it reads a binary number, see read_binary()
+ * \li '0' -- if the number starts with a zero, it reads an octal,
+ *            see read_octal()
+ * \li '.' -- it reads a floating point number
+ * \li otherwise it reads an integer, although if the integer is
+ *     followed by '.', 'e', or 'E', it ends up reading the number
+ *     as a floating point
+ *
+ * The result is directly saved in the necessary f_result_...
+ * variables.
+ *
+ * \internal
+ *
+ * \param[in] c  The digit or period that triggered this call.
+ */
 void Lexer::read_number(Input::char_t c)
 {
     String      number;
@@ -1826,6 +2080,25 @@ void Lexer::read_number(Input::char_t c)
 }
 
 
+/** \brief Read one string.
+ *
+ * This function reads one string from the input stream.
+ *
+ * The function expects \p quote as an input parameter representing the
+ * opening quote. It will read the input stream up to the next line
+ * terminator (unless escaped) or the closing quote.
+ *
+ * Note that we support backslash quoted "strings" which actually
+ * represent regular expressions. These cannot be continuated on
+ * the following line.
+ *
+ * This function sets the result type to NODE_STRING. It is changed
+ * by the caller when a regular expression was found instead.
+ *
+ * \internal
+ *
+ * \param[in] quote  The opening quote, which will match the closing quote.
+ */
 void Lexer::read_string(Input::char_t quote)
 {
     f_result_type = Node::node_t::NODE_STRING;
@@ -1860,6 +2133,17 @@ void Lexer::read_string(Input::char_t quote)
 
 
 
+/** \brief Create a new node of the specified type.
+ *
+ * This helper function creates a new node at the current position. This
+ * is useful internally and in the parser when creating nodes to build
+ * the input tree and in order for the new node to get the correct
+ * position according to the current lexer position.
+ *
+ * \param[in] type  The type of the new node.
+ *
+ * \return A pointer to the new node.
+ */
 Node::pointer_t Lexer::get_new_node(Node::node_t type)
 {
     Node::pointer_t node(new Node(type));
@@ -1869,6 +2153,15 @@ Node::pointer_t Lexer::get_new_node(Node::node_t type)
 }
 
 
+/** \brief Get the next token from the input stream.
+ *
+ * This function reads one token from the input stream and transform
+ * it in a Node. The Node is automatically assigned the position after
+ * the token was read.
+ *
+ * \return The node representing the next token, or a NODE_EOF if the
+ *         end of the stream was found.
+ */
 Node::pointer_t Lexer::get_next_token()
 {
     // get the info
@@ -1916,6 +2209,42 @@ Node::pointer_t Lexer::get_next_token()
 }
 
 
+/** \brief Read one token in the f_result_... variables.
+ *
+ * This function reads one token from the input stream. It reads one
+ * character and determine the type of token (identifier, string,
+ * number, etc.) and then reads the whole token.
+ *
+ * The main purpose of the function is to read characters from the
+ * stream and determine what token it represents. It uses many
+ * sub-functions to read more complex tokens such as identifiers
+ * and numbers.
+ *
+ * If the end of the input stream is reached, the function returns
+ * with a NODE_EOF. The function can be called any number of times
+ * after the end of the input is reached.
+ *
+ * Only useful tokens are returned. Comments and white spaces (space,
+ * tab, new line, line feed, etc.) are all skipped silently.
+ *
+ * The function detects invalid characters which are ignored although
+ * the function will first emit an error.
+ *
+ * This is the function that handles the case of a regular expression
+ * written between slashes (/.../). One can also use the backward
+ * quotes (`...`) for regular expression to avoid potential confusions
+ * with the divide character.
+ *
+ * \note
+ * Most extended operators, such as the power operator (**) are
+ * silently returned by this function. If the extended operators are
+ * not allowed, the parser will emit an error as required. However,
+ * a few operators (<> and :=) are returned jus like the standard
+ * operator (NODE_NOT_EQUAL and NODE_ASSIGNMENT) and thus the error
+ * has to be emitted here, and it is.
+ *
+ * \internal
+ */
 void Lexer::get_token()
 {
     for(Input::char_t c(getc());; c = getc())

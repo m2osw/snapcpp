@@ -475,6 +475,7 @@ void As2JsNodeUnitTests::test_conversions()
             case as2js::Node::node_t::NODE_FALSE:
             case as2js::Node::node_t::NODE_NULL:
             case as2js::Node::node_t::NODE_UNDEFINED:
+            case as2js::Node::node_t::NODE_STRING: // empty string...
                 CPPUNIT_ASSERT(node->to_int64());
                 CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_INT64);
                 CPPUNIT_ASSERT(node->get_int64().get() == 0);
@@ -516,6 +517,7 @@ void As2JsNodeUnitTests::test_conversions()
 
             case as2js::Node::node_t::NODE_FALSE:
             case as2js::Node::node_t::NODE_NULL:
+            case as2js::Node::node_t::NODE_STRING:
                 CPPUNIT_ASSERT(node->to_float64());
                 CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_FLOAT64);
 #pragma GCC diagnostic push
@@ -874,7 +876,21 @@ void As2JsNodeUnitTests::test_conversions()
                 node->set_float64(j);
                 CPPUNIT_ASSERT(node->to_string());
                 CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_STRING);
-                CPPUNIT_ASSERT(node->get_string() == as2js::String(std::to_string(j.get())));
+                as2js::String str(as2js::String(std::to_string(j.get())));
+                if(str.find('.') != as2js::String::npos)
+                {
+                    // remove all least significant zeroes if any
+                    while(str.back() == '0')
+                    {
+                        str.pop_back();
+                    }
+                    // make sure the number does not end with a period
+                    if(str.back() == '.')
+                    {
+                        str.pop_back();
+                    }
+                }
+                CPPUNIT_ASSERT(node->get_string() == str);
             }
         }
     }

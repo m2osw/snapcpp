@@ -35,81 +35,99 @@ SOFTWARE.
 
 #include    "as2js/optimizer.h"
 #include    "as2js/message.h"
-#include    "as2js/exceptions.h"
+//#include    "as2js/exceptions.h"
+#include    "optimizer_tables.h"
 
-#include    <controlled_vars/controlled_vars_no_enum_init.h>
+//#include    <controlled_vars/controlled_vars_no_enum_init.h>
 
-#include    <math.h>
+//#include    <math.h>
 
 
 namespace as2js
 {
 
 
-/**********************************************************************/
-/**********************************************************************/
-/***  OPTIMIZER  ******************************************************/
-/**********************************************************************/
-/**********************************************************************/
+/** \class class Optimizer
+ * \brief The as2js optimizer.
+ *
+ * Finally, once the program was parsed and then compiled
+ * one usually wants to optimize it. This means removing
+ * all the possible expressions and statements which can
+ * be removed to make the code more efficient. The
+ * optimizations applied can be tweaked using the options,
+ * however, the options have already been parsed and thus
+ * they are found directly in the nodes.
+ *
+ * The code, after you ran the compiler looks like this:
+ *
+ *    Optimizer::pointer_t optimizer(Optimizer::CreateOptimizer());
+ *    optimize->Optimize(root);
+ *
+ * The optimize() function goes through the list of
+ * nodes defined in the root parameter and it tries to
+ * remove all possible expressions and functions which
+ * will have no effect in the final output (by default,
+ * certain things such as x + 0, are not removed since it
+ * has an effect!).
+ *
+ * The root parameter may be what was returned by the parse()
+ * function of the Parser object. However, in most cases, the
+ * compiler only optimizes part of the tree as required (because
+ * many parts cannot be optimized and it will make things
+ * generally faster.)
+ *
+ * Note that it is expected that you first Compile()
+ * the nodes, but it is possible to call the optimizer
+ * without first running any compilation.
+ */
 
-Optimizer::Optimizer()
-    //: f_options(nullptr) -- auto-init
-    //, f_label(0) -- auto-init
-{
-}
 
-
-
-void Optimizer::set_options(Options::pointer_t& options)
-{
-    f_options = options;
-}
-
-
-
-
-/**********************************************************************/
-/**********************************************************************/
-/***  OPTIMIZE  *******************************************************/
-/**********************************************************************/
-/**********************************************************************/
-
+/** \brief Optimize the specified node.
+ *
+ * This function goes through all the available optimizations and
+ * processes them whenever they apply to your code.
+ *
+ * Errors may be generated whenever a problem is found. For example,
+ * a division or modulo by zero can legally occur in your input
+ * program. In that case the optimizer generates an error to let you
+ * know that such a division is not legal and the compiler cannot
+ * generate the output.
+ *
+ * The optimizer reports the total number of errors that were generated
+ * while optimizing.
+ *
+ * \important
+ * It is important to note that this function is not unlikely going
+ * to modify your tree (even if you do not think there is a possible
+ * optimization). This means the caller should not expect the node to
+ * still be the same pointer and possibly not at the same location in
+ * the parent node (many nodes get deleted.)
+ *
+ * \param[in] node  The node to optimize.
+ *
+ * \return The number of errors generated while optimizing.
+ */
 int Optimizer::optimize(Node::pointer_t& node)
 {
-    int errcnt(Message::error_count());
+    int const errcnt(Message::error_count());
 
-    run(node);
+    optimizer_details::optimize_tree(node);
 
     // This may not be at the right place because the caller may be
-    // looping through a list of children too...
-    node->clean_tree();
+    // looping through a list of children too... (although we have
+    // an important not in the documentation... that does not mean
+    // much, does it?)
+    if(node)
+    {
+        node->clean_tree();
+    }
 
     return Message::error_count() - errcnt;
 }
 
 
-void Optimizer::label(String& new_label)
-{
-    std::stringstream s;
-    s << "__optimizer__" << f_label;
-    ++f_label;
-    new_label = s.str();
-}
 
-
-Optimizer::label_t Optimizer::get_last_label() const
-{
-    return f_label;
-}
-
-
-void Optimizer::set_first_label(label_t label_id)
-{
-    f_label = label_id;
-}
-
-
-
+#if 0
 void Optimizer::run(Node::pointer_t& node)
 {
     // accept empty nodes, just ignore them
@@ -329,9 +347,9 @@ void Optimizer::condition_double_logical_not(Node::pointer_t& condition)
         && sub_expr->get_children_size() == 1)
         {
             // Source:
-            //   if(!!a)
+            //   !!a
             // Destination:
-            //   if(a)
+            //   a
             //
             condition->replace_with(sub_expr->get_child(0));
         }
@@ -843,7 +861,7 @@ void Optimizer::power(Node::pointer_t& power_node)
     if(!right->to_number())
     {
         // Reduce the following
-        //    0 ** b = 0 (we can't garantee that b <> 0, we can't do it)
+        //    0 ** b = 0 (we cannot guarantee that b <> 0, we cannot do it)
         //    1 ** b = 1
         if(!left->to_number())
         {
@@ -3529,7 +3547,7 @@ void Optimizer::conditional(Node::pointer_t& conditional_node)
         }
     }
 }
-
+#endif
 
 
 

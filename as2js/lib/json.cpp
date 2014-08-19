@@ -49,6 +49,40 @@ SOFTWARE.
  * The parser makes use of the lexer and an input stream.
  *
  * The writer makes use of an output stream.
+ *
+ * Note that our JSON parser supports the following extensions that
+ * are NOT part of a valid JSON file:
+ *
+ * \li C-like comments using the standard slash (/) asterisk (*) to
+ *     start the comment and asterisk (*) slash (/) to end it.
+ * \li C++-like comments using the standard double slash (/) and ending
+ *     the line with a newline character.
+ * \li The NaN special value.
+ * \li The +Infinity value.
+ * \li The -Infinity value.
+ * \li The +<number> value.
+ * \li Decimal numbers are read as decimal numbers and not floating point
+ *     numbers. We support full 64 bit integers.
+ * \li Strings using single quote (') characters.
+ * \li Strings can include \U######## characters (large Unicode, 8 digits.)
+ *
+ * Note that all comments are discarded while reading a JSON file.
+ *
+ * The writer, however, generates:
+ *
+ * \li Strings using double quotes (").
+ * \li Only uses the small unicode \u#### encoding. Large Unicode characters
+ *     are output as is (in the format used by your output stream.)
+ * \li Does not output any comments (although you may include a comment in
+ *     the header parameter.)
+ *
+ * However, it will:
+ *
+ * \li Generate integers that are 64 bit.
+ * \li Output NaN for undefined numbers.
+ * \li Output Infinity and -Infinity for number representing infinity.
+ *
+ * We may later introduce a flag to allow / disallow these values.
  */
 
 
@@ -58,7 +92,7 @@ namespace as2js
 /** \brief Private implementation functions.
  *
  * Our JSON implementation makes use of functions that are defined in
- * this namespace.
+ * this unnamed namespace.
  */
 namespace
 {
@@ -652,7 +686,22 @@ String JSON::JSONValue::to_string() const
         return "false";
 
     case type_t::JSON_TYPE_FLOAT64:
+    {
+        Float64 f(f_float.get());
+        if(f.is_NaN())
+        {
+            return "NaN";
+        }
+        if(f.is_positive_infinity())
+        {
+            return "Infinity";
+        }
+        if(f.is_negative_infinity())
+        {
+            return "-Infinity";
+        }
         return std::to_string(f_float.get());
+    }
 
     case type_t::JSON_TYPE_INT64:
         return std::to_string(f_integer.get());
@@ -811,6 +860,26 @@ JSON::JSONValue::pointer_t JSON::read_json_value(Node::pointer_t n)
     }
     switch(n->get_type())
     {
+    case Node::node_t::NODE_ADD:
+        // positive number...
+        n = f_lexer->get_next_token();
+        switch(n->get_type())
+        {
+        case Node::node_t::NODE_FLOAT64:
+            return JSONValue::pointer_t(new JSONValue(n->get_position(), n->get_float64()));
+
+        case Node::node_t::NODE_INT64:
+            return JSONValue::pointer_t(new JSONValue(n->get_position(), n->get_int64()));
+
+        default:
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_UNEXPECTED_TOKEN, n->get_position());
+            msg << "unexpected token (" << n->get_type_name() << ") found after a '+' sign, a number was expected.";
+            return JSONValue::pointer_t();
+
+        }
+        /*NOT_REACHED*/
+        break;
+
     case Node::node_t::NODE_FALSE:
         return JSONValue::pointer_t(new JSONValue(n->get_position(), false));
 
@@ -934,8 +1003,12 @@ JSON::JSONValue::pointer_t JSON::read_json_value(Node::pointer_t n)
         case Node::node_t::NODE_FLOAT64:
             {
                 Float64 f(n->get_float64());
-                f.set(-f.get());
-                n->set_float64(f);
+                if(!f.is_NaN())
+                {
+                    f.set(-f.get());
+                    n->set_float64(f);
+                }
+                // else ... should we err about this one?
             }
             return JSONValue::pointer_t(new JSONValue(n->get_position(), n->get_float64()));
 

@@ -352,6 +352,25 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
 }
 
 
+/** \brief Compare a set of attributes with the current attributes of this node.
+ *
+ * This function compares the specified set of attributes with the node's
+ * attributes. If the sets are equal, then the function returns true.
+ * Otherwise the function returns false.
+ *
+ * This function compares all the attributes, whether or not they are
+ * valid for the current node type.
+ *
+ * \param[in] s  The set of attributes to compare with.
+ *
+ * \return true if \p s is equal to the node attributes.
+ */
+bool Node::compare_all_attributes(attribute_set_t const& s) const
+{
+    return f_attributes == s;
+}
+
+
 }
 // namespace as2js
 

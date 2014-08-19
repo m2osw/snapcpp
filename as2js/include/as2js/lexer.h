@@ -71,7 +71,6 @@ private:
     typedef controlled_vars::auto_init<char_type_t, CHAR_NO_FLAGS>  zchar_type_t;
 
     void                        get_token();
-    Input::char_t               input_getc();
     Input::char_t               getc();
     void                        ungetc(Input::char_t c);
     int64_t                     read_hex(unsigned long max);

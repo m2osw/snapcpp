@@ -3307,7 +3307,7 @@
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 1,
-                "message": "';' was expected after 'INT64'."
+                "message": "';' was expected after 'INT64' (current token: 'OPEN_CURVLY_BRACKET')."
             }
         ],
         "result": {
@@ -4689,7 +4689,7 @@ import edit = \"snap.editor\";\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 1,
-                "message": "';' was expected after 'IMPORT'."
+                "message": "';' was expected after 'IMPORT' (current token: 'IDENTIFIER')."
             }
         ],
         "result": {
@@ -4729,7 +4729,7 @@ import edit = \"snap.editor\";\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 1,
-                "message": "';' was expected after 'IMPORT'."
+                "message": "';' was expected after 'IMPORT' (current token: 'INT64')."
             }
         ],
         "result": {
@@ -8146,7 +8146,7 @@ attrs use namespace extra;\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 1,
-                "message": "';' was expected after 'USE'."
+                "message": "';' was expected after 'USE' (current token: 'STRING')."
             }
         ],
         "result": {
@@ -9483,7 +9483,7 @@ use debug() extended_operators();\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 5,
-                "message": "';' was expected after 'USE'."
+                "message": "';' was expected after 'USE' (current token: 'MULTIPLY')."
             },
             {
                 "message level": 2,
@@ -9707,7 +9707,7 @@ use debug() extended_operators();\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 1,
-                "message": "';' was expected after 'MEMBER'."
+                "message": "';' was expected after 'MEMBER' (current token: 'EOF')."
             }
         ],
         "result": {
@@ -10446,7 +10446,7 @@ use debug() extended_operators();\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 1,
-                "message": "';' was expected after 'BREAK'."
+                "message": "';' was expected after 'BREAK' (current token: 'CASE')."
             },
             {
                 "options": "no_extended_operators_safe",
@@ -10465,7 +10465,7 @@ use debug() extended_operators();\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 1,
-                "message": "';' was expected after 'CONTINUE'."
+                "message": "';' was expected after 'CONTINUE' (current token: 'CASE')."
             },
             {
                 "options": "no_extended_operators_safe",
@@ -11948,7 +11948,7 @@ console.log(a);\n\
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 5,
-                "message": "';' was expected after 'DO'."
+                "message": "';' was expected after 'DO' (current token: 'EOF')."
             }
         ],
         "result": {
@@ -12086,7 +12086,7 @@ while repeat);\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 4,
-                "message": "';' was expected after 'DO'."
+                "message": "';' was expected after 'DO' (current token: 'IDENTIFIER')."
             }
         ],
         "result": {
@@ -13683,7 +13683,7 @@ goto repeat;\n\
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 2,
-                "message": "';' was expected after 'LOGICAL_NOT'."
+                "message": "';' was expected after 'LOGICAL_NOT' (current token: 'CLOSE_PARENTHESIS')."
             },
             {
                 "options": "extended_operators|extended_operators_safe",
@@ -15394,7 +15394,7 @@ d::{j: 'counter'};\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 1,
-                "message": "';' was expected after 'OPEN_PARENTHESIS'."
+                "message": "';' was expected after 'OPEN_PARENTHESIS' (current token: 'INT64')."
             },
             {
                 "message level": 2,
@@ -15419,7 +15419,7 @@ d::{j: 'counter'};\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 3,
-                "message": "';' was expected after 'SCOPE'."
+                "message": "';' was expected after 'SCOPE' (current token: 'STRING')."
             },
             {
                 "options": "extended_operators|extended_operators_safe",
@@ -15438,7 +15438,7 @@ d::{j: 'counter'};\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 4,
-                "message": "';' was expected after 'SCOPE'."
+                "message": "';' was expected after 'SCOPE' (current token: 'FLOAT64')."
             },
             {
                 "options": "extended_operators|extended_operators_safe",
@@ -15457,7 +15457,7 @@ d::{j: 'counter'};\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 5,
-                "message": "';' was expected after 'SCOPE'."
+                "message": "';' was expected after 'SCOPE' (current token: 'OPEN_SQUARE_BRACKET')."
             },
             {
                 "options": "extended_operators|extended_operators_safe",
@@ -15476,7 +15476,7 @@ d::{j: 'counter'};\n",
                 "message level": 2,
                 "error code": "SEMICOLON_EXPECTED",
                 "line #": 6,
-                "message": "';' was expected after 'SCOPE'."
+                "message": "';' was expected after 'SCOPE' (current token: 'OPEN_CURVLY_BRACKET')."
             }
         ],
         "result": {

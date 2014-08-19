@@ -515,23 +515,22 @@ void Node::set_child(int index, pointer_t child)
  *
  * This function is very similar to the set_child() when you do not know
  * the index position of 'this' node in its parent or do not have the
- * parent node handy. This is the equivalent code for this helper
- * function:
+ * parent node handy. The following code shows what the function does
+ * internally:
  *
  * \code
  *     child->replace_with(node);
  *     // or
  *     int index(child->get_offset());
  *     Node::pointer_t parent(child->get_parent());
- *     parent->set_parent(nullptr, index);
- *     child->set_parent(index, parent);
+ *     parent->set_child(index, node);
  * \endcode
  *
  * \warning
  * This function modifies the tree in a way that may break loops over
  * node children.
  *
- * \exception exception_internal_error
+ * \exception exception_no_parent
  * If 'this' node does not have a parent node, then this exception is
  * raised.
  *

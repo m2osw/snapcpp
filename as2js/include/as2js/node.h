@@ -482,10 +482,12 @@ public:
     // check flags
     bool                        get_flag(flag_t f) const;
     void                        set_flag(flag_t f, bool v);
+    bool                        compare_all_flags(flag_set_t const& s) const;
 
     // check attributes
     bool                        get_attribute(attribute_t f) const;
     void                        set_attribute(attribute_t f, bool v);
+    bool                        compare_all_attributes(attribute_set_t const& s) const;
 
     // switch operator: switch(...) with(<operator>)
     node_t                      get_switch_operator() const;
@@ -583,6 +585,8 @@ private:
     vector_of_pointers_t            f_variables;
     map_of_pointers_t               f_labels;
 };
+
+typedef std::vector<Node::pointer_t>    node_pointer_vector_t;
 
 std::ostream& operator << (std::ostream& out, Node const& node);
 

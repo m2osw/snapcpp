@@ -86,6 +86,8 @@ public:
 
     bool                    operator == (char const *str) const;
     friend bool             operator == (char const *str, String const& string);
+    bool                    operator != (char const *str) const;
+    friend bool             operator != (char const *str, String const& string);
 
     String&                 operator += (char const *str);
     String&                 operator += (wchar_t const *str);

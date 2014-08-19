@@ -1,4 +1,6 @@
-/* compiler.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+#ifndef TEST_AS2JS_OPTIMIZER_H
+#define TEST_AS2JS_OPTIMIZER_H
+/* test_as2js_optimizer.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -33,65 +35,26 @@ SOFTWARE.
 
 */
 
-#include    "as2js/compiler.h"
+
+#include <cppunit/extensions/HelperMacros.h>
 
 
-namespace as2js
+class As2JsOptimizerUnitTests : public CPPUNIT_NS::TestFixture
 {
+    CPPUNIT_TEST_SUITE( As2JsOptimizerUnitTests );
+        CPPUNIT_TEST( test_optimizer_invalid_nodes );
+        CPPUNIT_TEST( test_optimizer_additive );
+        CPPUNIT_TEST( test_optimizer_logical );
+    CPPUNIT_TEST_SUITE_END();
 
+public:
+    //virtual void setUp();
 
+protected:
+    void test_optimizer_invalid_nodes();
+    void test_optimizer_additive();
+    void test_optimizer_logical();
+};
 
-
-
-
-
-Compiler::Compiler()
-    : f_time(time(nullptr))
-    //, f_optimizer(nullptr) -- auto-init
-    //, f_options(nullptr) -- auto-init
-    //, f_program(nullptr) -- auto-init
-    //, f_input_retriever(nullptr) -- auto-init
-    //, f_err_flags(0) -- auto-init
-    //, f_scope(nullptr) -- auto-init
-    //, f_modules() -- auto-init
-{
-    internal_imports();
-}
-
-
-Compiler::~Compiler()
-{
-}
-
-
-InputRetriever::pointer_t Compiler::set_input_retriever(InputRetriever::pointer_t retriever)
-{
-    InputRetriever::pointer_t old(f_input_retriever);
-
-    f_input_retriever = retriever;
-
-    return old;
-}
-
-
-void Compiler::set_options(Options::pointer_t options)
-{
-    f_options = options;
-}
-
-
-
-
-
-bool Compiler::isspace(int c)
-{
-    return c == ' ' || c == '\t';
-}
-
-
-
-
-}
-// namespace as2js
-
+#endif
 // vim: ts=4 sw=4 et

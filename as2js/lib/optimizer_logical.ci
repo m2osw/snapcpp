@@ -1,0 +1,221 @@
+/* optimizer_logical.ci -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+
+/*
+
+Copyright (c) 2005-2014 Made to Order Software Corp.
+
+http://snapwebsites.org/project/as2js
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and
+associated documentation files (the "Software"), to
+deal in the Software without restriction, including
+without limitation the rights to use, copy, modify,
+merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom
+the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+
+/** \file
+ * \brief Optimizations applied against logical operators.
+ *
+ * This files defines variable optimizations applied to logical operators
+ * such as '!!!a' which can safely become '!a', or '!true' which gets
+ * optimized to 'false'.
+ */
+
+
+namespace as2js
+{
+namespace optimizer_details
+{
+
+
+/** \brief Match '!true'
+ *
+ * This table defines a match for the expression '!true'.
+ */
+optimization_match_t const g_optimizer_logical_match_not_literal[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match '!false'
+ *
+ * This table defines a match for the expression '!false'.
+ */
+optimization_match_t const g_optimizer_logical_match_not_false[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false),
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match '!!!a'
+ *
+ * This table defines a match for the expression '!!!a', where 'a' can
+ * be anything at all.
+ */
+optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+            {
+                /* f_depth */               2,
+                /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+                /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            },
+
+                {
+                    /* f_depth */               3,
+                    /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(), // match any node
+                    /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                    /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+                }
+};
+
+
+/** \brief Optimize '!true' to 'false'.
+ *
+ * This table defines the optimization of '!true' to 'false'.
+ */
+optimization_entry_t const g_optimizer_logical_entry_not_literal[] =
+{
+    {
+        /* f_name */            "'!a' where 'a' is a literal -> 'true' or 'false'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_not_literal),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_logical_not_1_0)
+    }
+};
+
+
+///** \brief Optimize '!false' to 'true'.
+// *
+// * This table defines the optimization of '!false' to 'true'.
+// */
+//optimization_entry_t const g_optimizer_logical_entry_not_false[] =
+//{
+//    {
+//        /* f_name */            "'!false' -> 'true'",
+//        /* f_flags */           0,
+//
+//        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_not_false),
+//        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_logical_not_1_0)
+//    }
+//};
+
+
+/** \brief Optimize '!!!a' to '!a'.
+ *
+ * This table defines the optimization of '!!!a' to '!a'.
+ *
+ * Note that '!!a' is not equivalent to just 'a' unless 'a'
+ * is a known Boolean. This is why we have this extra optimization
+ * which should really very rarely happen but when people use
+ * parenthesis, things like that can appear in fairly standard
+ * code.
+ */
+optimization_entry_t const g_optimizer_logical_entry_not_not_not_a[] =
+{
+    {
+        /* f_name */            "'!!!a' whatever 'a' is -> '!a'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_not_not_not_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_2_0)
+    }
+};
+
+
+/** \brief List of additive entries.
+ *
+ * This table is a list of all the additive entries found in this file.
+ *
+ * It is referenced in the optimizer_tables.cpp as one of the tables to
+ * be used to optimize node trees.
+ */
+optimization_table_t const g_optimizer_logical_table[] =
+{
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_not_literal)
+    },
+    //{
+    //    /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_not_false)
+    //},
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_not_not_not_a)
+    }
+};
+
+
+
+}
+// namespace optimizer_details
+}
+// namespace as2js
+
+// vim: ts=4 sw=4 et
