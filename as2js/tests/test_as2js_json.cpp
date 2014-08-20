@@ -46,6 +46,7 @@ SOFTWARE.
 
 #include    <unistd.h>
 
+#include    <limits>
 #include    <cstring>
 #include    <algorithm>
 #include    <iomanip>
@@ -230,6 +231,23 @@ struct test_data_t
 };
 
 
+int const TYPE_NULL         = 0x00000001;
+int const TYPE_INT64        = 0x00000002;
+int const TYPE_FLOAT64      = 0x00000004;
+int const TYPE_NAN          = 0x00000008;
+int const TYPE_PINFINITY    = 0x00000010;
+int const TYPE_MINFINITY    = 0x00000020;
+int const TYPE_TRUE         = 0x00000040;
+int const TYPE_FALSE        = 0x00000080;
+int const TYPE_STRING       = 0x00000100;
+int const TYPE_ARRAY        = 0x00000200;
+int const TYPE_OBJECT       = 0x00000400;
+
+int const TYPE_ALL          = 0x000007FF;
+
+int g_type_used;
+
+
 void create_item(test_data_t& data, as2js::JSON::JSONValue::pointer_t parent, int depth)
 {
     size_t const max_items(rand() % 8 + 2);
@@ -241,10 +259,12 @@ void create_item(test_data_t& data, as2js::JSON::JSONValue::pointer_t parent, in
         switch(select)
         {
         case 0: // NULL
+            g_type_used |= TYPE_NULL;
             item.reset(new as2js::JSON::JSONValue(data.f_pos));
             break;
 
         case 1: // INT64
+            g_type_used |= TYPE_INT64;
             {
                 as2js::Int64::int64_type int_value((rand() << 13) ^ rand());
                 as2js::Int64 integer(int_value);
@@ -253,22 +273,59 @@ void create_item(test_data_t& data, as2js::JSON::JSONValue::pointer_t parent, in
             break;
 
         case 2: // FLOAT64
+            switch(rand() % 10)
             {
-                as2js::Float64::float64_type flt_value(static_cast<double>((rand() << 16) | rand()) / static_cast<double>((rand() << 16) | rand()));
-                as2js::Float64 flt(flt_value);
-                item.reset(new as2js::JSON::JSONValue(data.f_pos, flt));
+            case 0:
+                g_type_used |= TYPE_NAN;
+                {
+                    as2js::Float64 flt;
+                    flt.set_NaN();
+                    item.reset(new as2js::JSON::JSONValue(data.f_pos, flt));
+                }
+                break;
+
+            case 1:
+                g_type_used |= TYPE_PINFINITY;
+                {
+                    as2js::Float64 flt;
+                    flt.set_infinity();
+                    item.reset(new as2js::JSON::JSONValue(data.f_pos, flt));
+                }
+                break;
+
+            case 2:
+                g_type_used |= TYPE_MINFINITY;
+                {
+                    as2js::Float64::float64_type flt_value(-std::numeric_limits<as2js::Float64::float64_type>::infinity());
+                    as2js::Float64 flt(flt_value);
+                    item.reset(new as2js::JSON::JSONValue(data.f_pos, flt));
+                }
+                break;
+
+            default:
+                g_type_used |= TYPE_FLOAT64;
+                {
+                    as2js::Float64::float64_type flt_value(static_cast<double>((rand() << 16) | rand()) / static_cast<double>((rand() << 16) | rand()));
+                    as2js::Float64 flt(flt_value);
+                    item.reset(new as2js::JSON::JSONValue(data.f_pos, flt));
+                }
+                break;
+
             }
             break;
 
         case 3: // TRUE
+            g_type_used |= TYPE_TRUE;
             item.reset(new as2js::JSON::JSONValue(data.f_pos, true));
             break;
 
         case 4: // FALSE
+            g_type_used |= TYPE_FALSE;
             item.reset(new as2js::JSON::JSONValue(data.f_pos, false));
             break;
 
         case 5: // STRING
+            g_type_used |= TYPE_STRING;
             {
                 as2js::String str;
                 as2js::String stringified;
@@ -278,6 +335,7 @@ void create_item(test_data_t& data, as2js::JSON::JSONValue::pointer_t parent, in
             break;
 
         case 6: // empty ARRAY
+            g_type_used |= TYPE_ARRAY;
             {
                 as2js::JSON::JSONValue::array_t empty_array;
                 item.reset(new as2js::JSON::JSONValue(data.f_pos, empty_array));
@@ -289,6 +347,7 @@ void create_item(test_data_t& data, as2js::JSON::JSONValue::pointer_t parent, in
             break;
 
         case 7: // empty OBJECT
+            g_type_used |= TYPE_OBJECT;
             {
                 as2js::JSON::JSONValue::object_t empty_object;
                 item.reset(new as2js::JSON::JSONValue(data.f_pos, empty_object));
@@ -356,7 +415,22 @@ void data_to_string(as2js::JSON::JSONValue::pointer_t value, as2js::String& expe
         break;
 
     case as2js::JSON::JSONValue::type_t::JSON_TYPE_FLOAT64:
-        expected += std::to_string(value->get_float64().get());
+        if(value->get_float64().is_NaN())
+        {
+            expected += "NaN";
+        }
+        else if(value->get_float64().is_positive_infinity())
+        {
+            expected += "Infinity";
+        }
+        else if(value->get_float64().is_negative_infinity())
+        {
+            expected += "-Infinity";
+        }
+        else
+        {
+            expected += std::to_string(value->get_float64().get());
+        }
         break;
 
     case as2js::JSON::JSONValue::type_t::JSON_TYPE_STRING:
@@ -700,6 +774,53 @@ void As2JsJSONUnitTests::test_basic_values()
     }
 
     // FLOAT64 value
+    {
+        as2js::Position pos;
+        pos.reset_counters(144);
+        pos.set_filename("data.json");
+        pos.set_function("save_objects");
+        as2js::Float64::float64_type flt_value(std::numeric_limits<as2js::Float64::float64_type>::quiet_NaN());
+        as2js::Float64 flt(flt_value);
+        as2js::JSON::JSONValue::pointer_t value(new as2js::JSON::JSONValue(pos, flt));
+        CPPUNIT_ASSERT(value->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_FLOAT64);
+        CPPUNIT_ASSERT_THROW(value->get_int64().get() == 0, as2js::exception_internal_error);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        // NaN's do not compare equal
+        CPPUNIT_ASSERT(value->get_float64().get() != flt_value);
+#pragma GCC diagnostic pop
+        CPPUNIT_ASSERT_THROW(value->get_string() == "ignore", as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(value->get_array(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(value->set_item(rand(), nullptr_value), as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(value->get_object(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(value->set_member("name", nullptr_value), as2js::exception_internal_error);
+        as2js::Position const& p(value->get_position());
+        CPPUNIT_ASSERT(p.get_filename() == pos.get_filename());
+        CPPUNIT_ASSERT(p.get_function() == pos.get_function());
+        CPPUNIT_ASSERT(p.get_line() == 144);
+//std::cerr << "compare " << value->to_string() << " with " << cmp << "\n";
+        CPPUNIT_ASSERT(value->to_string() == "NaN");
+        // copy operator
+        as2js::JSON::JSONValue copy(*value);
+        CPPUNIT_ASSERT(copy.get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_FLOAT64);
+        CPPUNIT_ASSERT_THROW(copy.get_int64().get() == 0, as2js::exception_internal_error);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        // NaN's do not compare equal
+        CPPUNIT_ASSERT(copy.get_float64().get() != flt_value);
+#pragma GCC diagnostic pop
+        CPPUNIT_ASSERT_THROW(copy.get_string() == "ignore", as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(copy.get_array(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(copy.set_item(rand(), nullptr_value), as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(copy.get_object(), as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(copy.set_member("name", nullptr_value), as2js::exception_internal_error);
+        as2js::Position const& q(copy.get_position());
+        CPPUNIT_ASSERT(q.get_filename() == pos.get_filename());
+        CPPUNIT_ASSERT(q.get_function() == pos.get_function());
+        CPPUNIT_ASSERT(q.get_line() == 144);
+        CPPUNIT_ASSERT(copy.to_string() == "NaN");
+    }
+
     for(int idx(0); idx < 100; ++idx)
     {
         as2js::Position pos;
@@ -1430,8 +1551,9 @@ void As2JsJSONUnitTests::test_object_value()
 void As2JsJSONUnitTests::test_json()
 {
     // test with a few random objects
+    g_type_used = 0;
     typedef std::map<as2js::String, as2js::String>  sort_t;
-    for(int idx(0); idx < 10; ++idx)
+    for(int idx(0); idx < 10 || g_type_used != TYPE_ALL; ++idx)
     {
         as2js::String const header(rand() & 1 ? "// we can have a C++ comment\n/* or even a C like comment in the header\n(not the rest because we do not have access...) */\n" : "");
 
@@ -1543,6 +1665,57 @@ void As2JsJSONUnitTests::test_json()
 
         unlink(filename.c_str());
     }
+}
+
+
+void As2JsJSONUnitTests::test_json_with_positive_numbers()
+{
+    as2js::String const content(
+            "// we can have a C++ comment\n"
+            "/* or even a C like comment in the header\n"
+            "(not the rest because we do not have access...) */\n"
+            "[\n"
+            "\t+111,\n"
+            "\t+1.113,\n"
+            "\t+Infinity,\n"
+            "\t+NaN\n"
+            "]\n"
+        );
+
+    test_data_t data;
+    data.f_pos.reset_counters(201);
+    data.f_pos.set_filename("full.json");
+    data.f_pos.set_function("save_full");
+
+    as2js::StringInput::pointer_t in(new as2js::StringInput(content));
+
+    as2js::JSON::pointer_t load_json(new as2js::JSON);
+    as2js::JSON::JSONValue::pointer_t loaded_value(load_json->parse(in));
+    CPPUNIT_ASSERT(loaded_value == load_json->get_value());
+
+    as2js::JSON::JSONValue::pointer_t value(load_json->get_value());
+    CPPUNIT_ASSERT(value->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_ARRAY);
+    as2js::JSON::JSONValue::array_t array(value->get_array());
+    CPPUNIT_ASSERT(array.size() == 4);
+
+    CPPUNIT_ASSERT(array[0]->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_INT64);
+    as2js::Int64 integer(array[0]->get_int64());
+    CPPUNIT_ASSERT(integer.get() == 111);
+
+    CPPUNIT_ASSERT(array[1]->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_FLOAT64);
+    as2js::Float64 floating_point(array[1]->get_float64());
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+    CPPUNIT_ASSERT(floating_point.get() == 1.113);
+#pragma GCC diagnostic pop
+
+    CPPUNIT_ASSERT(array[2]->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_FLOAT64);
+    floating_point = array[2]->get_float64();
+    CPPUNIT_ASSERT(floating_point.is_positive_infinity());
+
+    CPPUNIT_ASSERT(array[3]->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_FLOAT64);
+    floating_point = array[3]->get_float64();
+    CPPUNIT_ASSERT(floating_point.is_NaN());
 }
 
 
@@ -1940,6 +2113,35 @@ void As2JsJSONUnitTests::test_error()
 
     {
         as2js::String str(
+            "['valid',+555,'bad-pos',+'123']"
+        );
+        as2js::StringInput::pointer_t in(new as2js::StringInput(str));
+
+        test_callback tc;
+
+        test_callback::expected_t expected1;
+        expected1.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+        expected1.f_error_code = as2js::err_code_t::AS_ERR_UNEXPECTED_TOKEN;
+        expected1.f_pos.set_filename("unknown-file");
+        expected1.f_pos.set_function("unknown-func");
+        expected1.f_message = "unexpected token (STRING) found after a '+' sign, a number was expected.";
+        tc.f_expected.push_back(expected1);
+
+        test_callback::expected_t expected2;
+        expected2.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_FATAL;
+        expected2.f_error_code = as2js::err_code_t::AS_ERR_CANNOT_COMPILE;
+        expected2.f_pos.set_filename("unknown-file");
+        expected2.f_pos.set_function("unknown-func");
+        expected2.f_message = "could not interpret this JSON input \"\".";
+        tc.f_expected.push_back(expected2);
+
+        as2js::JSON::pointer_t json(new as2js::JSON);
+        CPPUNIT_ASSERT(json->parse(in) == as2js::JSON::JSONValue::pointer_t());
+        tc.got_called();
+    }
+
+    {
+        as2js::String str(
             "['valid',123 'next-item',456]"
         );
         as2js::StringInput::pointer_t in(new as2js::StringInput(str));
@@ -2015,7 +2217,7 @@ void As2JsJSONUnitTests::test_error()
         case '\\':
         case '`':
         case 0x7F:
-        //case ',': -- that generates the error because it's in the wrong place
+        //case ',': -- that would generate errors because it would be in the wrong place
         case '.':
         case '0':
         case '1':

@@ -46,6 +46,7 @@ class As2JsJSONUnitTests : public CPPUNIT_NS::TestFixture
         CPPUNIT_TEST( test_array_value );
         CPPUNIT_TEST( test_object_value );
         CPPUNIT_TEST( test_json );
+        CPPUNIT_TEST( test_json_with_positive_numbers );
         CPPUNIT_TEST( test_error );
     CPPUNIT_TEST_SUITE_END();
 
@@ -57,6 +58,7 @@ protected:
     void test_array_value();
     void test_object_value();
     void test_json();
+    void test_json_with_positive_numbers();
     void test_error();
 };
 
