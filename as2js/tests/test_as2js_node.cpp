@@ -236,10 +236,19 @@ void As2JsNodeUnitTests::test_type()
             // mark this specific flag as valid
             valid_flags[static_cast<int>(node_flags->f_flag)] = true;
 
+            as2js::Node::flag_set_t set;
+            CPPUNIT_ASSERT(node->compare_all_flags(set));
+
+
             // before we set it, always false
             CPPUNIT_ASSERT(!node->get_flag(node_flags->f_flag));
             node->set_flag(node_flags->f_flag, true);
             CPPUNIT_ASSERT(node->get_flag(node_flags->f_flag));
+
+            CPPUNIT_ASSERT(!node->compare_all_flags(set));
+            set[static_cast<int>(node_flags->f_flag)] = true;
+            CPPUNIT_ASSERT(node->compare_all_flags(set));
+
             node->set_flag(node_flags->f_flag, false);
             CPPUNIT_ASSERT(!node->get_flag(node_flags->f_flag));
         }
@@ -475,10 +484,59 @@ void As2JsNodeUnitTests::test_conversions()
             case as2js::Node::node_t::NODE_FALSE:
             case as2js::Node::node_t::NODE_NULL:
             case as2js::Node::node_t::NODE_UNDEFINED:
-            case as2js::Node::node_t::NODE_STRING: // empty string...
                 CPPUNIT_ASSERT(node->to_int64());
                 CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_INT64);
                 CPPUNIT_ASSERT(node->get_int64().get() == 0);
+                break;
+
+            case as2js::Node::node_t::NODE_STRING: // empty string to start with...
+                CPPUNIT_ASSERT(node->to_int64());
+                CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_INT64);
+                CPPUNIT_ASSERT(node->get_int64().get() == 0);
+
+                // if not empty...
+                {
+                    as2js::Node::pointer_t node_str(new as2js::Node(original_type));
+                    node_str->set_string("34");
+                    CPPUNIT_ASSERT(node_str->to_int64());
+                    CPPUNIT_ASSERT(node_str->get_type() == as2js::Node::node_t::NODE_INT64);
+                    CPPUNIT_ASSERT(node_str->get_int64().get() == 34);
+                }
+                {
+                    as2js::Node::pointer_t node_str(new as2js::Node(original_type));
+                    node_str->set_string("+84");
+                    CPPUNIT_ASSERT(node_str->to_int64());
+                    CPPUNIT_ASSERT(node_str->get_type() == as2js::Node::node_t::NODE_INT64);
+                    CPPUNIT_ASSERT(node_str->get_int64().get() == 84);
+                }
+                {
+                    as2js::Node::pointer_t node_str(new as2js::Node(original_type));
+                    node_str->set_string("-37");
+                    CPPUNIT_ASSERT(node_str->to_int64());
+                    CPPUNIT_ASSERT(node_str->get_type() == as2js::Node::node_t::NODE_INT64);
+                    CPPUNIT_ASSERT(node_str->get_int64().get() == -37);
+                }
+                {
+                    as2js::Node::pointer_t node_str(new as2js::Node(original_type));
+                    node_str->set_string("3.4");
+                    CPPUNIT_ASSERT(node_str->to_int64());
+                    CPPUNIT_ASSERT(node_str->get_type() == as2js::Node::node_t::NODE_INT64);
+                    CPPUNIT_ASSERT(node_str->get_int64().get() == 3);
+                }
+                {
+                    as2js::Node::pointer_t node_str(new as2js::Node(original_type));
+                    node_str->set_string("34e+5");
+                    CPPUNIT_ASSERT(node_str->to_int64());
+                    CPPUNIT_ASSERT(node_str->get_type() == as2js::Node::node_t::NODE_INT64);
+                    CPPUNIT_ASSERT(node_str->get_int64().get() == 3400000);
+                }
+                {
+                    as2js::Node::pointer_t node_str(new as2js::Node(original_type));
+                    node_str->set_string("some NaN");
+                    CPPUNIT_ASSERT(node_str->to_int64());
+                    CPPUNIT_ASSERT(node_str->get_type() == as2js::Node::node_t::NODE_INT64);
+                    CPPUNIT_ASSERT(node_str->get_int64().get() == 0);
+                }
                 break;
 
             case as2js::Node::node_t::NODE_TRUE:
@@ -640,9 +698,9 @@ void As2JsNodeUnitTests::test_conversions()
                 CPPUNIT_ASSERT(node->get_string() == "");
                 break;
 
-            case as2js::Node::node_t::NODE_INT64:
             case as2js::Node::node_t::NODE_FLOAT64:
-                // by default numbers are zero; we'll have another test
+            case as2js::Node::node_t::NODE_INT64:
+                // by default numbers are zero; we have other tests
                 // to verify the conversion
                 CPPUNIT_ASSERT(node->to_string());
                 CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_STRING);
@@ -681,6 +739,48 @@ void As2JsNodeUnitTests::test_conversions()
 
             default:
                 CPPUNIT_ASSERT(!node->to_string());
+                CPPUNIT_ASSERT(node->get_type() == original_type);
+                break;
+
+            }
+        }
+
+        // a few types of nodes can be converted to an IDENTIFIER
+        {
+            as2js::Node::pointer_t node(new as2js::Node(original_type));
+            {
+                as2js::NodeLock lock(node);
+                CPPUNIT_ASSERT_THROW(node->to_identifier(), as2js::exception_locked_node);
+                CPPUNIT_ASSERT(node->get_type() == original_type);
+            }
+            switch(original_type)
+            {
+            case as2js::Node::node_t::NODE_IDENTIFIER:
+                CPPUNIT_ASSERT(node->to_identifier());
+                CPPUNIT_ASSERT(node->get_type() == original_type);
+                CPPUNIT_ASSERT(node->get_string() == "");
+                break;
+
+            case as2js::Node::node_t::NODE_PRIVATE:
+                CPPUNIT_ASSERT(node->to_identifier());
+                CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_IDENTIFIER);
+                CPPUNIT_ASSERT(node->get_string() == "private");
+                break;
+
+            case as2js::Node::node_t::NODE_PROTECTED:
+                CPPUNIT_ASSERT(node->to_identifier());
+                CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_IDENTIFIER);
+                CPPUNIT_ASSERT(node->get_string() == "protected");
+                break;
+
+            case as2js::Node::node_t::NODE_PUBLIC:
+                CPPUNIT_ASSERT(node->to_identifier());
+                CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_IDENTIFIER);
+                CPPUNIT_ASSERT(node->get_string() == "public");
+                break;
+
+            default:
+                CPPUNIT_ASSERT(!node->to_identifier());
                 CPPUNIT_ASSERT(node->get_type() == original_type);
                 break;
 
@@ -732,6 +832,7 @@ void As2JsNodeUnitTests::test_conversions()
         }
     }
 
+    bool got_dot(false);
     for(int i(0); i < 100; ++i)
     {
         // Integer to other types
@@ -800,18 +901,27 @@ void As2JsNodeUnitTests::test_conversions()
         }
 
         // Floating point to other values
+        bool first(true);
+        do
         {
             // generate a random 64 bit number
-            float s1(rand() & 1 ? -1 : 1);
-            float n1(static_cast<float>((static_cast<int64_t>(rand()) << 48)
-                                      ^ (static_cast<int64_t>(rand()) << 32)
-                                      ^ (static_cast<int64_t>(rand()) << 16)
-                                      ^ (static_cast<int64_t>(rand()) <<  0)));
-            float d1(static_cast<float>((static_cast<int64_t>(rand()) << 48)
-                                      ^ (static_cast<int64_t>(rand()) << 32)
-                                      ^ (static_cast<int64_t>(rand()) << 16)
-                                      ^ (static_cast<int64_t>(rand()) <<  0)));
-            float r(n1 / d1 * s1);
+            double s1(rand() & 1 ? -1 : 1);
+            double n1(static_cast<double>((static_cast<int64_t>(rand()) << 48)
+                                        ^ (static_cast<int64_t>(rand()) << 32)
+                                        ^ (static_cast<int64_t>(rand()) << 16)
+                                        ^ (static_cast<int64_t>(rand()) <<  0)));
+            double d1(static_cast<double>((static_cast<int64_t>(rand()) << 48)
+                                        ^ (static_cast<int64_t>(rand()) << 32)
+                                        ^ (static_cast<int64_t>(rand()) << 16)
+                                        ^ (static_cast<int64_t>(rand()) <<  0)));
+            if(!first && n1 >= d1)
+            {
+                // the dot is easier to reach with very small numbers
+                // so create a small number immediately
+                std::swap(n1, d1);
+                d1 *= 1e+4;
+            }
+            double r(n1 / d1 * s1);
             as2js::Float64 j(r);
 
             {
@@ -888,11 +998,14 @@ void As2JsNodeUnitTests::test_conversions()
                     if(str.back() == '.')
                     {
                         str.pop_back();
+                        got_dot = true;
                     }
                 }
                 CPPUNIT_ASSERT(node->get_string() == str);
             }
+            first = false;
         }
+        while(!got_dot);
     }
 
     // verify special floating point values
@@ -1708,8 +1821,15 @@ void As2JsNodeUnitTests::test_attributes()
                                          *attr_list != as2js::Node::attribute_t::NODE_ATTR_max;
                                          ++attr_list)
             {
+                as2js::Node::attribute_set_t set;
+                CPPUNIT_ASSERT(node->compare_all_attributes(set));
+
                 // set that one attribute first
                 node->set_attribute(*attr_list, true);
+
+                CPPUNIT_ASSERT(!node->compare_all_attributes(set));
+                set[static_cast<int>(*attr_list)] = true;
+                CPPUNIT_ASSERT(node->compare_all_attributes(set));
 
                 as2js::String str(g_attribute_names[static_cast<int>(*attr_list)]);
 

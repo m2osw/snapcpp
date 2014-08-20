@@ -275,6 +275,10 @@ bool Node::to_identifier()
 
     switch(f_type)
     {
+    case node_t::NODE_IDENTIFIER:
+        // already an identifier
+        return true;
+
     case node_t::NODE_PRIVATE:
         f_type = node_t::NODE_IDENTIFIER;
         set_string("private");
@@ -354,9 +358,13 @@ bool Node::to_int64()
         {
             f_int.set(f_str.to_int64());
         }
+        else if(f_str.is_float64())
+        {
+            f_int.set(f_str.to_float64()); // C-like cast to integer with a floor() (no rounding)
+        }
         else
         {
-            f_int.set(0);
+            f_int.set(0); // should return NaN, not possible with an integer...
         }
         break;
 
