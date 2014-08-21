@@ -57,6 +57,7 @@ optimization_match_t const g_optimizer_logical_match_not_literal[] =
     {
         /* f_depth */               0,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+        /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
         /* f_links[_count] */       NULL_POINTER_AND_COUNT()
@@ -65,6 +66,7 @@ optimization_match_t const g_optimizer_logical_match_not_literal[] =
         {
             /* f_depth */               1,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
             /* f_links[_count] */       NULL_POINTER_AND_COUNT()
@@ -81,6 +83,7 @@ optimization_match_t const g_optimizer_logical_match_not_false[] =
     {
         /* f_depth */               0,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+        /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
         /* f_links[_count] */       NULL_POINTER_AND_COUNT()
@@ -89,6 +92,7 @@ optimization_match_t const g_optimizer_logical_match_not_false[] =
         {
             /* f_depth */               1,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false),
+            /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
             /* f_links[_count] */       NULL_POINTER_AND_COUNT()
@@ -106,6 +110,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
     {
         /* f_depth */               0,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+        /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
         /* f_links[_count] */       NULL_POINTER_AND_COUNT()
@@ -114,6 +119,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
         {
             /* f_depth */               1,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+            /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
             /* f_links[_count] */       NULL_POINTER_AND_COUNT()
@@ -122,6 +128,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
             {
                 /* f_depth */               2,
                 /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+                /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
                 /* f_links[_count] */       NULL_POINTER_AND_COUNT()
@@ -130,6 +137,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
                 {
                     /* f_depth */               3,
                     /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(), // match any node
+                    /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                     /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
                     /* f_links[_count] */       NULL_POINTER_AND_COUNT()

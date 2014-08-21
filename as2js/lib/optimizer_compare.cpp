@@ -102,6 +102,53 @@ bool match_node(Node::pointer_t node, optimization_match_t const *match)
         }
     }
 
+    if(match->f_with_value != nullptr)
+    {
+        optimization_match_t::optimization_literal_t const *value(match->f_with_value);
+
+        // note: we only need to check STRING, INT64, and FLOAT64 literals
+        switch(value->f_operator)
+        {
+        case Node::node_t::NODE_EQUAL:
+        case Node::node_t::NODE_STRICTLY_EQUAL:
+            switch(node->get_type())
+            {
+            case Node::node_t::NODE_STRING:
+                if(node->get_string() != value->f_string)
+                {
+                    return false;
+                }
+                break;
+
+            case Node::node_t::NODE_INT64:
+                if(node->get_int64().get() != value->f_int64)
+                {
+                    return false;
+                }
+                break;
+
+            case Node::node_t::NODE_FLOAT64:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(node->get_float64().get() != value->f_float64)
+#pragma GCC diagnostic pop
+                {
+                    return false;
+                }
+                break;
+
+            default:
+                throw exception_internal_error("INTERNAL ERROR: optimizer optimization_literal_t table used against an unsupported node type."); // LCOV_EXCL_LINE
+
+            }
+            break;
+
+        default:
+            throw exception_internal_error("INTERNAL ERROR: optimizer optimization_literal_t table using an unsupported comparison operator."); // LCOV_EXCL_LINE
+
+        }
+    }
+
     // match node attributes
     if(match->f_attributes_count > 0)
     {

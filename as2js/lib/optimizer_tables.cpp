@@ -39,6 +39,7 @@ SOFTWARE.
 
 // Low level matching tables
 #include    "optimizer_matches.ci"
+#include    "optimizer_values.ci"
 
 // Optimization tables 
 #include    "optimizer_optimize.ci"

@@ -68,12 +68,20 @@ namespace optimizer_details
 {
 
 
-#define POINTER_AND_COUNT(name)              name, sizeof(name) / sizeof(name[0])
+#define POINTER_AND_COUNT(name)             name, sizeof(name) / sizeof(name[0])
 #define NULL_POINTER_AND_COUNT()            nullptr, 0
 
 
 struct optimization_match_t
 {
+    struct optimization_literal_t
+    {
+        Node::node_t                        f_operator;
+        char const *                        f_string;
+        Int64::int64_type                   f_int64;
+        Float64::float64_type               f_float64;
+    };
+
     struct optimization_link_match_t
     {
         optimization_match_t const *        f_match;
@@ -92,6 +100,8 @@ struct optimization_match_t
 
     Node::node_t const *            f_node_types;
     size_t                          f_node_types_count;
+
+    optimization_literal_t const *  f_with_value;
 
     Node::attribute_t const *       f_attributes;   // list of attributes, NODE_ATTR_max is used to separate each list
     size_t                          f_attributes_count;
@@ -127,6 +137,7 @@ struct optimization_optimize_t
 
 
 uint32_t const OPTIMIZATION_ENTRY_FLAG_UNSAFE_MATH =        0x0001;
+uint32_t const OPTIMIZATION_ENTRY_FLAG_UNSAFE_OBJECT =      0x0002;     // in most cases because the object may have its own operator(s)
 
 struct optimization_entry_t
 {

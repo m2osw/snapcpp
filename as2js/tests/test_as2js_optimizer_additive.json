@@ -397,6 +397,46 @@
         }
     },
 
+    // +a -> a, idenfitier
+    {
+        //"verbose": true,
+        "name": "+a -> a, with an object",
+        "program": "+a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
     // -a -> a, integer
     {
         //"verbose": true,
@@ -1138,6 +1178,104 @@
                         {
                             "node type": "FLOAT64",
                             "float": 2.3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 0-a -> -a, integer
+    {
+        //"verbose": true,
+        "name": "0 - a -> -a, with integer",
+        "program": "0 - a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 0.0-a -> -a, float
+    {
+        //"verbose": true,
+        "name": "0.0 - a -> -a, with float",
+        "program": "0.0 - a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 0.0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
                         }
                     ]
                 }

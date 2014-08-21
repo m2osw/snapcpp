@@ -1,4 +1,4 @@
-/* optimizer_matches.ci -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* optimizer_values.ci -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -39,72 +39,13 @@ namespace optimizer_details
 {
 
 
-Node::node_t const g_optimizer_match_add[]
+optimization_match_t::optimization_literal_t const g_optimizer_value_zero[] =
 {
-    Node::node_t::NODE_ADD
+    Node::node_t::NODE_EQUAL,
+    "",
+    0,
+    0.0
 };
-
-
-Node::node_t const g_optimizer_match_any_literal[]
-{
-    Node::node_t::NODE_FALSE,
-    Node::node_t::NODE_FLOAT64,
-    Node::node_t::NODE_INT64,
-    Node::node_t::NODE_NULL,
-    Node::node_t::NODE_STRING,
-    Node::node_t::NODE_TRUE,
-    Node::node_t::NODE_UNDEFINED
-};
-
-
-Node::node_t const g_optimizer_match_false[]
-{
-    Node::node_t::NODE_FALSE
-};
-
-
-Node::node_t const g_optimizer_match_floating_point[]
-{
-    Node::node_t::NODE_FLOAT64
-};
-
-
-Node::node_t const g_optimizer_match_integer[]
-{
-    Node::node_t::NODE_INT64
-};
-
-
-Node::node_t const g_optimizer_match_logical_not[]
-{
-    Node::node_t::NODE_LOGICAL_NOT
-};
-
-
-Node::node_t const g_optimizer_match_numbers[]
-{
-    Node::node_t::NODE_INT64,
-    Node::node_t::NODE_FLOAT64
-};
-
-
-Node::node_t const g_optimizer_match_string[]
-{
-    Node::node_t::NODE_STRING
-};
-
-
-Node::node_t const g_optimizer_match_subtract[]
-{
-    Node::node_t::NODE_SUBTRACT
-};
-
-
-Node::node_t const g_optimizer_match_true[]
-{
-    Node::node_t::NODE_TRUE
-};
-
 
 
 
