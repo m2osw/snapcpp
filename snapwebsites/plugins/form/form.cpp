@@ -2213,12 +2213,12 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
  */
 QString form::get_source(QString const& owner, content::path_info_t& ipath)
 {
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-    if(!data_table->exists(ipath.get_branch_key()))
+    QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
+    if(!branch_table->exists(ipath.get_branch_key()))
     {
         return "";
     }
-    QtCassandra::QCassandraRow::pointer_t row(data_table->row(ipath.get_branch_key()));
+    QtCassandra::QCassandraRow::pointer_t row(branch_table->row(ipath.get_branch_key()));
     if(!row->exists(get_name(SNAP_NAME_FORM_SOURCE)))
     {
         return "";

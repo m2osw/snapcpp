@@ -48,12 +48,12 @@ public:
     links_exception_missing_links_table(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
-class links_exception_missing_data_table : public links_exception
+class links_exception_missing_branch_table : public links_exception
 {
 public:
-    links_exception_missing_data_table(char const *       what_msg) : links_exception(what_msg) {}
-    links_exception_missing_data_table(std::string const& what_msg) : links_exception(what_msg) {}
-    links_exception_missing_data_table(QString const&     what_msg) : links_exception(what_msg) {}
+    links_exception_missing_branch_table(char const *       what_msg) : links_exception(what_msg) {}
+    links_exception_missing_branch_table(std::string const& what_msg) : links_exception(what_msg) {}
+    links_exception_missing_branch_table(QString const&     what_msg) : links_exception(what_msg) {}
 };
 
 class links_exception_invalid_name : public links_exception
@@ -228,7 +228,7 @@ private:
 
     zpsnap_child_t                                  f_snap;
     QtCassandra::QCassandraTable::pointer_t         f_links_table;
-    QtCassandra::QCassandraTable::pointer_t         f_data_table;
+    QtCassandra::QCassandraTable::pointer_t         f_branch_table;
 };
 
 } // namespace links

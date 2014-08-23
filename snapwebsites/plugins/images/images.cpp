@@ -361,16 +361,16 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
     }
 
     // verify that the attachment key exists
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
-    if(!data_table->exists(parent_ipath.get_revision_key())
-    || !data_table->row(parent_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    if(!revision_table->exists(parent_ipath.get_revision_key())
+    || !revision_table->row(parent_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         // again, check whether we have an attachment...
         return VIRTUAL_PATH_INVALID;
     }
 
     // get the key of that attachment, it should be a file md5
-    QtCassandra::QCassandraValue attachment_key(data_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         // no key?!
@@ -467,8 +467,8 @@ bool images::on_path_execute(content::path_info_t& ipath)
         field_name = ipath.get_parameter("attachment_field");
     }
 
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-    QtCassandra::QCassandraValue attachment_key(data_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         // somehow the file key is not available
@@ -605,7 +605,7 @@ void images::on_modified_content(content::path_info_t& ipath)
         // request the backend to regenerate these different views
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
-        QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
+        QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
 
         // TODO: Delay this add to the end of the process so we can avoid
         //       adding delays to our data processing
@@ -616,7 +616,7 @@ void images::on_modified_content(content::path_info_t& ipath)
 
         // check whether we already had an entry for this image in the files
         // table, images row.
-        QtCassandra::QCassandraValue old_date_value(data_table->row(ipath.get_branch_key())->cell(get_name(SNAP_NAME_IMAGES_MODIFIED))->value());
+        QtCassandra::QCassandraValue old_date_value(branch_table->row(ipath.get_branch_key())->cell(get_name(SNAP_NAME_IMAGES_MODIFIED))->value());
         if(!old_date_value.nullValue())
         {
             // not null, there is an old date
@@ -651,7 +651,7 @@ void images::on_modified_content(content::path_info_t& ipath)
         // (this we keep so we can see when the image modifications were
         // requested and then once done how long it took the system to
         // do the work.)
-        data_table->row(ipath.get_branch_key())->cell(get_name(SNAP_NAME_IMAGES_MODIFIED))->setValue(start_date);
+        branch_table->row(ipath.get_branch_key())->cell(get_name(SNAP_NAME_IMAGES_MODIFIED))->setValue(start_date);
 
         f_ping_backend = true;
     }
@@ -896,7 +896,7 @@ SNAP_LOG_INFO() << "image path from key [" << image_key << "]\n";
 bool images::do_image_transformations(QString const& image_key)
 {
     content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     content::path_info_t image_ipath;
     image_ipath.set_path(image_key);
 
@@ -939,7 +939,7 @@ bool images::do_image_transformations(QString const& image_key)
         QString const script_key(script_info.key());
         content::path_info_t script_ipath;
         script_ipath.set_path(script_key);
-        QString script(data_table->row(script_ipath.get_revision_key())->cell(get_name(SNAP_NAME_IMAGES_SCRIPT))->value().stringValue());
+        QString script(revision_table->row(script_ipath.get_revision_key())->cell(get_name(SNAP_NAME_IMAGES_SCRIPT))->value().stringValue());
         if(script.isEmpty())
         {
             // We have a problem here! This is a waste of time.
@@ -1208,12 +1208,12 @@ void images::func_read(parameters_t& params)
     // param 3 is the image number, zero by default (optional)
 
     content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);
-    QByteArray md5(data_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
+    QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
     QString const output_name(params.f_params[1]);
     QString field_name;
     if(output_name == "data")
@@ -1250,12 +1250,12 @@ void images::func_write(parameters_t& params)
     // param 2 is the name used to save the file in the files table
 
     content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);
-    QByteArray md5(data_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
+    QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
 
     QString const output_name(params.f_params[1]);
     if(output_name == "data")

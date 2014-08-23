@@ -1715,7 +1715,7 @@ void permissions::on_backend_action(QString const& action)
 void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifier)
 {
     content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     uint64_t const created_date(f_snap->get_start_date());
 
     // All users are also given a permission group that can be used to
@@ -1732,7 +1732,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
         content_plugin->create_content(permission_ipath, get_plugin_name(), "system-page");
 
         // create a default the title and body
-        QtCassandra::QCassandraRow::pointer_t permission_revision_row(data_table->row(permission_ipath.get_revision_key()));
+        QtCassandra::QCassandraRow::pointer_t permission_revision_row(revision_table->row(permission_ipath.get_revision_key()));
         permission_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
         // TODO: translate (not too important on this page since it is really not public)
         permission_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(QString("User #%1 Private Permission Right").arg(identifier));
@@ -1750,7 +1750,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
         content_plugin->create_content(group_ipath, get_plugin_name(), "system-page");
 
         // save the title, description, and link to the type
-        QtCassandra::QCassandraRow::pointer_t group_revision_row(data_table->row(group_ipath.get_revision_key()));
+        QtCassandra::QCassandraRow::pointer_t group_revision_row(revision_table->row(group_ipath.get_revision_key()));
         group_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
         // TODO: translate (not too important on this page since it is really not public)
         group_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(QString("User #%1 Private Permission Group").arg(identifier));

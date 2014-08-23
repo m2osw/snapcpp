@@ -20,7 +20,7 @@ then
 fi	
 
 echo
-echo "Reseting your Snap! database..."
+echo "Resetting your Snap! database..."
 echo
 DISTDIR=$1
 BINDIR=${DISTDIR}/bin

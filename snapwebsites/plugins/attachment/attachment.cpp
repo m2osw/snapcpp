@@ -204,14 +204,14 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
     cpath = cpath.left(cpath.length() - 3);
     content::path_info_t attachment_ipath;
     attachment_ipath.set_path(cpath);
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-    if(!data_table->exists(attachment_ipath.get_revision_key())
-    || !data_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
+    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
+    if(!revision_table->exists(attachment_ipath.get_revision_key())
+    || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         return;
     }
 
-    QtCassandra::QCassandraValue attachment_key(data_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         return;
@@ -274,8 +274,8 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
         field_name = ipath.get_parameter("attachment_field");
     }
 
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-    QtCassandra::QCassandraValue attachment_key(data_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         // somehow the file key is not available

@@ -584,8 +584,8 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 {
     static_cast<void>(r);
 
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-    if(!data_table)
+    QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
+    if(!branch_table)
     {
         // the table does not exist?!
         // (since the content is a core plugin, that should not happen)
@@ -637,7 +637,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
             url.set_uri(page_key);
 
             // author of the page defined a priority for the sitemap.xml file?
-            QtCassandra::QCassandraValue priority(data_table->row(page_ipath.get_branch_key())->cell(get_name(SNAP_NAME_SITEMAPXML_PRIORITY))->value());
+            QtCassandra::QCassandraValue priority(branch_table->row(page_ipath.get_branch_key())->cell(get_name(SNAP_NAME_SITEMAPXML_PRIORITY))->value());
             if(priority.nullValue())
             {
                 // set the site priority to 1.0 for the home page
@@ -654,14 +654,14 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
             }
 
             // use the last modification date from that page
-            QtCassandra::QCassandraValue modified(data_table->row(page_ipath.get_branch_key())->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
+            QtCassandra::QCassandraValue modified(branch_table->row(page_ipath.get_branch_key())->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
             if(!modified.nullValue())
             {
                 url.set_last_modification(modified.int64Value() / 1000000L); // micro-seconds -> seconds
             }
 
             // XXX ameliorate as we grow this feature
-            QtCassandra::QCassandraValue frequency(data_table->row(page_ipath.get_branch_key())->cell(get_name(SNAP_NAME_SITEMAPXML_FREQUENCY))->value());
+            QtCassandra::QCassandraValue frequency(branch_table->row(page_ipath.get_branch_key())->cell(get_name(SNAP_NAME_SITEMAPXML_FREQUENCY))->value());
             if(!frequency.nullValue())
             {
                 QString f(frequency.stringValue());

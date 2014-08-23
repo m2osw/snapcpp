@@ -658,6 +658,7 @@ INPUT                  = @snapwebsites_project_SOURCE_DIR@/lib \
                          @snapwebsites_project_SOURCE_DIR@/src \
                          @snapwebsites_project_BINARY_DIR@/lib/snapwebsites.h \
                          @snapwebsites_project_SOURCE_DIR@/plugins/antivirus \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/attachment \
                          @snapwebsites_project_SOURCE_DIR@/plugins/carousel \
                          @snapwebsites_project_SOURCE_DIR@/plugins/char_chart \
                          @snapwebsites_project_SOURCE_DIR@/plugins/content \
@@ -667,25 +668,30 @@ INPUT                  = @snapwebsites_project_SOURCE_DIR@/lib \
                          @snapwebsites_project_SOURCE_DIR@/plugins/filter \
                          @snapwebsites_project_SOURCE_DIR@/plugins/form \
                          @snapwebsites_project_SOURCE_DIR@/plugins/header \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/images \
                          @snapwebsites_project_SOURCE_DIR@/plugins/info \
                          @snapwebsites_project_SOURCE_DIR@/plugins/javascript \
                          @snapwebsites_project_SOURCE_DIR@/plugins/layout \
                          @snapwebsites_project_SOURCE_DIR@/plugins/links \
                          @snapwebsites_project_SOURCE_DIR@/plugins/list \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/listener \
                          @snapwebsites_project_SOURCE_DIR@/plugins/mailinglist \
                          @snapwebsites_project_SOURCE_DIR@/plugins/menu \
                          @snapwebsites_project_SOURCE_DIR@/plugins/messages \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/mimetype \
                          @snapwebsites_project_SOURCE_DIR@/plugins/output \
                          @snapwebsites_project_SOURCE_DIR@/plugins/path \
                          @snapwebsites_project_SOURCE_DIR@/plugins/permissions \
                          @snapwebsites_project_SOURCE_DIR@/plugins/robotstxt \
                          @snapwebsites_project_SOURCE_DIR@/plugins/search \
                          @snapwebsites_project_SOURCE_DIR@/plugins/sendmail \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/server_access \
                          @snapwebsites_project_SOURCE_DIR@/plugins/sessions \
                          @snapwebsites_project_SOURCE_DIR@/plugins/shorturl \
                          @snapwebsites_project_SOURCE_DIR@/plugins/sitemapxml \
                          @snapwebsites_project_SOURCE_DIR@/plugins/taxonomy \
-                         @snapwebsites_project_SOURCE_DIR@/plugins/users
+                         @snapwebsites_project_SOURCE_DIR@/plugins/users \
+                         @snapwebsites_project_SOURCE_DIR@/plugins/zoom
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

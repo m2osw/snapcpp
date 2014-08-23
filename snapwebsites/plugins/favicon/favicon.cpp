@@ -257,10 +257,10 @@ bool favicon::on_path_execute(content::path_info_t& ipath)
     // check whether there is a current attachment in this ipath with a
     // favicon.ico file; this works because we are the owner of the
     // attachment (opposed to some other plugin)
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
     QString const revision_key(ipath.get_revision_key());
     if(!revision_key.isEmpty()
-    && data_table->row(revision_key)->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
+    && revision_table->row(revision_key)->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
     {
         output(ipath);
         return true;

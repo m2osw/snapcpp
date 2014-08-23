@@ -514,6 +514,11 @@ void users::on_process_cookies()
                         // we right away cancel the session
                         f_info->set_object_path("/user/");
 
+                        // drop the referrer if there is one, it is a
+                        // security issue to keep that info on an explicit
+                        // log out!
+                        static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
+
                         QtCassandra::QCassandraRow::pointer_t row(users_table->row(key));
 
                         // Save the date when the user logged out
@@ -1156,9 +1161,11 @@ void users::logout_user(content::path_info_t& ipath, QDomElement& page, QDomElem
         QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         if(!content_table->exists(ipath.get_key()))
         {
+            // forcing to exact /logout page
             ipath.set_path("logout");
         }
     }
+
     output::output::instance()->on_generate_main_content(ipath, page, body, "");
 }
 
@@ -1800,7 +1807,7 @@ void users::process_login_form(login_mode_t login_mode)
         logged_info.set_identifier(user_identifier.int64Value());
         logged_info.user_ipath().set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(logged_info.get_identifier()));
 
-        // before we actually log the user in we must make sure he's
+        // before we actually log the user in we must make sure he is
         // not currently blocked or not yet active
         links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, logged_info.user_ipath().get_key(), logged_info.user_ipath().get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
@@ -2999,8 +3006,8 @@ bool users::register_user(QString const& email, QString const& password)
     content_plugin->create_content(user_ipath, get_plugin_name(), "user-page");
 
     // save a default title and body
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
-    QtCassandra::QCassandraRow::pointer_t revision_row(data_table->row(user_ipath.get_revision_key()));
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
     revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
     // no title or body by default--other plugins could set those to the
     //                              user name or other information

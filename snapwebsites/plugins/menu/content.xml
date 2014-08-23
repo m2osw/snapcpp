@@ -54,7 +54,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="list::original_item_key_script" overwrite="yes">
       <![CDATA[(branch := int32(cell("content", page, "content::revision_control::current_branch")),
                 key := string(cell("content", page, "content::revision_control::current_revision_key::" + branch + "::en")),
-                key ? string(cell("data", key, "content::title")) : "no title")]]>
+                key ? string(cell("revision", key, "content::title")) : "no title")]]>
     </param>
     <param name="list::original_test_script" overwrite="yes">
       <![CDATA[linked_to("menu::admin", page, "types/taxonomy/system/menu/item/admin")]]>

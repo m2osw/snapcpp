@@ -1310,7 +1310,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
 {
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
 
     QtCassandra::QCassandraValue last_updated_value;
     if(layout_name == "default")
@@ -1331,8 +1331,8 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     content::path_info_t layout_ipath;
     layout_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
     if(layout_ipath.has_branch()
-    && data_table->exists(layout_ipath.get_branch_key())
-    && data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+    && branch_table->exists(layout_ipath.get_branch_key())
+    && branch_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
     {
         // The layout is already installed
         if(last_updated == 0)
@@ -1411,7 +1411,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
 
     // after an update of the content.xml file we expect the layout::boxes
     // field to be defined
-    if( !data_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)) )
+    if( !branch_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)) )
     {
         if(last_updated != 0)
         {

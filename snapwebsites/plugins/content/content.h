@@ -39,6 +39,7 @@ enum name_t
     SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE,
     SNAP_NAME_CONTENT_BODY,
     SNAP_NAME_CONTENT_BRANCH,
+    SNAP_NAME_CONTENT_BRANCH_TABLE,
     SNAP_NAME_CONTENT_CHILDREN,
     SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED,
     SNAP_NAME_CONTENT_CONTENT_TYPES,
@@ -46,7 +47,6 @@ enum name_t
     SNAP_NAME_CONTENT_COPYRIGHTED,
     SNAP_NAME_CONTENT_CREATED,
     SNAP_NAME_CONTENT_CURRENT_VERSION,
-    SNAP_NAME_CONTENT_DATA_TABLE,
     SNAP_NAME_CONTENT_DESCRIPTION,
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
     SNAP_NAME_CONTENT_FILES_CREATED,
@@ -91,6 +91,7 @@ enum name_t
     SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY,
     SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH,
     SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION,
+    SNAP_NAME_CONTENT_REVISION_TABLE,
     SNAP_NAME_CONTENT_SHORT_TITLE,
     SNAP_NAME_CONTENT_SINCE,
     SNAP_NAME_CONTENT_SUBMITTED,
@@ -521,7 +522,8 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
     QtCassandra::QCassandraTable::pointer_t get_content_table();
     QtCassandra::QCassandraTable::pointer_t get_files_table();
-    QtCassandra::QCassandraTable::pointer_t get_data_table();
+    QtCassandra::QCassandraTable::pointer_t get_branch_table();
+    QtCassandra::QCassandraTable::pointer_t get_revision_table();
     QtCassandra::QCassandraValue get_content_parameter(path_info_t& path, QString const& param_name, param_revision_t revision_type);
 
     // revision control
@@ -547,6 +549,7 @@ public:
     QString             set_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& revision, QString const& locale, bool working_branch);
     path_info_t         get_path_info(QString const& cpath, QString const& owner, bool main_page);
     QString             get_user_key(QString const& key, snap_version::version_number_t branch, int64_t identifier);
+    path_info_t         clone_page(path_info_t& source_ipath, QString& destination);
 
     void                on_bootstrap(snap_child *snap);
     void                on_execute(QString const& uri_path);
@@ -626,7 +629,8 @@ private:
 
     zpsnap_child_t                                  f_snap;
     QtCassandra::QCassandraTable::pointer_t         f_content_table;
-    QtCassandra::QCassandraTable::pointer_t         f_data_table;
+    QtCassandra::QCassandraTable::pointer_t         f_branch_table;
+    QtCassandra::QCassandraTable::pointer_t         f_revision_table;
     QtCassandra::QCassandraTable::pointer_t         f_files_table;
     content_block_map_t                             f_blocks;
     controlled_vars::zint32_t                       f_file_index;

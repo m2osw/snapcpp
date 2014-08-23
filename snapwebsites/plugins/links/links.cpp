@@ -391,16 +391,16 @@ link_context::link_context(::snap::snap_child *snap, const link_info& info, cons
     {
         // TODO: we have to somehow remove this content dependency (circular
         //       dependency)
-        QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-        if(!data_table)
+        QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
+        if(!branch_table)
         {
             // the table does not exist?!
-            throw links_exception_missing_data_table("could not get the data table");
+            throw links_exception_missing_branch_table("could not get the data table");
         }
         // f_row remains null (isNull() returns true)
         //QtCassandra::QCassandraRow::pointer_t row(table->row(f_info.key()));
         QString const links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
-        QtCassandra::QCassandraValue link(data_table->row(f_info.row_key())->cell(links_namespace + "::" + f_info.name())->value());
+        QtCassandra::QCassandraValue link(branch_table->row(f_info.row_key())->cell(links_namespace + "::" + f_info.name())->value());
         if(!link.nullValue())
         {
             f_link = link.stringValue();
@@ -563,7 +563,7 @@ bool link_context::next_link(link_info& info)
 links::links()
     //: f_snap(nullptr) -- auto-init
     //, f_links_table() -- auto-init
-    //, f_data_table() -- auto-init
+    //, f_branch_table() -- auto-init
 {
 }
 
@@ -670,7 +670,7 @@ void links::initial_update(int64_t variables_timestamp)
 /** \brief Initialize the links table.
  *
  * This function creates the links table if it doesn't exist yet. Otherwise
- * it simple initializes the f_data_table variable member.
+ * it simple initializes the f_branch_table variable member.
  *
  * If the function is not able to create the table an exception is raised.
  *
@@ -704,16 +704,16 @@ void links::init_tables()
     get_links_table();
 
     // retrieve content table if not there yet
-    if(!f_data_table)
+    if(!f_branch_table)
     {
         // TODO remove this circular dependency on content plugin
-        QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
-        if(!data_table)
+        QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
+        if(!branch_table)
         {
             // links cannot work if the data table doesn't already exist
-            throw links_exception_missing_data_table("could not get the data table");
+            throw links_exception_missing_branch_table("could not get the data table");
         }
-        f_data_table = data_table;
+        f_branch_table = branch_table;
     }
 }
 
@@ -844,8 +844,8 @@ void links::create_link(const link_info& src, const link_info& dst)
     }
 
     // save the links in the rows (branches)
-    (*f_data_table)[src.row_key()][src_col] = dst.data(); // save dst in src
-    (*f_data_table)[dst.row_key()][dst_col] = src.data(); // save src in dst
+    (*f_branch_table)[src.row_key()][src_col] = dst.data(); // save dst in src
+    (*f_branch_table)[dst.row_key()][dst_col] = src.data(); // save src in dst
 }
 
 
@@ -913,7 +913,7 @@ void links::delete_link(link_info const& info, const int delete_record_count )
 
     init_tables();
 
-    if(!f_data_table->exists(info.row_key()))
+    if(!f_branch_table->exists(info.row_key()))
     {
         // probably not an error if the row does not even exist...
         return;
@@ -922,7 +922,7 @@ void links::delete_link(link_info const& info, const int delete_record_count )
     // note: we consider the content row defined in the info structure
     //       to be the source; obviously, as a result, the other one will
     //       be the destination
-    QtCassandra::QCassandraRow::pointer_t src_row(f_data_table->row(info.row_key()));
+    QtCassandra::QCassandraRow::pointer_t src_row(f_branch_table->row(info.row_key()));
 
     // check if the link is defined as is (i.e. this info represents
     // a unique link, a "1")
@@ -941,13 +941,13 @@ void links::delete_link(link_info const& info, const int delete_record_count )
         // destination and can delete it too
         link_info destination;
         destination.from_data(link.stringValue());
-        if(!f_data_table->exists(destination.row_key()))
+        if(!f_branch_table->exists(destination.row_key()))
         {
             SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
                         (destination.row_key())("\" (destination row missing in data table).");
             return;
         }
-        QtCassandra::QCassandraRow::pointer_t dst_row(f_data_table->row(destination.row_key()));
+        QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(destination.row_key()));
 
         // to delete the link on the other side, we have to test whether
         // it is unique (1:1) or multiple (1:*)
@@ -1039,7 +1039,7 @@ void links::delete_link(link_info const& info, const int delete_record_count )
             //for(auto cell_iterator : cells) -- cannot use that one because we need the key
             {
                 QString const key(QString::fromUtf8(cell_iterator.key()));
-                if(!f_data_table->exists(key))
+                if(!f_branch_table->exists(key))
                 {
                     // probably not an error if a link does not exist at all...
                     SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
@@ -1048,7 +1048,7 @@ void links::delete_link(link_info const& info, const int delete_record_count )
                 }
                 else
                 {
-                    QtCassandra::QCassandraRow::pointer_t dst_row(f_data_table->row(key));
+                    QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(key));
                     if(dst_row->exists(unique_link_name))
                     {
                         // here we have a "*:1"
@@ -1151,7 +1151,7 @@ void links::delete_this_link(link_info const& source, link_info const& destinati
     {
         QString src_key(src_row->cell(destination.key())->value().stringValue());
         src_row->dropCell(destination.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-        f_data_table->row(source.row_key())->dropCell(src_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        f_branch_table->row(source.row_key())->dropCell(src_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
     }
 
     // drop the destination info
@@ -1160,7 +1160,7 @@ void links::delete_this_link(link_info const& source, link_info const& destinati
     {
         QString dst_key(dst_row->cell(source.key())->value().stringValue());
         dst_row->dropCell(source.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-        f_data_table->row(destination.row_key())->dropCell(dst_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+        f_branch_table->row(destination.row_key())->dropCell(dst_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
     }
 }
 

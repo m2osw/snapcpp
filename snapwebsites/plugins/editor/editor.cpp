@@ -466,8 +466,8 @@ void editor::process_new_draft()
     content_plugin->create_content(draft_ipath, owner, "page/draft");
 
     // save the title, description, and link to the type as a "draft type"
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
-    QtCassandra::QCassandraRow::pointer_t revision_row(data_table->row(draft_ipath.get_revision_key()));
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(draft_ipath.get_revision_key()));
     revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_DESCRIPTION))->setValue(page_description);
@@ -791,7 +791,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 
     // check whether auto-save is ON
     QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
-    bool const auto_save = on_save.isNull() ? true : on_save.attribute("auto-save", "yes") == "yes";
+    bool const auto_save(on_save.isNull() ? true : on_save.attribute("auto-save", "yes") == "yes");
 
     QtCassandra::QCassandraRow::pointer_t revision_row;
 
@@ -834,8 +834,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         // now save the new data
         ipath.force_revision(revision_number);
 
-        QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
-        revision_row = data_table->row(ipath.get_revision_key());
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        revision_row = revision_table->row(ipath.get_revision_key());
     }
 
     // this will get initialized if the row is required
@@ -1801,7 +1801,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
  *
  * This function saves the page in a new revision and makes it the current
  * revision. If the page does not exist yet, then it gets created (i.e.
- * saving from the admin/drafts area to a real page.
+ * saving from the admin/drafts area to a real page.)
  *
  * The page type as defined when creating the draft is used as the type of
  * this new page. This generally defines the permissions, so we do not
@@ -1814,7 +1814,8 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
     messages::messages *messages(messages::messages::instance());
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
     QString const site_key(f_snap->get_site_key_with_slash());
 
     // although we expect the URI sent by the editor to be safe, we filter it
@@ -1855,6 +1856,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
         // the page totally innaccessible is as follow
         //
         // TBD: should we use page/private instead?
+        // TODO: offer the administrator to define a default
         type_name = "page/secure";
     }
 
@@ -1919,7 +1921,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
         // this is a new page, create it now
         //
         // TODO: language "xx" is totally wrong, plus we actually need to
-        //       publish ALL that languages present in the draft
+        //       publish ALL those languages present in the draft
         //
         QString const locale("xx");
         QString const owner(output::output::instance()->get_plugin_name());
@@ -1935,10 +1937,10 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
         content_table->row(page_ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_on);
 
         // it is being issued now
-        data_table->row(page_ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ISSUED))->setValue(f_snap->get_start_date());
+        branch_table->row(page_ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ISSUED))->setValue(f_snap->get_start_date());
 
         // copy the last revision
-        dbutils::copy_row(data_table, ipath.get_revision_key(), data_table, page_ipath.get_revision_key());
+        dbutils::copy_row(revision_table, ipath.get_revision_key(), revision_table, page_ipath.get_revision_key());
 
         // TODO: copy links too...
     }
@@ -2130,7 +2132,7 @@ bool editor::replace_uri_token_impl(editor_uri_token& token_info)
     }
 
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QtCassandra::QCassandraTable::pointer_t data_table(content::content::instance()->get_data_table());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
 
     //
     // TIME / DATE
@@ -2292,7 +2294,7 @@ bool editor::replace_uri_token_impl(editor_uri_token& token_info)
             break;
 
         case TIME_SOURCE_MODIFICATION_DATE:
-            seconds = data_table->row(token_info.f_ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))->value().int64Value() / 1000000;
+            seconds = branch_table->row(token_info.f_ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))->value().int64Value() / 1000000;
             break;
 
         case TIME_SOURCE_NOW:
@@ -2665,8 +2667,8 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
     // now go through all the widgets checking out their path, if the
     // path exists in doc then copy the data in the parser_xml
-    QtCassandra::QCassandraTable::pointer_t data_table(content_plugin->get_data_table());
-    QtCassandra::QCassandraRow::pointer_t revision_row(data_table->row(ipath.get_revision_key()));
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
     for(int i(0); i < max_widgets; ++i)
     {
         QDomElement w(widgets.at(i).toElement());
