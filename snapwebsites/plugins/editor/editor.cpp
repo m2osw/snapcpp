@@ -21,9 +21,6 @@
 #include "../attachment/attachment.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
-#include "../sessions/sessions.h"
-#include "../filter/filter.h"
-#include "../layout/layout.h"
 
 #include "dbutils.h"
 #include "mkgmtime.h"

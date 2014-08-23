@@ -17,7 +17,7 @@
 
 #include "search.h"
 
-#include "../content/content.h"
+//#include "../content/content.h"
 
 #include "not_reached.h"
 #include "dom_util.h"
