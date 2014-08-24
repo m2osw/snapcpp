@@ -249,6 +249,12 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_SINCE:
         return "content::since";
 
+    case SNAP_NAME_CONTENT_STATUS:
+        return "content::status";
+
+    case SNAP_NAME_CONTENT_STATUS_CHANGED:
+        return "content::status_changed";
+
     case SNAP_NAME_CONTENT_SUBMITTED:
         return "content::submitted";
 
@@ -302,6 +308,135 @@ char const *css_extensions[] =
 };
 
 } // no name namespace
+
+
+/** \type enum class status_t
+ *
+ * This basic status is used by the content plugin to manage a page
+ * availability.
+ *
+ * By default a page is in the normal status (SNAP_CONTENT_STATUS_NORMAL).
+ * A normal page can be viewed as fully available and will be shown to
+ * anyone with enough permissions.
+ *
+ * A page can also be hidden from view (SNAP_CONTENT_STATUS_HIDDEN) in
+ * which case the page is accessible by the administrators with enough
+ * permissions to see hidden pages, but no one else.
+ *
+ * The page can also be created, cloned, deleted... In all those other
+ * states, the page is not available at all and it should not be checked
+ * except by the update functions that know how to deal with such pages.
+ *
+ * Note that a deleted page (SNAP_CONTENT_STATUS_DELETED) is similar to
+ * a normal page, only it is found in the trashcan and thus it cannot
+ * get edited. It can only be "undeleted" (cloned back to its original
+ * location or to a new location in the regular tree.)
+ */
+
+/** \var SNAP_CONTENT_STATUS_UNSUPPORTED
+ *
+ * This value is returned by the get_status() function whenever a path
+ * to a page returns a number that the current status implementation does
+ * not understand. Unfortunately, such status cannot really be dealt with
+ * otherwise.
+ */
+
+/** \var SNAP_CONTENT_STATUS_UNDEFINED
+ *
+ * This value is returned by the get_status() function whenever a path
+ * to a non-existant page is read.
+ *
+ * This is similar to saying this is a 404. There is no redirect or anything
+ * else that will help in this circumstance.
+ */
+
+/** \var SNAP_CONTENT_STATUS_UNKNOWN
+ *
+ * This value is used internally to indicate that the status was not yet
+ * read from the database. It should never be saved in the database itself.
+ *
+ * This is used in the path_info_t class up until the status gets read from
+ * the content table.
+ */
+
+/** \var SNAP_CONTENT_STATUS_NORMAL
+ *
+ * This page is valid. You can use it as is.
+ *
+ * This is the only status that makes a page 100% valid for anyone with
+ * enough permissions to visit the page.
+ */
+
+/** \var SNAP_CONTENT_STATUS_HIDDEN
+ *
+ * A hidden page is similar to a normal page, only it returns a 404 to
+ * normal users.
+ *
+ * Only administrators with the correct permissions can see the page.
+ */
+
+/** \var SNAP_CONTENT_STATUS_MOVED
+ *
+ * This page content is still intact from the time it was cloned and it
+ * should not be used. Instead, since it is considered moved, it generates
+ * a 301 (it could be made a 302?) so that way the users who had links to
+ * the old path still get to the page.
+ *
+ * A moved page may get deleted at a later time.
+ */
+
+/** \var SNAP_CONTENT_STATUS_DELETED
+ *
+ * A page that gets moved to the trashcan is marked as deleted since we
+ * cannot redirect someone (other than an administrator with enough
+ * permissions) to the trashcan.
+ *
+ * Someone with enough permission can restore a deleted page.
+ *
+ * A page marked as deleted is eventually removed from the database by
+ * the content backend. Pages in the trashcan are also eventually deleted
+ * from the database. That depends on the trashcan policy settings.
+ */
+
+/** \var SNAP_CONTENT_STATUS_CREATING
+ *
+ * While creating a page, the page is marked with this status.
+ *
+ * Once the page is created, it is marked as SNAP_CONTENT_STATUS_NORMAL.
+ */
+
+/** \var SNAP_CONTENT_STATUS_CLONING
+ *
+ * This status is similar to the creating status
+ * (SNAP_CONTENT_STATUS_CREATING) only the data comes from another page
+ * instead of the user.
+ *
+ * You have similar restriction on a page being cloned as a page being
+ * created. While this status is set, someone visiting the page can only
+ * get a signal such as "server busy".
+ *
+ * Once the cloning is done, the page can go to the normal state.
+ */
+
+/** \var SNAP_CONTENT_STATUS_REMOVING
+ *
+ * This status is used to mark the source page in a cloning process as
+ * the page is going to be removed (i.e. the page is being moved to the
+ * trashcan).
+ *
+ * If the page is simply being moved, then the status can remain normal
+ * (SNAP_CONTENT_STATUS_NORMAL) since the source remains perfectly valid
+ * while the page gets cloned. Once the cloning is done then the page is
+ * marked as moved (SNAP_CONTENT_STATUS_MOVED).
+ *
+ * Once the remove process is done, the page gets marked as deleted
+ * (SNAP_CONTENT_STATUS_DELETED). Remember that deleted pages return
+ * a 404 to the client even though all the data is still available in
+ * the database.
+ */
+
+
+
 
 
 /** \class field_search
@@ -2388,6 +2523,7 @@ QString const& attachment_file::get_name() const
 path_info_t::path_info_t()
     : f_content_plugin(content::content::instance())
     , f_snap(f_content_plugin->get_snap())
+    //, f_status(status_t::SNAP_CONTENT_STATUS_UNKNOWN)
     //, f_key("") -- auto-init
     //, f_real_key("") -- auto-init
     //, f_cpath("") -- auto-init
@@ -2606,6 +2742,236 @@ bool path_info_t::is_main_page() const
 QString path_info_t::get_parameter(QString const& name) const
 {
     return f_parameters.contains(name) ? f_parameters[name] : "";
+}
+
+
+/** \brief Retrieve the current status of this page.
+ *
+ * This function reads the basic status of the page. This is important when
+ * more than one person access a website to avoid a certain amount of
+ * conflicting processes (i.e. creating a page at the same time as you
+ * delete that very page).
+ *
+ * The status returned is any one of the status_t values.
+ *
+ * The function may return SNAP_CONTENT_STATUS_UNDEFINED in which case the
+ * page does not exist at all. Note that this function won't lie to you
+ * and say that the page does not exist just because it is marked as deleted.
+ * However, in this case, the page simply is not defined in the Cassandra
+ * database.
+ *
+ * The function may returned the special status named
+ * SNAP_CONTENT_STATUS_UNSUPPORTED. When that happens, you cannot know what
+ * to do with that very page because a more advanced Snap version is running
+ * and marked the page with a status that you do not yet understand... In
+ * that case, the best is for your function to return and not process the
+ * page in any way.
+ *
+ * \important
+ * Status values are using the QUORUM consistency instead of the default of
+ * ONE. This is to ensure that all instances see the same/latest value
+ * saved in the database. This does NOT ensure 100% consistency between
+ * various instances, however, it is not that likely that two people would
+ * apply status changes to a page so simultaneously that it would fail
+ * consistently. Note that if a node is down, this will block the Snap!
+ * server as it has to wait on that one node (forever). It will eventually
+ * time out, but most certainly after Apache already said that the request
+ * could not be satisfied.
+ *
+ * \note
+ * The function never returns SNAP_CONTENT_STATUS_UNKNOWN.
+ *
+ * \param[in] reread  Whether the status should be re-read from the database.
+ *
+ * \return The current status of the page.
+ */
+status_t path_info_t::get_status(bool reread) const
+{
+    // was the status already defined?
+    if(reread || f_status == status_t::SNAP_CONTENT_STATUS_UNKNOWN)
+    {
+        // verify that the page exists, it MUST have a primary owner, if not
+        // it was eradicated from the database at some point
+        QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
+        if(content_table->exists(f_key)
+        && content_table->row(f_key)->exists(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+        {
+            // we set the consistency of the cell to QUORUM to make sure
+            // we read the last written value
+            QtCassandra::QCassandraCell::pointer_t cell(content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS)));
+            cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+            QtCassandra::QCassandraValue value(cell->value());
+            if(value.nullValue())
+            {
+                // this case happens on creating a new page
+                f_status = status_t::SNAP_CONTENT_STATUS_UNDEFINED;
+            }
+            else
+            {
+                // we have got a status, read it
+                f_status = static_cast<status_t>(value.signedCharValue());
+
+                switch(f_status)
+                {
+                case status_t::SNAP_CONTENT_STATUS_NORMAL:
+                case status_t::SNAP_CONTENT_STATUS_HIDDEN:
+                case status_t::SNAP_CONTENT_STATUS_MOVED:
+                case status_t::SNAP_CONTENT_STATUS_DELETED:
+                case status_t::SNAP_CONTENT_STATUS_CREATING:
+                case status_t::SNAP_CONTENT_STATUS_CLONING:
+                case status_t::SNAP_CONTENT_STATUS_REMOVING:
+                    break;
+
+                default:
+                    // any other status is not understood by this version of snap
+//std::cerr << "status is " << static_cast<int>(static_cast<status_t>(f_status)) << "\n";
+                    f_status = status_t::SNAP_CONTENT_STATUS_UNSUPPORTED;
+                    break;
+
+                }
+            }
+        }
+        else
+        {
+            // the page does not exist
+            f_status = status_t::SNAP_CONTENT_STATUS_UNDEFINED;
+        }
+    }
+
+    return f_status;
+}
+
+
+/** \brief Change the current status of the page.
+ *
+ * This function can be used to change the status of the page from its
+ * current status to a new status.
+ *
+ * The function re-reads the status first to make sure we can indeed
+ * change the value. Then it verifies that the status can go from the
+ * existing status to the new status. If not, we assume that the code
+ * is wrong an thus raise an exception.
+ *
+ * The path_info_t object is not using RAII to handle the status cleanly
+ * because these variables can be copied or duplicated and the status of
+ * one variable could be misinterpreted. Therefore, any function that
+ * changes the the status to a temporary state (SNAP_CONTENT_STATUS_CREATING,
+ * SNAP_CONTENT_STATUS_CLONING, or SNAP_CONTENT_STATUS_REMOVING at time of
+ * writing) should use RAII to make sure that the object gets a valid status
+ * once the function is done dealing with the page.
+ *
+ * \important
+ * Status values are using the QUORUM consistency instead of the default of
+ * ONE. This is to ensure that all instances see the same/latest value
+ * saved in the database. However, it blocks the Snap! server until the
+ * write returns and that could be a problem, especially if a node is down.
+ * Such a write will eventually time out.
+ *
+ * \bug
+ * At this point the function expects the status to be properly managed
+ * from the outside. That being said, status changes should only be handled
+ * by functions defined in the content plugin and not functions from other
+ * plugins. Yet, there is a problem where a page status may be set to a
+ * value and not properly restored as expected later. When that occurs, the
+ * database will "remember" the wrong status. We will need to have a way to
+ * fix a website by going through all of the pages and making sure their
+ * status is a currently working status. This is probably a job for the
+ * content backend that also handles things like the trashcan.
+ *
+ * \exception content_exception_invalid_sequence
+ * This exception is raised if the change in status is not valid. (i.e.
+ * changing from status A to status B is not allowed.)
+ *
+ * \param[in] status  The new status for this page.
+ */
+void path_info_t::set_status(status_t status)
+{
+    status_t now(get_status(true));
+
+    // shift by 8 is safe since the status is expected to be one byte
+    // however, the special statuses are negative so we clear a few bits
+#define STATUS_COMBO(n, s) ((static_cast<int>(n) & 255) | ((static_cast<int>(s) & 255) << 8))
+    switch(STATUS_COMBO(now, status))
+    {
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_NORMAL):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_HIDDEN,     status_t::SNAP_CONTENT_STATUS_HIDDEN):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_MOVED,      status_t::SNAP_CONTENT_STATUS_MOVED):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_DELETED,    status_t::SNAP_CONTENT_STATUS_DELETED):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CREATING,   status_t::SNAP_CONTENT_STATUS_CREATING):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CLONING,    status_t::SNAP_CONTENT_STATUS_CLONING):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_REMOVING,   status_t::SNAP_CONTENT_STATUS_REMOVING):
+        // no change, return immediately
+        return;
+
+    // undefined -> ...
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_UNDEFINED,  status_t::SNAP_CONTENT_STATUS_CREATING):
+    // normal -> ...
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_HIDDEN):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_MOVED):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_CLONING):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_REMOVING):
+    // hidden -> ...
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_HIDDEN,     status_t::SNAP_CONTENT_STATUS_NORMAL):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_HIDDEN,     status_t::SNAP_CONTENT_STATUS_CLONING):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_HIDDEN,     status_t::SNAP_CONTENT_STATUS_REMOVING):
+    // hidden -> ...
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_MOVED,      status_t::SNAP_CONTENT_STATUS_NORMAL):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_MOVED,      status_t::SNAP_CONTENT_STATUS_HIDDEN):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_MOVED,      status_t::SNAP_CONTENT_STATUS_CLONING):
+    // creating -> ...
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CREATING,   status_t::SNAP_CONTENT_STATUS_NORMAL):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CREATING,   status_t::SNAP_CONTENT_STATUS_HIDDEN):
+    // cloning -> ...
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CLONING,    status_t::SNAP_CONTENT_STATUS_NORMAL):
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CLONING,    status_t::SNAP_CONTENT_STATUS_HIDDEN):
+    // removing -> ...
+    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_REMOVING,   status_t::SNAP_CONTENT_STATUS_DELETED):
+
+        // this is a valid combo
+        break;
+
+    default:
+        // we do not like this combo at this time
+        throw content_exception_invalid_sequence(QString("changing page status from %1 to %2 is not supported, page \"%3\"")
+                        .arg(static_cast<int>(now)).arg(static_cast<int>(status)).arg(f_key));
+
+    }
+
+    f_status = status;
+
+#ifdef DEBUG
+    switch(f_status)
+    {
+    case status_t::SNAP_CONTENT_STATUS_UNSUPPORTED:
+    case status_t::SNAP_CONTENT_STATUS_UNDEFINED:
+    case status_t::SNAP_CONTENT_STATUS_UNKNOWN:
+        throw snap_logic_exception("somehow got an invalid status for set_status()");
+
+    default:
+        break;
+
+    }
+#endif
+
+    QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
+
+    // we use QUORUM in the consistency level to make sure that information
+    // is available on all Cassandra nodes all at once
+    //
+    // we save the date when we changed the status so that way we know whether
+    // the process when to lala land or is still working on the status; a
+    // backend is responsible for fixing "invalid" status (i.e. after 10 min.
+    // a status is reset back to something like DELETED or HIDDEN if not
+    // otherwise considered valid.)
+    QtCassandra::QCassandraValue changed;
+    changed.setInt64Value(f_snap->get_start_date());
+    changed.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+    content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(changed);
+
+    QtCassandra::QCassandraValue value;
+    value.setSignedCharValue(static_cast<signed char>(static_cast<status_t>(f_status)));
+    value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+    content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS))->setValue(value);
 }
 
 
@@ -4263,6 +4629,9 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     // save the owner
     row->cell(primary_owner)->setValue(owner);
 
+    // now that we have the owner, we can save the status
+    ipath.set_status(status_t::SNAP_CONTENT_STATUS_CREATING);
+
     snap_version::version_number_t const branch_number(ipath.get_branch());
     QString const branch_owner(ipath.get_owner());
 
@@ -4340,6 +4709,28 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     }
 
     return true;
+}
+
+
+/** \brief Function called after all the other plugins signal were called.
+ *
+ * This function gives a chance to the content plugin to fix the status
+ * to NORMAL since on creation it is set to CREATING instead.
+ *
+ * \param[in] path  The path of the new page.
+ * \param[in] owner  The name of the plugin that is to own this page.
+ * \param[in] type  The type of page.
+ */
+void content::create_content_done(path_info_t& ipath, QString const& owner, QString const& type)
+{
+    static_cast<void>(owner);
+    static_cast<void>(type);
+
+    // now the page was created and is ready to be used
+    // (although the revision data is not yet available...
+    // but at this point we do not have a good way to handle
+    // that part yet.)
+    ipath.set_status(status_t::SNAP_CONTENT_STATUS_NORMAL);
 }
 
 
@@ -6080,6 +6471,9 @@ void content::on_save_content()
         QString primary_owner(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER));
         if(content_table->row(d->f_path)->cell(primary_owner)->value().nullValue())
         {
+            path_info_t ipath;
+            ipath.set_path(d->f_path);
+            ipath.set_status(status_t::SNAP_CONTENT_STATUS_CREATING);
             content_table->row(d->f_path)->cell(primary_owner)->setValue(d->f_owner);
         }
         // if != then another plugin took ownership which is fine...
@@ -6363,6 +6757,10 @@ void content::on_save_content()
             }
         }
         // else -- if the path doesn't start with site_key we've got a problem
+
+        path_info_t ipath;
+        ipath.set_path(d->f_path);
+        ipath.set_status(status_t::SNAP_CONTENT_STATUS_NORMAL);
     }
     f_updating = false;
 
@@ -6526,7 +6924,8 @@ void content::on_backend_process()
 }
 
 
-/** \brief Check whether the attachment is considered secure.
+/** \fn void check_attachment_security(attachment_file const& file, permission_flag& secure, bool const fast)
+ * \brief Check whether the attachment is considered secure.
  *
  * Before processing an attachment further we want to know whether it is
  * secure. This event allows different plugins to check the security of
@@ -6538,17 +6937,7 @@ void content::on_backend_process()
  * \param[in] file  The file being processed.
  * \param[in,out] secure  Whether the file is secure.
  * \param[in] fast  If true only perform fast checks (i.e. not the virus check).
- *
- * \return true if the check shall continue, false otherwise.
  */
-bool content::check_attachment_security_impl(attachment_file const& file, permission_flag& secure, bool const fast)
-{
-    static_cast<void>(file);
-    static_cast<void>(secure);
-    static_cast<void>(fast);
-
-    return true;
-}
 
 
 /** \brief Check the attachment for one thing or another.

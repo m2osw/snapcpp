@@ -179,8 +179,6 @@ public:
     QString                 detach_from_session(session_info const& info, QString const& name);
     QString                 get_from_session(session_info const& info, QString const& name);
 
-    SNAP_SIGNAL(generate_sessions, (sessions *r), (r));
-
 private:
     void content_update(int64_t variables_timestamp);
 

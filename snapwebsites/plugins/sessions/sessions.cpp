@@ -949,18 +949,6 @@ QtCassandra::QCassandraTable::pointer_t sessions::get_sessions_table()
 }
 
 
-/** \brief Implementation of the generate_sessions signal.
- *
- * This function readies the generate_sessions signal.
- *
- * \return true if the signal has to be sent to other plugins.
- */
-bool sessions::generate_sessions_impl(sessions * /*r*/)
-{
-    return true;
-}
-
-
 /** \brief Generate the actual content of the statistics page.
  *
  * This function generates the contents of the statistics page of the

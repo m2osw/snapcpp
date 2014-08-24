@@ -65,6 +65,7 @@ private:
         CT_hexarray_limited_value,
         CT_md5array_value,
         CT_secure_value,
+        CT_status_value,
         CT_string_value
     };
 

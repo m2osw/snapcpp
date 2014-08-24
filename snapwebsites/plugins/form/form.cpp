@@ -541,7 +541,8 @@ void form::fill_value(QDomElement widget, QString const& value)
 }
 
 
-/** \brief Request plugins to fill in form widgets.
+/** \fn void form::fill_form_widget(form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id)
+ * \brief Request plugins to fill in form widgets.
  *
  * This function offers widgets to fill out form widgets. This is used
  * to dynamically fill forms. It should rarely be necessary to do so
@@ -561,23 +562,11 @@ void form::fill_value(QDomElement widget, QString const& value)
  * \param[in] xml_form  The XML form being filled.
  * \param[in] widget  The widget being worked on.
  * \param[in] id  The identifier (name) of the widget (id=... attribute).
- *
- * \return true if the signal is to be propagated to other plugins.
  */
-bool form::fill_form_widget_impl(form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id)
-{
-    static_cast<void>(f);
-    static_cast<void>(owner);
-    static_cast<void>(cpath);
-    static_cast<void>(xml_form);
-    static_cast<void>(widget);
-    static_cast<void>(id);
-
-    return true;
-}
 
 
-/** \brief Default implementation of the form element event.
+/** \fn void form::form_element(form *f)
+ * \brief Default implementation of the form element event.
  *
  * This function loads the default XSTL that transform Core defined
  * elements to HTML. Other plugins can add their own widgets.
@@ -588,15 +577,7 @@ bool form::fill_form_widget_impl(form *f, QString const& owner, QString const& c
  * If the function fails, the XSLT document will not be valid.
  *
  * \param[in,out] f  A pointer to the form plugin
- *
- * \return true if the core form XSL file was successfully loaded.
  */
-bool form::form_element_impl(form *f)
-{
-    static_cast<void>(f);
-
-    return true;
-}
 
 
 /** \brief Add the templates and parameters defined in 'add'.
@@ -810,29 +791,20 @@ QDomDocument const form::load_form(content::path_info_t& ipath, QString const& s
 }
 
 
-/** \brief Allow any plugin to tweak a form.
+/** \fn void form::tweak_form(form *f, content::path_info_t& ipath, QDomDocument form_doc)
+ * \brief Allow any plugin to tweak a form.
  *
  * Just before the load_form() returns, the form plugin broadcasts this
  * signal so other plugins have a chance to tweak the form.
  *
  * \todo
- * We'll need to add some kind of support so plugins that need to be called
+ * We will need to add some kind of support so plugins that need to be called
  * at the time we receive the post are.
  *
  * \param[in] f  The form plugin pointer.
  * \param[in,out] ipath  The path of the page this form is attached to.
  * \param[in,out] form_doc  The XML form in a DOM.
- *
- * \return This function returns true if other signals are to be processed.
  */
-bool form::tweak_form_impl(form *f, content::path_info_t& ipath, QDomDocument form_doc)
-{
-    (void) f;
-    (void) ipath;
-    (void) form_doc;
-
-    return true;
-}
 
 
 /** \typedef form::auto_save_types_t

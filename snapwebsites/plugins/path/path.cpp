@@ -377,7 +377,8 @@ bool path::access_allowed_impl(QString const& user_path, content::path_info_t& i
 }
 
 
-/** \brief Validate the user action.
+/** \fn void path::validate_action(content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback)
+ * \brief Validate the user action.
  *
  * This function validates the user action. If invalid or if that means
  * the user does not have enough rights to access the specified path,
@@ -386,17 +387,9 @@ bool path::access_allowed_impl(QString const& user_path, content::path_info_t& i
  * \param[in,out] ipath  The path being validated.
  * \param[in] action  The action being performed against \p path.
  * \param[in,out] err_callback  Call functions on errors.
- *
- * \return true if the event has to carry on.
  */
-bool path::validate_action_impl(content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(action);
-    static_cast<void>(err_callback);
 
-    return true;
-}
+
 
 /** \brief Dynamically compute the default action.
  *
@@ -583,22 +576,18 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
 }
 
 
-/** \brief Allow modules to redirect before we do anything else.
+/** \fn void path::check_for_redirect(content::path_info_t& ipath)
+ * \brief Allow modules to redirect before we do anything else.
  *
  * This signal is used to allow plugins to redirect before we hit anything
  * else. Note that this happens BEFORE we check for permissions.
  *
  * \param[in,out] ipath  The path the client is trying to access.
  */
-bool path::check_for_redirect_impl(content::path_info_t& ipath)
-{
-    static_cast<void>(ipath);
-
-    return true;
-}
 
 
-/** \brief Allow other modules to do some pre-processing.
+/** \fn void path::preprocess_path(content::path_info_t& ipath, plugins::plugin *owner_plugin)
+ * \brief Allow other modules to do some pre-processing.
  *
  * This signal is sent just before we run the actual execute() function
  * of the plugins. This can be useful to make some early changes to
@@ -606,19 +595,11 @@ bool path::check_for_redirect_impl(content::path_info_t& ipath)
  *
  * \param[in,out] ipath  The path of the page being processed.
  * \param[in] owner_plugin  The plugin that owns this page (may be nullptr).
- *
- * \return true so other plugins have a chance to receive this signal.
  */
-bool path::preprocess_path_impl(content::path_info_t& ipath, plugins::plugin *owner_plugin)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(owner_plugin);
-
-    return true;
-}
 
 
-/** \brief Default implementation of the dynamic path handler.
+/** \fn void path::can_handle_dynamic_path(content::path_info_t& ipath, dynamic_plugin_t& plugin_info)
+ * \brief Default implementation of the dynamic path handler.
  *
  * This function doesn't do anything as the path plugin does not itself
  * offer another way to handle a path than checking the database (which
@@ -627,18 +608,11 @@ bool path::preprocess_path_impl(content::path_info_t& ipath, plugins::plugin *ow
  * \param[in] ipath  The canonicalized path to be checked.
  * \param[in.out] plugin_info  Will hold the plugin that can handle this
  *                             dynamic path.
- *
- * \return true if the signal is to be propagated to all the other plugins.
  */
-bool path::can_handle_dynamic_path_impl(content::path_info_t& ipath, dynamic_plugin_t& plugin_info)
-{
-    (void) ipath;
-    (void) plugin_info;
-    return true;
-}
 
 
-/** \brief Default implementation of the page not found signal.
+/** \fn void path::page_not_found(content::path_info_t& ipath)
+ * \brief Default implementation of the page not found signal.
  *
  * This function doesn't do anything as the path plugin does not itself
  * offer another way to handle a path than checking the database (which
@@ -649,11 +623,7 @@ bool path::can_handle_dynamic_path_impl(content::path_info_t& ipath, dynamic_plu
  *
  * \param[in] ipath  The canonicalized path that generated a page not found.
  */
-bool path::page_not_found_impl(content::path_info_t& ipath)
-{
-    (void) ipath;
-    return true;
-}
+
 
 
 SNAP_PLUGIN_END()

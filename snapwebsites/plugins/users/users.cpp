@@ -1457,25 +1457,18 @@ void users::verify_user(content::path_info_t& ipath)
 }
 
 
-/** \brief Signal that a new user was verified.
+/** \fn void users::user_verified(content::path_info_t& ipath, int64_t identifier)
+ * \brief Signal that a new user was verified.
  *
- * After a user registers, he receivs an email with a magic number that
+ * After a user registers, he receives an email with a magic number that
  * needs to be used for the user to register on the system.
+ *
+ * This signal is used in order to tell other plugins that the user did
+ * following that link.
  *
  * \param[in,out] ipath  The user path.
  * \param[in] identifier  The user identifier.
- *
- * \return true so the other plugins can receive the signal
  */
-bool users::user_verified_impl(content::path_info_t& ipath, int64_t identifier)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(identifier);
-
-    // all the verifications are processed in the verify_user() function
-    // as far as the users plugin is concerned, so just return true
-    return true;
-}
 
 
 /** \brief Check that password verification code.
@@ -1987,7 +1980,8 @@ void users::process_login_form(login_mode_t login_mode)
 }
 
 
-/** \brief Tell plugins that the user is now logged in.
+/** \fn void users::user_logged_in(user_logged_info_t& logged_info)
+ * \brief Tell plugins that the user is now logged in.
  *
  * This signal is used to tell plugins that the user is now logged in.
  * Note that this signal only happens at the time the user logs in, not
@@ -2010,15 +2004,7 @@ void users::process_login_form(login_mode_t login_mode)
  * or not.
  *
  * \param[in] logged_info  The user login information.
- *
- * \return true if the signal is to be propagated.
  */
-bool users::user_logged_in_impl(user_logged_info_t& logged_info)
-{
-    static_cast<void>(logged_info);
-
-    return true;
-}
 
 
 /** \brief Register a user.
@@ -3040,7 +3026,8 @@ bool users::register_user(QString const& email, QString const& password)
 }
 
 
-/** \brief Signal that a user is about to get a new account.
+/** \fn void users::check_user_security(QString const& email, QString const& password, content::permission_flag& secure)
+ * \brief Signal that a user is about to get a new account.
  *
  * This signal is called before a new user gets created.
  *
@@ -3054,21 +3041,11 @@ bool users::register_user(QString const& email, QString const& password)
  * \param[in] email  The email of the user about to be registered
  * \param[in] password  The user password.
  * \param[in,out] secure  The flag defining whether the flag is secure.
- *
- * \return true so other plugins have a chance to verify the user email
- *         and password before we create the new user.
  */
-bool users::check_user_security_impl(QString const& email, QString const& password, content::permission_flag& secure)
-{
-    static_cast<void>(email);
-    static_cast<void>(password);
-    static_cast<void>(secure);
-
-    return true;
-}
 
 
-/** \brief Signal telling other plugins that a user just registered.
+/** \fn void users::user_registered(content::path_info_t& ipath, int64_t identifier)
+ * \brief Signal telling other plugins that a user just registered.
  *
  * Note that this signal is sent when the user was registered and NOT when
  * the user verified his account. This means the user is not really fully
@@ -3076,16 +3053,7 @@ bool users::check_user_security_impl(QString const& email, QString const& passwo
  *
  * \param[in,out] ipath  The path to the new user's account (/user/\<identifier\>)
  * \param[in] identifier  The user identifier.
- *
- * \return true so the signal propagates to other plugins.
  */
-bool users::user_registered_impl(content::path_info_t& ipath, int64_t identifier)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(identifier);
-
-    return true;
-}
 
 
 /** \brief Send an email to request email verification.

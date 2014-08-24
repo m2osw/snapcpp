@@ -87,10 +87,10 @@ public:
     void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
     void                        on_filtered_content(content::path_info_t& path, QDomDocument& doc, QString const& xsl);
 
-    SNAP_SIGNAL(tweak_form, (form *f, content::path_info_t& ipath, QDomDocument form_doc), (f, ipath, form_doc));
-    SNAP_SIGNAL(form_element, (form *f), (f));
+    SNAP_SIGNAL_WITH_MODE(tweak_form, (form *f, content::path_info_t& ipath, QDomDocument form_doc), (f, ipath, form_doc), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(form_element, (form *f), (f), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(fill_form_widget, (form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id), (f, owner, cpath, xml_form, widget, id), NEITHER);
     SNAP_SIGNAL(validate_post_for_widget, (content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, bool const is_secret), (ipath, info, widget, widget_name, widget_type, is_secret));
-    SNAP_SIGNAL(fill_form_widget, (form *f, QString const& owner, QString const& cpath, QDomDocument xml_form, QDomElement widget, QString const& id), (f, owner, cpath, xml_form, widget, id));
 
     QDomDocument const          load_form(content::path_info_t& cpath, QString const& source, QString& error);
     QDomDocument                form_to_html(sessions::sessions::session_info& info, QDomDocument& xml);

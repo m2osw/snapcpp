@@ -57,14 +57,18 @@ void table_model::setTable( QCassandraTable::pointer_t t )
 }
 
 
-bool table_model::canFetchMore(const QModelIndex & /* index */) const
+bool table_model::canFetchMore(const QModelIndex & model_index) const
 {
+    static_cast<void>(model_index);
+
     return f_rowsRemaining >= f_rowCount;
 }
 
 
-void table_model::fetchMore(const QModelIndex & /* index */)
+void table_model::fetchMore(const QModelIndex & model_index)
 {
+    static_cast<void>(model_index);
+
     if( !f_table ) return;
 
     try

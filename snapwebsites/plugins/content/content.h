@@ -39,7 +39,7 @@ enum name_t
     SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE,
     SNAP_NAME_CONTENT_BODY,
     SNAP_NAME_CONTENT_BRANCH,
-    SNAP_NAME_CONTENT_BRANCH_TABLE,
+    SNAP_NAME_CONTENT_BRANCH_TABLE,         // Name of Cassandra table used for branch information
     SNAP_NAME_CONTENT_CHILDREN,
     SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED,
     SNAP_NAME_CONTENT_CONTENT_TYPES,
@@ -91,11 +91,13 @@ enum name_t
     SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY,
     SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH,
     SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION,
-    SNAP_NAME_CONTENT_REVISION_TABLE,
+    SNAP_NAME_CONTENT_REVISION_TABLE,         // Name of Cassandra table used for revision information
     SNAP_NAME_CONTENT_SHORT_TITLE,
     SNAP_NAME_CONTENT_SINCE,
+    SNAP_NAME_CONTENT_STATUS,
+    SNAP_NAME_CONTENT_STATUS_CHANGED,
     SNAP_NAME_CONTENT_SUBMITTED,
-    SNAP_NAME_CONTENT_TABLE,         // Cassandra Table used for content (pages, comments, tags, vocabularies, etc.)
+    SNAP_NAME_CONTENT_TABLE,         // Name of Cassandra table used for content tree main info
     SNAP_NAME_CONTENT_TAG,
     SNAP_NAME_CONTENT_TITLE,
     SNAP_NAME_CONTENT_UNTIL,
@@ -196,6 +198,29 @@ public:
 
 
 
+enum class status_t : signed char
+{
+    // in memory only
+    SNAP_CONTENT_STATUS_UNSUPPORTED = -3,   // read a value that is not supported by the current version
+    SNAP_CONTENT_STATUS_UNDEFINED,          // the page is undefined
+    SNAP_CONTENT_STATUS_UNKNOWN,            // not read from database yet
+
+    // current permanent status
+    SNAP_CONTENT_STATUS_NORMAL,             // valid, can be read safely
+    SNAP_CONTENT_STATUS_HIDDEN,             // page returns 404 except to admins who can put it back to normal
+    SNAP_CONTENT_STATUS_MOVED,              // page was moved, it includes a redirect to the new page
+    SNAP_CONTENT_STATUS_DELETED,            // page was moved to the trashcan
+
+    // a process is working on the page
+    SNAP_CONTENT_STATUS_CREATING,           // creating the page
+    SNAP_CONTENT_STATUS_CLONING,            // creating from another page (copying, used in destination page)
+    SNAP_CONTENT_STATUS_REMOVING            // removing this page (if used with a CLONING, we are in fact MOVING the page, used in source page when moving)
+};
+
+typedef controlled_vars::limited_auto_enum_init<status_t, status_t::SNAP_CONTENT_STATUS_UNSUPPORTED, status_t::SNAP_CONTENT_STATUS_REMOVING, status_t::SNAP_CONTENT_STATUS_UNKNOWN> safe_status_t;
+
+
+
 class content;
 
 class path_info_t
@@ -228,6 +253,8 @@ public:
     QString                         get_owner() const;
     bool                            is_main_page() const;
     QString                         get_parameter(QString const& name) const;
+    status_t                        get_status(bool reread = false) const;
+    void                            set_status(status_t status);
 
     bool                            get_working_branch() const;
     snap_version::version_number_t  get_branch(bool create_new_if_required = false, QString const& locale = "") const;
@@ -247,6 +274,7 @@ private:
     // auto-initialized
     content *                       f_content_plugin;
     zpsnap_child_t                  f_snap;
+    mutable safe_status_t           f_status;
 
     // user specified
     QString                         f_key;
@@ -560,12 +588,11 @@ public:
     void                on_backend_process();
 
     SNAP_SIGNAL(new_content, (path_info_t& path), (path));
-    SNAP_SIGNAL(create_content, (path_info_t& path, QString const& owner, QString const& type), (path, owner, type));
+    SNAP_SIGNAL_WITH_MODE(create_content, (path_info_t& path, QString const& owner, QString const& type), (path, owner, type), START_AND_DONE);
     SNAP_SIGNAL(create_attachment, (attachment_file& file, snap_version::version_number_t branch_number, QString const& locale), (file, branch_number, locale));
     SNAP_SIGNAL(modified_content, (path_info_t& ipath), (ipath));
-    SNAP_SIGNAL(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast));
+    SNAP_SIGNAL_WITH_MODE(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast), NEITHER);
     SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));
-    SNAP_SIGNAL(output_attachment, (QtCassandra::QCassandraRow::pointer_t file_row), (file_row));
 
     //void                output() const;
 

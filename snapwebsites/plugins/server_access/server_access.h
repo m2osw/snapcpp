@@ -67,7 +67,7 @@ public:
     void                        ajax_redirect(QString const& uri, QString const& target = "");
     void                        ajax_append_data(QString const& name, QByteArray const& data);
 
-    SNAP_SIGNAL(process_ajax_result, (content::path_info_t& ipath, bool const succeeded), (ipath, succeeded));
+    SNAP_SIGNAL_WITH_MODE(process_ajax_result, (content::path_info_t& ipath, bool const succeeded), (ipath, succeeded), NEITHER);
 
 private:
     typedef QMap<QString, QByteArray>   data_map_t;

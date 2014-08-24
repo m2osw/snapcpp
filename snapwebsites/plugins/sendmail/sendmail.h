@@ -211,7 +211,7 @@ public:
     void                post_email(email const& e);
     QString             default_from() const;
 
-    SNAP_SIGNAL(filter_email, (email& e), (e));
+    SNAP_SIGNAL_WITH_MODE(filter_email, (email& e), (e), NEITHER);
 
 private:
     void content_update(int64_t variables_timestamp);

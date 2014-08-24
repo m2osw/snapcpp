@@ -468,8 +468,10 @@ QString server::description() const
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
-int64_t server::do_update(int64_t /*last_updated*/)
+int64_t server::do_update(int64_t last_updated)
 {
+    static_cast<void>(last_updated);
+
     SNAP_PLUGIN_UPDATE_INIT();
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1409,97 +1411,64 @@ std::string server::servername() const
     return f_servername;
 }
 
-/** \brief Implementation of the bootstrap signal.
+/** \fn void server::bootstrap(snap_child *snap)
+ * \brief Handle of the bootstrap signal.
  *
- * This function readies the bootstrap signal.
- *
- * At this time, it does nothing.
+ * The bootstrap signal is used to initialize the plugins. At this point all the plugins
+ * are loaded, however, they are not yet ready to receive signals because all plugins are
+ * not yet connected. The bootstrap() function is actually used to get all the listeners
+ * registered.
  *
  * \param[in,out] snap  The snap child process.
- *
- * \return true if the signal has to be sent to other plugins.
  */
-bool server::bootstrap_impl(snap_child *snap)
-{
-    static_cast<void>(snap);
-
-    return true;
-}
 
 
-/** \brief Initialize the Snap Websites server.
+/** \fn void server::init()
+ * \brief Initialize the Snap Websites server.
  *
  * This function readies the Init signal.
  *
  * At this time, it does nothing.
- *
- * \return true if the signal has to be sent to other plugins.
  */
-bool server::init_impl()
-{
-    return true;
-}
 
-/** \brief Update the Snap Websites server.
+
+/** \fn void server::update(int64_t last_updated)
+ * \brief Update the Snap Websites server.
  *
- * This function ensure that the data managed by this plugin is up to
- * date.
- *
- * This function does nothing at this point.
+ * This signal ensures that the data managed by this plugin is up to date.
  *
  * \param[in] last_updated  The date and time when the website was last updated.
- *
- * \return true if the signal has to be sent to other plugins.
  */
-bool server::update_impl(int64_t /*last_updated*/)
-{
-    return true;
-}
 
 
-/** \brief Process a cookies on an HTTP request.
+/** \fn void server::process_cookies()
+ * \brief Process a cookies on an HTTP request.
  *
- * This function readies the process_cookies signal.
+ * This signal is used to 
  *
  * At this time, it does nothing.
- *
- * \return true if the signal has to be sent to other plugins.
  */
-bool server::process_cookies_impl()
-{
-    return true;
-}
 
 
-/** \brief Process the attach to session event.
+/** \fn void server::attach_to_session()
+ * \brief Process the attach to session event.
  *
- * This function readies the attach to session event.
- *
- * At this time, it does nothing.
- *
- * \return true if the signal has to be sent to other plugins.
+ * This signal gives plugins a chance to attach data to the session right
+ * before the process ends.
  */
-bool server::attach_to_session_impl()
-{
-    return true;
-}
 
 
-/** \brief Process the detach from session event.
+/** \fn void server::detach_from_session()
+ * \brief Process the detach from session event.
  *
- * This function readies the detach from session event.
- *
- * At this time, it does nothing.
- *
- * \return true if the signal has to be sent to other plugins.
+ * This signal gives plugins a chance to detach data that they attached to
+ * the sessions earlier. This signal happens early on after the process
+ * initialized the plugins.
  */
-bool server::detach_from_session_impl()
-{
-    return true;
-}
 
 
-/** \brief Give plugins a chance to define the acceptable page locales.
+/** \fn void server::define_locales(QString& locales)
+ * \brief Give plugins a chance to define the acceptable page locales.
  *
  * This signal is used whenever the user tries to access a page and
  * the language and/or country was not already defined as a sub-domain,
@@ -1510,101 +1479,65 @@ bool server::detach_from_session_impl()
  * \<language>_\<country> pairs separated by commas.
  *
  * \param[in,out] locales  The variable receiving the locales.
- *
- * \return true if the signal should be processed by users.
  */
-bool server::define_locales_impl(QString& locales)
-{
-    static_cast<void>(locales);
-
-    return true;
-}
 
 
-/** \brief Process a POST request at the specified URL.
+/** \fn void server::process_post(QString const& url)
+ * \brief Process a POST request at the specified URL.
  *
- * This function readies the process_post signal.
- *
- * At this time, it does nothing.
+ * This signal is sent when the server is called with a POST instead of a GET.
  *
  * \param[in] url  The URL to process a POST from.
- *
- * \return true if the signal has to be/sign sent to other plugins.
  */
-bool server::process_post_impl(QString const& url)
-{
-    static_cast<void>(url);
-
-    return true;
-}
 
 
-/** \brief Execute the URL.
+/** \fn void server::execute(QString const& url)
+ * \brief Execute the URL.
  *
- * This function readies the Execute signal.
- *
- * At this time, it does nothing.
+ * This signal is called once the plugins were fully initialized. At this point
+ * only one plugin is expected to implement that signal: path.
  *
  * \param[in] url  The URL to execute.
- *
- * \return true if the signal has to be sent to other plugins.
  */
-bool server::execute_impl(QString const& url)
-{
-    static_cast<void>(url);
-
-    return true;
-}
 
 
-/** \brief Execute the specified backend action.
+/** \fn void server::register_backend_action(backend_action_map_t& actions)
+ * \brief Execute the specified backend action.
  *
- * This function readies the register_backend_action signal.
- *
- * At this time, it does nothing.
+ * This signal is called when the server is run as a backend service.
+ * Plugins that handle backend work can register when this signal is
+ * triggered.
  *
  * \param[in,out] actions  A map where plugins can register the actions they support.
- *
- * \return true if the signal has to be sent to other plugins.
  */
-bool server::register_backend_action_impl(backend_action_map_t& /*actions*/)
-{
-    return true;
-}
 
-/** \brief Execute the backend processes.
+
+/** \fn void server::backend_process()
+ * \brief Execute the backend processes.
  *
- * This function readies the backend_process signal.
+ * This signal runs the backend processes that registered when they received
+ * the register_backend_action() call.
  *
- * At this time, it does nothing.
- *
- * \return true if the signal has to be sent to other plugins.
+ * Backends that do not return (run forever) must make use of a specific
+ * action name to not block the other backends when running the period
+ * processes.
  */
-bool server::backend_process_impl()
-{
-    return true;
-}
 
 
-/** \brief Request new content to be saved.
+/** \fn void server::save_content()
+ * \brief Request new content to be saved.
  *
- * This function readies the Save Content signal.
- *
- * At this time, it does nothing.
- *
- * \return true if the signal has to be sent to other plugins.
+ * This signal is sent after the update signal returns. This gives a chance
+ * to the content plugin to save the data. It is somewhat specialized at this
+ * point, unfortunately, but it has the advantage of working properly.
  */
-bool server::save_content_impl()
-{
-    return true;
-}
 
 
-/** \brief Implementation of the XSS filter signal.
+/** \fn void server::xss_filter(QDomNode& node, QString const& acceptable_tags, QString const& acceptable_attributes)
+ * \brief Implementation of the XSS filter signal.
  *
- * This function readies the XSS filter signal.
- *
- * At this time, it does nothing.
+ * This signal is used to clean any possible XSS potential problems in the specified
+ * \p node.
  *
  * \param[in,out] node  The HTML node to check with XSS filters.
  * \param[in] acceptable_tags  The tags kept in the specified HTML.
@@ -1614,16 +1547,6 @@ bool server::save_content_impl()
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::xss_filter_impl(QDomNode& node,
-                             QString const& acceptable_tags,
-                             QString const& acceptable_attributes)
-{
-    static_cast<void>(node);
-    static_cast<void>(acceptable_tags);
-    static_cast<void>(acceptable_attributes);
-
-    return true;
-}
 
 
 /** \fn permission_error_callback::on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
@@ -1668,7 +1591,8 @@ bool server::xss_filter_impl(QDomNode& node,
  */
 
 
-/** \brief Improve the die() signature to add at the bottom of pages.
+/** \fn void server::improve_signature(QString const& path, QString& signature)
+ * \brief Improve the die() signature to add at the bottom of pages.
  *
  * This function calls all the plugins that define the signature signal so
  * they can append their own link or other information to the signature.
@@ -1695,13 +1619,6 @@ bool server::xss_filter_impl(QDomNode& node,
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::improve_signature_impl(QString const& path, QString& signature)
-{
-    static_cast<void>(path);
-    static_cast<void>(signature);
-
-    return true;
-}
 
 
 /** \brief Load a file.
@@ -1765,7 +1682,9 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
 }
 
 
-/** \brief Check whether the cell can securily be used in a script.
+
+/** \fn void server::cell_is_secure(QString const& table, QString const& row, QString const& cell, secure_field_flag_t& secure)
+ * \brief Check whether the cell can securily be used in a script.
  *
  * This signal is sent by the cell() function of snap_expr objects.
  * The plugin receiving the signal can check the table, row, and cell
@@ -1784,36 +1703,21 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
  * \param[in] row  The row being accessed.
  * \param[in] cell  The cell being accessed.
  * \param[in] secure  Whether the cell is secure.
- *
- * \return This function returns true in case the signal needs to proceed.
  */
-bool server::cell_is_secure_impl(QString const& table, QString const& row, QString const& cell, secure_field_flag_t& secure)
-{
-    static_cast<void>(table);
-    static_cast<void>(row);
-    static_cast<void>(cell);
-    static_cast<void>(secure);
-
-    return true;
-}
 
 
-/** \brief Give a change to different plugins to add functions for snap_expr.
+/** \fn void server::add_snap_expr_functions(snap_expr::functions_t& functions)
+ * \brief Give a change to different plugins to add functions for snap_expr.
  *
  * This function gives a chance to any plugin listening to this signal
  * to add functions that the snap_expr can then make use of.
  *
  * \return true in case the signal is to be broadcast.
  */
-bool server::add_snap_expr_functions_impl(snap_expr::functions_t& functions)
-{
-    static_cast<void>(functions);
-
-    return true;
-}
 
 
-/** \brief Implementation of the output_result signal.
+/** \fn void server::output_result(QString const& uri_path, QByteArray& result)
+ * \brief Implementation of the output_result signal.
  *
  * This function readies the output_result signal.
  *
@@ -1833,13 +1737,7 @@ bool server::add_snap_expr_functions_impl(snap_expr::functions_t& functions)
  *
  * \return true if the signal has to be sent to other plugins.
  */
-bool server::output_result_impl(QString const& uri_path, QByteArray& result)
-{
-    static_cast<void>(uri_path);
-    static_cast<void>(result);
 
-    return true;
-}
 
 
 /** \brief Send a PING message to the specified UDP server.

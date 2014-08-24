@@ -272,23 +272,15 @@ QtCassandra::QCassandraTable::pointer_t mailinglist::get_mailinglist_table()
     return f_snap->create_table(get_name(SNAP_NAME_MAILINGLIST_TABLE), "Mailing list table.");
 }
 
-/** \brief Prepare the email for the filter_email signal.
+/** \fn void mailinglist::name_to_list(const QString& name, QSharedPointer<list>& emails)
+ * \brief Prepare the email for the filter_email signal.
  *
  * This function checks the parameters validity and returns true if it will be
  * possible to ready a list of emails from the name of a list.
  *
  * \param[in] name  The name of the list to access.
  * \param[in] emails  The resulting list of emails.
- *
- * \return true if the signal is to be propagated to all the other plugins.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-bool mailinglist::name_to_list_impl(const QString& name, QSharedPointer<list>& emails)
-{
-    return true;
-}
-#pragma GCC diagnostic pop
 
 
 /** \brief Prepare the email for the filter_email signal.

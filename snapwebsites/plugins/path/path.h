@@ -81,12 +81,12 @@ public:
     void                            verify_permissions(content::path_info_t& ipath, permission_error_callback& err_callback);
     QString                         default_action(content::path_info_t& ipath);
 
-    SNAP_SIGNAL(can_handle_dynamic_path, (content::path_info_t& ipath, dynamic_plugin_t& plugin_info), (ipath, plugin_info));
-    SNAP_SIGNAL(page_not_found, (content::path_info_t& ipath), (ipath));
-    SNAP_SIGNAL(validate_action, (content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback), (ipath, action, err_callback));
     SNAP_SIGNAL(access_allowed, (QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result), (user_path, ipath, action, login_status, result));
-    SNAP_SIGNAL(check_for_redirect, (content::path_info_t& ipath), (ipath));
-    SNAP_SIGNAL(preprocess_path, (content::path_info_t& ipath, plugins::plugin *owner_plugin), (ipath, owner_plugin));
+    SNAP_SIGNAL_WITH_MODE(can_handle_dynamic_path, (content::path_info_t& ipath, dynamic_plugin_t& plugin_info), (ipath, plugin_info), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(page_not_found, (content::path_info_t& ipath), (ipath), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(validate_action, (content::path_info_t& ipath, QString const& action, permission_error_callback& err_callback), (ipath, action, err_callback), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(check_for_redirect, (content::path_info_t& ipath), (ipath), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(preprocess_path, (content::path_info_t& ipath, plugins::plugin *owner_plugin), (ipath, owner_plugin), NEITHER);
 
     void                            handle_dynamic_path(plugins::plugin *p);
 

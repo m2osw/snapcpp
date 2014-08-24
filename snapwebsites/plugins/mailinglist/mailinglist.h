@@ -77,7 +77,7 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_name_to_list(const QString& name, QSharedPointer<list>& emails);
 
-    SNAP_SIGNAL(name_to_list, (const QString& name, QSharedPointer<list>& emails), (name, emails));
+    SNAP_SIGNAL_WITH_MODE(name_to_list, (const QString& name, QSharedPointer<list>& emails), (name, emails), NEITHER);
 
 private:
     void initial_update(int64_t variables_timestamp);

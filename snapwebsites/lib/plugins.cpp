@@ -435,8 +435,10 @@ int64_t plugin::last_modification() const
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
-int64_t plugin::do_update(int64_t /*last_updated*/)
+int64_t plugin::do_update(int64_t last_updated)
 {
+    static_cast<void>(last_updated);
+
     SNAP_PLUGIN_UPDATE_INIT();
 
     // in a complete implementation you'd have entries like this one:

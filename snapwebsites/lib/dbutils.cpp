@@ -326,6 +326,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::files::updated"
          || n == "content::modified"
          || n == "content::updated"
+         || n == "content::status_changed"
          || n.left(18) == "core::last_updated"
          || n == "core::plugin_threshold"
          || n == "images::modified"
@@ -454,6 +455,10 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     else if(n == "content::files::secure")
     {
         return CT_secure_value;
+    }
+    else if(n == "content::status")
+    {
+        return CT_status_value;
     }
 
     // all others viewed as strings
@@ -627,6 +632,65 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
+            case CT_status_value:
+            {
+                if(display_only)
+                {
+                    switch(c->value().signedCharValue())
+                    {
+                    case -3:
+                        v = "unsupported";
+                        break;
+
+                    case -2:
+                        v = "undefined";
+                        break;
+
+                    case -1:
+                        v = "unknown";
+                        break;
+
+                    case 0:
+                        v = "normal";
+                        break;
+
+                    case 1:
+                        v = "hidden";
+                        break;
+
+                    case 2:
+                        v = "moved";
+                        break;
+
+                    case 3:
+                        v = "deleted";
+                        break;
+
+                    case 4:
+                        v = "creating";
+                        break;
+
+                    case 5:
+                        v = "cloning";
+                        break;
+
+                    case 6:
+                        v = "removing";
+                        break;
+
+                    default:
+                        v = QString("unknown content status (%1)").arg(c->value().signedCharValue());
+                        break;
+
+                    }
+                }
+                else
+                {
+                    v = QString("%1").arg(c->value().signedCharValue());
+                }
+            }
+            break;
+
             case CT_string_value:
             {
                 v = c->value().stringValue().replace("\n", "\\n");
@@ -791,6 +855,57 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
             else
             {
                 throw snap_exception( "error: unknown secure value! Must be -1, 0 or 1!" );
+            }
+            cvalue.setSignedCharValue( cv );
+        }
+        break;
+
+        case CT_status_value:
+        {
+            signed char cv;
+            if(v == "-3" && v == "unsupported")
+            {
+                cv = -3;
+            }
+            else if(v == "-2" && v == "undefined")
+            {
+                cv = -2;
+            }
+            else if(v == "-1" && v == "unknown")
+            {
+                cv = -1;
+            }
+            else if(v == "0" && v == "normal")
+            {
+                cv = 0;
+            }
+            else if(v == "1" && v == "hidden")
+            {
+                cv = 1;
+            }
+            else if(v == "2" && v == "moved")
+            {
+                cv = 2;
+            }
+            else if(v == "3" && v == "deleted")
+            {
+                cv = 3;
+            }
+            else if(v == "4" && v == "creating")
+            {
+                cv = 4;
+            }
+            else if(v == "5" && v == "cloning")
+            {
+                cv = 5;
+            }
+            else if(v == "6" && v == "removing")
+            {
+                cv = 6;
+            }
+            else
+            {
+                throw snap_exception( "error: unknown secure value! Must be between -3 and +6!" );
             }
             cvalue.setSignedCharValue( cv );
         }

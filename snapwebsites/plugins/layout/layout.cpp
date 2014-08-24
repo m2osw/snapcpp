@@ -1539,7 +1539,8 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
 }
 
 
-/** \brief Generate the page main content.
+/** \fn void layout::generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+ * \brief Generate the page main content.
  *
  * This function generates the main content of the page. Other
  * plugins will also have the event called if they subscribed and
@@ -1558,21 +1559,11 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The template used in case some parameters do not
  *                       exist in the specified path
- *
- * \return true if the page content creation can proceed.
  */
-bool layout::generate_page_content_impl(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(page);
-    static_cast<void>(body);
-    static_cast<void>(ctemplate);
-
-    return true;
-}
 
 
-/** \brief Generate the page main content.
+/** \fn void layout::filtered_content(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
+ * \brief Generate the page main content.
  *
  * This function generates the main content of the page. Other
  * plugins will also have the event called if they subscribed and
@@ -1589,17 +1580,7 @@ bool layout::generate_page_content_impl(content::path_info_t& ipath, QDomElement
  * \param[in,out] doc  The document that was just generated.
  * \param[in] xsl  The XSLT document that is about to be used to transform
  *                 the body (still as a string).
- *
- * \return true if the filtered content signal can proceed.
  */
-bool layout::filtered_content_impl(content::path_info_t& ipath, QDomDocument& doc, QString const& xsl)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(doc);
-    static_cast<void>(xsl);
-
-    return true;
-}
 
 
 /** \brief Load a file.

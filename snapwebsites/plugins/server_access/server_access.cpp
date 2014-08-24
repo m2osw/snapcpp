@@ -495,7 +495,8 @@ void server_access::ajax_append_data(QString const& name, QByteArray const& data
 }
 
 
-/** \brief Inform plugins that an AJAX reply is about to happen.
+/** \fn void server_access::process_ajax_result(content::path_info_t& ipath, bool const succeeded)
+ * \brief Inform plugins that an AJAX reply is about to happen.
  *
  * This signal is sent whenever an AJAX result is processed. This gives
  * you a changes to modify the AJAX result. For example, you may want to
@@ -507,16 +508,7 @@ void server_access::ajax_append_data(QString const& name, QByteArray const& data
  *
  * \param[in,out] ipath  The ipath on which the POST was processed.
  * \param[in] succeeded  Whether the saving process succeeded (true) or not (false).
- *
- * \return true so other plugins can act on the signal.
  */
-bool server_access::process_ajax_result_impl(content::path_info_t& ipath, bool const succeeded)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(succeeded);
-
-    return true;
-}
 
 
 SNAP_PLUGIN_END()

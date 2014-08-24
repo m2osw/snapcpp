@@ -1287,7 +1287,8 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
 }
 
 
-/** \brief Allow other plugins to dynamically add widgets.
+/** \fn void editor::dynamic_editor_widget(content::path_info_t& ipath, QString const& name, QDomDocument& editor_widgets)
+ * \brief Allow other plugins to dynamically add widgets.
  *
  * This message is sent to the plugins to give them a chance to dynamically
  * add dynamic widgets to a list of editor widgets.
@@ -1295,17 +1296,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
  * \param[in,out] ipath  The path to the page being handled.
  * \param[in] name  The name of the editor layout being loaded for this page.
  * \param[in,out] editor_widgets  The DOM with the editor widgets.
- *
- * \return true if the event should be processed.
  */
-bool editor::dynamic_editor_widget_impl(content::path_info_t& ipath, QString const& name, QDomDocument& editor_widgets)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(name);
-    static_cast<void>(editor_widgets);
-
-    return true;
-}
 
 
 /** \brief Start a widget validation.
@@ -2857,18 +2848,6 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // use of the tab index so we'll get some gaps, but that's a very
     // small price to pay for this cool feature
     form::form::used_tab_id(max_widgets);
-}
-
-
-bool editor::init_editor_widget_impl(content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row)
-{
-    static_cast<void>(ipath);
-    static_cast<void>(field_id);
-    static_cast<void>(field_type);
-    static_cast<void>(widget);
-    static_cast<void>(row);
-
-    return true;
 }
 
 

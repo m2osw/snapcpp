@@ -474,8 +474,9 @@ void snap_backend::process_backend_uri(QString const& uri)
             // we add a "list" entry so it appears in the right place
             class fake : public server::backend_action
             {
-                virtual void on_backend_action(QString const& /*action*/)
+                virtual void on_backend_action(QString const& action)
                 {
+                    static_cast<void>(action);
                 }
             };
             fake foo;

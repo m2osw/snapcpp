@@ -1452,7 +1452,8 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
 }
 
 
-/** \brief Prepare the email for the filter_email signal.
+/** \fn void sendmail::filter_email(email& e)
+ * \brief Prepare the email for the filter_email signal.
  *
  * This function readies the email parameter (\p e) for the filter_email
  * signal.
@@ -1462,15 +1463,8 @@ QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
  * proceeding further.
  *
  * \param[in] e  The email to be filtered by other plugins.
- *
- * \return true if the signal is to be propagated to all the other plugins.
  */
-bool sendmail::filter_email_impl(email& e)
-{
-    static_cast<void>(e);
 
-    return true;
-}
 
 
 /** \brief Post an email.
