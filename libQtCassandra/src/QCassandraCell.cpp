@@ -597,8 +597,8 @@ consistency_level_t QCassandraCell::consistencyLevel() const
  *
  * This function sets the consistency of the f_value field of this cell.
  * This can be used to ensure the proper consistency on a read. In case
- * of a write, the consistency is always taken from the value parameter.
- * For a read this is the only way to specify the consistency.
+ * of a write, the consistency is always taken from the input value
+ * parameter. For a read this is the only way to specify the consistency.
  *
  * By default, the consistency level is set to CONSISTENCY_LEVEL_DEFAULT
  * which means: use the consistency level defined in the QCassandra object
