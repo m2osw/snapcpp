@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.12
+ * Version: 0.1.5.13
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -584,7 +584,8 @@ snapwebsites.Output.prototype.handleMessages_ = function()
  * See snapwebsites.ServerAccess.onSuccess_() for the origin of the
  * \p xml object.
  *
- * @param {Element} xml  The XML object that encompasses all the messages.
+ * @param {Element} xml  The XML object or text that encompasses all
+ *                       the messages.
  */
 snapwebsites.Output.prototype.displayMessages = function(xml)
 {
@@ -666,6 +667,33 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
                 jQuery(this).css("z-index", z);
             });
     }
+};
+
+
+/** \brief Display a message.
+ *
+ * This helper function can be used to display a message in the user
+ * message popup.
+ *
+ * The message XML is created here from the few parametrs passed to
+ * this function.
+ *
+ * @param {!string} title  The title for this error message.
+ * @param {string} message  The error message (optional, you may use null).
+ * @param {string} type  Whether this is an 'info', 'warning' or 'error' message
+ *                  (optional, defaults to 'error').
+ */
+snapwebsites.Output.prototype.displayOneMessage = function(title, message, type)
+{
+    // TODO: get a valid identifier from caller?
+    var xml = "<?xml version='1.0'?><messages><message msg-id='no-id' type='" + (type ? type : "error") + "'><title>" + title + "</title>";
+    if(message)
+    {
+        xml += "<body>" + message + "</body>";
+    }
+    xml += "</messages>";
+
+    this.displayMessages(xml);
 };
 
 

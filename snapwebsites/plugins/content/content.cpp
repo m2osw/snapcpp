@@ -15,6 +15,25 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+
+/** \file
+ * \brief The implementation of the content plugin.
+ *
+ * The implementation of the content plugin handles the content, branch, and
+ * revision tables in a way that gives other plugins access to all the data
+ * without themselves having to directly peek and poke at the data.
+ *
+ * This allows the content plugin a way to control that modified data does
+ * general all the necessary "side effects" as expected in the system. The
+ * main problem we have when modifying one or more fields in a propagation
+ * of the information. By using the path_info_t and the content plugin to
+ * make all data changes we ensure that the related signals get emitted
+ * and thus that all plugins get a chance to do further updates as they
+ * require to make to finish up the work (i.e. when changing a title and
+ * that page is part of a list which shows that title, we want the list
+ * plugin to kick in and fix the corresponding list.)
+ */
+
 #include "content.h"
 
 //#include "../messages/messages.h" -- we now have 2 levels (messages and output) so we could include messages.h here
@@ -310,30 +329,62 @@ char const *css_extensions[] =
 } // no name namespace
 
 
-/** \type enum class status_t
+/** \typedef uint32_t path_info_t::status_t::status_type
+ * \brief Basic status type to save the status in the database.
  *
  * This basic status is used by the content plugin to manage a page
- * availability.
+ * availability. It is called "basic" because this feature does not
+ * use the taxonomy to mark the page as being in a specific status
+ * that the end user has control over.
  *
- * By default a page is in the normal status (SNAP_CONTENT_STATUS_NORMAL).
- * A normal page can be viewed as fully available and will be shown to
- * anyone with enough permissions.
+ * By default a page is in the "normal state"
+ * (path_info_t::status_t::NORMAL). A normal page can be viewed as
+ * fully available and will be shown to anyone with enough permissions
+ * to access that page.
  *
- * A page can also be hidden from view (SNAP_CONTENT_STATUS_HIDDEN) in
- * which case the page is accessible by the administrators with enough
- * permissions to see hidden pages, but no one else.
+ * A page can also be hidden from view (path_info_t::status_t::HIDDEN),
+ * in which case the page is accessible by the administrators with enough
+ * permissions to see hidden pages, but no one else who get an error
+ * (probably a 404, although if the hidden page is to be shown again
+ * later a 503 is probably more appropriate.)
  *
- * The page can also be created, cloned, deleted... In all those other
- * states, the page is not available at all and it should not be checked
- * except by the update functions that know how to deal with such pages.
+ * Finally, a page can be given a working status:
  *
- * Note that a deleted page (SNAP_CONTENT_STATUS_DELETED) is similar to
- * a normal page, only it is found in the trashcan and thus it cannot
- * get edited. It can only be "undeleted" (cloned back to its original
+ * \li path_info_t::status_t::NOT_WORKING -- no processes are working on
+ *     the page
+ * \li path_info_t::status_t::CREATING -- the page is being created
+ * \li path_info_t::status_t::CLONING -- the page is being cloned from
+ *     another page
+ * \li path_info_t::status_t::REMOVING -- the page is being moved or deleted
+ * \li path_info_t::status_t::UPDATING -- the page is being updated
+ *
+ * These states are used in parallel with the basic state of the page.
+ * So a page can be normal and updating at the same time. This is useful
+ * in order to allow a page to revert back to a standard state (i.e. not
+ * being processed) without having to have many more states making it
+ * much harder to handle.
+ *
+ * The status_t class gives you two sets of functions to handle the state
+ * and the working state separatly. There is also a common function,
+ * reset_state(), which modifies both values at the same time.
+ *
+ * Note that a deleted page (path_info_t::status_t::DELETED) is similar
+ * to a normal page, only it is found in the trashcan and thus it cannot
+ * be edited. It can only be "undeleted" (cloned back to its original
  * location or to a new location in the regular tree.)
  */
 
-/** \var SNAP_CONTENT_STATUS_UNSUPPORTED
+/** \var path_info_t::status_t::NO_ERROR
+ * \brief No error occured.
+ *
+ * When creating a new status object, we mark it as a "no error" object.
+ *
+ * In this state a status can be saved to the database. If not in this
+ * state, trying to save the status will fail with an exception.
+ */
+
+/** \var path_info_t::status_t::UNSUPPORTED
+ * \brief Read a status that this version does not know about.
  *
  * This value is returned by the get_status() function whenever a path
  * to a page returns a number that the current status implementation does
@@ -341,7 +392,8 @@ char const *css_extensions[] =
  * otherwise.
  */
 
-/** \var SNAP_CONTENT_STATUS_UNDEFINED
+/** \var path_info_t::status_t::UNDEFINED
+ * \brief The state is not defined in the database.
  *
  * This value is returned by the get_status() function whenever a path
  * to a non-existant page is read.
@@ -350,24 +402,33 @@ char const *css_extensions[] =
  * else that will help in this circumstance.
  */
 
-/** \var SNAP_CONTENT_STATUS_UNKNOWN
+/** \var path_info_t::status_t::UNKNOWN_STATE
+ * \brief The state was not yet defined.
  *
  * This value is used internally to indicate that the status was not yet
  * read from the database. It should never be saved in the database itself.
  *
- * This is used in the path_info_t class up until the status gets read from
+ * This is used in the status_t class up until the status gets read from
  * the content table.
  */
 
-/** \var SNAP_CONTENT_STATUS_NORMAL
+/** \var path_info_t::status_t::CREATE
+ * \brief We are in the process of creating a page.
  *
- * This page is valid. You can use it as is.
+ * While creating a page, the page is marked with this state.
+ *
+ * Once the page is created, it is marked as path_info_t::status_t::NORMAL.
+ */
+
+/** \var path_info_t::status_t::NORMAL
+ * \brief This page is valid. You can use it as is.
  *
  * This is the only status that makes a page 100% valid for anyone with
  * enough permissions to visit the page.
  */
 
-/** \var SNAP_CONTENT_STATUS_HIDDEN
+/** \var path_info_t::status_t::HIDDEN
+ * \brief The page is currently hidden.
  *
  * A hidden page is similar to a normal page, only it returns a 404 to
  * normal users.
@@ -375,7 +436,8 @@ char const *css_extensions[] =
  * Only administrators with the correct permissions can see the page.
  */
 
-/** \var SNAP_CONTENT_STATUS_MOVED
+/** \var path_info_t::status_t::MOVED
+ * \brief This page was moved, users coming here shall be redirected.
  *
  * This page content is still intact from the time it was cloned and it
  * should not be used. Instead, since it is considered moved, it generates
@@ -385,7 +447,8 @@ char const *css_extensions[] =
  * A moved page may get deleted at a later time.
  */
 
-/** \var SNAP_CONTENT_STATUS_DELETED
+/** \var path_info_t::status_t::DELETED
+ * \brief This page was deleted (moved to the trash).
  *
  * A page that gets moved to the trashcan is marked as deleted since we
  * cannot redirect someone (other than an administrator with enough
@@ -398,17 +461,29 @@ char const *css_extensions[] =
  * from the database. That depends on the trashcan policy settings.
  */
 
-/** \var SNAP_CONTENT_STATUS_CREATING
+/** \var path_info_t::status_t::NOT_WORKING
+ * \brief Indicate that no processes are working on this page.
  *
- * While creating a page, the page is marked with this status.
- *
- * Once the page is created, it is marked as SNAP_CONTENT_STATUS_NORMAL.
+ * This value indicates that the page is not being worked on. In most cases
+ * backend processes use that signal to know whether to process a page
+ * or not for a reason or another. For example, the list plugin will
+ * avoid including pages in a list while those pages are being
+ * created or updated. It will keep those pages in its list of pages
+ * to be processed later on instead.
  */
 
-/** \var SNAP_CONTENT_STATUS_CLONING
+/** \var path_info_t::status_t::CREATING
+ * \brief Working on a page while creating it.
+ *
+ * This working value is used to mark a page being created. In a way, this
+ * working state is a plain state too (we use CREATE/CREATING and then
+ * transform that in NORMAL/NOT_WORKING).
+ */
+
+/** \var path_info_t::status_t::CLONING
  *
  * This status is similar to the creating status
- * (SNAP_CONTENT_STATUS_CREATING) only the data comes from another page
+ * (path_info_t::status_t::CREATING) only the data comes from another page
  * instead of the user.
  *
  * You have similar restriction on a page being cloned as a page being
@@ -418,21 +493,99 @@ char const *css_extensions[] =
  * Once the cloning is done, the page can go to the normal state.
  */
 
-/** \var SNAP_CONTENT_STATUS_REMOVING
+/** \var path_info_t::status_t::REMOVING
  *
  * This status is used to mark the source page in a cloning process as
  * the page is going to be removed (i.e. the page is being moved to the
  * trashcan).
  *
  * If the page is simply being moved, then the status can remain normal
- * (SNAP_CONTENT_STATUS_NORMAL) since the source remains perfectly valid
+ * (path_info_t::status_t::NORMAL) since the source remains perfectly valid
  * while the page gets cloned. Once the cloning is done then the page is
- * marked as moved (SNAP_CONTENT_STATUS_MOVED).
+ * marked as moved (path_info_t::status_t::MOVED).
  *
  * Once the remove process is done, the page gets marked as deleted
- * (SNAP_CONTENT_STATUS_DELETED). Remember that deleted pages return
+ * (path_info_t::status_t::DELETED). Remember that deleted pages return
  * a 404 to the client even though all the data is still available in
  * the database.
+ */
+
+/** \var path_info_t::status_t::UPDATING
+ *
+ * A page that gets heavily updated (more than one or two fields in a row)
+ * should be marked as path_info_t::status_t::UPDATING. However, you want
+ * to be careful as a page current status should not change once the update
+ * is done (i.e. if the page was hidden then reverting it back to hidden
+ * after the update is what you should do; so if you change that to normal
+ * instead, you are in trouble.)
+ */
+
+/** \var path_info_t::status_t::f_error
+ * \brief The current error of this status object.
+ *
+ * The error of this status. By default this parameter is set to
+ * path_info_t::status_t::NO_ERROR.
+ *
+ * When a status is erroneous, the is_error() function returns true and
+ * the status cannot be saved in the database.
+ *
+ * The state and working state of the status are ignored if
+ * the status is in error (is_error() returns true.)
+ *
+ * There is one special case the transition function accepts a
+ * path_info_t::status_t::UNDEFINED status as a valid input to
+ * transit to a path_info_t::status_t::CREATE and
+ * path_info_t::status_t::CREATING status. However, the erroneous
+ * status itself is otherwise still considered to be in error.
+ */
+
+/** \var path_info_t::status_t::f_state
+ * \brief The current state of the status.
+ *
+ * The state of this status. By default this parameter is set to
+ * path_info_t::status_t::UNKNOWN_STATE. You may check whether the
+ * state is unknown using the is_unknown() function.
+ *
+ * \warning
+ * The working state is ignored if is_error() is true.
+ */
+
+/** \var path_info_t::status_t::f_working
+ * \brief The current working state of the status.
+ *
+ * The status of a page may include a working state which represents what
+ * the process working on the page is doing. By default this parameter is
+ * set to path_info_t::status_t::NOT_WORKING.
+ *
+ * When a process is working on a page, its status is_working() function
+ * returns true.
+ *
+ * \warning
+ * The working state is ignored if is_error() is true.
+ */
+
+/** \typedef path_info_t::status_t::safe_error_t
+ * \brief Safe as in auto-initialized error_t variable type.
+ *
+ * This typedef is used to define error_t variable members in classes
+ * so they automatically get initialized and they test the range of
+ * the error data saved into them when modifying them.
+ */
+
+/** \typedef path_info_t::status_t::safe_state_t
+ * \brief Safe as in auto-initialized state_t variable type.
+ *
+ * This typedef is used to define state_t variable members in classes
+ * so they automatically get initialized and they test the range of
+ * the state data saved into them when modifying them.
+ */
+
+/** \typedef path_info_t::status_t::safe_working_t
+ * \brief Safe as in auto-initialized working_t variable type.
+ *
+ * This typedef is used to define working_t variable members in classes
+ * so they automatically get initialized and they test the range of
+ * the working data saved into them when modifying them.
  */
 
 
@@ -844,9 +997,9 @@ field_search::~field_search()
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (field_search::command_t cmd)
+field_search& field_search::operator () (command_t cmd)
 {
-    field_search::cmd_info_t inst(cmd);
+    cmd_info_t inst(cmd);
     f_program.push_back(inst);
     return *this;
 }
@@ -877,9 +1030,9 @@ field_search& field_search::operator () (field_search::command_t cmd)
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (field_search::command_t cmd, char const *str_value)
+field_search& field_search::operator () (command_t cmd, char const *str_value)
 {
-    field_search::cmd_info_t inst(cmd, QString(str_value));
+    cmd_info_t inst(cmd, QString(str_value));
     f_program.push_back(inst);
     return *this;
 }
@@ -905,9 +1058,9 @@ field_search& field_search::operator () (field_search::command_t cmd, char const
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (field_search::command_t cmd, QString const& str_value)
+field_search& field_search::operator () (command_t cmd, QString const& str_value)
 {
-    field_search::cmd_info_t inst(cmd, str_value);
+    cmd_info_t inst(cmd, str_value);
     f_program.push_back(inst);
     return *this;
 }
@@ -932,9 +1085,9 @@ field_search& field_search::operator () (field_search::command_t cmd, QString co
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (field_search::command_t cmd, int64_t int_value)
+field_search& field_search::operator () (command_t cmd, int64_t int_value)
 {
-    field_search::cmd_info_t inst(cmd, int_value);
+    cmd_info_t inst(cmd, int_value);
     f_program.push_back(inst);
     return *this;
 }
@@ -952,9 +1105,9 @@ field_search& field_search::operator () (field_search::command_t cmd, int64_t in
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (field_search::command_t cmd, QtCassandra::QCassandraValue value)
+field_search& field_search::operator () (command_t cmd, QtCassandra::QCassandraValue value)
 {
-    field_search::cmd_info_t inst(cmd, value);
+    cmd_info_t inst(cmd, value);
     f_program.push_back(inst);
     return *this;
 }
@@ -973,7 +1126,7 @@ field_search& field_search::operator () (field_search::command_t cmd, QtCassandr
  */
 field_search& field_search::operator () (command_t cmd, QDomElement element)
 {
-    field_search::cmd_info_t inst(cmd, element);
+    cmd_info_t inst(cmd, element);
     f_program.push_back(inst);
     return *this;
 }
@@ -992,7 +1145,7 @@ field_search& field_search::operator () (command_t cmd, QDomElement element)
  */
 field_search& field_search::operator () (command_t cmd, QDomDocument doc)
 {
-    field_search::cmd_info_t inst(cmd, doc);
+    cmd_info_t inst(cmd, doc);
     f_program.push_back(inst);
     return *this;
 }
@@ -1011,7 +1164,7 @@ field_search& field_search::operator () (command_t cmd, QDomDocument doc)
  */
 field_search& field_search::operator () (command_t cmd, search_result_t& result)
 {
-    field_search::cmd_info_t inst(cmd, result);
+    cmd_info_t inst(cmd, result);
     f_program.push_back(inst);
     return *this;
 }
@@ -1032,7 +1185,7 @@ field_search& field_search::operator () (command_t cmd, search_result_t& result)
  */
 field_search& field_search::operator () (command_t cmd, path_info_t& ipath)
 {
-    field_search::cmd_info_t inst(cmd, ipath);
+    cmd_info_t inst(cmd, ipath);
     f_program.push_back(inst);
     return *this;
 }
@@ -1803,8 +1956,8 @@ void field_search::run()
         QDomElement                                     f_element;
         controlled_vars::fbool_t                        f_found_self;
         controlled_vars::fbool_t                        f_saved;
-        field_search::search_result_t                   f_result;
-        field_search::variables_t                       f_variables;
+        search_result_t                                 f_result;
+        variables_t                                     f_variables;
         path_info_t                                     f_path_info;
     } search(f_filename, f_function, f_line, f_snap, f_program);
 
@@ -2520,10 +2673,467 @@ QString const& attachment_file::get_name() const
 
 
 
+
+
+/** \brief Initialize the status with the default status values.
+ *
+ * The default constructor of the status class defines a status object
+ * with default values.
+ *
+ * The default values are:
+ *
+ * \li path_info_t::status_t::NO_ERROR for error
+ * \li path_info_t::status_t::UNKNOWN_STATE for state
+ * \li path_info_t::status_t::NOT_WORKING for working
+ *
+ * The default values can then be changed using the set_...() functions
+ * of the class.
+ *
+ * You may also set the status using the set_status() function in case
+ * you get a \p current_status after you created a status object.
+ */
+path_info_t::status_t::status_t()
+    //: f_error(error_t::NO_ERROR)
+    //, f_state(state_t::UNKNOWN_STATE)
+    //, f_working(working_t::NOT_WORKING)
+{
+}
+
+
+/** \brief Initialize the status with the specified current_status value.
+ *
+ * The constructor and get_status() make use of an integer to
+ * save in the database but they do not declare the exact format
+ * of that integer (i.e. the format is internal, hermetic.)
+ *
+ * The input parameter can only be defined from the get_status() of
+ * another status. If you are not reading a new status, you must make
+ * use of the constructor without a status specified.
+ *
+ * \param[in] current_status  The current status to save in this instance.
+ */
+path_info_t::status_t::status_t(status_type current_status)
+    //: f_error(error_t::NO_ERROR)
+    //, f_state(state_t::UNKNOWN_STATE)
+    //, f_working(working_t::NOT_WORKING)
+{
+    set_status(current_status);
+}
+
+
+/** \brief Set the current status from the specified \p current_status value.
+ *
+ * This function accepts a \p current_status value which gets saved in the
+ * corresponding f_state and f_working variable members.
+ *
+ * How the status is encoded in the \p current_status value is none of your
+ * business. It is encoded by the get_status() and decoded using the
+ * set_status(). That value can be saved in the database.
+ *
+ * \note
+ * The constructor accepting a \p current_status parameter calls this
+ * set_status() function to save its input value.
+ *
+ * \note
+ * The error value is set to error_t::NO in this case.
+ *
+ * \param[in] current_status  The current status to save in this instance.
+ */
+void path_info_t::status_t::set_status(status_type current_status)
+{
+    // set some defaults so that way we have "proper" defaults on errors
+    f_state = state_t::UNKNOWN_STATE;
+    f_working = working_t::NOT_WORKING;
+
+    state_t state(static_cast<state_t>(static_cast<int>(current_status) & 255));
+    switch(state)
+    {
+    case state_t::UNKNOWN_STATE:
+    case state_t::CREATE:
+    case state_t::NORMAL:
+    case state_t::HIDDEN:
+    case state_t::MOVED:
+    case state_t::DELETED:
+        break;
+
+    default:
+        // any other status is not understood by this version of snap
+//std::cerr << "status is " << static_cast<int>(static_cast<status_t>(f_status)) << "\n";
+        f_error = error_t::UNSUPPORTED;
+        return;
+
+    }
+
+    working_t working(static_cast<working_t>((static_cast<int>(current_status) / 256) & 255));
+    switch(working)
+    {
+    case working_t::NOT_WORKING:
+    case working_t::CREATING:
+    case working_t::CLONING:
+    case working_t::REMOVING:
+    case working_t::UPDATING:
+        break;
+
+    default:
+        // any other status is not understood by this version of snap
+        f_error = error_t::UNSUPPORTED;
+        return;
+
+    }
+
+    f_error = error_t::NO_ERROR;
+    f_state = state;
+    f_working = working;
+}
+
+
+/** \brief Retrieve the current value of the status of this object.
+ *
+ * This function returns the encoded status so one can save it in a
+ * database, or some other place. The returned value is an integer.
+ *
+ * Internally, the value is handled as an error, a state, and a
+ * working status. The encoder does not know how to handle errors
+ * in this function, so if an error is detected, it actually
+ * throws an exception. It is expected that your code will first
+ * check whether is_error() returns true. If so, then you cannot
+ * call this function.
+ *
+ * Note that if the state is still set to state_t::UNKNOWN_STATE, then
+ * the function also raises an exception. This is because we
+ * cannot allow saving that kind of a status in the database.
+ * Some other combinations are forbidden. For example the
+ * working_t::CREATING can only be used with the state_t::CREATING
+ * status. All such mixes generate an error here.
+ *
+ * \exception snap_logic_exception
+ * This exception is raised if this function gets called when the
+ * status is currently representing an error. This is done that
+ * way because there is really no reasons to allow for saving
+ * an error in the database.
+ *
+ * \return The current status encrypted for storage.
+ */
+path_info_t::status_t::status_type path_info_t::status_t::get_status() const
+{
+    struct subfunc
+    {
+        static constexpr int status_combo(state_t s, working_t w)
+        {
+            return static_cast<unsigned char>(static_cast<int>(s))
+                 | static_cast<unsigned char>(static_cast<int>(w)) * 256;
+        }
+    };
+
+    // errors have priority and you cannot convert an error to a status_type
+    if(f_error != error_t::NO_ERROR)
+    {
+        throw snap_logic_exception(QString("attempting to convert a status to status_type when it represents an error (%1).").arg(static_cast<int>(static_cast<error_t>(f_error))));
+    }
+
+    // of the 4 x 5 = 20 possibilities, we only allow 14 of them
+    switch(subfunc::status_combo(f_state, f_working))
+    {
+    // creating
+    case subfunc::status_combo(state_t::CREATE, working_t::CREATING):
+    // normal
+    case subfunc::status_combo(state_t::NORMAL, working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::NORMAL, working_t::CLONING):
+    case subfunc::status_combo(state_t::NORMAL, working_t::REMOVING):
+    case subfunc::status_combo(state_t::NORMAL, working_t::UPDATING):
+    // hidden
+    case subfunc::status_combo(state_t::HIDDEN, working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::HIDDEN, working_t::CLONING):
+    case subfunc::status_combo(state_t::HIDDEN, working_t::REMOVING):
+    case subfunc::status_combo(state_t::HIDDEN, working_t::UPDATING):
+    // moved
+    case subfunc::status_combo(state_t::MOVED, working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::MOVED, working_t::REMOVING):
+    case subfunc::status_combo(state_t::MOVED, working_t::UPDATING):
+    // deleted
+    case subfunc::status_combo(state_t::DELETED, working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::DELETED, working_t::UPDATING):
+        break;
+
+    default:
+        throw snap_logic_exception(QString("attempting to convert status with state %1 and working %2 which is not allowed").arg(static_cast<int>(static_cast<state_t>(f_state))).arg(static_cast<int>(static_cast<working_t>(f_working))));
+
+    }
+
+    // if no error, then the value is (state | (working << 8))
+    return static_cast<status_type>(static_cast<state_t>(f_state))
+         | static_cast<status_type>(static_cast<working_t>(f_working)) * 256;
+}
+
+
+/** \brief Get 
+ * 
+ * Verify that going from the current status (this) to the \p destination
+ * status is acceptable.
+ *
+ * \param[in] destination  The new state.
+ *
+ * \return true if the transition is acceptable, false otherwise.
+ */
+bool path_info_t::status_t::valid_transition(status_t destination) const
+{
+    struct subfunc
+    {
+        static constexpr int status_combo(state_t s1, working_t w1, state_t s2, working_t w2)
+        {
+            return static_cast<unsigned char>(static_cast<int>(s1))
+                 | static_cast<unsigned char>(static_cast<int>(w1)) * 0x100
+                 | static_cast<unsigned char>(static_cast<int>(s2)) * 0x10000
+                 | static_cast<unsigned char>(static_cast<int>(w2)) * 0x1000000;
+        }
+    };
+
+    if(is_error())
+    {
+        return f_error == error_t::UNDEFINED
+            && destination.f_state == state_t::CREATE
+            && destination.f_working == working_t::CREATING;
+    }
+
+    // shift by 8 is safe since the status is expected to be one byte
+    // however, the special statuses are negative so we clear a few bits
+    switch(subfunc::status_combo(f_state, f_working, destination.f_state, destination.f_working))
+    {
+    case subfunc::status_combo(state_t::NORMAL,     working_t::NOT_WORKING, state_t::NORMAL,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::NOT_WORKING, state_t::HIDDEN,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::NOT_WORKING, state_t::MOVED,     working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::NOT_WORKING, state_t::NORMAL,    working_t::CLONING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::NOT_WORKING, state_t::NORMAL,    working_t::REMOVING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::NOT_WORKING, state_t::NORMAL,    working_t::UPDATING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::CLONING,     state_t::NORMAL,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::REMOVING,    state_t::DELETED,   working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::UPDATING,    state_t::NORMAL,    working_t::NOT_WORKING):
+
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::NOT_WORKING, state_t::HIDDEN,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::NOT_WORKING, state_t::NORMAL,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::NOT_WORKING, state_t::HIDDEN,    working_t::CLONING):
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::NOT_WORKING, state_t::HIDDEN,    working_t::REMOVING):
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::NOT_WORKING, state_t::HIDDEN,    working_t::UPDATING):
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::CLONING,     state_t::HIDDEN,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::REMOVING,    state_t::DELETED,   working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::UPDATING,    state_t::HIDDEN,    working_t::NOT_WORKING):
+
+    case subfunc::status_combo(state_t::MOVED,      working_t::NOT_WORKING, state_t::MOVED,     working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::MOVED,      working_t::NOT_WORKING, state_t::NORMAL,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::MOVED,      working_t::NOT_WORKING, state_t::HIDDEN,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::MOVED,      working_t::NOT_WORKING, state_t::MOVED,     working_t::CLONING):
+    case subfunc::status_combo(state_t::MOVED,      working_t::CLONING,     state_t::MOVED,     working_t::NOT_WORKING):
+
+    case subfunc::status_combo(state_t::DELETED,    working_t::NOT_WORKING, state_t::DELETED,   working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::DELETED,    working_t::NOT_WORKING, state_t::DELETED,   working_t::CLONING):
+    case subfunc::status_combo(state_t::DELETED,    working_t::CLONING,     state_t::DELETED,   working_t::NOT_WORKING):
+
+    // see error handle prior to this switch
+    //case subfunc::status_combo(state_t::UNDEFINED,  working_t::NOT_WORKING, state_t::CREATE,    working_t::CREATING):
+
+    case subfunc::status_combo(state_t::CREATE,     working_t::CREATING,    state_t::CREATE,    working_t::CREATING):
+    case subfunc::status_combo(state_t::CREATE,     working_t::CREATING,    state_t::NORMAL,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::CREATE,     working_t::CREATING,    state_t::HIDDEN,    working_t::NOT_WORKING):
+
+        // this is a valid combo
+        return true;
+
+    default:
+        // we do not like this combo at this time
+        return false;
+
+    }
+}
+
+
+/** \brief Set the error number in this status.
+ *
+ * Change the current status in an erroneous status. By default an object
+ * is considered to not have any errors.
+ *
+ * The current state and working statuses do not get modified.
+ *
+ * \param[in] error  The new error to save in this status.
+ */
+void path_info_t::status_t::set_error(error_t error)
+{
+    f_error = error;
+}
+
+
+/** \brief Retrieve the current error.
+ *
+ * This function returns the current error of an ipath. If this status
+ * represents an error, you may also call the is_error() function which
+ * will return true for any errors except error_t::NO.
+ *
+ * \return The current error.
+ */
+path_info_t::status_t::error_t path_info_t::status_t::get_error() const
+{
+    return f_error;
+}
+
+
+/** \brief Check whether the path represents an error.
+ *
+ * If a path represents an error (which means the set_error() was called
+ * with a value other than error_t::NO) then this function returns true.
+ * Otherwise it returns true.
+ *
+ * \return true if the error in this status is not error_t::NO.
+ */
+bool path_info_t::status_t::is_error() const
+{
+    return f_error != error_t::NO_ERROR;
+}
+
+
+/** \brief Reset this status with the specified values.
+ *
+ * This function can be used to reset the status to the specified
+ * state and working values. It also resets the current error
+ * status.
+ *
+ * This is particularly useful to go from an undefined status to
+ * a creating status.
+ *
+ * This function is a shortcut from doing:
+ *
+ * \code
+ *      status.set_error(error_t::NO);
+ *      status.set_state(state);
+ *      status.set_working(working);
+ * \endcode
+ *
+ * \param[in] state  The new state.
+ * \param[in] working  The new working value.
+ */
+void path_info_t::status_t::reset_state(state_t state, working_t working)
+{
+    f_error = error_t::NO_ERROR;
+    f_state = state;
+    f_working = working;
+}
+
+
+/** \brief Change the current state of this status.
+ *
+ * This function can be used to save a new state in this status object.
+ *
+ * \note
+ * This function does NOT affect the error state. This means that if the
+ * status object has an error state other than error_t::NO, it is still
+ * considered to be erroneous.
+ *
+ * \param[in] state  The new state of this status.
+ */
+void path_info_t::status_t::set_state(state_t state)
+{
+    f_state = state;
+}
+
+
+/** \brief Retrieve the current state.
+ *
+ * This function returns the current state of this status. The state is
+ * set to unknown (path_info_t::status_t::UNKNOWN_STATE) by default if
+ * no current_status is passed to the constructor.
+ *
+ * \return The current state.
+ */
+path_info_t::status_t::state_t path_info_t::status_t::get_state() const
+{
+    return f_state;
+}
+
+
+/** \brief Check whether the current state is unknown.
+ *
+ * When creating a new state object, the state is set to unknown by
+ * default. It remains that way until you change it with set_state()
+ * or reset_state().
+ *
+ * This function can be used to know whether the state is still set
+ * to unknown.
+ *
+ * Note that is important because you cannot save an unknown state in
+ * the database. The get_status() function will raise an exception
+ * if that is attempted.
+ */
+bool path_info_t::status_t::is_unknown() const
+{
+    return f_state == state_t::UNKNOWN_STATE;
+}
+
+
+/** \brief Change the working state.
+ *
+ * This function is used to change the working state of the status object.
+ *
+ * The state can be set to any valid working state value, however, note
+ * that the get_status() prevents a certain number of combinations such
+ * as the working_t::CREATING working state with a state other than
+ * state_t::CREATING.
+ *
+ * The default value of the working state is working_t::NO meaning that
+ * the page is not being worked on.
+ *
+ * \note
+ * So, this function allows any combinations to be generated, because
+ * that way we do not enforce the use of the reset_state() function
+ * or a specific order (i.e. change state first then working or
+ * vice versa.)
+ *
+ * \param[in] working  The new working state.
+ */
+void path_info_t::status_t::set_working(working_t working)
+{
+    f_working = working;
+}
+
+
+/** \brief Retrieve the current working state.
+ *
+ * This function returns the current working state of this status.
+ *
+ * Note that if is_error() is returning true, then this working state
+ * is not considered when calling the get_status() function.
+ *
+ * By default the working state is set to working_t::NO which means
+ * that the page is not being worked on.
+ *
+ * \return The current status working state.
+ */
+path_info_t::status_t::working_t path_info_t::status_t::get_working() const
+{
+    return f_working;
+}
+
+
+/** \brief Indicate whether a process is currently working on that page.
+ *
+ * This function returns true if the current working status was
+ * something else than path_info_t::status_t::NOT_WORKING.
+ *
+ * \return true if a process is working on this page.
+ */
+bool path_info_t::status_t::is_working() const
+{
+    return f_working != working_t::NOT_WORKING;
+}
+
+
+
+
+
+
+
+
+
 path_info_t::path_info_t()
     : f_content_plugin(content::content::instance())
     , f_snap(f_content_plugin->get_snap())
-    //, f_status(status_t::SNAP_CONTENT_STATUS_UNKNOWN)
     //, f_key("") -- auto-init
     //, f_real_key("") -- auto-init
     //, f_cpath("") -- auto-init
@@ -2747,18 +3357,22 @@ QString path_info_t::get_parameter(QString const& name) const
 
 /** \brief Retrieve the current status of this page.
  *
- * This function reads the basic status of the page. This is important when
+ * This function reads the raw status of the page. This is important when
  * more than one person access a website to avoid a certain amount of
  * conflicting processes (i.e. creating a page at the same time as you
- * delete that very page).
+ * delete that very page). It also very much helps the backend processes
+ * which would otherwise attempt updates too early or too late.
  *
- * The status returned is any one of the status_t values.
+ * The status returned is any one of the status_t values, although the
+ * general and working numbers may be mixed together (i.e. a page can
+ * at the same time be hidden and updated.)
  *
- * The function may return SNAP_CONTENT_STATUS_UNDEFINED in which case the
- * page does not exist at all. Note that this function won't lie to you
- * and say that the page does not exist just because it is marked as deleted.
- * However, in this case, the page simply is not defined in the Cassandra
- * database.
+ * The function may return a status with the path_info_t::status_t::UNDEFINED
+ * error in which case the page does not exist at all. Note that this
+ * function will not lie to you and say that the page does not exist just
+ * because it is marked as deleted or some other similar valid status.
+ * In that very case, the page simply is not defined in the
+ * Cassandra database.
  *
  * The function may returned the special status named
  * SNAP_CONTENT_STATUS_UNSUPPORTED. When that happens, you cannot know what
@@ -2768,77 +3382,55 @@ QString path_info_t::get_parameter(QString const& name) const
  * page in any way.
  *
  * \important
- * Status values are using the QUORUM consistency instead of the default of
- * ONE. This is to ensure that all instances see the same/latest value
- * saved in the database. This does NOT ensure 100% consistency between
- * various instances, however, it is not that likely that two people would
- * apply status changes to a page so simultaneously that it would fail
- * consistently. Note that if a node is down, this will block the Snap!
- * server as it has to wait on that one node (forever). It will eventually
- * time out, but most certainly after Apache already said that the request
- * could not be satisfied.
+ * Access to the status values make use the QUORUM consistency instead
+ * of the default of ONE. This is to ensure that all instances see the
+ * same/latest value saved in the database. This does NOT ensure 100%
+ * consistency between various instances, however, it is not that likely
+ * that two people would apply status changes to a page so simultaneously
+ * that it would fail consistently (i.e. we do not use a lock to update
+ * the status.) Note that if a Cassandra node is down, it is likely to
+ * block the Snap! server as it has to wait on that one node (forever).
+ * It will eventually time out, but most certainly after Apache already
+ * said that the request could not be satisfied.
  *
  * \note
- * The function never returns SNAP_CONTENT_STATUS_UNKNOWN.
+ * The status is not cached in the path_info_t object because (1) we could
+ * have multiple path_info_t objects, each with its own status; and (2) the
+ * libQtCassandra library has its own cache which is common to all the
+ * path_info_t objects.
  *
- * \param[in] reread  Whether the status should be re-read from the database.
- *
- * \return The current status of the page.
+ * \return The current raw status of the page.
  */
-status_t path_info_t::get_status(bool reread) const
+path_info_t::status_t path_info_t::get_status() const
 {
-    // was the status already defined?
-    if(reread || f_status == status_t::SNAP_CONTENT_STATUS_UNKNOWN)
+    status_t    result;
+
+    // verify that the page (row) exists, if not it was eradicated or
+    // not yet created...
+    QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
+    if(!content_table->exists(f_key))
     {
-        // verify that the page exists, it MUST have a primary owner, if not
-        // it was eradicated from the database at some point
-        QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
-        if(content_table->exists(f_key)
-        && content_table->row(f_key)->exists(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER)))
-        {
-            // we set the consistency of the cell to QUORUM to make sure
-            // we read the last written value
-            QtCassandra::QCassandraCell::pointer_t cell(content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS)));
-            cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-            QtCassandra::QCassandraValue value(cell->value());
-            if(value.nullValue())
-            {
-                // this case happens on creating a new page
-                f_status = status_t::SNAP_CONTENT_STATUS_UNDEFINED;
-            }
-            else
-            {
-                // we have got a status, read it
-                f_status = static_cast<status_t>(value.signedCharValue());
-
-                switch(f_status)
-                {
-                case status_t::SNAP_CONTENT_STATUS_NORMAL:
-                case status_t::SNAP_CONTENT_STATUS_HIDDEN:
-                case status_t::SNAP_CONTENT_STATUS_MOVED:
-                case status_t::SNAP_CONTENT_STATUS_DELETED:
-                case status_t::SNAP_CONTENT_STATUS_CREATING:
-                case status_t::SNAP_CONTENT_STATUS_CLONING:
-                case status_t::SNAP_CONTENT_STATUS_REMOVING:
-                    break;
-
-                default:
-                    // any other status is not understood by this version of snap
-//std::cerr << "status is " << static_cast<int>(static_cast<status_t>(f_status)) << "\n";
-                    f_status = status_t::SNAP_CONTENT_STATUS_UNSUPPORTED;
-                    break;
-
-                }
-            }
-        }
-        else
-        {
-            // the page does not exist
-            f_status = status_t::SNAP_CONTENT_STATUS_UNDEFINED;
-        }
+        // the page does not exist
+        result.set_error(status_t::error_t::UNDEFINED);
+        return result;
     }
 
-    return f_status;
+    // we set the consistency of the cell to QUORUM to make sure
+    // we read the last written value
+    QtCassandra::QCassandraCell::pointer_t cell(content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS)));
+    cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+    QtCassandra::QCassandraValue value(cell->value());
+    if(value.size() != sizeof(uint32_t))
+    {
+        // this case is legal, it happens when creating a new page
+        result.set_error(status_t::error_t::UNDEFINED);
+        return result;
+    }
+
+    // we have a status
+    result.set_status(static_cast<status_t::status_type>(value.uint32Value()));
+
+    return result;
 }
 
 
@@ -2884,74 +3476,27 @@ status_t path_info_t::get_status(bool reread) const
  *
  * \param[in] status  The new status for this page.
  */
-void path_info_t::set_status(status_t status)
+void path_info_t::set_status(status_t const& status)
 {
-    status_t now(get_status(true));
-
-    // shift by 8 is safe since the status is expected to be one byte
-    // however, the special statuses are negative so we clear a few bits
-#define STATUS_COMBO(n, s) ((static_cast<int>(n) & 255) | ((static_cast<int>(s) & 255) << 8))
-    switch(STATUS_COMBO(now, status))
+    // make sure it is not an error
+    if(status.is_error())
     {
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_NORMAL):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_HIDDEN,     status_t::SNAP_CONTENT_STATUS_HIDDEN):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_MOVED,      status_t::SNAP_CONTENT_STATUS_MOVED):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_DELETED,    status_t::SNAP_CONTENT_STATUS_DELETED):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CREATING,   status_t::SNAP_CONTENT_STATUS_CREATING):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CLONING,    status_t::SNAP_CONTENT_STATUS_CLONING):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_REMOVING,   status_t::SNAP_CONTENT_STATUS_REMOVING):
-        // no change, return immediately
-        return;
-
-    // undefined -> ...
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_UNDEFINED,  status_t::SNAP_CONTENT_STATUS_CREATING):
-    // normal -> ...
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_HIDDEN):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_MOVED):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_CLONING):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_NORMAL,     status_t::SNAP_CONTENT_STATUS_REMOVING):
-    // hidden -> ...
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_HIDDEN,     status_t::SNAP_CONTENT_STATUS_NORMAL):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_HIDDEN,     status_t::SNAP_CONTENT_STATUS_CLONING):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_HIDDEN,     status_t::SNAP_CONTENT_STATUS_REMOVING):
-    // hidden -> ...
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_MOVED,      status_t::SNAP_CONTENT_STATUS_NORMAL):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_MOVED,      status_t::SNAP_CONTENT_STATUS_HIDDEN):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_MOVED,      status_t::SNAP_CONTENT_STATUS_CLONING):
-    // creating -> ...
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CREATING,   status_t::SNAP_CONTENT_STATUS_NORMAL):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CREATING,   status_t::SNAP_CONTENT_STATUS_HIDDEN):
-    // cloning -> ...
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CLONING,    status_t::SNAP_CONTENT_STATUS_NORMAL):
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_CLONING,    status_t::SNAP_CONTENT_STATUS_HIDDEN):
-    // removing -> ...
-    case STATUS_COMBO(status_t::SNAP_CONTENT_STATUS_REMOVING,   status_t::SNAP_CONTENT_STATUS_DELETED):
-
-        // this is a valid combo
-        break;
-
-    default:
-        // we do not like this combo at this time
-        throw content_exception_invalid_sequence(QString("changing page status from %1 to %2 is not supported, page \"%3\"")
-                        .arg(static_cast<int>(now)).arg(static_cast<int>(status)).arg(f_key));
-
+        throw content_exception_invalid_sequence(QString("changing page status to error %1 is not allowed, page \"%2\"")
+                        .arg(static_cast<int>(status.get_status()))
+                        .arg(f_key));
     }
 
-    f_status = status;
+    status_t now(get_status());
 
-#ifdef DEBUG
-    switch(f_status)
+    if(!now.valid_transition(status))
     {
-    case status_t::SNAP_CONTENT_STATUS_UNSUPPORTED:
-    case status_t::SNAP_CONTENT_STATUS_UNDEFINED:
-    case status_t::SNAP_CONTENT_STATUS_UNKNOWN:
-        throw snap_logic_exception("somehow got an invalid status for set_status()");
-
-    default:
-        break;
-
+        throw content_exception_invalid_sequence(QString("changing page status from %1/%2 to %3/%4 is not supported, page \"%5\"")
+                        .arg(static_cast<int>(now.get_state()))
+                        .arg(static_cast<int>(now.get_working()))
+                        .arg(static_cast<int>(status.get_state()))
+                        .arg(static_cast<int>(status.get_working()))
+                        .arg(f_key));
     }
-#endif
 
     QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
 
@@ -2969,7 +3514,7 @@ void path_info_t::set_status(status_t status)
     content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(changed);
 
     QtCassandra::QCassandraValue value;
-    value.setSignedCharValue(static_cast<signed char>(static_cast<status_t>(f_status)));
+    value.setUInt32Value(status.get_status());
     value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS))->setValue(value);
 }
@@ -4626,11 +5171,13 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
         }
     }
 
+    // first, we want to save the status
+    path_info_t::status_t status(ipath.get_status());
+    status.reset_state(path_info_t::status_t::state_t::CREATE, path_info_t::status_t::working_t::CREATING);
+    ipath.set_status(status);
+
     // save the owner
     row->cell(primary_owner)->setValue(owner);
-
-    // now that we have the owner, we can save the status
-    ipath.set_status(status_t::SNAP_CONTENT_STATUS_CREATING);
 
     snap_version::version_number_t const branch_number(ipath.get_branch());
     QString const branch_owner(ipath.get_owner());
@@ -4730,7 +5277,13 @@ void content::create_content_done(path_info_t& ipath, QString const& owner, QStr
     // (although the revision data is not yet available...
     // but at this point we do not have a good way to handle
     // that part yet.)
-    ipath.set_status(status_t::SNAP_CONTENT_STATUS_NORMAL);
+    path_info_t::status_t status(ipath.get_status());
+    if(status.get_state() == path_info_t::status_t::state_t::CREATE)
+    {
+        status.set_state(path_info_t::status_t::state_t::NORMAL);
+    }
+    status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
+    ipath.set_status(status);
 }
 
 
@@ -6458,6 +7011,7 @@ void content::on_save_content()
         return;
     }
 
+    QString const primary_owner(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER));
     QString const site_key(f_snap->get_site_key_with_slash());
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
@@ -6468,17 +7022,32 @@ void content::on_save_content()
         // now do the actual save
         // connect this entry to the corresponding plugin
         // (unless that field is already defined!)
-        QString primary_owner(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER));
-        if(content_table->row(d->f_path)->cell(primary_owner)->value().nullValue())
+        path_info_t ipath;
+        ipath.set_path(d->f_path);
+        path_info_t::status_t status(ipath.get_status());
+        if(status.is_error())
         {
-            path_info_t ipath;
-            ipath.set_path(d->f_path);
-            ipath.set_status(status_t::SNAP_CONTENT_STATUS_CREATING);
-            content_table->row(d->f_path)->cell(primary_owner)->setValue(d->f_owner);
+            if(status.get_error() == path_info_t::status_t::error_t::UNDEFINED)
+            {
+                status.reset_state(path_info_t::status_t::state_t::CREATE, path_info_t::status_t::working_t::CREATING);
+                ipath.set_status(status);
+
+                // we only set the primary owner on creation, which means
+                // a plugin can take over the ownership of a page and we
+                // do not reset that ownership on updates
+                content_table->row(d->f_path)->cell(primary_owner)->setValue(d->f_owner);
+            }
+            else
+            {
+                throw snap_logic_exception(QString("somehow create_content() stumble on an erroneous status (%1)").arg(d->f_path));
+            }
         }
-        // if != then another plugin took ownership which is fine...
-        //else if(content_table->row(d->f_path)->cell(primary_owner)->value().stringValue() != d->f_owner) {
-        //}
+        else
+        {
+            status.set_working(path_info_t::status_t::working_t::UPDATING);
+            //status.reset_state(path_info_t::state_t::CREATING, path_info_t::working_t::CREATING);
+            ipath.set_status(status);
+        }
 
         // make sure we have our different basic content dates setup
         int64_t const start_date(f_snap->get_start_date());
@@ -6760,7 +7329,9 @@ void content::on_save_content()
 
         path_info_t ipath;
         ipath.set_path(d->f_path);
-        ipath.set_status(status_t::SNAP_CONTENT_STATUS_NORMAL);
+        path_info_t::status_t status(ipath.get_status());
+        status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
+        ipath.set_status(status);
     }
     f_updating = false;
 
@@ -7420,6 +7991,18 @@ void content::add_css(QDomDocument doc, QString const& name)
 }
 
 
+/** \brief Copy a page to another with additional features.
+ *
+ * This function is used to properly copy a page to another location.
+ *
+ * This feature is used by many others such as deleting a page in which
+ * case the page is "moved" to the trashcan. In that case, the existing
+ * page is copied to the trashcan, the source is marked as deleted
+ * (SNAP_CONTENT_STATUS_DELETED)
+ *
+ * It can also be used to simply clone a page to another location before
+ * working on its content.
+ */
 path_info_t content::clone_page(path_info_t& source_ipath, QString& destination)
 {
 

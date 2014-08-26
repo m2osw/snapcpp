@@ -198,27 +198,6 @@ public:
 
 
 
-enum class status_t : signed char
-{
-    // in memory only
-    SNAP_CONTENT_STATUS_UNSUPPORTED = -3,   // read a value that is not supported by the current version
-    SNAP_CONTENT_STATUS_UNDEFINED,          // the page is undefined
-    SNAP_CONTENT_STATUS_UNKNOWN,            // not read from database yet
-
-    // current permanent status
-    SNAP_CONTENT_STATUS_NORMAL,             // valid, can be read safely
-    SNAP_CONTENT_STATUS_HIDDEN,             // page returns 404 except to admins who can put it back to normal
-    SNAP_CONTENT_STATUS_MOVED,              // page was moved, it includes a redirect to the new page
-    SNAP_CONTENT_STATUS_DELETED,            // page was moved to the trashcan
-
-    // a process is working on the page
-    SNAP_CONTENT_STATUS_CREATING,           // creating the page
-    SNAP_CONTENT_STATUS_CLONING,            // creating from another page (copying, used in destination page)
-    SNAP_CONTENT_STATUS_REMOVING            // removing this page (if used with a CLONING, we are in fact MOVING the page, used in source page when moving)
-};
-
-typedef controlled_vars::limited_auto_enum_init<status_t, status_t::SNAP_CONTENT_STATUS_UNSUPPORTED, status_t::SNAP_CONTENT_STATUS_REMOVING, status_t::SNAP_CONTENT_STATUS_UNKNOWN> safe_status_t;
-
 
 
 class content;
@@ -226,6 +205,76 @@ class content;
 class path_info_t
 {
 public:
+    class status_t
+    {
+    public:
+        // hermetic type to save the status in the database
+        typedef uint32_t            status_type;
+
+        // error state, if not NO then it has priority over the general state and working state
+        enum class error_t
+        {
+            NO_ERROR,
+            UNDEFINED,
+            UNSUPPORTED
+        };
+        typedef controlled_vars::limited_auto_enum_init<error_t, error_t::NO_ERROR, error_t::UNSUPPORTED, error_t::NO_ERROR> safe_error_t;
+
+        // general state
+        enum class state_t
+        {
+            UNKNOWN_STATE,
+            CREATE,
+            NORMAL,
+            HIDDEN,
+            MOVED,
+            DELETED
+        };
+        typedef controlled_vars::limited_auto_enum_init<state_t, state_t::UNKNOWN_STATE, state_t::DELETED, state_t::UNKNOWN_STATE> safe_state_t;
+
+        // working state
+        enum class working_t
+        {
+            NOT_WORKING,
+            CREATING,
+            CLONING,
+            REMOVING,
+            UPDATING
+        };
+        typedef controlled_vars::limited_auto_enum_init<working_t, working_t::NOT_WORKING, working_t::UPDATING, working_t::NOT_WORKING> safe_working_t;
+
+                                    status_t();
+                                    status_t(status_type current_status);
+        void                        set_status(status_type current_status);
+        status_type                 get_status() const;
+
+        // error status
+        void                        set_error(error_t error);
+        error_t                     get_error() const;
+        bool                        is_error() const;
+
+        // reset the error, set the state and working values
+        void                        reset_state(state_t state, working_t working);
+
+        // general status, may include a working status (see below)
+        void                        set_state(state_t state);
+        state_t                     get_state() const;
+        bool                        is_unknown() const;
+
+        // working status used along the general status
+        void                        set_working(working_t working);
+        working_t                   get_working() const;
+        bool                        is_working() const;
+
+        // other functions
+        bool                        valid_transition(status_t destination) const;
+
+    private:
+        safe_error_t                f_error;
+        safe_state_t                f_state;
+        safe_working_t              f_working;
+    };
+
     typedef std::vector<path_info_t *>              vector_path_info_t;
     typedef std::map<std::string, path_info_t *>    map_path_info_t;
 
@@ -253,8 +302,8 @@ public:
     QString                         get_owner() const;
     bool                            is_main_page() const;
     QString                         get_parameter(QString const& name) const;
-    status_t                        get_status(bool reread = false) const;
-    void                            set_status(status_t status);
+    status_t                        get_status() const;
+    void                            set_status(status_t const& status);
 
     bool                            get_working_branch() const;
     snap_version::version_number_t  get_branch(bool create_new_if_required = false, QString const& locale = "") const;
@@ -274,7 +323,6 @@ private:
     // auto-initialized
     content *                       f_content_plugin;
     zpsnap_child_t                  f_snap;
-    mutable safe_status_t           f_status;
 
     // user specified
     QString                         f_key;
@@ -370,7 +418,7 @@ public:
                             cmd_info_t(command_t cmd, int64_t int_value);
                             cmd_info_t(command_t cmd, QtCassandra::QCassandraValue& value);
                             cmd_info_t(command_t cmd, QDomElement element);
-                            cmd_info_t(command_t cmd, QDomDocument element);
+                            cmd_info_t(command_t cmd, QDomDocument doc);
                             cmd_info_t(command_t cmd, search_result_t& result);
                             cmd_info_t(command_t cmd, path_info_t const& ipath);
 
@@ -401,7 +449,7 @@ public:
     field_search&       operator () (command_t cmd, int64_t int_value);
     field_search&       operator () (command_t cmd, QtCassandra::QCassandraValue value);
     field_search&       operator () (command_t cmd, QDomElement element);
-    field_search&       operator () (command_t cmd, QDomDocument element);
+    field_search&       operator () (command_t cmd, QDomDocument doc);
     field_search&       operator () (command_t cmd, search_result_t& result);
     field_search&       operator () (command_t cmd, path_info_t& ipath);
 
