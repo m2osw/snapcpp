@@ -1009,6 +1009,104 @@
         }
     },
 
+    // a+0 -> +a
+    {
+        "verbose": true,
+        "name": "a + 0 -> +a",
+        "program": "a + 0;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 0+a -> +a
+    {
+        "verbose": true,
+        "name": "0 + a -> +a",
+        "program": "0 + a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
     // a-b -> subtract(a,b), integers
     {
         //"verbose": true,
@@ -1846,6 +1944,13 @@
             ]
         }
     }
+
+// TODO:
+// once we support a "type of variable is ..." then we can add many
+// more optimizations such as "a + 0" where 'a' is a number can be
+// optimized to "a"; at this point, 'a' could be an object which
+// overloads the '+' operator and does something "special" when
+// zero is added to 'a'.
 
 ]
 // vim: ts=4 sw=4 et

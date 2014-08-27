@@ -84,7 +84,7 @@ function(json_to_cpp TARGET_NAME)
     add_custom_command(OUTPUT ${as2js_compiler_BINARY_DIR}/tests/test_as2js_${TARGET_NAME}.ci
         COMMAND json_to_string -o ${as2js_compiler_BINARY_DIR}/tests/test_as2js_${TARGET_NAME}.ci ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_${TARGET_NAME}.json
         DEPENDS json_to_string ${as2js_compiler_SOURCE_DIR}/tests/test_as2js_${TARGET_NAME}.json
-        COMMENT "Generating test_as2js_parser_basics.ci")
+        COMMENT "Generating test_as2js_${TARGET_NAME}.ci")
 endfunction(json_to_cpp)
 
 

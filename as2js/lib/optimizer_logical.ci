@@ -74,15 +74,15 @@ optimization_match_t const g_optimizer_logical_match_not_literal[] =
 };
 
 
-/** \brief Match '!false'
+/** \brief Match 'true && a'
  *
- * This table defines a match for the expression '!false'.
+ * This table defines a match for the expression 'true && a'.
  */
-optimization_match_t const g_optimizer_logical_match_not_false[] =
+optimization_match_t const g_optimizer_logical_match_true_and_a[] =
 {
     {
         /* f_depth */               0,
-        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_and),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -91,7 +91,161 @@ optimization_match_t const g_optimizer_logical_match_not_false[] =
 
         {
             /* f_depth */               1,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false),
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_true_literals),
+            /* f_with_value */          g_optimizer_value_true,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'false && a'
+ *
+ * This table defines a match for the expression 'false && a'.
+ */
+optimization_match_t const g_optimizer_logical_match_false_and_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_and),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
+            /* f_with_value */          g_optimizer_value_false,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+///** \brief Match 'a && false'
+// *
+// * This table defines a match for the expression 'a && false'.
+// *
+// * In this case we can just return false unless 'a' has possible
+// * side effects.
+// *
+// * This is incorrect because if 'a' is false the expression returns 'a'.
+// */
+//optimization_match_t const g_optimizer_logical_match_a_and_false[] =
+//{
+//    {
+//        /* f_depth */               0,
+//        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_and),
+//        /* f_with_value */          nullptr,
+//        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+//        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+//        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+//    },
+//
+//        {
+//            /* f_depth */               1,
+//            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+//            /* f_with_value */          g_optimizer_value_no_side_effects,
+//            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+//            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+//            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+//        },
+//
+//        {
+//            /* f_depth */               1,
+//            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
+//            /* f_with_value */          g_optimizer_value_false,
+//            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+//            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+//            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+//        }
+//};
+
+
+/** \brief Match 'true || a'
+ *
+ * This table defines a match for the expression 'true || a'.
+ */
+optimization_match_t const g_optimizer_logical_match_true_or_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_or),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_true_literals),
+            /* f_with_value */          g_optimizer_value_true,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'false || a'
+ *
+ * This table defines a match for the expression 'false || a'.
+ */
+optimization_match_t const g_optimizer_logical_match_false_or_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_or),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
+            /* f_with_value */          g_optimizer_value_false,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -161,20 +315,89 @@ optimization_entry_t const g_optimizer_logical_entry_not_literal[] =
 };
 
 
-///** \brief Optimize '!false' to 'true'.
+/** \brief Optimize 'true && a' to 'a'.
+ *
+ * This table defines the optimization of 'true && a' to 'a'.
+ */
+optimization_entry_t const g_optimizer_logical_entry_true_and_a[] =
+{
+    {
+        /* f_name */            "'true && a' -> 'a'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_true_and_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_2_0)
+    }
+};
+
+
+/** \brief Optimize 'false && a' to 'false'.
+ *
+ * This table defines the optimization of 'false && a' to 'false'.
+ */
+optimization_entry_t const g_optimizer_logical_entry_false_and_a[] =
+{
+    {
+        /* f_name */            "'false && a' -> 'false'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_false_and_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_1_0)
+    }
+};
+
+
+///** \brief Optimize 'a && false' to 'false'.
 // *
-// * This table defines the optimization of '!false' to 'true'.
+// * This table defines the optimization of 'a && false' to 'false' in
+// * the event 'a' has no side effects.
+// *
+// * \warning
+// * Tis is incorrect because if a is false, 'a && false' returns 'a'
+// * and not false.
 // */
-//optimization_entry_t const g_optimizer_logical_entry_not_false[] =
+//optimization_entry_t const g_optimizer_logical_entry_a_and_false[] =
 //{
 //    {
-//        /* f_name */            "'!false' -> 'true'",
+//        /* f_name */            "'a && false' -> 'false'",
 //        /* f_flags */           0,
 //
-//        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_not_false),
-//        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_logical_not_1_0)
+//        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_a_and_false),
+//        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_2_0)
 //    }
 //};
+
+
+/** \brief Optimize 'true || a' to 'true'.
+ *
+ * This table defines the optimization of 'true || a' to 'true'.
+ */
+optimization_entry_t const g_optimizer_logical_entry_true_or_a[] =
+{
+    {
+        /* f_name */            "'true || a' -> 'true'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_true_or_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_1_0)
+    }
+};
+
+
+/** \brief Optimize 'false || a' to 'a'.
+ *
+ * This table defines the optimization of 'false || a' to 'a'.
+ */
+optimization_entry_t const g_optimizer_logical_entry_false_or_a[] =
+{
+    {
+        /* f_name */            "'false || a' -> 'a'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_false_or_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_2_0)
+    }
+};
 
 
 /** \brief Optimize '!!!a' to '!a'.
@@ -208,14 +431,31 @@ optimization_entry_t const g_optimizer_logical_entry_not_not_not_a[] =
  */
 optimization_table_t const g_optimizer_logical_table[] =
 {
+    // logical NOT
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_not_literal)
     },
-    //{
-    //    /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_not_false)
-    //},
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_not_not_not_a)
+    },
+
+    // logical AND
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_true_and_a)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_false_and_a)
+    },
+    //{
+    //    /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_a_and_false)
+    //}
+
+    // logical OR
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_true_or_a)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_false_or_a)
     }
 };
 

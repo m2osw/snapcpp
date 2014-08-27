@@ -109,6 +109,13 @@ bool match_node(Node::pointer_t node, optimization_match_t const *match)
         // note: we only need to check STRING, INT64, and FLOAT64 literals
         switch(value->f_operator)
         {
+        case Node::node_t::NODE_ASSIGNMENT:
+            if(node->has_side_effects())
+            {
+                return false;
+            }
+            break;
+
         case Node::node_t::NODE_EQUAL:
         case Node::node_t::NODE_STRICTLY_EQUAL:
             switch(node->get_type())
@@ -140,6 +147,20 @@ bool match_node(Node::pointer_t node, optimization_match_t const *match)
             default:
                 throw exception_internal_error("INTERNAL ERROR: optimizer optimization_literal_t table used against an unsupported node type."); // LCOV_EXCL_LINE
 
+            }
+            break;
+
+        case Node::node_t::NODE_TRUE:
+            if(node->to_boolean_type_only() != Node::node_t::NODE_TRUE)
+            {
+                return false;
+            }
+            break;
+
+        case Node::node_t::NODE_FALSE:
+            if(node->to_boolean_type_only() != Node::node_t::NODE_FALSE)
+            {
+                return false;
             }
             break;
 

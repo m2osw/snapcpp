@@ -3229,9 +3229,14 @@ void Optimizer::logical_and(Node::pointer_t& logical_and_node)
     // Reduce
     //    true && b == b
     //    false && b == false
+    //
+    //       the following is NOT correct, if a is true, then
+    //       we get true, but otherwise we get a (i.e. null,
+    //       undefined, '', 0, 0.0, or false)
     //    a && true == !!a     -- we reduce this one because it is smaller
     //                            text wise and we may end up reducing the
     //                            !! to nothing
+    //
     //    a && false == false  -- if a has no side effect
 
     if(logical_and_node->get_children_size() != 2)
@@ -3425,7 +3430,10 @@ void Optimizer::logical_or(Node::pointer_t& logical_or_node)
     //    false || b == b
     //    a || true == true   or (a, true)
     //                         -- we reduce if a has no side effects
-    //    a || false == !!a
+    //                         -- this is wrong because if 'a' represents
+    //                            true, then 'a' is returned
+    //    a || false == a     or !!a
+    //                         -- the || does not force Boolean conversions
 
     if(logical_or_node->get_children_size() != 2)
     {

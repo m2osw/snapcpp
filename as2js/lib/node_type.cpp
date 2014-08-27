@@ -614,7 +614,7 @@ bool Node::has_side_effects() const
 
     //case NODE_IDENTIFIER:
     //
-    // TODO: Test whether this is a reference to a getter
+    // TODO: Test whether this is a reference to a [sg]etter
     //       function (needs to be compiled already...)
     //    
     //    break;

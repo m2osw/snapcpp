@@ -131,6 +131,36 @@ optimization_match_t const g_optimizer_additive_match_a_plus_b[] =
         }
 };
 
+optimization_match_t const g_optimizer_additive_match_a_plus_zero[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_add),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          g_optimizer_value_zero,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
 optimization_match_t const g_optimizer_additive_match_a_minus_b[] =
 {
     {
@@ -298,6 +328,17 @@ optimization_entry_t const g_optimizer_additive_entry_a_plus_b[] =
     }
 };
 
+optimization_entry_t const g_optimizer_additive_entry_a_plus_zero[] =
+{
+    {
+        /* f_name */                "'a+0' whatever 'a' -> '+a'",
+        /* f_flags */               0,
+
+        /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_additive_match_a_plus_zero),
+        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_remove_2)
+    }
+};
+
 optimization_entry_t const g_optimizer_additive_entry_a_minus_b[] =
 {
     {
@@ -363,6 +404,9 @@ optimization_table_t const g_optimizer_additive_table[] =
     },
     {
         /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_additive_entry_a_plus_b)
+    },
+    {
+        /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_additive_entry_a_plus_zero)
     },
     {
         /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_additive_entry_a_minus_b)

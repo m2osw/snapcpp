@@ -74,6 +74,14 @@ optimization_optimize_t const g_optimizer_optimize_move_2_1[] =
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_remove_2[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_REMOVE,
+        /* f_indexes */     { 2, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_negate_1_0[] =
 {
     {

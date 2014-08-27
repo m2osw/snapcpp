@@ -48,6 +48,33 @@ optimization_match_t::optimization_literal_t const g_optimizer_value_zero[] =
 };
 
 
+optimization_match_t::optimization_literal_t const g_optimizer_value_true[] =
+{
+    Node::node_t::NODE_TRUE,
+    "",
+    0,
+    0.0
+};
+
+
+optimization_match_t::optimization_literal_t const g_optimizer_value_false[] =
+{
+    Node::node_t::NODE_FALSE,
+    "",
+    0,
+    0.0
+};
+
+
+optimization_match_t::optimization_literal_t const g_optimizer_value_no_side_effects[] =
+{
+    Node::node_t::NODE_ASSIGNMENT,  // if you have assignments, then it has side effects and this returns false (not a match)
+    "",
+    0,
+    0.0
+};
+
+
 
 
 }

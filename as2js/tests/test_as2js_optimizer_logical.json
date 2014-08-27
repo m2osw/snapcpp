@@ -270,7 +270,7 @@
         }
     },
 
-    // !65 => false
+    // !6.5 => false
     {
         //"verbose": true,
         "name": "!6.5 -> false",
@@ -440,7 +440,881 @@
                 }
             ]
         }
+    },
+
+    // true && a => a
+    {
+        //"verbose": true,
+        "name": "true && a -> a",
+        "program": "true && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "TRUE"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // "true" && a => a
+    {
+        //"verbose": true,
+        "name": "\"true\" && a -> a",
+        "program": "\"true\" && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "true"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 104 && a => a
+    {
+        //"verbose": true,
+        "name": "104 && a -> a",
+        "program": "104 && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 104
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 1.04 && a => a
+    {
+        //"verbose": true,
+        "name": "1.04 && a -> a",
+        "program": "1.04 && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 1.04
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // false && a => false
+    {
+        //"verbose": true,
+        "name": "false && a -> false",
+        "program": "false && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "FALSE"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // '' && a => ''
+    {
+        //"verbose": true,
+        "name": "'' && a -> ''",
+        "program": "'' && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": ""
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "STRING",
+                            "label": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 0 && a => 0
+    {
+        //"verbose": true,
+        "name": "0 && a -> 0",
+        "program": "0 && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 0.0 && a => 0.0
+    {
+        //"verbose": true,
+        "name": "0.0 && a -> 0.0",
+        "program": "0.0 && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 0.0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": 0.0
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // null && a => null
+    {
+        //"verbose": true,
+        "name": "null && a -> null",
+        "program": "null && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "NULL"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "NULL"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // undefined && a => undefined
+    {
+        //"verbose": true,
+        "name": "undefined && a -> undefined",
+        "program": "undefined && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "UNDEFINED"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "UNDEFINED"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // true || a => true
+    {
+        //"verbose": true,
+        "name": "true || a -> true",
+        "program": "true || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "TRUE"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // "true" || a => "true"
+    {
+        //"verbose": true,
+        "name": "\"true\" || a -> a",
+        "program": "\"true\" || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "true"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "STRING",
+                            "label": "true"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 104 || a => 104
+    {
+        //"verbose": true,
+        "name": "104 || a -> 104",
+        "program": "104 || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 104
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 104
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 1.04 || a => 1.04
+    {
+        //"verbose": true,
+        "name": "1.04 || a -> 1.04",
+        "program": "1.04 || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 1.04
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": 1.04
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // false || a => a
+    {
+        //"verbose": true,
+        "name": "false || a -> a",
+        "program": "false || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "FALSE"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // '' || a => a
+    {
+        //"verbose": true,
+        "name": "'' || a -> a",
+        "program": "'' || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": ""
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 0 || a => a
+    {
+        //"verbose": true,
+        "name": "0 || a -> a",
+        "program": "0 || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 0.0 || a => a
+    {
+        //"verbose": true,
+        "name": "0.0 || a -> a",
+        "program": "0.0 || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 0.0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // null || a => a
+    {
+        //"verbose": true,
+        "name": "null || a -> a",
+        "program": "null || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "NULL"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // undefined || a => a
+    {
+        //"verbose": true,
+        "name": "undefined || a -> a",
+        "program": "undefined || a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "UNDEFINED"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
     }
+
+// TODO:
+// Once we support types properly we can look into supporting some
+// "!!a" <=> "a" optimizations; we may also want to look into a
+// way to support such optimization whenever the expression is used
+// in a boolean context such as "if(!!a)" <=> "if(a)"
 
 ]
 // vim: ts=4 sw=4 et

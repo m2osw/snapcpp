@@ -1094,17 +1094,19 @@ bool String::is_true() const
     {
         return false;
     }
-    if(is_int64())
-    {
-        return to_int64() != 0;
-    }
-    if(is_float64())
-    {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-        return strtod(to_utf8().c_str(), 0) != 0.0;
-#pragma GCC diagnostic pop
-    }
+// Not too sure why I picked that up, but the documentation clearly says
+// that an empty string is false, anything else is true...
+//    if(is_int64())
+//    {
+//        return to_int64() != 0;
+//    }
+//    if(is_float64())
+//    {
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wfloat-equal"
+//        return strtod(to_utf8().c_str(), 0) != 0.0;
+//#pragma GCC diagnostic pop
+//    }
     return true;
 }
 

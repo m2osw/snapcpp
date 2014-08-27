@@ -267,6 +267,35 @@ void optimizer_func_LOGICAL_NOT(node_pointer_vector_t const& node_array, optimiz
 }
 
 
+/** \brief Apply a REMOVE function.
+ *
+ * This function removes a node from another. In most cases, you remove one
+ * of the child of a binary operator or similar
+ *
+ * \code
+ *      a + 0;
+ * \endcode
+ *
+ * You could remove the zero to get:
+ *
+ * \code
+ *      +a;
+ * \endcode
+ *
+ * \li 0 -- source
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_REMOVE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src(optimize->f_indexes[0]);
+
+    // simply remove from the parent, the smart pointers take care of the rest
+    node_array[src]->set_parent(nullptr);
+}
+
+
 /** \brief Apply an SUBTRACT function.
  *
  * This function adds two numbers and saves the result in the 3rd position.
@@ -472,6 +501,7 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_MOVE           */ OPTIMIZER_FUNC(MOVE),
     /* OPTIMIZATION_FUNCTION_NEGATE         */ OPTIMIZER_FUNC(NEGATE),
     /* OPTIMIZATION_FUNCTION_LOGICAL_NOT    */ OPTIMIZER_FUNC(LOGICAL_NOT),
+    /* OPTIMIZATION_FUNCTION_REMOVE         */ OPTIMIZER_FUNC(REMOVE),
     /* OPTIMIZATION_FUNCTION_SUBTRACT       */ OPTIMIZER_FUNC(SUBTRACT),
     /* OPTIMIZATION_FUNCTION_TO_FLOAT64     */ OPTIMIZER_FUNC(TO_FLOAT64),
     /* OPTIMIZATION_FUNCTION_TO_INT64       */ OPTIMIZER_FUNC(TO_INT64),
