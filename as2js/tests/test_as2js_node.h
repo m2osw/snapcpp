@@ -39,6 +39,9 @@ SOFTWARE.
 #include <cppunit/extensions/HelperMacros.h>
 
 
+#include    "as2js/node.h"
+
+
 class As2JsNodeUnitTests : public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE( As2JsNodeUnitTests );
@@ -80,6 +83,9 @@ protected:
     void test_display_flags();
     void test_display_attributes();
     void test_display_tree();
+
+    // helper functions
+    bool in_conflict(size_t j, as2js::Node::attribute_t attr, as2js::Node::attribute_t a) const;
 };
 
 #endif

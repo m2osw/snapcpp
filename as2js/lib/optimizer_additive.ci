@@ -331,11 +331,11 @@ optimization_entry_t const g_optimizer_additive_entry_a_plus_b[] =
 optimization_entry_t const g_optimizer_additive_entry_a_plus_zero[] =
 {
     {
-        /* f_name */                "'a+0' whatever 'a' -> '+a'",
+        /* f_name */                "'a+0' whatever 'a' -> 'a'",
         /* f_flags */               0,
 
         /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_additive_match_a_plus_zero),
-        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_remove_2)
+        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_move_1_0)
     }
 };
 
@@ -405,9 +405,9 @@ optimization_table_t const g_optimizer_additive_table[] =
     {
         /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_additive_entry_a_plus_b)
     },
-    {
-        /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_additive_entry_a_plus_zero)
-    },
+    //{ -- wrong, if a is a string we concatenate and if a is a Boolean, undefined, or null we convert to a number
+    //    /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_additive_entry_a_plus_zero)
+    //},
     {
         /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_additive_entry_a_minus_b)
     },

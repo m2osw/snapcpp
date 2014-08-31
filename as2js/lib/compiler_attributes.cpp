@@ -57,6 +57,7 @@ void Compiler::variable_to_attrs(Node::pointer_t node, Node::pointer_t var_node)
     {
     case Node::node_t::NODE_FALSE:
     case Node::node_t::NODE_IDENTIFIER:
+    case Node::node_t::NODE_INLINE:
     case Node::node_t::NODE_PRIVATE:
     case Node::node_t::NODE_PROTECTED:
     case Node::node_t::NODE_PUBLIC:
@@ -247,6 +248,10 @@ void Compiler::node_to_attrs(Node::pointer_t node, Node::pointer_t a)
 
     case Node::node_t::NODE_IDENTIFIER:
         identifier_to_attrs(node, a);
+        break;
+
+    case Node::node_t::NODE_INLINE:
+        node->set_attribute(Node::attribute_t::NODE_ATTR_INLINE, true);
         break;
 
     case Node::node_t::NODE_NATIVE: // Note: I called this one INTRINSIC before

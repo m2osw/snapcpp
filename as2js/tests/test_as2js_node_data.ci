@@ -1012,6 +1012,13 @@ node_type_info_t const g_node_types[] =
         .f_node_flags = g_flags_none
     },
     {
+        .f_type = as2js::Node::node_t::NODE_INLINE,
+        .f_name = "INLINE",
+        .f_operator = nullptr,
+        .f_flags = TEST_NODE_IS_NAN,
+        .f_node_flags = g_flags_none
+    },
+    {
         .f_type = as2js::Node::node_t::NODE_INSTANCEOF,
         .f_name = "INSTANCEOF",
         .f_operator = nullptr,
@@ -1561,6 +1568,7 @@ char const *g_attribute_names[static_cast<int>(as2js::Node::attribute_t::NODE_AT
     "ABSTRACT",
     "VIRTUAL",
     "ARRAY",
+    "INLINE",
     "REQUIRE_ELSE",
     "ENSURE_THEN",
     "NATIVE",
@@ -1632,7 +1640,7 @@ groups_attributes_t const g_groups_of_attributes[] =
     },
     {
         g_group_function_type,
-        "static, abstract, virtual, and constructor; also abstract and native"
+        "abstract, constructor, inline, native, static, and virtual"
     },
     {
         g_group_function_contract,

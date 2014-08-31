@@ -191,6 +191,7 @@ Node::Node(node_t type)
     case node_t::NODE_IN:
     case node_t::NODE_INCLUDE:
     case node_t::NODE_INCREMENT:
+    case node_t::NODE_INLINE:
     case node_t::NODE_INSTANCEOF:
     case node_t::NODE_INT64:
     case node_t::NODE_INTERFACE:

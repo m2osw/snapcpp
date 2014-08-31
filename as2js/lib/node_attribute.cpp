@@ -64,7 +64,7 @@ enum
 char const *g_attribute_groups[] =
 {
     [ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION] = "true and false",
-    [ATTRIBUTES_GROUP_FUNCTION_TYPE] = "static, abstract, virtual, and constructor; also abstract and native",
+    [ATTRIBUTES_GROUP_FUNCTION_TYPE] = "abstract, constructor, inline, native, static, and virtual",
     [ATTRIBUTES_GROUP_FUNCTION_CONTRACT] = "require else and ensure then",
     [ATTRIBUTES_GROUP_SWITCH_TYPE] = "foreach, nobreak, and autobreak",
     [ATTRIBUTES_GROUP_MEMBER_VISIBILITY] = "public, private, and protected"
@@ -148,6 +148,7 @@ void Node::verify_attribute(attribute_t a) const
     case attribute_t::NODE_ATTR_ABSTRACT:
     case attribute_t::NODE_ATTR_VIRTUAL:
     case attribute_t::NODE_ATTR_ARRAY:
+    case attribute_t::NODE_ATTR_INLINE:
 
     // function contracts
     case attribute_t::NODE_ATTR_REQUIRE_ELSE:
@@ -235,6 +236,7 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
         // these attributes have no conflicts
         return true;
 
+    // function contract
     case attribute_t::NODE_ATTR_REQUIRE_ELSE:
         conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ENSURE_THEN)];
         names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_CONTRACT];
@@ -243,11 +245,6 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
     case attribute_t::NODE_ATTR_ENSURE_THEN:
         conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_REQUIRE_ELSE)];
         names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_CONTRACT];
-        break;
-
-    case attribute_t::NODE_ATTR_NATIVE:
-        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)];
-        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
 
     // member visibility
@@ -270,6 +267,37 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
         break;
 
     // function type group
+    case attribute_t::NODE_ATTR_ABSTRACT:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_NATIVE)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_INLINE)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
+
+    case attribute_t::NODE_ATTR_CONSTRUCTOR:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_INLINE)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
+
+    case attribute_t::NODE_ATTR_INLINE:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_NATIVE)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
+
+    case attribute_t::NODE_ATTR_NATIVE:
+        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_INLINE)];
+        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
+        break;
+
     case attribute_t::NODE_ATTR_STATIC:
         conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)]
                 || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
@@ -277,25 +305,11 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
         names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
 
-    case attribute_t::NODE_ATTR_ABSTRACT:
-        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
-                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
-                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)]
-                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_NATIVE)];
-        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
-        break;
-
     case attribute_t::NODE_ATTR_VIRTUAL:
         conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
                 || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_CONSTRUCTOR)]
-                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)];
-        names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
-        break;
-
-    case attribute_t::NODE_ATTR_CONSTRUCTOR:
-        conflict = f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_STATIC)]
-                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_VIRTUAL)]
-                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)];
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_ABSTRACT)]
+                || f_attributes[static_cast<size_t>(attribute_t::NODE_ATTR_INLINE)];
         names = g_attribute_groups[ATTRIBUTES_GROUP_FUNCTION_TYPE];
         break;
 

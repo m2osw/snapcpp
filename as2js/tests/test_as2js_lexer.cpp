@@ -110,11 +110,11 @@ option_t const g_option_octal[] =
     as2js::Options::option_t::OPTION_max
 };
 
-option_t const g_option_extended_operators[] =
-{
-    as2js::Options::option_t::OPTION_EXTENDED_OPERATORS,
-    as2js::Options::option_t::OPTION_max
-};
+//option_t const g_option_extended_operators[] =
+//{
+//    as2js::Options::option_t::OPTION_EXTENDED_OPERATORS,
+//    as2js::Options::option_t::OPTION_max
+//};
 
 result_t const g_result_test_a_string[] =
 {
@@ -1741,6 +1741,20 @@ result_t const g_result_keyword_in[] =
     }
 };
 
+result_t const g_result_keyword_inline[] =
+{
+    {
+        as2js::Node::node_t::NODE_INLINE,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    },
+    {
+        as2js::Node::node_t::NODE_UNKNOWN,
+        CHECK_VALUE_IGNORE, 0, 0.0, "", false,
+        nullptr
+    }
+};
+
 result_t const g_result_keyword_instanceof[] =
 {
     {
@@ -2838,6 +2852,10 @@ token_t const g_tokens[] =
     {
         "in",
         g_result_keyword_in
+    },
+    {
+        "inline",
+        g_result_keyword_inline
     },
     {
         "instanceof",
@@ -4582,7 +4600,7 @@ char const g_mixed_tokens_one[] =
     /* LINE 21 */   "var c|=__LINE__|1000>34<2!~3..5.length;\n"
 
     /* LINE 22 */   "abstract function long_shot(a: String, b: Number, c: double, ...);\n"
-    /* LINE 23 */   "var q = 91.e+j;\n"
+    /* LINE 23 */   "use extended_operators(2); var q = 91.e+j;\n"
 ;
 
 result_t const g_mixed_results_one[] =
@@ -6591,7 +6609,7 @@ result_t const g_mixed_results_one[] =
         nullptr
     },
 
-    // LINE 23 --   "var q = 91.e+j;\n"
+    // LINE 23 --   "use extended_operators(2); var q = 91.e+j;\n"
     {
         as2js::Node::node_t::NODE_VAR,
         CHECK_VALUE_IGNORE, 0, 0.0, "", false,

@@ -260,6 +260,7 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_FINAL:
     case node_t::NODE_FLOAT:
     case node_t::NODE_IDENTIFIER:
+    case node_t::NODE_INLINE:
     case node_t::NODE_INT64:
     case node_t::NODE_FALSE:
     case node_t::NODE_FLOAT64:

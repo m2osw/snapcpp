@@ -1132,6 +1132,7 @@ void As2JsNodeUnitTests::test_tree()
             case as2js::Node::node_t::NODE_EMPTY:
             case as2js::Node::node_t::NODE_EOF:
             case as2js::Node::node_t::NODE_IDENTIFIER:
+            case as2js::Node::node_t::NODE_INLINE:
             case as2js::Node::node_t::NODE_INT64:
             case as2js::Node::node_t::NODE_FALSE:
             case as2js::Node::node_t::NODE_FINAL:
@@ -1843,27 +1844,7 @@ void As2JsNodeUnitTests::test_attributes()
                     }
 
                     // is attribute 'a' in conflict with attribute '*attr_list'?
-                    bool in_conflict(false);
-                    for(as2js::Node::attribute_t const *conflict_list(g_groups_of_attributes[j].f_attributes);
-                                                 *conflict_list != as2js::Node::attribute_t::NODE_ATTR_max;
-                                                 ++conflict_list)
-                    {
-                        if(static_cast<as2js::Node::attribute_t>(a) == *conflict_list)
-                        {
-                            in_conflict = true;
-                            break;
-                        }
-                    }
-
-                    // we may get even more complicated stuff later, but for
-                    // now the abstract / native is the only exception...
-                    if((*attr_list == as2js::Node::attribute_t::NODE_ATTR_ABSTRACT && a == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_NATIVE))
-                    || (*attr_list == as2js::Node::attribute_t::NODE_ATTR_NATIVE && a == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_ABSTRACT)))
-                    {
-                        in_conflict = true;
-                    }
-
-                    if(in_conflict)
+                    if(in_conflict(j, *attr_list, static_cast<as2js::Node::attribute_t>(a)))
                     {
                         test_callback c;
                         c.f_expected_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
@@ -1898,6 +1879,108 @@ void As2JsNodeUnitTests::test_attributes()
             }
         }
     }
+}
+
+
+// is attribute 'a' in conflict with attribute '*attr_list'?
+bool As2JsNodeUnitTests::in_conflict(size_t j, as2js::Node::attribute_t attr, as2js::Node::attribute_t a) const
+{
+    for(as2js::Node::attribute_t const *conflict_list(g_groups_of_attributes[j].f_attributes);
+                                       *conflict_list != as2js::Node::attribute_t::NODE_ATTR_max;
+                                       ++conflict_list)
+    {
+        if(a == *conflict_list)
+        {
+            return true;
+        }
+    }
+
+    // the following handles exceptions
+    //
+    // From the function type:
+    //  . abstract, constructor, static, virtual
+    //
+    // We also get:
+    //  . abstract / native
+    //  . abstract / constructor / inline / virtual
+    switch(attr)
+    {
+    case as2js::Node::attribute_t::NODE_ATTR_ABSTRACT:
+        switch(a)
+        {
+        case as2js::Node::attribute_t::NODE_ATTR_NATIVE:
+        case as2js::Node::attribute_t::NODE_ATTR_INLINE:
+            return true;
+            break;
+
+        default:
+            break;
+
+        }
+        break;
+
+    case as2js::Node::attribute_t::NODE_ATTR_CONSTRUCTOR:
+        switch(a)
+        {
+        case as2js::Node::attribute_t::NODE_ATTR_INLINE:
+            return true;
+            break;
+
+        default:
+            break;
+
+        }
+        break;
+
+    case as2js::Node::attribute_t::NODE_ATTR_INLINE:
+        switch(a)
+        {
+        case as2js::Node::attribute_t::NODE_ATTR_ABSTRACT:
+        case as2js::Node::attribute_t::NODE_ATTR_CONSTRUCTOR:
+        case as2js::Node::attribute_t::NODE_ATTR_NATIVE:
+        case as2js::Node::attribute_t::NODE_ATTR_VIRTUAL:
+            return true;
+            break;
+
+        default:
+            break;
+
+        }
+        break;
+
+    case as2js::Node::attribute_t::NODE_ATTR_NATIVE:
+        switch(a)
+        {
+        case as2js::Node::attribute_t::NODE_ATTR_ABSTRACT:
+        case as2js::Node::attribute_t::NODE_ATTR_INLINE:
+            return true;
+            break;
+
+        default:
+            break;
+
+        }
+        break;
+
+
+    case as2js::Node::attribute_t::NODE_ATTR_VIRTUAL:
+        switch(a)
+        {
+        case as2js::Node::attribute_t::NODE_ATTR_INLINE:
+            return true;
+
+        default:
+            break;
+
+        }
+        break;
+
+    default:
+        break;
+
+    }
+
+    return false;
 }
 
 

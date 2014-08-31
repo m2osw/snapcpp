@@ -36,7 +36,6 @@ SOFTWARE.
 #include    "test_as2js_node.h"
 #include    "test_as2js_main.h"
 
-#include    "as2js/node.h"
 #include    "as2js/message.h"
 #include    "as2js/exceptions.h"
 
@@ -341,27 +340,10 @@ void As2JsNodeUnitTests::test_display_attributes()
                     }
 
                     // is attribute 'a' in conflict with attribute '*attr_list'?
-                    bool in_conflict(false);
-                    for(as2js::Node::attribute_t const *conflict_list(g_groups_of_attributes[j].f_attributes);
-                                                       *conflict_list != as2js::Node::attribute_t::NODE_ATTR_max;
-                                                       ++conflict_list)
+                    if(!in_conflict(j, *attr_list, static_cast<as2js::Node::attribute_t>(a)))
                     {
-                        if(static_cast<as2js::Node::attribute_t>(a) == *conflict_list)
-                        {
-                            in_conflict = true;
-                            break;
-                        }
-                    }
-                    if((*attr_list == as2js::Node::attribute_t::NODE_ATTR_ABSTRACT && a == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_NATIVE))
-                    || (*attr_list == as2js::Node::attribute_t::NODE_ATTR_NATIVE && a == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_ABSTRACT)))
-                    {
-                        in_conflict = true;
-                    }
-
-                    // if in conflict we do not care much here because the
-                    // display is going to be exactly the same
-                    if(!in_conflict)
-                    {
+                        // if in conflict we do not care much here because the
+                        // display is going to be exactly the same
                         node->set_attribute(static_cast<as2js::Node::attribute_t>(a), true);
 
                         // display that now

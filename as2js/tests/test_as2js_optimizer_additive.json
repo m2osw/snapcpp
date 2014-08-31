@@ -1009,103 +1009,110 @@
         }
     },
 
-    // a+0 -> +a
-    {
-        "verbose": true,
-        "name": "a + 0 -> +a",
-        "program": "a + 0;",
-        "parser result": {
-            "node type": "PROGRAM",
-            "children": [
-                {
-                    "node type": "DIRECTIVE_LIST",
-                    "children": [
-                        {
-                            "node type": "ADD",
-                            "children": [
-                                {
-                                    "node type": "IDENTIFIER",
-                                    "label": "a"
-                                },
-                                {
-                                    "node type": "INT64",
-                                    "integer": 0
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
-        "optimizer result": {
-            "node type": "PROGRAM",
-            "children": [
-                {
-                    "node type": "DIRECTIVE_LIST",
-                    "children": [
-                        {
-                            "node type": "ADD",
-                            "children": [
-                                {
-                                    "node type": "IDENTIFIER",
-                                    "label": "a"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-
-    // 0+a -> +a
-    {
-        "verbose": true,
-        "name": "0 + a -> +a",
-        "program": "0 + a;",
-        "parser result": {
-            "node type": "PROGRAM",
-            "children": [
-                {
-                    "node type": "DIRECTIVE_LIST",
-                    "children": [
-                        {
-                            "node type": "ADD",
-                            "children": [
-                                {
-                                    "node type": "INT64",
-                                    "integer": 0
-                                },
-                                {
-                                    "node type": "IDENTIFIER",
-                                    "label": "a"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
-        "optimizer result": {
-            "node type": "PROGRAM",
-            "children": [
-                {
-                    "node type": "DIRECTIVE_LIST",
-                    "children": [
-                        {
-                            "node type": "ADD",
-                            "children": [
-                                {
-                                    "node type": "IDENTIFIER",
-                                    "label": "a"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-    },
+//
+// These are not actually available as they are wrong
+//
+// i.e. 'abc' + 0 -> 'abc0'
+//      undefined + 0 -> NaN
+//      null + 0 -> 0
+//      true + 0 -> 1
+//      false + 0 -> 0
+//
+// So until we can determine the type of 'a' we cannot really know
+// the result of this operation
+//
+//    // a+0 -> +a
+//    {
+//        "verbose": true,
+//        "name": "a + 0 -> +a",
+//        "program": "a + 0;",
+//        "parser result": {
+//            "node type": "PROGRAM",
+//            "children": [
+//                {
+//                    "node type": "DIRECTIVE_LIST",
+//                    "children": [
+//                        {
+//                            "node type": "ADD",
+//                            "children": [
+//                                {
+//                                    "node type": "IDENTIFIER",
+//                                    "label": "a"
+//                                },
+//                                {
+//                                    "node type": "INT64",
+//                                    "integer": 0
+//                                }
+//                            ]
+//                        }
+//                    ]
+//                }
+//            ]
+//        },
+//        "optimizer result": {
+//            "node type": "PROGRAM",
+//            "children": [
+//                {
+//                    "node type": "DIRECTIVE_LIST",
+//                    "children": [
+//                        {
+//                            "node type": "IDENTIFIER",
+//                            "label": "a"
+//                        }
+//                    ]
+//                }
+//            ]
+//        }
+//    },
+//
+//    // 0+a -> +a
+//    {
+//        "verbose": true,
+//        "name": "0 + a -> +a",
+//        "program": "0 + a;",
+//        "parser result": {
+//            "node type": "PROGRAM",
+//            "children": [
+//                {
+//                    "node type": "DIRECTIVE_LIST",
+//                    "children": [
+//                        {
+//                            "node type": "ADD",
+//                            "children": [
+//                                {
+//                                    "node type": "INT64",
+//                                    "integer": 0
+//                                },
+//                                {
+//                                    "node type": "IDENTIFIER",
+//                                    "label": "a"
+//                                }
+//                            ]
+//                        }
+//                    ]
+//                }
+//            ]
+//        },
+//        "optimizer result": {
+//            "node type": "PROGRAM",
+//            "children": [
+//                {
+//                    "node type": "DIRECTIVE_LIST",
+//                    "children": [
+//                        {
+//                            "node type": "ADD",
+//                            "children": [
+//                                {
+//                                    "node type": "IDENTIFIER",
+//                                    "label": "a"
+//                                }
+//                            ]
+//                        }
+//                    ]
+//                }
+//            ]
+//        }
+//    },
 
     // a-b -> subtract(a,b), integers
     {

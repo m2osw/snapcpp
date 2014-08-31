@@ -3305,6 +3305,13 @@ void Optimizer::logical_xor(Node::pointer_t& logical_xor_node)
     //          result (contrary to the && and ||) we presume that
     //          both sides must be Boolean values
 
+    // a ^^ b is equivalent to !!a ^ !!b
+    // or in terms of || and && we can write a complex thing such as:
+    //    (a || b) && (!a || !b)
+    //    (a || b) && !(a && b)
+    //    (a || b) && (!a || !b)
+    //    (a && !b) || (!a && b)
+
     // Reduce
     //    true ^^ b == !b
     //    false ^^ b == !!b

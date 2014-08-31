@@ -1573,6 +1573,11 @@ void Lexer::read_identifier(Input::char_t c)
                 f_result_type = Node::node_t::NODE_IN;
                 return;
             }
+            if(l == 6 && str == "inline")
+            {
+                f_result_type = Node::node_t::NODE_INLINE;
+                return;
+            }
             if(l == 10 && str == "instanceof")
             {
                 f_result_type = Node::node_t::NODE_INSTANCEOF;

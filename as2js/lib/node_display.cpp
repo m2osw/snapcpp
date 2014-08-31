@@ -438,6 +438,7 @@ void Node::display(std::ostream& out, int indent, char c) const
             display_attribute(attribute_t::NODE_ATTR_ABSTRACT,       "ABSTRACT"      );
             display_attribute(attribute_t::NODE_ATTR_VIRTUAL,        "VIRTUAL"       );
             display_attribute(attribute_t::NODE_ATTR_ARRAY,          "ARRAY"         );
+            display_attribute(attribute_t::NODE_ATTR_INLINE,         "INLINE"        );
 
             display_attribute(attribute_t::NODE_ATTR_REQUIRE_ELSE,   "REQUIRE_ELSE"  );
             display_attribute(attribute_t::NODE_ATTR_ENSURE_THEN,    "ENSURE_THEN"   );

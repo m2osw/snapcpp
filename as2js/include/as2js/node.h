@@ -176,6 +176,7 @@ public:
         NODE_IN,
         NODE_INCLUDE,
         NODE_INCREMENT,
+        NODE_INLINE,
         NODE_INSTANCEOF,
         NODE_INT64,
         NODE_INTERFACE,
@@ -357,6 +358,7 @@ public:
         NODE_ATTR_ABSTRACT,
         NODE_ATTR_VIRTUAL,
         NODE_ATTR_ARRAY,
+        NODE_ATTR_INLINE,
 
         // function contract
         NODE_ATTR_REQUIRE_ELSE,

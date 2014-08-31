@@ -689,6 +689,7 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_ABSTRACT:
     //case Node::node_t::NODE_FALSE:
     case Node::node_t::NODE_FINAL:
+    case Node::node_t::NODE_INLINE:
     case Node::node_t::NODE_NATIVE:
     //case Node::node_t::NODE_PRIVATE:
     //case Node::node_t::NODE_PROTECTED:

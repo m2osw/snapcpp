@@ -1655,7 +1655,7 @@ void As2JsStringUnitTests::test_number()
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             CPPUNIT_ASSERT(str1.to_float64() == static_cast<double>(i));
 #pragma GCC diagnostic pop
-            CPPUNIT_ASSERT(str1.is_true() ^ (i == 0));
+            CPPUNIT_ASSERT(str1.is_true());
         }
         // hexadecimal
         {
@@ -1667,7 +1667,7 @@ void As2JsStringUnitTests::test_number()
             CPPUNIT_ASSERT(str1.is_number());
             CPPUNIT_ASSERT(str1.to_int64() == i);
             CPPUNIT_ASSERT(std::isnan(str1.to_float64()));
-            CPPUNIT_ASSERT(str1.is_true() ^ (i == 0));
+            CPPUNIT_ASSERT(str1.is_true());
         }
     }
 
@@ -1701,7 +1701,7 @@ void As2JsStringUnitTests::test_number()
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        CPPUNIT_ASSERT(str1.is_true() ^ (i == 0.0));
+        CPPUNIT_ASSERT(str1.is_true());
 #pragma GCC diagnostic pop
 
         // add x 1000 as an exponent
@@ -1717,7 +1717,7 @@ void As2JsStringUnitTests::test_number()
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        CPPUNIT_ASSERT(str2.is_true() ^ (i == 0.0));
+        CPPUNIT_ASSERT(str2.is_true());
 #pragma GCC diagnostic pop
 
         // add x 1000 as an exponent
@@ -1734,7 +1734,7 @@ void As2JsStringUnitTests::test_number()
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        CPPUNIT_ASSERT(str3.is_true() ^ (i == 0.0));
+        CPPUNIT_ASSERT(str3.is_true());
 #pragma GCC diagnostic pop
     }
 
@@ -1754,7 +1754,7 @@ void As2JsStringUnitTests::test_number()
 #pragma GCC diagnostic ignored "-Wfloat-equal"
         CPPUNIT_ASSERT(str1.to_float64() == static_cast<double>(value));
 #pragma GCC diagnostic pop
-        CPPUNIT_ASSERT(str1.is_true() ^ (value == 0));
+        CPPUNIT_ASSERT(str1.is_true());
     }
 
     // test a few non-hexadecimal numbers
@@ -1780,7 +1780,7 @@ void As2JsStringUnitTests::test_number()
         CPPUNIT_ASSERT(!str1.is_number());
         CPPUNIT_ASSERT_THROW(str1.to_int64(), as2js::exception_internal_error);
         CPPUNIT_ASSERT(std::isnan(str1.to_float64()));
-        CPPUNIT_ASSERT(str1.is_true()); // non-empty string which is no a number
+        CPPUNIT_ASSERT(str1.is_true());
 
         // invalid character is in the middle of the hex number
         std::stringstream ss2;
@@ -1791,7 +1791,7 @@ void As2JsStringUnitTests::test_number()
         CPPUNIT_ASSERT(!str2.is_number());
         CPPUNIT_ASSERT_THROW(str2.to_int64(), as2js::exception_internal_error);
         CPPUNIT_ASSERT(std::isnan(str2.to_float64()));
-        CPPUNIT_ASSERT(str2.is_true()); // non-empty string which is no a number
+        CPPUNIT_ASSERT(str2.is_true());
     }
 }
 
