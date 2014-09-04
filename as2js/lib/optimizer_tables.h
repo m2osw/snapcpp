@@ -72,6 +72,9 @@ namespace optimizer_details
 #define NULL_POINTER_AND_COUNT()            nullptr, 0
 
 
+uint32_t const OPTIMIZATION_MATCH_FLAG_CHILDREN =        0x0001;
+
+
 struct optimization_match_t
 {
     struct optimization_literal_t
@@ -97,6 +100,7 @@ struct optimization_match_t
     };
 
     uint8_t                         f_depth;        // to build a tree
+    uint8_t                         f_match_flags;  // zero by default
 
     Node::node_t const *            f_node_types;
     size_t                          f_node_types_count;
@@ -121,8 +125,10 @@ enum class optimization_function_t
     OPTIMIZATION_FUNCTION_MOVE,
     OPTIMIZATION_FUNCTION_NEGATE,
     OPTIMIZATION_FUNCTION_LOGICAL_NOT,
+    OPTIMIZATION_FUNCTION_LOGICAL_XOR,
     OPTIMIZATION_FUNCTION_REMOVE,
     OPTIMIZATION_FUNCTION_SUBTRACT,
+    OPTIMIZATION_FUNCTION_SWAP,
     OPTIMIZATION_FUNCTION_TO_FLOAT64,
     OPTIMIZATION_FUNCTION_TO_INT64,
     OPTIMIZATION_FUNCTION_TO_NUMBER,

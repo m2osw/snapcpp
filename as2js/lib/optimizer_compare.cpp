@@ -292,50 +292,55 @@ bool match_tree(node_pointer_vector_t& node_array, Node::pointer_t node, optimiz
     && match_node(node, match))
     {
         node_array.push_back(node);
+//std::cerr << "Matched " << node->get_type_name()
+//                        << ", depth=" << static_cast<int>(depth)
+//                        << ", count=" << match_count
+//                        << ", children? " << ((match->f_match_flags & OPTIMIZATION_MATCH_FLAG_CHILDREN) != 0 ? "YES" : "no")
+//                        << ", size=" << node_array.size()
+//                        << "\n";
+
+        size_t const max_child(node->get_children_size());
+        size_t c(max_child);
 
         // it matched, do we have more to check in the tree?
         --match_count;
-        if(match_count == 0)
+        if(match_count != 0 && (match->f_match_flags & OPTIMIZATION_MATCH_FLAG_CHILDREN) != 0)
         {
-            // TODO: should we check whether this node has children
-            //       and if so return false?
-            return true;
-        }
 
 #if defined(_DEBUG) || defined(DEBUG)
-        if(depth >= 255)
-        {
-            throw exception_internal_error("INTERNAL ERROR: optimizer is using a depth of more than 255."); // LCOV_EXCL_LINE
-        }
+            if(depth >= 255)
+            {
+                throw exception_internal_error("INTERNAL ERROR: optimizer is using a depth of more than 255."); // LCOV_EXCL_LINE
+            }
 #endif
 
-        // check that the children are a match
-        uint8_t next_level(depth + 1);
-        size_t const max_child(node->get_children_size());
+            // check that the children are a match
+            uint8_t const next_level(depth + 1);
 
-        size_t c(0);
-        for(; match_count > 0; --match_count)
-        {
-            ++match;
-            if(match->f_depth == next_level)
+            c = 0;
+            for(; match_count > 0; --match_count)
             {
-                if(c >= max_child)
+                ++match;
+                if(match->f_depth == next_level)
                 {
-                    // another match is required, but no more children are
-                    // available in this node...
-                    return false;
+                    if(c >= max_child)
+                    {
+                        // another match is required, but no more children are
+                        // available in this node...
+                        return false;
+                    }
+                    if(!match_tree(node_array, node->get_child(c), match, match_count, next_level))
+                    {
+                        // not a match
+                        return false;
+                    }
+                    ++c;
                 }
-                if(!match_tree(node_array, node->get_child(c), match, match_count, next_level))
+                else if(match->f_depth < next_level)
                 {
-                    // not a match
-                    return false;
+                    // we arrived at the end of this list of children
+                    break;
                 }
-                ++c;
-            }
-            else if(match->f_depth < next_level)
-            {
-                // we arrived at the end of this list of children
-                break;
             }
         }
 

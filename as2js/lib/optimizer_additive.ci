@@ -42,6 +42,7 @@ optimization_match_t const g_optimizer_additive_match_positive_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_add),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -51,6 +52,7 @@ optimization_match_t const g_optimizer_additive_match_positive_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -63,6 +65,7 @@ optimization_match_t const g_optimizer_additive_match_plus_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_add),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -72,6 +75,7 @@ optimization_match_t const g_optimizer_additive_match_plus_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -84,6 +88,7 @@ optimization_match_t const g_optimizer_additive_match_negate_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_f_match_flags */       OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_subtract),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -93,6 +98,7 @@ optimization_match_t const g_optimizer_additive_match_negate_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -105,6 +111,7 @@ optimization_match_t const g_optimizer_additive_match_a_plus_b[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_add),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -114,6 +121,7 @@ optimization_match_t const g_optimizer_additive_match_a_plus_b[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -123,6 +131,7 @@ optimization_match_t const g_optimizer_additive_match_a_plus_b[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -135,6 +144,7 @@ optimization_match_t const g_optimizer_additive_match_a_plus_zero[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_add),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -144,6 +154,7 @@ optimization_match_t const g_optimizer_additive_match_a_plus_zero[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -153,6 +164,7 @@ optimization_match_t const g_optimizer_additive_match_a_plus_zero[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
             /* f_with_value */          g_optimizer_value_zero,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -165,6 +177,7 @@ optimization_match_t const g_optimizer_additive_match_a_minus_b[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_subtract),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -174,6 +187,7 @@ optimization_match_t const g_optimizer_additive_match_a_minus_b[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -183,6 +197,7 @@ optimization_match_t const g_optimizer_additive_match_a_minus_b[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -195,6 +210,7 @@ optimization_match_t const g_optimizer_additive_match_zero_minus_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_subtract),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -204,6 +220,7 @@ optimization_match_t const g_optimizer_additive_match_zero_minus_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
             /* f_with_value */          g_optimizer_value_zero,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -213,6 +230,7 @@ optimization_match_t const g_optimizer_additive_match_zero_minus_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -225,6 +243,7 @@ optimization_match_t const g_optimizer_additive_match_a_concatenate_b_any[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_add),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -234,6 +253,7 @@ optimization_match_t const g_optimizer_additive_match_a_concatenate_b_any[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_string),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -243,6 +263,7 @@ optimization_match_t const g_optimizer_additive_match_a_concatenate_b_any[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -255,6 +276,7 @@ optimization_match_t const g_optimizer_additive_match_a_any_concatenate_b[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_add),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -264,6 +286,7 @@ optimization_match_t const g_optimizer_additive_match_a_any_concatenate_b[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -273,6 +296,7 @@ optimization_match_t const g_optimizer_additive_match_a_any_concatenate_b[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_string),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),

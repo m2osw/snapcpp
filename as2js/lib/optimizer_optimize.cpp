@@ -233,11 +233,11 @@ void optimizer_func_NEGATE(node_pointer_vector_t const& node_array, optimization
 
 /** \brief Apply a LOGICAL_NOT function.
  *
- * This function applies a logical not and saves the result in the
+ * This function applies a logical NOT and saves the result in the
  * 2nd position.
  *
- * The logical not is applied whatever the literal after a conversion
- * to a boolean. If the conversion fails, then an exception is raised.
+ * The logical NOT is applied whatever the input literal after a conversion
+ * to Boolean. If the conversion fails, then an exception is raised.
  *
  * \li 0 -- source
  * \li 1 -- destination
@@ -257,13 +257,70 @@ void optimizer_func_LOGICAL_NOT(node_pointer_vector_t const& node_array, optimiz
 
     if(!node_array[src]->to_boolean())
     {
-        throw exception_internal_error("optimizer used function to_boolean() against a node that cannot be converted to a boolean."); // LCOV_EXCL_LINE
+        throw exception_internal_error("optimizer used function to_boolean() against a node that cannot be converted to a Boolean."); // LCOV_EXCL_LINE
     }
     bool b(node_array[src]->get_boolean());
     node_array[src]->set_boolean(!b);
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src]);
+}
+
+
+/** \brief Apply a LOGICAL_XOR function.
+ *
+ * This function applies a logical XOR between the two sources and saves
+ * the result in the 2nd position.
+ *
+ * The logical XOR is applied whatever the literals after a conversion
+ * to Boolean. If the conversion fails, then an exception is raised.
+ *
+ * \li 0 -- first source
+ * \li 1 -- second source
+ * \li 2 -- destination
+ *
+ * \warning
+ * The first source will be modified before replacing destination.
+ *
+ * \exception exception_internal_error
+ * The function may attempt to convert the inputs to Boolean values.
+ * If that fails, this exception is raised. The Optimizer matching mechanism
+ * should, however, prevent all such problems.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_LOGICAL_XOR(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    Node::node_t n1(node_array[src1]->to_boolean_type_only());
+    Node::node_t n2(node_array[src2]->to_boolean_type_only());
+    if((n1 != Node::node_t::NODE_TRUE && n1 != Node::node_t::NODE_FALSE)
+    || (n2 != Node::node_t::NODE_TRUE && n2 != Node::node_t::NODE_FALSE))
+    {
+        throw exception_internal_error("optimizer used function to_boolean_type_only() against a node that cannot be converted to a Boolean."); // LCOV_EXCL_LINE
+    }
+    if(n1 == n2)
+    {
+        // if false, return the Boolean false
+        node_array[src1]->to_boolean();
+        node_array[src1]->set_boolean(false);
+    }
+    else
+    {
+        // if true, return the input as is
+        if(n1 == Node::node_t::NODE_FALSE)
+        {
+            // src2 is the result if src1 represents false
+            src1 = src2;
+        }
+    }
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src1]);
 }
 
 
@@ -349,6 +406,47 @@ void optimizer_func_SUBTRACT(node_pointer_vector_t const& node_array, optimizati
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+}
+
+
+/** \brief Apply a SWAP function.
+ *
+ * This function exchanges a node with another. For example, we can inverse
+ * a condition in an 'if()' statement and then swap the first list of
+ * statements with the second (i.e. the 'then' part with the 'else' part.)
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_SWAP(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]);
+
+    // get the existing pointers and offsets
+    Node::pointer_t n1(node_array[src1]);
+    Node::pointer_t n2(node_array[src2]);
+
+    Node::pointer_t p1(n1->get_parent());
+    Node::pointer_t p2(n2->get_parent());
+
+    Node::pointer_t e1(new Node(Node::node_t::NODE_EMPTY));
+    Node::pointer_t e2(new Node(Node::node_t::NODE_EMPTY));
+
+    size_t o1(n1->get_offset());
+    size_t o2(n2->get_offset());
+
+    p1->set_child(o1, e1);
+    p2->set_child(o2, e2);
+
+    p1->set_child(o1, n2);
+    p2->set_child(o2, n1);
+
+    // WARNING: we do not use the replace_with() function because we would
+    //          otherwise lose the parent and offset information
 }
 
 
@@ -501,8 +599,10 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_MOVE           */ OPTIMIZER_FUNC(MOVE),
     /* OPTIMIZATION_FUNCTION_NEGATE         */ OPTIMIZER_FUNC(NEGATE),
     /* OPTIMIZATION_FUNCTION_LOGICAL_NOT    */ OPTIMIZER_FUNC(LOGICAL_NOT),
+    /* OPTIMIZATION_FUNCTION_LOGICAL_XOR    */ OPTIMIZER_FUNC(LOGICAL_XOR),
     /* OPTIMIZATION_FUNCTION_REMOVE         */ OPTIMIZER_FUNC(REMOVE),
     /* OPTIMIZATION_FUNCTION_SUBTRACT       */ OPTIMIZER_FUNC(SUBTRACT),
+    /* OPTIMIZATION_FUNCTION_SWAP           */ OPTIMIZER_FUNC(SWAP),
     /* OPTIMIZATION_FUNCTION_TO_FLOAT64     */ OPTIMIZER_FUNC(TO_FLOAT64),
     /* OPTIMIZATION_FUNCTION_TO_INT64       */ OPTIMIZER_FUNC(TO_INT64),
     /* OPTIMIZATION_FUNCTION_TO_NUMBER      */ OPTIMIZER_FUNC(TO_NUMBER),

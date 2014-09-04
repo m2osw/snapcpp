@@ -56,6 +56,7 @@ optimization_match_t const g_optimizer_logical_match_not_literal[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -65,6 +66,7 @@ optimization_match_t const g_optimizer_logical_match_not_literal[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -82,6 +84,7 @@ optimization_match_t const g_optimizer_logical_match_true_and_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_and),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -91,6 +94,7 @@ optimization_match_t const g_optimizer_logical_match_true_and_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_true_literals),
             /* f_with_value */          g_optimizer_value_true,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -100,6 +104,7 @@ optimization_match_t const g_optimizer_logical_match_true_and_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -117,6 +122,7 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_and),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -126,6 +132,7 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
             /* f_with_value */          g_optimizer_value_false,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -135,6 +142,7 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -157,6 +165,7 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 //{
 //    {
 //        /* f_depth */               0,
+//        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
 //        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_and),
 //        /* f_with_value */          nullptr,
 //        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -166,6 +175,7 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 //
 //        {
 //            /* f_depth */               1,
+//            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
 //            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
 //            /* f_with_value */          g_optimizer_value_no_side_effects,
 //            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -175,6 +185,7 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 //
 //        {
 //            /* f_depth */               1,
+//            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
 //            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
 //            /* f_with_value */          g_optimizer_value_false,
 //            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -192,6 +203,7 @@ optimization_match_t const g_optimizer_logical_match_true_or_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_or),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -201,6 +213,7 @@ optimization_match_t const g_optimizer_logical_match_true_or_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_true_literals),
             /* f_with_value */          g_optimizer_value_true,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -210,6 +223,7 @@ optimization_match_t const g_optimizer_logical_match_true_or_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -227,6 +241,7 @@ optimization_match_t const g_optimizer_logical_match_false_or_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_or),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -236,6 +251,7 @@ optimization_match_t const g_optimizer_logical_match_false_or_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
             /* f_with_value */          g_optimizer_value_false,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -245,6 +261,240 @@ optimization_match_t const g_optimizer_logical_match_false_or_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'literal ^^ literal'
+ *
+ * This table defines a match for the expression 'literal ^^ literal'.
+ */
+optimization_match_t const g_optimizer_logical_match_boolean_literal_or_boolean_literal[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_xor),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'if(!!a)' or 'while(!!a)'
+ *
+ * This table defines a match for the expression 'if(!!a)' or 'while(!!a)'.
+ */
+optimization_match_t const g_optimizer_logical_match_if_while_not_not_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_if_or_while),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+            {
+                /* f_depth */               2,
+                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+                /* f_with_value */          nullptr,
+                /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            },
+
+                {
+                    /* f_depth */               3,
+                    /* f_match_flags */         0,
+                    /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+                    /* f_with_value */          nullptr,
+                    /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                    /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+                },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'if(!a) b else c'.
+ *
+ * This table defines a match for the expression 'if(!a) b else c'.
+ */
+optimization_match_t const g_optimizer_logical_match_if_logical_not_else[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_if),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        { // !a
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+            {
+                /* f_depth */               2,
+                /* f_match_flags */         0,
+                /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_with_value */          nullptr,
+                /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            },
+
+        { // b
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // c
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'for(a; !!b; c) d'.
+ *
+ * This table defines a match for the expression 'for(a; !!b; c) d' because
+ * it can be optimized to 'for(a; b; c) d'.
+ */
+optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_for),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        { // a
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // !!b
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+            {
+                /* f_depth */               2,
+                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+                /* f_with_value */          nullptr,
+                /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            },
+
+                {
+                    /* f_depth */               3,
+                    /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                    /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+                    /* f_with_value */          nullptr,
+                    /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                    /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+                },
+
+        { // c
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // d
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -263,6 +513,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
 {
     {
         /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
         /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -272,6 +523,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
 
         {
             /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -281,6 +533,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
 
             {
                 /* f_depth */               2,
+                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
                 /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -290,6 +543,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
 
                 {
                     /* f_depth */               3,
+                    /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
                     /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(), // match any node
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -400,6 +654,93 @@ optimization_entry_t const g_optimizer_logical_entry_false_or_a[] =
 };
 
 
+/** \brief Optimize 'true/false ^^ true/false' to 'true/false'.
+ *
+ * This table defines the optimization of two literals and the
+ * logical XOR operator. The result using standard JavaScript
+ * operators is:
+ *
+ * \code
+ *      (a ^^ b) <=> (!a != !b ? a || b : false)
+ * \endcode
+ *
+ * Unfortunately this does not allow us to cleanly return a or b
+ * if one of them is a literal (whether true or false) because
+ * we want to return the Boolean false when both a and b represent
+ * the same Boolean value.
+ */
+optimization_entry_t const g_optimizer_logical_entry_literal_xor_literal[] =
+{
+    {
+        /* f_name */            "'literal ^^ literal' -> 'literal'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_boolean_literal_or_boolean_literal),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_logical_xor_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'true/false ^^ true/false' to 'true/false'.
+ *
+ * This table defines the optimization of two literals and the
+ * logical XOR operator. The result using standard JavaScript
+ * operators is:
+ *
+ * \code
+ *      (a ^^ b) <=> (!a != !b ? a || b : false)
+ * \endcode
+ *
+ * Unfortunately this does not allow us to cleanly return a or b
+ * if one of them is a literal (whether true or false) because
+ * we want to return the Boolean false when both a and b represent
+ * the same Boolean value.
+ */
+optimization_entry_t const g_optimizer_logical_entry_if_while_logical_not_not[] =
+{
+    {
+        /* f_name */            "'if(!!a)' -> 'if(a)'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_if_while_not_not_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_3_1)
+    }
+};
+
+
+/** \brief Optimize 'if(!a) b else c' to 'if(a) c else b'.
+ *
+ * Optimize 'if(!a) b else c' by removing the '!' by swapping 'b' and 'c'
+ */
+optimization_entry_t const g_optimizer_logical_entry_if_logical_not_else[] =
+{
+    {
+        /* f_name */            "'if(!a) b else c' -> 'if(a) c else b'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_if_logical_not_else),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_if_logical_not_else)
+    }
+};
+
+/** \brief Optimize 'for(a; !!b; c) d'.
+ *
+ * The '!!b' can be optimized as just 'b' because the for() instruction
+ * knows how to convert b to a Boolean without the need to use the logical
+ * NOT operator.
+ */
+optimization_entry_t const g_optimizer_logical_entry_for_logical_not_not[] =
+{
+    {
+        /* f_name */            "'for(a; !!b; c) d' -> for(a; b; c) d",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_for_not_not_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_4_2)
+    }
+};
+
+
 /** \brief Optimize '!!!a' to '!a'.
  *
  * This table defines the optimization of '!!!a' to '!a'.
@@ -456,6 +797,22 @@ optimization_table_t const g_optimizer_logical_table[] =
     },
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_false_or_a)
+    },
+
+    // logical XOR
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_literal_xor_literal)
+    },
+
+    // if(!!...) or while(!!...) or for(...; !!...; ...) and others
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_if_while_logical_not_not)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_if_logical_not_else)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_for_logical_not_not)
     }
 };
 

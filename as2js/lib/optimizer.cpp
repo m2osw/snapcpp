@@ -3305,12 +3305,14 @@ void Optimizer::logical_xor(Node::pointer_t& logical_xor_node)
     //          result (contrary to the && and ||) we presume that
     //          both sides must be Boolean values
 
-    // a ^^ b is equivalent to !!a ^ !!b
-    // or in terms of || and && we can write a complex thing such as:
-    //    (a || b) && (!a || !b)
-    //    (a || b) && !(a && b)
-    //    (a || b) && (!a || !b)
-    //    (a && !b) || (!a && b)
+    // a ^^ b is somewhat equivalent to (!a != !b) if just a true/false
+    // result is expected (i.e. for the if(), while(), for() statements)
+    //
+    // the actual full expression in standard JavaScript is:
+    //
+    //      (a ^^ b) <=> (!a != !b ? a || b : false)
+    //
+    // and as we can see it returns a Boolean false if (!a != !b)
 
     // Reduce
     //    true ^^ b == !b

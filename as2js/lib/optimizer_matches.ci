@@ -63,6 +63,25 @@ Node::node_t const g_optimizer_match_false[]
 };
 
 
+Node::node_t const g_optimizer_match_for[]
+{
+    Node::node_t::NODE_FOR
+};
+
+
+Node::node_t const g_optimizer_match_if[]
+{
+    Node::node_t::NODE_IF
+};
+
+
+Node::node_t const g_optimizer_match_if_or_while[]
+{
+    Node::node_t::NODE_IF,
+    Node::node_t::NODE_WHILE
+};
+
+
 Node::node_t const g_optimizer_match_false_literals[]
 {
     Node::node_t::NODE_FALSE,
@@ -101,6 +120,12 @@ Node::node_t const g_optimizer_match_logical_not[]
 Node::node_t const g_optimizer_match_logical_or[]
 {
     Node::node_t::NODE_LOGICAL_OR
+};
+
+
+Node::node_t const g_optimizer_match_logical_xor[]
+{
+    Node::node_t::NODE_LOGICAL_XOR
 };
 
 
