@@ -244,11 +244,19 @@ QString QCassandraRowPredicate::startRowName() const
  *
  * This function defines the name of the start row to retrieve. All the
  * rows defined between the start and end row names/keys will be returned
- * by this predicate.
+ * by this predicate. However, rows are most often NOT sorted in your
+ * database (you may have changed the settings to support such, but by
+ * default they are sorted by MD5 checksums or something of the sort which
+ * creates better disparity to place content on each node and not end up
+ * with a few nodes doing most of the work.)
  *
  * An empty row name can be used to request the very first row to be
  * returned first. The start row is included in the result except if
  * the wrap parameter is set to true.
+ *
+ * \warning
+ * In most cases your Cassandra rows are NOT sorted so trying to use
+ * a range of names will fail badly.
  *
  * \param[in] row_name  The name of the row to start with.
  *
@@ -284,6 +292,10 @@ const QByteArray& QCassandraRowPredicate::startRowKey() const
  * This function has the side effect of clearing the exclude
  * flag so this very row key will be included in the next
  * readRows() unless wrap is true.
+ *
+ * \warning
+ * In most cases your Cassandra rows are NOT sorted so trying to use
+ * a range by name will fail.
  *
  * \param[in] row_key  The new start row key.
  *
@@ -327,6 +339,10 @@ QString QCassandraRowPredicate::endRowName() const
  * Note that the row that matches this key is returned (i.e. the
  * boundary is inclusive.)
  *
+ * \warning
+ * In most cases your Cassandra rows are NOT sorted so trying to use
+ * a range by name will fail.
+ *
  * \param[in] row_name  The name of the end row.
  *
  * \sa setEndRowKey()
@@ -358,6 +374,10 @@ const QByteArray& QCassandraRowPredicate::endRowKey() const
  *
  * This function sets the last key you're interested in. It can safely be
  * set to an empty key to not bound the last key.
+ *
+ * \warning
+ * In most cases your Cassandra rows are NOT sorted so trying to use
+ * a range by name will fail.
  *
  * \param[in] row_key  The binary row key we stop searching.
  *
