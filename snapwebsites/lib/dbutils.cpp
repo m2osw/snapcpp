@@ -319,6 +319,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return CT_uint64_value;
     }
     else if(n == "content::created"
+         || n == "content::cloned"
          || n == "content::files::created"
          || n == "content::files::creation_time"
          || n == "content::files::modification_time"
@@ -634,59 +635,75 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
 
             case CT_status_value:
             {
+                uint32_t status(c->value().uint32Value());
                 if(display_only)
                 {
-                    switch(c->value().signedCharValue())
+                    switch(status & 0x000000FF)
                     {
-                    case -3:
-                        v = "unsupported";
-                        break;
-
-                    case -2:
-                        v = "undefined";
-                        break;
-
-                    case -1:
-                        v = "unknown";
-                        break;
-
                     case 0:
-                        v = "normal";
+                        v = "unknown state";
                         break;
 
                     case 1:
-                        v = "hidden";
+                        v = "create";
                         break;
 
                     case 2:
-                        v = "moved";
+                        v = "normal";
                         break;
 
                     case 3:
-                        v = "deleted";
+                        v = "hidden";
                         break;
 
                     case 4:
-                        v = "creating";
+                        v = "moved";
                         break;
 
                     case 5:
-                        v = "cloning";
-                        break;
-
-                    case 6:
-                        v = "removing";
+                        v = "deleted";
                         break;
 
                     default:
-                        v = QString("unknown content status (%1)").arg(c->value().signedCharValue());
+                        v = QString("unknown content status (%1)").arg(status & 255);
+                        break;
+
+                    }
+                    switch(status & 0x0000FF00)
+                    {
+                    case 0 * 256:
+                        v += " (unknown working)";
+                        break;
+
+                    case 1 * 256:
+                        // "not working" is not shown
+                        break;
+
+                    case 2 * 256:
+                        v += " (creating)";
+                        break;
+
+                    case 3 * 256:
+                        v += " (cloning)";
+                        break;
+
+                    case 4 * 256:
+                        v += " (removing)";
+                        break;
+
+                    case 5 * 256:
+                        v = " (updating)";
+                        break;
+
+                    default:
+                        v = QString(" (unknown working status: %1)").arg(status & 0x0000FF00);
                         break;
 
                     }
                 }
                 else
                 {
-                    v = QString("%1").arg(c->value().signedCharValue());
+                    v = QString("%1").arg(status);
                 }
             }
             break;
@@ -711,7 +728,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
 }
 
 
-void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
+void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
 {
     QCassandraValue cvalue;
     //
@@ -862,52 +879,75 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, const QString& v )
 
         case CT_status_value:
         {
-            signed char cv;
-            if(v == "-3" && v == "unsupported")
+            uint32_t cv;
+            QString state_name(v);
+            int pos(v.indexOf("("));
+            if(pos != -1)
             {
-                cv = -3;
+                state_name = state_name.left(pos).trimmed();
             }
-            else if(v == "-2" && v == "undefined")
-            {
-                cv = -2;
-            }
-            else if(v == "-1" && v == "unknown")
-            {
-                cv = -1;
-            }
-            else if(v == "0" && v == "normal")
+            if(v == "0" || state_name == "unknown" || state_name == "unknown state")
             {
                 cv = 0;
             }
-            else if(v == "1" && v == "hidden")
+            else if(v == "1" || state_name == "create")
             {
                 cv = 1;
             }
-            else if(v == "2" && v == "moved")
+            else if(v == "2" || state_name == "normal")
             {
                 cv = 2;
             }
-            else if(v == "3" && v == "deleted")
+            else if(v == "3" || state_name == "hidden")
             {
                 cv = 3;
             }
-            else if(v == "4" && v == "creating")
+            else if(v == "4" || state_name == "moved")
             {
                 cv = 4;
             }
-            else if(v == "5" && v == "cloning")
+            else if(v == "5" || state_name == "deleted")
             {
                 cv = 5;
             }
-            else if(v == "6" && v == "removing")
-            {
-                cv = 6;
-            }
             else
             {
-                throw snap_exception( "error: unknown secure value! Must be between -3 and +6!" );
+                throw snap_exception( "error: unknown status state value! Must be between 0 and +5 or a valid name!" );
             }
-            cvalue.setSignedCharValue( cv );
+            if(pos != -1)
+            {
+                // there is processing status
+                QString working_name(v.mid(pos + 1).trimmed());
+                if(working_name.right(1) == ")")
+                {
+                    working_name.remove(working_name.length() - 1, 1);
+                }
+                if(working_name == "0" || working_name == "unknown" || working_name == "unknown working")
+                {
+                    cv |= 0 * 256;
+                }
+                else if(working_name == "1" || working_name == "not working")
+                {
+                    cv |= 1 * 256;
+                }
+                else if(working_name == "2" || working_name == "creating")
+                {
+                    cv |= 2 * 256;
+                }
+                else if(working_name == "3" || working_name == "cloning")
+                {
+                    cv |= 3 * 256;
+                }
+                else if(working_name == "4" || working_name == "removing")
+                {
+                    cv |= 4 * 256;
+                }
+                else if(working_name == "5" || working_name == "updating")
+                {
+                    cv |= 5 * 256;
+                }
+            }
+            cvalue.setUInt32Value( cv );
         }
         break;
 

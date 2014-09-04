@@ -112,6 +112,12 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_CHILDREN:
         return "content::children";
 
+    case SNAP_NAME_CONTENT_CLONE:
+        return "content::clone";
+
+    case SNAP_NAME_CONTENT_CLONED:
+        return "content::cloned";
+
     case SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED:
         return "uncompressed";
 
@@ -208,6 +214,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_MODIFIED:
         return "content::modified";
 
+    case SNAP_NAME_CONTENT_ORIGINAL_PAGE:
+        return "content::original_page";
+
     case SNAP_NAME_CONTENT_OUTPUT_PLUGIN: // this a forward declaration of the name of the "output" plugin...
         return "output";
 
@@ -226,37 +235,40 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_PRIMARY_OWNER:
         return "content::primary_owner";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL: // content::revision_control::<owner>::...
+    case SNAP_NAME_CONTENT_PROCESSING_TABLE:
+        return "processing";
+
+    case SNAP_NAME_CONTENT_REVISION_CONTROL: // content::revision_control::...
         return "content::revision_control";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH: // content::revision_control::<owner>::current_branch [uint32_t]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH: // content::revision_control::current_branch [uint32_t]
         return "current_branch";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY: // content::revision_control::<owner>::current_branch_key [string]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY: // content::revision_control::current_branch_key [string]
         return "current_branch_key";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION: // content::revision_control::<owner>::current_revision::<branch>::<locale> [uint32_t]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION: // content::revision_control::current_revision::<branch>::<locale> [uint32_t]
         return "current_revision";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY: // content::revision_control::<owner>::current_revision_key::<branch>::<locale> [string]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY: // content::revision_control::current_revision_key::<branch>::<locale> [string]
         return "current_revision_key";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH: // content::revision_control::<owner>::current_working_branch [uint32_t]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH: // content::revision_control::current_working_branch [uint32_t]
         return "current_working_branch";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY: // content::revision_control::<owner>::current_working_branch_key [string]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY: // content::revision_control::current_working_branch_key [string]
         return "current_working_branch_key";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION: // content::revision_control::<owner>::current_working_revision::<branch>::<locale> [uint32_t]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION: // content::revision_control::current_working_revision::<branch>::<locale> [uint32_t]
         return "current_working_revision";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY: // content::revision_control::<owner>::current_working_revision_key::<branch>::<locale> [string]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY: // content::revision_control::current_working_revision_key::<branch>::<locale> [string]
         return "current_working_revision_key";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH: // content::revision_control::<owner>::last_branch [uint32_t]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH: // content::revision_control::last_branch [uint32_t]
         return "last_branch";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION: // content::revision_control::<owner>::last_revision::<branch>::<locale> [uint32_t]
+    case SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION: // content::revision_control::last_revision::<branch>::<locale> [uint32_t]
         return "last_revision";
 
     case SNAP_NAME_CONTENT_REVISION_TABLE:
@@ -286,6 +298,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_TITLE:
         return "content::title";
 
+    case SNAP_NAME_CONTENT_TRASHCAN:
+        return "content::trashcan";
+
     case SNAP_NAME_CONTENT_UNTIL:
         return "content::until";
 
@@ -308,6 +323,13 @@ char const *get_name(name_t name)
 namespace
 {
 
+/** \brief Extensions we accept as JavaScript file extensions.
+ *
+ * This table lists JavaScript extensions that we understand as
+ * acceptable JavaScript extensions. This table is used to make
+ * sure JavaScript files get added to the right place when
+ * uploaded to the website.
+ */
 char const *js_extensions[] =
 {
     // longer first
@@ -1281,19 +1303,10 @@ void field_search::run()
             f_mode = static_cast<int>(mode); // XXX fix, should be a cast to mode_t
         }
 
-        void cmd_branch_owner(QString const& owner)
-        {
-            if(owner.isEmpty())
-            {
-                throw content_exception_invalid_sequence("COMMAND_BRANCH_OWNER cannot be set to an empty string");
-            }
-            f_path_info.set_owner(owner);
-        }
-
         void cmd_branch_path(int64_t main_page)
         {
             // retrieve the path from this cell:
-            //   content::revision_control::<owner>::current_branch_key
+            //   content::revision_control::current_branch_key
             f_path_info.set_path(f_self);
             f_path_info.set_main_page(main_page != 0);
             cmd_path(f_path_info.get_branch_key());
@@ -1305,7 +1318,7 @@ void field_search::run()
         void cmd_revision_path(int64_t main_page)
         {
             // retrieve the path from this cell:
-            //   content::revision_control::<owner>::current_revision_key::<branch>::<locale>
+            //   content::revision_control::current_revision_key::<branch>::<locale>
             f_path_info.set_path(f_self);
             f_path_info.set_main_page(main_page != 0);
             cmd_path(f_path_info.get_revision_key());
@@ -1794,10 +1807,6 @@ void field_search::run()
                     cmd_mode(f_program[i].get_int64());
                     break;
 
-                case COMMAND_BRANCH_OWNER:
-                    cmd_branch_owner(f_program[i].get_string());
-                    break;
-
                 case COMMAND_BRANCH_PATH:
                     cmd_branch_path(f_program[i].get_int64());
                     break;
@@ -1992,6 +2001,10 @@ field_search create_field_search(char const *filename, char const *func, int lin
  * database. In this case the file is setup from the database
  * information.
  *
+ * The other constructor is used when creating an attachment from
+ * data received in a POST or generated by a backend. It includes
+ * the file information.
+ *
  * \param[in] snap  A pointer to the snap_child object.
  */
 attachment_file::attachment_file(snap_child *snap)
@@ -2065,7 +2078,7 @@ attachment_file::attachment_file(snap_child *snap, snap_child::post_file_t const
  * which gives us a full name such as:
  *
  * \code
- * "content::attachment::<owner>::<field name>::path::<server_name>_<unique number>"
+ * "content::attachment::<field name>::path::<server_name>_<unique number>"
  * \endcode
  *
  * By default a file is expected to be unique (multiple is set to false).
@@ -2116,10 +2129,10 @@ void attachment_file::set_parent_cpath(QString const& cpath)
  *
  * \code
  * // name of the field in the database:
- * "content::attachment::<owner>::<field name>::path"
+ * "content::attachment::<field name>::path"
  *
  * // or, if multiple is set to true:
- * "content::attachment::<owner>::<field name>::path::<server_name>_<unique number>"
+ * "content::attachment::<field name>::path::<server_name>_<unique number>"
  * \endcode
  *
  * \param[in] field_name  The name of the field used to save this attachment.
@@ -2162,8 +2175,7 @@ void attachment_file::set_attachment_cpath(QString const& cpath)
  * This allows the plugin to specially handle the attachment when the
  * client wants to retrieve it.
  *
- * Note that this name is also used in the name of field holding the
- * path to the attachment.
+ * This name is saved as the primary owner of the attachment page.
  *
  * \param[in] owner  The name of the plugin that owns that attachment.
  *
@@ -2618,10 +2630,10 @@ dependency_list_t const& attachment_file::get_dependencies() const
  *
  * \code
  * // name of the field in the database:
- * "content::attachment::<owner>::<field name>::path"
+ * "content::attachment::<field name>::path"
  *
  * // or, if multiple is set to true:
- * "content::attachment::<owner>::<field name>::path::<server name>_<unique number>"
+ * "content::attachment::<field name>::path::<server name>_<unique number>"
  * \endcode
  *
  * To make sure that everyone always uses the same name each time, we
@@ -2646,9 +2658,8 @@ QString const& attachment_file::get_name() const
     {
         if(f_multiple)
         {
-            f_name = QString("%1::%2::%3::%4::%5")
+            f_name = QString("%1::%2::%3::%4")
                     .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT))
-                    .arg(get_attachment_owner())
                     .arg(get_field_name())
                     .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT_PATH_END))
                     .arg(f_snap->get_unique_number())
@@ -2656,9 +2667,8 @@ QString const& attachment_file::get_name() const
         }
         else
         {
-            f_name = QString("%1::%2::%3::%4")
+            f_name = QString("%1::%2::%3")
                     .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT))
-                    .arg(get_attachment_owner())
                     .arg(get_field_name())
                     .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT_PATH_END))
                     ;
@@ -2767,6 +2777,7 @@ void path_info_t::status_t::set_status(status_type current_status)
     working_t working(static_cast<working_t>((static_cast<int>(current_status) / 256) & 255));
     switch(working)
     {
+    case working_t::UNKNOWN_WORKING:
     case working_t::NOT_WORKING:
     case working_t::CREATING:
     case working_t::CLONING:
@@ -2906,6 +2917,7 @@ bool path_info_t::status_t::valid_transition(status_t destination) const
     case subfunc::status_combo(state_t::NORMAL,     working_t::NOT_WORKING, state_t::NORMAL,    working_t::REMOVING):
     case subfunc::status_combo(state_t::NORMAL,     working_t::NOT_WORKING, state_t::NORMAL,    working_t::UPDATING):
     case subfunc::status_combo(state_t::NORMAL,     working_t::CLONING,     state_t::NORMAL,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::NORMAL,     working_t::REMOVING,    state_t::NORMAL,    working_t::NOT_WORKING): // in case of a reset
     case subfunc::status_combo(state_t::NORMAL,     working_t::REMOVING,    state_t::DELETED,   working_t::NOT_WORKING):
     case subfunc::status_combo(state_t::NORMAL,     working_t::UPDATING,    state_t::NORMAL,    working_t::NOT_WORKING):
 
@@ -2915,6 +2927,7 @@ bool path_info_t::status_t::valid_transition(status_t destination) const
     case subfunc::status_combo(state_t::HIDDEN,     working_t::NOT_WORKING, state_t::HIDDEN,    working_t::REMOVING):
     case subfunc::status_combo(state_t::HIDDEN,     working_t::NOT_WORKING, state_t::HIDDEN,    working_t::UPDATING):
     case subfunc::status_combo(state_t::HIDDEN,     working_t::CLONING,     state_t::HIDDEN,    working_t::NOT_WORKING):
+    case subfunc::status_combo(state_t::HIDDEN,     working_t::REMOVING,    state_t::HIDDEN,    working_t::NOT_WORKING): // in case of a reset
     case subfunc::status_combo(state_t::HIDDEN,     working_t::REMOVING,    state_t::DELETED,   working_t::NOT_WORKING):
     case subfunc::status_combo(state_t::HIDDEN,     working_t::UPDATING,    state_t::HIDDEN,    working_t::NOT_WORKING):
 
@@ -3126,6 +3139,59 @@ bool path_info_t::status_t::is_working() const
 
 
 
+path_info_t::raii_status_t::raii_status_t(path_info_t& ipath, status_t now, status_t end)
+    : f_ipath(ipath)
+    , f_end(end)
+{
+    status_t current(f_ipath.get_status());
+
+    // reset the error in case we are loading from a non-existant page
+    if(current.is_error())
+    {
+        if(current.get_error() != status_t::error_t::UNDEFINED)
+        {
+            // the page probably exists, but we still got an error
+            throw content_exception_content_invalid_state(QString("get error %1 when trying to change \"%2\" status.")
+                    .arg(static_cast<int>(current.get_error()))
+                    .arg(f_ipath.get_key()));
+        }
+        current.set_error(status_t::error_t::NO_ERROR);
+    }
+
+    // setup state if requested
+    if(now.get_state() != status_t::state_t::UNKNOWN_STATE)
+    {
+        current.set_state(now.get_state());
+    }
+
+    // setup working state if requested
+    if(now.get_working() != status_t::working_t::UNKNOWN_WORKING)
+    {
+        current.set_working(now.get_working());
+    }
+
+    f_ipath.set_status(current);
+}
+
+
+path_info_t::raii_status_t::~raii_status_t()
+{
+    status_t current(f_ipath.get_status());
+    if(f_end.get_state() != status_t::state_t::UNKNOWN_STATE)
+    {
+        current.set_state(f_end.get_state());
+    }
+    if(f_end.get_working() != status_t::working_t::UNKNOWN_WORKING)
+    {
+        current.set_working(f_end.get_working());
+    }
+    f_ipath.set_status(current);
+}
+
+
+
+
+
 
 
 
@@ -3138,7 +3204,6 @@ path_info_t::path_info_t()
     //, f_real_key("") -- auto-init
     //, f_cpath("") -- auto-init
     //, f_real_cpath("") -- auto-init
-    , f_owner(f_content_plugin->get_plugin_name())
     //, f_main_page(false) -- auto-init
     //, f_parameters() -- auto-init
     //, f_branch(snap_version::SPECIAL_VERSION_UNDEFINED) -- auto-init
@@ -3209,16 +3274,6 @@ void path_info_t::set_real_path(QString const& path)
         // execpt for the parameters which we keep in place
         clear(true);
     }
-}
-
-
-void path_info_t::set_owner(QString const& owner)
-{
-    if(f_owner != owner)
-    {
-        clear();
-    }
-    f_owner = owner;
 }
 
 
@@ -3334,12 +3389,6 @@ QString path_info_t::get_cpath() const
 QString path_info_t::get_real_cpath() const
 {
     return f_real_cpath;
-}
-
-
-QString path_info_t::get_owner() const
-{
-    return f_owner;
 }
 
 
@@ -3498,6 +3547,12 @@ void path_info_t::set_status(status_t const& status)
                         .arg(f_key));
     }
 
+    if(status.is_working())
+    {
+        QtCassandra::QCassandraTable::pointer_t processing_table(f_content_plugin->get_processing_table());
+        signed char const one_byte(1);
+        processing_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(one_byte);
+    }
     QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
 
     // we use QUORUM in the consistency level to make sure that information
@@ -3509,7 +3564,8 @@ void path_info_t::set_status(status_t const& status)
     // a status is reset back to something like DELETED or HIDDEN if not
     // otherwise considered valid.)
     QtCassandra::QCassandraValue changed;
-    changed.setInt64Value(f_snap->get_start_date());
+    int64_t const start_date(f_snap->get_start_date());
+    changed.setInt64Value(start_date);
     changed.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(changed);
 
@@ -3538,12 +3594,12 @@ snap_version::version_number_t path_info_t::get_branch(bool create_new_if_requir
         if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
         {
             QString const& key(f_real_key.isEmpty() ? f_key : f_real_key);
-            f_branch = f_content_plugin->get_current_branch(key, f_owner, get_working_branch());
+            f_branch = f_content_plugin->get_current_branch(key, get_working_branch());
             if(create_new_if_required
             && snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
             {
                 f_locale = locale;
-                f_branch = f_content_plugin->get_new_branch(key, f_owner, f_locale);
+                f_branch = f_content_plugin->get_new_branch(key, f_locale);
             }
         }
     }
@@ -3595,30 +3651,30 @@ snap_version::version_number_t path_info_t::get_revision() const
             QString const& key(f_real_key.isEmpty() ? f_key : f_real_key);
 
             // try with the full locale
-            f_revision = f_content_plugin->get_current_revision(key, f_owner, f_branch, f_locale, get_working_branch());
+            f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
             if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision && f_locale.length() == 5)
             {
                 // try without the country
                 f_locale = f_locale.left(2);
-                f_revision = f_content_plugin->get_current_revision(key, f_owner, f_branch, f_locale, get_working_branch());
+                f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
             }
             if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
             {
                 // try with the neutral language
                 f_locale = "xx";
-                f_revision = f_content_plugin->get_current_revision(key, f_owner, f_branch, f_locale, get_working_branch());
+                f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
             }
             if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision)
             {
                 // try without a language
                 f_locale.clear();
-                f_revision = f_content_plugin->get_current_revision(key, f_owner, f_branch, f_locale, get_working_branch());
+                f_revision = f_content_plugin->get_current_revision(key, f_branch, f_locale, get_working_branch());
             }
             if(snap_version::SPECIAL_VERSION_UNDEFINED == f_revision
             && default_language.left(2) != "en")
             {
                 // try an "internal" default language as a last resort...
-                f_revision = f_content_plugin->get_current_revision(key, f_owner, f_branch, "en", get_working_branch());
+                f_revision = f_content_plugin->get_current_revision(key, f_branch, "en", get_working_branch());
                 if(snap_version::SPECIAL_VERSION_UNDEFINED != f_revision)
                 {
                     f_locale = "en";
@@ -3713,9 +3769,8 @@ QString path_info_t::get_revision_key() const
             }
 
             // name of the field in the content table of that page
-            QString const base_key(f_content_plugin->get_revision_base_key(f_owner));
             QString field(QString("%1::%2::%3")
-                        .arg(base_key)
+                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                         .arg(get_name(get_working_branch()
                                 ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
                                 : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
@@ -3925,8 +3980,8 @@ void content::content_update(int64_t variables_timestamp)
 
 /** \brief Initialize the content table.
  *
- * This function creates the content table if it doesn't exist yet. Otherwise
- * it simple initializes the f_content_table variable member.
+ * This function creates the content table if it does not already exist.
+ * Otherwise it simply initializes the f_content_table variable member.
  *
  * If the function is not able to create the table an exception is raised.
  *
@@ -3969,6 +4024,32 @@ QtCassandra::QCassandraTable::pointer_t content::get_content_table()
         f_content_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
     }
     return f_content_table;
+}
+
+
+/** \brief Initialize the processing table.
+ *
+ * This function creates the processing table if it does not already exist.
+ * Otherwise it simply initializes the f_processing_table variable member.
+ *
+ * If the function is not able to create the table an exception is raised.
+ *
+ * The processing table is used to save all the URI of pages being processed
+ * one way or the other. This allows the backend process to delete all
+ * statuses (over 10 minutes old.)
+ *
+ * The data is set to the start date so we do not have to read anything
+ * more to know whether we need to process that entry.
+ *
+ * \return The pointer to the content table.
+ */
+QtCassandra::QCassandraTable::pointer_t content::get_processing_table()
+{
+    if(!f_processing_table)
+    {
+        f_processing_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_PROCESSING_TABLE), "Website content table.");
+    }
+    return f_processing_table;
 }
 
 
@@ -4142,57 +4223,11 @@ void content::invalid_revision_control(QString const& version)
 }
 
 
-/** \brief Generate a base key used with revision handling.
- *
- * This function generates the base key which is composed of the
- * SNAP_NAME_CONTENT_REVISION_CONTROL string (content::revision_control)
- * and the owner.
- *
- * note that the owner is not added to the key if defined as "content"
- * which is the default. The owner string should always be defined using
- * the plugin name as in:
- *
- * \code
- * content::content *content_plugin(content::content::instance());
- * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
- * \endcode
- *
- * \param[in] owner  The name of the plugin that owns this specific revision.
- */
-QString content::get_revision_base_key(QString const& owner)
-{
-    if(owner.isEmpty())
-    {
-        throw content_exception_invalid_name("the owner of the get_data_version() cannot be the empty string");
-    }
-
-    QString base_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL));
-    if(owner != get_name(SNAP_NAME_CONTENT_OWNER)
-    && owner != get_name(SNAP_NAME_CONTENT_OUTPUT_PLUGIN)
-    && owner != get_name(SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN))
-    {
-        base_key += "::";
-        base_key += owner;
-    }
-
-    return base_key;
-}
-
-
 /** \brief Get the current branch.
  *
  * This function retrieves the current branch for data defined in a page.
  * The current branch is determined using the key of the page being
  * accessed.
- *
- * The owner is expected to be the name of the plugin creating this
- * revision. By default it should be set to "content". The owner string
- * should always be defined using the plugin name as in:
- *
- * \code
- * content::content *content_plugin(content::content::instance());
- * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
- * \endcode
  *
  * \note
  * The current branch number may not be the last branch number. The system
@@ -4202,16 +4237,16 @@ QString content::get_revision_base_key(QString const& owner)
  * that it should become current.
  *
  * \param[in] key  The key of the page concerned.
- * \param[in] owner  The plugin that owns this revision data.
  * \param[in] working_branch  Whether the working branch (true) or the current
  *                            branch (false) is used.
  *
  * \return The current revision number.
  */
-snap_version::version_number_t content::get_current_branch(QString const& key, QString const& owner, bool working_branch)
+snap_version::version_number_t content::get_current_branch(QString const& key, bool working_branch)
 {
-    QString base_key(get_revision_base_key(owner));
-    QString current_branch_key(QString("%1::%2").arg(base_key).arg(get_name(working_branch
+    QString current_branch_key(QString("%1::%2")
+                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(working_branch
                                 ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH
                                 : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
@@ -4234,7 +4269,6 @@ snap_version::version_number_t content::get_current_branch(QString const& key, Q
  * The function does not change the current branch information.
  *
  * \param[in] key  The key of the page concerned.
- * \param[in] owner  The owner, in most cases the name of the content plugin.
  * \param[in] locale  The locale to create the first revision of that branch.
  * \param[in] working_branch  Whether the working branch (true) or the current
  *                            branch (false) is used.
@@ -4242,9 +4276,9 @@ snap_version::version_number_t content::get_current_branch(QString const& key, Q
  * \sa get_current_branch()
  * \sa get_new_branch()
  */
-snap_version::version_number_t content::get_current_user_branch(QString const& key, QString const& owner, QString const& locale, bool working_branch)
+snap_version::version_number_t content::get_current_user_branch(QString const& key, QString const& locale, bool working_branch)
 {
-    snap_version::version_number_t branch(get_current_branch(key, owner, working_branch));
+    snap_version::version_number_t branch(get_current_branch(key, working_branch));
     if(snap_version::SPECIAL_VERSION_UNDEFINED == branch
     || snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch)
     {
@@ -4253,8 +4287,9 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
         QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
         // get the last branch number
-        QString const base_key(get_revision_base_key(owner));
-        QString const last_branch_key(QString("%1::%2").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+        QString const last_branch_key(QString("%1::%2")
+                            .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                            .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
         if(!branch_value.nullValue())
         {
@@ -4266,7 +4301,7 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
         || snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch)
         {
             // well... no user branch exists yet, create one
-            return get_new_branch(key, owner, locale);
+            return get_new_branch(key, locale);
         }
     }
 
@@ -4280,21 +4315,11 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
  * The current branch is determined using the get_current_branch()
  * function with the same key, owner, and working_branch parameters.
  *
- * The owner is expected to be the name of the plugin creating this
- * revision. By default it should be set to "content". The owner string
- * should always be defined using the plugin name as in:
- *
- * \code
- * content::content *content_plugin(content::content::instance());
- * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
- * \endcode
- *
  * \note
  * The current revision number may have been changed by an editor to a
  * number other than the last revision number.
  *
  * \param[in] key  The key of the page concerned.
- * \param[in] owner  The plugin that owns this data.
  * \param[in] branch  The branch number.
  * \param[in] locale  The language and country information.
  * \param[in] working_branch  Whether the working branch (true) or the current
@@ -4302,11 +4327,10 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
  *
  * \return The current revision number.
  */
-snap_version::version_number_t content::get_current_revision(QString const& key, QString const& owner, snap_version::version_number_t const branch, QString const& locale, bool working_branch)
+snap_version::version_number_t content::get_current_revision(QString const& key, snap_version::version_number_t const branch, QString const& locale, bool working_branch)
 {
-    QString const base_key(get_revision_base_key(owner));
     QString revision_key(QString("%1::%2::%3")
-            .arg(base_key)
+            .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
             .arg(get_name(working_branch
                     ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION
                     : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
@@ -4332,33 +4356,22 @@ snap_version::version_number_t content::get_current_revision(QString const& key,
  * The current branch is determined using the get_current_branch()
  * function with the same key, owner, and working_branch parameters.
  *
- * The owner is expected to be the name of the plugin creating this
- * revision. By default it should be set to "content". The owner string
- * should always be defined using the plugin name as in:
- *
- * \code
- * content::content *content_plugin(content::content::instance());
- * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
- * \endcode
- *
  * \note
  * The current revision number may have been changed by an editor to a
  * number other than the last revision number.
  *
  * \param[in] key  The key of the page concerned.
- * \param[in] owner  The plugin that owns this revision data.
  * \param[in] locale  The language and country information.
  * \param[in] working_branch  Whether the working branch (true) or the current
  *                            branch (false) is used.
  *
  * \return The current revision number.
  */
-snap_version::version_number_t content::get_current_revision(QString const& key, QString const& owner, QString const& locale, bool working_branch)
+snap_version::version_number_t content::get_current_revision(QString const& key, QString const& locale, bool working_branch)
 {
-    QString const base_key(get_revision_base_key(owner));
-    snap_version::version_number_t const branch(get_current_branch(key, owner, working_branch));
+    snap_version::version_number_t const branch(get_current_branch(key, working_branch));
     QString revision_key(QString("%1::%2::%3")
-            .arg(base_key)
+            .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
             .arg(get_name(working_branch
                     ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION
                     : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
@@ -4397,15 +4410,6 @@ snap_version::version_number_t content::get_current_revision(QString const& key,
  * setting the locale to "xx" which still allows translation only this one
  * entry is considered neutral in terms of language.
  *
- * The owner is expected to be the name of the plugin creating this
- * revision. By default it should be set to "content". The owner string
- * should always be defined using the plugin name as in:
- *
- * \code
- * content::content *content_plugin(content::content::instance());
- * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
- * \endcode
- *
  * \note
  * Branch zero (0) is never created using this function. If no branch
  * exists this function returns one (1) anyway. This is because branch
@@ -4418,13 +4422,14 @@ snap_version::version_number_t content::get_current_revision(QString const& key,
  *
  * \return The new branch number.
  */
-snap_version::version_number_t content::get_new_branch(QString const& key, QString const& owner, QString const& locale)
+snap_version::version_number_t content::get_new_branch(QString const& key, QString const& locale)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
     // get the last branch number
-    QString const base_key(get_revision_base_key(owner));
-    QString const last_branch_key(QString("%1::%2").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+    QString const last_branch_key(QString("%1::%2")
+                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
 
     // increase revision if one exists, otherwise we keep the default (0)
     snap_version::version_number_t branch(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH));
@@ -4447,7 +4452,10 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
     }
     content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
 
-    QString last_revision_key(QString("%1::%2::%3").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION)).arg(branch));
+    QString last_revision_key(QString("%1::%2::%3")
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                    .arg(branch));
     if(!locale.isEmpty())
     {
         last_revision_key += "::" + locale;
@@ -4488,15 +4496,6 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
  * modification time. To do so, make sure to call the content_modified()
  * function once you are done with your changes.
  *
- * The owner is expected to be the name of the plugin creating this
- * revision. By default it should be set to "output". The owner string
- * should always be defined using the plugin name as in:
- *
- * \code
- * output::output *output_plugin(output::output::instance());
- * output_plugin->get_revision_base_key(output_plugin->get_plugin_name());
- * \endcode
- *
  * \note
  * In debug mode the branch number is verified for validity. It has to
  * be an existing branch.
@@ -4508,11 +4507,10 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
  * \todo
  * We may want to create a class that allows us to define a set of the new
  * fields so instead of copying we can immediately save the new value. Right
- * now we're going to write the same field twice (once here in the repeat
+ * now we are going to write the same field twice (once here in the repeat
  * to save the old value and once by the caller to save the new value.)
  *
  * \param[in] key  The key of the page concerned.
- * \param[in] owner  The plugin requesting this new revision.
  * \param[in] branch  The branch for which this new revision is being created.
  * \param[in] locale  The locale used for this revision.
  * \param[in] repeat  Whether the existing data should be duplicated in the
@@ -4521,19 +4519,22 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
  * \return The new revision number.
  */
 snap_version::version_number_t content::get_new_revision(QString const& key,
-                QString const& owner, snap_version::version_number_t branch,
+                snap_version::version_number_t branch,
                 QString const& locale, bool repeat)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
     // define the key
-    QString const base_key(get_revision_base_key(owner));
-    QString last_revision_key(QString("%1::%2::%3").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION)).arg(branch));
+    QString last_revision_key(QString("%1::%2::%3")
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION)).arg(branch));
     if(!locale.isEmpty())
     {
         last_revision_key += "::" + locale;
     }
-    QString current_revision_key(QString("%1::%2::%3").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION)).arg(branch));
+    QString current_revision_key(QString("%1::%2::%3")
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION)).arg(branch));
     if(!locale.isEmpty())
     {
         current_revision_key += "::" + locale;
@@ -4546,15 +4547,19 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
 
 #ifdef DEBUG
-    // verify correctness of branch
-    QString const last_branch_key(QString("%1::%2").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
-    QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
-    if(!branch_value.nullValue()
-    && branch > branch_value.uint32Value())
     {
-        // the 'branch' parameter cannot be larger than the last branch allocated
-        throw snap_logic_exception(QString("trying to create a new revision for branch %1 which does not exist (last branch is %2)")
-                    .arg(branch).arg(branch_value.uint32Value()));
+        // verify correctness of branch
+        QString const last_branch_key(QString("%1::%2")
+                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+        QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
+        if(!branch_value.nullValue()
+        && branch > branch_value.uint32Value())
+        {
+            // the 'branch' parameter cannot be larger than the last branch allocated
+            throw snap_logic_exception(QString("trying to create a new revision for branch %1 which does not exist (last branch is %2)")
+                        .arg(branch).arg(branch_value.uint32Value()));
+        }
     }
 #endif
 
@@ -4636,12 +4641,11 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
  *
  * \return A string representing the branch key in the data table.
  */
-QString content::get_branch_key(QString const& key, QString const& owner, bool working_branch)
+QString content::get_branch_key(QString const& key, bool working_branch)
 {
     // key in the content table
-    QString const base_key(get_revision_base_key(owner));
     QString const current_key(QString("%1::%2")
-                .arg(base_key)
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
                         ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY
                         : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY)));
@@ -4675,18 +4679,16 @@ QString content::generate_branch_key(QString const& key, snap_version::version_n
  * in most cases the branch is created when getting a new branch.
  *
  * \param[in] key  The key to the page concerned.
- * \param[in] owner  The name of the plugin that owns this revision.
  * \param[in] branch  The number of the new current branch.
  * \param[in] working_branch  Update the current working branch (true) or the current branch (false).
  *
  * \return This function returns a copy of the current branch key.
  */
-void content::set_branch(QString const& key, QString const& owner, snap_version::version_number_t branch, bool working_branch)
+void content::set_branch(QString const& key, snap_version::version_number_t branch, bool working_branch)
 {
     // key in the content table
-    QString const base_key(get_revision_base_key(owner));
     QString const current_key(QString("%1::%2")
-                .arg(base_key)
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
                         ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH
                         : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
@@ -4705,31 +4707,20 @@ void content::set_branch(QString const& key, QString const& owner, snap_version:
  * The current branch is the one shown to your anonymous visitors. By default
  * only editors can see the other branches and revisions.
  *
- * The owner is expected to be the name of the plugin creating this
- * revision. By default it should be set to "content". The owner string
- * should always be defined using the plugin name as in:
- *
- * \code
- * content::content *content_plugin(content::content::instance());
- * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
- * \endcode
- *
  * \param[in] key  The key to the page concerned.
- * \param[in] owner  The name of the plugin that owns this revision.
  * \param[in] branch  The number of the new current branch.
  * \param[in] working_branch  Update the current working branch (true) or the current branch (false).
  *
  * \return This function returns a copy of the current branch key.
  */
-QString content::set_branch_key(QString const& key, QString const& owner, snap_version::version_number_t branch, bool working_branch)
+QString content::set_branch_key(QString const& key, snap_version::version_number_t branch, bool working_branch)
 {
     // key in the data table
     QString const current_branch_key(generate_branch_key(key, branch));
 
     // key in the content table
-    QString const base_key(get_revision_base_key(owner));
     QString const current_key(QString("%1::%2")
-                .arg(base_key)
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
                         ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY
                         : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY)));
@@ -4756,14 +4747,15 @@ QString content::set_branch_key(QString const& key, QString const& owner, snap_v
  */
 void content::initialize_branch(QString const& key)
 {
-    QString const base_key(get_revision_base_key(get_plugin_name()));
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
     // *** BRANCH ***
     snap_version::version_number_t branch_number(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH));
     {
         // Last branch
-        QString const last_branch_key(QString("%1::%2").arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+        QString const last_branch_key(QString("%1::%2")
+                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
         if(branch_value.nullValue())
         {
@@ -4778,7 +4770,8 @@ void content::initialize_branch(QString const& key)
 
     {
         QString const current_branch_key(QString("%1::%2")
-                .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(current_branch_key)->value());
         if(branch_value.nullValue())
         {
@@ -4788,7 +4781,8 @@ void content::initialize_branch(QString const& key)
 
     {
         QString const current_branch_key(QString("%1::%2")
-                .arg(base_key).arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(current_branch_key)->value());
         if(branch_value.nullValue())
         {
@@ -4798,21 +4792,21 @@ void content::initialize_branch(QString const& key)
 
     {
         // Current branch key
-        QString const current_branch_key(get_branch_key(key, get_plugin_name(), false));
+        QString const current_branch_key(get_branch_key(key, false));
         if(current_branch_key.isEmpty())
         {
             // there is no branch yet, create one
-            set_branch_key(key, get_plugin_name(), branch_number, false);
+            set_branch_key(key, branch_number, false);
         }
     }
 
     {
         // Current working branch key
-        QString const current_branch_key(get_branch_key(key, get_plugin_name(), true));
+        QString const current_branch_key(get_branch_key(key, true));
         if(current_branch_key.isEmpty())
         {
             // there is no branch yet, create one
-            set_branch_key(key, get_plugin_name(), branch_number, true);
+            set_branch_key(key, branch_number, true);
         }
     }
 }
@@ -4825,19 +4819,17 @@ void content::initialize_branch(QString const& key)
  * is to be used to access the user information in the data table.
  *
  * \param[in] key  The key of the page being worked on.
- * \param[in] owner  The name of the plugin that owns this revision.
  * \param[in] branch  The concerned branch.
  * \param[in] locale  The language and country information.
  * \param[in] working_branch  The current branch (false) or the current working branch (true).
  *
  * \return A string representing the end of the key
  */
-QString content::get_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& locale, bool working_branch)
+QString content::get_revision_key(QString const& key, snap_version::version_number_t branch, QString const& locale, bool working_branch)
 {
     // key in the content table
-    QString const base_key(get_revision_base_key(owner));
     QString current_key(QString("%1::%2::%3")
-                .arg(base_key)
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
                         ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
                         : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
@@ -4938,19 +4930,17 @@ QString content::generate_revision_key(QString const& key, QString const& revisi
  * key of the current revision.
  *
  * \param[in] key  The page concerned.
- * \param[in] owner  The owner of the revision, "content" in most cases.
  * \param[in] branch  The branch which current revision is being set.
  * \param[in] revision  The revision being set as current.
  * \param[in] locale  The locale (\<language>_\<country>) or an empty string.
  * \param[in] working_branch  Whether this is the current branch (true)
  *                            or current working branch (false).
  */
-void content::set_current_revision(QString const& key, QString const& owner, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch)
+void content::set_current_revision(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch)
 {
     // key in the content table
-    QString const base_key(get_revision_base_key(owner));
     QString current_key(QString("%1::%2::%3")
-                .arg(base_key)
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
                         ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION
                         : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION))
@@ -4976,20 +4966,10 @@ void content::set_current_revision(QString const& key, QString const& owner, sna
  * user, in most cases, will want the latest revision to become the current
  * revision.
  *
- * The owner is expected to be the name of the plugin creating this
- * revision. By default it should be set to "content". The owner string
- * should always be defined using the plugin name as in:
- *
- * \code
- * content::content *content_plugin(content::content::instance());
- * content_plugin->get_revision_base_key(content_plugin->get_plugin_name());
- * \endcode
- *
  * You may call the generate_revision_key() function to regenerate the
  * revision key without saving it in the database too.
  *
  * \param[in] key  The key to the page concerned.
- * \param[in] owner  The owner of the page, usually "content".
  * \param[in] branch  The branch this revision is being saved for.
  * \param[in] revision  The new revision number.
  * \param[in] locale  The language and country information.
@@ -4997,15 +4977,14 @@ void content::set_current_revision(QString const& key, QString const& owner, sna
  *
  * \return This function returns a copy of the revision key just computed.
  */
-QString content::set_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch)
+QString content::set_revision_key(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch)
 {
     // key in the data table
     QString const current_revision_key(generate_revision_key(key, branch, revision, locale));
 
     // key in the content table
-    QString const base_key(get_revision_base_key(owner));
     QString current_key(QString("%1::%2::%3")
-                .arg(base_key)
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
                         ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
                         : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
@@ -5034,7 +5013,6 @@ QString content::set_revision_key(QString const& key, QString const& owner, snap
  * revision key without saving it in the database too.
  *
  * \param[in] key  The key to the page concerned.
- * \param[in] owner  The owner of the page, usually "content".
  * \param[in] branch  The branch of the page.
  * \param[in] revision  The new revision string.
  * \param[in] locale  The language and country information.
@@ -5043,15 +5021,14 @@ QString content::set_revision_key(QString const& key, QString const& owner, snap
  *
  * \return A copy of the current revision key saved in the database.
  */
-QString content::set_revision_key(QString const& key, QString const& owner, snap_version::version_number_t branch, QString const& revision, QString const& locale, bool working_branch)
+QString content::set_revision_key(QString const& key, snap_version::version_number_t branch, QString const& revision, QString const& locale, bool working_branch)
 {
     // key in the data table
     QString const current_revision_key(generate_revision_key(key, revision, locale));
 
     // key in the content table
-    QString const base_key(get_revision_base_key(owner));
     QString current_key(QString("%1::%2::%3")
-                .arg(base_key)
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
                         ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
                         : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
@@ -5123,7 +5100,7 @@ QString content::get_user_key(QString const& key, snap_version::version_number_t
  * zero (0) is used. When the system creates content it always uses
  * SPECIAL_VERSION_SYSTEM_BRANCH as the branch number (which is zero).
  *
- * \param[in] path  The path of the new page.
+ * \param[in] ipath  The path of the new page.
  * \param[in] owner  The name of the plugin that is to own this page.
  * \param[in] type  The type of page.
  *
@@ -5180,12 +5157,11 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     row->cell(primary_owner)->setValue(owner);
 
     snap_version::version_number_t const branch_number(ipath.get_branch());
-    QString const branch_owner(ipath.get_owner());
 
-    set_branch(key, branch_owner, branch_number, false);
-    set_branch(key, branch_owner, branch_number, true);
-    set_branch_key(key, branch_owner, branch_number, true);
-    set_branch_key(key, branch_owner, branch_number, false);
+    set_branch(key, branch_number, false);
+    set_branch(key, branch_number, true);
+    set_branch_key(key, branch_number, true);
+    set_branch_key(key, branch_number, false);
 
     snap_version::version_number_t const revision_number(ipath.get_revision());
     if(revision_number != snap_version::SPECIAL_VERSION_UNDEFINED
@@ -5193,10 +5169,10 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     && revision_number != snap_version::SPECIAL_VERSION_EXTENDED)
     {
         QString const locale(ipath.get_locale());
-        set_current_revision(key, branch_owner, branch_number, revision_number, locale, false);
-        set_current_revision(key, branch_owner, branch_number, revision_number, locale, true);
-        set_revision_key(key, branch_owner, branch_number, revision_number, locale, true);
-        set_revision_key(key, branch_owner, branch_number, revision_number, locale, false);
+        set_current_revision(key, branch_number, revision_number, locale, false);
+        set_current_revision(key, branch_number, revision_number, locale, true);
+        set_revision_key(key, branch_number, revision_number, locale, true);
+        set_revision_key(key, branch_number, revision_number, locale, false);
     }
 
     // add the different basic content dates setup
@@ -5242,7 +5218,7 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
         dst = site_key + dst;
 
         // TBD: 3rd parameter should be true or false?
-        parent_branch = get_current_branch(dst, get_plugin_name(), true);
+        parent_branch = get_current_branch(dst, true);
 
         // TBD: is the use of the system branch always correct here?
         links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src, child_branch);
@@ -5733,9 +5709,8 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
     // check whether the row exists before we create it
     bool const content_row_exists(content_table->exists(attachment_ipath.get_key()));
 
-    // this is the new content row, that is, it may still be empty but we
+    // this may be a new content row, that is, it may still be empty so we
     // have to test several things before we can call create_content()...
-    QString const attachment_owner(get_name(SNAP_NAME_CONTENT_OWNER));
 
     QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
     QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
@@ -5777,20 +5752,20 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
             if(snap_version::SPECIAL_VERSION_UNDEFINED == branch_number
             || snap_version::SPECIAL_VERSION_INVALID == branch_number)
             {
-                branch_number = get_current_branch(attachment_ipath.get_key(), attachment_owner, true);
+                branch_number = get_current_branch(attachment_ipath.get_key(), true);
             }
             attachment_ipath.force_branch(branch_number);
             if(snap_version::SPECIAL_VERSION_UNDEFINED == branch_number)
             {
                 // this should nearly never (if ever) happen
-                branch_number = get_new_branch(attachment_ipath.get_key(), attachment_owner, locale);
-                set_branch_key(attachment_ipath.get_key(), attachment_owner, branch_number, true);
+                branch_number = get_new_branch(attachment_ipath.get_key(), locale);
+                set_branch_key(attachment_ipath.get_key(), branch_number, true);
                 // new branches automatically get a revision of zero (0)
                 revision_number = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION);
             }
             else
             {
-                revision_number = get_new_revision(attachment_ipath.get_key(), attachment_owner, branch_number, locale, true);
+                revision_number = get_new_revision(attachment_ipath.get_key(), branch_number, locale, true);
             }
             attachment_ipath.force_revision(revision_number);
         }
@@ -5801,18 +5776,18 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
             throw snap_logic_exception(QString("the branch (%1) and/or revision (%2) numbers are still undefined").arg(branch_number).arg(revision_number));
         }
 
-        set_branch(attachment_ipath.get_key(), attachment_owner, branch_number, true);
-        set_branch(attachment_ipath.get_key(), attachment_owner, branch_number, false);
-        set_branch_key(attachment_ipath.get_key(), attachment_owner, branch_number, true);
-        set_branch_key(attachment_ipath.get_key(), attachment_owner, branch_number, false);
+        set_branch(attachment_ipath.get_key(), branch_number, true);
+        set_branch(attachment_ipath.get_key(), branch_number, false);
+        set_branch_key(attachment_ipath.get_key(), branch_number, true);
+        set_branch_key(attachment_ipath.get_key(), branch_number, false);
 
         // TODO: this call is probably wrong, that is, it works and shows the
         //       last working version but the user may want to keep a previous
         //       revision visible at this point...
-        set_current_revision(attachment_ipath.get_key(), attachment_owner, branch_number, revision_number, locale, false);
-        set_current_revision(attachment_ipath.get_key(), attachment_owner, branch_number, revision_number, locale, true);
-        set_revision_key(attachment_ipath.get_key(), attachment_owner, branch_number, revision_number, locale, true);
-        set_revision_key(attachment_ipath.get_key(), attachment_owner, branch_number, revision_number, locale, false);
+        set_current_revision(attachment_ipath.get_key(), branch_number, revision_number, locale, false);
+        set_current_revision(attachment_ipath.get_key(), branch_number, revision_number, locale, true);
+        set_revision_key(attachment_ipath.get_key(), branch_number, revision_number, locale, true);
+        set_revision_key(attachment_ipath.get_key(), branch_number, revision_number, locale, false);
 
         // back reference for quick search
         branch_table->row(attachment_ipath.get_branch_key())->cell(attachment_ref)->setValue(static_cast<int64_t>(revision_number));
@@ -5825,12 +5800,12 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
         // this is probably somewhat wrong... (remember that for JS/CSS files
         // we do not generate a revision number, we use the file version
         // instead.)
-        set_branch(attachment_ipath.get_key(), attachment_owner, branch_number, true);
-        set_branch(attachment_ipath.get_key(), attachment_owner, branch_number, false);
-        set_branch_key(attachment_ipath.get_key(), attachment_owner, branch_number, true);
-        set_branch_key(attachment_ipath.get_key(), attachment_owner, branch_number, false);
-        set_revision_key(attachment_ipath.get_key(), attachment_owner, branch_number, revision, locale, true);
-        set_revision_key(attachment_ipath.get_key(), attachment_owner, branch_number, revision, locale, false);
+        set_branch(attachment_ipath.get_key(), branch_number, true);
+        set_branch(attachment_ipath.get_key(), branch_number, false);
+        set_branch_key(attachment_ipath.get_key(), branch_number, true);
+        set_branch_key(attachment_ipath.get_key(), branch_number, false);
+        set_revision_key(attachment_ipath.get_key(), branch_number, revision, locale, true);
+        set_revision_key(attachment_ipath.get_key(), branch_number, revision, locale, false);
 
         // TODO: add set_current_revision()/set_revision_key()/... to save
         //       that info (only the revision here may be multiple numbers)
@@ -6339,10 +6314,14 @@ void content::add_xml(const QString& plugin_name)
  * It can be called by other functions which load content XML data from
  * a place other than the resources.
  *
+ * \note
+ * As an example, the layout plugin will call this function if it finds
+ * a content.xml file in its list of files.
+ *
  * \param[in] dom  The DOM to add to the content system.
  * \param[in] plugin_name  The name of the plugin loading this data.
  */
-void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
+void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
 {
     QDomNodeList content_nodes(dom.elementsByTagName(get_name(SNAP_NAME_CONTENT_TAG)));
     int const max_nodes(content_nodes.size());
@@ -6399,7 +6378,7 @@ void content::add_xml_document(QDomDocument& dom, const QString& plugin_name)
             }
 
             // <param name=... overwrite=... force-namespace=...> data </param>
-            QString tag_name(element.tagName());
+            QString const tag_name(element.tagName());
             if(tag_name == "param")
             {
                 QString const param_name(element.attribute("name"));
@@ -7039,7 +7018,7 @@ void content::on_save_content()
             }
             else
             {
-                throw snap_logic_exception(QString("somehow create_content() stumble on an erroneous status (%1)").arg(d->f_path));
+                throw snap_logic_exception(QString("somehow on_save_content() stumble on erroneous status %1 (%2)").arg(static_cast<int>(status.get_error())).arg(d->f_path));
             }
         }
         else
@@ -7127,17 +7106,17 @@ void content::on_save_content()
                     param_table = revision_table;
                     if(!use_new_revision)
                     {
-                        row_key = get_revision_key(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false);
+                        row_key = get_revision_key(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false);
                     }
                     // else row_key.clear(); -- I think it is faster to test the flag again
                     if(use_new_revision || row_key.isEmpty())
                     {
                         // the revision does not exist yet, create it
-                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false));
-                        set_current_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
-                        set_current_revision(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
-                        set_revision_key(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
-                        row_key = set_revision_key(d->f_path, get_plugin_name(), snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
+                        snap_version::version_number_t revision_number(get_new_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, locale, false));
+                        set_current_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
+                        set_current_revision(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
+                        set_revision_key(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, false);
+                        row_key = set_revision_key(d->f_path, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, revision_number, locale, true);
                         use_new_revision = false;
 
                         // mark when the row was created
@@ -7342,7 +7321,91 @@ void content::on_save_content()
 
 
 
-/** \brief Process new attachments.
+/** \brief Process various backend tasks.
+ *
+ * Content backend processes:
+ *
+ * \li Reset the status of pages that somehow got a working status
+ *     but that status never got reset.
+ *
+ * \li Check new attachements as those files may be or include viruses.
+ */
+void content::on_backend_process()
+{
+    backend_process_status();
+    backend_process_files();
+}
+
+
+/** \brief Check whether a working process never reset its status.
+ *
+ * As the database is being worked on, the status of a page changes while
+ * it gets processed. Unfortunately, once in while a page process breaks
+ * and its status does not get restored as expected.
+ *
+ * The status handling saves the URI of the pages that get a status with
+ * a working process in the processing table. The URI does not get deleted
+ * for speed. This backend checks the pages, verifies the status and how
+ * long it was set to a working state (if such is still the case) and
+ * resets the working state to path_info_t::status_t::NOT_WORKING if the
+ * working status was on for over 10 minutes.
+ *
+ * \note
+ * A process that takes over 10 minutes can always update the date once a
+ * minute or so to avoid getting erased by this backend. At this point the
+ * 10 minutes was chosen somewhat arbitrarily and we may want to adjust
+ * that with time and even possibly offer the administrator to change that
+ * number for one's website.
+ */
+void content::backend_process_status()
+{
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    QtCassandra::QCassandraTable::pointer_t processing_table(get_processing_table());
+
+    // any page with this start date or less gets its processing state
+    // reset by this backend; we may want the 10 minutes to be saved in
+    // a site parameter so the administrator can tweak it...
+    int64_t start_date(f_snap->get_start_date() - 10 * 60 * 1000000);
+
+    QtCassandra::QCassandraRowPredicate row_predicate;
+    // process 100 in a row
+    row_predicate.setCount(100);
+    for(;;)
+    {
+        processing_table->clearCache();
+        uint32_t const count(processing_table->readRows(row_predicate));
+        if(count == 0)
+        {
+            // no more lists to process
+            break;
+        }
+        QtCassandra::QCassandraRows const rows(processing_table->rows());
+        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                o != rows.end(); ++o)
+        {
+            path_info_t ipath;
+            ipath.set_path(QString::fromUtf8(o.key().data()));
+            int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->value().int64Value());
+            if(last_changed < start_date)
+            {
+                // we are done with that page since we just reset the
+                // working status as expected so drop it (we do that first
+                // so in case it gets re-created in between, we will reset
+                // again later)
+                processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+
+                // it has been more than 10 minutes, reset the state
+                path_info_t::status_t status(ipath.get_status());
+                status.set_status(static_cast<path_info_t::status_t::status_type>(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value().uint32Value()));
+                status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
+                ipath.set_status(status);
+            }
+        }
+    }
+}
+
+
+/** \brief Process new attachments to make sure they are secure.
  *
  * As user upload new files to the server, we want to have them
  * processed in different ways. This backend process does part of
@@ -7386,7 +7449,7 @@ void content::on_save_content()
  * number of time a file gets uploaded, if the counter increases
  * outregiously fast, it is probably not a good sign.
  */
-void content::on_backend_process()
+void content::backend_process_files()
 {
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW)));
@@ -7991,19 +8054,45 @@ void content::add_css(QDomDocument doc, QString const& name)
 }
 
 
-/** \brief Copy a page to another with additional features.
+/** \brief Copy a page to another location and additional features.
  *
  * This function is used to properly copy a page to another location.
  *
- * This feature is used by many others such as deleting a page in which
+ * This feature is used by many others such as the "delete page" in which
  * case the page is "moved" to the trashcan. In that case, the existing
- * page is copied to the trashcan, the source is marked as deleted
- * (SNAP_CONTENT_STATUS_DELETED)
+ * page is copied to the trashcan and the source is marked as deleted
+ * (path_info_t::status_t::DELETED)
  *
  * It can also be used to simply clone a page to another location before
  * working on its content.
+ *
+ * \important
+ * A clone is a copy which becomes its very own version of the page. In
+ * other words it is a page in its own right and it does not behave like
+ * a hard or soft link (i.e. if you edit the original, the copy is not
+ * affected and vice versa.)
+ *
+ * \todo
+ * At this point the destination MUST be non-existant which works for our
+ * main purposes. However, to restore a previously deleted object, or
+ * move a page back and forth between two paths, we need to be able to
+ * overwrite the current destination. We should have a form of mode for
+ * the clone function, mode which defines what we do in various 
+ * "complex" situations.
+ *
+ * \todo
+ * As we add a mode, we may want to offer a way to create a clone with
+ * just the latest branch and not all the branches and revisions. At
+ * this point we are limited to copying everything (which is good when
+ * sending a page to the trashcan, but not so good when doing a "quick
+ * clone".)
+ *
+ * \param[in] source  The source being cloned.
+ * \param[in] destination  The destination where the source gets copied.
+ *
+ * \return true if the cloning worked smoothly, false otherwise
  */
-path_info_t content::clone_page(path_info_t& source_ipath, QString& destination)
+bool content::clone_page(clone_info_t& source, clone_info_t& destination)
 {
 
 // WARNING: This function is NOT yet functional, I am still looking into how
@@ -8012,64 +8101,354 @@ path_info_t content::clone_page(path_info_t& source_ipath, QString& destination)
 
     struct sub_function
     {
-        void func(content *content_plugin, path_info_t& source_ipath, QString& destination)
+        bool clone(content *content_plugin, clone_info_t& source, clone_info_t& destination, int64_t const start_date)
         {
             // make sure that the content table was defined
             QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
             QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
             QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
-            // make sure the destination does not exist, if it does, we cannot
-            // create the clone (should we throw in that case?)
-            if(content_table->exists(destination))
+            // make sure the destination does not exist, if it does,
+            // we cannot create the clone
+            //
+            // TODO: add support for that case (i.e. to overwrite page A
+            //       with page B data; we may want to first move page A
+            //       to the trashcan though!)
+            if(content_table->exists(destination.f_ipath.get_key()))
             {
-                return;
+                SNAP_LOG_ERROR("clone_page() called with a destination (")(destination.f_ipath.get_key())(") which already exists.");
+                return false;
             }
 
-            // we need the page type to create the new page
-            QString type_name;
-            links::link_info info(get_name(SNAP_NAME_CONTENT_PAGE_TYPE),
-                                  false, source_ipath.get_key(), source_ipath.get_branch());
-            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
-            links::link_info type_info;
-            if(!link_ctxt->next_link(type_info))
+            // setup the status using RAII
+            path_info_t::status_t src_now(source.f_ipath.get_status());
+            if(src_now.is_working())
             {
-                // this should never happen
-                return;
+                // we cannot work on a page when another process is already
+                // working on that page...
+                SNAP_LOG_ERROR("clone_page() called with a source (")(source.f_ipath.get_key())(") which is being processed now (working: ")(static_cast<int>(src_now.get_working()))(").");
+                return false;
+            }
+            path_info_t::raii_status_t source_state(source.f_ipath, source.f_processing_state, source.f_done_state);
+
+            // nothing to check for the destination,
+            // at this point the current status would be undefined
+            // (should be extended in the future though...)
+            path_info_t::raii_status_t destination_state(destination.f_ipath, destination.f_processing_state, destination.f_done_state);
+
+            // save the date when we cloned the page
+            content_table->row(destination.f_ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_CLONED))->setValue(start_date);
+
+std::cerr << "   copy content...\n";
+            // the content table is just one row, we specialize it because
+            // we can directly fix the branch/revision information (and that
+            // makes it a lot easier and safer to manage the whole thing)
+            copy_content(content_table, source, destination);
+
+std::cerr << "   copy branches...\n";
+            // copy all branches,
+            // the difference here is that we may have many branches and
+            // thus many rows to copy; using Cassandra we can find all
+            // the branches with a simple sweap, then use the dbutil copy
+            // function to copy the data
+            //
+            // TODO: add support to only copy the current branches (current
+            //       and working)
+            copy_branches(branch_table, source, destination);
+
+std::cerr << "   copy revisions...\n";
+            // copy all revisions,
+            // this is very similar to the branch copy, only it uses the
+            // revision table and the row predicate is slightly different
+            //
+            // TODO: add support to only copy the current revisions (current
+            //       and working)
+            copy_revisions(revision_table, source, destination);
+
+            // link both pages together in the current branch
+            //
+            // TBD: should the link appear in all branches?
+            //      (in case someone changes the branch...)
+            {
+std::cerr << "   link clone...\n";
+                bool const source_unique(true);
+                bool const destination_unique(false);
+                links::link_info link_source(get_name(SNAP_NAME_CONTENT_ORIGINAL_PAGE), source_unique, source.f_ipath.get_key(), source.f_ipath.get_branch());
+                links::link_info link_destination(get_name(SNAP_NAME_CONTENT_CLONE), destination_unique, destination.f_ipath.get_key(), destination.f_ipath.get_branch());
+                links::links::instance()->create_link(link_source, link_destination);
             }
 
-            QString const type(type_info.key());
-            QString const site_key(content_plugin->get_snap()->get_site_key_with_slash());
-            if(type.startsWith(site_key + "types/taxonomy/system/content-types/"))
-            {
-                // this should never happen
-                return;
-            }
-            type_name = type.mid(site_key.length() + 36);
-            if(type_name.isEmpty())
-            {
-                // this should really never happen
-                return;
-            }
+            // now tell all the other plugins that we just cloned a page
+            content_plugin->page_cloned(source, destination);
 
-            QString primary_owner(content_table->row(source_ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+            return true;
+        }
 
-            QString const locale("xx");
-            path_info_t page_ipath;
-            page_ipath.set_path(destination);
-            page_ipath.force_branch(content_plugin->get_current_user_branch(destination, primary_owner, locale, true));
-            page_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
-            page_ipath.force_locale(locale);
-            content_plugin->create_content(page_ipath, primary_owner, type_name);
+        void copy_content(QtCassandra::QCassandraTable::pointer_t content_table, clone_info_t& source, clone_info_t& destination)
+        {
+            QString revision_control(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL));
+            QString current_branch_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY));
+            QString current_working_branch_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY));
+            QString current_revision_key(QString("::%1::").arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY)));
+            QString current_working_revision_key(QString("::%1::").arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY)));
+            // copy the main row in the content table by hand because
+            // otherwise we would have problems with the status and a
+            // few other things; also that way we can immediately fix
+            // the branch and revision URIs
+            QtCassandra::QCassandraRow::pointer_t source_row(content_table->row(source.f_ipath.get_key()));
+            QtCassandra::QCassandraRow::pointer_t destination_row(content_table->row(destination.f_ipath.get_key()));
+            QtCassandra::QCassandraColumnRangePredicate column_predicate;
+            column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
+            column_predicate.setIndex(); // behave like an index
+            for(;;)
+            {
+                source_row->clearCache();
+                source_row->readCells(column_predicate);
+                QtCassandra::QCassandraCells const source_cells(source_row->cells());
+                if(source_cells.isEmpty())
+                {
+                    // done
+                    break;
+                }
+                // handle one batch
+                for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+                        nc != source_cells.end();
+                        ++nc)
+                {
+                    QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+                    QByteArray cell_key(source_cell->columnKey());
+                    // ignore the status
+                    if(strcmp(cell_key.data(), get_name(SNAP_NAME_CONTENT_STATUS)) != 0
+                    && strcmp(cell_key.data(), get_name(SNAP_NAME_CONTENT_STATUS_CHANGED)) != 0
+                    && strcmp(cell_key.data(), get_name(SNAP_NAME_CONTENT_CLONED)) != 0)
+                    {
+                        QString key(QString::fromAscii(cell_key.data()));
+                        if(key.startsWith(revision_control)
+                        && (key.endsWith(current_branch_key)
+                         || key.endsWith(current_working_branch_key)
+                         || key.contains(current_revision_key)
+                         || key.contains(current_working_revision_key)))
+                        {
+                            QString uri(source_cell->value().stringValue());
+                            if(uri.startsWith(source.f_ipath.get_key()))
+                            {
+                                uri = destination.f_ipath.get_key() + uri.mid(source.f_ipath.get_key().length());
+                                destination_row->cell(cell_key)->setValue(uri);
+                            }
+                            else
+                            {
+                                // TODO: verify that this is not actually an error?
+                                destination_row->cell(cell_key)->setValue(source_cell->value());
+                            }
+                        }
+                        else
+                        {
+                            // anything else gets copied as is for now
+                            destination_row->cell(cell_key)->setValue(source_cell->value());
+                        }
+                    }
+                }
+            }
+        }
+
+        void copy_branches(QtCassandra::QCassandraTable::pointer_t branch_table, clone_info_t& source, clone_info_t& destination)
+        {
+            // WARNING: Do not even remotely try to use a row predicate
+            //          along the setStartRowName() and setEndRowName()
+            //          functions because rows are NOT sorted using their
+            //          key as is. Instead they use an MD5 checksum which
+            //          is completely different.
+            path_info_t isource(source.f_ipath);
+
+            QString const source_key(source.f_ipath.get_key());
+            QString const destination_key(destination.f_ipath.get_key());
+
+            QtCassandra::QCassandraRowPredicate row_predicate;
+            // all the names end with '#' and a <version> number
+std::cerr << "source key for copy of branches [" << source_key << "]\n";
+            row_predicate.setStartRowName(source_key + "#");
+            // ':' is just after any digit
+            row_predicate.setEndRowName(source_key + "#:");
+            // 100 is good enough, someone who has more than 100 branches...
+            row_predicate.setCount(100);
+            for(;;)
+            {
+                branch_table->clearCache();
+                uint32_t const count(branch_table->readRows(row_predicate));
+                if(count == 0)
+                {
+                    // no more lists to process
+                    break;
+                }
+                QtCassandra::QCassandraRows const rows(branch_table->rows());
+                for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                        o != rows.end(); ++o)
+                {
+                    QString const source_uri(QString::fromUtf8(o.key().data()));
+std::cerr << "   -->> source uri for copy of branches [" << source_key << "] / [" << source_uri << "]\n";
+                    QString const destination_uri(QString("%1%2").arg(destination_key).arg(source_uri.mid(source_key.length())));
+std::cerr << "   -->> destination key [" << destination_key << "] becomes -->> [" << destination_uri << "]\n";
+                    dbutils::copy_row(branch_table, source_uri, branch_table, destination_uri);
+                }
+            }
+        }
+
+        void copy_revisions(QtCassandra::QCassandraTable::pointer_t revision_table, clone_info_t& source, clone_info_t& destination)
+        {
+            QString const source_key(source.f_ipath.get_key());
+            QString const destination_key(destination.f_ipath.get_key());
+
+            QtCassandra::QCassandraRowPredicate row_predicate;
+            // all the names end with '#', a <language>, a slash (/), a <branch> number, and a <revision> number
+            row_predicate.setStartRowName(source_key + "#");
+            // '~' is the last ASCII character (languages should be limited to a-z though)
+            row_predicate.setEndRowName(source_key + "#~");
+            // 100 should be good enough, although when programming revisions
+            // can grow really fast as each time you update a content.xml file
+            // the pages get updated in your database...
+            row_predicate.setCount(100);
+            for(;;)
+            {
+                revision_table->clearCache();
+                uint32_t const count(revision_table->readRows(row_predicate));
+                if(count == 0)
+                {
+                    // no more lists to process
+                    break;
+                }
+                QtCassandra::QCassandraRows const rows(revision_table->rows());
+                for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                        o != rows.end(); ++o)
+                {
+                    QString const source_uri(QString::fromUtf8(o.key().data()));
+                    QString const destination_uri(QString("%1%2").arg(destination_key).arg(source_uri.mid(source_key.length())));
+                    dbutils::copy_row(revision_table, source_uri, revision_table, destination_uri);
+                }
+            }
         }
     };
 
     sub_function f;
-    f.func(this, source_ipath, destination);
+    return f.clone(this, source, destination, f_snap->get_start_date());
+}
 
-    path_info_t result;
-    result.set_path(destination);
-    return result;
+
+/** \brief Move a page from one URI to another.
+ *
+ * This function moves the source page to the destination page. The source
+ * is then marked as deleted.
+ *
+ * At this point the destination page must not exist yet.
+ *
+ * \note
+ * Since the page does not get deleted, we do not make a copy in the
+ * trashcan even though the source page ends up being marked as deleted.
+ *
+ * \param[in] ipath_source  The path to the source page being moved.
+ * \param[in] ipath_destination  The path to the destination page.
+ *
+ * \return true if the move succeeds.
+ */
+bool content::move_page(path_info_t& ipath_source, path_info_t& ipath_destination)
+{
+    // setup the clone parameters
+    clone_info_t source;
+    source.f_ipath = ipath_source;
+    source.f_processing_state.set_state(path_info_t::status_t::state_t::NORMAL);
+    source.f_processing_state.set_working(path_info_t::status_t::working_t::CLONING);
+    source.f_done_state.set_state(path_info_t::status_t::state_t::DELETED);
+
+    clone_info_t destination;
+    destination.f_ipath = ipath_destination;
+    destination.f_processing_state.set_state(path_info_t::status_t::state_t::CREATE);
+    destination.f_processing_state.set_working(path_info_t::status_t::working_t::CREATING);
+    destination.f_done_state = ipath_source.get_status();
+
+    return clone_page(source, destination);
+}
+
+
+/** \brief Put the specified page in the trashcan.
+ *
+ * This function "deletes" a page by making a copy of it in the trashcan.
+ *
+ * The original page remains as DELETED for a while. After that while it
+ * gets 100% deleted from Cassandra.
+ *
+ * The pages in the trashcan can be restored at a later time. The time
+ * pages are kept in the trashcan is controlled by the website
+ * administrator. It can be very short (1 day) or very long (forever).
+ *
+ * \param[in] ipath  The path to move to the trash.
+ *
+ * \return true if the cloning worked as expected.
+ */
+bool content::trash_page(path_info_t& ipath)
+{
+    // create a destination path in the trashcan
+    QString trashcan_path("trashcan");
+
+    // path can be changed by administrator
+    QtCassandra::QCassandraValue trashcan_path_value(f_snap->get_site_parameter(get_name(SNAP_NAME_CONTENT_TRASHCAN)));
+    if(!trashcan_path_value.nullValue())
+    {
+        // administrators can move the trashcan around up until something
+        // gets deleted
+        trashcan_path = trashcan_path_value.stringValue();
+    }
+
+    // make sure that path exists
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    if(!content_table->exists(trashcan_path))
+    {
+        path_info_t trashcan_ipath;
+
+        trashcan_ipath.set_path(trashcan_path);
+        trashcan_ipath.force_branch(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+        trashcan_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+
+        // TODO: would we have a language attached to the trashcan?
+        //       (certainly because the title should change depending on
+        //       the language, right?)
+        trashcan_ipath.force_locale("xx");
+
+        // TODO: the owner is the first person who deletes something on the
+        //       website; that's probably wrong!
+        create_content(trashcan_ipath, get_name(SNAP_NAME_CONTENT_OWNER), "system-page");
+
+        // save the creation date, title, and description
+        QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
+        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(trashcan_ipath.get_revision_key()));
+        int64_t const start_date(f_snap->get_start_date());
+        revision_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+        // TODO: add support for translation
+        QString const title("Trashcan");
+        revision_row->cell(get_name(SNAP_NAME_CONTENT_TITLE))->setValue(title);
+        QString const empty_string;
+        revision_row->cell(get_name(SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
+    }
+
+    // new page goes under a randomly generated number
+    trashcan_path += "/";
+    trashcan_path += f_snap->get_unique_number();
+
+    // setup the clone parameters
+    clone_info_t source;
+    source.f_ipath = ipath;
+    source.f_processing_state.set_state(path_info_t::status_t::state_t::NORMAL);
+    source.f_processing_state.set_working(path_info_t::status_t::working_t::REMOVING);
+    source.f_done_state.set_state(path_info_t::status_t::state_t::DELETED);
+
+    clone_info_t destination;
+    destination.f_ipath.set_path(trashcan_path);
+    destination.f_ipath.force_branch(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+    destination.f_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    destination.f_ipath.force_locale("xx"); // TBD: should the language be set as... maybe the page being deleted?
+    destination.f_processing_state.set_state(path_info_t::status_t::state_t::CREATE);
+    destination.f_processing_state.set_working(path_info_t::status_t::working_t::CREATING);
+    destination.f_done_state.set_state(path_info_t::status_t::state_t::HIDDEN);
+
+    return clone_page(source, destination);
 }
 
 

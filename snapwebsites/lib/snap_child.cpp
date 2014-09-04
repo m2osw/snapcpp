@@ -5343,7 +5343,7 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
  * \param[in] name  The name of the parameter to save.
  * \param[in] value  The new value for this parameter.
  */
-void snap_child::set_site_parameter(const QString& name, const QtCassandra::QCassandraValue& value)
+void snap_child::set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value)
 {
     // retrieve site table if not there yet
     if(!f_site_table)
@@ -6292,7 +6292,7 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
                 // run the updates as required
                 // we have a date/time for each plugin since each has
                 // it's own list of date/time checks
-                QString specific_param_name(core_last_updated + "::" + plugin_name);
+                QString const specific_param_name(QString("%1::%2").arg(core_last_updated).arg(plugin_name));
                 QtCassandra::QCassandraValue specific_last_updated(get_site_parameter(specific_param_name));
                 if(specific_last_updated.nullValue())
                 {
@@ -7473,9 +7473,16 @@ time_t snap_child::string_to_date(QString const& date)
                 {
                     // maybe that was the month, not the day
                     // if the time is last, we have a preprocessor date/time
-                    if(strlen(f_s) == 11 + 1 + 8
-                    && f_s[11 + 1 + 8 - 6] == ':'
-                    && f_s[11 + 1 + 8 - 3] == ':')
+                    // the second test is needed because the string gets
+                    // simplified and thus numbers 1 to 9 generate a string
+                    // one shorter
+                    if((strlen(f_s) == 11 + 1 + 8
+                     && f_s[11 + 1 + 8 - 6] == ':'
+                     && f_s[11 + 1 + 8 - 3] == ':')
+                    ||
+                       (strlen(f_s) == 10 + 1 + 8
+                     && f_s[10 + 1 + 8 - 6] == ':'
+                     && f_s[10 + 1 + 8 - 3] == ':'))
                     {
                         return parse_us();
                     }

@@ -17,6 +17,7 @@
 
 #include "path.h"
 
+#include "../links/links.h"
 #include "../messages/messages.h"
 #include "../server_access/server_access.h"
 
@@ -241,10 +242,37 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
     if(content_table->exists(ipath.get_key())
     && content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
+        // verify that the status is good for displaying this page
+        content::path_info_t::status_t status(ipath.get_status());
+        switch(status.get_state())
+        {
+        case content::path_info_t::status_t::state_t::UNKNOWN_STATE:
+            // TBD: should we throw instead when unknown (because get_state()
+            //      is not expected to ever return that value)
+        case content::path_info_t::status_t::state_t::CREATE:
+        case content::path_info_t::status_t::state_t::DELETED:
+            // TODO: for administrators who can undelete pages, the DELETED
+            //       will need special handling at some point
+            // TBD: maybe we should use 403 instead of 404?
+            err_callback.on_error(snap_child::HTTP_CODE_NOT_FOUND,
+                        "Unknow Page Status",
+                        "An internal error occured and this page cannot properly be displayed at this time.",
+                        QString("User tried to access page \"%1\" but its status state is %2.")
+                                .arg(ipath.get_key())
+                                .arg(static_cast<int>(status.get_state())));
+            return nullptr;
+
+        case content::path_info_t::status_t::state_t::NORMAL:
+        case content::path_info_t::status_t::state_t::HIDDEN:   // TBD -- probably requires special handling to know whether we can show those pages
+        case content::path_info_t::status_t::state_t::MOVED:    // MOVED pages will redirect a little later (if allowed)
+            break;
+
+        }
+
         // get the modified date so we can setup the Last-Modified HTTP header field
-        // it is also a way to determine that a path is valid
-        QtCassandra::QCassandraValue value(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value());
-        QString owner = content_table->row(ipath.get_key())->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))->value().stringValue();
+        // it is also another way to determine that a path is valid
+        QtCassandra::QCassandraValue const value(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value());
+        QString const owner = content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue();
         if(value.nullValue() || owner.isEmpty())
         {
             err_callback.on_error(snap_child::HTTP_CODE_NOT_FOUND,
@@ -269,7 +297,9 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
             f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                         "Plugin Missing",
                         "This page is not currently available as its plugin is not currently installed.",
-                        QString("User tried to access page \"%1\" but its plugin (%2) does not exist (not installed? mispelled?)").arg(ipath.get_cpath()).arg(owner));
+                        QString("User tried to access page \"%1\" but its plugin (%2) does not exist (not installed? mispelled?)")
+                                .arg(ipath.get_cpath())
+                                .arg(owner));
             NOTREACHED();
         }
     }
@@ -568,7 +598,8 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
                 f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                         "Page Not Present",
                         "Somehow this page is not currently available.",
-                        "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + path_plugin->get_plugin_name() + ") refused it");
+                        QString("User tried to access page \"%1\" but its plugin (%2) refused it")
+                                .arg(ipath.get_cpath()).arg(path_plugin->get_plugin_name()));
                 NOTREACHED();
             }
         }
@@ -576,14 +607,59 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
 }
 
 
-/** \fn void path::check_for_redirect(content::path_info_t& ipath)
- * \brief Allow modules to redirect before we do anything else.
+/** \brief Allow modules to redirect before we do anything else.
  *
  * This signal is used to allow plugins to redirect before we hit anything
  * else. Note that this happens BEFORE we check for permissions.
  *
  * \param[in,out] ipath  The path the client is trying to access.
  */
+bool path::check_for_redirect_impl(content::path_info_t& ipath)
+{
+    // check whether the page mode is currently MOVED
+    content::path_info_t::status_t status(ipath.get_status());
+    if(status.get_state() == content::path_info_t::status_t::state_t::MOVED)
+    {
+        // the page was moved, get the new location and auto-redirect
+        // user
+        //
+        // TODO: avoid auto-redirect if user is an administrator so that
+        //       way the admin can reuse the page in some way
+        //
+        // TBD: what code is the most appropriate here? (we are using 301
+        //      for now, but 303 or 307 could be better?)
+        //
+        links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_ORIGINAL_PAGE), true, ipath.get_key(), ipath.get_branch());
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info clone_info;
+        if(link_ctxt->next_link(clone_info))
+        {
+            content::path_info_t imoved;
+            imoved.set_path(clone_info.key());
+            if(imoved.get_status().get_state() == content::path_info_t::status_t::state_t::NORMAL)
+            {
+                // we have a valid destination, go there
+                f_snap->page_redirect(imoved.get_key(),
+                            snap_child::HTTP_CODE_MOVED_PERMANENTLY,
+                            "Redirect to the new version of this page.",
+                            QString("This page (%1) was moved so we are redirecting this user to the new location (%2).")
+                                    .arg(ipath.get_key()).arg(imoved.get_key()));
+                NOTREACHED();
+            }
+            // else -- if the destination status is MOVED, we can loop over it!
+        }
+
+        // we cannot redirect to the copy, so just say not found
+        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                    "Invalid Page",
+                    "This page is not currently valid. It can not be viewed.",
+                    QString("User tried to access page \"%1\" but it is marked as MOVED and the destination is either unspecified or not NORMAL.")
+                            .arg(ipath.get_key()));
+        NOTREACHED();
+    }
+
+    return true;
+}
 
 
 /** \fn void path::preprocess_path(content::path_info_t& ipath, plugins::plugin *owner_plugin)

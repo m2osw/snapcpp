@@ -1221,7 +1221,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
                 attachment.set_attachment_type(attachment_type);
                 // TODO: define the locale in some ways...
                 //       (use ipath.get_locale()?)
-                snap_version::version_number_t const branch(content_plugin->get_current_user_branch(ipath.get_key(), content_plugin->get_plugin_name(), "", true));
+                snap_version::version_number_t const branch(content_plugin->get_current_user_branch(ipath.get_key(), "", true));
                 content_plugin->create_attachment(attachment, branch, "");
             }
         }

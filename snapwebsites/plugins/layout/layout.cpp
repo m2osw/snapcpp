@@ -168,9 +168,10 @@ QString layout::description() const
  * This works for newly installed plugins and older plugins that were
  * updated.
  *
- * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ * \param[in] last_updated  The UTC Unix date when the website was last
+ *                          updated (in micro seconds).
  *
- * \return The UTC Unix date of the last update of this plugin.
+ * \return The UTC Unix date of the last update of this plugin or a layout.
  */
 int64_t layout::do_update(int64_t last_updated)
 {
@@ -178,6 +179,11 @@ int64_t layout::do_update(int64_t last_updated)
 
     //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, content_update); -- layout data is defined in output/content.xml at this time
 
+    // we do not use the last_updated timestamp against the plugin
+    // last update date and time because the layout itself is
+    // considered as its own entity and as such it has its own
+    // last date date and time; because of that we always call this
+    // sub-function
     int64_t const last_layout_update(do_layout_updates(last_updated));
     if(last_layout_update > last_plugin_update)
     {
@@ -194,10 +200,11 @@ int64_t layout::do_update(int64_t last_updated)
  * on this website.
  *
  * Whenever you update a layout file, all references are reset to zero. This
- * function searches such references and if zero, do the update and then set
- * the reference to one.
+ * function searches such references and if zero, does the update and then
+ * sets the reference to one.
  *
- * \param[in] last_updated  The UTC Unix date when the website was last updated (in micro seconds).
+ * \param[in] last_updated  The UTC Unix date when the website was last
+ *                          updated (in micro seconds).
  *
  * \return The date when we last updated a layout.
  */
@@ -209,7 +216,6 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const base_key(site_key + get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/");
 
-    int64_t new_last_updated(last_updated);
     content::path_info_t types_ipath;
     types_ipath.set_path("types/taxonomy/system/content-types/layout-page");
     if(!content_table->exists(types_ipath.get_key()))
@@ -217,15 +223,16 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
         // this is likely to happen on first initialization
         return last_updated;
     }
+    int64_t new_last_updated(last_updated);
     links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), false, types_ipath.get_key(), types_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info layout_info;
     while(link_ctxt->next_link(layout_info))
     {
-        QString layout_key(layout_info.key());
+        QString const layout_key(layout_info.key());
         if(layout_key.startsWith(base_key))
         {
-            QString name(layout_key.mid(base_key.length()));
+            QString const name(layout_key.mid(base_key.length()));
             int const pos(name.indexOf('/'));
             if(pos < 0)
             {
@@ -426,7 +433,21 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
 
     // check whether the layout was defined in this website database
     // (note: this was in the define_layout() which now gets called twice...)
-    install_layout(layout_name, 0);
+    int64_t const last_update(install_layout(layout_name, 0));
+
+    QtCassandra::QCassandraValue specific_last_updated(f_snap->get_site_parameter("core::last_updated::layout"));
+    if(last_update > specific_last_updated.int64Value())
+    {
+        specific_last_updated.setInt64Value(last_update);
+        // TODO:
+        // This is VERY dangerous from what I can tell because only
+        // one layout gets updated here; however, if we do not do that
+        // we get in many troubles; this happens the first time the
+        // layout is loaded and another layout may have a different date
+        // so we want to have one 'last updated' date per layout to make
+        // sure we get it right...
+        f_snap->set_site_parameter("core::last_updated::layout", specific_last_updated);
+    }
 
     QDomDocument doc(create_document(ipath, dynamic_cast<plugin *>(content_plugin)));
     create_body(doc, ipath, xsl, content_plugin, ctemplate, true, layout_name);
@@ -1320,7 +1341,11 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
         // this file date and time
         QString const last_layout_update(__DATE__ " " __TIME__);
 
-        time_t last_update_of_default_theme(f_snap->string_to_date(last_layout_update));
+        time_t const last_update_of_default_theme(f_snap->string_to_date(last_layout_update));
+        if(last_update_of_default_theme == static_cast<time_t>(-1))
+        {
+            throw snap_logic_exception(QString("string_to_date(%1) failed in layout::install_layout()").arg(last_layout_update));
+        }
         last_updated_value.setInt64Value(last_update_of_default_theme * 1000000LL);
     }
     else

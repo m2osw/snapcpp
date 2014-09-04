@@ -2984,7 +2984,7 @@ bool users::register_user(QString const& email, QString const& password)
     content::path_info_t user_ipath;
     user_ipath.set_path(QString("%1/%2").arg(user_path).arg(identifier));
     content::content *content_plugin(content::content::instance());
-    snap_version::version_number_t const branch_number(content_plugin->get_current_user_branch(user_ipath.get_key(), content_plugin->get_plugin_name(), "", true));
+    snap_version::version_number_t const branch_number(content_plugin->get_current_user_branch(user_ipath.get_key(), "", true));
     user_ipath.force_branch(branch_number);
     // default revision when creating a new branch
     user_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));

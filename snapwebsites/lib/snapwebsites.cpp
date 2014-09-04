@@ -1882,7 +1882,7 @@ void quiet_error_callback::on_redirect(
     f_error = true;
     if(f_log)
     {
-        SNAP_LOG_ERROR("error #")(static_cast<int>(http_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details)(" (path: ")(path);
+        SNAP_LOG_ERROR("error #")(static_cast<int>(http_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details)(" (would redirect to: \"")(path)("\")");
     }
 }
 
