@@ -4527,7 +4527,8 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     // define the key
     QString last_revision_key(QString("%1::%2::%3")
                 .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION)).arg(branch));
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                .arg(branch));
     if(!locale.isEmpty())
     {
         last_revision_key += "::" + locale;
@@ -4696,6 +4697,25 @@ void content::set_branch(QString const& key, snap_version::version_number_t bran
     // save the data key in the content table
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     content_table->row(key)->cell(current_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
+
+    // Last branch
+    QString const last_branch_key(QString("%1::%2")
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+    QtCassandra::QCassandraValue last_branch_value(content_table->row(key)->cell(last_branch_key)->value());
+    if(last_branch_value.nullValue())
+    {
+        // last branch does not exist yet, create it
+        content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
+    }
+    else
+    {
+        snap_version::version_number_t const last_branch(last_branch_value.uint32Value());
+        if(branch > last_branch)
+        {
+            content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
+        }
+    }
 }
 
 
@@ -4953,6 +4973,26 @@ void content::set_current_revision(QString const& key, snap_version::version_num
     // get the data key from the content table
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     content_table->row(key)->cell(current_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+
+    // Last revision
+    QString const last_revision_key(QString("%1::%2::%3")
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                    .arg(branch));
+    QtCassandra::QCassandraValue const revision_value(content_table->row(key)->cell(last_revision_key)->value());
+    if(revision_value.nullValue())
+    {
+        // last revision does not exist yet, create it
+        content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+    }
+    else
+    {
+        snap_version::version_number_t const last_revision(revision_value.uint32Value());
+        if(revision > last_revision)
+        {
+            content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
+        }
+    }
 }
 
 
