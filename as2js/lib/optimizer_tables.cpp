@@ -47,6 +47,7 @@ SOFTWARE.
 // Actually optimization entries
 #include    "optimizer_additive.ci"
 #include    "optimizer_logical.ci"
+#include    "optimizer_statements.ci"
 
 namespace as2js
 {
@@ -90,12 +91,13 @@ namespace
 optimization_tables_t const g_optimizer_tables[] =
 {
     {
-        g_optimizer_additive_table,
-        sizeof(g_optimizer_additive_table) / sizeof(g_optimizer_additive_table[0])
+        POINTER_AND_COUNT(g_optimizer_additive_table)
     },
     {
-        g_optimizer_logical_table,
-        sizeof(g_optimizer_logical_table) / sizeof(g_optimizer_logical_table[0])
+        POINTER_AND_COUNT(g_optimizer_logical_table)
+    },
+    {
+        POINTER_AND_COUNT(g_optimizer_statements_table)
     }
 };
 

@@ -1104,6 +1104,9 @@ char const g_optimizer_additive[] =
 char const g_optimizer_logical[] =
 #include "test_as2js_optimizer_logical.ci"
 ;
+char const g_optimizer_statements[] =
+#include "test_as2js_optimizer_statements.ci"
+;
 
 
 
@@ -1339,6 +1342,11 @@ void As2JsOptimizerUnitTests::test_optimizer_additive()
 void As2JsOptimizerUnitTests::test_optimizer_logical()
 {
     run_tests(g_optimizer_logical, "test_parser_logical.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_statements()
+{
+    run_tests(g_optimizer_statements, "test_parser_statements.json");
 }
 
 

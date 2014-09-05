@@ -1,0 +1,76 @@
+// logical
+[
+
+    // if(true) a => a
+    {
+        "verbose": true,
+        "name": "if(true) a -> a",
+        "program": "if(true) a *= 27;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IF",
+                            "children": [
+                                {
+                                    "node type": "TRUE"
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "ASSIGNMENT_MULTIPLY",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                },
+                                                {
+                                                    "node type": "INT64",
+                                                    "integer": 27
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "DIRECTIVE_LIST",
+                            "children": [
+                                {
+                                    "node type": "ASSIGNMENT_MULTIPLY",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 27
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+]
+// vim: ts=4 sw=4 et

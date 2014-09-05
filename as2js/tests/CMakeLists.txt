@@ -94,6 +94,7 @@ json_to_cpp(parser)
 
 json_to_cpp(optimizer_additive)
 json_to_cpp(optimizer_logical)
+json_to_cpp(optimizer_statements)
 
 
 
@@ -179,6 +180,7 @@ add_executable(${PROJECT_NAME}
     test_as2js_parser.cpp
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_additive.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_logical.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_statements.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
     test_as2js_position.cpp
