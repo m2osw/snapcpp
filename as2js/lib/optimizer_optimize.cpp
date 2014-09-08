@@ -348,8 +348,16 @@ void optimizer_func_REMOVE(node_pointer_vector_t const& node_array, optimization
 {
     uint32_t src(optimize->f_indexes[0]);
 
-    // simply remove from the parent, the smart pointers take care of the rest
-    node_array[src]->set_parent(nullptr);
+    if(src == 0)
+    {
+        // ah... we cannot remove this one, instead mark it as unknown
+        node_array[src]->to_unknown();
+    }
+    else
+    {
+        // simply remove from the parent, the smart pointers take care of the rest
+        node_array[src]->set_parent(nullptr);
+    }
 }
 
 
@@ -450,6 +458,40 @@ void optimizer_func_SWAP(node_pointer_vector_t const& node_array, optimization_o
 }
 
 
+/** \brief Apply an TO_CONDITIONAL function.
+ *
+ * This function replaces a number with a conditional.
+ *
+ * \li 0 -- source 1 (true/false expression)
+ * \li 1 -- source 2 (result if true)
+ * \li 2 -- source 3 (result if false)
+ * \li 3 -- destination (destination)
+ *
+ * \exception exception_internal_error
+ * The function may attempt to convert the input to floating point numbers.
+ * If that fails, this exception is raised. The Optimizer matching mechanism
+ * should, however, prevent all such problems.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_TO_CONDITIONAL(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             src3(optimize->f_indexes[2]),
+             dst(optimize->f_indexes[3]);
+
+    Node::pointer_t conditional(new Node(Node::node_t::NODE_CONDITIONAL));
+    conditional->append_child(node_array[src1]);
+    conditional->append_child(node_array[src2]);
+    conditional->append_child(node_array[src3]);
+
+    // save the result replacing the specified destination
+    node_array[dst]->replace_with(conditional);
+}
+
+
 /** \brief Apply a TO_FLOAT64 function.
  *
  * This function transforms a node to a floating point number. The
@@ -541,6 +583,33 @@ void optimizer_func_TO_STRING(node_pointer_vector_t const& node_array, optimizat
 }
 
 
+/** \brief Apply a WHILE_TRUE_TO_FOREVER function.
+ *
+ * This function transforms a 'while(true)' in a 'for(;;)' which is a bit
+ * smaller.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_WHILE_TRUE_TO_FOREVER(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src(optimize->f_indexes[0]),
+             dst(optimize->f_indexes[1]);
+
+    Node::pointer_t statements(node_array[src]);
+    Node::pointer_t for_statement(new Node(Node::node_t::NODE_FOR));
+    Node::pointer_t e1(new Node(Node::node_t::NODE_EMPTY));
+    Node::pointer_t e2(new Node(Node::node_t::NODE_EMPTY));
+    Node::pointer_t e3(new Node(Node::node_t::NODE_EMPTY));
+
+    node_array[dst]->replace_with(for_statement);
+    for_statement->append_child(e1);
+    for_statement->append_child(e2);
+    for_statement->append_child(e3);
+    for_statement->append_child(statements);
+}
+
+
 /** \brief Internal structure used to define a list of optimization functions.
  *
  * This structure is used to define a list of optimization functions which
@@ -603,10 +672,12 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_REMOVE         */ OPTIMIZER_FUNC(REMOVE),
     /* OPTIMIZATION_FUNCTION_SUBTRACT       */ OPTIMIZER_FUNC(SUBTRACT),
     /* OPTIMIZATION_FUNCTION_SWAP           */ OPTIMIZER_FUNC(SWAP),
+    /* OPTIMIZATION_FUNCTION_TO_CONDITIONAL */ OPTIMIZER_FUNC(TO_CONDITIONAL),
     /* OPTIMIZATION_FUNCTION_TO_FLOAT64     */ OPTIMIZER_FUNC(TO_FLOAT64),
     /* OPTIMIZATION_FUNCTION_TO_INT64       */ OPTIMIZER_FUNC(TO_INT64),
     /* OPTIMIZATION_FUNCTION_TO_NUMBER      */ OPTIMIZER_FUNC(TO_NUMBER),
-    /* OPTIMIZATION_FUNCTION_TO_STRING      */ OPTIMIZER_FUNC(TO_STRING)
+    /* OPTIMIZATION_FUNCTION_TO_STRING      */ OPTIMIZER_FUNC(TO_STRING),
+    /* OPTIMIZATION_FUNCTION_WHILE_TRUE_TO_FOREVER */ OPTIMIZER_FUNC(WHILE_TRUE_TO_FOREVER)
 };
 
 /** \brief The size of the optimizer list of optimization functions.

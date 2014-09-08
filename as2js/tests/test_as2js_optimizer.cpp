@@ -1101,6 +1101,9 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
 char const g_optimizer_additive[] =
 #include "test_as2js_optimizer_additive.ci"
 ;
+char const g_optimizer_conditional[] =
+#include "test_as2js_optimizer_conditional.ci"
+;
 char const g_optimizer_logical[] =
 #include "test_as2js_optimizer_logical.ci"
 ;
@@ -1337,6 +1340,11 @@ void As2JsOptimizerUnitTests::test_optimizer_invalid_nodes()
 void As2JsOptimizerUnitTests::test_optimizer_additive()
 {
     run_tests(g_optimizer_additive, "test_parser_additive.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_conditional()
+{
+    run_tests(g_optimizer_conditional, "test_parser_conditional.json");
 }
 
 void As2JsOptimizerUnitTests::test_optimizer_logical()

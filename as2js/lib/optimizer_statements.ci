@@ -34,11 +34,10 @@ SOFTWARE.
 */
 
 /** \file
- * \brief Optimizations applied against logical operators.
+ * \brief Optimizations applied against statements.
  *
- * This files defines variable optimizations applied to logical operators
- * such as '!!!a' which can safely become '!a', or '!true' which gets
- * optimized to 'false'.
+ * This files defines optimizations applied to statements
+ * such as 'if(false) a' which can safely be optimized out.
  */
 
 
@@ -86,6 +85,339 @@ optimization_match_t const g_optimizer_statements_if_true_then_a[] =
 };
 
 
+/** \brief Match 'if(false) a;'
+ *
+ * This table defines a match for the statements 'if(false) a;'.
+ */
+optimization_match_t const g_optimizer_statements_if_false_then_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_if),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
+            /* f_with_value */          g_optimizer_value_false,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // a
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'if(true) a; else b;'
+ *
+ * This table defines a match for the statements 'if(true) a; else b;'.
+ */
+optimization_match_t const g_optimizer_statements_if_true_then_a_else_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_if),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_true_literals),
+            /* f_with_value */          g_optimizer_value_true,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // a
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // b
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'if(false) a; else b;'
+ *
+ * This table defines a match for the statements 'if(false) a; else b;'.
+ */
+optimization_match_t const g_optimizer_statements_if_false_then_a_else_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_if),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
+            /* f_with_value */          g_optimizer_value_false,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // a
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // b
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'while(true) a;'
+ *
+ * This table defines a match for the statements 'while(true) a;'.
+ *
+ * \todo
+ * This optimization is wrong if the while is labeled and a break or
+ * a continue within that while reference that label.
+ */
+optimization_match_t const g_optimizer_statements_while_true_to_forever[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_while),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_true_literals),
+            /* f_with_value */          g_optimizer_value_true,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // a
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'while(false) a;'
+ *
+ * This table defines a match for the statements 'while(false) a;'.
+ *
+ * \todo
+ * This optimization is wrong if the while is labeled and a break or
+ * a continue within that while reference that label.
+ */
+optimization_match_t const g_optimizer_statements_while_false_to_nothing[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_while),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
+            /* f_with_value */          g_optimizer_value_false,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // a
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'do { a; } while(true);'
+ *
+ * This table defines a match for the statements 'do { a; } while(true);'.
+ *
+ * \todo
+ * This optimization is wrong if the do/while is labeled and a break or
+ * a continue within that do/while reference that label.
+ */
+optimization_match_t const g_optimizer_statements_do_while_true_to_forever[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_do),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        { // a
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_true_literals),
+            /* f_with_value */          g_optimizer_value_true,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'do { a; } while(false);'
+ *
+ * This table defines a match for the statements 'do { a; } while(false);'.
+ *
+ * \todo
+ * This optimization is wrong if the do/while is labeled and a break or
+ * a continue within that do/while reference that label.
+ */
+optimization_match_t const g_optimizer_statements_do_while_false_to_nothing[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_do),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        { // a
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_false_literals),
+            /* f_with_value */          g_optimizer_value_false,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'do { a; } while(false);'
+ *
+ * This table defines a match for the statements 'do { a; } while(false);'.
+ *
+ * \todo
+ * This optimization is wrong if the do/while is labeled and a break or
+ * a continue within that do/while reference that label.
+ */
+optimization_match_t const g_optimizer_statements_directive_list_directive_list[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_directive_list),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_directive_list),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
 
 
 /** \brief Optimize 'if(true) a' to 'a'.
@@ -100,6 +432,136 @@ optimization_entry_t const g_optimizer_statements_entry_if_true_then_a[] =
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_if_true_then_a),
         /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_2_0)
+    }
+};
+
+
+/** \brief Optimize 'if(false) a' to ''.
+ *
+ * This table defines the optimization of 'if(false) a' to ''.
+ */
+optimization_entry_t const g_optimizer_statements_entry_if_false_then_a[] =
+{
+    {
+        /* f_name */            "'if(false) a' -> ''",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_if_false_then_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_remove_0)
+    }
+};
+
+
+/** \brief Optimize 'if(true) a; else b;' to 'a'.
+ *
+ * This table defines the optimization of 'if(true) a; else b;' to 'a'.
+ */
+optimization_entry_t const g_optimizer_statements_entry_if_true_then_a_else_b[] =
+{
+    {
+        /* f_name */            "'if(true) a; else b;' -> 'a'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_if_true_then_a_else_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_2_0)
+    }
+};
+
+
+/** \brief Optimize 'if(false) a; else b;' to 'b'.
+ *
+ * This table defines the optimization of 'if(false) a; else b;' to 'b'.
+ */
+optimization_entry_t const g_optimizer_statements_entry_if_false_then_a_else_b[] =
+{
+    {
+        /* f_name */            "'if(true) a; else b;' -> 'b'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_if_false_then_a_else_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_3_0)
+    }
+};
+
+
+/** \brief Optimize 'while(true) a;' to 'for(;;) a;'.
+ *
+ * This table defines the optimization of 'while(true) a;' to 'for(;;) a;'.
+ */
+optimization_entry_t const g_optimizer_statements_entry_while_true_to_forever[] =
+{
+    {
+        /* f_name */            "'while(true) a;' -> 'for(;;) a;'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_while_true_to_forever),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_replace_while_true_with_forever_2)
+    }
+};
+
+
+/** \brief Optimize 'while(false) a;' to ';'.
+ *
+ * This table defines the optimization of 'while(false) a;' to ';'.
+ */
+optimization_entry_t const g_optimizer_statements_entry_while_false_to_nothing[] =
+{
+    {
+        /* f_name */            "'while(false) a;' -> ';'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_while_false_to_nothing),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_remove_0)
+    }
+};
+
+
+/** \brief Optimize 'do { a; } while(true);' to 'for(;;) a;'.
+ *
+ * This table defines the optimization of 'do { a; } while(true);'
+ * to 'for(;;) a;'.
+ */
+optimization_entry_t const g_optimizer_statements_entry_do_while_true_to_forever[] =
+{
+    {
+        /* f_name */            "'do { a; } while(true);' -> 'for(;;) a;'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_do_while_true_to_forever),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_replace_while_true_with_forever_1)
+    }
+};
+
+
+/** \brief Optimize 'do { a; } while(false);' to 'for(;;) a;'.
+ *
+ * This table defines the optimization of 'do { a; } while(false);'
+ * to 'for(;;) a;'.
+ */
+optimization_entry_t const g_optimizer_statements_entry_do_while_false_to_nothing[] =
+{
+    {
+        /* f_name */            "'do { a; } while(false);' -> 'a;'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_do_while_false_to_nothing),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_1_0)
+    }
+};
+
+
+/** \brief Optimize '{ { a; } }' to '{ a; }'.
+ *
+ * This table defines the optimization of '{ { a; } }' to '{ a; }'.
+ */
+optimization_entry_t const g_optimizer_statements_entry_directive_list_directive_list[] =
+{
+    {
+        /* f_name */            "'{ { a; } };' -> '{ a; }'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_statements_directive_list_directive_list),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_1_0)
     }
 };
 
@@ -119,6 +581,34 @@ optimization_table_t const g_optimizer_statements_table[] =
     // if(true)/if(false)
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_if_true_then_a)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_if_false_then_a)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_if_true_then_a_else_b)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_if_false_then_a_else_b)
+    },
+
+    // while(true)/while(false)
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_while_true_to_forever)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_while_false_to_nothing)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_do_while_true_to_forever)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_do_while_false_to_nothing)
+    },
+
+    // directive lists
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_statements_entry_directive_list_directive_list)
     }
 };
 

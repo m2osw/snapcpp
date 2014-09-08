@@ -44,8 +44,9 @@ SOFTWARE.
 // Optimization tables 
 #include    "optimizer_optimize.ci"
 
-// Actually optimization entries
+// Actual optimization entries
 #include    "optimizer_additive.ci"
+#include    "optimizer_conditional.ci"
 #include    "optimizer_logical.ci"
 #include    "optimizer_statements.ci"
 
@@ -92,6 +93,9 @@ optimization_tables_t const g_optimizer_tables[] =
 {
     {
         POINTER_AND_COUNT(g_optimizer_additive_table)
+    },
+    {
+        POINTER_AND_COUNT(g_optimizer_conditional_table)
     },
     {
         POINTER_AND_COUNT(g_optimizer_logical_table)

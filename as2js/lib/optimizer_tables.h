@@ -129,17 +129,19 @@ enum class optimization_function_t
     OPTIMIZATION_FUNCTION_REMOVE,
     OPTIMIZATION_FUNCTION_SUBTRACT,
     OPTIMIZATION_FUNCTION_SWAP,
+    OPTIMIZATION_FUNCTION_TO_CONDITIONAL,
     OPTIMIZATION_FUNCTION_TO_FLOAT64,
     OPTIMIZATION_FUNCTION_TO_INT64,
     OPTIMIZATION_FUNCTION_TO_NUMBER,
-    OPTIMIZATION_FUNCTION_TO_STRING
+    OPTIMIZATION_FUNCTION_TO_STRING,
+    OPTIMIZATION_FUNCTION_WHILE_TRUE_TO_FOREVER
 };
 
 
 struct optimization_optimize_t
 {
     optimization_function_t         f_function;
-    uint32_t                        f_indexes[3];   // number of indices used varies depending on the function
+    uint16_t                        f_indexes[6];   // number of indices used varies depending on the function
 };
 
 

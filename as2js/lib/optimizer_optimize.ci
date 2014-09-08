@@ -42,11 +42,11 @@ optimization_optimize_t const g_optimizer_optimize_to_number_1_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_NUMBER,
-        /* f_indexes */     { 1, 0, 0 }
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
     },
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
-        /* f_indexes */     { 1, 0, 0 }
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
     }
 };
 
@@ -54,7 +54,7 @@ optimization_optimize_t const g_optimizer_optimize_move_1_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
-        /* f_indexes */     { 1, 0, 0 }
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
     }
 };
 
@@ -62,7 +62,7 @@ optimization_optimize_t const g_optimizer_optimize_move_2_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
-        /* f_indexes */     { 2, 0, 0 }
+        /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
     }
 };
 
@@ -70,7 +70,15 @@ optimization_optimize_t const g_optimizer_optimize_move_2_1[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
-        /* f_indexes */     { 2, 1, 0 }
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_move_3_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
+        /* f_indexes */     { 3, 0, 0, 0, 0, 0 }
     }
 };
 
@@ -78,7 +86,7 @@ optimization_optimize_t const g_optimizer_optimize_move_3_1[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
-        /* f_indexes */     { 3, 1, 0 }
+        /* f_indexes */     { 3, 1, 0, 0, 0, 0 }
     }
 };
 
@@ -86,7 +94,7 @@ optimization_optimize_t const g_optimizer_optimize_move_4_2[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
-        /* f_indexes */     { 4, 2, 0 }
+        /* f_indexes */     { 4, 2, 0, 0, 0, 0 }
     }
 };
 
@@ -94,11 +102,19 @@ optimization_optimize_t const g_optimizer_optimize_if_logical_not_else[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SWAP,
-        /* f_indexes */     { 3, 4, 0 }
+        /* f_indexes */     { 3, 4, 0, 0, 0, 0 }
     },
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
-        /* f_indexes */     { 2, 1, 0 }
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_remove_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_REMOVE,
+        /* f_indexes */     { 0, 0, 0, 0, 0, 0 }
     }
 };
 
@@ -106,7 +122,7 @@ optimization_optimize_t const g_optimizer_optimize_remove_2[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_REMOVE,
-        /* f_indexes */     { 2, 0, 0 }
+        /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
     }
 };
 
@@ -114,7 +130,7 @@ optimization_optimize_t const g_optimizer_optimize_negate_1_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_NEGATE,
-        /* f_indexes */     { 1, 0, 0 }
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
     }
 };
 
@@ -122,7 +138,7 @@ optimization_optimize_t const g_optimizer_optimize_a_plus_b_1_2_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ADD,
-        /* f_indexes */     { 1, 2, 0 }
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     }
 };
 
@@ -130,7 +146,7 @@ optimization_optimize_t const g_optimizer_optimize_a_minus_b_1_2_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SUBTRACT,
-        /* f_indexes */     { 1, 2, 0 }
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     }
 };
 
@@ -138,7 +154,7 @@ optimization_optimize_t const g_optimizer_optimize_logical_not_1_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_NOT,
-        /* f_indexes */     { 1, 0, 0 }
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
     }
 };
 
@@ -146,7 +162,15 @@ optimization_optimize_t const g_optimizer_optimize_logical_xor_1_2_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_XOR,
-        /* f_indexes */     { 1, 2, 0 }
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_a_and_b_or_c[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_CONDITIONAL,
+        /* f_indexes */     { 2, 3, 4, 0, 0, 0 }
     }
 };
 
@@ -154,7 +178,7 @@ optimization_optimize_t const g_optimizer_optimize_a_concatenate_b_1_2_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_CONCATENATE,
-        /* f_indexes */     { 1, 2, 0 }
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     }
 };
 
@@ -162,7 +186,7 @@ optimization_optimize_t const g_optimizer_optimize_a_concatenate_b_nb_1_2_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_CONCATENATE,
-        /* f_indexes */     { 1, 2, 0 }
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     }
 };
 
@@ -170,9 +194,26 @@ optimization_optimize_t const g_optimizer_optimize_a_nb_concatenate_b_1_2_0[] =
 {
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_CONCATENATE,
-        /* f_indexes */     { 1, 2, 0 }
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     }
 };
+
+optimization_optimize_t const g_optimizer_optimize_replace_while_true_with_forever_1[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_WHILE_TRUE_TO_FOREVER,
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_replace_while_true_with_forever_2[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_WHILE_TRUE_TO_FOREVER,
+        /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
+    }
+};
+
 
 
 

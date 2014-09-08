@@ -57,6 +57,24 @@ Node::node_t const g_optimizer_match_any_literal[]
 };
 
 
+Node::node_t const g_optimizer_match_conditional[]
+{
+    Node::node_t::NODE_CONDITIONAL
+};
+
+
+Node::node_t const g_optimizer_match_directive_list[]
+{
+    Node::node_t::NODE_DIRECTIVE_LIST
+};
+
+
+Node::node_t const g_optimizer_match_do[]
+{
+    Node::node_t::NODE_DO
+};
+
+
 Node::node_t const g_optimizer_match_false[]
 {
     Node::node_t::NODE_FALSE
@@ -160,6 +178,12 @@ Node::node_t const g_optimizer_match_true_literals[]
     Node::node_t::NODE_INT64,
     Node::node_t::NODE_STRING,
     Node::node_t::NODE_TRUE
+};
+
+
+Node::node_t const g_optimizer_match_while[]
+{
+    Node::node_t::NODE_WHILE
 };
 
 

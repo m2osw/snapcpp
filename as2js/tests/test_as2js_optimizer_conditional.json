@@ -1,0 +1,99 @@
+// conditional
+[
+
+    // true ? a : b => a
+    {
+        //"verbose": true,
+        "name": "true ? a : b -> a",
+        "program": "true ? a : b;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CONDITIONAL",
+                            "children": [
+                                {
+                                    "node type": "TRUE"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "b"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "a"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // false ? a : b => a
+    {
+        //"verbose": true,
+        "name": "false ? a : b -> a",
+        "program": "false ? a : b;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CONDITIONAL",
+                            "children": [
+                                {
+                                    "node type": "FALSE"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "b"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "IDENTIFIER",
+                            "label": "b"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+]
+// vim: ts=4 sw=4 et

@@ -1829,27 +1829,22 @@
                                     "node type": "DIRECTIVE_LIST",
                                     "children": [
                                         {
-                                            "node type": "DIRECTIVE_LIST",
+                                            "node type": "ASSIGNMENT",
                                             "children": [
                                                 {
-                                                    "node type": "ASSIGNMENT",
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "b"
+                                                },
+                                                {
+                                                    "node type": "ADD",
                                                     "children": [
                                                         {
                                                             "node type": "IDENTIFIER",
-                                                            "label": "b"
+                                                            "label": "q"
                                                         },
                                                         {
-                                                            "node type": "ADD",
-                                                            "children": [
-                                                                {
-                                                                    "node type": "IDENTIFIER",
-                                                                    "label": "q"
-                                                                },
-                                                                {
-                                                                    "node type": "INT64",
-                                                                    "integer": 3
-                                                                }
-                                                            ]
+                                                            "node type": "INT64",
+                                                            "integer": 3
                                                         }
                                                     ]
                                                 }
@@ -2109,6 +2104,143 @@
                                             "label": "d"
                                         }
                                     ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // !!a ? b : c => a ? b : c
+    {
+        //"verbose": true,
+        "name": "!!a ? b : c -> a ? b : c",
+        "program": "!!a ? b : c;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CONDITIONAL",
+                            "children": [
+                                {
+                                    "node type": "LOGICAL_NOT",
+                                    "children": [
+                                        {
+                                            "node type": "LOGICAL_NOT",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "b"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "c"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CONDITIONAL",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "b"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "c"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a && b || c => a ? b : c
+    {
+        //"verbose": true,
+        "name": "a && b || c -> a ? b : c",
+        "program": "a && b || c;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_OR",
+                            "children": [
+                                {
+                                    "node type": "LOGICAL_AND",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "b"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "c"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CONDITIONAL",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "b"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "c"
                                 }
                             ]
                         }

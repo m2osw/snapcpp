@@ -195,6 +195,64 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 //};
 
 
+/** \brief Match 'a && b || c'
+ *
+ * This table defines a match for the expression 'a && b || c'.
+ */
+optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_or),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_and),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+            {
+                /* f_depth */               2,
+                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_with_value */          nullptr,
+                /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            },
+
+            {
+                /* f_depth */               2,
+                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_with_value */          nullptr,
+                /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
 /** \brief Match 'true || a'
  *
  * This table defines a match for the expression 'true || a'.
@@ -504,6 +562,74 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
 };
 
 
+/** \brief Match '!!a ? b : c'
+ *
+ * This table defines a match for the expression '!!a ? b : c'.
+ */
+optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_conditional),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        { // !!a
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+            {
+                /* f_depth */               2,
+                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_logical_not),
+                /* f_with_value */          nullptr,
+                /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            },
+
+                {
+                    /* f_depth */               3,
+                    /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                    /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+                    /* f_with_value */          nullptr,
+                    /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                    /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+                },
+
+        { // b
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        { // c
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
 /** \brief Match '!!!a'
  *
  * This table defines a match for the expression '!!!a', where 'a' can
@@ -622,6 +748,22 @@ optimization_entry_t const g_optimizer_logical_entry_false_and_a[] =
 //};
 
 
+/** \brief Optimize 'a && b || c' to 'a ? b : c'.
+ *
+ * This table defines the optimization of 'a && b || c' to 'a ? b : c'.
+ */
+optimization_entry_t const g_optimizer_logical_entry_a_and_b_or_c[] =
+{
+    {
+        /* f_name */            "'a && b || c' -> 'a ? b : c'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_a_and_b_or_c),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_and_b_or_c)
+    }
+};
+
+
 /** \brief Optimize 'true || a' to 'true'.
  *
  * This table defines the optimization of 'true || a' to 'true'.
@@ -723,6 +865,7 @@ optimization_entry_t const g_optimizer_logical_entry_if_logical_not_else[] =
     }
 };
 
+
 /** \brief Optimize 'for(a; !!b; c) d'.
  *
  * The '!!b' can be optimized as just 'b' because the for() instruction
@@ -737,6 +880,24 @@ optimization_entry_t const g_optimizer_logical_entry_for_logical_not_not[] =
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_for_not_not_b),
         /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_4_2)
+    }
+};
+
+
+/** \brief Optimize '!!a ? b : c'.
+ *
+ * The '!!a' can be optimized as just 'a' because the conditional instruction
+ * knows how to convert a to a Boolean without the need to use the logical
+ * NOT operator.
+ */
+optimization_entry_t const g_optimizer_logical_entry_conditional_logical_not_not[] =
+{
+    {
+        /* f_name */            "'!!a ? b : c' -> a ? b : c",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_conditional_not_not_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_3_1)
     }
 };
 
@@ -790,6 +951,9 @@ optimization_table_t const g_optimizer_logical_table[] =
     //{
     //    /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_a_and_false)
     //}
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_a_and_b_or_c)
+    },
 
     // logical OR
     {
@@ -813,6 +977,9 @@ optimization_table_t const g_optimizer_logical_table[] =
     },
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_for_logical_not_not)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_logical_entry_conditional_logical_not_not)
     }
 };
 
