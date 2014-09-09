@@ -220,8 +220,8 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_OUTPUT_PLUGIN: // this a forward declaration of the name of the "output" plugin...
         return "output";
 
-    case SNAP_NAME_CONTENT_OWNER:
-        return "content";
+    case SNAP_NAME_CONTENT_PAGE:
+        return "content::page";
 
     case SNAP_NAME_CONTENT_PAGE_TYPE:
         return "content::page_type";
@@ -3356,7 +3356,7 @@ void path_info_t::get_parent(path_info_t& parent_ipath) const
 
 void path_info_t::get_child(path_info_t& parent_ipath, QString const& child) const
 {
-    // since the path won't include the domain name, it will get
+    // since the path will not include the domain name, it will get
     // canonicalized automatically
     parent_ipath.set_path(f_cpath + "/" + child);
 }
@@ -4958,27 +4958,32 @@ QString content::generate_revision_key(QString const& key, QString const& revisi
  */
 void content::set_current_revision(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch)
 {
-    // key in the content table
+    // revision key in the content table
     QString current_key(QString("%1::%2::%3")
                 .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
                         ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION
                         : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION))
                 .arg(branch));
+
+    // key to the last revision
+    QString last_revision_key(QString("%1::%2::%3")
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                    .arg(branch));
+
     if(!locale.isEmpty())
     {
+        // append locale if defined
         current_key += "::" + locale;
+        last_revision_key += "::" + locale;
     }
 
     // get the data key from the content table
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     content_table->row(key)->cell(current_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
 
-    // Last revision
-    QString const last_revision_key(QString("%1::%2::%3")
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
-                    .arg(branch));
+    // avoid changing the revision if defined and larger or equal
     QtCassandra::QCassandraValue const revision_value(content_table->row(key)->cell(last_revision_key)->value());
     if(revision_value.nullValue())
     {
@@ -5236,7 +5241,7 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
         path_info_t destination_ipath;
         destination_ipath.set_path(destination_key);
         QString const link_name(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
-        QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
+        QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE));
         bool const source_unique(true);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, key, branch_number);
@@ -6561,12 +6566,12 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                 }
                 if(link_name == plugin_name)
                 {
-                    throw content_exception_invalid_content_xml("the \"name\" attribute of a <link> tag cannot be set to the plugin name (" + plugin_name + ")");
+                    throw content_exception_invalid_content_xml(QString("the \"name\" attribute of a <link> tag cannot be set to the plugin name (%1)").arg(plugin_name));
                 }
                 if(!link_name.contains("::"))
                 {
                     // force the owner in the link name
-                    link_name = plugin_name + "::" + link_name;
+                    link_name = QString("%1::%2").arg(plugin_name).arg(link_name);
                 }
                 if(link_name == get_name(SNAP_NAME_CONTENT_PAGE_TYPE))
                 {
@@ -6579,12 +6584,12 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                 }
                 if(link_to == plugin_name)
                 {
-                    throw content_exception_invalid_content_xml("the \"to\" attribute of a <link> tag cannot be set to the plugin name (" + plugin_name + ")");
+                    throw content_exception_invalid_content_xml(QString("the \"to\" attribute of a <link> tag cannot be set to the plugin name (%1)").arg(plugin_name));
                 }
                 if(!link_to.contains("::"))
                 {
                     // force the owner in the link name
-                    link_to = plugin_name + "::" + link_to;
+                    link_to = QString("%1::%2").arg(plugin_name).arg(link_to);
                 }
                 bool source_unique(true);
                 bool destination_unique(true);
@@ -6680,7 +6685,7 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
         if(!found_content_type)
         {
             QString const link_name(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
-            QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
+            QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE));
             bool const source_unique(true);
             bool const destination_unique(false);
             QString destination_path;
@@ -7399,6 +7404,8 @@ void content::on_backend_process()
  */
 void content::backend_process_status()
 {
+    SNAP_LOG_TRACE() << "backend_process: Content status auto adjustments.";
+
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QtCassandra::QCassandraTable::pointer_t processing_table(get_processing_table());
 
@@ -7425,20 +7432,30 @@ void content::backend_process_status()
         {
             path_info_t ipath;
             ipath.set_path(QString::fromUtf8(o.key().data()));
-            int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->value().int64Value());
-            if(last_changed < start_date)
+            if(content_table->exists(ipath.get_key())
+            && content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED)))
             {
-                // we are done with that page since we just reset the
-                // working status as expected so drop it (we do that first
-                // so in case it gets re-created in between, we will reset
-                // again later)
-                processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->value().int64Value());
+                if(last_changed < start_date)
+                {
+                    // we are done with that page since we just reset the
+                    // working status as expected so drop it (we do that first
+                    // so in case it gets re-created in between, we will reset
+                    // again later)
+                    processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
 
-                // it has been more than 10 minutes, reset the state
-                path_info_t::status_t status(ipath.get_status());
-                status.set_status(static_cast<path_info_t::status_t::status_type>(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value().uint32Value()));
-                status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
-                ipath.set_status(status);
+                    // it has been more than 10 minutes, reset the state
+                    path_info_t::status_t status(ipath.get_status());
+                    status.set_status(static_cast<path_info_t::status_t::status_type>(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value().uint32Value()));
+                    status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
+                    ipath.set_status(status);
+                }
+            }
+            else
+            {
+                // the row was deleted in between... or something of
+                // the sort, just ignore that entry altogether
+                processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
             }
         }
     }
@@ -7488,9 +7505,15 @@ void content::backend_process_status()
  * first get uploaded. One signal on that one could be to count the
  * number of time a file gets uploaded, if the counter increases
  * outregiously fast, it is probably not a good sign.
+ *
+ * \todo
+ * When the process finds content that is considered non secure,
+ * send an email to the content owner.
  */
 void content::backend_process_files()
 {
+    SNAP_LOG_TRACE() << "backend_process: Content file processing (check for viruses, etc.)";
+
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -8094,17 +8117,96 @@ void content::add_css(QDomDocument doc, QString const& name)
 }
 
 
+/** \brief Handle the content specific links from a cloned page.
+ *
+ * This function repairs parent links.
+ */
+void content::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination)
+{
+    if(source.name() == get_name(SNAP_NAME_CONTENT_PARENT)
+    && destination.name() == get_name(SNAP_NAME_CONTENT_CHILDREN))
+    {
+        // this is a special case as the cloned page parent is in most
+        // cases not the same as the cloned page's parent page; for
+        // example, if you put a page in the trashcan, the parent of
+        // the new page is /trashcan/!
+        path_info_t child;
+        child.set_path(clone);
+        path_info_t parent;
+        child.get_parent(parent);
+        links::link_info src(get_name(SNAP_NAME_CONTENT_PARENT), true, clone, branch_number);
+        links::link_info dst(get_name(SNAP_NAME_CONTENT_CHILDREN), false, parent.get_key(), get_current_branch(parent.get_key(), true));
+        links::links::instance()->create_link(src, dst);
+    }
+    else if(source.name() == get_name(SNAP_NAME_CONTENT_PAGE_TYPE)
+    && destination.name() == get_name(SNAP_NAME_CONTENT_PAGE))
+    {
+        links::link_info src(get_name(SNAP_NAME_CONTENT_PAGE_TYPE), true, clone, branch_number);
+        links::links::instance()->create_link(src, destination);
+    }
+    // else -- ignore all others for now (especially all children!)
+}
+
+
+/** \brief Get the page cloned.
+ *
+ * This signal is captured here because the links cannot work on
+ * the cloned tree directly (the links.h header cannot include
+ * the content.h file).
+ *
+ * So here we call functions on the links plugin to make it all
+ * work. The good thing (side effect) is that all the links are
+ * fixed by the time the other plugins page_cloned() function
+ * gets called.
+ *
+ * \param[in] tree  The tree of nodes that were cloned.
+ *
+ * \return always true so other modules always receive the signal.
+ */
+bool content::page_cloned_impl(cloned_tree_t const& tree)
+{
+    links::links *link_plugin(links::links::instance());
+    size_t const max_pages(tree.f_pages.size());
+    for(size_t idx(0); idx < max_pages; ++idx)
+    {
+        cloned_page_t const& page(tree.f_pages[idx]);
+        size_t const max_branches(page.f_branches.size());
+        for(size_t branch(0); branch < max_branches; ++branch)
+        {
+            snap_version::version_number_t const b(page.f_branches[branch].f_branch);
+            path_info_t source(page.f_source);
+            path_info_t destination(page.f_destination);
+            source.force_branch(b);
+            destination.force_branch(b);
+            link_plugin->adjust_links_after_cloning(source.get_branch_key(), destination.get_branch_key());
+        }
+    }
+
+    // always return true
+    return true;
+}
+
+
 /** \brief Copy a page to another location and additional features.
  *
  * This function is used to properly copy a page to another location.
  *
- * This feature is used by many others such as the "delete page" in which
+ * This feature is used by many others such as the "trash page" in which
  * case the page is "moved" to the trashcan. In that case, the existing
  * page is copied to the trashcan and the source is marked as deleted
  * (path_info_t::status_t::DELETED)
  *
  * It can also be used to simply clone a page to another location before
- * working on its content.
+ * working on that clone (i.e. that way you can offer templates for
+ * various type of pages...)
+ *
+ * \warning
+ * This function DOES NOT verify that a page can be cloned the way you
+ * are requesting the page to be cloned. In other words, as a programmer,
+ * you can create a big mess. This can be necessary when a module takes
+ * over another module data, however, for end users, it is very dangerous.
+ * It is preferable that you call another function such as the move_page()
+ * and trash_page() functions.
  *
  * \important
  * A clone is a copy which becomes its very own version of the page. In
@@ -8131,6 +8233,9 @@ void content::add_css(QDomDocument doc, QString const& name)
  * \param[in] destination  The destination where the source gets copied.
  *
  * \return true if the cloning worked smoothly, false otherwise
+ *
+ * \sa move_page()
+ * \sa trash_page()
  */
 bool content::clone_page(clone_info_t& source, clone_info_t& destination)
 {
@@ -8138,93 +8243,112 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
 // WARNING: This function is NOT yet functional, I am still looking into how
 //          to make the cloning work so it is not all incorrect
 
-
     struct sub_function
     {
-        bool clone(content *content_plugin, clone_info_t& source, clone_info_t& destination, int64_t const start_date)
+        sub_function(content *content_plugin, clone_info_t& source, clone_info_t& destination, int64_t const start_date)
+            : f_content_plugin(content_plugin)
+            , f_source(source)
+            , f_destination(destination)
+            , f_start_date(start_date)
+            , f_content_table(f_content_plugin->get_content_table())
+            , f_branch_table(f_content_plugin->get_branch_table())
+            , f_revision_table(f_content_plugin->get_revision_table())
+            , f_clones(source, destination)
+            //, f_result(true) -- auto-init
         {
-            // make sure that the content table was defined
-            QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-            QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-            QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        }
 
+        void clone_tree()
+        {
             // make sure the destination does not exist, if it does,
             // we cannot create the clone
             //
+            // if the parent does not exist, then all the children won't
+            // exist either so we can do that test just once at the top
+            //
             // TODO: add support for that case (i.e. to overwrite page A
             //       with page B data; we may want to first move page A
-            //       to the trashcan though!)
-            if(content_table->exists(destination.f_ipath.get_key()))
+            //       to the trashcan though, and then allow the overwrite
+            //       if the destination is marked as "deleted")
+            if(f_content_table->exists(f_destination.f_ipath.get_key()))
             {
-                SNAP_LOG_ERROR("clone_page() called with a destination (")(destination.f_ipath.get_key())(") which already exists.");
-                return false;
+                SNAP_LOG_ERROR("clone_page() called with a destination (")(f_destination.f_ipath.get_key())(") which already exists.");
+                f_result = false;
+                return;
             }
 
+            // we can clone the parent most page as is, then we go through
+            // the children, and the children of the children, etc.
+            clone_page(f_source.f_ipath, f_destination.f_ipath);
+
+            // now tell all the other plugins that we just cloned a page
+            f_content_plugin->page_cloned(f_clones);
+        }
+
+        void clone_children(path_info_t source_parent, path_info_t destination_parent)
+        {
+            QString const source_key(source_parent.get_key());
+            links::link_info info(get_name(SNAP_NAME_CONTENT_CHILDREN), false, source_key, source_parent.get_branch());
+            QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+            links::link_info child_info;
+            while(link_ctxt->next_link(child_info))
+            {
+                path_info_t src, dst;
+                src.set_path(child_info.key());
+                destination_parent.get_child(dst, child_info.key().mid(source_key.length()));
+                clone_page(src, dst);
+            }
+        }
+
+        void clone_page(path_info_t source, path_info_t destination)
+        {
             // setup the status using RAII
-            path_info_t::status_t src_now(source.f_ipath.get_status());
+            path_info_t::status_t src_now(source.get_status());
             if(src_now.is_working())
             {
                 // we cannot work on a page when another process is already
                 // working on that page...
-                SNAP_LOG_ERROR("clone_page() called with a source (")(source.f_ipath.get_key())(") which is being processed now (working: ")(static_cast<int>(src_now.get_working()))(").");
-                return false;
+                SNAP_LOG_ERROR("clone_page() called with a source (")(source.get_key())(") which is being processed now (working: ")(static_cast<int>(src_now.get_working()))(").");
+                f_result = false;
+                return;
             }
-            path_info_t::raii_status_t source_state(source.f_ipath, source.f_processing_state, source.f_done_state);
+            path_info_t::raii_status_t source_state(source, f_source.f_processing_state, f_source.f_done_state);
 
             // nothing to check for the destination,
             // at this point the current status would be undefined
             // (should be extended in the future though...)
-            path_info_t::raii_status_t destination_state(destination.f_ipath, destination.f_processing_state, destination.f_done_state);
+            path_info_t::raii_status_t destination_state(destination, f_destination.f_processing_state, f_destination.f_done_state);
 
             // save the date when we cloned the page
-            content_table->row(destination.f_ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_CLONED))->setValue(start_date);
+            f_content_table->row(destination.get_key())->cell(get_name(SNAP_NAME_CONTENT_CLONED))->setValue(f_start_date);
 
-std::cerr << "   copy content...\n";
             // the content table is just one row, we specialize it because
             // we can directly fix the branch/revision information (and that
             // makes it a lot easier and safer to manage the whole thing)
-            copy_content(content_table, source, destination);
+            copy_content(source, destination);
 
-std::cerr << "   copy branches...\n";
-            // copy all branches,
+            // copy all branches and their revisions,
+            //
             // the difference here is that we may have many branches and
-            // thus many rows to copy; using Cassandra we can find all
-            // the branches with a simple sweap, then use the dbutil copy
-            // function to copy the data
+            // thus many rows to copy; using the last_branch parameter we
+            // can find all the branches with a simple sweap, then use the
+            // dbutil copy function to copy the data
+            //
+            // Each branch has one or more revisions, these are copied at
+            // the same time
             //
             // TODO: add support to only copy the current branches (current
-            //       and working)
-            copy_branches(branch_table, source, destination);
+            //       and working); or "the last few branches"
+            cloned_page_t page;
+            page.f_source = source;
+            page.f_destination = destination;
+            copy_branches(page);
+            f_clones.f_pages.push_back(page);
 
-std::cerr << "   copy revisions...\n";
-            // copy all revisions,
-            // this is very similar to the branch copy, only it uses the
-            // revision table and the row predicate is slightly different
-            //
-            // TODO: add support to only copy the current revisions (current
-            //       and working)
-            copy_revisions(revision_table, source, destination);
-
-            // link both pages together in the current branch
-            //
-            // TBD: should the link appear in all branches?
-            //      (in case someone changes the branch...)
-            {
-std::cerr << "   link clone...\n";
-                bool const source_unique(true);
-                bool const destination_unique(false);
-                links::link_info link_source(get_name(SNAP_NAME_CONTENT_ORIGINAL_PAGE), source_unique, source.f_ipath.get_key(), source.f_ipath.get_branch());
-                links::link_info link_destination(get_name(SNAP_NAME_CONTENT_CLONE), destination_unique, destination.f_ipath.get_key(), destination.f_ipath.get_branch());
-                links::links::instance()->create_link(link_source, link_destination);
-            }
-
-            // now tell all the other plugins that we just cloned a page
-            content_plugin->page_cloned(source, destination);
-
-            return true;
+            clone_children(source, destination);
         }
 
-        void copy_content(QtCassandra::QCassandraTable::pointer_t content_table, clone_info_t& source, clone_info_t& destination)
+        void copy_content(path_info_t& source, path_info_t& destination)
         {
             QString revision_control(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL));
             QString current_branch_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY));
@@ -8235,8 +8359,8 @@ std::cerr << "   link clone...\n";
             // otherwise we would have problems with the status and a
             // few other things; also that way we can immediately fix
             // the branch and revision URIs
-            QtCassandra::QCassandraRow::pointer_t source_row(content_table->row(source.f_ipath.get_key()));
-            QtCassandra::QCassandraRow::pointer_t destination_row(content_table->row(destination.f_ipath.get_key()));
+            QtCassandra::QCassandraRow::pointer_t source_row(f_content_table->row(source.get_key()));
+            QtCassandra::QCassandraRow::pointer_t destination_row(f_content_table->row(destination.get_key()));
             QtCassandra::QCassandraColumnRangePredicate column_predicate;
             column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
             column_predicate.setIndex(); // behave like an index
@@ -8270,9 +8394,10 @@ std::cerr << "   link clone...\n";
                          || key.contains(current_working_revision_key)))
                         {
                             QString uri(source_cell->value().stringValue());
-                            if(uri.startsWith(source.f_ipath.get_key()))
+                            if(uri.startsWith(source.get_key()))
                             {
-                                uri = destination.f_ipath.get_key() + uri.mid(source.f_ipath.get_key().length());
+                                // fix the key so it matches the destination properly
+                                uri = destination.get_key() + uri.mid(source.get_key().length());
                                 destination_row->cell(cell_key)->setValue(uri);
                             }
                             else
@@ -8291,85 +8416,218 @@ std::cerr << "   link clone...\n";
             }
         }
 
-        void copy_branches(QtCassandra::QCassandraTable::pointer_t branch_table, clone_info_t& source, clone_info_t& destination)
+        void copy_branches(cloned_page_t& page)
         {
             // WARNING: Do not even remotely try to use a row predicate
             //          along the setStartRowName() and setEndRowName()
             //          functions because rows are NOT sorted using their
             //          key as is. Instead they use an MD5 checksum which
             //          is completely different.
-            path_info_t isource(source.f_ipath);
 
-            QString const source_key(source.f_ipath.get_key());
-            QString const destination_key(destination.f_ipath.get_key());
+            QString const source_key(page.f_source.get_key());
+            QString const destination_key(page.f_destination.get_key());
 
-            QtCassandra::QCassandraRowPredicate row_predicate;
-            // all the names end with '#' and a <version> number
-std::cerr << "source key for copy of branches [" << source_key << "]\n";
-            row_predicate.setStartRowName(source_key + "#");
-            // ':' is just after any digit
-            row_predicate.setEndRowName(source_key + "#:");
-            // 100 is good enough, someone who has more than 100 branches...
-            row_predicate.setCount(100);
-            for(;;)
+            // retrieve the last branch (inclusive)
+            QString last_branch_key(QString("%1::%2")
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+            QtCassandra::QCassandraValue last_branch_value(f_content_table->row(source_key)->cell(last_branch_key)->value());
+            snap_version::version_number_t last_branch;
+            if(last_branch_value.nullValue())
             {
-                branch_table->clearCache();
-                uint32_t const count(branch_table->readRows(row_predicate));
-                if(count == 0)
+                // some assumption, the last branch should always be defined
+                last_branch = 1;
+            }
+            else
+            {
+                last_branch = last_branch_value.uint32Value();
+            }
+
+            QString const links_namespace(QString("%1::").arg(links::get_name(links::SNAP_NAME_LINKS_NAMESPACE)));
+            QByteArray const links_bytearray(links_namespace.toAscii());
+
+            // all the names end with '#' and the <branch> number
+            // some branches may not exist (partial copy, branch zero)
+            for(snap_version::version_number_t branch(0); branch <= last_branch; ++branch)
+            {
+                QString const source_uri(f_content_plugin->generate_branch_key(source_key, branch));
+                QString const destination_uri(f_content_plugin->generate_branch_key(destination_key, branch));
+                if(f_branch_table->exists(source_uri)
+                && f_branch_table->row(source_uri)->exists(get_name(SNAP_NAME_CONTENT_CREATED)))
                 {
-                    // no more lists to process
-                    break;
-                }
-                QtCassandra::QCassandraRows const rows(branch_table->rows());
-                for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                        o != rows.end(); ++o)
-                {
-                    QString const source_uri(QString::fromUtf8(o.key().data()));
-std::cerr << "   -->> source uri for copy of branches [" << source_key << "] / [" << source_uri << "]\n";
-                    QString const destination_uri(QString("%1%2").arg(destination_key).arg(source_uri.mid(source_key.length())));
-std::cerr << "   -->> destination key [" << destination_key << "] becomes -->> [" << destination_uri << "]\n";
-                    dbutils::copy_row(branch_table, source_uri, branch_table, destination_uri);
+                    cloned_branch_t cloned_branch;
+                    cloned_branch.f_branch = branch;
+
+                    //dbutils::copy_row(f_branch_table, source_uri, f_branch_table, destination_uri);
+                    // Handle our own copy to avoid copying the links because
+                    // it could cause all sorts of weird side effects (i.e.
+                    // wrong parent, wrong children to cite only those two...)
+                    QtCassandra::QCassandraRow::pointer_t source_row(f_branch_table->row(source_uri));
+                    QtCassandra::QCassandraRow::pointer_t destination_row(f_branch_table->row(destination_uri));
+                    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+                    column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
+                    column_predicate.setIndex(); // behave like an index
+                    for(;;)
+                    {
+                        source_row->clearCache();
+                        source_row->readCells(column_predicate);
+                        QtCassandra::QCassandraCells const source_cells(source_row->cells());
+                        if(source_cells.isEmpty())
+                        {
+                            // done
+                            break;
+                        }
+                        // handle one batch
+                        for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+                                nc != source_cells.end();
+                                ++nc)
+                        {
+                            QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+                            QByteArray cell_key(source_cell->columnKey());
+                            // ignore all links
+                            if(!cell_key.startsWith(links_bytearray))
+                            {
+                                // anything else gets copied as is for now
+                                destination_row->cell(source_cell->columnKey())->setValue(source_cell->value());
+                            }
+                        }
+                    }
+
+                    // copy all revisions
+                    //
+                    // this is very similar to the branch copy, only it uses
+                    // the revision table and the last revision information
+                    // for that branch
+                    copy_revisions(page, cloned_branch);
+
+                    page.f_branches.push_back(cloned_branch);
+
+                    // link both pages together in this branch
+                    {
+                        // note: we do not need a specific revision when
+                        //       creating a link, however, we do need a
+                        //       specific branch so we create a new path
+                        //       info with the right branch, but leave
+                        //       the revision to whatever it is by default
+                        path_info_t si;
+                        bool source_unique(false);
+                        si.set_path(page.f_source.get_key());
+                        si.force_branch(branch);
+                        char const *clone_name(get_name(SNAP_NAME_CONTENT_CLONE));
+                        links::link_info link_source(clone_name, source_unique, si.get_key(), si.get_branch());
+
+                        path_info_t di;
+                        bool destination_unique(true);
+                        di.set_path(page.f_destination.get_key());
+                        di.force_branch(branch);
+                        char const *original_page_name(get_name(SNAP_NAME_CONTENT_ORIGINAL_PAGE));
+                        links::link_info link_destination(original_page_name, destination_unique, di.get_key(), di.get_branch());
+
+                        links::links::instance()->create_link(link_source, link_destination);
+                    }
                 }
             }
         }
 
-        void copy_revisions(QtCassandra::QCassandraTable::pointer_t revision_table, clone_info_t& source, clone_info_t& destination)
+        void copy_revisions(cloned_page_t& page, cloned_branch_t& cloned_branch)
         {
-            QString const source_key(source.f_ipath.get_key());
-            QString const destination_key(destination.f_ipath.get_key());
+            // TODO: add support to only copy the current revisions
+            //       (current and working, or a few latest revisions)
+            QString const source_key(page.f_source.get_key());
+            QString const destination_key(page.f_destination.get_key());
 
-            QtCassandra::QCassandraRowPredicate row_predicate;
-            // all the names end with '#', a <language>, a slash (/), a <branch> number, and a <revision> number
-            row_predicate.setStartRowName(source_key + "#");
-            // '~' is the last ASCII character (languages should be limited to a-z though)
-            row_predicate.setEndRowName(source_key + "#~");
-            // 100 should be good enough, although when programming revisions
-            // can grow really fast as each time you update a content.xml file
-            // the pages get updated in your database...
-            row_predicate.setCount(100);
+            // retrieve the last revision (inclusive)
+            // we have to use a predicate because there may be various
+            // languages for each branch; so we have a loop per
+            // branch/language and then an inner loop for each revision
+            QString last_revision_key(QString("%1::%2::%3")
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                    .arg(cloned_branch.f_branch));
+
+            QtCassandra::QCassandraColumnRangePredicate column_predicate;
+            column_predicate.setCount(10000); // 4 bytes per entry + row name of under 100 bytes, that's 1Mb max.
+            column_predicate.setIndex(); // behave like an index
+            column_predicate.setStartColumnName(last_revision_key); // no language (fully neutral) is a valid entry
+            column_predicate.setEndColumnName(last_revision_key + "|"); // languages are limited to letters
+            QtCassandra::QCassandraRow::pointer_t revision_row(f_content_table->row(source_key));
             for(;;)
             {
-                revision_table->clearCache();
-                uint32_t const count(revision_table->readRows(row_predicate));
-                if(count == 0)
+                revision_row->clearCache();
+                revision_row->readCells(column_predicate);
+                QtCassandra::QCassandraCells const new_cells(revision_row->cells());
+                if(new_cells.isEmpty())
                 {
-                    // no more lists to process
                     break;
                 }
-                QtCassandra::QCassandraRows const rows(revision_table->rows());
-                for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
-                        o != rows.end(); ++o)
+                // handle one batch
+                for(QtCassandra::QCassandraCells::const_iterator nc(new_cells.begin());
+                        nc != new_cells.end();
+                        ++nc)
                 {
-                    QString const source_uri(QString::fromUtf8(o.key().data()));
-                    QString const destination_uri(QString("%1%2").arg(destination_key).arg(source_uri.mid(source_key.length())));
-                    dbutils::copy_row(revision_table, source_uri, revision_table, destination_uri);
+                    // verify the entry is valid
+                    QtCassandra::QCassandraCell::pointer_t last_revision_cell(*nc);
+                    if(!last_revision_cell->value().nullValue())
+                    {
+                        // the revision number is the cell value
+                        // we need the row key to extract the language
+                        QString column_name(last_revision_cell->columnName());
+                        QString locale;
+                        if(last_revision_key != column_name)
+                        {
+                            int const pos(column_name.lastIndexOf(":"));
+                            if(pos < 0)
+                            {
+                                throw snap_logic_exception(QString("somehow the revision column_name \"%1\" does not include at least one ':'.")
+                                            .arg(column_name));
+                            }
+                            // extract the locale (language name)
+                            locale = column_name.mid(pos + 1);
+                        }
+                        snap_version::version_number_t last_revision(last_revision_cell->value().uint32Value());
+
+                        // all the revision names end with:
+                        //    '#' <locale> '/' <branch> '.' <revision>
+                        //
+                        // some revisions may not exist (partial copy)
+                        for(snap_version::version_number_t revision(0); revision <= last_revision; ++revision)
+                        {
+                            QString const source_uri(f_content_plugin->generate_revision_key(source_key, cloned_branch.f_branch, revision, locale));
+                            QString const destination_uri(f_content_plugin->generate_revision_key(destination_key, cloned_branch.f_branch, revision, locale));
+
+                            if(f_revision_table->exists(source_uri)
+                            && f_revision_table->row(source_uri)->exists(get_name(SNAP_NAME_CONTENT_CREATED)))
+                            {
+                                dbutils::copy_row(f_revision_table, source_uri, f_revision_table, destination_uri);
+
+                                cloned_branch.f_revisions.push_back(revision);
+                            }
+                        }
+                    }
                 }
             }
         }
+
+        bool result() const
+        {
+            return f_result;
+        }
+
+    private:
+        content *                                   f_content_plugin;
+        clone_info_t                                f_source;
+        clone_info_t                                f_destination;
+        int64_t const                               f_start_date;
+        QtCassandra::QCassandraTable::pointer_t     f_content_table;
+        QtCassandra::QCassandraTable::pointer_t     f_branch_table;
+        QtCassandra::QCassandraTable::pointer_t     f_revision_table;
+        cloned_tree_t                               f_clones;
+        controlled_vars::tbool_t                    f_result;
     };
 
-    sub_function f;
-    return f.clone(this, source, destination, f_snap->get_start_date());
+    sub_function f(this, source, destination, f_snap->get_start_date());
+    f.clone_tree();
+    return f.result();
 }
 
 
@@ -8388,9 +8646,26 @@ std::cerr << "   -->> destination key [" << destination_key << "] becomes -->> [
  * \param[in] ipath_destination  The path to the destination page.
  *
  * \return true if the move succeeds.
+ *
+ * \sa clone_page()
+ * \sa trash_page()
  */
 bool content::move_page(path_info_t& ipath_source, path_info_t& ipath_destination)
 {
+    // is the page deletable? (and thus movable?)
+    //
+    // (administrative pages, those created from content.xml, are nearly
+    // all marked as not deletable by default!)
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    QtCassandra::QCassandraValue prevent_delete(content_table->row(ipath_source.get_key())->cell(get_name(SNAP_NAME_CONTENT_PREVENT_DELETE))->value());
+    if(!prevent_delete.nullValue() && prevent_delete.signedCharValue())
+    {
+        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Forbidden Move",
+                "Sorry. this page is marked as undeletable and as such it cannot be moved.",
+                QString("User tried to move page \"%1\", which is locked (marked as undeletable).").arg(ipath_source.get_key()));
+        NOTREACHED();
+    }
+
     // setup the clone parameters
     clone_info_t source;
     source.f_ipath = ipath_source;
@@ -8422,9 +8697,26 @@ bool content::move_page(path_info_t& ipath_source, path_info_t& ipath_destinatio
  * \param[in] ipath  The path to move to the trash.
  *
  * \return true if the cloning worked as expected.
+ *
+ * \sa clone_page()
+ * \sa move_page()
  */
 bool content::trash_page(path_info_t& ipath)
 {
+    // is the page deletable?
+    //
+    // (administrative pages, those created from content.xml, are nearly
+    // all marked as not deletable by default!)
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    QtCassandra::QCassandraValue prevent_delete(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_PREVENT_DELETE))->value());
+    if(!prevent_delete.nullValue() && prevent_delete.signedCharValue())
+    {
+        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Forbidden Removal",
+                "Sorry. This page is marked as undeletable.",
+                QString("User tried to delete page \"%1\", which is locked.").arg(ipath.get_key()));
+        NOTREACHED();
+    }
+
     // create a destination path in the trashcan
     QString trashcan_path("trashcan");
 
@@ -8438,7 +8730,6 @@ bool content::trash_page(path_info_t& ipath)
     }
 
     // make sure that path exists
-    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     if(!content_table->exists(trashcan_path))
     {
         path_info_t trashcan_ipath;
@@ -8454,7 +8745,7 @@ bool content::trash_page(path_info_t& ipath)
 
         // TODO: the owner is the first person who deletes something on the
         //       website; that's probably wrong!
-        create_content(trashcan_ipath, get_name(SNAP_NAME_CONTENT_OWNER), "system-page");
+        create_content(trashcan_ipath, get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER), "system-page");
 
         // save the creation date, title, and description
         QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());

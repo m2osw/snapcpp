@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="sitemapxml::frequency">always</param>
     <!--param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param-->
-    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <!-- the home page is marked as "deletable" although it is not while
@@ -45,7 +45,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="sitemapxml::priority" type="float">0.2</param>
     <param name="sitemapxml::frequency">yearly</param>
-    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <param name="content::prevent_delete" type="int8" revision="global">0</param>
@@ -57,7 +57,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="sitemapxml::priority" type="float">0.15</param>
     <param name="sitemapxml::frequency">yearly</param>
-    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <param name="content::prevent_delete" type="int8" revision="global">0</param>
@@ -78,7 +78,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[parent(path) == "admin"]]>
     </param>
     <param name="list::selector">children</param>
-    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
     <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>

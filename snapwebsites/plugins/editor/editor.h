@@ -71,6 +71,7 @@ enum name_t
 {
     SNAP_NAME_EDITOR_DRAFTS_PATH,
     SNAP_NAME_EDITOR_LAYOUT,
+    SNAP_NAME_EDITOR_PAGE,
     SNAP_NAME_EDITOR_PAGE_TYPE,
     SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH,
     SNAP_NAME_EDITOR_TYPE_FORMAT_PATH
@@ -78,7 +79,12 @@ enum name_t
 char const *get_name(name_t name) __attribute__ ((const));
 
 
-class editor : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post, public layout::layout_boxes
+class editor : public plugins::plugin
+             , public links::links_cloned
+             , public path::path_execute
+             , public layout::layout_content
+             , public form::form_post
+             , public layout::layout_boxes
 {
 public:
     static int const    EDITOR_SESSION_ID_EDIT = 1;
@@ -134,6 +140,7 @@ public:
     void                on_process_post(QString const& uri_path);
     void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     virtual void        on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate);
+    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination);
 
     QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
     static save_mode_t  string_to_save_mode(QString const& mode);

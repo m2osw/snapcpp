@@ -311,7 +311,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
         QtCassandra::QCassandraValue layout_value(content::content::instance()->get_content_table()->row(ipath.get_key())->cell(column_name)->value());
         if(layout_value.nullValue())
         {
-            // that very content doesn't define a layout, check its type(s)
+            // that very content does not define a layout, check its type(s)
             layout_value = taxonomy::taxonomy::instance()->find_type_with(
                 ipath,
                 content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE),

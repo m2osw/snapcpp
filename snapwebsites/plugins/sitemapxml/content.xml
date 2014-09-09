@@ -21,11 +21,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- files that are 100% dynamically generated are defined here, but they do not get a title and body -->
   <content path="/sitemap.xml">
     <param name="content::final" type="int8" revision="global">1</param>
-    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
   <content path="/sitemap.xsl">
     <param name="content::final" type="int8" revision="global">1</param>
-    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
   <content path="/sitemap.txt">
     <param name="content::final" type="int8" revision="global">1</param>

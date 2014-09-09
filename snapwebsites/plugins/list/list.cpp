@@ -162,6 +162,10 @@ char const *get_name(name_t name)
  * \li Standard Link: List Page \<-\> Item Page
  * \li Ordered List: List Page -\> Item Page,
  *                   Item Page includes key used in List Page
+ *
+ * \note
+ * We do not repair list links when a page is cloned. If the clone is
+ * to be part of a list the links will be updated accordingly.
  */
 
 
@@ -919,6 +923,8 @@ void list::on_backend_action(QString const& action)
  */
 void list::on_backend_process()
 {
+    SNAP_LOG_TRACE() << "backend_process: update specialized lists.";
+
     // only process if the user clearly specified that we should do so;
     // we should never run in parallel with a background backend, hence
     // this flag (see the on_backend_action() function)
@@ -1113,7 +1119,7 @@ int list::generate_new_list_for_type(QString const& site_key, content::path_info
 
     content::path_info_t ipath;
     ipath.set_path(QString("%1%2").arg(site_key).arg(type));
-    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), false, ipath.get_key(), ipath.get_branch());
+    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PAGE), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
     while(link_ctxt->next_link(child_info))
@@ -1388,11 +1394,11 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
 
                 did_work = 1;
             }
-            // else -- nothing changed, we're done
+            // else -- nothing changed, we are done
         }
         else
         {
-            // it doesn't exist yet, add it
+            // it does not exist yet, add it
 
             // create a standard link between the list and the page item
             bool const source_unique(false);

@@ -129,6 +129,16 @@ public:
     {
         return f_name;
     }
+    QString cell_name() const
+    {
+        if(f_name.isEmpty())
+        {
+            // no name, return an empty string
+            return f_name;
+        }
+        // prepend "links" as a namespace for all links
+        return QString("%1::%2").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)).arg(f_name);
+    }
     QString const& key() const
     {
         return f_key;
@@ -145,7 +155,7 @@ public:
         {
             throw snap_logic_exception("row_key() was requested with the branch still undefined");
         }
-        return QString("%2#%3").arg(f_key).arg(f_branch);
+        return QString("%1#%2").arg(f_key).arg(f_branch);
     }
     QString link_key() const
     {
@@ -201,9 +211,17 @@ private:
     QString                                         f_link;
 };
 
+class links_cloned
+{
+public:
+    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, link_info const& source, link_info const& destination) = 0;
+};
+
 class links : public plugins::plugin
 {
 public:
+    static int const    DELETE_RECORD_COUNT = 1000;
+
                         links();
                         ~links();
 
@@ -214,13 +232,14 @@ public:
 
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_add_snap_expr_functions(snap_expr::functions_t& functions);
+    void                adjust_links_after_cloning(QString const& source_key, QString const& destination_key);
 
     // TBD should those be events? (or trigger events?)
     void                create_link(link_info const& src, link_info const& dst);
-    void                delete_link(link_info const& info, int const delete_record_count = 1000);
+    void                delete_link(link_info const& info, int const delete_record_count = DELETE_RECORD_COUNT);
     void                delete_this_link(link_info const& source, link_info const& destination);
 
-    QSharedPointer<link_context> new_link_context(link_info const& info, int const count = 1000);
+    QSharedPointer<link_context> new_link_context(link_info const& info, int const count = DELETE_RECORD_COUNT);
 
 private:
     void                initial_update(int64_t variables_timestamp);

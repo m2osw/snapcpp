@@ -68,6 +68,9 @@ public:
     void                on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
     void                on_create_content(content::path_info_t& path, const QString& owner, const QString& type);
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+    void                on_page_cloned(content::content::cloned_tree_t const& tree);
+
+    SNAP_SIGNAL(allow_shorturl, (content::path_info_t& ipath, QString const& owner, QString const& type, bool& allow), (ipath, owner, type, allow));
 
 private:
     void initial_update(int64_t variables_timestamp);

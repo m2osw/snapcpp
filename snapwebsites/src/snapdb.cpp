@@ -335,8 +335,8 @@ void snapdb::drop_tables(bool all)
     // there are re-created when we connect and refilled when
     // we access a page; obviously this is VERY dangerous on
     // a live system!
-    context->dropTable("content");
     context->dropTable("branch");
+    context->dropTable("content");
     context->dropTable("revision");
     context->dropTable("emails");
     context->dropTable("files");
@@ -345,9 +345,11 @@ void snapdb::drop_tables(bool all)
     context->dropTable("links");
     context->dropTable("list");
     context->dropTable("listref");
+    context->dropTable("processing");
+    context->dropTable("revision");
+    context->dropTable("sessions");
     context->dropTable("shorturl");
     context->dropTable("sites");
-    context->dropTable("sessions");
     context->dropTable("users");
 
     if(all)

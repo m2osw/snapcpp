@@ -32,6 +32,7 @@ enum name_t
     SNAP_NAME_PERMISSIONS_EDIT,
     SNAP_NAME_PERMISSIONS_GROUP,
     SNAP_NAME_PERMISSIONS_GROUP_RETURNING_REGISTERED_USER,
+    SNAP_NAME_PERMISSIONS_GROUPS,
     SNAP_NAME_PERMISSIONS_GROUPS_PATH,
     SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER,
     SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR,
@@ -76,7 +77,10 @@ public:
 
 
 
-class permissions : public plugins::plugin, public layout::layout_content, public server::backend_action
+class permissions : public plugins::plugin
+                  , public links::links_cloned
+                  , public layout::layout_content
+                  , public server::backend_action
 {
 public:
     class sets_t
@@ -127,6 +131,7 @@ public:
     virtual void            on_backend_action(QString const& action);
     void                    on_user_verified(content::path_info_t& ipath, int64_t identifier);
     void                    on_add_snap_expr_functions(snap_expr::functions_t& functions);
+    virtual void            repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination);
 
     SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
     SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));

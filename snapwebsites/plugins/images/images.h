@@ -86,7 +86,6 @@ public:
     virtual void        on_backend_action(QString const& action);
     virtual bool        on_path_execute(content::path_info_t& ipath);
 
-    void                on_backend_process();
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     void                on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type);
     void                on_modified_content(content::path_info_t& ipath);

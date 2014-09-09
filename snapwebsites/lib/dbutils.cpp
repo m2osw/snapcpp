@@ -256,7 +256,7 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
         strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
         name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
     }
-    else if(f_tableName == "data" && (key.startsWith(content_attachment_reference.toAscii())) )
+    else if(f_tableName == "branch" && (key.startsWith(content_attachment_reference.toAscii())) )
     {
         name = content_attachment_reference;
         name += key_to_string( key.mid( content_attachment_reference.length() ) );
@@ -445,7 +445,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // same as previous only this can be huge so we limit it
         return CT_hexarray_limited_value;
     }
-    else if((f_tableName == "data" && n == "content::attachment")
+    else if((f_tableName == "branch" && n == "content::attachment")
          || (f_tableName == "files" && f_rowName == "javascripts")
          || (f_tableName == "files" && f_rowName == "css")
          )

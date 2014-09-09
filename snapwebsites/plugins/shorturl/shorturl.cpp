@@ -21,6 +21,7 @@
 #include "../messages/messages.h"
 
 #include "not_reached.h"
+#include "log.h"
 
 #include <QtCassandra/QCassandraLock.h>
 
@@ -104,6 +105,7 @@ void shorturl::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(shorturl, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(shorturl, "content", content::content, create_content, _1, _2, _3);
+    SNAP_LISTEN(shorturl, "content", content::content, page_cloned, _1);
     SNAP_LISTEN(shorturl, "path", path::path, can_handle_dynamic_path, _1, _2);
 }
 
@@ -166,13 +168,12 @@ int64_t shorturl::do_update(int64_t last_updated)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void shorturl::initial_update(int64_t variables_timestamp)
 {
+    static_cast<void>(variables_timestamp);
+
     get_shorturl_table();
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Update the database with our shorturl references.
@@ -182,13 +183,12 @@ void shorturl::initial_update(int64_t variables_timestamp)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void shorturl::content_update(int64_t variables_timestamp)
 {
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Initialize the content table.
@@ -254,13 +254,13 @@ void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement
     if(ipath.get_cpath().startsWith("s/"))
     {
         bool ok;
-        int64_t const identifier(ipath.get_cpath().mid(2).toLongLong(&ok, 36));
+        uint64_t const identifier(ipath.get_cpath().mid(2).toULongLong(&ok, 36));
         if(ok)
         {
             QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
             QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
             QtCassandra::QCassandraValue identifier_value;
-            identifier_value.setInt64Value(identifier);
+            identifier_value.setUInt64Value(identifier);
             QtCassandra::QCassandraValue url(shorturl_table->row(index)->cell(identifier_value.binaryValue())->value());
             if(!url.nullValue())
             {
@@ -329,13 +329,59 @@ void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomEleme
 }
 
 
-void shorturl::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
+/** \brief Whether that URL supports short URL.
+ *
+ * If you create a plugin that creates pages that do not require a short
+ * URL (i.e. sitemap.xml) then you may implement this signal and set the
+ * \p allow parameter to false to avoid wasting time and resources.
+ *
+ * \param[in] ipath  The path receiving a short URL.
+ * \param[in] owner  The owner of the new page (a plugin name).
+ * \param[in] type  The type of page.
+ * \param[in,out] allow  Whether the path should accept a short URL.
+ *
+ * \return This function returns true if this plugin does not considers
+ *         the \p ipath as a path that does not require a short URL.
+ */
+bool shorturl::allow_shorturl_impl(content::path_info_t& ipath, QString const& owner, QString const& type, bool& allow)
 {
     static_cast<void>(owner);
     static_cast<void>(type);
 
     // do not ever create short URLs for admin pages
     if(ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/"))
+    {
+        // do not allow those
+        allow = false;
+        return false;
+    }
+
+    // force the default to 'true' in case another plugin calls this
+    // signal improperly
+    allow = true;
+
+    return true;
+}
+
+
+/** \brief Implementation of the create_content() signal.
+ *
+ * For each page being created, we receive this callback. This allows us to
+ * quickly add the short URL information in that page.
+ *
+ * The plugin first checks whether the path accepts short URLs. If not,
+ * then the process ends immediately.
+ *
+ * \param[in] ipath  The page being created and receiving a short URL.
+ * \param[in] owner  The owner of the new page (a plugin name).
+ * \param[in] type  The type of page.
+ */
+void shorturl::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
+{
+    // allow this path to have a short URI?
+    bool allow(true);
+    allow_shorturl(ipath, owner, type, allow);
+    if(!allow)
     {
         return;
     }
@@ -348,7 +394,7 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
     QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
 
     // first generate a site wide unique identifier for that page
-    int64_t identifier(0);
+    uint64_t identifier(0);
     QString const id_key(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_ID_ROW));
     QString const identifier_key(get_name(SNAP_NAME_SHORTURL_IDENTIFIER));
     QtCassandra::QCassandraValue new_identifier;
@@ -357,10 +403,10 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
     {
         QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("shorturl"));
 
-        // In order to register the user in the contents we want a
-        // unique identifier for each user, for that purpose we use
-        // a special row in the users table and since we have a lock
-        // we can safely do a read-increment-write cycle.
+        // In order to register a unique URI contents we want a
+        // unique identifier for each URI, for that purpose we use
+        // a special row in the short URI table and since we have a
+        // lock we can safely do a read-increment-write cycle.
         if(shorturl_table->exists(id_key))
         {
             QtCassandra::QCassandraRow::pointer_t id_row(shorturl_table->row(id_key));
@@ -380,7 +426,7 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
                 );
                 return;
             }
-            identifier = current_identifier.int64Value();
+            identifier = current_identifier.uint64Value();
         }
 
         // XXX -- we could support a randomize too?
@@ -391,7 +437,7 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
         //       be hidden from preying eyes
         ++identifier;
 
-        new_identifier.setInt64Value(identifier);
+        new_identifier.setUInt64Value(identifier);
         shorturl_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
 
         // the lock automatically goes away here
@@ -440,6 +486,101 @@ void shorturl::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dyn
     }
 }
 
+
+/** \brief Someone just cloned a page.
+ *
+ * Check whether the short URL of the clone needs tweaking.
+ *
+ * If the source page had no short URL, then nothing happens and we
+ * return immediately.
+ *
+ * Otherwise, we create a new short URL when the source page remains
+ * as NORMAL or HIDDEN after the cloning process (i.e. actual copy).
+ *
+ * We do not create a new short URL in any other situation. Yet, we
+ * update the shortcut table to point to the new location of the
+ * page (destination URL.)
+ *
+ * \param[in] tree  The tree of pages that got cloned
+ */
+void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
+{
+    // the short URL is global (saved in the content table) so we do not
+    // need to do anything about the branches and revisions in this function
+
+    // got a short URL in the source?
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+
+    content::path_info_t::status_t::state_t const source_done_state(tree.f_source.f_done_state.get_state());
+    size_t const max_pages(tree.f_pages.size());
+    for(size_t idx(0); idx < max_pages; ++idx)
+    {
+        content::path_info_t source(tree.f_pages[idx].f_source);
+        QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(source.get_key()));
+        if(content_row->exists(get_name(SNAP_NAME_SHORTURL_URL)))
+        {
+            // need a change?
+            switch(source_done_state)
+            {
+            case content::path_info_t::status_t::state_t::UNKNOWN_STATE:
+            case content::path_info_t::status_t::state_t::CREATE:
+                SNAP_LOG_WARNING("cloning results with a invalid state (")(static_cast<int>(source_done_state))(")");
+                // since this is wrong here, it will be wrong on each
+                // iteration so we can as well return immediately
+                return;
+
+            case content::path_info_t::status_t::state_t::NORMAL:
+            case content::path_info_t::status_t::state_t::HIDDEN:
+                // in this case we want a new short URL!
+                {
+                    content::path_info_t destination(tree.f_pages[idx].f_destination);
+
+                    // get destination owner
+                    QString const owner(content_table->row(destination.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+
+                    // get destination type
+                    // TODO: this requires the link to have been updated already...
+                    QString type("page/public");
+                    links::link_info type_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, destination.get_key(), destination.get_branch());
+                    QSharedPointer<links::link_context> type_link_ctxt(links::links::instance()->new_link_context(type_info));
+                    links::link_info type_child_info;
+                    if(type_link_ctxt->next_link(type_child_info))
+                    {
+                        // should always be true because all pages have a type
+                        QString const type_key(type_child_info.key());
+                        int const pos(type_key.indexOf("/types/taxonomy/system/content-types/"));
+                        type = type_key.mid(pos + 37);
+                    }
+
+                    // now create a new short URL for this page
+                    on_create_content(destination, owner, type);
+                }
+                break;
+
+            case content::path_info_t::status_t::state_t::MOVED:
+            case content::path_info_t::status_t::state_t::DELETED:  // TBD -- do we really want that for deleted pages? we could also delete the short URL...
+                // in this case the destination can make use of the existing short URL
+                // however, we want to update the shorturl table so it points to
+                // 'destination' now
+                {
+                    content::path_info_t destination(tree.f_pages[idx].f_destination);
+
+                    QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
+                    QtCassandra::QCassandraValue identifier_value(content_table->row(destination.get_key())->cell(get_name(SNAP_NAME_SHORTURL_IDENTIFIER))->value());
+                    
+                    // make sure we have a valid identifier
+                    if(!identifier_value.nullValue())
+                    {
+                        QString const index(QString("%1/%2").arg(f_snap->get_website_key()).arg(get_name(SNAP_NAME_SHORTURL_INDEX_ROW)));
+                        shorturl_table->row(index)->cell(identifier_value.binaryValue())->setValue(destination.get_key());
+                    }
+                }
+                break;
+
+            }
+        }
+    }
+}
 
 
 // API for TinyURL.com is as follow (shortening http://linux.m2osw.com/zmeu-attack)

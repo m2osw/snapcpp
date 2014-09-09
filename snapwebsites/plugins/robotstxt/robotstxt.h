@@ -24,6 +24,16 @@ namespace snap
 namespace robotstxt
 {
 
+enum name_t
+{
+    SNAP_NAME_ROBOTSTXT_NOARCHIVE,
+    SNAP_NAME_ROBOTSTXT_NOFOLLOW,
+    SNAP_NAME_ROBOTSTXT_NOINDEX
+};
+char const *get_name(name_t name) __attribute__ ((const));
+
+
+
 class robotstxt_exception : public snap_exception
 {
 public:

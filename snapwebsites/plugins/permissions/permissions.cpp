@@ -76,6 +76,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_GROUP_RETURNING_REGISTERED_USER:
         return "permissions::group::returning_registered_user";
 
+    case SNAP_NAME_PERMISSIONS_GROUPS:
+        return "permissions::groups";
+
     case SNAP_NAME_PERMISSIONS_GROUPS_PATH:
         return "types/permissions/groups";
 
@@ -1096,7 +1099,7 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
             {
                 // finally, check if there are groups defined for this content type
                 // groups here function the same way as user groups
-                links::link_info perm_info("permissions::groups", false, tpath.get_key(), tpath.get_branch());
+                links::link_info perm_info(get_name(SNAP_NAME_PERMISSIONS_GROUPS), false, tpath.get_key(), tpath.get_branch());
                 link_ctxt = links::links::instance()->new_link_context(perm_info);
                 links::link_info right_info;
                 while(link_ctxt->next_link(right_info))
@@ -1516,7 +1519,7 @@ void permissions::recursive_add_user_rights(QString const& group, sets_t& sets)
 
     // get all the children and do a recursive call with them all
     {
-        QString const children_name("content::children");
+        QString const children_name(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN));
         links::link_info info(children_name, false, group_ipath.get_key(), group_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
@@ -1602,7 +1605,7 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
 
     // get all the children and do a recursive call with them all
     {
-        QString const children_name("content::children");
+        QString const children_name(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN));
         links::link_info info(children_name, false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
@@ -1927,6 +1930,24 @@ void permissions::on_generate_header_content(content::path_info_t& ipath, QDomEl
         // generate!
         ;
 }
+
+
+/** \brief Repair the permission links.
+ *
+ * When cloning a page, permissions will disappear. This function restores
+ * them from the source page.
+ *
+ * Later we may avoid copying certain permissions. At this point all the
+ * permissions get copied.
+ */
+void permissions::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination)
+{
+    // permission links are never unique
+    links::link_info src(source.name(), false, clone, branch_number);
+    links::links::instance()->create_link(src, destination);
+}
+
+
 
 
 SNAP_PLUGIN_END()

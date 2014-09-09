@@ -1,4 +1,4 @@
-// Snap Websites Server -- sitemap.xml
+// Snap Websites Server -- Sitemap XML
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@ enum name_t
 {
     SNAP_NAME_SITEMAPXML_COUNT,
     SNAP_NAME_SITEMAPXML_FREQUENCY,
+    SNAP_NAME_SITEMAPXML_INCLUDE,
     SNAP_NAME_SITEMAPXML_SITEMAP_XML,
     SNAP_NAME_SITEMAPXML_PRIORITY
 };
@@ -36,17 +37,17 @@ const char *get_name(name_t name) __attribute__ ((const));
 class sitemapxml_exception : public snap_exception
 {
 public:
-    sitemapxml_exception(const char *what_msg) : snap_exception("sitemap.xml: " + std::string(what_msg)) {}
-    sitemapxml_exception(const std::string& what_msg) : snap_exception("sitemap.xml: " + what_msg) {}
-    sitemapxml_exception(const QString& what_msg) : snap_exception("sitemap.xml: " + what_msg.toStdString()) {}
+    sitemapxml_exception(char const *       what_msg) : snap_exception("sitemap.xml", what_msg) {}
+    sitemapxml_exception(std::string const& what_msg) : snap_exception("sitemap.xml", what_msg) {}
+    sitemapxml_exception(QString const&     what_msg) : snap_exception("sitemap.xml", what_msg) {}
 };
 
 class sitemapxml_exception_missing_table : public sitemapxml_exception
 {
 public:
-    sitemapxml_exception_missing_table(const char *what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_missing_table(const std::string& what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_missing_table(const QString& what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_table(char const *       what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_table(std::string const& what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_table(QString const&     what_msg) : sitemapxml_exception(what_msg) {}
 };
 
 class sitemapxml_exception_invalid_xslt_data : public sitemapxml_exception
@@ -107,6 +108,7 @@ public:
     void                    on_generate_robotstxt(robotstxt::robotstxt *r);
     void                    on_backend_process();
     virtual bool            on_path_execute(content::path_info_t& ipath);
+    void                    on_allow_shorturl(content::path_info_t& ipath, QString const& owner, QString const& type, bool& allow);
 
     SNAP_SIGNAL(generate_sitemapxml, (sitemapxml *sitemap), (sitemap));
 

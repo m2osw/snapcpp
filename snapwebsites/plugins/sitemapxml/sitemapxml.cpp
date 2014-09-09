@@ -18,6 +18,7 @@
 #include "sitemapxml.h"
 
 #include "../permissions/permissions.h"
+#include "../shorturl/shorturl.h"
 
 #include "plugins.h"
 #include "log.h"
@@ -57,6 +58,9 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_SITEMAPXML_FREQUENCY:
         return "sitemapxml::frequency";
+
+    case SNAP_NAME_SITEMAPXML_INCLUDE:
+        return "sitemapxml::include";
 
     case SNAP_NAME_SITEMAPXML_SITEMAP_XML: // in site table, string
         return "sitemapxml::sitemap.xml";
@@ -342,8 +346,9 @@ void sitemapxml::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(sitemapxml, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
     SNAP_LISTEN0(sitemapxml, "server", server, backend_process);
+    SNAP_LISTEN(sitemapxml, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
+    SNAP_LISTEN(sitemapxml, "shorturl", shorturl::shorturl, allow_shorturl, _1, _2, _3, _4);
 }
 
 
@@ -596,7 +601,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 
     content::path_info_t include_ipath;
     include_ipath.set_path("types/taxonomy/system/sitemapxml/include");
-    links::link_info xml_sitemap_info("sitemapxml::include", false, include_ipath.get_key(), include_ipath.get_branch());
+    links::link_info xml_sitemap_info(get_name(SNAP_NAME_SITEMAPXML_INCLUDE), false, include_ipath.get_key(), include_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
     links::link_info xml_sitemap;
     while(link_ctxt->next_link(xml_sitemap))
@@ -704,6 +709,8 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
  */
 void sitemapxml::on_backend_process()
 {
+    SNAP_LOG_TRACE() << "backend_process: process sitemap.xml content.";
+
     uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
 
     // now give other plugins a chance to add dynamic links to the sitemap.xml
@@ -846,6 +853,48 @@ SNAP_LOG_TRACE() << "Updating [" << sitemap_xml << "]";
 void sitemapxml::add_url(const url_info& url)
 {
     f_url_info.push_back(url);
+}
+
+
+/** \brief Prevent short URL on sitemap.xml files.
+ *
+ * sitemap.xml really do not need a short URL so we prevent those on
+ * such paths.
+ *
+ * \param[in,out] ipath  The path being checked.
+ * \param[in] owner  The plugin that owns that page.
+ * \param[in] type  The type of this page.
+ * \param[in,out] allow  Whether the short URL is allowed.
+ */
+void sitemapxml::on_allow_shorturl(content::path_info_t& ipath, QString const& owner, QString const& type, bool& allow)
+{
+    static_cast<void>(owner);
+    static_cast<void>(type);
+
+    if(!allow)
+    {
+        // already forbidden, cut short
+        return;
+    }
+
+    //
+    // a sitemap XML file may include a number as in:
+    //
+    //    sitemap101.xml
+    //
+    // so our test uses the start and end of the filename; this is not
+    // 100% correct since sitemap-video.xml will match too...
+    //
+    QString const cpath(ipath.get_cpath());
+    if((cpath.startsWith("sitemap") && cpath.endsWith(".xml"))
+    || cpath == "sitemap.txt"
+    || cpath == "sitemap.xsl")
+    {
+        allow = false;
+    }
+
+    // note: we are the primary owner for more pages than just those that
+    //       should not receive a short URL so we do not do more than that
 }
 
 

@@ -170,7 +170,8 @@ void snap_backend::udp_monitor::run()
  *
  * This class handles backend processing for the snapserver.
  *
- * \todo Add more documentation about the backend and how it works.
+ * \todo
+ * Add more documentation about the backend and how it works.
  *
  * \sa snap_child
  */
@@ -387,6 +388,10 @@ void snap_backend::run_backend()
  * performed because otherwise the destination would be processed
  * twice in the end.
  *
+ * \todo
+ * Add necessary code to break the child if (1) the child is very long
+ * and (2) never contact us (i.e. watchdog signals.)
+ *
  * \param[in] uri  The URI of the site to be checked.
  */
 void snap_backend::process_backend_uri(QString const& uri)
@@ -407,6 +412,9 @@ void snap_backend::process_backend_uri(QString const& uri)
             exit(1);
         }
         // block until child is done
+        //
+        // XXX should we have a way to break the wait after a "long"
+        //     while in the event the child locks up...
         int status;
         wait(&status);
         // TODO: check status?

@@ -909,12 +909,15 @@ void users::on_create_content(content::path_info_t& ipath, QString const& owner,
                 QString const site_key(f_snap->get_site_key_with_slash());
                 QString const user_key(QString("%1%2/%3").arg(site_key).arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
 
+                content::path_info_t user_ipath;
+                user_ipath.set_path(user_key);
+
                 QString const link_name(get_name(SNAP_NAME_USERS_AUTHOR));
                 bool const source_unique(true);
                 links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
                 QString const link_to(get_name(SNAP_NAME_USERS_AUTHORED_PAGES));
                 bool const destination_multi(false);
-                links::link_info destination(link_to, destination_multi, user_key, ipath.get_branch());
+                links::link_info destination(link_to, destination_multi, user_ipath.get_key(), user_ipath.get_branch());
                 links::links::instance()->create_link(source, destination);
             }
         }
@@ -2991,6 +2994,11 @@ bool users::register_user(QString const& email, QString const& password)
     user_ipath.force_locale("xx");
     content_plugin->create_content(user_ipath, get_plugin_name(), "user-page");
 
+    // mark when the user was created in the branch
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    QtCassandra::QCassandraRow::pointer_t branch_row(branch_table->row(user_ipath.get_branch_key()));
+    branch_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+
     // save a default title and body
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
@@ -3738,6 +3746,29 @@ void users::on_cell_is_secure(QString const& table, QString const& row, QString 
         }
     }
 }
+
+
+/** \brief Repair the author link.
+ *
+ * When cloning a page, we repair the author link and then add
+ * a "cloned by" link to the current user.
+ *
+ * The "cloned by" link does NOT ever get "repaired".
+ */
+void users::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination)
+{
+    if(source.name() == get_name(SNAP_NAME_USERS_AUTHOR)
+    && destination.name() == get_name(SNAP_NAME_USERS_AUTHORED_PAGES))
+    {
+        links::link_info src(get_name(SNAP_NAME_USERS_AUTHOR), true, clone, branch_number);
+        links::links::instance()->create_link(src, destination);
+    }
+    // else ...
+    // users also have a status, but no one should allow a user to be cloned
+    // and thus the status does not need to be handled here (what would we
+    // do really with it here? mark the user as blocked?)
+}
+
 
 
 SNAP_PLUGIN_END()

@@ -78,7 +78,7 @@ enum name_t
     SNAP_NAME_CONTENT_MODIFIED,
     SNAP_NAME_CONTENT_ORIGINAL_PAGE,
     SNAP_NAME_CONTENT_OUTPUT_PLUGIN,
-    SNAP_NAME_CONTENT_OWNER,
+    SNAP_NAME_CONTENT_PAGE,
     SNAP_NAME_CONTENT_PAGE_TYPE,
     SNAP_NAME_CONTENT_PARENT,
     SNAP_NAME_CONTENT_PREVENT_DELETE,
@@ -569,7 +569,7 @@ private:
 
 
 
-class content : public plugins::plugin
+class content : public plugins::plugin, public links::links_cloned
 {
 public:
     enum param_type_t
@@ -616,6 +616,35 @@ public:
         path_info_t::status_t   f_done_state;
     };
 
+    struct cloned_branch_t
+    {
+        snap_version::version_number_t          f_branch;
+        snap_version::version_numbers_vector_t  f_revisions;
+    };
+    typedef std::vector<cloned_branch_t>    cloned_branches_t;
+
+    struct cloned_page_t
+    {
+        path_info_t                             f_source;
+        path_info_t                             f_destination;
+        cloned_branches_t                       f_branches;
+    };
+    typedef std::vector<cloned_page_t>      cloned_pages_t;
+
+    struct cloned_tree_t
+    {
+        cloned_tree_t(clone_info_t& source, clone_info_t& destination)
+            : f_source(source)
+            , f_destination(destination)
+            //, f_pages() -- auto-init
+        {
+        }
+
+        clone_info_t&                           f_source;
+        clone_info_t&                           f_destination;
+        cloned_pages_t                          f_pages;
+    };
+
                         content();
     virtual             ~content();
 
@@ -651,6 +680,7 @@ public:
     QString             set_revision_key(QString const& key, snap_version::version_number_t branch, QString const& revision, QString const& locale, bool working_branch);
     path_info_t         get_path_info(QString const& cpath, bool main_page);
     QString             get_user_key(QString const& key, snap_version::version_number_t branch, int64_t identifier);
+    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination);
     bool                clone_page(clone_info_t& source, clone_info_t& destination);
     bool                move_page(path_info_t& ipath_source, path_info_t& ipath_destination);
     bool                trash_page(path_info_t& ipath);
@@ -669,7 +699,7 @@ public:
     SNAP_SIGNAL(modified_content, (path_info_t& ipath), (ipath));
     SNAP_SIGNAL_WITH_MODE(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast), NEITHER);
     SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));
-    SNAP_SIGNAL_WITH_MODE(page_cloned, (clone_info_t& source, clone_info_t& destination), (source, destination), NEITHER);
+    SNAP_SIGNAL(page_cloned, (cloned_tree_t const& tree), (tree));
 
     //void                output() const;
 

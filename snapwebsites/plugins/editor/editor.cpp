@@ -65,6 +65,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_EDITOR_LAYOUT:
         return "editor::layout";
 
+    case SNAP_NAME_EDITOR_PAGE:
+        return "editor::page";
+
     case SNAP_NAME_EDITOR_PAGE_TYPE:
         return "editor::page_type";
 
@@ -475,7 +478,7 @@ void editor::process_new_draft()
     {
         QString const link_name(get_name(SNAP_NAME_EDITOR_PAGE_TYPE));
         bool const source_unique(true);
-        QString const link_to(get_name(SNAP_NAME_EDITOR_PAGE_TYPE));
+        QString const link_to(get_name(SNAP_NAME_EDITOR_PAGE));
         bool const destination_unique(false);
         content::path_info_t type_ipath;
         QString const type_key(site_key + "types/taxonomy/system/content-types/" + type);
@@ -2858,6 +2861,19 @@ void editor::on_generate_boxes_content(content::path_info_t& page_cpath, content
 
     // use the output generate main content in the end
     output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
+}
+
+
+/** \brief Repair the editor links.
+ *
+ * When cloning a page, the editor plugin may create an editor page type,
+ * which is used once a draft is saved as a full page. This type has to
+ * be duplicated here.
+ */
+void editor::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination)
+{
+    links::link_info src(source.name(), source.is_unique(), clone, branch_number);
+    links::links::instance()->create_link(src, destination);
 }
 
 

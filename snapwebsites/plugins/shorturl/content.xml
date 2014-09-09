@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>This path is used by the Short URL plugin. When detected by the plugin, it takes the number and redirects the user to the full path page. TODO: add a list of the last 10 public pages that were added to the website.</p>]]>
     </param>
     <param name="permissions::dynamic" type="int8" revision="global">1</param>
-    <link name="content::page_type" to="content::page_type" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/robotstxt/nofollow</link>
     <link name="robotstxt::noindex" to="robotstxt::noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
   </content>

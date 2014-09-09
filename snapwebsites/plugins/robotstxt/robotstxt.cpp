@@ -26,6 +26,38 @@
 
 SNAP_PLUGIN_START(robotstxt, 1, 0)
 
+
+/** \brief Get a fixed permissions plugin name.
+ *
+ * The permissions plugin makes use of different names in the database. This
+ * function ensures that you get the right spelling for a given name.
+ *
+ * \param[in] name  The name to retrieve.
+ *
+ * \return A pointer to the name.
+ */
+char const *get_name(name_t name)
+{
+    switch(name)
+    {
+    case SNAP_NAME_ROBOTSTXT_NOARCHIVE:
+        return "robotstxt::noarchive";
+
+    case SNAP_NAME_ROBOTSTXT_NOFOLLOW:
+        return "robotstxt::nofollow";
+
+    case SNAP_NAME_ROBOTSTXT_NOINDEX:
+        return "robotstxt::noindex";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_ROBOTSTXT_...");
+
+    }
+    NOTREACHED();
+}
+
+
 const char *        robotstxt::ROBOT_NAME_ALL = "*";
 const char *        robotstxt::ROBOT_NAME_GLOBAL = "";
 const char *        robotstxt::FIELD_NAME_DISALLOW = "Disallow";
@@ -338,7 +370,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
         {
 // linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
 // <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
-            links::link_info robots_info("robotstxt::noindex", false, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOINDEX), false, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -348,7 +380,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             }
         }
         {
-            links::link_info robots_info("robotstxt::nofollow", false, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOFOLLOW), false, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -358,7 +390,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             }
         }
         {
-            links::link_info robots_info("robotstxt::noarchive", false, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOARCHIVE), false, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
