@@ -92,6 +92,7 @@ void attachment::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(attachment, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(attachment, "content", content::content, page_cloned, _1);
 }
 
 
@@ -330,6 +331,72 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     f_snap->output(data.binaryValue());
 
     return true;
+}
+
+
+/** \brief Someone just cloned a page.
+ *
+ * Check whether the clone represents a file. If so, we want to add a
+ * reference from that file to this new page.
+ *
+ * This must happen in pretty much all cases.
+ *
+ * \param[in] tree  The tree of pages that got cloned.
+ */
+void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
+{
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+
+    char const *attachment_reference(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
+    QString const content_attachment_reference(QString("%1::").arg(attachment_reference));
+    size_t const max_pages(tree.f_pages.size());
+    for(size_t idx(0); idx < max_pages; ++idx)
+    {
+        content::content::cloned_page_t const& page(tree.f_pages[idx]);
+        size_t const max_branches(page.f_branches.size());
+        for(size_t branch(0); branch < max_branches; ++branch)
+        {
+            snap_version::version_number_t const b(page.f_branches[branch].f_branch);
+            content::path_info_t page_ipath(page.f_destination);
+            page_ipath.force_branch(b);
+
+            QtCassandra::QCassandraRow::pointer_t branch_row(branch_table->row(page_ipath.get_branch_key()));
+            QtCassandra::QCassandraColumnRangePredicate column_predicate;
+            column_predicate.setStartColumnName(content_attachment_reference);
+            column_predicate.setEndColumnName(QString("%1;").arg(attachment_reference));
+            column_predicate.setCount(100);
+            column_predicate.setIndex(); // behave like an index
+            for(;;)
+            {
+                branch_row->clearCache();
+                branch_row->readCells(column_predicate);
+                QtCassandra::QCassandraCells const branch_cells(branch_row->cells());
+                if(branch_cells.isEmpty())
+                {
+                    // done
+                    break;
+                }
+                // handle one batch
+                for(QtCassandra::QCassandraCells::const_iterator nc(branch_cells.begin());
+                                                                 nc != branch_cells.end();
+                                                                 ++nc)
+                {
+                    QtCassandra::QCassandraCell::pointer_t branch_cell(*nc);
+                    QByteArray cell_key(branch_cell->columnKey());
+
+                    // this key starts with SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE + "::"
+                    // and then represents an md5
+                    QByteArray md5(cell_key.mid( content_attachment_reference.length() ));
+
+                    // with that md5 we can access the files table
+                    signed char const one(1);
+                    files_table->row(md5)->cell(QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(page_ipath.get_key()))->setValue(one);
+                }
+            }
+        }
+    }
 }
 
 

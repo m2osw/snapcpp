@@ -445,7 +445,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // same as previous only this can be huge so we limit it
         return CT_hexarray_limited_value;
     }
-    else if((f_tableName == "branch" && n == "content::attachment")
+    else if((f_tableName == "revision" && n == "content::attachment")
          || (f_tableName == "files" && f_rowName == "javascripts")
          || (f_tableName == "files" && f_rowName == "css")
          )

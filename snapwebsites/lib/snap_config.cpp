@@ -85,7 +85,7 @@ void snap_config::read_config_file( const QString& filename )
     }
 
     // read the configuration file variables as parameters
-    char buf[256];
+    char buf[1024];
     for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line)
     {
         // make sure the last byte is '\0'

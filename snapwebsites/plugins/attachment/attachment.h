@@ -67,6 +67,7 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     virtual bool        on_path_execute(content::path_info_t& ipath);
+    void                on_page_cloned(content::content::cloned_tree_t const& tree);
 
 private:
     void                content_update(int64_t variables_timestamp);

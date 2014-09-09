@@ -1222,9 +1222,6 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
     column_predicate.setEndColumnName(QString("%1;").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
     column_predicate.setCount(100);
     column_predicate.setIndex(); // behave like an index
-std::cerr << "***\n";
-std::cerr << "*** from [" << column_predicate.startColumnName() << "] to [" << column_predicate.endColumnName()
-          << "] reading from [" << destination_branch << "] (copied from [" << source_branch << "])\n";
     int const branch_pos(source_branch.indexOf('#'));
     QString const source_uri(source_branch.mid(0, branch_pos));
     for(;;)
@@ -1235,7 +1232,6 @@ std::cerr << "*** from [" << column_predicate.startColumnName() << "] to [" << c
         QtCassandra::QCassandraCells const cells(source_row->cells());
         if(cells.empty())
         {
-std::cerr << "*** no more matches...\n";
             // all columns read
             break;
         }
@@ -1244,13 +1240,10 @@ std::cerr << "*** no more matches...\n";
                                                          ++cell_iterator)
         {
             QString const key(QString::fromUtf8(cell_iterator.key()));
-std::cerr << "*** getting somewhere? [" << key << "]\n";
 
             QString const dst_link(source_row->cell(key)->value().stringValue());
-std::cerr << "*** -- [" << dst_link << "]";
             link_info dst_li;
             dst_li.from_data(dst_link);
-std::cerr << " - " << dst_li.row_key() << " / " << dst_li.cell_name() << "\n";
 
             QString const other_row(dst_li.row_key());
             if(other_row != destination_branch)
@@ -1267,19 +1260,8 @@ std::cerr << " - " << dst_li.row_key() << " / " << dst_li.cell_name() << "\n";
                 }
                 QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(other_row));
                 QString const src_link(dst_row->cell(cell_name)->value().stringValue());
-std::cerr << "*** processing... [" << src_link << "]\n";
                 link_info src_li;
                 src_li.from_data(src_link);
-
-std::cerr << "*** From source got link \"" << dst_li.name()
-                       << "\" to tweak; [" << dst_li.row_key()
-                                  << "] [" << dst_li.branch()
-                                  << "] [" << dst_li.is_unique() << "]\n";
-
-std::cerr << "*** From destination got link \"" << src_li.name()
-                            << "\" to tweak; [" << src_li.row_key() << " / " << cell_name
-                                       << "] [" << src_li.branch()
-                                       << "] [" << src_li.is_unique() << "]\n";
 
                 QString const name(src_li.name());
                 int const namespace_end(name.indexOf(':'));
@@ -1292,13 +1274,11 @@ std::cerr << "*** From destination got link \"" << src_li.name()
                 links_cloned *link_owner(dynamic_cast<links_cloned *>(plugin_owner));
                 if(link_owner != nullptr)
                 {
-std::cerr << "plugin [" << plugin_name << "] handles that one...\n";
                     link_owner->repair_link_of_cloned_page(destination_uri, branch_number, src_li, dst_li);
                 }
             }
         }
     }
-std::cerr << "***\n";
 }
 
 
