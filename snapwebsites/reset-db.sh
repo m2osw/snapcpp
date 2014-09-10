@@ -9,15 +9,15 @@
 #
 if [ -z "$1" ]
 then
-	echo "usage: $0 distdir [config-file]"
+    echo "usage: $0 distdir [config-file]"
     exit 1
 fi
 
 CONFIGFILE=/etc/snapwebsites/snapserver.conf
 if [ -n "$2" ]
 then
-	CONFIGFILE=$2
-fi	
+    CONFIGFILE=$2
+fi
 
 echo
 echo "Resetting your Snap! database..."
