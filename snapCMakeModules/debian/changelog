@@ -1,3 +1,15 @@
+snapcmakemodules (1.0.19~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 09 Sep 2014 11:53:32 -0700
+
+snapcmakemodules (1.0.18~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 18 Aug 2014 11:57:40 -0700
+
 snapcmakemodules (1.0.17~saucy) saucy; urgency=high
 
   * Nightly build.

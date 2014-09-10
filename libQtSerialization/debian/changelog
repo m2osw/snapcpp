@@ -1,3 +1,15 @@
+libqtserialization (0.1.12~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 09 Sep 2014 11:54:35 -0700
+
+libqtserialization (0.1.11~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 18 Aug 2014 11:58:42 -0700
+
 libqtserialization (0.1.10~saucy) saucy; urgency=high
 
   * Nightly build.

@@ -1,3 +1,15 @@
+as2js (0.1.9~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 09 Sep 2014 11:54:13 -0700
+
+as2js (0.1.8~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 18 Aug 2014 11:58:20 -0700
+
 as2js (0.1.7~saucy) saucy; urgency=high
 
   * Nightly build.
