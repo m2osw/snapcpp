@@ -224,7 +224,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
         return last_updated;
     }
     int64_t new_last_updated(last_updated);
-    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), false, types_ipath.get_key(), types_ipath.get_branch());
+    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PAGE), false, types_ipath.get_key(), types_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info layout_info;
     while(link_ctxt->next_link(layout_info))
@@ -1373,7 +1373,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
             int64_t const last_install(last_updated_value.int64Value());
             if(last_install <= last_updated)
             {
-                // we're good already
+                // we are good already
                 return last_updated;
             }
         }
