@@ -325,7 +325,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
             }
         }
 
-        QString layout_script(layout_value.stringValue());
+        QString const layout_script(layout_value.stringValue());
 
         bool run_script(true);
         if(layout_script.startsWith("\"")
