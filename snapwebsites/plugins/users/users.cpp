@@ -144,6 +144,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_LOGOUT_ON:
         return "users::logout_on";
 
+    case SNAP_NAME_USERS_LONG_SESSIONS:
+        return "users::long_sessions";
+
     case SNAP_NAME_USERS_MULTIUSER:
         return "users::multiuser";
 
@@ -152,6 +155,9 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_USERS_NEW_PATH:
         return "types/users/new";
+
+    case SNAP_NAME_USERS_NOT_MAIN_PAGE:
+        return "users::not_main_page";
 
     case SNAP_NAME_USERS_ORIGINAL_EMAIL:
         return "users::original_email";
@@ -467,6 +473,10 @@ QString users::get_user_cookie_name()
  * Only this very function also checks whether the user is currently
  * logged in and defines the user key (email address) if so. Otherwise the
  * session can be used for things such as saving messages between redirects.
+ *
+ * \important
+ * This function cannot be called more than once. It would not properly
+ * reset variables if called again.
  */
 void users::on_process_cookies()
 {
@@ -479,9 +489,9 @@ void users::on_process_cookies()
     if(f_snap->cookie_is_defined(user_cookie_name))
     {
         // is that session a valid user session?
-        QString session_cookie(f_snap->cookie(user_cookie_name));
-        QStringList parameters(session_cookie.split("/"));
-        QString session_key(parameters[0]);
+        QString const session_cookie(f_snap->cookie(user_cookie_name));
+        QStringList const parameters(session_cookie.split("/"));
+        QString const session_key(parameters[0]);
         QString random_key; // no random key?
         if(parameters.size() > 1)
         {
@@ -532,13 +542,21 @@ void users::on_process_cookies()
                     }
                     else
                     {
-                        f_user_key = key;
-
                         // the user still has a valid session, but he may not
                         // be fully logged in... (i.e. not have as much
                         // permission as given with a fresh log in) -- we need
                         // an additional form to authorize the user to do more
                         f_user_logged_in = f_snap->get_start_time() < f_info->get_login_limit();
+
+                        // the website may opt out of the long session scheme
+                        // the following loses the user key if the website
+                        // administrator said so...
+                        QtCassandra::QCassandraValue long_sessions(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_LONG_SESSIONS)));
+                        if(f_user_logged_in
+                        || (long_sessions.nullValue() || long_sessions.signedCharValue()))
+                        {
+                            f_user_key = key;
+                        }
                     }
                 }
             }
@@ -573,6 +591,7 @@ void users::on_process_cookies()
         sessions::sessions::instance()->save_session(*f_info, new_random);
     }
 
+    // push new cookie info back to the browser
     http_cookie cookie(
             f_snap,
             user_cookie_name,
@@ -858,7 +877,7 @@ void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& p
     //       page (i.e. user reference in the last revision)
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const link_name(get_name(SNAP_NAME_USERS_AUTHOR));
-    links::link_info author_info(get_name(SNAP_NAME_USERS_AUTHOR), true, ipath.get_key(), ipath.get_branch());
+    links::link_info author_info(link_name, true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(author_info));
     links::link_info user_info;
     if(link_ctxt->next_link(user_info))
@@ -1326,7 +1345,8 @@ void users::verify_user(content::path_info_t& ipath)
         f_user_key.clear();
     }
 
-    QString session_id(ipath.get_cpath().mid(7));
+    // remove "verify/" so the path is just the session ID
+    QString const session_id(ipath.get_cpath().mid(7));
     sessions::sessions::session_info info;
     sessions::sessions *session(sessions::sessions::instance());
     // TODO: remove the ending characters such as " ", "/", "\" and "|"?
@@ -2523,7 +2543,7 @@ void users::process_password_form()
  */
 void users::process_verify_resend_form()
 {
-    QString email(f_snap->postenv("email"));
+    QString const email(f_snap->postenv("email"));
     QString details;
 
     // check to make sure that a user with that email address exists
@@ -2605,6 +2625,11 @@ void users::process_verify_resend_form()
  * This function runs the verify_user() function with the code that the
  * user entered in the form. This is similar to going to the
  * verify/\<verification_code> page to get an account confirmed.
+ *
+ * The verification code gets "simplified" as in all spaces get removed.
+ * The code cannot include spaces anyway and when someone does a copy &
+ * paste, at times, a space is added at the end. This way, such spaces
+ * will be ignored.
  */
 void users::process_verify_form()
 {
@@ -2613,7 +2638,7 @@ void users::process_verify_form()
     // get an error if redirect to ourselves
     QString verification_code(f_snap->postenv("verification_code"));
     content::path_info_t ipath;
-    ipath.set_path("verify/" + verification_code);
+    ipath.set_path("verify/" + verification_code.simplified());
     verify_user(ipath);
 }
 
@@ -3241,6 +3266,13 @@ void users::set_referrer( QString path )
     ipath.set_path(path);
     path = ipath.get_key();  // make sure it is canonicalized
 
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    if(!content_table->exists(ipath.get_key()))
+    {
+        SNAP_LOG_ERROR("path \"")(path)("\" was not found in the database?!");
+        return;
+    }
+
     // check whether this is our current page
     content::path_info_t main_ipath;
     main_ipath.set_path(f_snap->get_uri().path());
@@ -3258,6 +3290,20 @@ void users::set_referrer( QString path )
         {
             return;
         }
+    }
+
+    // if the page is linked to the "not-main-page" type, then it cannot
+    // be a referrer so we drop it right here (this is used by pages such
+    // as boxes and other pages that are not expected to become main pages)
+    // note that this does not prevent one from going to the page, only
+    // the system will not redirect one to such a page
+    QString const link_name(get_name(SNAP_NAME_USERS_NOT_MAIN_PAGE));
+    links::link_info not_main_page_info(link_name, true, path, ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(not_main_page_info));
+    links::link_info type_info;
+    if(link_ctxt->next_link(type_info))
+    {
+        return;
     }
 
     // use the current refererrer if there is one as the redirect page

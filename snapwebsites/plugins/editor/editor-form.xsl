@@ -178,6 +178,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
           test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <div class="snap-editor-dropdown-reset-value"><xsl:copy-of select="default/node()"/></div>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" has "display: none"
                a script shows them on load once ready AND if the value is empty
@@ -220,7 +221,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               <ul class="dropdown-selection">
                 <xsl:for-each select="value/item">
                   <li>
-                    <xsl:attribute name="class">dropdown-item<xsl:if test="@default='default'"> selected</xsl:if></xsl:attribute>
+                    <xsl:attribute name="class">dropdown-item<xsl:if test="@default='default'"> selected</xsl:if><xsl:if
+                        test="@class"><xsl:text> </xsl:text><xsl:value-of select="@class"/></xsl:if></xsl:attribute>
                     <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
                     <xsl:copy-of select="./node()"/>
                   </li>

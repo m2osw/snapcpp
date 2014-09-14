@@ -235,6 +235,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>This page type represents a user page. These pages have a different set of permissions which allows website owners to completely hide their list of registered users.</p>]]>
     </param>
   </content>
+  <content path="/types/taxonomy/system/content-types/page/not-main-page">
+    <param name="taxonomy::name">users::user_page</param>
+    <param name="content::title" revision="revision">Not a Main Page</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>This type is used to mark a page as "not a main page" meaning that it cannot be viewed as a referrer. This is used for pages such as boxes which should never be used as referrers.</p>]]>
+    </param>
+  </content>
   <content path="/types/taxonomy/system/users">
     <param name="content::title" revision="revision">User Tags</param>
     <param name="content::body" revision="revision">

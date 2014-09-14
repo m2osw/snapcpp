@@ -122,6 +122,30 @@ install(
 
 
 #################################################################################
+## Snap Sites table handling
+##
+project(snapsiteinfo)
+
+add_executable(${PROJECT_NAME}
+    snapsiteinfo.cpp
+)
+
+# while developing you may need to set LD_LIBRARY_PATH
+target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    ${ADVGETOPT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
 ## Snap DB process
 ##
 project(snapdb)

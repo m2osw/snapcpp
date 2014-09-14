@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.197
+ * Version: 0.0.3.203
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -889,6 +889,31 @@ snapwebsites.EditorWidgetTypeBase.prototype.saving = function(editor_widget, dat
 {
     // by default we do nothing (the defaults created by the
     // snapwebsites.EditorWidget.saving() function are good enough.)
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Reset the value of a widget.
+ *
+ * This function offers a way for programmers to dynamically reset the
+ * value of a widget.
+ *
+ * At this point it is specifically used to reset a Dropdown. A Dropdown
+ * widget may have a "reset value" which is not one of the values one
+ * can select in the list of items of the Dropdown.
+ *
+ * @param {!Object} editor_widget  The concerned widget
+ *
+ * @return {boolean}  true if the value got set.
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.resetValue = function(editor_widget) // virtual
+{
+    // by default we do nothing here, which means nothing gets reset by
+    // default... a type must overload this function so something
+    // happens
+
+    return false;
 };
 /*jslint unparam: false */
 
@@ -2070,6 +2095,8 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      final function discard();
  *      function getEditorForm() : EditorForm;
  *      function getEditorBase() : EditorBase;
+ *      function show() : Void;
+ *      function hide() : Void;
  *      final function getWidget() : jQuery;
  *      final function getWidgetContent() : jQuery;
  *      final function checkForBackgroundValue();
@@ -2433,6 +2460,50 @@ snapwebsites.EditorWidget.prototype.getEditorBase = function()
 };
 
 
+/** \brief Show the widget.
+ *
+ * This function is used to show the widget. If there is a label defined
+ * for that widget (i.e. with the for="..." attribute properly defined)
+ * then the label gets hidden too.
+ *
+ * \todo
+ * Add signatures as supported by jQuery (duration, complete), (options).
+ */
+snapwebsites.EditorWidget.prototype.show = function()
+{
+    var id = this.widget_.attr("field_name");
+
+    this.widget_.show();
+
+    if(id)
+    {
+        jQuery("label[for='" + id + "']").show();
+    }
+};
+
+
+/** \brief Hide the widget.
+ *
+ * This function is used to hide the widget. If there is a label defined
+ * for that widget (i.e. with the for="..." attribute properly defined)
+ * then the label gets hidden too.
+ *
+ * \todo
+ * Add signatures as supported by jQuery (duration, complete), (options).
+ */
+snapwebsites.EditorWidget.prototype.hide = function()
+{
+    var id = this.widget_.attr("field_name");
+
+    this.widget_.hide();
+
+    if(id)
+    {
+        jQuery("label[for='" + id + "']").hide();
+    }
+};
+
+
 /** \brief Retrieve the jQuery widget.
  *
  * This function returns the jQuery widget attached to this
@@ -2536,6 +2607,45 @@ snapwebsites.EditorWidget.prototype.getValue = function()
 {
     var data = this.saving();
     return data.result;
+};
+
+
+/** \brief Reset the value of the widget.
+ *
+ * This function resets the value of this widget. This generally only
+ * works with widgets that have a form of default value.
+ *
+ * If the parameters 'changed' is set to true then the widget is marked
+ * as modified, otherwise the modified flag is not changed.
+ *
+ * @param {!boolean} changed  Whether to mark the widget as modified.
+ *
+ * @return {boolean}  true if the value got set.
+ */
+snapwebsites.EditorWidget.prototype.resetValue = function(changed)
+{
+    var data;
+
+    if(!this.widgetType_.resetValue(this))
+    {
+        // could not even change the value
+        return false;
+    }
+    if(changed)
+    {
+        this.wasModified(true);
+    }
+    else
+    {
+        // programmer views this change as a 'current status' so we
+        // prevent the wasModified() from being true in this case
+        data = this.saving();
+        this.saved(data);
+    }
+    this.checkForBackgroundValue();
+
+    // it was set, whether it was modified is not our concern when returning
+    return true;
 };
 
 
@@ -3652,7 +3762,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
     {
         if(this.editorWidgets_.hasOwnProperty(key))
         {
-            // note that widget marked as "immediate-save" are ignored
+            // note that widgets marked as "immediate-save" are ignored
             // here because those were saved as soon as they were modified
             // so there is no need for us to save them again here (plus
             // in some cases it would be impossible like for file upload)
@@ -5476,6 +5586,86 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
 };
 
 
+/** \brief Reset the value of the specified editor widget.
+ *
+ * This function offers a way for programmers to dynamically reset the
+ * value of a dropdown widget. You should never call the editor widget
+ * type function, instead use the resetValue() function of the widget you
+ * want to reset the value of (it will make sure that the modified
+ * flag is properly set.)
+ *
+ * For a dropdown, it may reset the value back to the original as if the
+ * user had never selected anything. This may be a value found in the list
+ * of items, or it may be a string such as "Please select an option ...".
+ * If the default value is not equal to any one of the items, then the
+ * function makes sure to remove the "value" attribute of the widget.
+ *
+ * If the default value is an empty string, then that is used. If you do
+ * not want that resolution, you may want to use the setValue()
+ * function instead.
+ *
+ * \todo
+ * We want to add support for the item marked as the default. At this
+ * point we only support the default string used to as the user to
+ * please select an entry...
+ *
+ * @param {!Object} widget  The concerned widget.
+ *
+ * @return {boolean}  true if the value gets changed.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        d = w.children(".dropdown-items"),
+        item = d.children(".dropdown-selection").children(".dropdown-item"),
+        reset_value = w.children(".snap-editor-dropdown-reset-value"),
+        widget_change,
+        result;
+
+    // at this point the reset value cannot be a value defined in
+    // the widget;
+    //
+    // TODO: later add support for default values (pre-selected item)
+    //       when the widget itself does not otherwise offer a full
+    //       reset value...
+
+    item.removeClass("selected");
+
+    // check whether the value was defined
+    result = !!c.attr("value");
+
+    // reset the actual line edit
+    c.empty();
+    c.append(reset_value.html());
+
+    if(result)
+    {
+        // if "value" is defined, reset all of that and emit an event
+        c.removeAttr("value");
+        c.focus();
+        editor_widget.getEditorBase().setActiveElement(c);
+
+        // send an event for each change because the user
+        // make want to know even if the value was not actually
+        // modified
+        widget_change = jQuery.Event("widgetchange",
+            {
+                widget: editor_widget,
+                value: null
+            });
+        w.trigger(widget_change);
+
+        editor_widget.getEditorBase().checkModified();
+    }
+
+    // if the item had a value attribute, this returns true
+    // (i.e. it was modified)
+    return result;
+};
+
+
 /** \brief Save a new value in the specified editor widget.
  *
  * This function offers a way for programmers to dynamically change the
@@ -5515,6 +5705,22 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, valu
     }
     else
     {
+        //
+        // if not a number, search the list of items:
+        //
+        //   . first we check with the "value" attribute; the value
+        //     attribute is authoritative so we do want to test that
+        //     first; this is viewed as a strong selection since two
+        //     items cannot (should not at time of writing, really)
+        //     share the same value
+        //
+        //   . second we give the user a chance to select using the
+        //     HTML of one of the items (this is a requirement since
+        //     some entries may not use the "value" attribute); this
+        //     is somewhat flaky since two items could have the exact
+        //     same HTML and only the first one will be selected
+        //
+
         // Note: the filter may return more than one item, in that case
         //       we simply ignore the extra items
         that_item = item.filter(function()
@@ -5531,9 +5737,20 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, valu
                     return attr === value;
                 }
 
-                // no 'value' attribute, attempt to match the HTML data
-                return e.html() === value;
+                // not a match...
+                return false;
             }).eq(0);
+
+        if(!that_item.exists())
+        {
+            // Note: the filter may return more than one item, in that case
+            //       we simply ignore the extra items
+            that_item = item.filter(function()
+                {
+                    // no 'value' attribute, attempt to match the HTML data
+                    return jQuery(this).html() === value;
+                }).eq(0);
+        }
     }
 
     // TODO: if this Dropdown supports editing (i.e. not just read-only)

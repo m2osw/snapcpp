@@ -88,6 +88,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 <!ELEMENT item (#PCDATA|%html-data;)*>
 <!ATTLIST item default (default) #IMPLIED
+               class CDATA ""
                value CDATA #IMPLIED> <!-- value is the result, i.e. you could use 0, 1, 2, 3, instead of the string in the dropdown -->
 
 <!ELEMENT sizes (min|max|resize)+>
