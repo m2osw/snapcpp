@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.203
+ * Version: 0.0.3.206
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -2460,6 +2460,16 @@ snapwebsites.EditorWidget.prototype.getEditorBase = function()
 };
 
 
+/** \brief Set the focus to this widget if possible.
+ *
+ * This function is used to set the focus to this widget.
+ */
+snapwebsites.EditorWidget.prototype.focus = function()
+{
+    var id = this.widgetContent_.focus();
+};
+
+
 /** \brief Show the widget.
  *
  * This function is used to show the widget. If there is a label defined
@@ -4230,6 +4240,16 @@ snapwebsites.Editor = function()
 snapwebsites.inherits(snapwebsites.Editor, snapwebsites.EditorBase);
 
 
+/** \brief The Editor instance.
+ *
+ * This class is a singleton and as such it makes use of a static
+ * reference to itself. It gets created on load.
+ *
+ * \@type {snapwebsites.Editor}
+ */
+snapwebsites.EditorInstance = null; // static
+
+
 /** \brief The toolbar object.
  *
  * This variable represents the toolbar used by the editor.
@@ -5282,9 +5302,19 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
 
     c.keydown(function(e)
         {
-            if(c.is(".read-only"))
+            var keyCode = e.keyCode || e.which,
+                widget = c.parent();
+
+            // do not prevent the Tab and Enter
+            if(keyCode == 9 || keyCode == 13)
             {
-                // no typing allowed (this should be in the text-edit though
+                return;
+            }
+
+            if(widget.is(".read-only")
+            || widget.is(".disabled"))
+            {
+                // no typing allowed
                 e.preventDefault();
                 e.stopPropagation();
             }

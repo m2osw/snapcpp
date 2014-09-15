@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.26
+ * Version: 0.1.0.27
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -147,6 +147,16 @@ snapwebsites.Popup.PopupData;
  *          callback: function(string)}}
  */
 snapwebsites.Popup.PopupMessage;
+
+
+/** \brief The Popup instance.
+ *
+ * This class is a singleton and as such it makes use of a static
+ * reference to itself. It gets created on load.
+ *
+ * \@type {snapwebsites.Popup}
+ */
+snapwebsites.PopupInstance = null; // static
 
 
 /** \brief A unique identifier.

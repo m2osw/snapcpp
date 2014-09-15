@@ -1,6 +1,6 @@
 /** @preserve
  * Name: listener
- * Version: 0.0.1.13
+ * Version: 0.0.1.14
  * Browsers: all
  * Depends: server-access (>= 0.0.1.16)
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -601,6 +601,16 @@ snapwebsites.Listener = function()
  * it sends AJAX data to the server and it wants to handle the response.
  */
 snapwebsites.inherits(snapwebsites.Listener, snapwebsites.ServerAccessCallbacks);
+
+
+/** \brief The Listener instance.
+ *
+ * This class is a singleton and as such it makes use of a static
+ * reference to itself. It gets created on load.
+ *
+ * \@type {snapwebsites.Listener}
+ */
+snapwebsites.ListenerInstance = null; // static
 
 
 /** \brief Array of requests currently active.

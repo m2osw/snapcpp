@@ -7447,6 +7447,12 @@ void content::backend_process_status()
                     // it has been more than 10 minutes, reset the state
                     path_info_t::status_t status(ipath.get_status());
                     status.set_status(static_cast<path_info_t::status_t::status_type>(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value().uint32Value()));
+                    if(status.get_state() == path_info_t::status_t::state_t::CREATE)
+                    {
+                        // a create failed, set it to normal...
+                        // (should we instead set it to hidden?)
+                        status.set_state(path_info_t::status_t::state_t::NORMAL);
+                    }
                     status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
                     ipath.set_status(status);
                 }

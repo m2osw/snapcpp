@@ -174,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 9, 13, 0, 43, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 9, 14, 18, 38, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

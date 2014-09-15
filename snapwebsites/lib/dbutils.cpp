@@ -695,11 +695,11 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
                         break;
 
                     case 5 * 256:
-                        v = " (updating)";
+                        v += " (updating)";
                         break;
 
                     default:
-                        v = QString(" (unknown working status: %1)").arg(status & 0x0000FF00);
+                        v += QString(" (unknown working status: %1)").arg(status & 0x0000FF00);
                         break;
 
                     }

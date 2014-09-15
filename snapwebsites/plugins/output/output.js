@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.13
+ * Version: 0.1.5.14
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -429,6 +429,16 @@ snapwebsites.Output = function()
 snapwebsites.base(snapwebsites.Output);
 
 
+/** \brief The Output instance.
+ *
+ * This class is a singleton and as such it makes use of a static
+ * reference to itself. It gets created on load.
+ *
+ * \@type {snapwebsites.Output}
+ */
+snapwebsites.OutputInstance = null; // static
+
+
 /** \brief Holds the array of query string values if any.
  *
  * This variable member is an array of the query string values keyed on
@@ -584,8 +594,8 @@ snapwebsites.Output.prototype.handleMessages_ = function()
  * See snapwebsites.ServerAccess.onSuccess_() for the origin of the
  * \p xml object.
  *
- * @param {Element} xml  The XML object or text that encompasses all
- *                       the messages.
+ * @param {Element|string} xml  The XML object or text that encompasses all
+ *                              the messages.
  */
 snapwebsites.Output.prototype.displayMessages = function(xml)
 {

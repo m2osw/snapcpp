@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.2.0
+ * Version: 0.0.2.1
  * Browsers: all
  * Depends: output (>= 0.0.5), jquery-extensions (>= 1.0.1)
  * Copyright: Copyright 2012-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -69,6 +69,16 @@ snapwebsites.Form = function()
  * This class does not inherit from any other classes.
  */
 snapwebsites.base(snapwebsites.Form);
+
+
+/** \brief The Form instance.
+ *
+ * This class is a singleton and as such it makes use of a static
+ * reference to itself. It gets created on load.
+ *
+ * \@type {snapwebsites.Form}
+ */
+snapwebsites.FormInstance = null; // static
 
 
 /** \brief This function is called whenever a widget gets the focus.

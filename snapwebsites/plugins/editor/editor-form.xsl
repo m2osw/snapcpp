@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                               xmlns:fn="http://www.w3.org/2005/xpath-functions"
                               xmlns:snap="http://snapwebsites.info/snap-functions">
   <xsl:variable name="editor-name">editor</xsl:variable>
-  <xsl:variable name="editor-modified">2014-03-16 00:36:48</xsl:variable>
+  <xsl:variable name="editor-modified">2014-09-14 17:51:48</xsl:variable>
 
   <!-- COMMAND PARTS -->
   <xsl:template name="snap:common-parts">
@@ -331,7 +331,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               select="concat(' ', classes)"/><xsl:if
               test="state = 'disabled'"> disabled</xsl:if><xsl:if
               test="state = 'read-only'"> read-only</xsl:if></xsl:attribute>
-        <xsl:if test="@state = 'read-only' or @state = 'disabled'">
+        <xsl:if test="state = 'read-only' or state = 'disabled'">
           <!-- avoid spellcheck of non-editable widgets -->
           <xsl:attribute name="spellcheck">false</xsl:attribute>
         </xsl:if>
@@ -403,7 +403,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
           select="concat(' ', classes)"/><xsl:if test="state = 'disabled'"> disabled</xsl:if><xsl:if
           test="state = 'read-only'"> read-only</xsl:if></xsl:attribute>
-        <xsl:if test="@state = 'read-only' or @state = 'disabled'">
+        <xsl:if test="state = 'read-only' or state = 'disabled'">
           <!-- avoid spellcheck of non-editable widgets -->
           <xsl:attribute name="spellcheck">false</xsl:attribute>
         </xsl:if>
