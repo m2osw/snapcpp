@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.27
+ * Version: 0.1.0.28
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -216,7 +216,7 @@ snapwebsites.Popup.prototype.darkenPage = function(show, wait)
     if(!this.darkenPagePopup_)
     {
         // create the full screen fixed div
-        jQuery("<div id='darkenPage'></div>").appendTo("body");
+        jQuery("<div id='darkenPage' class='zordered'></div>").appendTo("body");
         this.darkenPagePopup_ = jQuery("#darkenPage");
     }
 
@@ -308,7 +308,7 @@ snapwebsites.Popup.prototype.open = function(popup)
     popup.widget = jQuery("#" + popup.id);
     if(popup.widget.length === 0)
     {
-        jQuery("<div class='snap-popup' id='" + popup.id + "' style='position:fixed;display:none;'>"
+        jQuery("<div class='snap-popup zordered' id='" + popup.id + "' style='position:fixed;display:none;'>"
              + (popup.noClose ? "" : "<div class='close-popup'></div>")
              + "<div class='inside-popup'><div class='popup-title'></div><div class='popup-body'></div></div></div>")
                 .appendTo("body");

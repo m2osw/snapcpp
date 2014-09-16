@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.19
+ * Version: 0.0.1.20
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -331,7 +331,8 @@
 	text-shadow: 0 0 0 #000;
 }
 
-.editable.dropdown .dropdown-items
+.editable.dropdown .dropdown-items,
+.top-window.dropdown-items
 {
 	/* items are hidden by default */
 	display: none;
@@ -345,39 +346,49 @@
 	border-top-right-radius: 0;
 	box-shadow: 1px 2px 3px 0px rgba(0, 0, 0, 0.5);
 }
-.editable.dropdown .dropdown-items.disabled
+.editable.dropdown .dropdown-items.disabled,
+.top-window.dropdown-items.disabled
 {
 	background-color: #cccccc;
 }
 
-.editable.dropdown .dropdown-items .no-selection
+.editable.dropdown .dropdown-items .no-selection,
+.top-window.dropdown-items .no-selection
 {
 	padding: 5px 8px;
 }
 
-.editable.dropdown .dropdown-items ul
+.editable.dropdown .dropdown-items ul,
+.top-window.dropdown-items ul
 {
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
 
-.editable.dropdown .dropdown-items li
+.editable.dropdown .dropdown-items li,
+.top-window.dropdown-items li
 {
 	display: block;
 	padding: 5px 8px;
 	border: 1px solid white;
 }
-.editable.dropdown .dropdown-items li.selected
+.editable.dropdown .dropdown-items li.selected,
+.top-window.dropdown-items li.selected
 {
 	background-color: #ffcc99;
 }
 
-.editable.dropdown .dropdown-items li:hover
+.editable.dropdown .dropdown-items li:hover,
+.top-window.dropdown-items li:hover
 {
 	background-color: #ffeecc;
 	cursor: pointer;
 	border: 1px dashed #ffcc88;
+}
+.top-window.dropdown-items
+{
+	position: fixed;
 }
 
 

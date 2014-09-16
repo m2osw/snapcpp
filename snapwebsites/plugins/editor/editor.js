@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.206
+ * Version: 0.0.3.226
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -5466,6 +5466,21 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeDropdown, snapwebsites.Editor
 snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown_ = null;
 
 
+/** \brief Whether the currently opened dropdown is a clone.
+ *
+ * This variable member is true when the openDropdown_ variable is
+ * a clone of the dropdown elements. This means it will be deleted
+ * after it gets closed.
+ *
+ * By default, this is false as it is assumed that your dropdown is
+ * created in the top-most window.
+ *
+ * @type {jQuery}
+ * @private
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.clonedDropdown_ = false;
+
+
 /** \brief Return "dropdown".
  *
  * Return the name of the dropdown type.
@@ -5510,7 +5525,9 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
         {
             var that_element = jQuery(this),
                 visible,
-                z;
+                z,
+                pos,
+                iframe_pos;
 
             // avoid default browser behavior
             e.preventDefault();
@@ -5523,69 +5540,52 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
 
             if(!visible)
             {
-                // the newly visible dropdown
-                that.openDropdown_ = d;
-
-                // setup z-index
-                // (reset itself first so we do not just +1 each time)
-                d.css("z-index", 0);
-                z = jQuery("div.zordered").maxZIndex() + 1;
-                d.css("z-index", z);
-
-                d.fadeIn(150);
-            }
-        });
-
-    d.children(".dropdown-selection").children(".dropdown-item")
-        .click(function(e)
-            {
-                var that_element = jQuery(this),
-                    value,
-                    widget_change;
-
-                // avoid default browser behavior
-                e.preventDefault();
-                e.stopPropagation();
-
-                // hide the dropdown (we could use d.toggle() but that
-                // would not update the openDropdon_ variable member)
-                that.hideDropdown();
-
-                // first select the new item
-                d.find(".dropdown-item").removeClass("selected");
-                that_element.addClass("selected");
-
-                // then copy the item label to the "content" (line edit)
-                c.empty();
-                c.append(that_element.html());
-
-                // finally, get the resulting value if there is one
-                value = that_element.attr("value");
-                if(value)
+                // test with 'window.' so it works in IE
+                if(window.self != window.top)
                 {
-                    c.attr("value", snapwebsites.castToString(value, "dropdown item value attribute"));
+                    that.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered' style='position: absolute;'>" + d.html() + "</div>").appendTo("body");
+                    pos = c.offset();
+                    iframe_pos = window.top.jQuery("#create-finball.snap-popup .popup-body iframe").offset();
+                    pos.left += iframe_pos.left;
+                    pos.top += iframe_pos.top + w.height();
+                    that.openDropdown_.offset(pos);
+                    that.clonedDropdown_ = true;
+
+                    that.openDropdown_
+                        .children(".dropdown-selection")
+                        .children(".dropdown-item")
+                        .click(function(e)
+                            {
+                                that.itemClicked(e, widget);
+                            });
+
+                    // setup z-index
+                    // (reset itself first so we do not just +1 each time)
+                    that.openDropdown_.css("z-index", 0);
+                    z = window.top.jQuery("div.zordered").maxZIndex() + 1;
+                    that.openDropdown_.css("z-index", z);
                 }
                 else
                 {
-                    // canonicalize the undefined value
-                    value = null; // TBD should it be value = c.text(); ?
-                    c.removeAttr("value");
+                    // the newly visible dropdown
+                    that.openDropdown_ = d;
+
+                    // setup z-index
+                    // (reset itself first so we do not just +1 each time)
+                    that.openDropdown_.css("z-index", 0);
+                    z = jQuery("div.zordered").maxZIndex() + 1;
+                    that.openDropdown_.css("z-index", z);
                 }
 
-                // make that dropdown the currently active object
-                c.focus();
-                editor_widget.getEditorBase().setActiveElement(c);
+                that.openDropdown_.fadeIn(150);
+            }
+        });
 
-                // send an event for each change because the user
-                // make want to know even if the value was not actually
-                // modified
-                widget_change = jQuery.Event("widgetchange", {
-                        widget: editor_widget,
-                        value: value
-                    });
-                w.trigger(widget_change);
-
-                editor_widget.getEditorBase().checkModified();
+    d.children(".dropdown-selection")
+        .children(".dropdown-item")
+        .click(function(e)
+            {
+                that.itemClicked(e, widget);
             });
 
     c.blur(function()
@@ -5608,11 +5608,88 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
  */
 snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
 {
+    var clone = null;
+
     if(this.openDropdown_)
     {
-        this.openDropdown_.fadeOut(150);
+        // if we are in the top window, otherwise it is already hidden
+        if(this.clonedDropdown_)
+        {
+            clone = this.openDropdown_;
+        }
+        this.openDropdown_.fadeOut(150, function()
+            {
+                if(clone)
+                {
+                    clone.remove();
+                }
+            });
         this.openDropdown_ = null;
     }
+};
+
+
+/** \brief Handle a click on a dropdown item.
+ *
+ * This function is called whenever the user clicks on a dropdown
+ * item.
+ *
+ * @param {Event} e  The jQuery click event on this item.
+ * @param {jQuery} widget  The widget representing the dropdown.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(e, widget)
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        d = w.children(".dropdown-items"),
+        that_element = jQuery(e.target),
+        value,
+        widget_change;
+
+    // avoid default browser behavior
+    e.preventDefault();
+    e.stopPropagation();
+
+    // hide the dropdown (we could use d.toggle() but that
+    // would not update the openDropdon_ variable member)
+    this.hideDropdown();
+
+    // first select the new item
+    d.find(".dropdown-item").removeClass("selected");
+    that_element.addClass("selected");
+
+    // then copy the item label to the "content" (line edit)
+    c.empty();
+    c.append(that_element.html());
+
+    // finally, get the resulting value if there is one
+    value = that_element.attr("value");
+    if(value)
+    {
+        c.attr("value", snapwebsites.castToString(value, "dropdown item value attribute"));
+    }
+    else
+    {
+        // canonicalize the undefined value
+        value = null; // TBD should it be value = c.text(); ?
+        c.removeAttr("value");
+    }
+
+    // make that dropdown the currently active object
+    c.focus();
+    editor_widget.getEditorBase().setActiveElement(c);
+
+    // send an event for each change because the user
+    // make want to know even if the value was not actually
+    // modified
+    widget_change = jQuery.Event("widgetchange", {
+            widget: editor_widget,
+            value: value
+        });
+    w.trigger(widget_change);
+
+    editor_widget.getEditorBase().checkModified();
 };
 
 
