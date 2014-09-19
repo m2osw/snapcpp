@@ -68,7 +68,7 @@ public:
                         return *this;
                     }
 
-    int64_t         get() const
+    int64_type      get() const
                     {
                         return f_int;
                     }

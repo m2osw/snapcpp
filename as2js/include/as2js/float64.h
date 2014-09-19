@@ -75,7 +75,7 @@ public:
                         return *this;
                     }
 
-    double          get() const
+    float64_type    get() const
                     {
                         return f_float;
                     }

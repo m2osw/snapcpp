@@ -112,6 +112,50 @@ void optimizer_func_ADD(node_pointer_vector_t const& node_array, optimization_op
 }
 
 
+/** \brief Apply an BITWISE_AND function.
+ *
+ * This function AND two numbers and saves the result in the 3rd position.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * Although the AND could be computed using 64 bits when handling integer
+ * we do 32 bits to make sure that we get a result as JavaScript would.
+ *
+ * \exception exception_internal_error
+ * The function may attempt to convert the input to floating point numbers.
+ * If that fails, this exception is raised. The Optimizer matching mechanism
+ * should, however, prevent all such problems.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_BITWISE_AND(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    if(!node_array[src1]->to_int64()
+    || !node_array[src2]->to_int64())
+    {
+        throw exception_internal_error("optimizer used function to_int64() against a node that cannot be converted to an int64."); // LCOV_EXCL_LINE
+    }
+
+    // compute the result
+    // a + b when a and b are integers
+    Int64 i1(node_array[src1]->get_int64());
+    Int64 i2(node_array[src2]->get_int64());
+    // TODO: err on overflows?
+    i1.set((i1.get() & i2.get()) & 0xFFFFFFFF);
+    node_array[src1]->set_int64(i1);
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src1]);
+}
+
+
 /** \brief Apply a CONCATENATE function.
  *
  * This function concatenates two strings and save the result.
@@ -358,6 +402,100 @@ void optimizer_func_REMOVE(node_pointer_vector_t const& node_array, optimization
         // simply remove from the parent, the smart pointers take care of the rest
         node_array[src]->set_parent(nullptr);
     }
+}
+
+
+/** \brief Apply a SET_FLOAT function.
+ *
+ * This function sets the value of a float node. This is used when an
+ * optimization can determine the result of a numeric expression and
+ * a simple float can be set as the result.
+ *
+ * For example, a bitwise operation with NaN returns zero. This
+ * function can be used for that purpose.
+ *
+ * \li 0 -- node to be modified, it must be a NODE_FLOAT64
+ * \li 1 -- dividend (taken as a signed 16 bit value)
+ * \li 2 -- divisor (unsigned)
+ *
+ * The value is offset 1 divided by offset 2. Note however that
+ * both of those values are only 16 bits... If the divisor is zero
+ * then we use NaN as the value.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_SET_FLOAT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t dst(optimize->f_indexes[0]),
+             divisor(optimize->f_indexes[2]);
+
+    int32_t  dividend(static_cast<int16_t>(optimize->f_indexes[1]));
+
+    double value(divisor == 0 ? NAN : static_cast<double>(dividend) / static_cast<double>(divisor));
+
+    Float64 v(node_array[dst]->get_float64());
+    v.set(value);
+    node_array[dst]->set_float64(v);
+}
+
+
+/** \brief Apply a SET_INTEGER function.
+ *
+ * This function sets the value of an integer node. This is used when
+ * an optimization can determine the result of a numeric expression and
+ * a simple integer can be set as the result.
+ *
+ * For example, a bitwise operation with NaN returns zero. This
+ * function can be used for that purpose.
+ *
+ * \li 0 -- node to be modified, it must be a NODE_INT64
+ * \li 1 -- new value (taken as a signed 16 bit value)
+ *
+ * Note that at this point this function limits the value to 16 bits.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_SET_INTEGER(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t dst(optimize->f_indexes[0]);
+
+    int32_t  value(static_cast<int16_t>(optimize->f_indexes[1]));
+
+    Int64 v(node_array[dst]->get_int64());
+    v.set(value);
+    node_array[dst]->set_int64(v);
+}
+
+
+/** \brief Apply a SET_NODE_TYPE function.
+ *
+ * This function changes a node with another one. For example, it changes
+ * the NODE_ASSIGNMENT_SUBTRACT to a NODE_ASSIGNMENT when the subtract is
+ * useless (i.e. the right handside is NaN.)
+ *
+ * \li 0 -- the new node type (Node::node_t::NODE_...)
+ * \li 1 -- the offset of the node to be replaced
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_SET_NODE_TYPE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    Node::node_t node_type(static_cast<Node::node_t>(optimize->f_indexes[0]));
+    uint32_t src(optimize->f_indexes[1]);
+
+    Node::pointer_t node(new Node(node_type));
+
+    Node::pointer_t to_replace(node_array[src]);
+
+    size_t max_children(to_replace->get_children_size());
+    for(size_t idx(0); idx < max_children; ++idx)
+    {
+        node->append_child(to_replace->get_child(0));
+    }
+    to_replace->replace_with(node);
 }
 
 
@@ -664,12 +802,16 @@ struct optimizer_optimize_function_t
 optimizer_optimize_function_t g_optimizer_optimize_functions[] =
 {
     /* OPTIMIZATION_FUNCTION_ADD            */ OPTIMIZER_FUNC(ADD),
+    /* OPTIMIZATION_FUNCTION_BITWISE_AND    */ OPTIMIZER_FUNC(BITWISE_AND),
     /* OPTIMIZATION_FUNCTION_CONCATENATE    */ OPTIMIZER_FUNC(CONCATENATE),
     /* OPTIMIZATION_FUNCTION_MOVE           */ OPTIMIZER_FUNC(MOVE),
     /* OPTIMIZATION_FUNCTION_NEGATE         */ OPTIMIZER_FUNC(NEGATE),
     /* OPTIMIZATION_FUNCTION_LOGICAL_NOT    */ OPTIMIZER_FUNC(LOGICAL_NOT),
     /* OPTIMIZATION_FUNCTION_LOGICAL_XOR    */ OPTIMIZER_FUNC(LOGICAL_XOR),
     /* OPTIMIZATION_FUNCTION_REMOVE         */ OPTIMIZER_FUNC(REMOVE),
+    /* OPTIMIZATION_FUNCTION_SET_INTEGER    */ OPTIMIZER_FUNC(SET_INTEGER),
+    /* OPTIMIZATION_FUNCTION_SET_FLOAT      */ OPTIMIZER_FUNC(SET_FLOAT),
+    /* OPTIMIZATION_FUNCTION_SET_NODE_TYPE  */ OPTIMIZER_FUNC(SET_NODE_TYPE),
     /* OPTIMIZATION_FUNCTION_SUBTRACT       */ OPTIMIZER_FUNC(SUBTRACT),
     /* OPTIMIZATION_FUNCTION_SWAP           */ OPTIMIZER_FUNC(SWAP),
     /* OPTIMIZATION_FUNCTION_TO_CONDITIONAL */ OPTIMIZER_FUNC(TO_CONDITIONAL),

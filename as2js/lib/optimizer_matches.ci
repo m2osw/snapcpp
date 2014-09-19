@@ -57,6 +57,54 @@ Node::node_t const g_optimizer_match_any_literal[]
 };
 
 
+Node::node_t const g_optimizer_match_assignment[]
+{
+    Node::node_t::NODE_ASSIGNMENT
+};
+
+
+Node::node_t const g_optimizer_match_arithmetic_assignments_except_add[]
+{
+    Node::node_t::NODE_ASSIGNMENT_DIVIDE,
+    Node::node_t::NODE_ASSIGNMENT_MODULO,
+    Node::node_t::NODE_ASSIGNMENT_MULTIPLY,
+    Node::node_t::NODE_ASSIGNMENT_POWER,
+    Node::node_t::NODE_ASSIGNMENT_SUBTRACT
+};
+
+
+Node::node_t const g_optimizer_match_minmax_assignments[]
+{
+    Node::node_t::NODE_ASSIGNMENT_MAXIMUM,
+    Node::node_t::NODE_ASSIGNMENT_MINIMUM
+};
+
+
+Node::node_t const g_optimizer_match_bitwise_assignments[]
+{
+    Node::node_t::NODE_ASSIGNMENT_BITWISE_AND,
+    Node::node_t::NODE_ASSIGNMENT_BITWISE_OR,
+    Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR,
+    Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT,
+    Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT,
+    Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT,
+    Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT,
+    Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED
+};
+
+
+Node::node_t const g_optimizer_match_assignment_subtract[]
+{
+    Node::node_t::NODE_ASSIGNMENT_SUBTRACT
+};
+
+
+Node::node_t const g_optimizer_match_bitwise_and[]
+{
+    Node::node_t::NODE_BITWISE_AND
+};
+
+
 Node::node_t const g_optimizer_match_conditional[]
 {
     Node::node_t::NODE_CONDITIONAL
@@ -81,9 +129,26 @@ Node::node_t const g_optimizer_match_false[]
 };
 
 
+Node::node_t const g_optimizer_match_false_literals[]
+{
+    Node::node_t::NODE_FALSE,
+    Node::node_t::NODE_FLOAT64,
+    Node::node_t::NODE_INT64,
+    Node::node_t::NODE_NULL,
+    Node::node_t::NODE_STRING,
+    Node::node_t::NODE_UNDEFINED
+};
+
+
 Node::node_t const g_optimizer_match_for[]
 {
     Node::node_t::NODE_FOR
+};
+
+
+Node::node_t const g_optimizer_match_identifier[]
+{
+    Node::node_t::NODE_IDENTIFIER
 };
 
 
@@ -97,17 +162,6 @@ Node::node_t const g_optimizer_match_if_or_while[]
 {
     Node::node_t::NODE_IF,
     Node::node_t::NODE_WHILE
-};
-
-
-Node::node_t const g_optimizer_match_false_literals[]
-{
-    Node::node_t::NODE_FALSE,
-    Node::node_t::NODE_FLOAT64,
-    Node::node_t::NODE_INT64,
-    Node::node_t::NODE_NULL,
-    Node::node_t::NODE_STRING,
-    Node::node_t::NODE_UNDEFINED
 };
 
 

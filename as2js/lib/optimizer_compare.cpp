@@ -83,7 +83,7 @@ namespace
  *
  * \return true if the node is a perfect match.
  */
-bool match_node(Node::pointer_t node, optimization_match_t const *match)
+bool match_node(node_pointer_vector_t& node_array, Node::pointer_t node, optimization_match_t const *match)
 {
     // match node types
     if(match->f_node_types_count > 0)
@@ -116,6 +116,27 @@ bool match_node(Node::pointer_t node, optimization_match_t const *match)
             }
             break;
 
+        case Node::node_t::NODE_IDENTIFIER:
+            if(value->f_int64 != 0)
+            {
+                if(static_cast<size_t>(value->f_int64) >= node_array.size())
+                {
+                    throw exception_internal_error("INTERNAL ERROR: identifier check using an index larger than the existing nodes"); // LCOV_EXCL_LINE
+                }
+                if(node_array[value->f_int64]->get_string() != node->get_string())
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if(node->get_string() != value->f_string)
+                {
+                    return false;
+                }
+            }
+            break;
+
         case Node::node_t::NODE_EQUAL:
         case Node::node_t::NODE_STRICTLY_EQUAL:
             switch(node->get_type())
@@ -137,11 +158,21 @@ bool match_node(Node::pointer_t node, optimization_match_t const *match)
             case Node::node_t::NODE_FLOAT64:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-                if(node->get_float64().get() != value->f_float64)
-#pragma GCC diagnostic pop
+                // if we expect a NaN make sure both are NaN
+                // remember that == and != always return false
+                // when checked with one or two NaN
+                if(std::isnan(value->f_float64))
+                {
+                    if(!node->get_float64().is_NaN())
+                    {
+                        return false;
+                    }
+                }
+                else if(node->get_float64().get() != value->f_float64)
                 {
                     return false;
                 }
+#pragma GCC diagnostic pop
                 break;
 
             default:
@@ -241,8 +272,8 @@ bool match_node(Node::pointer_t node, optimization_match_t const *match)
                 }
                 // when matching links, we do not optimize those thus
                 // we put their nodes in a temporary array
-                node_pointer_vector_t node_array;
-                if(match_tree(node_array, link, lk->f_links[j].f_match, lk->f_links[j].f_match_count, 0))
+                node_pointer_vector_t temp_node_array;
+                if(match_tree(temp_node_array, link, lk->f_links[j].f_match, lk->f_links[j].f_match_count, 0))
                 {
                     break;
                 }
@@ -289,7 +320,7 @@ bool match_tree(node_pointer_vector_t& node_array, Node::pointer_t node, optimiz
 {
     // attempt a match only if proper depth
     if(match->f_depth == depth
-    && match_node(node, match))
+    && match_node(node_array, node, match))
     {
         node_array.push_back(node);
 //std::cerr << "Matched " << node->get_type_name()

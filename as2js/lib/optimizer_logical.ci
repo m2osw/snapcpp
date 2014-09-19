@@ -924,9 +924,9 @@ optimization_entry_t const g_optimizer_logical_entry_not_not_not_a[] =
 };
 
 
-/** \brief List of additive entries.
+/** \brief List of logical entries.
  *
- * This table is a list of all the additive entries found in this file.
+ * This table is a list of all the logical entries found in this file.
  *
  * It is referenced in the optimizer_tables.cpp as one of the tables to
  * be used to optimize node trees.

@@ -1,0 +1,49 @@
+// bitwise
+[
+
+    // number & number => number
+    {
+        //"verbose": true,
+        "name": "number & number -> number",
+        "program": "0xAFC3 & 0x5355;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0x5355
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x0341
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+]
+// vim: ts=4 sw=4 et

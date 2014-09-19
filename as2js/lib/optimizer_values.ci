@@ -39,24 +39,6 @@ namespace optimizer_details
 {
 
 
-optimization_match_t::optimization_literal_t const g_optimizer_value_zero[] =
-{
-    Node::node_t::NODE_EQUAL,
-    "",
-    0,
-    0.0
-};
-
-
-optimization_match_t::optimization_literal_t const g_optimizer_value_true[] =
-{
-    Node::node_t::NODE_TRUE,
-    "",
-    0,
-    0.0
-};
-
-
 optimization_match_t::optimization_literal_t const g_optimizer_value_false[] =
 {
     Node::node_t::NODE_FALSE,
@@ -69,6 +51,42 @@ optimization_match_t::optimization_literal_t const g_optimizer_value_false[] =
 optimization_match_t::optimization_literal_t const g_optimizer_value_no_side_effects[] =
 {
     Node::node_t::NODE_ASSIGNMENT,  // if you have assignments, then it has side effects and this returns false (not a match)
+    "",
+    0,
+    0.0
+};
+
+
+optimization_match_t::optimization_literal_t const g_optimizer_value_identifier_equal_1[] =
+{
+    Node::node_t::NODE_IDENTIFIER, // this identifier equals identifier in item 1
+    "",
+    1,
+    0.0
+};
+
+
+optimization_match_t::optimization_literal_t const g_optimizer_value_nan[] =
+{
+    Node::node_t::NODE_EQUAL,
+    "",
+    0,
+    NAN
+};
+
+
+optimization_match_t::optimization_literal_t const g_optimizer_value_true[] =
+{
+    Node::node_t::NODE_TRUE,
+    "",
+    0,
+    0.0
+};
+
+
+optimization_match_t::optimization_literal_t const g_optimizer_value_zero[] =
+{
+    Node::node_t::NODE_EQUAL,
     "",
     0,
     0.0

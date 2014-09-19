@@ -93,6 +93,8 @@ json_to_cpp(parser)
 
 
 json_to_cpp(optimizer_additive)
+json_to_cpp(optimizer_assignments)
+json_to_cpp(optimizer_bitwise)
 json_to_cpp(optimizer_conditional)
 json_to_cpp(optimizer_logical)
 json_to_cpp(optimizer_statements)
@@ -180,6 +182,8 @@ add_executable(${PROJECT_NAME}
     test_as2js_options.cpp
     test_as2js_parser.cpp
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_additive.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_assignments.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_bitwise.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_conditional.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_logical.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_statements.ci
