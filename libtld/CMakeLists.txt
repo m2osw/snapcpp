@@ -29,27 +29,11 @@
 
 set(LIBTLD_VERSION_MAJOR 1)
 set(LIBTLD_VERSION_MINOR 4)
-set(LIBTLD_VERSION_PATCH 7)
+set(LIBTLD_VERSION_PATCH 17)
 
 cmake_minimum_required(VERSION 2.8.4)
 
 project(tld_library)
-
-## Global C++ command line flags
-#if( DEFINED ENV{LIBTLD_COVERAGE} )
-#    message("*** COVERAGE TURNED ON ***")
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Werror -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=1 -Wundef -Wno-unused -Wunused-variable -Wno-variadic-macros -Wno-parentheses -Wno-unknown-pragmas -Wwrite-strings -Wswitch -fdiagnostics-show-option -fprofile-arcs -ftest-coverage")
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -Werror -Wall -Wextra -fprofile-arcs -ftest-coverage")
-#    set(CMAKE_SHARED_LINKER_FLAGS "-fprofile-arcs -ftest-coverage")
-#    set(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs -ftest-coverage")
-#    set(COVERAGE_LIBS gcov)
-#else()
-#    # If you have problems compiling with the -W... flags, use the -O3 only
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Werror -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=1 -Wundef -Wno-unused -Wunused-variable -Wno-variadic-macros -Wno-parentheses -Wno-unknown-pragmas -Wwrite-strings -Wswitch -fdiagnostics-show-option")
-#    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -Werror -Wall -Wextra")
-#    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-#endif()
 
 #
 # Include support modules
@@ -77,28 +61,5 @@ add_subdirectory( src )
 add_subdirectory( doc )
 add_subdirectory( tests )
 add_subdirectory( package )
-
-###
-### Packaging
-###
-#set(CPACK_PACKAGE_NAME "libtld")
-#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "libtld -- a C library to extract TLDs in a URI")
-#set(CPACK_PACKAGE_VENDOR "Made to Order Software Corporation")
-#set(CPACK_PACKAGE_CONTACT "alexis@m2osw.com")
-#set(CPACK_RESOURCE_FILE_LICENSE "${tld_library_SOURCE_DIR}/LICENSE.txt")
-#set(CPACK_GENERATOR "TGZ" "DEB")
-#set(CPACK_SOURCE_GENERATOR "TGZ")
-#set(CPACK_SOURCE_IGNORE_FILES "/CVS/;/work-files/;/.svn/;.swp$;.*~;cscope.*;/tmp/;.*\\\\.o$;.*\\\\.so$;BUILD;Build;build;.gitignore")
-#set(CPACK_PACKAGE_VERSION "${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}.${LIBTLD_VERSION_PATCH}")
-#set(CPACK_PACKAGE_VERSION_MAJOR "${LIBTLD_VERSION_MAJOR}")
-#set(CPACK_PACKAGE_VERSION_MINOR "${LIBTLD_VERSION_MINOR}")
-#set(CPACK_PACKAGE_VERSION_PATCH "${LIBTLD_VERSION_PATCH}")
-#set(CPACK_SOURCE_PACKAGE_FILE_NAME "libtld-${LIBTLD_VERSION_MAJOR}.${LIBTLD_VERSION_MINOR}.${LIBTLD_VERSION_PATCH}")
-#set(CPACK_PACKAGE_EXECUTABLES "libtld.so")
-#set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
-#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://snapwebsites.org/project/tld-library-libtld")
-## I'm not too sure how we can add this one...
-##set(CPACK_DEBIAN_PACKAGE_DEV_DEPENDENCIES "cmake libqt4-dev")
-#include(CPack)
 
 # vim: ts=4 sw=4 et
