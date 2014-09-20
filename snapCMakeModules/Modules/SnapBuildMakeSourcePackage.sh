@@ -9,6 +9,13 @@
 
 # Handle command line
 #
+unset NOINC_VERSION
+if [ "$1" == "--noinc" ]
+then
+    NOINC_VERSION=1
+    shift
+fi
+
 if [ -z "$1" ]
 then
 	DIST=saucy
@@ -37,19 +44,22 @@ FULLNAME=${NAME}_${VERSION}
 echo "Building source package for '${FULLNAME}'"
 rm -f ../${FULLNAME}.dsc ../${FULLNAME}_source.* ../${FULLNAME}.tar.gz
 
-# Get the current version from the change log, get rid of everything past the tilde "~",
-# and increment the version number.
-#
-CURVER=`dpkg-parsechangelog --show-field Version | sed 's/~.*$//'`
-INCVER=`echo ${CURVER} | perl -pe 's/^((\d+\.)*)(\d+)(.*)$/$1.($3+1).$4/e'`
-
-# Write a new changelog entry, but using "~dist".
-#
-dch --newversion ${INCVER}~${DIST} --urgency high --distribution ${DIST} Nightly build.
-if [ "$?" != 0 ]
+if [ -z "$NOINC_VERSION" ]
 then
-	echo "Error running dch! Aborting..."
-	exit 1;
+    # Get the current version from the change log, get rid of everything past the tilde "~",
+    # and increment the version number.
+    #
+    CURVER=`dpkg-parsechangelog --show-field Version | sed 's/~.*$//'`
+    INCVER=`echo ${CURVER} | perl -pe 's/^((\d+\.)*)(\d+)(.*)$/$1.($3+1).$4/e'`
+
+    # Write a new changelog entry, but using "~dist".
+    #
+    dch --newversion ${INCVER}~${DIST} --urgency high --distribution ${DIST} Nightly build.
+    if [ "$?" != 0 ]
+    then
+        echo "Error running dch! Aborting..."
+        exit 1;
+    fi
 fi
 
 # Build the source package itself. The output will be placed in the parent directory
