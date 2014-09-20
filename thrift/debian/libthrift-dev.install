@@ -1,0 +1,4 @@
+debian/tmp/usr/lib/lib/*.a /usr/lib
+debian/tmp/usr/lib/lib/*.la /usr/lib
+debian/tmp/usr/lib/lib/pkgconfig/* /usr/lib/pkgconfig
+debian/tmp/usr/include/include/* /usr/include
