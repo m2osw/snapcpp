@@ -147,13 +147,13 @@ public:
     {
         if(f_key.isEmpty())
         {
-            throw snap_logic_exception("row_key() was requested with the key still undefined");
+            throw snap_logic_exception(QString("row_key() was requested with the key still undefined (name: \"%1\", branch is \"%2\")").arg(f_name).arg(f_branch));
         }
         if(f_branch == snap_version::SPECIAL_VERSION_INVALID
         || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
         || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
         {
-            throw snap_logic_exception("row_key() was requested with the branch still undefined");
+            throw snap_logic_exception(QString("row_key() was requested with the branch still undefined (name: \"%1\", key is \"%2\")").arg(f_name).arg(f_key));
         }
         return QString("%1#%2").arg(f_key).arg(f_branch);
     }
