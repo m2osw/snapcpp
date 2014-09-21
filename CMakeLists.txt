@@ -58,18 +58,19 @@ set( CMAKE_MODULE_PATH
     ${CMAKE_SOURCE_DIR}/snapCMakeModules/Modules
     ${CMAKE_BINARY_DIR}/dist/share/cmake-2.8/Modules
 )
-find_package( SnapCMakeModules REQUIRED )
 find_package( SnapBuild        REQUIRED )
 
 ################################################################################
 # Third party libraries
 #
-add_subdirectory( thrift )
+#add_subdirectory( thrift )
 
 
 ################################################################################
 # Snap libraries
 #
+ConfigureMakeProject( PROJECT_NAME thrift NOINC_DEBVERS )
+
 ConfigureMakeProject( PROJECT_NAME snapCMakeModules )
 
 ConfigureMakeProject( PROJECT_NAME zipios )
@@ -117,7 +118,7 @@ ConfigureMakeProject( PROJECT_NAME libQtCassandra
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS snapCMakeModules controlled_vars
+    DEPENDS thrift snapCMakeModules controlled_vars
 )
 
 ConfigureMakeProject( PROJECT_NAME libQtSerialization
@@ -134,7 +135,7 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS snapCMakeModules zipios advgetopt libQtCassandra libQtSerialization libtld controlled_vars
+    DEPENDS thrift snapCMakeModules zipios advgetopt libQtCassandra libQtSerialization libtld controlled_vars
 )
 
 ConfigureMakeProject( PROJECT_NAME snapmanager
@@ -158,7 +159,7 @@ ConfigureMakeProject( PROJECT_NAME cassview
         -DSNAPWEBSITES_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DSNAPWEBSITES_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libsnapwebsites.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS snapCMakeModules snapwebsites controlled_vars
+    DEPENDS thrift snapCMakeModules snapwebsites controlled_vars
     )
 
 
