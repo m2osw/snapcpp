@@ -1,7 +1,7 @@
 Source: thrift
 Section: devel
 Priority: extra
-Build-Depends: debhelper (>= 5), build-essential, 
+Build-Depends: debhelper (>= 5), build-essential, cmake (>= 2.8.0),
     autoconf, automake, pkg-config, libtool, bison, flex, libboost-dev | libboost1.40-bin,
     libboost-test-dev | libboost-test1.40-dev, libevent-dev,
     libglib2.0-dev, libssl-dev
