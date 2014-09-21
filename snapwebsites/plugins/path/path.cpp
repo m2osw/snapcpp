@@ -593,12 +593,12 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
             {
                 // TODO (TBD):
                 // page_not_found() not called here because the page exists
-                // it's just not available right now and thus we
+                // it is just not available right now and thus we
                 // may not want to replace it with something else?
                 f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
                         "Page Not Present",
                         "Somehow this page is not currently available.",
-                        QString("User tried to access page \"%1\" but its plugin (%2) refused it")
+                        QString("User tried to access page \"%1\" but the page's plugin (%2) refused it")
                                 .arg(ipath.get_cpath()).arg(path_plugin->get_plugin_name()));
                 NOTREACHED();
             }
