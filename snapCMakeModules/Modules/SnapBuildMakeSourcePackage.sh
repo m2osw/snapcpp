@@ -7,6 +7,8 @@
 # The default is "saucy."
 #
 
+set -e
+
 # Handle command line
 #
 unset NOINC_VERSION
@@ -55,23 +57,11 @@ then
     # Write a new changelog entry, but using "~dist".
     #
     dch --newversion ${INCVER}~${DIST} --urgency high --distribution ${DIST} Nightly build.
-    if [ "$?" != 0 ]
-    then
-        echo "Error running dch! Aborting..."
-        exit 1;
-    fi
 fi
 
 # Build the source package itself. The output will be placed in the parent directory
 # of the CWD.
 #
 debuild -S -sa -m"${DEBEMAIL}"
-if [ "$?" != 0 ]
-then
-	echo "Error running debuild! Aborting..."
-    exit 1
-fi
-
-exit 0
 
 # vim: ts=4 sw=4 et
