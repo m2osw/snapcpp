@@ -44,6 +44,8 @@ class As2JsOptimizerUnitTests : public CPPUNIT_NS::TestFixture
     CPPUNIT_TEST_SUITE( As2JsOptimizerUnitTests );
         CPPUNIT_TEST( test_optimizer_invalid_nodes );
         CPPUNIT_TEST( test_optimizer_additive );
+        CPPUNIT_TEST( test_optimizer_assignments );
+        CPPUNIT_TEST( test_optimizer_bitwise );
         CPPUNIT_TEST( test_optimizer_conditional );
         CPPUNIT_TEST( test_optimizer_logical );
         CPPUNIT_TEST( test_optimizer_statements );
@@ -55,6 +57,8 @@ public:
 protected:
     void test_optimizer_invalid_nodes();
     void test_optimizer_additive();
+    void test_optimizer_assignments();
+    void test_optimizer_bitwise();
     void test_optimizer_conditional();
     void test_optimizer_logical();
     void test_optimizer_statements();

@@ -46,6 +46,8 @@ SOFTWARE.
 
 // Actual optimization entries
 #include    "optimizer_additive.ci"
+#include    "optimizer_assignments.ci"
+#include    "optimizer_bitwise.ci"
 #include    "optimizer_conditional.ci"
 #include    "optimizer_logical.ci"
 #include    "optimizer_statements.ci"
@@ -93,6 +95,12 @@ optimization_tables_t const g_optimizer_tables[] =
 {
     {
         POINTER_AND_COUNT(g_optimizer_additive_table)
+    },
+    {
+        POINTER_AND_COUNT(g_optimizer_assignments_table)
+    },
+    {
+        POINTER_AND_COUNT(g_optimizer_bitwise_table)
     },
     {
         POINTER_AND_COUNT(g_optimizer_conditional_table)

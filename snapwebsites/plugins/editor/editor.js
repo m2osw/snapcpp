@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.226
+ * Version: 0.0.3.227
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -3212,8 +3212,8 @@ snapwebsites.EditorSaveDialog.prototype.close = function()
 
 /** \brief Setup the save dialog status.
  *
- * when a user clicks on a save dialog button, you should call this
- * function to disable the dialog
+ * When a user clicks on a save dialog button, you should call this
+ * function to disable the dialog.
  *
  * \warning
  * The function throws if the popup is not yet defined. You should not
@@ -3230,7 +3230,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
     // dialog even exists?
     if(!this.saveDialogPopup_)
     {
-        throw new Error("setStatus_() called without the dialog defined.");
+        throw new Error("setStatus() called without the dialog defined.");
     }
 //#endif
 
@@ -3264,7 +3264,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      virtual function serverAccessError(result: ResultData);
  *      virtual function serverAccessComplete(result: ResultData);
  *      function isSaving() : boolean;
- *      function setSaving(new_status: boolean);
+ *      function setSaving(new_status: boolean, will_redirect: boolean);
  *      function changed();
  *      function getSaveDialog() : EditorSaveDialog;
  *      function newTypeRegistered();
@@ -3878,7 +3878,8 @@ snapwebsites.EditorForm.prototype.setSaving = function(new_status, will_redirect
 snapwebsites.EditorForm.prototype.changed = function()
 {
     // tell others that something changed in the editor form
-    var e = jQuery.Event("formchange", {
+    var e = jQuery.Event("formchange",
+        {
             form: this
         });
     this.getFormWidget().trigger(e);

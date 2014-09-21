@@ -1101,6 +1101,12 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
 char const g_optimizer_additive[] =
 #include "test_as2js_optimizer_additive.ci"
 ;
+char const g_optimizer_assignments[] =
+#include "test_as2js_optimizer_assignments.ci"
+;
+char const g_optimizer_bitwise[] =
+#include "test_as2js_optimizer_bitwise.ci"
+;
 char const g_optimizer_conditional[] =
 #include "test_as2js_optimizer_conditional.ci"
 ;
@@ -1340,6 +1346,16 @@ void As2JsOptimizerUnitTests::test_optimizer_invalid_nodes()
 void As2JsOptimizerUnitTests::test_optimizer_additive()
 {
     run_tests(g_optimizer_additive, "test_parser_additive.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_assignments()
+{
+    run_tests(g_optimizer_assignments, "test_parser_assignments.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_bitwise()
+{
+    run_tests(g_optimizer_bitwise, "test_parser_bitwise.json");
 }
 
 void As2JsOptimizerUnitTests::test_optimizer_conditional()

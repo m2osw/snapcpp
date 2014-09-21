@@ -1,6 +1,12 @@
 libtld (1.4.17~saucy) saucy; urgency=high
 
   * Nightly build.
+  * Added many new TLDs.
+  * Better organized a few TLDs which were in the wrong category.
+  * Updated the internal test accordingly.
+  * Fixed version in CMakeLists.txt.
+  * Removed some now commented out code in CMakeLists.txt.
+  * Updated the changelog.
 
  -- Build Server <build@m2osw.com>  Fri, 12 Sep 2014 17:20:39 -0700
 

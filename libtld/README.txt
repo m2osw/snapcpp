@@ -1,8 +1,12 @@
 
 Notes:
 
+  o Version 1.4.17 includes even more new global TLD entries.
+  
+  o "Intermediate" versions are "lost" to our nightly build server.
+
   o Version 1.4.6 includes many (most) of the new allowed global TLD entries.
-    (INA expects about 960 new TLDs within the next few months.)
+    (INA expects about 960 new TLDs within the next few years.)
 
   o Version 1.4.3, 1.4.4, and 1.4.5 are missing because these were used to
     finish up the Debian installer. Although one version included a memory

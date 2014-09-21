@@ -347,6 +347,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::category_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::sub_category_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::business_type_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::connection_accepted_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::connection_declined_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
     {
         // 64 bit value (microseconds)

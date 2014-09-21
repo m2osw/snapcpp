@@ -121,12 +121,16 @@ struct optimization_match_t
 enum class optimization_function_t
 {
     OPTIMIZATION_FUNCTION_ADD,
+    OPTIMIZATION_FUNCTION_BITWISE_AND,
     OPTIMIZATION_FUNCTION_CONCATENATE,
     OPTIMIZATION_FUNCTION_MOVE,
     OPTIMIZATION_FUNCTION_NEGATE,
     OPTIMIZATION_FUNCTION_LOGICAL_NOT,
     OPTIMIZATION_FUNCTION_LOGICAL_XOR,
     OPTIMIZATION_FUNCTION_REMOVE,
+    OPTIMIZATION_FUNCTION_SET_INTEGER,
+    OPTIMIZATION_FUNCTION_SET_FLOAT,
+    OPTIMIZATION_FUNCTION_SET_NODE_TYPE,
     OPTIMIZATION_FUNCTION_SUBTRACT,
     OPTIMIZATION_FUNCTION_SWAP,
     OPTIMIZATION_FUNCTION_TO_CONDITIONAL,
@@ -138,10 +142,12 @@ enum class optimization_function_t
 };
 
 
+typedef uint16_t                    index_t;
+
 struct optimization_optimize_t
 {
     optimization_function_t         f_function;
-    uint16_t                        f_indexes[6];   // number of indices used varies depending on the function
+    index_t                         f_indexes[6];   // number of indices used varies depending on the function
 };
 
 

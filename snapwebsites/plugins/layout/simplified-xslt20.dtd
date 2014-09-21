@@ -242,6 +242,7 @@ DTD of the XSLT 2.0.
 <!ATTLIST td class CDATA #IMPLIED
              colspan CDATA #IMPLIED
              rowspan CDATA #IMPLIED
+             style CDATA #IMPLIED
              valign (top|middle|bottom) "middle"
              width CDATA #IMPLIED>
 

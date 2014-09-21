@@ -134,6 +134,14 @@ optimization_optimize_t const g_optimizer_optimize_negate_1_0[] =
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_a_and_b_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_AND,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_a_plus_b_1_2_0[] =
 {
     {
@@ -215,6 +223,30 @@ optimization_optimize_t const g_optimizer_optimize_replace_while_true_with_forev
 };
 
 
+optimization_optimize_t const g_optimizer_optimize_to_assignment_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_NODE_TYPE,
+        /* f_indexes */     { static_cast<index_t>(Node::node_t::NODE_ASSIGNMENT), 0, 0, 0, 0, 0 }
+    }
+};
+
+
+optimization_optimize_t const g_optimizer_optimize_to_assignment_and_set_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_NODE_TYPE,
+        /* f_indexes */     { static_cast<index_t>(Node::node_t::NODE_ASSIGNMENT), 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_INT64,
+        /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_INTEGER,
+        /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
+    }
+};
 
 
 

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.14
+ * Version: 0.1.5.17
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -490,32 +490,7 @@ snapwebsites.Output.prototype.registeredBufferToMIME_; // = []; -- initialized i
  */
 snapwebsites.Output.prototype.initQsParams_ = function()
 {
-    var v, variables, name_value;
-
-    this.queryString_ = {};
-
-    variables = location.search.replace(/^\?/, "")
-                               .replace(/\+/, "%20")
-                               .split("&");
-    for(v in variables)
-    {
-        if(variables.hasOwnProperty(v))
-        {
-            name_value = variables[v].split("=");
-            if(name_value.length === 2)
-            {
-                try
-                {
-                    this.queryString_[name_value[0]] = decodeURIComponent(name_value[1]);
-                }
-                catch(ignore)
-                {
-                    // totally ignore if invalid
-                    // (happens if name_value[1] is not valid UTF-8)
-                }
-            }
-        }
-    }
+    this.queryString_ = snapwebsites.Output.parseQueryString(document.search.replace(/^\?/, ""));
 };
 
 
@@ -771,6 +746,80 @@ snapwebsites.Output.prototype.bufferToMIME = function(buffer)
 snapwebsites.Output.prototype.registerBufferToMIME = function(buffer_to_mime)
 {
     this.registeredBufferToMIME_.push(buffer_to_mime);
+};
+
+
+/** \brief Parse a query string to an object.
+ *
+ * This function transforms a query string from a list of name/value
+ * pairs to a JavaScript object.
+ *
+ * If you already have a query string extracted, set the
+ * \p include_domain parameter to false. You have to be very careful
+ * since in this case, setting the \p include_domain parameter to
+ * true would likely make the function completely ignore your query
+ * string (because it is not likely to include a question mark (?)
+ * character, and when \p include_domain is true, the question mark
+ * (?) is mandatory.)
+ *
+ * If you have a full href (as defined in an anchor) with a domain name
+ * followed by a query string, then set the \p include_domain paramter
+ * to true. That way the function first removes the domain part.
+ *
+ * @param {!string} query_string  The query string to parse, may include
+ *                                a domain name.
+ * @param {boolean} include_domain  Whether the query_string includes a
+ *                                  domain name followed by a query string
+ *                                  after a question mark (?).
+ *
+ * @return {Object}  An object representing the query string name/value
+ *                   pairs of the query string; the object may be empty
+ *                   (i.e. length === 0).
+ */
+snapwebsites.Output.parseQueryString = function(query_string, include_domain) // static
+{
+    var v,
+        value,
+        variables,
+        name_value,
+        result = {};
+
+    if(include_domain)
+    {
+        pos = query_string.indexOf("?");
+        if(pos === -1)
+        {
+            return null;
+        }
+        query_string = query_string.slice(pos + 1);
+    }
+
+    variables = query_string.replace("+", "%20", "gm")
+                            .split("&");
+    for(v in variables)
+    {
+        if(variables.hasOwnProperty(v))
+        {
+            name_value = variables[v].split("=");
+            if(name_value.length === 2)
+            {
+                try
+                {
+                    // do this on two lines to make sure we do not get
+                    // spurious entries in the result object
+                    value = decodeURIComponent(name_value[1]);
+                    result[name_value[0]] = value;
+                }
+                catch(ignore)
+                {
+                    // totally ignore if invalid
+                    // (happens if name_value[1] is not valid UTF-8)
+                }
+            }
+        }
+    }
+
+    return result;
 };
 
 

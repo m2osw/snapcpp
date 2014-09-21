@@ -36,7 +36,7 @@ find_program( INC_DEPS_SCRIPT    SnapBuildIncDeps.pl           PATHS ${CMAKE_MOD
 find_program( PBUILDER_SCRIPT    SnapPBuilder.sh			   PATHS ${CMAKE_MODULE_PATH} )
 
 function( ConfigureMakeProject )
-	set( options        USE_CONFIGURE_SCRIPT )
+	set( options        USE_CONFIGURE_SCRIPT NOINC_DEBVERS )
 	set( oneValueArgs   PROJECT_NAME VERSION DISTFILE_PATH )
 	set( multiValueArgs CONFIG_ARGS DEPENDS )
 	cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
@@ -164,9 +164,13 @@ function( ConfigureMakeProject )
 	else()
 		add_custom_target( ${ARG_PROJECT_NAME}-incdeps )
 	endif()
+	unset( NOINC_DEBVERS )
+	if( ARG_NOINC_DEBVERS )
+		set( NOINC_DEBVERS "--noinc" )
+	endif()
 	add_custom_target(
 		${ARG_PROJECT_NAME}-debuild
-		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${DEBUILD_PLATFORM}
+		COMMAND env DEBEMAIL="${EMAIL_ADDY}" ${MAKE_SOURCE_SCRIPT} ${NOINC_DEBVERS} ${DEBUILD_PLATFORM}
 			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_debuild.log
 		WORKING_DIRECTORY ${SRC_DIR}
 		DEPENDS ${ARG_PROJECT_NAME}-incdeps

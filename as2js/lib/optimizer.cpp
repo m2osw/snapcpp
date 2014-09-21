@@ -577,6 +577,7 @@ void Optimizer::assignment_add(Node::pointer_t& assignment_node)
 {
     // a += 0 -> a
     // a -= 0 -> a
+    // a -= NaN -> NaN
     if(assignment_node->get_children_size() != 2)
     {
         return;
@@ -614,9 +615,9 @@ void Optimizer::assignment_add(Node::pointer_t& assignment_node)
 
 void Optimizer::assignment_multiply(Node::pointer_t& assignment_node)
 {
-    // a *= 0 -> 0
+    // a *= 0 -> 0  --  wrong, this is like 'a = 0' not just '0'
     // a *= 1 -> a
-    // a *= NaN -> NaN
+    // a *= NaN -> NaN -- wrong, this is like 'a = NaN' not just 'NaN'
     if(assignment_node->get_children_size() != 2)
     {
         return;
@@ -633,7 +634,7 @@ void Optimizer::assignment_multiply(Node::pointer_t& assignment_node)
                 // Source:
                 //   a *= 0;
                 // Destination:
-                //   0
+                //   0;  // wrong! -- maybe a = 0? but if a is NaN then that's wrong too...
                 //
                 assignment_node->replace_with(right);
             }
@@ -642,7 +643,7 @@ void Optimizer::assignment_multiply(Node::pointer_t& assignment_node)
                 // Source:
                 //   a *= 1;
                 // Destination:
-                //   a;
+                //   a;  // wrong unless we know 'a' is a number
                 //
                 assignment_node->replace_with(assignment_node->get_child(0));
             }
@@ -657,7 +658,7 @@ void Optimizer::assignment_multiply(Node::pointer_t& assignment_node)
                 // Source:
                 //   a *= 0.0;
                 // Destination:
-                //   a;
+                //   0.0; // wrong!
                 //
                 assignment_node->replace_with(right);
             }
@@ -666,7 +667,7 @@ void Optimizer::assignment_multiply(Node::pointer_t& assignment_node)
                 // Source:
                 //   a *= 1.0;
                 // Destination:
-                //   a;
+                //   a;  // wrong unless we know 'a' is a number
                 //
                 assignment_node->replace_with(assignment_node->get_child(0));
             }

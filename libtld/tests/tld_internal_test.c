@@ -102,7 +102,7 @@ void test_search()
 		 */
 
 		/* get the .uk offset */
-		{ 6775, 7380, "uk", 2, 7333 },
+		{ 6775, 7405, "uk", 2, 7355 },
 
 		/* get each offset of the .uk 2nd level domain */
 		{ 6587, 6612, "ac", 2,							6587 },
@@ -141,7 +141,7 @@ void test_search()
 		{ 6530, 6555, "cz", 2, -1 },
 
 		/* get the .vu offset */
-		{ 6775, 7380, "vu", 2, 7356 },
+		{ 6775, 7405, "vu", 2, 7378 },
 
 		/* get the .gov.vu offset */
 		{ 6720, 6721, "gov", 3, 6720 },

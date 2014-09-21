@@ -2345,7 +2345,7 @@ void QCassandraTable::create()
     f_from_cassandra = true;
 
     // TBD: Should we then call describe_keyspace() on our Context
-    //      to make sure we've got the right data (defaults) in this
+    //      to make sure we have got the right data (defaults) in this
     //      object and column definitions?
 }
 
