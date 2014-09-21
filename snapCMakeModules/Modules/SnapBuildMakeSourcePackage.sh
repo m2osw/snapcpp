@@ -65,7 +65,7 @@ fi
 # Build the source package itself. The output will be placed in the parent directory
 # of the CWD.
 #
-debuild -S -sa
+debuild -S -sa -m"${DEBEMAIL}"
 if [ "$?" != 0 ]
 then
 	echo "Error running debuild! Aborting..."
