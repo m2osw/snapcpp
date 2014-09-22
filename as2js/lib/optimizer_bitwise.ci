@@ -86,19 +86,404 @@ optimization_match_t const g_optimizer_bitwise_match_a_and_b[] =
 };
 
 
-
-/** \brief Optimize '!true' to 'false'.
+/** \brief Match 'a | b'
  *
- * This table defines the optimization of '!true' to 'false'.
+ * This table defines a match for the expression 'a | b' when a and b
+ * are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_or_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_or),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'a ^ b'
+ *
+ * This table defines a match for the expression 'a ^ b' when a and b
+ * are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_xor_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_xor),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'a << b'
+ *
+ * This table defines a match for the expression 'a << b' when a and b
+ * are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_shift_left_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_shift_left),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'a >> b'
+ *
+ * This table defines a match for the expression 'a >> b' when a and b
+ * are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_shift_right_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_shift_right),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'a >>> b'
+ *
+ * This table defines a match for the expression 'a >>> b' when a and b
+ * are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_shift_right_unsigned_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_shift_right_unsigned),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'a <% b'
+ *
+ * This table defines a match for the expression 'a <% b' when a and b
+ * are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_rotate_left_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_rotate_left),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'a >% b'
+ *
+ * This table defines a match for the expression 'a >% b' when a and b
+ * are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_rotate_right_b[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_rotate_right),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+
+/** \brief Optimize 'number & number' to 'number'.
+ *
+ * This table defines the optimization of 'number & number' to 'number'.
  */
 optimization_entry_t const g_optimizer_bitwise_entry_a_and_b[] =
 {
     {
-        /* f_name */            "a & b, where a and b are numbers -> (a & b)",
+        /* f_name */            "a & b, where a and b are numbers -> and(a, b)",
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_and_b),
         /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_and_b_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'number | number' to 'number'.
+ *
+ * This table defines the optimization of 'number | number' to 'number'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_or_b[] =
+{
+    {
+        /* f_name */            "a | b, where a and b are numbers -> or(a, b)",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_or_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_or_b_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'number ^ number' to 'number'.
+ *
+ * This table defines the optimization of 'number ^ number' to 'number'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_xor_b[] =
+{
+    {
+        /* f_name */            "a ^ b, where a and b are numbers -> xor(a, b)",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_xor_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_xor_b_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'number << number' to 'number'.
+ *
+ * This table defines the optimization of 'number << number' to 'number'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_shift_left_b[] =
+{
+    {
+        /* f_name */            "a << b, where a and b are numbers -> shift_left(a, b)",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_shift_left_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_shift_left_b_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'number >> number' to 'number'.
+ *
+ * This table defines the optimization of 'number >> number' to 'number'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_shift_right_b[] =
+{
+    {
+        /* f_name */            "a >> b, where a and b are numbers -> shift_right(a, b)",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_shift_right_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_shift_right_b_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'number >>> number' to 'number'.
+ *
+ * This table defines the optimization of 'number >>> number' to 'number'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_shift_right_unsigned_b[] =
+{
+    {
+        /* f_name */            "a >>> b, where a and b are numbers -> shift_right_unsigned(a, b)",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_shift_right_unsigned_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_shift_right_unsigned_b_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'number <% number' to 'number'.
+ *
+ * This table defines the optimization of 'number <% number' to 'number'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_rotate_left_b[] =
+{
+    {
+        /* f_name */            "a <% b, where a and b are numbers -> rotate_left(a, b)",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_rotate_left_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_rotate_left_b_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'number >% number' to 'number'.
+ *
+ * This table defines the optimization of 'number >% number' to 'number'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_rotate_right_b[] =
+{
+    {
+        /* f_name */            "a >% b, where a and b are numbers -> rotate_right(a, b)",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_rotate_right_b),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_rotate_right_b_1_2_0)
     }
 };
 
@@ -117,6 +502,33 @@ optimization_table_t const g_optimizer_bitwise_table[] =
     // bitwise AND
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_and_b)
+    },
+
+    // bitwise OR
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_or_b)
+    },
+
+    // bitwise XOR
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_xor_b)
+    },
+
+    // shift
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_shift_left_b)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_shift_right_b)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_shift_right_unsigned_b)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_rotate_left_b)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_rotate_right_b)
     }
 };
 

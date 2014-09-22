@@ -314,6 +314,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 
     if(n == "users::identifier"
     || n == "shorturl::identifier"
+    || n == "finball::invoice_number" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
     )
     {
         return CT_uint64_value;

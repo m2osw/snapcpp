@@ -4,7 +4,7 @@
     // number & number => number
     {
         //"verbose": true,
-        "name": "number & number -> number",
+        "name": "0xAFC3 & 0x5355 -> 0x341",
         "program": "0xAFC3 & 0x5355;",
         "parser result": {
             "node type": "PROGRAM",
@@ -38,6 +38,1424 @@
                         {
                             "node type": "INT64",
                             "integer": 0x0341
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number & number => number
+    {
+        //"verbose": true,
+        "name": "0xAFC3 & NaN -> 0",
+        "program": "0xAFC3 & NaN;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number | number => number
+    {
+        //"verbose": true,
+        "name": "0xAFC3 | 0x5355 -> 0xFFD7",
+        "program": "0xAFC3 | 0x5355;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_OR",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0x5355
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xFFD7
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number | number => number
+    {
+        //"verbose": true,
+        "name": "0xAFC3 | 0x5355 -> 0x5355",
+        "program": "NaN | 0x5355;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_OR",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0x5355
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x5355
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number ^ number => number
+    {
+        //"verbose": true,
+        "name": "0xAFC3 ^ 0x5355 -> 0xFC96",
+        "program": "0xAFC3 ^ 0x5355;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_XOR",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0x5355
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xFC96
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number ^ number => number
+    {
+        //"verbose": true,
+        "name": "0xAFC3 ^ NaN -> 0xAFC3",
+        "program": "0xAFC3 ^ NaN;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_XOR",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xAFC3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number ^ number => number
+    {
+        //"verbose": true,
+        "name": "NaN ^ 0xAFC3 -> 0xAFC3",
+        "program": "NaN ^ 0xAFC3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_XOR",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xAFC3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number << number => number
+    {
+        //"verbose": true,
+        "name": "number << number -> number",
+        "program": "0xAFC3 << 4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_LEFT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xAFC30
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number << number => number
+    {
+        //"verbose": true,
+        "name": "number << number -> number",
+        "program": "0xAFC3 << -4;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static shift amount is less than zero. 28 will be used instead of -4.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_LEFT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x30000000
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number << number => number
+    {
+        //"verbose": true,
+        "name": "number << number -> number",
+        "program": "0xAFC3 << 4 + 32;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static shift amount is larger than 31. 4 will be used instead of 36.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_LEFT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 32
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xAFC30
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >> number => number
+    {
+        //"verbose": true,
+        "name": "number >> number -> number",
+        "program": "0xAFC3 >> 4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xAFC
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >> number => number
+    {
+        //"verbose": true,
+        "name": "number >> number -> number",
+        "program": "0xAFC3 >> -4;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static shift amount is less than zero. 28 will be used instead of -4.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >> number => number
+    {
+        //"verbose": true,
+        "name": "number >> number -> number",
+        "program": "0xAFC3 >> 4 + 32;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static shift amount is larger than 31. 4 will be used instead of 36.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 32
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xAFC
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >> number => number
+    {
+        //"verbose": true,
+        "name": "number >> number -> number",
+        "program": "-1000 >> 4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 1000
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": -63
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >>> number => number
+    {
+        //"verbose": true,
+        "name": "number >>> number -> number",
+        "program": "0xAFC3 >>> 4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_RIGHT_UNSIGNED",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xAFC
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >>> number => number
+    {
+        //"verbose": true,
+        "name": "number >>> number -> number",
+        "program": "0xAFC3 >>> -4;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static shift amount is less than zero. 28 will be used instead of -4.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_RIGHT_UNSIGNED",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >>> number => number
+    {
+        //"verbose": true,
+        "name": "number >>> number -> number",
+        "program": "0xAFC3 >>> 4 + 32;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static shift amount is larger than 31. 4 will be used instead of 36.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_RIGHT_UNSIGNED",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xAFC3
+                                },
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 32
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xAFC
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >>> number => number
+    {
+        //"verbose": true,
+        "name": "number >>> number -> number",
+        "program": "-1000 >>> 4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SHIFT_RIGHT_UNSIGNED",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 1000
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            // -1000 is 0xFFFFFC18
+                            "integer": 0x0FFFFFC1
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number <% number => number
+    {
+        //"verbose": true,
+        "name": "number <% number -> number",
+        "program": "use extended_operators; 0xF195BAFC3 <% 4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_LEFT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x95BAFC31
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number <% number => number
+    {
+        //"verbose": true,
+        "name": "number <% number -> number",
+        "program": "use extended_operators; 0xF195BAFC3 <% -4;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static rotate amount is less than zero. 28 will be used instead of -4.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_LEFT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x3195BAFC
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number <% number => number
+    {
+        //"verbose": true,
+        "name": "number <% number -> number",
+        "program": "use extended_operators; 0xF195BAFC3 <% 4 + 32;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static rotate amount is larger than 31. 4 will be used instead of 36.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_LEFT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 32
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x95BAFC31
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >% number => number
+    {
+        //"verbose": true,
+        "name": "number >% number -> number",
+        "program": "use extended_operators; 0xF195BAFC3 >% 4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x3195BAFC
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >% number => number
+    {
+        //"verbose": true,
+        "name": "number >% number -> number",
+        "program": "use extended_operators; 0xF195BAFC3 >% -4;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static rotate amount is less than zero. 28 will be used instead of -4.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x95BAFC31
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >% number => number
+    {
+        //"verbose": true,
+        "name": "number >% number -> number",
+        "program": "use extended_operators; 0xF195BAFC3 >% 4 + 32;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "this static rotate amount is larger than 31. 4 will be used instead of 36.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 4
+                                        },
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 32
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x3195BAFC
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >% number => number
+    {
+        //"verbose": true,
+        "name": "-1000 >% 4 -> 0x8FFFFFC1",
+        "program": "use extended_operators; -1000 >% 4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 1000
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x8FFFFFC1
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >% number => number
+    {
+        //"verbose": true,
+        "name": "0xF195BAFC3 >% NaN -> 0x195BAFC3",
+        "program": "use extended_operators; 0xF195BAFC3 >% NaN;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x195BAFC3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >% number => number
+    {
+        //"verbose": true,
+        "name": "0xF195BAFC3 >% -NaN -> 0x195BAFC3",
+        "program": "use extended_operators; 0xF195BAFC3 >% -NaN;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": NaN
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x195BAFC3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >% number => number
+    {
+        //"verbose": true,
+        "name": "0xF195BAFC3 >% Infinity -> 0x195BAFC3",
+        "program": "use extended_operators; 0xF195BAFC3 >% Infinity;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": Infinity
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x195BAFC3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // number >% number => number
+    {
+        //"verbose": true,
+        "name": "0xF195BAFC3 >% -Infinity -> 0x195BAFC3",
+        "program": "use extended_operators; 0xF195BAFC3 >% -Infinity;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ROTATE_RIGHT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0x195BAFC3
                         }
                     ]
                 }

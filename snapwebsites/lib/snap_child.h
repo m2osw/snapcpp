@@ -336,6 +336,7 @@ public:
     static void                 canonicalize_path(QString& path);
     static QString              date_to_string(int64_t v, date_format_t date_format = DATE_FORMAT_SHORT);
     static time_t               string_to_date(QString const& date);
+    static int                  last_day_of_month(int month, int year);
     bool                        verify_locale(QString& lang, QString& country, bool generate_errors);
     static bool                 verify_language_name(QString& lang);
     static bool                 verify_country_name(QString& country);

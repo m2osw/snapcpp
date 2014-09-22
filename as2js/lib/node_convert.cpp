@@ -340,7 +340,16 @@ bool Node::to_int64()
         return true;
 
     case node_t::NODE_FLOAT64:
-        f_int.set(f_float.get()); // C-like cast to integer with a floor() (no rounding)
+        if(f_float.is_NaN() || f_float.is_infinity())
+        {
+            // the C-like cast would use 0x800...000
+            // JavaScript expects zero instead
+            f_int.set(0);
+        }
+        else
+        {
+            f_int.set(f_float.get()); // C-like cast to integer with a floor() (no rounding)
+        }
         break;
 
     case node_t::NODE_TRUE:

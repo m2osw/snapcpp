@@ -1259,7 +1259,6 @@ void run_tests(char const *data, char const *filename)
                             }
                         }
                         expected.f_message = message.find("message")->second->get_string();
-//std::cerr << "    --- message [" << expected.f_message << "]\n";
                         tc.f_expected.push_back(expected);
                     }
                 }
