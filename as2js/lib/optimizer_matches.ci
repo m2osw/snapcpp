@@ -105,6 +105,18 @@ Node::node_t const g_optimizer_match_bitwise_and[]
 };
 
 
+Node::node_t const g_optimizer_match_bitwise_or[]
+{
+    Node::node_t::NODE_BITWISE_OR
+};
+
+
+Node::node_t const g_optimizer_match_bitwise_xor[]
+{
+    Node::node_t::NODE_BITWISE_XOR
+};
+
+
 Node::node_t const g_optimizer_match_conditional[]
 {
     Node::node_t::NODE_CONDITIONAL
@@ -205,6 +217,36 @@ Node::node_t const g_optimizer_match_numbers[]
 {
     Node::node_t::NODE_INT64,
     Node::node_t::NODE_FLOAT64
+};
+
+
+Node::node_t const g_optimizer_match_rotate_left[]
+{
+    Node::node_t::NODE_ROTATE_LEFT
+};
+
+
+Node::node_t const g_optimizer_match_rotate_right[]
+{
+    Node::node_t::NODE_ROTATE_RIGHT
+};
+
+
+Node::node_t const g_optimizer_match_shift_left[]
+{
+    Node::node_t::NODE_SHIFT_LEFT
+};
+
+
+Node::node_t const g_optimizer_match_shift_right[]
+{
+    Node::node_t::NODE_SHIFT_RIGHT
+};
+
+
+Node::node_t const g_optimizer_match_shift_right_unsigned[]
+{
+    Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED
 };
 
 

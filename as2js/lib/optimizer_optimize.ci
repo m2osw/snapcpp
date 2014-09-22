@@ -142,6 +142,62 @@ optimization_optimize_t const g_optimizer_optimize_a_and_b_1_2_0[] =
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_a_or_b_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_OR,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_a_rotate_left_b_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ROTATE_LEFT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_a_rotate_right_b_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ROTATE_RIGHT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_a_shift_left_b_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_LEFT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_a_shift_right_b_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_RIGHT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_a_shift_right_unsigned_b_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_RIGHT_UNSIGNED,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_a_xor_b_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_XOR,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_a_plus_b_1_2_0[] =
 {
     {

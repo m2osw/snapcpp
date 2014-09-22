@@ -1009,7 +1009,7 @@ void As2JsNodeUnitTests::test_conversions()
     }
 
     // verify special floating point values
-    { // NaN
+    { // NaN -> String
         as2js::Float64 j;
         as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_FLOAT64));
         j.set_NaN();
@@ -1017,6 +1017,15 @@ void As2JsNodeUnitTests::test_conversions()
         CPPUNIT_ASSERT(node->to_string());
         CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_STRING);
         CPPUNIT_ASSERT(node->get_string() == "NaN");
+    }
+    { // NaN -> Int64
+        as2js::Float64 j;
+        as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_FLOAT64));
+        j.set_NaN();
+        node->set_float64(j);
+        CPPUNIT_ASSERT(node->to_int64());
+        CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_INT64);
+        CPPUNIT_ASSERT(node->get_int64().get() == 0);
     }
     { // +Infinity
         as2js::Float64 j;
@@ -1027,6 +1036,15 @@ void As2JsNodeUnitTests::test_conversions()
         CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_STRING);
         CPPUNIT_ASSERT(node->get_string() == "Infinity");
     }
+    { // +Infinity
+        as2js::Float64 j;
+        as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_FLOAT64));
+        j.set_infinity();
+        node->set_float64(j);
+        CPPUNIT_ASSERT(node->to_int64());
+        CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_INT64);
+        CPPUNIT_ASSERT(node->get_int64().get() == 0);
+    }
     { // -Infinity
         as2js::Float64 j;
         as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_FLOAT64));
@@ -1036,6 +1054,16 @@ void As2JsNodeUnitTests::test_conversions()
         CPPUNIT_ASSERT(node->to_string());
         CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_STRING);
         CPPUNIT_ASSERT(node->get_string() == "-Infinity");
+    }
+    { // +Infinity
+        as2js::Float64 j;
+        as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_FLOAT64));
+        j.set_infinity();
+        j.set(-j.get());
+        node->set_float64(j);
+        CPPUNIT_ASSERT(node->to_int64());
+        CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_INT64);
+        CPPUNIT_ASSERT(node->get_int64().get() == 0);
     }
 }
 
