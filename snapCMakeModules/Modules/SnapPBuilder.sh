@@ -9,6 +9,7 @@
 
 # Handle command line
 #
+set -e
 if [ -z "$1" ]
 then
     echo "usage: $0 distribution"
@@ -25,12 +26,5 @@ NAME=`dpkg-parsechangelog --show-field Source`
 VERSION=`dpkg-parsechangelog --show-field Version`
 
 pbuilder-dist $1 build ../${NAME}_${VERSION}.dsc
-if [ "$?" != 0 ]
-then
-	echo "Error running pbuilder-dist! Aborting..."
-    exit $?
-fi
-
-exit 0
 
 # vim: ts=4 sw=4 et
