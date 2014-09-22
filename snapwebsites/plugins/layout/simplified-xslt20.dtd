@@ -233,13 +233,17 @@ DTD of the XSLT 2.0.
 <!ATTLIST table border CDATA #IMPLIED
                 cellpadding CDATA #IMPLIED
                 cellspacing CDATA #IMPLIED
-                class CDATA #IMPLIED>
+                class CDATA #IMPLIED
+                height CDATA #IMPLIED
+                style CDATA #IMPLIED
+                width CDATA #IMPLIED>
 
 <!ELEMENT tbody ANY>
 <!ATTLIST tbody class CDATA #IMPLIED>
 
 <!ELEMENT td ANY>
-<!ATTLIST td class CDATA #IMPLIED
+<!ATTLIST td align CDATA #IMPLIED
+             class CDATA #IMPLIED
              colspan CDATA #IMPLIED
              rowspan CDATA #IMPLIED
              style CDATA #IMPLIED

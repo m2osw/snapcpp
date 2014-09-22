@@ -118,13 +118,14 @@ char const *g_week_day_name[] =
 {
     "Sunday", "Monday", "Tuesday", "Wedneday", "Thursday", "Friday", "Saturday"
 };
-int const g_week_day_length[] = { 6, 6, 7, 8, 8, 6, 8 };
+int const g_week_day_length[] = { 6, 6, 7, 8, 8, 6, 8 }; // strlen() of g_week_day_name's
 char const *g_month_name[] =
 {
     "January", "February", "Marsh", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
 };
-int const g_month_length[] = { 7, 8, 5, 5, 3, 4, 4, 6, 9, 7, 8, 8 };
+int const g_month_length[] = { 7, 8, 5, 5, 3, 4, 4, 6, 9, 7, 8, 8 }; // strlen() of g_month_name
+int const g_month_days[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 signed char const g_timezone_adjust[26] =
 {
     /* A */ -1,
@@ -7564,6 +7565,49 @@ time_t snap_child::string_to_date(QString const& date)
     // let's make time
     parser.f_time_info.tm_year -= 1900;
     return mkgmtime(&parser.f_time_info);
+}
+
+
+/** \brief From a month and year, get the last day of the month.
+ *
+ * This function gives you the number of the last day of the month.
+ * In all cases, except February, it returns 30 or 31.
+ *
+ * For the month of February, we first compute the leap year flag.
+ * If the year is a leap year, then it returns 29, otherwise it
+ * returns 28.
+ *
+ * The leap year formula is:
+ *
+ * \code
+ *      leap = !(year % 4) && (year % 100 || !(year % 400));
+ * \endcode
+ *
+ * \param[in] month  A number from 1 to 12 representing a month.
+ * \param[in] year  A year, including the century.
+ */
+int snap_child::last_day_of_month(int month, int year)
+{
+    if(month < 1 || month > 12)
+    {
+        throw snap_logic_exception(QString("last_day_of_month called with %1 as the month number").arg(month));
+    }
+
+    // The time when people switch from Julian to Gregorian is country
+    // dependent, Great Britain changed on September 2, 1752, but some
+    // countries changed as late as 1952...
+    if(year < 1800)
+    {
+        throw snap_logic_exception(QString("last_day_of_month called with %1 as the year number").arg(year));
+    }
+
+    if(month == 2)
+    {
+        // special case for February
+        return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? 29 : 28;
+    }
+
+    return g_month_days[month];
 }
 
 
