@@ -508,6 +508,7 @@ snap_init::snap_init( int argc, char *argv[] )
         exit( 1 );
     }
 
+#if 0
     f_cassandra.connect( f_config );
     //
     QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
@@ -521,6 +522,7 @@ snap_init::snap_init( int argc, char *argv[] )
         SNAP_LOG_FATAL() << "You must create both the 'domains' and the 'websites' tables before you can run snapserver!";
         exit( 1 );
     }
+#endif
 
     bool const list( f_opt.is_defined( "list" ) );
     if(list)
@@ -785,6 +787,20 @@ void snap_init::terminate_processes()
 
 void snap_init::start_processes()
 {
+    f_cassandra.connect( f_config );
+    //
+    QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
+    Q_ASSERT(context);
+    //
+    QtCassandra::QCassandraTable::pointer_t domains_table  ( context->findTable(snap::get_name(snap::SNAP_NAME_DOMAINS))  );
+    QtCassandra::QCassandraTable::pointer_t websites_table ( context->findTable(snap::get_name(snap::SNAP_NAME_WEBSITES)) );
+    //
+    if( !(domains_table && websites_table) )
+    {
+        SNAP_LOG_FATAL() << "You must create both the 'domains' and the 'websites' tables before you can run snapserver!";
+        exit( 1 );
+    }
+
     // lock snapinit so we cannot start more than one
     f_lock_file.open( QFile::ReadWrite );
 
