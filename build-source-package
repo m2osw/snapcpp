@@ -2,7 +2,7 @@
 #
 # Script used to build a source package specific to a sub-project.
 
-echo "Please, use a clean version of the repository and use:"
+echo "Please, from a clean version of the repository use:"
 echo "   dpkg-source -b <project-name>"
 echo "from the root directory"
 exit 1;
