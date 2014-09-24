@@ -45,6 +45,20 @@ VERSION=`dpkg-parsechangelog --show-field Version`
 FULLNAME=${NAME}_${VERSION}
 echo "Building source package for '${FULLNAME}'"
 rm -f ../${FULLNAME}.dsc ../${FULLNAME}_source.* ../${FULLNAME}.tar.gz
+VERSION_SCRIPT=$(cat<<EOF
+my \$version = <STDIN>;
+
+if( \$version =~ m/^(\d*).(\d+).(\d+)\$/ )
+{
+	print "\$1.\$2.\$3.1";
+}
+elsif( \$version =~ m/^(\d*).(\d+).(\d+).(\d+)\$/ )
+{
+	my \$inc = \$4+1;
+	print "\$1.\$2.\$3.\$inc";
+}
+EOF
+)
 
 if [ -z "$NOINC_VERSION" ]
 then
@@ -52,7 +66,7 @@ then
     # and increment the version number.
     #
     CURVER=`dpkg-parsechangelog --show-field Version | sed 's/~.*$//'`
-    INCVER=`echo ${CURVER} | perl -pe 's/^((\d+\.)*)(\d+)(.*)$/$1.($3+1).$4/e'`
+    INCVER=`echo ${CURVER} | perl -e '$VERSION_SCRIPT'`
 
     # Write a new changelog entry, but using "~dist".
     #
