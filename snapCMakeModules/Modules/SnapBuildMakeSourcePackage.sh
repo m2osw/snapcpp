@@ -66,7 +66,7 @@ then
     # and increment the version number.
     #
     CURVER=`dpkg-parsechangelog --show-field Version | sed 's/~.*$//'`
-    INCVER=`echo ${CURVER} | perl -e '$VERSION_SCRIPT'`
+    INCVER=`echo ${CURVER} | perl -e "$VERSION_SCRIPT"`
 
     # Write a new changelog entry, but using "~dist".
     #
