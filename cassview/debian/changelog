@@ -1,3 +1,9 @@
+cassview (0.0.28.2~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 25 Sep 2014 03:05:27 -0700
+
 cassview (0.0.28.1~saucy) saucy; urgency=high
 
   * Nightly build.
