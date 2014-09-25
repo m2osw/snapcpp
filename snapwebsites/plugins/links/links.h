@@ -26,6 +26,8 @@ namespace links
 
 enum name_t
 {
+    SNAP_NAME_LINKS_CREATELINK,
+    SNAP_NAME_LINKS_DELETELINK,
     SNAP_NAME_LINKS_TABLE,         // Cassandra Table used for links
     SNAP_NAME_LINKS_NAMESPACE
 };
@@ -218,6 +220,7 @@ public:
 };
 
 class links : public plugins::plugin
+            , public server::backend_action
 {
 public:
     static int const    DELETE_RECORD_COUNT = 1000;
@@ -232,6 +235,8 @@ public:
 
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_add_snap_expr_functions(snap_expr::functions_t& functions);
+    void                on_register_backend_action(server::backend_action_map_t& actions);
+    virtual void        on_backend_action(QString const& action);
     void                adjust_links_after_cloning(QString const& source_key, QString const& destination_key);
 
     // TBD should those be events? (or trigger events?)

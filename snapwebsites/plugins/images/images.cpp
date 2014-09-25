@@ -188,6 +188,7 @@ void images::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(images, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(images, "content", content::content, modified_content, _1);
     SNAP_LISTEN(images, "listener", listener::listener, listener_check, _1, _2, _3, _4);
+    SNAP_LISTEN(images, "versions", versions::versions, versions_libraries, _1);
 }
 
 
@@ -700,6 +701,22 @@ void images::on_register_backend_action(server::backend_action_map_t& actions)
     actions[get_name(SNAP_NAME_IMAGES_ACTION)] = this;
 }
 
+
+/** \brief Add the version of the ImageMagick library.
+ *
+ * This function adds the ImageMagick library version to the filter token.
+ * This library is not expected to be linked against with core, only this
+ * plugin and derivatives.
+ *
+ * \param[in] token  The token being worked on.
+ */
+void images::on_versions_libraries(filter::filter::token_info_t& token)
+{
+    token.f_replacement += "<li>";
+    size_t ignore;
+    token.f_replacement += MagickCore::GetMagickVersion(&ignore);
+    token.f_replacement += " (compiled with " MagickLibVersionText ")</li>";
+}
 
 /** \brief Start the images transform server.
  *

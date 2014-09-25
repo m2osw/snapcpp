@@ -426,14 +426,13 @@ int process::run()
                 {
                     return -1;
                 }
-                QByteArray data;
                 while(!feof(f) && !ferror(f))
                 {
                     char buf[4096];
                     size_t l(fread(buf, 1, sizeof(buf), f));
                     if(l > 0)
                     {
-                        data.append(buf, static_cast<int>(l));
+                        f_output.append(buf, static_cast<int>(l));
                     }
                 }
                 return rp.close_pipe();

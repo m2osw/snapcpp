@@ -91,6 +91,7 @@ void antivirus::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(antivirus, "content", content::content, check_attachment_security, _1, _2, _3);
+    SNAP_LISTEN(antivirus, "versions", versions::versions, versions_tools, _1);
 }
 
 /** \brief Get a pointer to the antivirus plugin.
@@ -227,12 +228,27 @@ void antivirus::on_check_attachment_security(content::attachment_file const& fil
     p.add_argument("-");
     p.set_input(file.get_file().get_data());
     p.run();
-    QString output(p.get_output(true));
+    QString const output(p.get_output(true));
 
     if(!output.isEmpty())
     {
         secure.not_permitted("anti-virus: " + output);
     }
+}
+
+
+void antivirus::on_versions_tools(filter::filter::token_info_t& token)
+{
+    process p("antivirus::clamscan-version");
+    p.set_mode(process::PROCESS_MODE_OUTPUT);
+    p.set_command("clamscan");
+    p.add_argument("--version");
+    p.run();
+    QString const output(p.get_output(true));
+
+    token.f_replacement += "<li>";
+    token.f_replacement += output;
+    token.f_replacement += "</li>";
 }
 
 

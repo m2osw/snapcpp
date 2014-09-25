@@ -886,9 +886,9 @@ void Optimizer::power(Node::pointer_t& power_node)
             else
             {
                 // Source:
-                //   1.0 ** b;
+                //   1 ** b;
                 // Destination:
-                //   1.0
+                //   1
                 //
                 power_node->replace_with(left);
             }

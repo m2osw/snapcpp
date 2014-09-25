@@ -17,6 +17,7 @@
 #pragma once
 
 #include "../path/path.h"
+#include "../versions/versions.h"
 
 #include "snapwebsites.h"
 #include "snap_backend.h"
@@ -83,6 +84,7 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(server::backend_action_map_t& actions);
+    void                on_versions_libraries(filter::filter::token_info_t& token);
     virtual void        on_backend_action(QString const& action);
     virtual bool        on_path_execute(content::path_info_t& ipath);
 

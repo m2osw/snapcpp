@@ -37,7 +37,7 @@ namespace snap
 namespace plugins
 {
 
-QMap<QString, plugin *> g_plugins;
+plugin_list_t g_plugins;
 QString g_next_register_name;
 QString g_next_register_filename;
 
@@ -315,8 +315,8 @@ bool verify_plugin_name(QString const& name)
     QChar last(name[name.length() - 1]);
     if(last == '.' || last == '-')
     {
-        std::cerr << "error: plugin name \"" << name
-                << "\" cannot end with a period (.) or dash (-)."
+        SNAP_LOG_ERROR("error: plugin name \"")(name)
+                ("\" cannot end with a period (.) or dash (-).")
                ;
         return false;
     }
@@ -356,13 +356,16 @@ bool exists(QString const& name)
  */
 void register_plugin(QString const& name, plugin *p)
 {
-    if(name.isEmpty()) {
+    if(name.isEmpty())
+    {
         throw plugin_exception("plugin name missing when registering... expected \"" + name + "\".");
     }
-    if(name != g_next_register_name) {
+    if(name != g_next_register_name)
+    {
         throw plugin_exception("it is not possible to register a plugin (" + name + ") other than the one being loaded (" + g_next_register_name + ").");
     }
-    if(exists(name)) {
+    if(exists(name))
+    {
         // this should not happen except if the plugin factory was attempting
         // to register the same plugin many times in a row
         throw plugin_exception("it is not possible to register a plugin more than once (" + name + ").");
@@ -379,7 +382,71 @@ plugin::plugin()
     : f_name(g_next_register_name)
     , f_filename(g_next_register_filename)
     //, f_last_modification(0) -- auto-init
+    //, f_version_major(0) -- auto-init
+    //, f_version_minor(0) -- auto-init
 {
+}
+
+
+/** \brief Define the version of the plugin.
+ *
+ * This function saves the version of the plugin in the object.
+ * This way other systems can access the version.
+ *
+ * In general you never call that function. It is automatically
+ * called by the SNAP_PLUGIN_START() macro. Note that the
+ * function cannot be called more than once and the version
+ * cannot be zero or negative.
+ *
+ * \param[in] version_major  The major version of the plugin.
+ * \param[in] version_minor  The minor version of the plugin.
+ */
+void plugin::set_version(int version_major, int version_minor)
+{
+    if(f_version_major != 0
+    || f_version_minor != 0)
+    {
+        // version was already defined; it cannot be set again
+        throw plugin_exception(QString("version of plugin \"%1\" already defined.").arg(f_name));
+    }
+
+    if(version_major < 0
+    || version_minor < 0
+    || (version_major == 0 && version_minor == 0))
+    {
+        // version cannot be negative or null
+        throw plugin_exception(QString("version of plugin \"%1\" cannot be zero or negative (%2.%3).")
+                    .arg(f_name).arg(version_major).arg(version_minor));
+    }
+
+    f_version_major = version_major;
+    f_version_minor = version_minor;
+}
+
+
+/** \brief Retrieve the major version of this plugin.
+ *
+ * This function returns the major version of this plugin. This is the
+ * same version as defined in the plugin factory.
+ *
+ * \return The major version of the plugin.
+ */
+int plugin::get_major_version() const
+{
+    return f_version_major;
+}
+
+
+/** \brief Retrieve the minor version of this plugin.
+ *
+ * This function returns the minor version of this plugin. This is the
+ * same version as defined in the plugin factory.
+ *
+ * \return The minor version of the plugin.
+ */
+int plugin::get_minor_version() const
+{
+    return f_version_minor;
 }
 
 
@@ -470,6 +537,25 @@ int64_t plugin::do_update(int64_t last_updated)
 plugin *get_plugin(const QString& name)
 {
     return g_plugins.value(name, nullptr);
+}
+
+
+/** \brief Retrieve the list of plugins.
+ *
+ * This function returns the list of plugins that were loaded in this
+ * session. Remember that plugins are loaded each time a client accesses
+ * the server.
+ *
+ * This means that the list is complete only once you are in the snap
+ * child and after the plugins were initialized. If you are in a plugin,
+ * this means the list is not complete in the constructor. It is complete
+ * anywhere else.
+ *
+ * \return List of plugins in a map indexed by plugin name.
+ */
+plugin_list_t const& get_plugin_list()
+{
+    return g_plugins;
 }
 
 

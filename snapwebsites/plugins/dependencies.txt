@@ -4,7 +4,7 @@
 # Core is the library (the server class is a plugin)
 core:	; @echo $@
 
-antivirus: content form output	; @echo $@
+antivirus: content form output versions	; @echo $@
 attachment: path	; @echo $@
 char_chart: sitemapxml	; @echo $@
 content: links	; @echo $@
@@ -14,7 +14,7 @@ feed: layout path content messages	; @echo $@
 filter: content messages	; @echo $@
 form: sessions filter content messages	; @echo $@
 header: path layout output	; @echo $@
-images: listener	; @echo $@
+images: listener versions	; @echo $@
 info: path form messages users output	; @echo $@
 javascript: content	; @echo $@
 layout: content filter javascript taxonomy	; @echo $@
@@ -37,6 +37,7 @@ shorturl: sessions path output messages	; @echo $@
 sitemapxml: robotstxt permissions	; @echo $@
 taxonomy: layout path output	; @echo $@
 users: form sitemapxml output messages sendmail	; @echo $@
+versions: filter users	; @echo $@
 
 
 

@@ -192,6 +192,15 @@ char const *get_name(name_t name)
 }
 
 
+// definitions from the plugins so we can define the name and filename of
+// the server plugin
+namespace plugins
+{
+extern QString g_next_register_name;
+extern QString g_next_register_filename;
+}
+
+
 /** \brief Hidden Snap! Server namespace.
  *
  * This namespace encompasses global variables only available to the
@@ -436,7 +445,13 @@ server::pointer_t server::instance()
 {
     if( !g_instance )
     {
+        plugins::g_next_register_name = "server";
+        plugins::g_next_register_filename = __FILE__;
+
         g_instance.reset( new server );
+
+        plugins::g_next_register_name.clear();
+        plugins::g_next_register_filename.clear();
     }
     return g_instance;
 }
@@ -480,9 +495,15 @@ int64_t server::do_update(int64_t last_updated)
 /** \brief Initialize the server.
  *
  * This function initializes the server.
+ *
+ * \note
+ * The server is also a plugin. This is useful for having support for
+ * signals in the server.
  */
 server::server()
 {
+    set_version(SNAPWEBSITES_VERSION_MAJOR, SNAPWEBSITES_VERSION_MINOR);
+
     // default parameters -- we may want to have a separate function and
     //                       maybe some clear separate variables?
     f_parameters["listen"]         = "0.0.0.0:4004";

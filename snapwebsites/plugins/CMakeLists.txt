@@ -80,6 +80,7 @@ add_subdirectory(shorturl)
 add_subdirectory(sitemapxml)
 add_subdirectory(taxonomy)
 add_subdirectory(users)
+add_subdirectory(versions)
 
 
 ################################################################################

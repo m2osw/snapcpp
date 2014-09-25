@@ -1664,11 +1664,6 @@ void permissions::on_backend_action(QString const& action)
     {
         // make specified user root
         QtCassandra::QCassandraTable::pointer_t user_table(users::users::instance()->get_users_table());
-        if(!user_table)
-        {
-            SNAP_LOG_FATAL() << "error: table \"users\" not found.";
-            exit(1);
-        }
         QString const email(f_snap->get_server_parameter("ROOT_USER_EMAIL"));
         if(!user_table->exists(email))
         {
@@ -1913,14 +1908,14 @@ void permissions::on_generate_header_content(content::path_info_t& ipath, QDomEl
             "edit",
             get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
             can_edit);
-    QString can_edit_page(can_edit.allowed() ? "yes" : "");
+    QString const can_edit_page(can_edit.allowed() ? "yes" : "");
 
     FIELD_SEARCH
         (content::field_search::COMMAND_ELEMENT, metadata)
         (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
 
         // snap/head/metadata/desc[@type="can_edit"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, can_edit.allowed() ? "yes" : "")
+        (content::field_search::COMMAND_DEFAULT_VALUE, can_edit_page)
         (content::field_search::COMMAND_SAVE, "desc[type=can_edit]/data")
 
         // snap/head/metadata/desc[@type="login_status"]/data

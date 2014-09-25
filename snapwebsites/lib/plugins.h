@@ -54,24 +54,32 @@ public:
 };
 
 
+
+
 class plugin
 {
 public:
                                         plugin();
     virtual                             ~plugin() {}
 
+    void                                set_version(int version_major, int version_minor);
+    int                                 get_major_version() const;
+    int                                 get_minor_version() const;
     QString                             get_plugin_name() const;
     int64_t                             last_modification() const;
     virtual QString                     description() const = 0;
     virtual int64_t                     do_update(int64_t last_updated);
 
 private:
-    const QString                        f_name;
-    const QString                        f_filename;
-    mutable controlled_vars::zint64_t    f_last_modification;
+    const QString                       f_name;
+    const QString                       f_filename;
+    mutable controlled_vars::zint64_t   f_last_modification;
+    controlled_vars::zint32_t           f_version_major;
+    controlled_vars::zint32_t           f_version_minor;
 };
 
 typedef std::shared_ptr<plugin> plugin_ptr_t;
+typedef QMap<QString, plugin *> plugin_list_t;
 
 QStringList list_all(QString const& plugin_path);
 bool load(QString const& plugin_path, plugin_ptr_t server, QStringList const& list_of_plugins);
@@ -79,6 +87,7 @@ QString find_plugin_filename(QStringList const& plugin_paths, QString const& nam
 bool exists(QString const& name);
 void register_plugin(QString const& name, plugin *p);
 plugin *get_plugin(QString const& name);
+plugin_list_t const& get_plugin_list();
 bool verify_plugin_name(QString const& name);
 
 /** \brief Initialize a plugin by creating a mini-factory.
@@ -153,16 +162,17 @@ bool verify_plugin_name(QString const& name);
     extern int qInitResources_##name(); \
     namespace snap { namespace name { \
     class plugin_##name##_factory { \
-    public: plugin_##name##_factory() : f_plugin(new name) { \
+    public: plugin_##name##_factory() : f_plugin(new name()) { \
         qInitResources_##name(); \
+        f_plugin->set_version(major, minor); \
         ::snap::plugins::register_plugin(#name, f_plugin); \
         ::snap::server::instance()->signal_listen_bootstrap( \
             boost::bind(&name::on_bootstrap, f_plugin, _1)); } \
-    ~plugin_##name##_factory() { delete f_plugin; } \
+    virtual ~plugin_##name##_factory() { delete f_plugin; } \
     name *instance() { return f_plugin; } \
-    int version_major() const { return major; } \
-    int version_minor() const { return minor; } \
-    QString version() const { return #major "." #minor; } \
+    virtual int version_major() const { return major; } \
+    virtual int version_minor() const { return minor; } \
+    virtual QString version() const { return #major "." #minor; } \
     private: name *f_plugin; \
     } g_plugin_##name##_factory;
 

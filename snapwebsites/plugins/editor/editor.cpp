@@ -2789,7 +2789,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             "edit",
             permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
             can_edit);
-    QString can_edit_page(can_edit.allowed() ? "yes" : "");
+    QString const can_edit_page(can_edit.allowed() ? "yes" : "");
 
     QXmlQuery q(QXmlQuery::XSLT20);
     QMessageHandler msg;

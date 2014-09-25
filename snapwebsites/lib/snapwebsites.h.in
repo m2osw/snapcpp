@@ -157,7 +157,7 @@ public:
 
     static void exit( const int code );
 
-    static const char *version();
+    static char const *version();
     static int version_major();
     static int version_minor();
     static int version_patch();

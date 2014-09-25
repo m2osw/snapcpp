@@ -5257,6 +5257,18 @@ bool snap_child::is_debug() const
 }
 
 
+/** \brief Retrieve the library (server) version.
+ *
+ * Retrieve the version of the snapwebsites library.
+ *
+ * \return A pointer to the version of the running server library.
+ */
+char const *snap_child::get_running_server_version()
+{
+    return server::version();
+}
+
+
 /** \brief Retrieve a server parameter.
  *
  * This function calls the get_parameter() function of the server. This

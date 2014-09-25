@@ -46,6 +46,12 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case SNAP_NAME_LINKS_CREATELINK:
+        return "createlink";
+
+    case SNAP_NAME_LINKS_DELETELINK:
+        return "deletelink";
+
     case SNAP_NAME_LINKS_TABLE: // sorted index of links
         return "links";
 
@@ -613,6 +619,7 @@ void links::on_bootstrap(::snap::snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(links, "server", server, add_snap_expr_functions, _1);
+    SNAP_LISTEN(links, "server", server, register_backend_action, _1);
 }
 
 
@@ -1334,6 +1341,198 @@ snap_expr::functions_t::function_call_table_t const links_functions[] =
 void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
 {
     functions.add_functions(details::links_functions);
+}
+
+
+/** \brief Register the links action.
+ *
+ * This function registers this plugin as supporting the "createlink"
+ * and "deletelink" actions.
+ *
+ * This allows administrators to create and delete link between pages
+ * using a command line tool instead of going on the website. Obviously,
+ * the command line tool is not limited to pages the administrator can
+ * edit on the website.
+ *
+ * To create a link use the following syntax. In this example, we are
+ * creating a link from the front page to user 1 making user 1 the
+ * author of the front page.
+ *
+ * \code
+ * snapbackend [--config snapserver.conf] --action createlink \
+ *      --param SOURCE_LINK_NAME=users::author \
+ *              SOURCE_LINK=http://csnap.example.com/ \
+ *              DESTINATION_LINK_NAME=users::authored_pages \
+ *              DESTINATION_LINK=http://csnap.example.com/user/1 \
+ *              'LINK_MODE=1,*'
+ * \endcode
+ *
+ * In order to delete a link, use the deletelink instead of createlink,
+ * specify the name of the field, and one or two URLs as in:
+ *
+ * \code
+ * snapbackend [--config snapserver.conf] --action createlink \
+ *      --param SOURCE_LINK_NAME=users::author \
+ *              SOURCE_LINK=http://csnap.example.com/ \
+ *              DESTINATION_LINK_NAME=users::authored_pages \
+ *              DESTINATION_LINK=http://csnap.example.com/user/1 \
+ *              'LINK_MODE=1,*'
+ *
+ * snapbackend [--config snapserver.conf] --action deletelink \
+ *      --param SOURCE_LINK_NAME=users::author \
+ *              SOURCE_LINK=http://csnap.example.com/ \
+ *              'LINK_MODE=1'
+ * \endcode
+ *
+ * If you have problems with this action (it does not seem to work,)
+ * try with --debug and make sure to look in the syslog output.
+ *
+ * \note
+ * This should be a user action, unfortunately that would add a permissions
+ * dependency in the users plugin which we cannot have (i.e. permissions
+ * need to know about users...)
+ *
+ * \param[in,out] actions  The list of supported actions where we add ourselves.
+ */
+void links::on_register_backend_action(server::backend_action_map_t& actions)
+{
+    actions[get_name(SNAP_NAME_LINKS_CREATELINK)] = this;
+    actions[get_name(SNAP_NAME_LINKS_DELETELINK)] = this;
+}
+
+
+/** \brief Create or delete a link.
+ *
+ * This function creates or deletes a link.
+ *
+ * \param[in] action  The action the user wants to execute.
+ */
+void links::on_backend_action(QString const& action)
+{
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+
+//std::cerr << "   a: " << action << "\n";
+//std::cerr << "mode: " << f_snap->get_server_parameter("LINK_MODE") << "\n";
+//std::cerr << " src: " << f_snap->get_server_parameter("SOURCE_LINK") << "\n";
+//std::cerr << "  sn: " << f_snap->get_server_parameter("SOURCE_LINK_NAME") << "\n";
+//std::cerr << " dst: " << f_snap->get_server_parameter("DESTINATION_LINK") << "\n";
+//std::cerr << "  dn: " << f_snap->get_server_parameter("DESTINATION_LINK_NAME") << "\n";
+
+    if(action == get_name(SNAP_NAME_LINKS_CREATELINK))
+    {
+        // create a link
+        QString const mode(f_snap->get_server_parameter("LINK_MODE"));
+        QStringList unique(mode.split(","));
+        if(unique.size() != 2)
+        {
+            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", missing comma or more than one comma.");
+            exit(1);
+        }
+        if((unique[0] != "*" && unique[0] != "1")
+        || (unique[1] != "*" && unique[1] != "1"))
+        {
+            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", one of the repeat is not \"*\" or \"1\".");
+            exit(1);
+        }
+
+        content::path_info_t source_ipath;
+        source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
+        if(!content_table->exists(source_ipath.get_key()))
+        {
+            SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
+            exit(1);
+        }
+
+        QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
+        bool const source_unique(unique[0] == "1");
+        link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
+
+        content::path_info_t destination_ipath;
+        destination_ipath.set_path(f_snap->get_server_parameter("DESTINATION_LINK"));
+        if(!content_table->exists(destination_ipath.get_key()))
+        {
+            SNAP_LOG_FATAL("invalid destination URI \"")(destination_ipath.get_key())("\", page does not exist.");
+            exit(1);
+        }
+
+        QString const link_to(f_snap->get_server_parameter("DESTINATION_LINK_NAME"));
+        bool const destination_unique(unique[1] == "1");
+        link_info destination(link_to, destination_unique, destination_ipath.get_key(), destination_ipath.get_branch());
+
+        // everything looked good, attempt the feat
+        create_link(source, destination);
+    }
+    else if(action == get_name(SNAP_NAME_LINKS_DELETELINK))
+    {
+        // delete a link
+        QString const mode(f_snap->get_server_parameter("LINK_MODE"));
+        QStringList unique(mode.split(","));
+        if(unique.size() == 1)
+        {
+            if(unique[0] != "*" && unique[0] != "1")
+            {
+                SNAP_LOG_FATAL("invalid mode \"")(mode)("\", the repeat is not \"*\" or \"1\".");
+                exit(1);
+            }
+
+            content::path_info_t source_ipath;
+            source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
+            if(content_table->exists(source_ipath.get_key()))
+            {
+                SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
+                exit(1);
+            }
+
+            QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
+            bool const source_unique(unique[0] == "1");
+            link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
+
+            // everything looked good, attempt the feat
+            delete_link(source);
+        }
+        else if(unique.size() == 2)
+        {
+            if((unique[0] != "*" && unique[0] != "1")
+            || (unique[1] != "*" && unique[1] != "1"))
+            {
+                SNAP_LOG_FATAL("invalid mode \"")(mode)("\", one of the repeat is not \"*\" or \"1\".");
+                exit(1);
+            }
+
+            content::path_info_t source_ipath;
+            source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
+            if(content_table->exists(source_ipath.get_key()))
+            {
+                SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
+                exit(1);
+            }
+
+            QString const link_name(f_snap->get_server_parameter("SOURCE_LINK_NAME"));
+            bool const source_unique(unique[0] == "1");
+            link_info source(link_name, source_unique, source_ipath.get_key(), source_ipath.get_branch());
+
+            content::path_info_t destination_ipath;
+            destination_ipath.set_path(f_snap->get_server_parameter("DESTINATION_LINK"));
+            if(content_table->exists(destination_ipath.get_key()))
+            {
+                SNAP_LOG_FATAL("invalid destination URI \"")(destination_ipath.get_key())("\", page does not exist.");
+                exit(1);
+            }
+
+            QString const link_to(f_snap->get_server_parameter("DESTINATION_LINK_NAME"));
+            bool const destination_unique(unique[1] == "1");
+            link_info destination(link_to, destination_unique, destination_ipath.get_key(), destination_ipath.get_branch());
+
+            // everything looked good, attempt the feat
+            delete_this_link(source, destination);
+        }
+        else
+        {
+            SNAP_LOG_FATAL("invalid mode \"")(mode)("\", two or more commas.");
+            exit(1);
+        }
+    }
 }
 
 
