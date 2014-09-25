@@ -1,3 +1,27 @@
+libtld (1.4.20.1~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 24 Sep 2014 07:19:39 -0700
+
+libtld (1.4.20~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 23 Sep 2014 20:32:08 -0700
+
+libtld (1.4.19~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 23 Sep 2014 03:07:48 -0700
+
+libtld (1.4.18~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 22 Sep 2014 14:59:33 -0700
+
 libtld (1.4.17~saucy) saucy; urgency=high
 
   * Nightly build.

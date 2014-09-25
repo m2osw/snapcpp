@@ -55,8 +55,8 @@ add_custom_target( thrift-install ALL
     COMMENT "Installing thrift v${THRIFT_VERS}..."
 )
 
-install( DIRECTORY ${DIST_DIR}/include DESTINATION include )
-install( DIRECTORY ${DIST_DIR}/bin     DESTINATION bin     )
-install( DIRECTORY ${DIST_DIR}/lib     DESTINATION lib     )
+install( DIRECTORY ${DIST_DIR}/include/ DESTINATION include )
+install( DIRECTORY ${DIST_DIR}/bin/     DESTINATION bin     )
+install( DIRECTORY ${DIST_DIR}/lib/     DESTINATION lib     )
 
 # vim: ts=4 sw=4 et nocindent

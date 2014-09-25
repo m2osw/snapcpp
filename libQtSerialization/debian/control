@@ -2,7 +2,7 @@ Source: libqtserialization
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, doxygen, graphviz, libqt4-dev,
-    snapcmakemodules, libthrift-dev (>= 0.9)
+    snapcmakemodules, libthrift-dev (>= 0.9.0)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/project/libqtserialization
