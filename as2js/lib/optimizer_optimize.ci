@@ -38,15 +38,115 @@ namespace as2js
 namespace optimizer_details
 {
 
-optimization_optimize_t const g_optimizer_optimize_to_number_1_0[] =
+
+/*** A ***/
+optimization_optimize_t const g_optimizer_optimize_add_1_2_0[] =
 {
     {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_NUMBER,
-        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ADD,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** B ***/
+optimization_optimize_t const g_optimizer_optimize_bitwise_and_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_AND,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_bitwise_or_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_OR,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_bitwise_xor_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_XOR,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** C ***/
+optimization_optimize_t const g_optimizer_optimize_concatenate_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_CONCATENATE,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** D ***/
+optimization_optimize_t const g_optimizer_optimize_divide_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_DIVIDE,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** I ***/
+optimization_optimize_t const g_optimizer_optimize_if_logical_not_else[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SWAP,
+        /* f_indexes */     { 3, 4, 0, 0, 0, 0 }
     },
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** L ***/
+optimization_optimize_t const g_optimizer_optimize_logical_a_and_b_or_c[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_CONDITIONAL,
+        /* f_indexes */     { 2, 3, 4, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_logical_not_1_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_NOT,
         /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_logical_xor_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_XOR,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** M ***/
+optimization_optimize_t const g_optimizer_optimize_modulo_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MODULO,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     }
 };
 
@@ -98,18 +198,39 @@ optimization_optimize_t const g_optimizer_optimize_move_4_2[] =
     }
 };
 
-optimization_optimize_t const g_optimizer_optimize_if_logical_not_else[] =
+optimization_optimize_t const g_optimizer_optimize_multiply_1_2_0[] =
 {
     {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SWAP,
-        /* f_indexes */     { 3, 4, 0, 0, 0, 0 }
-    },
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
-        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MULTIPLY,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     }
 };
 
+
+
+/*** N ***/
+optimization_optimize_t const g_optimizer_optimize_negate_1_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_NEGATE,
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** P ***/
+optimization_optimize_t const g_optimizer_optimize_power_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_POWER,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** R ***/
 optimization_optimize_t const g_optimizer_optimize_remove_0[] =
 {
     {
@@ -123,142 +244,6 @@ optimization_optimize_t const g_optimizer_optimize_remove_2[] =
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_REMOVE,
         /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_negate_1_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_NEGATE,
-        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_and_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_AND,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_or_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_OR,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_rotate_left_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ROTATE_LEFT,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_rotate_right_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ROTATE_RIGHT,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_shift_left_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_LEFT,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_shift_right_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_RIGHT,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_shift_right_unsigned_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_RIGHT_UNSIGNED,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_xor_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_XOR,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_plus_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ADD,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_minus_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SUBTRACT,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_logical_not_1_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_NOT,
-        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_logical_xor_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_XOR,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_and_b_or_c[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_CONDITIONAL,
-        /* f_indexes */     { 2, 3, 4, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_concatenate_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_CONCATENATE,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_concatenate_b_nb_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_CONCATENATE,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
-    }
-};
-
-optimization_optimize_t const g_optimizer_optimize_a_nb_concatenate_b_1_2_0[] =
-{
-    {
-        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_CONCATENATE,
-        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     }
 };
 
@@ -278,7 +263,60 @@ optimization_optimize_t const g_optimizer_optimize_replace_while_true_with_forev
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_rotate_left_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ROTATE_LEFT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
 
+optimization_optimize_t const g_optimizer_optimize_rotate_right_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_ROTATE_RIGHT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** S ***/
+optimization_optimize_t const g_optimizer_optimize_shift_left_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_LEFT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_shift_right_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_RIGHT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_shift_right_unsigned_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_RIGHT_UNSIGNED,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_subtract_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SUBTRACT,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+
+
+/*** T ***/
 optimization_optimize_t const g_optimizer_optimize_to_assignment_0[] =
 {
     {
@@ -286,7 +324,6 @@ optimization_optimize_t const g_optimizer_optimize_to_assignment_0[] =
         /* f_indexes */     { static_cast<index_t>(Node::node_t::NODE_ASSIGNMENT), 0, 0, 0, 0, 0 }
     }
 };
-
 
 optimization_optimize_t const g_optimizer_optimize_to_assignment_and_set_0[] =
 {
@@ -303,6 +340,20 @@ optimization_optimize_t const g_optimizer_optimize_to_assignment_and_set_0[] =
         /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
     }
 };
+
+optimization_optimize_t const g_optimizer_optimize_to_number_1_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_NUMBER,
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MOVE,
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    }
+};
+
+
 
 
 

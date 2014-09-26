@@ -934,17 +934,25 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
         {
             CPPUNIT_ASSERT(node->get_float64().is_NaN());
         }
+        else if(it_float->second->get_float64().is_positive_infinity())
+        {
+            CPPUNIT_ASSERT(node->get_float64().is_positive_infinity());
+        }
+        else if(it_float->second->get_float64().is_negative_infinity())
+        {
+            CPPUNIT_ASSERT(node->get_float64().is_negative_infinity());
+        }
         else
         {
             // we expect a floating point in this object
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(node->get_float64().get() != it_float->second->get_float64().get())
+            if(node->get_float64().get() - it_float->second->get_float64().get() > 0.0001)
             {
                 std::cerr << "   Expecting " << it_float->second->get_float64().get() << ", got " << node->get_float64().get() << " in the node\n";
             }
-            CPPUNIT_ASSERT(node->get_float64().get() == it_float->second->get_float64().get());
+            CPPUNIT_ASSERT(node->get_float64().get() - it_float->second->get_float64().get() <= 0.0001);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
             // further, if the float is zero, it may be +0.0 or -0.0
             if(it_float->second->get_float64().get() == 0.0)
             {
@@ -1112,6 +1120,9 @@ char const g_optimizer_conditional[] =
 ;
 char const g_optimizer_logical[] =
 #include "test_as2js_optimizer_logical.ci"
+;
+char const g_optimizer_multiplicative[] =
+#include "test_as2js_optimizer_multiplicative.ci"
 ;
 char const g_optimizer_statements[] =
 #include "test_as2js_optimizer_statements.ci"
@@ -1365,6 +1376,11 @@ void As2JsOptimizerUnitTests::test_optimizer_conditional()
 void As2JsOptimizerUnitTests::test_optimizer_logical()
 {
     run_tests(g_optimizer_logical, "test_parser_logical.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_multiplicative()
+{
+    run_tests(g_optimizer_multiplicative, "test_parser_multiplicative.json");
 }
 
 void As2JsOptimizerUnitTests::test_optimizer_statements()

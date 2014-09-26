@@ -371,7 +371,7 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_and_b[] =
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_and_b),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_and_b_1_2_0)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_and_1_2_0)
     }
 };
 
@@ -387,7 +387,7 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_or_b[] =
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_or_b),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_or_b_1_2_0)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_or_1_2_0)
     }
 };
 
@@ -403,7 +403,7 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_xor_b[] =
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_xor_b),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_xor_b_1_2_0)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_xor_1_2_0)
     }
 };
 
@@ -419,7 +419,7 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_shift_left_b[] =
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_shift_left_b),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_shift_left_b_1_2_0)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_shift_left_1_2_0)
     }
 };
 
@@ -435,7 +435,7 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_shift_right_b[] =
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_shift_right_b),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_shift_right_b_1_2_0)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_shift_right_1_2_0)
     }
 };
 
@@ -451,7 +451,7 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_shift_right_unsigned_b[] 
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_shift_right_unsigned_b),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_shift_right_unsigned_b_1_2_0)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_shift_right_unsigned_1_2_0)
     }
 };
 
@@ -467,7 +467,7 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_rotate_left_b[] =
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_rotate_left_b),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_rotate_left_b_1_2_0)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_rotate_left_1_2_0)
     }
 };
 
@@ -483,7 +483,7 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_rotate_right_b[] =
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_rotate_right_b),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_rotate_right_b_1_2_0)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_rotate_right_1_2_0)
     }
 };
 

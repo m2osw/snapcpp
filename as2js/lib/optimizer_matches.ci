@@ -129,6 +129,12 @@ Node::node_t const g_optimizer_match_directive_list[]
 };
 
 
+Node::node_t const g_optimizer_match_divide[]
+{
+    Node::node_t::NODE_DIVIDE
+};
+
+
 Node::node_t const g_optimizer_match_do[]
 {
     Node::node_t::NODE_DO
@@ -213,10 +219,28 @@ Node::node_t const g_optimizer_match_logical_xor[]
 };
 
 
+Node::node_t const g_optimizer_match_modulo[]
+{
+    Node::node_t::NODE_MODULO
+};
+
+
+Node::node_t const g_optimizer_match_multiply[]
+{
+    Node::node_t::NODE_MULTIPLY
+};
+
+
 Node::node_t const g_optimizer_match_numbers[]
 {
     Node::node_t::NODE_INT64,
     Node::node_t::NODE_FLOAT64
+};
+
+
+Node::node_t const g_optimizer_match_power[]
+{
+    Node::node_t::NODE_POWER
 };
 
 

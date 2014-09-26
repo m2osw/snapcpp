@@ -280,84 +280,94 @@ void optimizer_func_CONCATENATE(node_pointer_vector_t const& node_array, optimiz
 }
 
 
-/** \brief Apply a MOVE function.
+/** \brief Apply a DIVIDE function.
  *
- * This function moves a node to another. In most cases, you move a child
- * to the parent. For example in
+ * This function divides source 1 by source 2 and saves the result in
+ * the destination. Source 1 and 2 are expected to be literals.
  *
- * \code
- *      a := b + 0;
- * \endcode
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
  *
- * You could move b in the position of the '+' operator so the expression
- * now looks like:
- *
- * \code
- *      a := b;
- * \endcode
- *
- * (note that in this case we were optimizing 'b + 0' at this point)
- *
- * \li 0 -- source
- * \li 1 -- destination
- *
- * \param[in] node_array  The array of nodes being optimized.
- * \param[in] optimize  The optimization parameters.
- */
-void optimizer_func_MOVE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
-{
-    uint32_t src(optimize->f_indexes[0]),
-             dst(optimize->f_indexes[1]);
-
-    // move the source in place of the destination
-    node_array[dst]->replace_with(node_array[src]);
-}
-
-
-/** \brief Apply a NEGATE function.
- *
- * This function negate a number and saves the result in the 2nd position.
- *
- * \li 0 -- source
- * \li 1 -- destination
+ * \todo
+ * Should we always return a floating point number when dividing?
+ * At this point two integers return an integer unless the divisor
+ * is zero in which case +/-Infinity is returned.
  *
  * \exception exception_internal_error
- * The function may attempt to convert the input to a floating point number.
- * If that fails, this exception is raised. The Optimizer matching mechanism
- * should, however, prevent all such problems.
+ * The function does not check whether the parameters are numbers. They
+ * are assumed to be or can be converted to a number. The function uses
+ * the to_float64() just before the operation and if the conversion
+ * fails (returns false) then this exception is raised.
  *
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_NEGATE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_DIVIDE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
 {
-    uint32_t src(optimize->f_indexes[0]),
-             dst(optimize->f_indexes[1]);
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
 
-    Node::node_t type(node_array[src]->get_type());
-
-    // negate the integer or the float
-    if(type == Node::node_t::NODE_INT64)
+    // if both are integers, keep it as an integer
+    // (unless src2 is zero)
+    if(node_array[src1]->is_int64()
+    && node_array[src2]->is_int64())
     {
-        Int64 i(node_array[src]->get_int64());
-        i.set(-i.get());
-        node_array[src]->set_int64(i);
+        Int64 i1(node_array[src1]->get_int64());
+        Int64 i2(node_array[src2]->get_int64());
+        if(i2.get() == 0)
+        {
+            // generate an warning about divisions by zero because it is not
+            // unlikely an error
+            Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
+            msg << "division by zero of integers returning +Infinity or -Infinity.";
+
+            // dividing by zero gives infinity
+            Float64 f;
+            f.set_infinity(); // +Infinity
+            if(i1.get() < 0)
+            {
+                // -Infinity
+                f.set(-f.get());
+            }
+            if(!node_array[src1]->to_float64())
+            {
+                throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a float64."); // LCOV_EXCL_LINE
+            }
+            node_array[src1]->set_float64(f);
+        }
+        else
+        {
+            // TBD: should this return a float?
+            i1.set(i1.get() / i2.get());
+            node_array[src1]->set_int64(i1);
+        }
     }
     else
     {
-        // make sure a and b are floats, then do a + b as floats
-        // TODO: check for NaN and other fun things?
-        if(!node_array[src]->to_float64())
+        if(!node_array[src1]->to_float64()
+        || !node_array[src2]->to_float64())
         {
             throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a float64."); // LCOV_EXCL_LINE
         }
-        Float64 f(node_array[src]->get_float64());
-        f.set(-f.get());
-        node_array[src]->set_float64(f);
+        // make sure we keep NaN numbers as expected
+        Float64 f1(node_array[src1]->get_float64());
+        Float64 f2(node_array[src2]->get_float64());
+        if(f1.is_NaN()
+        || f2.is_NaN())
+        {
+            f1.set_NaN();
+        }
+        else
+        {
+            f1.set(f1.get() / f2.get());
+        }
+        node_array[src1]->set_float64(f1);
     }
 
     // save the result replacing the destination as specified
-    node_array[dst]->replace_with(node_array[src]);
+    node_array[dst]->replace_with(node_array[src1]);
 }
 
 
@@ -448,6 +458,281 @@ void optimizer_func_LOGICAL_XOR(node_pointer_vector_t const& node_array, optimiz
             src1 = src2;
         }
     }
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src1]);
+}
+
+
+/** \brief Apply a MODULO function.
+ *
+ * This function divides source 1 by source 2 and saves the rest in
+ * the destination. Source 1 and 2 are expected to be literals.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * If the divisor is zero, the function returns NaN.
+ *
+ * \exception exception_internal_error
+ * The function does not check whether the parameters are numbers. They
+ * are assumed to be or can be converted to a number. The function uses
+ * the to_float64() just before the operation and if the conversion
+ * fails (returns false) then this exception is raised.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_MODULO(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    // if both are integers, keep it as an integer
+    // (unless src2 is zero)
+    if(node_array[src1]->is_int64()
+    && node_array[src2]->is_int64())
+    {
+        Int64 i1(node_array[src1]->get_int64());
+        Int64 i2(node_array[src2]->get_int64());
+        if(i2.get() == 0)
+        {
+            // generate an warning about divisions by zero because it is not
+            // unlikely an error
+            Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
+            msg << "division by zero for a modulo of integers returning NaN.";
+
+            // dividing by zero gives infinity
+            Float64 f;
+            f.set_NaN();
+            if(!node_array[src1]->to_float64())
+            {
+                throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a float64."); // LCOV_EXCL_LINE
+            }
+            node_array[src1]->set_float64(f);
+        }
+        else
+        {
+            // TBD: should this return a float?
+            i1.set(i1.get() % i2.get());
+            node_array[src1]->set_int64(i1);
+        }
+    }
+    else
+    {
+        if(!node_array[src1]->to_float64()
+        || !node_array[src2]->to_float64())
+        {
+            throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a float64."); // LCOV_EXCL_LINE
+        }
+        // make sure we keep NaN numbers as expected
+        Float64 f1(node_array[src1]->get_float64());
+        Float64 f2(node_array[src2]->get_float64());
+        if(f1.is_NaN()
+        || f2.is_NaN())
+        {
+            f1.set_NaN();
+        }
+        else
+        {
+            f1.set(fmod(f1.get(), f2.get()));
+        }
+        node_array[src1]->set_float64(f1);
+    }
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src1]);
+}
+
+
+/** \brief Apply a MOVE function.
+ *
+ * This function moves a node to another. In most cases, you move a child
+ * to the parent. For example in
+ *
+ * \code
+ *      a := b + 0;
+ * \endcode
+ *
+ * You could move b in the position of the '+' operator so the expression
+ * now looks like:
+ *
+ * \code
+ *      a := b;
+ * \endcode
+ *
+ * (note that in this case we were optimizing 'b + 0' at this point)
+ *
+ * \li 0 -- source
+ * \li 1 -- destination
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_MOVE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src(optimize->f_indexes[0]),
+             dst(optimize->f_indexes[1]);
+
+    // move the source in place of the destination
+    node_array[dst]->replace_with(node_array[src]);
+}
+
+
+/** \brief Apply a MULTIPLY function.
+ *
+ * This function multiplies source 1 by source 2 and saves the result in
+ * the destination. Source 1 and 2 are expected to be literals.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \exception exception_internal_error
+ * The function does not check whether the parameters are numbers. They
+ * are assumed to be or can be converted to a number. The function uses
+ * the to_float64() just before the operation and if the conversion
+ * fails (returns false) then this exception is raised.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_MULTIPLY(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    // if both are integers, keep it as an integer
+    if(node_array[src1]->is_int64()
+    && node_array[src2]->is_int64())
+    {
+        Int64 i1(node_array[src1]->get_int64());
+        Int64 i2(node_array[src2]->get_int64());
+        i1.set(i1.get() * i2.get());
+        node_array[src1]->set_int64(i1);
+    }
+    else
+    {
+        if(!node_array[src1]->to_float64()
+        || !node_array[src2]->to_float64())
+        {
+            throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a float64."); // LCOV_EXCL_LINE
+        }
+        // make sure we keep NaN numbers as expected
+        Float64 f1(node_array[src1]->get_float64());
+        Float64 f2(node_array[src2]->get_float64());
+        if(f1.is_NaN()
+        || f2.is_NaN())
+        {
+            f1.set_NaN();
+        }
+        else
+        {
+            f1.set(f1.get() * f2.get());
+        }
+        node_array[src1]->set_float64(f1);
+    }
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src1]);
+}
+
+
+/** \brief Apply a NEGATE function.
+ *
+ * This function negate a number and saves the result in the 2nd position.
+ *
+ * \li 0 -- source
+ * \li 1 -- destination
+ *
+ * \exception exception_internal_error
+ * The function may attempt to convert the input to a floating point number.
+ * If that fails, this exception is raised. The Optimizer matching mechanism
+ * should, however, prevent all such problems.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_NEGATE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src(optimize->f_indexes[0]),
+             dst(optimize->f_indexes[1]);
+
+    Node::node_t type(node_array[src]->get_type());
+
+    // negate the integer or the float
+    if(type == Node::node_t::NODE_INT64)
+    {
+        Int64 i(node_array[src]->get_int64());
+        i.set(-i.get());
+        node_array[src]->set_int64(i);
+    }
+    else
+    {
+        // make sure a and b are floats, then do a + b as floats
+        // TODO: check for NaN and other fun things?
+        if(!node_array[src]->to_float64())
+        {
+            throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a float64."); // LCOV_EXCL_LINE
+        }
+        Float64 f(node_array[src]->get_float64());
+        f.set(-f.get());
+        node_array[src]->set_float64(f);
+    }
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src]);
+}
+
+
+/** \brief Apply a POWER function.
+ *
+ * This function computes source 1 power source 2 and saves the result in
+ * the destination. Source 1 and 2 are expected to be literals.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \exception exception_internal_error
+ * The function does not check whether the parameters are numbers. They
+ * are assumed to be or can be converted to a number. The function uses
+ * the to_float64() just before the operation and if the conversion
+ * fails (returns false) then this exception is raised.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_POWER(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    // for powers, we always return a floating point
+    // (think of negative numbers...)
+    if(!node_array[src1]->to_float64()
+    || !node_array[src2]->to_float64())
+    {
+        throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a float64."); // LCOV_EXCL_LINE
+    }
+
+    // make sure we keep NaN numbers as expected
+    Float64 f1(node_array[src1]->get_float64());
+    Float64 f2(node_array[src2]->get_float64());
+    if(f1.is_NaN()
+    || f2.is_NaN())
+    {
+        f1.set_NaN();
+    }
+    else
+    {
+        f1.set(pow(f1.get(), f2.get()));
+    }
+    node_array[src1]->set_float64(f1);
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
@@ -1197,10 +1482,14 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_BITWISE_OR     */ OPTIMIZER_FUNC(BITWISE_OR),
     /* OPTIMIZATION_FUNCTION_BITWISE_XOR    */ OPTIMIZER_FUNC(BITWISE_XOR),
     /* OPTIMIZATION_FUNCTION_CONCATENATE    */ OPTIMIZER_FUNC(CONCATENATE),
-    /* OPTIMIZATION_FUNCTION_MOVE           */ OPTIMIZER_FUNC(MOVE),
-    /* OPTIMIZATION_FUNCTION_NEGATE         */ OPTIMIZER_FUNC(NEGATE),
+    /* OPTIMIZATION_FUNCTION_DIVIDE         */ OPTIMIZER_FUNC(DIVIDE),
     /* OPTIMIZATION_FUNCTION_LOGICAL_NOT    */ OPTIMIZER_FUNC(LOGICAL_NOT),
     /* OPTIMIZATION_FUNCTION_LOGICAL_XOR    */ OPTIMIZER_FUNC(LOGICAL_XOR),
+    /* OPTIMIZATION_FUNCTION_MODULO         */ OPTIMIZER_FUNC(MODULO),
+    /* OPTIMIZATION_FUNCTION_MOVE           */ OPTIMIZER_FUNC(MOVE),
+    /* OPTIMIZATION_FUNCTION_MULTIPLY       */ OPTIMIZER_FUNC(MULTIPLY),
+    /* OPTIMIZATION_FUNCTION_NEGATE         */ OPTIMIZER_FUNC(NEGATE),
+    /* OPTIMIZATION_FUNCTION_POWER          */ OPTIMIZER_FUNC(POWER),
     /* OPTIMIZATION_FUNCTION_REMOVE         */ OPTIMIZER_FUNC(REMOVE),
     /* OPTIMIZATION_FUNCTION_ROTATE_LEFT    */ OPTIMIZER_FUNC(ROTATE_LEFT),
     /* OPTIMIZATION_FUNCTION_ROTATE_RIGHT   */ OPTIMIZER_FUNC(ROTATE_RIGHT),

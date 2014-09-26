@@ -348,7 +348,7 @@ optimization_entry_t const g_optimizer_additive_entry_a_plus_b[] =
         /* f_flags */               0,
 
         /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_additive_match_a_plus_b),
-        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_a_plus_b_1_2_0)
+        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_add_1_2_0)
     }
 };
 
@@ -370,7 +370,7 @@ optimization_entry_t const g_optimizer_additive_entry_a_minus_b[] =
         /* f_flags */               0,
 
         /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_additive_match_a_minus_b),
-        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_a_minus_b_1_2_0)
+        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_subtract_1_2_0)
     }
 };
 
@@ -392,7 +392,7 @@ optimization_entry_t const g_optimizer_additive_entry_a_concatenate_b_any[] =
         /* f_flags */               0,
 
         /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_additive_match_a_concatenate_b_any),
-        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_a_concatenate_b_1_2_0)
+        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_concatenate_1_2_0)
     }
 };
 
@@ -403,7 +403,7 @@ optimization_entry_t const g_optimizer_additive_entry_a_any_concatenate_b[] =
         /* f_flags */               0,
 
         /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_additive_match_a_any_concatenate_b),
-        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_a_concatenate_b_1_2_0)
+        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_concatenate_1_2_0)
     }
 };
 

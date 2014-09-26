@@ -759,7 +759,7 @@ optimization_entry_t const g_optimizer_logical_entry_a_and_b_or_c[] =
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_a_and_b_or_c),
-        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_a_and_b_or_c)
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_logical_a_and_b_or_c)
     }
 };
 
