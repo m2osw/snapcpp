@@ -48,10 +48,10 @@
         }
     },
 
-    // false ? a : b => a
+    // false ? a : b => b
     {
         //"verbose": true,
-        "name": "false ? a : b -> a",
+        "name": "false ? a : b -> b",
         "program": "false ? a : b;",
         "parser result": {
             "node type": "PROGRAM",
