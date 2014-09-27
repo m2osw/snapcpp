@@ -110,6 +110,22 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
+            'h',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "help",
+            nullptr,
+            "Show this help screen.",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "version",
+            nullptr,
+            "Show the version of the snapcgi executable.",
+            advgetopt::getopt::no_argument
+        },
+        {
             '\0',
             0,
             NULL,
@@ -143,6 +159,17 @@ snap_cgi::snap_cgi( int argc, char *argv[] )
     , f_port(4004)
     , f_address("0.0.0.0")
 {
+    if(f_opt.is_defined("version"))
+    {
+        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
+    }
+    if(f_opt.is_defined("help"))
+    {
+        f_opt.usage(advgetopt::getopt::no_error, "Usage: %s -<arg> ...\n", argv[0]);
+        exit(1);
+    }
+
     std::string logconfig(f_opt.get_string("logconfig"));
     snap::logging::configureConffile( logconfig.c_str() );
 }

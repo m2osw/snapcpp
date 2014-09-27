@@ -120,22 +120,30 @@ namespace
             "set-theme",
             nullptr,
             "usage: --set-theme URL [theme|layout] ['\"layout name\";']'",
-            advgetopt::getopt::no_argument, // expect 3 params as filenames
+            advgetopt::getopt::no_argument // expect 3 params as filenames
         },
-        { // at least until we have a way to edit the theme from the website
+        {
             'v',
             0,
             "verbose",
             nullptr,
             "show what snaplayout is doing",
-            advgetopt::getopt::no_argument, // expect 3 params as filenames
+            advgetopt::getopt::no_argument // expect 3 params as filenames
+        },
+        {
+            '\0',
+            0,
+            "version",
+            nullptr,
+            "show the version of the server and exit",
+            advgetopt::getopt::no_argument
         },
         {
             '\0',
             0,
             nullptr,
             nullptr,
-            "layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl",
+            "layout-file1.xsl layout-file2.xsl ... layout-fileN.xsl or layout.zip",
             advgetopt::getopt::default_multiple_argument
         },
         {
@@ -229,6 +237,11 @@ snap_layout::snap_layout(int argc, char *argv[])
     if( f_opt->is_defined( "help" ) )
     {
         usage();
+    }
+    if( f_opt->is_defined( "version" ) )
+    {
+        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
     }
     //
     f_host = f_opt->get_string( "host" ).c_str();

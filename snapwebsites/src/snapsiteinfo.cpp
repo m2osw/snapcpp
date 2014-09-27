@@ -36,14 +36,15 @@
 
 // snapwebsites
 //
+#include "snapwebsites.h"
 #include "qstring_stream.h"
 #include "dbutils.h"
 
-// libs
+// our libs
 //
-#include <QtCassandra/QCassandra.h>
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
+#include <QtCassandra/QCassandra.h>
 
 // system
 //
@@ -133,6 +134,14 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "version",
+            nullptr,
+            "show the version of the snapcgi executable",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             NULL,
             NULL,
             "[row [cell [value]]]",
@@ -200,6 +209,12 @@ snapdb::snapdb(int argc, char *argv[])
     //, f_row("") -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, NULL ) )
 {
+    if(f_opt->is_defined("version"))
+    {
+        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
+    }
+
     // first check options
     if( f_opt->is_defined( "count" ) )
     {

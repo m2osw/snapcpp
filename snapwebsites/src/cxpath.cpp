@@ -26,9 +26,11 @@
  *    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include "snapwebsites.h"
+#include "not_reached.h"
+#include "qdomxpath.h"
+
 #include <advgetopt.h>
-#include <not_reached.h>
-#include <qdomxpath.h>
 
 #include <iostream>
 
@@ -139,6 +141,14 @@ const advgetopt::getopt::option cxpath_options[] =
         "verbose",
         NULL,
         "make the process verbose",
+        advgetopt::getopt::no_argument
+    },
+    {
+        '\0',
+        0,
+        "version",
+        NULL,
+        "print out the version",
         advgetopt::getopt::no_argument
     },
     {
@@ -335,6 +345,11 @@ int main(int argc, char *argv[])
 {
     std::vector<std::string> empty_list;
     g_opt = new advgetopt::getopt(argc, argv, cxpath_options, empty_list, NULL);
+    if(g_opt->is_defined("version"))
+    {
+        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
+    }
     if(g_opt->is_defined("help"))
     {
         g_opt->usage(advgetopt::getopt::no_error, "Usage: cxpath [--<opt>] [-p '<xpath>'] | [-x <filename>.xpath <filename>.xml ...]");

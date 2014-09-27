@@ -330,6 +330,14 @@ namespace
         {
             '\0',
             0,
+            "version",
+            nullptr,
+            "Show the version of the server and exit.",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            0,
             "filename",
             nullptr,
             nullptr, // hidden argument in --help screen
@@ -660,6 +668,12 @@ void server::config(int argc, char *argv[])
     f_opt.reset(
         new advgetopt::getopt( argc, argv, g_snapserver_options, g_configuration_files, "SNAPSERVER_OPTIONS" )
     );
+
+    if(f_opt->is_defined("version"))
+    {
+        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
+    }
 
     // We want the servername for later.
     //

@@ -36,19 +36,23 @@
  *      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// system
+// our lib
+//
+#include "snapwebsites.h"
+#include "qstring_stream.h"
+#include "dbutils.h"
+
+// 3rd party libs
 //
 #include <QtCassandra/QCassandra.h>
 #include <controlled_vars/controlled_vars_need_init.h>
 #include <advgetopt/advgetopt.h>
+
+// system
+//
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-
-// lib
-//
-#include "qstring_stream.h"
-#include "dbutils.h"
 
 namespace
 {
@@ -147,6 +151,14 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "version",
+            nullptr,
+            "show the version of the snapdb executable",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             NULL,
             NULL,
             "[table [row]]",
@@ -234,6 +246,12 @@ snapdb::snapdb(int argc, char *argv[])
     //, f_row("") -- auto-init
     , f_opt( new advgetopt::getopt( argc, argv, g_snapdb_options, g_configuration_files, NULL ) )
 {
+    if(f_opt->is_defined("version"))
+    {
+        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
+    }
+
     // first check options
     if( f_opt->is_defined( "count" ) )
     {

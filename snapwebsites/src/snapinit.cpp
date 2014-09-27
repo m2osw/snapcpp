@@ -29,6 +29,13 @@
 #include "log.h"
 #include "not_reached.h"
 
+#include <advgetopt/advgetopt.h>
+
+#include <QtCassandra/QCassandraTable.h>
+
+#include <QFile>
+#include <QTime>
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -38,13 +45,6 @@
 #include <memory>
 #include <sstream>
 #include <vector>
-
-#include <advgetopt/advgetopt.h>
-
-#include <QtCassandra/QCassandraTable.h>
-
-#include <QFile>
-#include <QTime>
 
 namespace
 {
@@ -144,6 +144,14 @@ namespace
             "nolog",
             nullptr,
             "Only output to the console, not the log file.",
+            advgetopt::getopt::no_argument
+        },
+        {
+            '\0',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "version",
+            nullptr,
+            "show the version of the snapinit executable",
             advgetopt::getopt::no_argument
         },
         {
@@ -492,6 +500,12 @@ snap_init::snap_init( int argc, char *argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
     , f_lock_file( QString("/tmp/%1").arg(SNAPINIT_KEY) )
 {
+    if(f_opt.is_defined("version"))
+    {
+        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
+    }
+
     if( f_opt.is_defined( "nolog" ) || f_opt.is_defined( "help" ) )
     {
         snap::logging::configureConsole();

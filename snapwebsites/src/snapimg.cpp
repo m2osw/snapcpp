@@ -34,7 +34,10 @@
  */
 
 #include "snap_image.h"
+#include "snapwebsites.h"
+
 #include <advgetopt.h>
+
 #include <QFile>
 #include <QTextCodec>
 #include <iostream>
@@ -65,6 +68,14 @@ advgetopt::getopt::option const g_options[] =
         NULL,
         "Show usage and exit.",
         advgetopt::getopt::optional_argument
+    },
+    {
+        '\0',
+        0,
+        "version",
+        NULL,
+        "print out the version",
+        advgetopt::getopt::no_argument
     },
     {
         '\0',
@@ -141,6 +152,11 @@ int main(int argc, char *argv[])
 {
     const std::vector<std::string> no_config;
     g_opt = new advgetopt::getopt(argc, argv, g_options, no_config, NULL);
+    if(g_opt->is_defined("version"))
+    {
+        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
+    }
     if(g_opt->is_defined("help"))
     {
         g_opt->usage(advgetopt::getopt::no_error, "Usage: %s [--<opts>] <imagefile> ...\n", argv[0]);
