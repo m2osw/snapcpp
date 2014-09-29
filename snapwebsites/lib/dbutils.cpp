@@ -602,7 +602,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             case CT_md5array_value:
             {
                 // md5 in binary
-                const QByteArray& buf(c->value().binaryValue());
+                QByteArray const& buf(c->value().binaryValue());
                 int const max_length(buf.size());
                 if( display_only )
                 {

@@ -911,9 +911,20 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         // we do not throw, instead we want to "return" an error
         // however we're not (yet) replacing a token here so we just
         // generate a "standard" message
+        QString paths;
+        for(save_paths_t::const_iterator it(g_ipaths.begin());
+                                        it != g_ipaths.end();
+                                        ++it)
+        {
+            if(!paths.isEmpty())
+            {
+                paths += ", ";
+            }
+            paths += it.key();
+        }
         messages::messages::instance()->set_error(
             "Recursive Token(s)",
-            QString("One or more tokens is looping back to page \"%1\".").arg(ipath.get_key()),
+            QString("One or more tokens is looping back to page \"%1\" (all paths are: \"%2\").").arg(ipath.get_key().arg(paths)),
             QString("to fix, look at the tokens that loop"),
             false
         );

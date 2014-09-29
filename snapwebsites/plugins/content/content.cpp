@@ -6076,7 +6076,7 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
 
     // TODO: select the WORKING_VERSION if the user is logged in and can
     //       edit this attachment
-    QtCassandra::QCassandraTable::pointer_t revision_table(get_branch_table());
+    QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
     QtCassandra::QCassandraRow::pointer_t revision_attachment_row(revision_table->row(ipath.get_revision_key()));
     QtCassandra::QCassandraValue md5_value(revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->value());
 
@@ -7663,13 +7663,13 @@ bool content::process_attachment_impl(QByteArray const& file_key, attachment_fil
         {
             // compression succeeded
             file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED))->setValue(compressed_file);
-            uint64_t compressed_size(compressed_file.size());
+            uint64_t const compressed_size(compressed_file.size());
             file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED))->setValue(compressed_size);
         }
         else
         {
             // no better when compressed, mark such with a size of zero
-            uint64_t empty_size(0);
+            uint64_t const empty_size(0);
             file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED))->setValue(empty_size);
         }
     }
