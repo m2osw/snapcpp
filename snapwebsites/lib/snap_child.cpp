@@ -7619,7 +7619,7 @@ int snap_child::last_day_of_month(int month, int year)
         return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? 29 : 28;
     }
 
-    return g_month_days[month];
+    return g_month_days[month - 1];
 }
 
 
