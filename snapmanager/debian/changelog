@@ -1,3 +1,9 @@
+snapmanager (1.0.13.8~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 02 Oct 2014 03:09:53 -0700
+
 snapmanager (1.0.13.7~saucy) saucy; urgency=high
 
   * Nightly build.
