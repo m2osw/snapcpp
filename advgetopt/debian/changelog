@@ -1,3 +1,21 @@
+advgetopt (1.0.15.8~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 02 Oct 2014 03:08:58 -0700
+
+advgetopt (1.0.15.7~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 01 Oct 2014 03:06:52 -0700
+
+advgetopt (1.0.15.6~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 30 Sep 2014 03:07:15 -0700
+
 advgetopt (1.0.15.5~saucy) saucy; urgency=high
 
   * Nightly build.
