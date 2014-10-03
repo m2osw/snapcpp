@@ -61,6 +61,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_LIST_LINK: // standard link between list and list items
         return "list::link";
 
+    case SNAP_NAME_LIST_NAMESPACE:
+        return "list";
+
     case SNAP_NAME_LIST_ORDERED_PAGES: // list of ordered pages
         return "list::ordered_pages"; // + "::<item sort key>"
 
@@ -212,6 +215,7 @@ void list::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(list, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
     SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(list, "content", content::content, modified_content, _1);
+    SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
     SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 }
 
@@ -1919,6 +1923,53 @@ void list::on_generate_boxes_content(content::path_info_t& page_cpath, content::
     static_cast<void>(page_cpath);
 
     output::output::instance()->on_generate_main_content(ipath, page, box, ctemplate);
+}
+
+
+void list::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+{
+    static_cast<void>(destination_branch);
+
+    QtCassandra::QCassandraCells left_cells;
+
+    // handle one batch
+    bool has_list(false);
+    for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+            nc != source_cells.end();
+            ++nc)
+    {
+        QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+        QByteArray cell_key(source_cell->columnKey());
+
+        if(cell_key == get_name(SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT)
+        || cell_key == get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)
+        || cell_key == get_name(SNAP_NAME_LIST_SELECTOR))
+        {
+            has_list = true;
+            // copy our fields as is
+            destination_row->cell(cell_key)->setValue(source_cell->value());
+        }
+        else
+        {
+            // keep the other branch fields as is, other plugins can handle
+            // them as required by implementing this signal
+            //
+            // note that the map is a map a shared pointers so it is fast
+            // to make a copy like this
+            left_cells[cell_key] = source_cell;
+        }
+    }
+
+    if(has_list)
+    {
+        // make sure the (new) list is checked so we actually get a list
+        content::path_info_t ipath;
+        ipath.set_path(destination_row->rowName());
+        on_modified_content(ipath);
+    }
+
+    // overwrite the source with the cells we allow to copy "further"
+    source_cells = left_cells;
 }
 
 

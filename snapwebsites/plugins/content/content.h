@@ -666,7 +666,9 @@ public:
     snap_version::version_number_t get_current_revision(QString const& key, snap_version::version_number_t const branch, QString const& locale, bool working_branch);
     snap_version::version_number_t get_current_revision(QString const& key, QString const& locale, bool working_branch);
     snap_version::version_number_t get_new_branch(QString const& key, QString const& locale);
-    snap_version::version_number_t get_new_revision(QString const& key, snap_version::version_number_t branch, QString const& locale, bool repeat);
+    snap_version::version_number_t get_new_revision(QString const& key, snap_version::version_number_t const branch, QString const& locale, bool repeat, snap_version::version_number_t const old_branch = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED));
+    void                copy_branch(QString const& key, snap_version::version_number_t const source_branch, snap_version::version_number_t const destination_branch);
+    static void         copy_branch_cells_as_is(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, QString const& plugin_namespace);
     QString             get_branch_key(QString const& key, bool working_branch);
     void                initialize_branch(QString const& key);
     QString             generate_branch_key(QString const& key, snap_version::version_number_t branch);
@@ -680,7 +682,7 @@ public:
     QString             set_revision_key(QString const& key, snap_version::version_number_t branch, QString const& revision, QString const& locale, bool working_branch);
     path_info_t         get_path_info(QString const& cpath, bool main_page);
     QString             get_user_key(QString const& key, snap_version::version_number_t branch, int64_t identifier);
-    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination);
+    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning);
     bool                clone_page(clone_info_t& source, clone_info_t& destination);
     bool                move_page(path_info_t& ipath_source, path_info_t& ipath_destination);
     bool                trash_page(path_info_t& ipath);
@@ -700,6 +702,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast), NEITHER);
     SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));
     SNAP_SIGNAL(page_cloned, (cloned_tree_t const& tree), (tree));
+    SNAP_SIGNAL(copy_branch_cells, (QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
 
     //void                output() const;
 

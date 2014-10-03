@@ -62,6 +62,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_SITEMAPXML_INCLUDE:
         return "sitemapxml::include";
 
+    case SNAP_NAME_SITEMAPXML_NAMESPACE:
+        return "sitemapxml";
+
     case SNAP_NAME_SITEMAPXML_SITEMAP_XML: // in site table, string
         return "sitemapxml::sitemap.xml";
 
@@ -347,6 +350,7 @@ void sitemapxml::on_bootstrap(::snap::snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN0(sitemapxml, "server", server, backend_process);
+    SNAP_LISTEN(sitemapxml, "content", content::content, copy_branch_cells, _1, _2, _3);
     SNAP_LISTEN(sitemapxml, "robotstxt", robotstxt::robotstxt, generate_robotstxt, _1);
     SNAP_LISTEN(sitemapxml, "shorturl", shorturl::shorturl, allow_shorturl, _1, _2, _3, _4);
 }
@@ -895,6 +899,14 @@ void sitemapxml::on_allow_shorturl(content::path_info_t& ipath, QString const& o
 
     // note: we are the primary owner for more pages than just those that
     //       should not receive a short URL so we do not do more than that
+}
+
+
+void sitemapxml::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+{
+    static_cast<void>(destination_branch);
+
+    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(SNAP_NAME_SITEMAPXML_NAMESPACE));
 }
 
 

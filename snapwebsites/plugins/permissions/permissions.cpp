@@ -97,6 +97,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED:
         return "permissions::login_status::registered";
 
+    case SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR:
+        return "makeadministrator";
+
     case SNAP_NAME_PERMISSIONS_MAKE_ROOT:
         return "makeroot";
 
@@ -773,7 +776,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 3, 28, 22, 18, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 10, 2, 23, 57, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1469,11 +1472,16 @@ void permissions::add_user_rights(QString const& group, sets_t& sets)
     // a quick check to make sure that the programmer is not directly
     // adding a right (which he should do to the sets instead of this
     // function although we instead generate an error.)
+    //
+    // TODO: we probably want to change that "contains()" call with
+    //       a "startWith()" but we need to know whether "group"
+    //       may include the protocol, domain name, port...
     if(group.contains(get_name(SNAP_NAME_PERMISSIONS_RIGHTS_PATH)))
     {
         throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use sets.add_user_right() directly");
     }
 
+//std::cerr << "*** add_user_rights...\n";
     recursive_add_user_rights(group, sets);
 }
 
@@ -1492,10 +1500,11 @@ void permissions::add_user_rights(QString const& group, sets_t& sets)
  */
 void permissions::recursive_add_user_rights(QString const& group, sets_t& sets)
 {
+//std::cerr << "*** user right key: [" << group << "]\n";
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(!content_table->exists(group))
     {
-        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\"");
+        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\" (user)");
     }
 
     QtCassandra::QCassandraRow::pointer_t row(content_table->row(group));
@@ -1527,6 +1536,7 @@ void permissions::recursive_add_user_rights(QString const& group, sets_t& sets)
         {
             // a user right is attached to this page
             const QString child_key(right_info.key());
+//std::cerr << "*** children...\n";
             recursive_add_user_rights(child_key, sets);
         }
     }
@@ -1583,7 +1593,7 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(!content_table->exists(group))
     {
-        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\"");
+        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\" (plugin)");
     }
 
     content::path_info_t ipath;
@@ -1621,36 +1631,52 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
 
 /** \brief Register the permissions action.
  *
- * This function registers this plugin as supporting the "makeroot" action.
- * After an installation and a user was created on the website, the server
- * is ready to create a root user. This action is used for that purpose.
+ * This function registers this plugin as supporting the "makeadministrator"
+ * and the "makeroot" actions.
  *
- * The backend command line looks something like this:
+ * After an installation and a user was created on the website, the server
+ * is ready to create a root user. The "makeroot" action is used for that
+ * purpose. The root user can do pretty much anything he wants on the
+ * entire cluster of websites defined in a Snap database.
+ *
+ * Once a website is created and an administrator user is created on that
+ * website, one can use the "makeadministrator" action to mark that user
+ * as a Snap administrator. An administrator is limited to working on a
+ * specific website.
+ *
+ * The backend command line looks something like one of these:
  *
  * \code
+ * snapbackend [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeadministrator
  * snapbackend [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeroot
  * \endcode
  *
- * If you have problems with it (it doesn't seem to work,) try with --debug
- * and make sure to look in the syslog output.
+ * If you have problems with it (it does not seem to work,) try with --debug
+ * and make sure to look in the snapserver.log and syslog output files.
  *
  * \note
- * This should be a user action, unfortunately that would add a permissions
- * dependency in the users plugin which we cannot have (i.e. permissions
- * need to know about users...)
+ * These should be user actions, unfortunately that would add a 
+ * dependency on the "permissions" plugin in the "users" plugin,
+ * which we cannot have (i.e. "permissions" need to know about
+ * "users"... so we would end up with a looping dependency.)
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
 void permissions::on_register_backend_action(server::backend_action_map_t& actions)
 {
+    actions[get_name(SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)] = this;
     actions[get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT)] = this;
 }
 
 
-/** \brief Create a root user.
+/** \brief Create a root or administrator user.
  *
- * This function marks a user as a root user. The user email address has
- * to be specified on the command line.
+ * This function marks a user as a root or an administrator user.
+ * The user email address has to be specified on the command line.
+ *
+ * The root user has access to the entire database (i.e. ALL websites.)
+ * An administrator has access to an entire website, but he is cutoff from
+ * editing system pages.
  *
  * \note
  * This should be a users plugin callback, but it requires access to the
@@ -1660,7 +1686,8 @@ void permissions::on_register_backend_action(server::backend_action_map_t& actio
  */
 void permissions::on_backend_action(QString const& action)
 {
-    if(action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT))
+    if(action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)
+    || action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT))
     {
         // make specified user root
         QtCassandra::QCassandraTable::pointer_t user_table(users::users::instance()->get_users_table());
@@ -1688,8 +1715,11 @@ void permissions::on_backend_action(QString const& action)
         content::path_info_t user_ipath;
         user_ipath.set_path(QString("%1/%2").arg(users::get_name(users::SNAP_NAME_USERS_PATH)).arg(identifier));
         content::path_info_t dpath;
-        dpath.set_path(QString("%1/root").arg(get_name(SNAP_NAME_PERMISSIONS_GROUPS_PATH)));
+        dpath.set_path(QString("%1/%2")
+                .arg(get_name(SNAP_NAME_PERMISSIONS_GROUPS_PATH))
+                .arg(action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT) ? "root" : "root/administrator"));
 
+        // now link that user to that high level permission
         QString const link_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
         bool const source_multi(false);
         links::link_info source(link_name, source_multi, user_ipath.get_key(), user_ipath.get_branch());
@@ -1935,8 +1965,10 @@ void permissions::on_generate_header_content(content::path_info_t& ipath, QDomEl
  * Later we may avoid copying certain permissions. At this point all the
  * permissions get copied.
  */
-void permissions::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination)
+void permissions::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
 {
+    static_cast<void>(cloning);
+
     // permission links are never unique
     links::link_info src(source.name(), false, clone, branch_number);
     links::links::instance()->create_link(src, destination);

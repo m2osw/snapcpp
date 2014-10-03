@@ -315,6 +315,64 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </xsl:call-template>
   </xsl:template>
 
+  <!-- RADIO BUTTONS WIDGET -->
+  <!-- WARNING: we use this sub-template because of a Qt bug with variables
+                that do not properly get defined without such trickery -->
+  <xsl:template name="snap:radio">
+    <xsl:param name="path"/>
+    <xsl:param name="name"/>
+    <xsl:param name="value"/>
+    <widget path="{$path}">
+      <div field_type="radio">
+        <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
+        <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of
+          select="classes"/> radio <xsl:value-of select="$name"/><xsl:if
+          test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+          test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
+          test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <div>
+          <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+          <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
+          <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+          </xsl:if>
+          <xsl:if test="tooltip != ''">
+            <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
+          </xsl:if>
+
+          <div class="radio-flag">
+            <div class="flag-box"></div>
+            <!-- the actual value of a radio is used to know whether the radio is selected or not -->
+            <div><xsl:attribute name="class">radio-area</xsl:attribute></div>
+          </div>
+
+          <xsl:copy-of select="label/node()"/>
+          <xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if>
+        </div>
+        <xsl:call-template name="snap:common-parts"/>
+      </div>
+    </widget>
+  </xsl:template>
+  <xsl:template match="widget[@type='radio']">
+    <xsl:variable name="value">
+      <xsl:choose>
+        <xsl:when test="post != ''">
+          <!-- use the post value when there is one, it has priority -->
+          <xsl:copy-of select="post/node()"/>
+        </xsl:when>
+        <xsl:when test="value != ''">
+          <!-- use the current value when there is one -->
+          <xsl:copy-of select="value/node()"/>
+        </xsl:when>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:call-template name="snap:radio">
+      <xsl:with-param name="path" select="@path"/>
+      <xsl:with-param name="name" select="@id"/>
+      <xsl:with-param name="value" select="$value"/>
+    </xsl:call-template>
+  </xsl:template>
+
   <!-- TEXT EDIT WIDGET -->
   <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not get defined properly without such trickery -->

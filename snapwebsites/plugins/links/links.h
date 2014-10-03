@@ -216,7 +216,7 @@ private:
 class links_cloned
 {
 public:
-    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, link_info const& source, link_info const& destination) = 0;
+    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, link_info const& source, link_info const& destination, bool const cloning) = 0;
 };
 
 class links : public plugins::plugin
@@ -238,6 +238,7 @@ public:
     void                on_register_backend_action(server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const& action);
     void                adjust_links_after_cloning(QString const& source_key, QString const& destination_key);
+    void                fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch_number);
 
     // TBD should those be events? (or trigger events?)
     void                create_link(link_info const& src, link_info const& dst);

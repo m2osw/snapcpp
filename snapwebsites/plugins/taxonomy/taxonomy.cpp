@@ -48,6 +48,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_TAXONOMY_NAME:
         return "taxonomy::name";
 
+    case SNAP_NAME_TAXONOMY_NAMESPACE:
+        return "taxonomy";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid SNAP_NAME_TAXONOMY_...");
@@ -86,6 +89,8 @@ taxonomy::~taxonomy()
 void taxonomy::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
+
+    SNAP_LISTEN(taxonomy, "content", content::content, copy_branch_cells, _1, _2, _3);
 }
 
 
@@ -252,6 +257,14 @@ void taxonomy::on_generate_main_content(content::path_info_t& ipath, QDomElement
 {
     // a type is just like a regular page
     output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
+}
+
+
+void taxonomy::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+{
+    static_cast<void>(destination_branch);
+
+    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(SNAP_NAME_TAXONOMY_NAMESPACE));
 }
 
 

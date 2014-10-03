@@ -93,6 +93,7 @@ void attachment::on_bootstrap(snap_child *snap)
 
     SNAP_LISTEN(attachment, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(attachment, "content", content::content, page_cloned, _1);
+    SNAP_LISTEN(attachment, "content", content::content, copy_branch_cells, _1, _2, _3);
 }
 
 
@@ -145,7 +146,7 @@ int64_t attachment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 5, 8, 1, 30, 12, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 10, 2, 23, 58, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -397,6 +398,58 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
             }
         }
     }
+}
+
+
+void attachment::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+{
+    static_cast<void>(destination_branch);
+
+    QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
+
+    std::string content_attachment_reference(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
+    content_attachment_reference += "::";
+
+    QtCassandra::QCassandraCells left_cells;
+
+    // handle one batch
+    for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+            nc != source_cells.end();
+            ++nc)
+    {
+        QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+        QByteArray cell_key(source_cell->columnKey());
+
+        if(cell_key.startsWith(content_attachment_reference.c_str()))
+        {
+            // copy our fields as is
+            destination_row->cell(cell_key)->setValue(source_cell->value());
+
+            // make sure the (new) list is checked so we actually get a list
+            content::path_info_t ipath;
+            ipath.set_path(destination_row->rowName());
+
+            // this key starts with SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE + "::"
+            // and then represents an md5
+            QByteArray md5(cell_key.mid( content_attachment_reference.length() ));
+
+            // with that md5 we can access the files table
+            signed char const one(1);
+            files_table->row(md5)->cell(QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(ipath.get_key()))->setValue(one);
+        }
+        else
+        {
+            // keep the other branch fields as is, other plugins can handle
+            // them as required by implementing this signal
+            //
+            // note that the map is a map a shared pointers so it is fast
+            // to make a copy like this
+            left_cells[cell_key] = source_cell;
+        }
+    }
+
+    // overwrite the source with the cells we allow to copy "further"
+    source_cells = left_cells;
 }
 
 

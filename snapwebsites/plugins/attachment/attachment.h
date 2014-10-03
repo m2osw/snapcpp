@@ -68,6 +68,7 @@ public:
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     virtual bool        on_path_execute(content::path_info_t& ipath);
     void                on_page_cloned(content::content::cloned_tree_t const& tree);
+    void                on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
 private:
     void                content_update(int64_t variables_timestamp);

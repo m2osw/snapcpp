@@ -3801,8 +3801,10 @@ void users::on_cell_is_secure(QString const& table, QString const& row, QString 
  *
  * The "cloned by" link does NOT ever get "repaired".
  */
-void users::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination)
+void users::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
 {
+    static_cast<void>(cloning);
+
     if(source.name() == get_name(SNAP_NAME_USERS_AUTHOR)
     && destination.name() == get_name(SNAP_NAME_USERS_AUTHORED_PAGES))
     {

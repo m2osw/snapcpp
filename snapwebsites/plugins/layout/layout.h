@@ -31,6 +31,7 @@ enum name_t
     SNAP_NAME_LAYOUT_BOXES,
     SNAP_NAME_LAYOUT_CONTENT,
     SNAP_NAME_LAYOUT_LAYOUT,
+    SNAP_NAME_LAYOUT_NAMESPACE,
     SNAP_NAME_LAYOUT_REFERENCE,
     SNAP_NAME_LAYOUT_TABLE,
     SNAP_NAME_LAYOUT_THEME,
@@ -85,6 +86,7 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     void                on_load_file(snap_child::post_file_t& file, bool& found);
+    void                on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
     QString             get_layout(content::path_info_t& ipath, const QString& column_name, bool use_qs_theme);
     QDomDocument        create_document(content::path_info_t& ipath, plugin *content_plugin);

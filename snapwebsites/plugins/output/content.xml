@@ -175,6 +175,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>View a page of content.</p><p>This right is used to mark editable pages (i.e. HTML body).</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/view/page/secure">
+    <param name="content::title" revision="revision">Secure Page Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Right given to secure pages so administrators can see them.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/rights/view/page/private">
     <param name="content::title" revision="revision">Private Page Right</param>
     <param name="content::body" revision="revision">

@@ -74,6 +74,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_LAYOUT_LAYOUT:
         return "layout::layout";
 
+    case SNAP_NAME_LAYOUT_NAMESPACE:
+        return "layout";
+
     case SNAP_NAME_LAYOUT_REFERENCE:
         return "layout::reference";
 
@@ -126,6 +129,7 @@ void layout::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(layout, "server", server, load_file, _1, _2);
+    SNAP_LISTEN(layout, "content", content::content, copy_branch_cells, _1, _2, _3);
 }
 
 
@@ -1724,6 +1728,15 @@ void layout::add_layout_from_resources(QString const& name)
     int64_t updated(f_snap->get_start_date());
     layout_table->row(name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
 }
+
+
+void layout::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+{
+    static_cast<void>(destination_branch);
+
+    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(SNAP_NAME_LAYOUT_NAMESPACE));
+}
+
 
 
 // This was to test, at this point we don't offer anything in the layout itself

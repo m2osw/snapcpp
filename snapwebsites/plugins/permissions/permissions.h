@@ -39,6 +39,7 @@ enum name_t
     SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR,
     SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED,  // partial log in
     SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED,            // full log in
+    SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR,
     SNAP_NAME_PERMISSIONS_MAKE_ROOT,
     SNAP_NAME_PERMISSIONS_NAMESPACE,
     SNAP_NAME_PERMISSIONS_PATH,
@@ -131,7 +132,7 @@ public:
     virtual void            on_backend_action(QString const& action);
     void                    on_user_verified(content::path_info_t& ipath, int64_t identifier);
     void                    on_add_snap_expr_functions(snap_expr::functions_t& functions);
-    virtual void            repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination);
+    virtual void            repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning);
 
     SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
     SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));

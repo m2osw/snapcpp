@@ -772,13 +772,12 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 //         potential problem in that arena...
 //
 
-    bool switch_branch(false);
     snap_version::version_number_t branch_number(ipath.get_branch());
-    if(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch_number)
+    bool const switch_branch(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch_number);
+    if(switch_branch)
     {
         // force a user branch if that page still uses a system branch!
         branch_number = static_cast<int>(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);  // FIXME cast
-        switch_branch = true;
     }
     QString const key(ipath.get_key());
     QString const locale(ipath.get_locale());
@@ -806,6 +805,9 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         // make this newer revision the current one
         if(switch_branch)
         {
+            // TODO: test whether that branch already exist (it should not!)
+            content_plugin->copy_branch(key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, branch_number);
+
             // working branch cannot really stay as the system branch
             // so force both branches in this case
             content_plugin->set_branch(key, branch_number, false);
@@ -815,7 +817,9 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         }
 
         // get the revision number only AFTER the branch was created
-        snap_version::version_number_t revision_number(content_plugin->get_new_revision(key, branch_number, locale, true));
+        // TODO: once we have a "save branch" the old_branch parameter needs
+        //       to be corrected (another function anyway?)
+        snap_version::version_number_t revision_number(content_plugin->get_new_revision(key, branch_number, locale, true, switch_branch ? static_cast<snap_version::version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH) : branch_number));
 
 // TODO: add revision manager
 //       the current/working revisions are not correctly handled yet...
@@ -831,6 +835,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         content_plugin->set_revision_key(key, branch_number, revision_number, locale, true);
 
         // now save the new data
+        ipath.force_branch(branch_number);
         ipath.force_revision(revision_number);
 
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
@@ -2870,8 +2875,10 @@ void editor::on_generate_boxes_content(content::path_info_t& page_cpath, content
  * which is used once a draft is saved as a full page. This type has to
  * be duplicated here.
  */
-void editor::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination)
+void editor::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
 {
+    static_cast<void>(cloning);
+
     links::link_info src(source.name(), source.is_unique(), clone, branch_number);
     links::links::instance()->create_link(src, destination);
 }

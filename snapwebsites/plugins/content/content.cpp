@@ -4417,10 +4417,11 @@ snap_version::version_number_t content::get_current_revision(QString const& key,
  * found in the content.xml file.
  *
  * \param[in] key  The key of the page concerned.
- * \param[in] owner  The plugin requesting this new revision.
  * \param[in] locale  The locale used for this revision.
  *
  * \return The new branch number.
+ *
+ * \sa get_current_user_branch()
  */
 snap_version::version_number_t content::get_new_branch(QString const& key, QString const& locale)
 {
@@ -4431,7 +4432,7 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
                         .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
                         .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
 
-    // increase revision if one exists, otherwise we keep the default (0)
+    // increase revision if one exists, otherwise we keep the user default (1)
     snap_version::version_number_t branch(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH));
 
     QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
@@ -4466,6 +4467,174 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
     lock.unlock();
 
     return branch;
+}
+
+
+/** \brief Copy a branch in another.
+ *
+ * This function is generally used when a user creates a new branch on
+ * a page where another branch already exists.
+ *
+ * The function checks whether the source branch exists. If not, it
+ * silently returns.
+ *
+ * The destination may already have some parameters. The copy attempts to
+ * not modify existing data in the destination branch.
+ *
+ * The destination receives the content::created field as of this process
+ * instance (i.e. snap_child::get_start_date()) unless the field already
+ * exists.
+ *
+ * \param[in] key  The page where the branch is copied.
+ * \param[in] source_branch  The branch that gets copied.
+ * \param[in] destination_branch  The new branch you just "created" (the
+ *                                branch itself does not need to already
+ *                                exist in the database.)
+ */
+void content::copy_branch(QString const& key, snap_version::version_number_t const source_branch, snap_version::version_number_t const destination_branch)
+{
+    QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
+
+    if(source_branch >= destination_branch)
+    {
+        throw snap_logic_exception(QString("trying to copy a newer branch (%1) in an older one (%2)")
+                    .arg(source_branch)
+                    .arg(destination_branch));
+    }
+
+    path_info_t source_uri;
+    source_uri.set_path(key);
+    source_uri.force_branch(source_branch);
+
+    QtCassandra::QCassandraRow::pointer_t source_row(branch_table->row(source_uri.get_branch_key()));
+    if(!source_row->exists(get_name(SNAP_NAME_CONTENT_CREATED)))
+    {
+        // no source, ignore
+        return;
+    }
+
+    path_info_t destination_uri;
+    destination_uri.set_path(key);
+    destination_uri.force_branch(destination_branch);
+
+    QtCassandra::QCassandraRow::pointer_t destination_row(branch_table->row(destination_uri.get_branch_key()));
+
+    QString const links_namespace(QString("%1::").arg(links::get_name(links::SNAP_NAME_LINKS_NAMESPACE)));
+    QByteArray const links_bytearray(links_namespace.toAscii());
+
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setCount(1000); // we have to copy everything also it is likely very small (i.e. 10 fields...)
+    column_predicate.setIndex(); // behave like an index
+    for(;;)
+    {
+        source_row->clearCache();
+        source_row->readCells(column_predicate);
+        QtCassandra::QCassandraCells source_cells(source_row->cells());
+        if(source_cells.isEmpty())
+        {
+            // done
+            break;
+        }
+        copy_branch_cells(source_cells, destination_row, destination_branch);
+    }
+}
+
+
+bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+{
+    // we handle the links here because the links cannot include the
+    // content.h header file...
+    links::links *link_plugin(links::links::instance());
+    QString const links_namespace(QString("%1::").arg(links::get_name(links::SNAP_NAME_LINKS_NAMESPACE)));
+    QByteArray const links_bytearray(links_namespace.toAscii());
+
+    QtCassandra::QCassandraCells left_cells;
+
+    // handle one batch
+    for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+            nc != source_cells.end();
+            ++nc)
+    {
+        QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+        QByteArray cell_key(source_cell->columnKey());
+
+        if(cell_key == get_name(SNAP_NAME_CONTENT_MODIFIED)
+        || destination_row->exists(cell_key))
+        {
+            // ignore the content::modified cell
+            // ignore all the cells that already exist in the destination
+            //
+            // (TBD: we may want to limit those to content::... and
+            //       links::... cells and leave the decision to each plugin
+            //       for the others?)
+            continue;
+        }
+
+        if(cell_key == get_name(SNAP_NAME_CONTENT_CREATED))
+        {
+            // handle the content::created field
+            int64_t const now(f_snap->get_start_date());
+            destination_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(now);
+        }
+        else if(cell_key.startsWith(links_bytearray))
+        {
+            // handle the links as a special case because the links plugin
+            // cannot include content.h (circular includes...)
+            link_plugin->fix_branch_copy_link(source_cell, destination_row, destination_branch);
+        }
+        else
+        {
+            // keep the other branch fields as is, other plugins can handle
+            // them as required by implementing this signal
+            //
+            // note that the map is a map a shared pointers so it is fast
+            // to make a copy like this
+            left_cells[cell_key] = source_cell;
+        }
+    }
+
+    // overwrite the source with the cells we allow to copy "further"
+    source_cells = left_cells;
+
+    // continue process if there are still cells to handle
+    // (often false since content::... and links::... were already worked on)
+    return !source_cells.isEmpty();
+}
+
+
+void content::copy_branch_cells_as_is(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, QString const& plugin_namespace)
+{
+    QString const cell_namespace(QString("%1::").arg(plugin_namespace));
+    QByteArray const cell_bytearray(cell_namespace.toAscii());
+
+    QtCassandra::QCassandraCells left_cells;
+
+    // handle one batch
+    for(QtCassandra::QCassandraCells::const_iterator nc(source_cells.begin());
+            nc != source_cells.end();
+            ++nc)
+    {
+        QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
+        QByteArray cell_key(source_cell->columnKey());
+
+        if(cell_key.startsWith(cell_bytearray))
+        {
+            // copy our fields as is
+            destination_row->cell(cell_key)->setValue(source_cell->value());
+        }
+        else
+        {
+            // keep the other branch fields as is, other plugins can handle
+            // them as required by implementing this signal
+            //
+            // note that the map is a map a shared pointers so it is fast
+            // to make a copy like this
+            left_cells[cell_key] = source_cell;
+        }
+    }
+
+    // overwrite the source with the cells we allow to copy "further"
+    source_cells = left_cells;
 }
 
 
@@ -4505,6 +4674,10 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
  * yet exist for this page.
  *
  * \todo
+ * We probably should be using the path_info_t class to generate the
+ * URIs. At this point these are done "by hand" here.
+ *
+ * \todo
  * We may want to create a class that allows us to define a set of the new
  * fields so instead of copying we can immediately save the new value. Right
  * now we are going to write the same field twice (once here in the repeat
@@ -4519,10 +4692,15 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
  * \return The new revision number.
  */
 snap_version::version_number_t content::get_new_revision(QString const& key,
-                snap_version::version_number_t branch,
-                QString const& locale, bool repeat)
+                snap_version::version_number_t const branch,
+                QString const& locale, bool repeat,
+                snap_version::version_number_t const old_branch)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+    snap_version::version_number_t const previous_branch(
+        old_branch == static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED)
+            ? branch
+            : old_branch);
 
     // define the key
     QString last_revision_key(QString("%1::%2::%3")
@@ -4535,7 +4713,8 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     }
     QString current_revision_key(QString("%1::%2::%3")
                 .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION)).arg(branch));
+                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
+                .arg(previous_branch));
     if(!locale.isEmpty())
     {
         current_revision_key += "::" + locale;
@@ -4543,7 +4722,6 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
 
     // increase revision if one exists, otherwise we keep the default (0)
     snap_version::version_number_t revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
-    snap_version::version_number_t previous_revision(revision);
 
     QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
 
@@ -4564,17 +4742,6 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     }
 #endif
 
-    // copy from the current revision at this point
-    // (the editor WILL tell us to copy from a specific revisions at some
-    // point... it is important because if user A edits revision X, and user
-    // B creates a new revision Y in the meantime, we may still want to copy
-    // revision X at the time A saves his changes.)
-    QtCassandra::QCassandraValue current_revision_value(content_table->row(key)->cell(current_revision_key)->value());
-    if(!current_revision_value.nullValue())
-    {
-        previous_revision = current_revision_value.uint32Value();
-    }
-
     QtCassandra::QCassandraValue revision_value(content_table->row(key)->cell(last_revision_key)->value());
     if(!revision_value.nullValue())
     {
@@ -4594,6 +4761,18 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     }
     content_table->row(key)->cell(last_revision_key)->setValue(static_cast<snap_version::basic_version_number_t>(revision));
 
+    // copy from the current revision at this point
+    // (the editor WILL tell us to copy from a specific revisions at some
+    // point... it is important because if user A edits revision X, and user
+    // B creates a new revision Y in the meantime, we may still want to copy
+    // revision X at the time A saves his changes.)
+    snap_version::version_number_t previous_revision(revision);
+    QtCassandra::QCassandraValue current_revision_value(content_table->row(key)->cell(current_revision_key)->value());
+    if(!current_revision_value.nullValue())
+    {
+        previous_revision = current_revision_value.uint32Value();
+    }
+
     // TBD: should the repeat be done before or after the lock?
     //      it seems to me that since the next call will now generate a
     //      new revision, it is semi-safe (problem is that the newer
@@ -4601,14 +4780,15 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     //      also the caller will lose the lock too!
 
     if(repeat
-    && revision != static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION)
+    && (revision != static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION)
+       || old_branch != static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED))
     && previous_revision != revision)
     {
         // get two revision keys like:
         // http://csnap.m2osw.com/verify-credentials#en/0.2
         // and:
         // http://csnap.m2osw.com/verify-credentials#en/0.3
-        QString const previous_revision_key(generate_revision_key(key, branch, previous_revision, locale));
+        QString const previous_revision_key(generate_revision_key(key, old_branch, previous_revision, locale));
         QString const revision_key(generate_revision_key(key, branch, revision, locale));
         QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
 
@@ -4637,7 +4817,6 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
  * a number.
  *
  * \param[in] key  The key of the page being worked on.
- * \param[in] owner  The owner of that branch.
  * \param[in] working_branch  Whether we use the working branch or not.
  *
  * \return A string representing the branch key in the data table.
@@ -8127,7 +8306,7 @@ void content::add_css(QDomDocument doc, QString const& name)
  *
  * This function repairs parent links.
  */
-void content::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination)
+void content::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
 {
     if(source.name() == get_name(SNAP_NAME_CONTENT_PARENT)
     && destination.name() == get_name(SNAP_NAME_CONTENT_CHILDREN))
@@ -8150,7 +8329,15 @@ void content::repair_link_of_cloned_page(QString const& clone, snap_version::ver
         links::link_info src(get_name(SNAP_NAME_CONTENT_PAGE_TYPE), true, clone, branch_number);
         links::links::instance()->create_link(src, destination);
     }
-    // else -- ignore all others for now (especially all children!)
+    else if(!cloning
+    && source.name() == get_name(SNAP_NAME_CONTENT_CHILDREN)
+    && destination.name() == get_name(SNAP_NAME_CONTENT_PARENT))
+    {
+        // copy the children links only if we are not cloning
+        links::link_info src(source.name(), false, clone, branch_number);
+        links::links::instance()->create_link(src, destination);
+    }
+    // else -- ignore all others for now
 }
 
 

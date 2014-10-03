@@ -28,6 +28,7 @@ namespace form
 
 enum name_t {
     SNAP_NAME_FORM_FORM,
+    SNAP_NAME_FORM_NAMESPACE,
     SNAP_NAME_FORM_PATH,
     SNAP_NAME_FORM_RESOURCE,
     SNAP_NAME_FORM_SETTINGS,
@@ -86,6 +87,7 @@ public:
     void                        on_process_post(QString const& uri_path);
     void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
     void                        on_filtered_content(content::path_info_t& path, QDomDocument& doc, QString const& xsl);
+    void                        on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
     SNAP_SIGNAL_WITH_MODE(tweak_form, (form *f, content::path_info_t& ipath, QDomDocument form_doc), (f, ipath, form_doc), NEITHER);
     SNAP_SIGNAL_WITH_MODE(form_element, (form *f), (f), NEITHER);

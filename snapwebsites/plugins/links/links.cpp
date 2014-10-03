@@ -1222,15 +1222,15 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
 
     int const dst_branch_pos(destination_branch.indexOf('#'));
     QString const destination_uri(destination_branch.mid(0, dst_branch_pos));
-    snap_version::version_number_t branch_number(destination_branch.mid(dst_branch_pos + 1).toULong());
+    snap_version::version_number_t const branch_number(destination_branch.mid(dst_branch_pos + 1).toULong());
 
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setStartColumnName(QString("%1::").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
     column_predicate.setEndColumnName(QString("%1;").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
     column_predicate.setCount(100);
     column_predicate.setIndex(); // behave like an index
-    int const branch_pos(source_branch.indexOf('#'));
-    QString const source_uri(source_branch.mid(0, branch_pos));
+    int const src_branch_pos(source_branch.indexOf('#'));
+    QString const source_uri(source_branch.mid(0, src_branch_pos));
     for(;;)
     {
         // we MUST clear the cache in case we read the same list of links twice
@@ -1272,18 +1272,72 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
 
                 QString const name(src_li.name());
                 int const namespace_end(name.indexOf(':'));
-                if(namespace_end < 0)
+                if(namespace_end <= 0)
                 {
-                    throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call linked_to() expected exactly 3");
+                    throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid link field name, no namespace found");
                 }
                 QString const plugin_name(name.mid(0, namespace_end));
                 plugins::plugin *plugin_owner(plugins::get_plugin(plugin_name));
                 links_cloned *link_owner(dynamic_cast<links_cloned *>(plugin_owner));
                 if(link_owner != nullptr)
                 {
-                    link_owner->repair_link_of_cloned_page(destination_uri, branch_number, src_li, dst_li);
+                    link_owner->repair_link_of_cloned_page(destination_uri, branch_number, src_li, dst_li, true);
                 }
             }
+        }
+    }
+}
+
+
+void links::fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch_number)
+{
+    init_tables();
+
+    // the source data is the destination link information
+    QString const dst_link(source_cell->value().stringValue());
+    link_info dst_li;
+    dst_li.from_data(dst_link);
+    QString const destination_key(destination_row->rowName());
+    int const destination_branch_pos(destination_key.indexOf('#'));
+    QString const destination_uri(destination_key.mid(0, destination_branch_pos));
+
+    QtCassandra::QCassandraRow::pointer_t source_row(source_cell->parentRow());
+    QString const source_key(source_row->rowName());
+    int const source_branch_pos(source_key.indexOf('#'));
+    QString const source_uri(source_key.mid(0, source_branch_pos));
+
+    QString const other_row(dst_li.row_key());
+    if(other_row != destination_key)
+    {
+        QString cell_name;
+        if(dst_li.is_unique())
+        {
+            cell_name = dst_li.cell_name();
+        }
+        else
+        {
+            // in this case the info is in the links table
+            cell_name = f_links_table->row(dst_li.link_key())->cell(source_uri)->value().stringValue();
+        }
+        QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(other_row));
+        QString const src_link(dst_row->cell(cell_name)->value().stringValue());
+        link_info src_li;
+        src_li.from_data(src_link);
+
+        QString const name(src_li.name());
+        int const namespace_end(name.indexOf(':'));
+        if(namespace_end <= 0)
+        {
+            throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid link field name, no namespace found");
+        }
+        QString const plugin_name(name.mid(0, namespace_end));
+        plugins::plugin *plugin_owner(plugins::get_plugin(plugin_name));
+        links_cloned *link_owner(dynamic_cast<links_cloned *>(plugin_owner));
+        if(link_owner != nullptr)
+        {
+            // the repair itself is exactly the same as for a cloned page,
+            // the link_owner may or may not re-create that link, voilà
+            link_owner->repair_link_of_cloned_page(destination_uri, destination_branch_number, src_li, dst_li, false);
         }
     }
 }

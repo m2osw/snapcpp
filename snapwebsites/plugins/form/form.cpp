@@ -69,6 +69,9 @@ char const *get_name(name_t const name)
     case SNAP_NAME_FORM_FORM:
         return "form::form";
 
+    case SNAP_NAME_FORM_NAMESPACE:
+        return "form";
+
     case SNAP_NAME_FORM_PATH:
         return "form::path";
 
@@ -152,6 +155,7 @@ void form::on_bootstrap(::snap::snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(form, "server", server, process_post, _1);
+    SNAP_LISTEN(form, "content", content::content, copy_branch_cells, _1, _2, _3);
     SNAP_LISTEN(form, "filter", filter::filter, replace_token, _1, _2, _3, _4);
     SNAP_LISTEN(form, "layout", layout::layout, filtered_content, _1, _2, _3);
 }
@@ -2238,6 +2242,15 @@ void form::on_filtered_content(content::path_info_t& ipath, QDomDocument& doc, Q
         content::content::instance()->add_javascript(doc, "form");
     }
 }
+
+
+void form::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch)
+{
+    static_cast<void>(destination_branch);
+
+    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(SNAP_NAME_FORM_NAMESPACE));
+}
+
 
 
 

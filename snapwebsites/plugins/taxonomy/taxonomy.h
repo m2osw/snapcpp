@@ -25,7 +25,8 @@ namespace taxonomy
 {
 
 enum name_t {
-    SNAP_NAME_TAXONOMY_NAME
+    SNAP_NAME_TAXONOMY_NAME,
+    SNAP_NAME_TAXONOMY_NAMESPACE
 };
 const char *get_name(name_t name) __attribute__ ((const));
 
@@ -43,6 +44,7 @@ public:
     void                on_bootstrap(::snap::snap_child *snap);
     virtual bool        on_path_execute(content::path_info_t& ipath);
     virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
     QtCassandra::QCassandraValue    find_type_with(content::path_info_t& cpath, const QString& taxonomy, const QString& col_name, const QString& limit_name);
 

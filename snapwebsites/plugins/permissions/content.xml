@@ -102,7 +102,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
   </content>
   <content path="/types/permissions/rights/administer">
-    <param name="content::title" revision="revision">Administer Right</param>
+    <param name="content::title" revision="revision">Administer Rights</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Administer settings.</p><p>In general this is very similar to the Edit right, only it gives the user the permission to change things that are usually not accessible by people who just have Edit rights.</p>]]>
     </param>
