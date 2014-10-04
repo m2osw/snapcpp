@@ -149,6 +149,12 @@ int32_t snap_cassandra::get_cassandra_port() const
 }
 
 
+bool snap_cassandra::is_connected() const
+{
+    return f_cassandra->isConnected();
+}
+
+
 }
 // namespace snap
 

@@ -35,6 +35,8 @@
 #include "snap_image.h"
 #include "snapwebsites.h"
 #include "qstring_stream.h"
+#include "snap_cassandra.h"
+#include "snap_config.h"
 
 #include <advgetopt/advgetopt.h>
 #include <controlled_vars/controlled_vars_need_init.h>
@@ -91,19 +93,11 @@ namespace
             advgetopt::getopt::no_argument
         },
         {
-            'h',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "host",
-            "localhost",
-            "host IP address or name [default=localhost]",
-            advgetopt::getopt::optional_argument
-        },
-        {
-            'p',
-            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "port",
-            "9160",
-            "port on the host to which to connect [default=9160]",
+            'c',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "config",
+            "/etc/snapwebsites/snapserver.conf",
+            "Specify the configuration file to load at startup.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -174,6 +168,7 @@ namespace
 //namespace
 
 using namespace QtCassandra;
+using namespace snap;
 
 
 /** \brief A class for easy access to all resources.
@@ -200,8 +195,7 @@ public:
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
-
-    QCassandra::pointer_t           f_cassandra;
+    snap_cassandra  f_cassandra;
 
     // Layout file structure
     //
@@ -220,19 +214,20 @@ private:
 
     // Common attributes
     //
-    QString                         f_host;
-    controlled_vars::zint32_t       f_port;
     getopt_ptr_t                    f_opt;
     controlled_vars::fbool_t        f_verbose;
+    snap_config                     f_parameters;
+
+    // Private methods
+    //
+    QCassandraContext::pointer_t    get_snap_context();
 };
 
 
 snap_layout::snap_layout(int argc, char *argv[])
-    : f_cassandra( QCassandra::create() )
+    //: f_cassandra() )
     //, f_fileinfo_list -- auto-init
-    //, f_host        -- auto-init
-    //, f_port        -- auto-init
-    , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, nullptr ) )
+    : f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, "SNAPSERVER_OPTIONS" ) )
 {
     if( f_opt->is_defined( "help" ) )
     {
@@ -244,8 +239,7 @@ snap_layout::snap_layout(int argc, char *argv[])
         exit(1);
     }
     //
-    f_host = f_opt->get_string( "host" ).c_str();
-    f_port = f_opt->get_long  ( "port" );
+    f_parameters.read_config_file( f_opt->get_string( "config" ).c_str() );
     //
     if( !f_opt->is_defined( "--" ) )
     {
@@ -609,21 +603,27 @@ void snap_layout::load_image( QString const& filename, QByteArray const& content
 }
 
 
-void snap_layout::add_files()
+QCassandraContext::pointer_t snap_layout::get_snap_context()
 {
-    f_cassandra->connect(f_host, f_port);
-    if( !f_cassandra->isConnected() )
+    f_cassandra.connect( f_parameters );
+    if( !f_cassandra.is_connected() )
     {
-        std::cerr << "error: Error connecting to cassandra server on host='"
-            << f_host
+        std::cerr << "error: connecting to cassandra server on host='"
+            << f_cassandra.get_cassandra_host()
             << "', port="
-            << f_port
+            << f_cassandra.get_cassandra_port()
             << "!"
             << std::endl;
         exit(1);
     }
 
-    QCassandraContext::pointer_t context(f_cassandra->context("snap_websites"));
+    return f_cassandra.get_snap_context();
+}
+
+
+void snap_layout::add_files()
+{
+    QCassandraContext::pointer_t context( get_snap_context() );
 
     QCassandraTable::pointer_t table(context->findTable("layout"));
     if(!table)
@@ -823,21 +823,7 @@ void snap_layout::set_theme()
         exit(1);
     }
 
-    // the theme for the entire website is set at the top of the
-    // page type structure .../types/taxonomy/system/content-types
-    f_cassandra->connect(f_host, f_port);
-    if( !f_cassandra->isConnected() )
-    {
-        std::cerr << "error: connecting to cassandra server on host='"
-            << f_host
-            << "', port="
-            << f_port
-            << "!"
-            << std::endl;
-        exit(1);
-    }
-
-    QCassandraContext::pointer_t context(f_cassandra->context("snap_websites"));
+    QCassandraContext::pointer_t context( get_snap_context() );
 
     QCassandraTable::pointer_t table(context->findTable("content"));
     if(!table)
@@ -902,21 +888,7 @@ void snap_layout::remove_theme()
         exit(1);
     }
 
-    // the theme for the entire website is set at the top of the
-    // page type structure .../types/taxonomy/system/content-types
-    f_cassandra->connect(f_host, f_port);
-    if( !f_cassandra->isConnected() )
-    {
-        std::cerr << "error: connecting to cassandra server on host='"
-            << f_host
-            << "', port="
-            << f_port
-            << "!"
-            << std::endl;
-        exit(1);
-    }
-
-    QCassandraContext::pointer_t context(f_cassandra->context("snap_websites"));
+    QCassandraContext::pointer_t context( get_snap_context() );
 
     QCassandraTable::pointer_t table(context->findTable("layout"));
     if(!table)
