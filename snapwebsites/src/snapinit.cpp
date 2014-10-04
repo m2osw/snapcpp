@@ -421,20 +421,20 @@ void process::kill_service()
             SNAP_LOG_INFO() << "process " << f_name << " is still running. Wating " << timeout << " more counts.";
         }
         //
-        sleep( 5 );
+        usleep( 10000 );
         --timeout;
 
-        if( timeout == 0 )
+        if( timeout == 0 || timeout == -1 )
         {
-            SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to respond to signal, using SIGTERM...";
-            ::kill( f_pid, SIGTERM );
-            sleep(10);
-        }
-        else if( timeout == -1 )
-        {
-            SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to respond to signal, using SIGKILL...";
-            ::kill( f_pid, SIGKILL );
-            sleep(1);
+            const int signal = (timeout == 0)? SIGTERM: SIGKILL;
+            SNAP_LOG_WARNING() << "process " << f_name << ", pid=" << f_pid << ", failed to respond to signal, using -" << signal;
+            const int retval = ::kill( f_pid, signal );
+            if( retval == -1 )
+            {
+                SNAP_LOG_WARNING() << "Unable to kill process " << f_name << ", pid=" << f_pid << "! errno=" << errno;
+                break;
+            }
+            if( timeout == 0 ) sleep( 1 );
         }
         else if( timeout < -1 )
         {
@@ -469,7 +469,7 @@ private:
     services_t           f_services;
     QFile                f_lock_file;
     snap::snap_config    f_config;
-    snap::snap_cassandra f_cassandra;
+    //snap::snap_cassandra f_cassandra;
 
     typedef std::vector<process::pointer_t> process_list_t;
     process_list_t f_process_list;
@@ -479,7 +479,7 @@ private:
     void usage();
     void validate();
     void show_selected_servers() const;
-    bool backend_ready();
+    //bool backend_ready();
     void create_server_process();
     void create_backend_process( QString const& name );
     bool verify_process( QString const& name );
@@ -521,22 +521,6 @@ snap_init::snap_init( int argc, char *argv[] )
         SNAP_LOG_FATAL() << "the configuration file must list the services to start (services=server,images,pagelist,sendmail)";
         exit( 1 );
     }
-
-#if 0
-    f_cassandra.connect( f_config );
-    //
-    QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
-    Q_ASSERT(context);
-    //
-    QtCassandra::QCassandraTable::pointer_t domains_table  ( context->findTable(snap::get_name(snap::SNAP_NAME_DOMAINS))  );
-    QtCassandra::QCassandraTable::pointer_t websites_table ( context->findTable(snap::get_name(snap::SNAP_NAME_WEBSITES)) );
-    //
-    if( !(domains_table && websites_table) )
-    {
-        SNAP_LOG_FATAL() << "You must create both the 'domains' and the 'websites' tables before you can run snapserver!";
-        exit( 1 );
-    }
-#endif
 
     bool const list( f_opt.is_defined( "list" ) );
     if(list)
@@ -668,6 +652,7 @@ void snap_init::show_selected_servers() const
 }
 
 
+#if 0
 /** \brief Check if backend is ready to start.
  *
  * If the sites table has not yet been created, you don't want to
@@ -689,6 +674,7 @@ bool snap_init::backend_ready()
     QtCassandra::QCassandraTable::pointer_t sites_table( context->findTable( snap::get_name(snap::SNAP_NAME_SITES) ) );
     return static_cast<bool>(sites_table);
 }
+#endif
 
 
 bool snap_init::verify_process( QString const& name )
@@ -723,11 +709,13 @@ void snap_init::create_server_process()
 
 void snap_init::create_backend_process( QString const& name )
 {
+#if 0
     if( !backend_ready() )
     {
         SNAP_LOG_ERROR() << "The 'sites' table does not yet exist. Disabling backend--restart snapinit when the database is ready.";
         return;
     }
+#endif
 
     process::pointer_t p( new process( name ) );
     p->set_path( f_opt.get_string("binary_path").c_str() );
@@ -801,20 +789,6 @@ void snap_init::terminate_processes()
 
 void snap_init::start_processes()
 {
-    f_cassandra.connect( f_config );
-    //
-    QtCassandra::QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
-    Q_ASSERT(context);
-    //
-    QtCassandra::QCassandraTable::pointer_t domains_table  ( context->findTable(snap::get_name(snap::SNAP_NAME_DOMAINS))  );
-    QtCassandra::QCassandraTable::pointer_t websites_table ( context->findTable(snap::get_name(snap::SNAP_NAME_WEBSITES)) );
-    //
-    if( !(domains_table && websites_table) )
-    {
-        SNAP_LOG_FATAL() << "You must create both the 'domains' and the 'websites' tables before you can run snapserver!";
-        exit( 1 );
-    }
-
     // lock snapinit so we cannot start more than one
     f_lock_file.open( QFile::ReadWrite );
 

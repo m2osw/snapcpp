@@ -39,6 +39,7 @@ public:
 
     QString get_cassandra_host() const;
     int32_t get_cassandra_port() const;
+    bool    is_connected() const;
 
 private:
     QtCassandra::QCassandra::pointer_t f_cassandra;
