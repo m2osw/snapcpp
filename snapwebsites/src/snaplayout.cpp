@@ -101,6 +101,22 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
+            'h',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "host",
+            "localhost",
+            "host IP address or name [default=localhost]",
+            advgetopt::getopt::optional_argument
+        },
+        {
+            'p',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "port",
+            "9160",
+            "port on the host to which to connect [default=9160]",
+            advgetopt::getopt::optional_argument
+        },
+        {
             '\0',
             0,
             "remove-theme",
@@ -605,6 +621,17 @@ void snap_layout::load_image( QString const& filename, QByteArray const& content
 
 QCassandraContext::pointer_t snap_layout::get_snap_context()
 {
+    // Use command line options if they are set...
+    //
+    if( f_opt->is_defined( "host" ) )
+    {
+        f_parameters["cassandra_host"] = f_opt->get_string( "host" ).c_str();
+    }
+    if( f_opt->is_defined( "port" ) )
+    {
+        f_parameters["cassandra_port"] = f_opt->get_string( "port" ).c_str();
+    }
+
     f_cassandra.connect( f_parameters );
     if( !f_cassandra.is_connected() )
     {
