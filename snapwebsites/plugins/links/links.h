@@ -139,7 +139,21 @@ public:
             return f_name;
         }
         // prepend "links" as a namespace for all links
-        return QString("%1::%2").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)).arg(f_name);
+        return QString("%1::%2#%3").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)).arg(f_name).arg(f_branch);
+    }
+    QString cell_name(QString const& unique_number) const
+    {
+        if(f_name.isEmpty())
+        {
+            // no name, return an empty string
+            return f_name;
+        }
+        // prepend "links" as a namespace for all links
+        return QString("%1::%2-%3#%4")
+                .arg(get_name(SNAP_NAME_LINKS_NAMESPACE))
+                .arg(f_name)
+                .arg(unique_number)
+                .arg(f_branch);
     }
     QString const& key() const
     {

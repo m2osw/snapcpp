@@ -71,7 +71,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if
             test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
-            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+            <!-- put two attributes, that way we can set the tabindex to -1
+                 when disabling a screen -->
+            <xsl:variable name="tabindex" select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/>
+            <xsl:attribute name="tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
+            <xsl:attribute name="original_tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
           </xsl:if>
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.17
+ * Version: 0.1.5.20
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -490,7 +490,7 @@ snapwebsites.Output.prototype.registeredBufferToMIME_; // = []; -- initialized i
  */
 snapwebsites.Output.prototype.initQsParams_ = function()
 {
-    this.queryString_ = snapwebsites.Output.parseQueryString(document.search.replace(/^\?/, ""));
+    this.queryString_ = snapwebsites.Output.parseQueryString(document.location.search.replace(/^\?/, ""));
 };
 
 
@@ -513,7 +513,7 @@ snapwebsites.Output.prototype.qsParam = function(name)
         this.initQsParams_();
     }
 
-    // if it was not defined, then this returnes "undefined"
+    // if it was not defined, then this returns "undefined"
     return this.queryString_[name];
 };
 
@@ -820,6 +820,35 @@ snapwebsites.Output.parseQueryString = function(query_string, include_domain) //
     }
 
     return result;
+};
+
+
+/** \brief Make an element react as a button.
+ *
+ * This function transforms an HTML element such as an anchor (in
+ * most cases, an anchor) so it reacts to the keyboard the same
+ * way as a button element.
+ *
+ * This means attaching the keydown event to that element and react
+ * by triggering a click() event whenever the user hits enter or
+ * the spacebar.
+ *
+ * @param {Object} element  The element to "transform to a button."
+ */
+snapwebsites.Output.makeButton = function(element) // static
+{
+    jQuery(element).keydown(function(e)
+        {
+            if(e.which == 13 || e.which == 32)
+            {
+                // prevent further propagation
+                e.preventDefault();
+                e.stopPropagation();
+
+                // trigger a click instead
+                jQuery(element).trigger("click");
+            }
+        });
 };
 
 
