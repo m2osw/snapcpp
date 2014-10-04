@@ -39,10 +39,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#if 0
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+
+#define USE_OPEN_FD
+#ifdef USE_OPEN_FD
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#   include <fcntl.h>
 #endif
 
 #include <exception>
@@ -483,6 +485,7 @@ private:
     static pointer_t     f_instance;
     advgetopt::getopt    f_opt;
     services_t           f_services;
+    QString              f_lock_filename;
     QFile                f_lock_file;
     snap::snap_config    f_config;
     //snap::snap_cassandra f_cassandra;
@@ -514,10 +517,11 @@ snap_init::pointer_t snap_init::f_instance;
 
 snap_init::snap_init( int argc, char *argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
-    , f_lock_file( QString("%1/%2")
-                   .arg(f_opt.get_string("lockdir").c_str())
-                   .arg(SNAPINIT_KEY)
-                  )
+    , f_lock_filename( QString("%1/%2")
+                       .arg(f_opt.get_string("lockdir").c_str())
+                       .arg(SNAPINIT_KEY)
+                     )
+    , f_lock_file( f_lock_filename )
 {
     if(f_opt.is_defined("version"))
     {
@@ -808,11 +812,11 @@ void snap_init::terminate_processes()
 
 void snap_init::start_processes()
 {
-#if 0
+#ifdef USE_OPEN_FD
     // This does prevent a race attack; however, in this mode, the server cannot remove the lock file
     // when it closes. Thus "snapinit stop" hangs forever.
     //
-    const int fd = ::open( f_lock_file.fileName().toAscii().data(), O_CREAT | O_EXCL );
+    const int fd = ::open( f_lock_file.fileName().toUtf8().data(), O_CREAT | O_EXCL );
     if( fd == -1 )
     {
         SNAP_LOG_FATAL("Lock file exists! Is this a race attack?");
@@ -963,8 +967,14 @@ void snap_init::remove_lock()
 {
     if( f_lock_file.isOpen() )
     {
-        f_lock_file.close();
+#ifdef USE_OPEN_FD
+        // We have to do it this way, otherwise the remove doesn't work.
+        ::close( f_lock_file.handle() );
+        QFile lock_file( f_lock_filename );
+        lock_file.remove();
+#else
         f_lock_file.remove();
+#endif
     }
 }
 
