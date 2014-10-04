@@ -29,6 +29,8 @@ then
         exit 0
 fi
 
+mkdir -p /var/lock/snapwebsites
+
 INIT_ARGS="--detach ${INIT_OPTS}"    					 # INIT_OPTS  comes from /etc/default/snapserver
 
 # Load the VERBOSE setting and other rcS variables

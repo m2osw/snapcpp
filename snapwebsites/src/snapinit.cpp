@@ -39,6 +39,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#if 0
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
 
 #include <exception>
 #include <map>
@@ -127,6 +132,14 @@ namespace
             nullptr,
             "Display the list of services and exit.",
             advgetopt::getopt::no_argument
+        },
+        {
+            'k',
+            advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
+            "lockdir",
+            "/var/lock/snapwebsites",
+            "Full path to the snapinit lockdir.",
+            advgetopt::getopt::optional_argument
         },
         // TODO: We should allow for a log filename definition
         //       in the snapserver.conf file too
@@ -498,7 +511,10 @@ snap_init::pointer_t snap_init::f_instance;
 
 snap_init::snap_init( int argc, char *argv[] )
     : f_opt(argc, argv, g_snapinit_options, g_configuration_files, "SNAPINIT_OPTIONS")
-    , f_lock_file( QString("/tmp/%1").arg(SNAPINIT_KEY) )
+    , f_lock_file( QString("%1/%2")
+                   .arg(f_opt.get_string("lockdir").c_str())
+                   .arg(SNAPINIT_KEY)
+                  )
 {
     if(f_opt.is_defined("version"))
     {
@@ -789,8 +805,22 @@ void snap_init::terminate_processes()
 
 void snap_init::start_processes()
 {
+#if 0
+    // This does prevent a race attack; however, in this mode, the server cannot remove the lock file
+    // when it closes. Thus "snapinit stop" hangs forever.
+    //
+    const int fd = ::open( f_lock_file.fileName().toAscii().data(), O_CREAT | O_EXCL );
+    if( fd == -1 )
+    {
+        SNAP_LOG_FATAL("Lock file exists! Is this a race attack?");
+        exit(1);
+    }
+
+    f_lock_file.open( fd, QFile::ReadWrite );
+#else
     // lock snapinit so we cannot start more than one
     f_lock_file.open( QFile::ReadWrite );
+#endif
 
     // check whether all executable are available
     bool failed(false);
