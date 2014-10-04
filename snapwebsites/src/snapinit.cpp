@@ -447,7 +447,10 @@ void process::kill_service()
                 SNAP_LOG_WARNING() << "Unable to kill process " << f_name << ", pid=" << f_pid << "! errno=" << errno;
                 break;
             }
-            if( timeout == 0 ) sleep( 1 );
+            if( timeout == 0 )
+            {
+                sleep( 1 );
+            }
         }
         else if( timeout < -1 )
         {

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.227
+ * Version: 0.0.3.228
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -5303,11 +5303,10 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
 
     c.keydown(function(e)
         {
-            var keyCode = e.keyCode || e.which,
-                widget = c.parent();
+            var widget = c.parent();
 
             // do not prevent the Tab and Enter
-            if(keyCode == 9 || keyCode == 13)
+            if(e.which == 9 || e.which == 13)
             {
                 return;
             }

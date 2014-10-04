@@ -1449,7 +1449,7 @@ void users::verify_user(content::path_info_t& ipath)
         NOTREACHED();
     }
     // remove the "user/new" status link so the user can now log in
-    // he was successfully logged in
+    // he was successfully verified
     links::links::instance()->delete_link(user_status_info);
 
     // Save the date when the user verified

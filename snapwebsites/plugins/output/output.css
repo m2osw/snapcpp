@@ -1,6 +1,6 @@
 /*
  * Name: output
- * Version: 0.0.5
+ * Version: 0.0.6
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -50,6 +50,10 @@ iframe
 	background: url(/images/snap/close-button.png) no-repeat 50% 50%;
 	outline: none;
 	cursor: pointer;
+}
+.snap-popup .close-popup:focus
+{
+	outline: 1px dotted #ff0000;
 }
 
 .snap-popup .popup-title h1,
