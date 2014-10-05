@@ -130,6 +130,15 @@ void As2JsNodeUnitTests::test_type()
                                                                                         | TEST_NODE_IS_UNDEFINED
                                                                                         | TEST_NODE_IS_NULL)) == 0));
 
+        if(!node->is_literal())
+        {
+            as2js::Node::pointer_t literal(new as2js::Node(as2js::Node::node_t::NODE_STRING));
+            CPPUNIT_ASSERT(as2js::Node::compare(node, literal, true)  == as2js::compare_t::COMPARE_ERROR);
+            CPPUNIT_ASSERT(as2js::Node::compare(node, literal, false) == as2js::compare_t::COMPARE_ERROR);
+            CPPUNIT_ASSERT(as2js::Node::compare(literal, node, true)  == as2js::compare_t::COMPARE_ERROR);
+            CPPUNIT_ASSERT(as2js::Node::compare(literal, node, false) == as2js::compare_t::COMPARE_ERROR);
+        }
+
         CPPUNIT_ASSERT(node->has_side_effects() == false || node->has_side_effects() == true);
         CPPUNIT_ASSERT(static_cast<as2js::Node const *>(node.get())->has_side_effects() ^ ((g_node_types[i].f_flags & TEST_NODE_HAS_SIDE_EFFECTS) == 0));
 
@@ -338,6 +347,216 @@ void As2JsNodeUnitTests::test_type()
             CPPUNIT_ASSERT_THROW(new as2js::Node(node_type), as2js::exception_incompatible_node_type);
         }
     }
+}
+
+
+void As2JsNodeUnitTests::test_compare()
+{
+    as2js::Node::pointer_t node1_true(new as2js::Node(as2js::Node::node_t::NODE_TRUE));
+    as2js::Node::pointer_t node2_false(new as2js::Node(as2js::Node::node_t::NODE_FALSE));
+    as2js::Node::pointer_t node3_true(new as2js::Node(as2js::Node::node_t::NODE_TRUE));
+    as2js::Node::pointer_t node4_false(new as2js::Node(as2js::Node::node_t::NODE_FALSE));
+
+    as2js::Node::pointer_t node5_33(new as2js::Node(as2js::Node::node_t::NODE_INT64));
+    as2js::Int64 i33;
+    i33.set(33);
+    node5_33->set_int64(i33);
+
+    as2js::Node::pointer_t node6_101(new as2js::Node(as2js::Node::node_t::NODE_INT64));
+    as2js::Int64 i101;
+    i101.set(101);
+    node6_101->set_int64(i101);
+
+    as2js::Node::pointer_t node7_33(new as2js::Node(as2js::Node::node_t::NODE_FLOAT64));
+    as2js::Float64 f33;
+    f33.set(3.3);
+    node7_33->set_float64(f33);
+
+    as2js::Node::pointer_t node8_101(new as2js::Node(as2js::Node::node_t::NODE_FLOAT64));
+    as2js::Float64 f101;
+    f101.set(1.01);
+    node8_101->set_float64(f101);
+
+    as2js::Node::pointer_t node9_null(new as2js::Node(as2js::Node::node_t::NODE_NULL));
+    as2js::Node::pointer_t node10_null(new as2js::Node(as2js::Node::node_t::NODE_NULL));
+
+    as2js::Node::pointer_t node11_undefined(new as2js::Node(as2js::Node::node_t::NODE_UNDEFINED));
+    as2js::Node::pointer_t node12_undefined(new as2js::Node(as2js::Node::node_t::NODE_UNDEFINED));
+
+    as2js::Node::pointer_t node13_empty_string(new as2js::Node(as2js::Node::node_t::NODE_STRING));
+    as2js::Node::pointer_t node14_blah(new as2js::Node(as2js::Node::node_t::NODE_STRING));
+    node14_blah->set_string("blah");
+    as2js::Node::pointer_t node15_foo(new as2js::Node(as2js::Node::node_t::NODE_STRING));
+    node15_foo->set_string("foo");
+    as2js::Node::pointer_t node16_07(new as2js::Node(as2js::Node::node_t::NODE_STRING));
+    node16_07->set_string("0.7");
+
+    // BOOLEAN
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node1_true, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node3_true, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node3_true, node1_true, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node3_true, node3_true, true) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node1_true, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node3_true, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node3_true, node1_true, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node3_true, node3_true, false) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node2_false, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node4_false, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node4_false, node2_false, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node4_false, node4_false, true) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node2_false, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node4_false, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node4_false, node2_false, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node4_false, node4_false, false) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node2_false, true) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node3_true, node2_false, true) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node4_false, true) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node3_true, node4_false, true) == as2js::compare_t::COMPARE_GREATER);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node2_false, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node3_true, node2_false, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node4_false, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node3_true, node4_false, false) == as2js::compare_t::COMPARE_GREATER);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node1_true, true) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node3_true, true) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node4_false, node1_true, true) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node4_false, node3_true, true) == as2js::compare_t::COMPARE_LESS);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node1_true, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node3_true, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node4_false, node1_true, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node4_false, node3_true, false) == as2js::compare_t::COMPARE_LESS);
+
+    // FLOAT
+    CPPUNIT_ASSERT(as2js::Node::compare(node7_33, node7_33, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node7_33, node8_101, true) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node7_33, true) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node8_101, true) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node7_33, node7_33, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node7_33, node8_101, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node7_33, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node8_101, false) == as2js::compare_t::COMPARE_EQUAL);
+
+    // INTEGER
+    CPPUNIT_ASSERT(as2js::Node::compare(node5_33, node5_33, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node5_33, node6_101, true) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node6_101, node5_33, true) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node6_101, node6_101, true) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node5_33, node5_33, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node5_33, node6_101, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node6_101, node5_33, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node6_101, node6_101, false) == as2js::compare_t::COMPARE_EQUAL);
+
+    // NULL
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node9_null, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node10_null, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node10_null, node9_null, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node10_null, node10_null, true) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node9_null, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node10_null, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node10_null, node9_null, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node10_null, node10_null, false) == as2js::compare_t::COMPARE_EQUAL);
+
+    // UNDEFINED
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node11_undefined, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node12_undefined, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node12_undefined, node11_undefined, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node12_undefined, node12_undefined, true) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node11_undefined, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node12_undefined, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node12_undefined, node11_undefined, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node12_undefined, node12_undefined, false) == as2js::compare_t::COMPARE_EQUAL);
+
+    // STRING
+    CPPUNIT_ASSERT(as2js::Node::compare(node13_empty_string, node13_empty_string, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node13_empty_string, node14_blah, true) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node13_empty_string, node15_foo, true) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node14_blah, node13_empty_string, true) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node14_blah, node14_blah, true) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node14_blah, node15_foo, true) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node15_foo, node13_empty_string, true) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node15_foo, node14_blah, true) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node15_foo, node15_foo, true) == as2js::compare_t::COMPARE_EQUAL);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node13_empty_string, node13_empty_string, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node13_empty_string, node14_blah, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node13_empty_string, node15_foo, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node14_blah, node13_empty_string, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node14_blah, node14_blah, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node14_blah, node15_foo, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node15_foo, node13_empty_string, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node15_foo, node14_blah, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node15_foo, node15_foo, false) == as2js::compare_t::COMPARE_EQUAL);
+
+    // NULL vs UNDEFINED
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node11_undefined, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node12_undefined, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node10_null, node11_undefined, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node10_null, node12_undefined, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node9_null, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node12_undefined, node9_null, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node10_null, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node12_undefined, node10_null, true) == as2js::compare_t::COMPARE_UNORDERED);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node11_undefined, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node12_undefined, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node10_null, node11_undefined, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node10_null, node12_undefined, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node9_null, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node12_undefined, node9_null, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node10_null, false) == as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(as2js::Node::compare(node12_undefined, node10_null, false) == as2js::compare_t::COMPARE_EQUAL);
+
+    // <any> against FLOAT64
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node5_33, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node6_101, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node13_empty_string, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node14_blah, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node16_07, node7_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node1_true, node7_33, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node2_false, node7_33, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node5_33, node7_33, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node6_101, node7_33, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node9_null, node7_33, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node11_undefined, node7_33, false) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node13_empty_string, node7_33, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node14_blah, node7_33, false) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node16_07, node7_33, false) == as2js::compare_t::COMPARE_LESS);
+
+    // FLOAT64 against <any>
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node1_true, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node2_false, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node5_33, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node6_101, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node9_null, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node11_undefined, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node13_empty_string, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node14_blah, true) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node16_07, true) == as2js::compare_t::COMPARE_UNORDERED);
+
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node1_true, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node2_false, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node5_33, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node6_101, false) == as2js::compare_t::COMPARE_LESS);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node9_null, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node11_undefined, false) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node13_empty_string, false) == as2js::compare_t::COMPARE_GREATER);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node14_blah, false) == as2js::compare_t::COMPARE_UNORDERED);
+    CPPUNIT_ASSERT(as2js::Node::compare(node8_101, node16_07, false) == as2js::compare_t::COMPARE_GREATER);
 }
 
 

@@ -65,8 +65,8 @@ then
 else
     # brief test while working on a specific test
     #BUILD/tests/test_as2js
-    BUILD/tests/test_as2js As2JsLexerUnitTests
-    #BUILD/tests/test_as2js As2JsNodeUnitTests
+    #BUILD/tests/test_as2js As2JsLexerUnitTests
+    BUILD/tests/test_as2js As2JsNodeUnitTests
     #BUILD/tests/test_as2js As2JsOptimizerUnitTests
     # just in case, remove the log file if there is one
     rm -f test_log.txt

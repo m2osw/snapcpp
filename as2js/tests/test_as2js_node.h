@@ -46,6 +46,7 @@ class As2JsNodeUnitTests : public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE( As2JsNodeUnitTests );
         CPPUNIT_TEST( test_type );
+        CPPUNIT_TEST( test_compare );
         CPPUNIT_TEST( test_conversions );
         CPPUNIT_TEST( test_tree );
         CPPUNIT_TEST( test_param );
@@ -70,6 +71,7 @@ public:
 
 protected:
     void test_type();
+    void test_compare();
     void test_conversions();
     void test_tree();
     void test_param();
