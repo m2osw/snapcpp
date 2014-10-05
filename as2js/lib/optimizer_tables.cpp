@@ -51,6 +51,7 @@ SOFTWARE.
 #include    "optimizer_conditional.ci"
 #include    "optimizer_logical.ci"
 #include    "optimizer_multiplicative.ci"
+#include    "optimizer_relational.ci"
 #include    "optimizer_statements.ci"
 
 namespace as2js
@@ -111,6 +112,9 @@ optimization_tables_t const g_optimizer_tables[] =
     },
     {
         POINTER_AND_COUNT(g_optimizer_multiplicative_table)
+    },
+    {
+        POINTER_AND_COUNT(g_optimizer_relational_table)
     },
     {
         POINTER_AND_COUNT(g_optimizer_statements_table)

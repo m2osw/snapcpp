@@ -637,6 +637,42 @@ bool Node::has_side_effects() const
 }
 
 
+/** \brief Check whether this node represents a literal.
+ *
+ * Literals are:
+ *
+ * \li true or false
+ * \li floating point
+ * \li integer
+ * \li null
+ * \li string
+ * \li undefined
+ *
+ * If this node represents any one of those types, this function
+ * returns true.
+ *
+ * \return true if the node is a literal.
+ */
+bool Node::is_literal() const
+{
+    switch(f_type)
+    {
+    case node_t::NODE_FALSE:
+    case node_t::NODE_FLOAT64:
+    case node_t::NODE_INT64:
+    case node_t::NODE_NULL:
+    case node_t::NODE_STRING:
+    case node_t::NODE_TRUE:
+    case node_t::NODE_UNDEFINED:
+        return true;
+
+    default:
+        return false;
+
+    }
+}
+
+
 }
 // namespace as2js
 

@@ -56,6 +56,7 @@ add_library( as2js SHARED
     message.cpp
     node.cpp
     node_attribute.cpp
+    node_compare.cpp
     node_convert.cpp
     node_display.cpp
     node_flag.cpp

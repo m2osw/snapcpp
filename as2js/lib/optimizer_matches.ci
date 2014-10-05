@@ -73,6 +73,30 @@ Node::node_t const g_optimizer_match_arithmetic_assignments_except_add[]
 };
 
 
+Node::node_t const g_optimizer_match_greater[]
+{
+    Node::node_t::NODE_GREATER
+};
+
+
+Node::node_t const g_optimizer_match_greater_equal[]
+{
+    Node::node_t::NODE_GREATER_EQUAL
+};
+
+
+Node::node_t const g_optimizer_match_less[]
+{
+    Node::node_t::NODE_LESS
+};
+
+
+Node::node_t const g_optimizer_match_less_equal[]
+{
+    Node::node_t::NODE_LESS_EQUAL
+};
+
+
 Node::node_t const g_optimizer_match_minmax_assignments[]
 {
     Node::node_t::NODE_ASSIGNMENT_MAXIMUM,

@@ -1124,6 +1124,9 @@ char const g_optimizer_logical[] =
 char const g_optimizer_multiplicative[] =
 #include "test_as2js_optimizer_multiplicative.ci"
 ;
+char const g_optimizer_relational[] =
+#include "test_as2js_optimizer_relational.ci"
+;
 char const g_optimizer_statements[] =
 #include "test_as2js_optimizer_statements.ci"
 ;
@@ -1381,6 +1384,11 @@ void As2JsOptimizerUnitTests::test_optimizer_logical()
 void As2JsOptimizerUnitTests::test_optimizer_multiplicative()
 {
     run_tests(g_optimizer_multiplicative, "test_parser_multiplicative.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_relational()
+{
+    run_tests(g_optimizer_relational, "test_parser_relational.json");
 }
 
 void As2JsOptimizerUnitTests::test_optimizer_statements()

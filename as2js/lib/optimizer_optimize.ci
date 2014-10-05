@@ -99,6 +99,25 @@ optimization_optimize_t const g_optimizer_optimize_divide_1_2_0[] =
 
 
 
+/*** G ***/
+optimization_optimize_t const g_optimizer_optimize_greater_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LESS,
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_greater_equal_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LESS_EQUAL,
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    }
+};
+
+
+
 /*** I ***/
 optimization_optimize_t const g_optimizer_optimize_if_logical_not_else[] =
 {
@@ -115,6 +134,22 @@ optimization_optimize_t const g_optimizer_optimize_if_logical_not_else[] =
 
 
 /*** L ***/
+optimization_optimize_t const g_optimizer_optimize_less_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LESS,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_less_equal_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LESS_EQUAL,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_logical_a_and_b_or_c[] =
 {
     {

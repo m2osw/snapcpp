@@ -120,6 +120,16 @@ void As2JsNodeUnitTests::test_type()
         CPPUNIT_ASSERT(node->is_identifier() == false || node->is_identifier() == true);
         CPPUNIT_ASSERT(static_cast<as2js::Node const *>(node.get())->is_identifier() ^ ((g_node_types[i].f_flags & TEST_NODE_IS_IDENTIFIER) == 0));
 
+        CPPUNIT_ASSERT(node->is_literal() == false || node->is_literal() == true);
+        CPPUNIT_ASSERT(static_cast<as2js::Node const *>(node.get())->is_literal() ^ ((g_node_types[i].f_flags & (
+                                                                                          TEST_NODE_IS_INT64
+                                                                                        | TEST_NODE_IS_FLOAT64
+                                                                                        | TEST_NODE_IS_TRUE
+                                                                                        | TEST_NODE_IS_FALSE
+                                                                                        | TEST_NODE_IS_STRING
+                                                                                        | TEST_NODE_IS_UNDEFINED
+                                                                                        | TEST_NODE_IS_NULL)) == 0));
+
         CPPUNIT_ASSERT(node->has_side_effects() == false || node->has_side_effects() == true);
         CPPUNIT_ASSERT(static_cast<as2js::Node const *>(node.get())->has_side_effects() ^ ((g_node_types[i].f_flags & TEST_NODE_HAS_SIDE_EFFECTS) == 0));
 

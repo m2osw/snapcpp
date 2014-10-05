@@ -371,6 +371,65 @@ void optimizer_func_DIVIDE(node_pointer_vector_t const& node_array, optimization
 }
 
 
+/** \brief Apply a LESS function.
+ *
+ * This function checks source 1 against source 2. If source 1 is smaller
+ * than source 2, then the function saves true in the destination, otherwise
+ * it saves false.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_LESS(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    compare_t c(Node::compare(node_array[src1], node_array[src2], false));
+    Node::pointer_t result(new Node(c == compare_t::COMPARE_LESS
+                                    ? Node::node_t::NODE_TRUE
+                                    : Node::node_t::NODE_FALSE));
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(result);
+}
+
+
+/** \brief Apply a LESS_EQUAL function.
+ *
+ * This function checks source 1 against source 2. If source 1 is smaller
+ * than source 2, then the function saves true in the destination, otherwise
+ * it saves false.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_LESS_EQUAL(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    compare_t c(Node::compare(node_array[src1], node_array[src2], false));
+    Node::pointer_t result(new Node(c == compare_t::COMPARE_LESS
+                                 || c == compare_t::COMPARE_EQUAL
+                                        ? Node::node_t::NODE_TRUE
+                                        : Node::node_t::NODE_FALSE));
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(result);
+}
+
+
 /** \brief Apply a LOGICAL_NOT function.
  *
  * This function applies a logical NOT and saves the result in the
@@ -1483,6 +1542,8 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_BITWISE_XOR    */ OPTIMIZER_FUNC(BITWISE_XOR),
     /* OPTIMIZATION_FUNCTION_CONCATENATE    */ OPTIMIZER_FUNC(CONCATENATE),
     /* OPTIMIZATION_FUNCTION_DIVIDE         */ OPTIMIZER_FUNC(DIVIDE),
+    /* OPTIMIZATION_FUNCTION_LESS           */ OPTIMIZER_FUNC(LESS),
+    /* OPTIMIZATION_FUNCTION_LESS_EQUAL     */ OPTIMIZER_FUNC(LESS_EQUAL),
     /* OPTIMIZATION_FUNCTION_LOGICAL_NOT    */ OPTIMIZER_FUNC(LOGICAL_NOT),
     /* OPTIMIZATION_FUNCTION_LOGICAL_XOR    */ OPTIMIZER_FUNC(LOGICAL_XOR),
     /* OPTIMIZATION_FUNCTION_MODULO         */ OPTIMIZER_FUNC(MODULO),

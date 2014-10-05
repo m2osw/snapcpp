@@ -453,6 +453,7 @@ public:
     bool                        is_undefined() const;
     bool                        is_null() const;
     bool                        is_identifier() const;
+    bool                        is_literal() const;
 
     // basic conversions
     void                        to_unknown();
@@ -478,6 +479,8 @@ public:
     Int64                       get_int64() const;
     Float64                     get_float64() const;
     String const&               get_string() const;
+
+    static compare_t            compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bool const strict);
 
     pointer_t                   create_replacement(node_t type) const;
 
