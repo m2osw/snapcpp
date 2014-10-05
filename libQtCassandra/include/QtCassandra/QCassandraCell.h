@@ -83,10 +83,10 @@ public:
     int64_t timestamp() const;
     void setTimestamp(int64_t timestamp);
 
-    QCassandraRow::pointer_t parentRow() const;
+    std::shared_ptr<QCassandraRow> parentRow() const;
 
 private:
-    QCassandraCell(QCassandraRow::pointer_t row, const QByteArray& column_key);
+    QCassandraCell(std::shared_ptr<QCassandraRow> row, const QByteArray& column_key);
     void assignValue(const QCassandraValue& value);
     void unparent();
 
