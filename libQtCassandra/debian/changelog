@@ -1,3 +1,9 @@
+libqtcassandra (0.5.20.9~saucy) saucy; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 05 Oct 2014 17:49:02 -0700
+
 libqtcassandra (0.5.20.8~saucy) saucy; urgency=high
 
   * Nightly build.
