@@ -816,7 +816,7 @@ void snap_init::start_processes()
     // This does prevent a race attack; however, in this mode, the server cannot remove the lock file
     // when it closes. Thus "snapinit stop" hangs forever.
     //
-    const int fd = ::open( f_lock_file.fileName().toUtf8().data(), O_CREAT | O_EXCL );
+    const int fd = ::open( f_lock_file.fileName().toUtf8().data(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
     if( fd == -1 )
     {
         SNAP_LOG_FATAL("Lock file exists! Is this a race attack?");
