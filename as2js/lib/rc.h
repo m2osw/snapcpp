@@ -46,16 +46,21 @@ namespace as2js
 class rc_t
 {
 public:
+                            rc_t();
+
+    void                    reset();
     void                    init_rc(bool const accept_if_missing);
 
     String const&           get_scripts() const;
     String const&           get_db() const;
+    String const&           get_temporary_variable_name() const;
 
     static String const&    get_home();
 
 private:
     String                  f_scripts;
     String                  f_db;
+    String                  f_temporary_variable_name;
 };
 
 

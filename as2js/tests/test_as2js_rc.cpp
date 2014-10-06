@@ -75,6 +75,15 @@ public:
     // implementation of the output
     virtual void output(as2js::message_level_t message_level, as2js::err_code_t error_code, as2js::Position const& pos, std::string const& message)
     {
+        if(f_expected.empty())
+        {
+            std::cerr << "\nfilename = " << pos.get_filename() << "\n";
+            std::cerr << "msg = " << message << "\n";
+            std::cerr << "page = " << pos.get_page() << "\n";
+            std::cerr << "line = " << pos.get_line() << "\n";
+            std::cerr << "error_code = " << static_cast<int>(error_code) << "\n";
+        }
+
         CPPUNIT_ASSERT(!f_expected.empty());
 
 //std::cerr << "filename = " << pos.get_filename() << " / " << f_expected[0].f_pos.get_filename() << "\n";
@@ -213,8 +222,9 @@ void As2JsRCUnitTests::test_basics()
 
     {
         as2js::rc_t rc;
-        CPPUNIT_ASSERT(rc.get_scripts().empty());
-        CPPUNIT_ASSERT(rc.get_db().empty());
+        CPPUNIT_ASSERT(rc.get_scripts() == "as2js/scripts");
+        CPPUNIT_ASSERT(rc.get_db() == "/tmp/as2js_packages.db");
+        CPPUNIT_ASSERT(rc.get_temporary_variable_name() == "@temp");
     }
 
     {
@@ -284,7 +294,8 @@ void As2JsRCUnitTests::test_load_from_var()
                 rc_file << "// rc file\n"
                         << "{\n"
                         << "  'scripts': 'the/script',\n"
-                        << "  'db': 'that/db'\n"
+                        << "  'db': 'that/db',\n"
+                        << "  'temporary_variable_name': '@temp$'\n"
                         << "}\n";
             }
 
@@ -293,6 +304,7 @@ void As2JsRCUnitTests::test_load_from_var()
 
             CPPUNIT_ASSERT(rc.get_scripts() == "the/script");
             CPPUNIT_ASSERT(rc.get_db() == "that/db");
+            CPPUNIT_ASSERT(rc.get_temporary_variable_name() == "@temp$");
         }
 
         {
@@ -312,6 +324,7 @@ void As2JsRCUnitTests::test_load_from_var()
 
             CPPUNIT_ASSERT(rc.get_scripts() == "as2js/scripts");
             CPPUNIT_ASSERT(rc.get_db() == "that/db");
+            CPPUNIT_ASSERT(rc.get_temporary_variable_name() == "@temp");
         }
 
         {
@@ -331,6 +344,27 @@ void As2JsRCUnitTests::test_load_from_var()
 
             CPPUNIT_ASSERT(rc.get_scripts() == "the/script");
             CPPUNIT_ASSERT(rc.get_db() == "/tmp/as2js_packages.db");
+            CPPUNIT_ASSERT(rc.get_temporary_variable_name() == "@temp");
+        }
+
+        {
+            // create an .rc file, with just the temporary variable name
+            {
+                std::ofstream rc_file;
+                rc_file.open("as2js.rc");
+                CPPUNIT_ASSERT(rc_file.is_open());
+                rc_file << "// rc file\n"
+                        << "{\n"
+                        << "  \"temporary_variable_name\": \"what about validity of the value? -- we on purpose use @ because it is not valid in identifiers\"\n"
+                        << "}\n";
+            }
+
+            rc.init_rc(true);
+            unlink("as2js.rc");
+
+            CPPUNIT_ASSERT(rc.get_scripts() == "as2js/scripts");
+            CPPUNIT_ASSERT(rc.get_db() == "/tmp/as2js_packages.db");
+            CPPUNIT_ASSERT(rc.get_temporary_variable_name() == "what about validity of the value? -- we on purpose use @ because it is not valid in identifiers");
         }
 
         {
