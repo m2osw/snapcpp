@@ -3,10 +3,10 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, zip, libboost-dev (>= 1.53.0.0ubuntu2),
     libqt4-dev (>= 4.8.4), doxygen, graphviz, libqtwebkit-dev,
-    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.9~saucy), libadvgetopt-dev (>= 1.0.2),
-    libcontrolledvars-dev (>= 1.4.15.9~saucy), libtld-dev (>= 1.4.20.9~saucy),
-    libqtserialization-dev (>= 0.1.3), libqtcassandra-dev (>= 0.5.20.9~saucy),
-    libsnapwebsites-dev (>= 0.1.69.9~saucy)
+    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.10~saucy), libadvgetopt-dev (>= 1.0.2),
+    libcontrolledvars-dev (>= 1.4.15.10~saucy), libtld-dev (>= 1.4.20.10~saucy),
+    libqtserialization-dev (>= 0.1.3), libqtcassandra-dev (>= 0.5.20.10~saucy),
+    libsnapwebsites-dev (>= 0.1.69.10~saucy)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
@@ -17,7 +17,7 @@ Package: snapmanager
 Section: web
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: snapserver (>= 0.1.69.9~saucy)
+Suggests: snapserver (>= 0.1.69.10~saucy)
 Description: Fast Websites: powerful CMS for Apache written in C++.
  Snap! C++ runs your CMS using binary code written in C and C++.
  The basic concept is taken from a large set of Drupal 6.x
