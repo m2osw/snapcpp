@@ -72,6 +72,42 @@ String                      g_home;
 // no name namespace
 
 
+/** \brief Initialize the resources with defaults.
+ *
+ * The constructor calls the reset() function to initialize the
+ * variable resource parameters to internal defaults.
+ */
+rc_t::rc_t()
+    //: f_script("") -- auto-init
+    //, f_db("") -- auto-init
+    //, f_temporary_variable_name("") -- auto-init
+{
+    reset();
+}
+
+
+/** \brief Reset the resources to internal defaults.
+ *
+ * This function resets all the rc_t variables to internal defaults:
+ *
+ * \li scripts -- "as2js/scripts"
+ * \li db -- "/tmp/as2js_packages.db"
+ * \li temporary_variable_name -- "@temp"
+ *
+ * This function is called on construction and when calling init_rc().
+ *
+ * Note that does not reset the home parameter which has no internal
+ * default and is managed differently.
+ */
+void rc_t::reset()
+{
+    // internal defaults
+    f_scripts = "as2js/scripts";
+    f_db = "/tmp/as2js_packages.db";
+    f_temporary_variable_name = "@temp";
+}
+
+
 /** \brief Find the resource file.
  *
  * This function tries to find a resource file.
@@ -84,9 +120,7 @@ String                      g_home;
  */
 void rc_t::init_rc(bool const accept_if_missing)
 {
-    // internal defaults
-    f_scripts = "as2js/scripts";
-    f_db = "/tmp/as2js_packages.db";
+    reset();
 
     // first try to find a place with a .rc file
     FileInput::pointer_t in(new FileInput());
@@ -179,6 +213,10 @@ void rc_t::init_rc(bool const accept_if_missing)
                 {
                     f_db = parameter_value;
                 }
+                else if(parameter_name == "temporary_variable_name")
+                {
+                    f_temporary_variable_name = parameter_value;
+                }
             }
         }
     }
@@ -194,6 +232,12 @@ String const& rc_t::get_scripts() const
 String const& rc_t::get_db() const
 {
     return f_db;
+}
+
+
+String const& rc_t::get_temporary_variable_name() const
+{
+    return f_temporary_variable_name;
 }
 
 
