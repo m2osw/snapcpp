@@ -55,6 +55,17 @@
 
 namespace
 {
+    /** \brief Define whethre the standard output stream is a TTY.
+     *
+     * This function defines whether 'stderr' is a TTY or not. If not
+     * we assume that we were started as a deamon and we do not spit
+     * out errors in stderr. If it is a TTY, then we also print a
+     * message in the console making it easier to right away know
+     * that the tool detected an error and did not start in the
+     * background.
+     */
+    bool g_isatty = false;
+
     /** \brief List of configuration files.
      *
      * This variable is used as a list of configuration files. It may be
@@ -819,7 +830,22 @@ void snap_init::start_processes()
     const int fd = ::open( f_lock_file.fileName().toUtf8().data(), O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
     if( fd == -1 )
     {
-        SNAP_LOG_FATAL("Lock file exists! Is this a race attack?");
+        if(errno == EEXIST)
+        {
+            SNAP_LOG_FATAL("Lock file \"")(f_lock_file.fileName())("\" exists! Is this a race attack?");
+            if(g_isatty)
+            {
+                std::cerr << "Lock file \"" << f_lock_file.fileName() << "\" exists! Is this a race attack?" << std::endl;
+            }
+        }
+        else
+        {
+            SNAP_LOG_FATAL("Lock file \"")(f_lock_file.fileName())("\" could not be created.");
+            if(g_isatty)
+            {
+                std::cerr << "Lock file \"" << f_lock_file.fileName() << "\" could not be created." << std::endl;
+            }
+        }
         exit(1);
     }
 
@@ -827,6 +853,7 @@ void snap_init::start_processes()
 #else
     // lock snapinit so we cannot start more than one
     f_lock_file.open( QFile::ReadWrite );
+    // TODO: test that the file was indeed opened
 #endif
 
     // check whether all executable are available
@@ -1019,6 +1046,7 @@ void snap_init::sighandler( int sig )
 int main(int argc, char *argv[])
 {
     int retval = 0;
+    g_isatty = isatty(STDERR_FILENO);
 
     try
     {
