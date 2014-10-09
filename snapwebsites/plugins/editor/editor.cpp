@@ -328,7 +328,7 @@ void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::
 
     messages::messages *messages(messages::messages::instance());
 
-    // we're only interested by our widgets
+    // we are only interested by our widgets
     QString const cpath(ipath.get_cpath());
     if(cpath == "admin/drafts/new")
     {
@@ -348,7 +348,7 @@ void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::
                 messages->set_error(
                     "Unknown Type",
                     QString("Type \"%1\" is not yet defined and you do not have permission to create a new type of pages at this point.").arg(type),
-                    "type doesn't exist and we do not yet offer a way to auto-create a content type",
+                    "type does not exist and we do not yet offer a way to auto-create a content type",
                     false
                 );
                 info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);

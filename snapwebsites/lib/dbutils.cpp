@@ -425,9 +425,10 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "users::multiuser"
          || n == "users::long_sessions"
          || (f_tableName == "list" && f_rowName != "*standalone*")
-         || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
          || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::number_of_cashiers" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::plan" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
          )
     {
         // signed 8 bit value
