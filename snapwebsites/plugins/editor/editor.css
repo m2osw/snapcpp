@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.20
+ * Version: 0.0.1.21
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -223,7 +223,6 @@
 	background-color: #e0e0e0;
 	cursor: text;
 }
-
 .editable.snap-editor
 {
 	background-color: #f8f8f8;
@@ -267,10 +266,32 @@
 	cursor: pointer;
 }
 
+.editable.image-box .editor-content
+{
+	min-width: 200px;
+	min-height: 200px;
+}
+
 .editable.image-box .snap-editor-background-content,
 .editable.dropped-file-with-preview-box .snap-editor-background-content
 {
 	text-align: center;
+}
+
+
+/** LINE EDIT **/
+.editable.line-edit .editor-content
+{
+	padding: 3px;
+	height: 1.2em;
+}
+
+
+/** TEXT EDIT **/
+.editable.text-edit .editor-content
+{
+	padding: 3px;
+	min-height: 1.2em;
 }
 
 
@@ -315,7 +336,7 @@
 .editable.dropdown .editor-content
 {
 	padding: 3px;
-	height: 1em;
+	height: 1.2em;
 	background: url(/images/editor/dropdown-arrow-15x15.png) 97% 50% no-repeat;
 }
 
@@ -436,6 +457,64 @@
 .editable.checkmark .editor-content:focus
 {
 	outline: 1px dotted #ff0000;
+}
+
+
+/** RADIO **/
+.editable.radio
+{
+	margin-right: 10px;
+	border: none;
+	box-shadow: none;
+	background: transparent;
+	font-size: 90%;
+	width: 100%;
+	cursor: default;
+}
+
+.editable.radio .editor-content ul
+{
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.editable.radio .editor-content ul li
+{
+	clear: both;
+	display: block;
+	padding: 0;
+	margin: 5px 0;
+}
+
+.editable.radio .editor-content ul li .radio-flag-box
+{
+	float: left;
+	margin-right: 10px;
+	background: url(/images/editor/radio-unselected.png) no-repeat 2px 5px;
+	width: 20px;
+	height: 20px;
+}
+
+.editable.radio .editor-content ul li.selected .radio-flag-box
+{
+	background: url(/images/editor/radio-selected.png) no-repeat 2px 5px;
+}
+
+.editable.radio .editor-content ul li .radio-area
+{
+	padding: 3px 0;
+	float: left;
+}
+
+.editable.radio .editor-content ul li:focus
+{
+	outline: 1px dotted #ff0000;
+}
+
+.end-radio-item
+{
+	clear: both;
 }
 
 

@@ -174,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 10, 3, 20, 11, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 10, 8, 20, 5, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -854,7 +854,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         }
 
         // now go through all the widgets checking out their path, if the
-        // path exists in doc then copy the data in the parser_xml
+        // path exists in doc then save the data in Cassandra
         QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
         int const max_widgets(widgets.size());
         for(int i(0); i < max_widgets; ++i)
@@ -1244,7 +1244,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
     QString const cpath(ipath.get_cpath());
     if(!g_cached_form.contains(cpath))
     {
-        QDomDocument editor_widgets("editor-form");
+        QDomDocument editor_widgets;
         layout::layout *layout_plugin(layout::layout::instance());
         QString script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT), true));
         QStringList const script_parts(script.split("/"));
@@ -1280,10 +1280,37 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
             {
                 QString const name(names[0]);
 
+                // always test for the data in the layout table first
                 QtCassandra::QCassandraTable::pointer_t layout_table(layout_plugin->get_layout_table());
-                QString const parser_xml(layout_table->row(name)->cell(script)->value().stringValue());
-//std::cerr << "Default [" << script << "," << name << "] -- [" << parser_xml.mid(0, 256) << "] found " << layout_name << " for " << ipath.get_key() << "\n";
-                editor_widgets.setContent(parser_xml);
+                QString widgets_xml(layout_table->row(name)->cell(script)->value().stringValue());
+                if(widgets_xml.isEmpty())
+                {
+                    // check for a file in the resources instead...
+                    QFile rc_widgets(QString(":/xml/editor/%1.xml").arg(script));
+                    if(rc_widgets.open(QIODevice::ReadOnly))
+                    {
+                        QByteArray const data(rc_widgets.readAll());
+                        if(!data.isEmpty())
+                        {
+                            widgets_xml = QString::fromUtf8(data.data(), data.size());
+                        }
+                    }
+                }
+
+                if(widgets_xml.isEmpty())
+                {
+                    SNAP_LOG_WARNING("Could not find an editor layout parser file named \"")
+                            (script)("\". We checked the row \"")
+                            (name)("\" in the \"layout\" table, then in Qt resources with filename \":/xml/editor/")
+                            (script)(".xml\".");
+                }
+                else
+                {
+//std::cerr << "Default [" << script << "," << name << "] -- [" << widgets_xml.mid(0, 256) << "] found " << layout_name << " for " << ipath.get_key() << "\n";
+                    QDomDocument named_editor_widgets("editor-form");
+                    editor_widgets = named_editor_widgets;
+                    editor_widgets.setContent(widgets_xml);
+                }
             }
         }
         dynamic_editor_widget(ipath, script, editor_widgets);
@@ -2656,7 +2683,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     }
 
     // now go through all the widgets checking out their path, if the
-    // path exists in doc then copy the data in the parser_xml
+    // path exists in doc then copy the data somewhere in the doc
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
     for(int i(0); i < max_widgets; ++i)

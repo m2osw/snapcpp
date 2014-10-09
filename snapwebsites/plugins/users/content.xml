@@ -146,7 +146,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Set of images offered and used by the Users plugin.</p>]]>
     </param>
     <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="close-button" type="attachment/public">
       <path>:/images/users/default-user-image.png</path>
       <mime-type>image/png</mime-type>

@@ -491,6 +491,9 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  * \param[in] name  The name of the field to user to retrieve the layout name
  *                  from the database (expects layout::layout or layout::theme)
  * \param[in] key  The key of the cell to load the XSL from.
+ * \param[in] default_filename  The name of a resource file representing
+ *                              the default theme in case no theme was
+ *                              already specified.
  * \param[out] layout_name  A QString to hold the resulting layout name.
  *
  * \return The XSL code in a string.
@@ -538,12 +541,26 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
         }
 
         // try to load the layout from the database, if not found
-        // we'll switch to the default layout instead
+        // we will try the Qt resources and if that fails too
+        // switch to the default layout instead
         QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
         QtCassandra::QCassandraValue const layout_value(layout_table->row(layout_name)->cell(cell_name)->value());
         if(layout_value.nullValue())
         {
-            // note that a layout cannot be empty so the test is correct
+            // no data not found in the layout database
+            // the XSLT data may be in Qt, so we check there,
+            // but we still return the layout name as "default"
+            // (which is probably wrong but wrong for my current test)
+            QString const qt_name(QString(":/xsl/layout/%1-parser.xsl").arg(layout_name));
+            QFile rc_parser(qt_name);
+            if(rc_parser.open(QIODevice::ReadOnly))
+            {
+                QByteArray const data(rc_parser.readAll());
+                if(!data.isEmpty())
+                {
+                    xsl = QString::fromUtf8(data.data(), data.size());
+                }
+            }
             layout_name = "default";
         }
         else
@@ -554,9 +571,9 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
 
     // Fallback to the default theme if none was set properly above.
     //
-    if(layout_name == "default")
+    if(xsl.isEmpty() && layout_name == "default")
     {
-        // Grab the XSL from the Qt4 compiled-in resources.
+        // Grab the default theme XSL from the Qt resources.
         //
         QFile file(default_filename);
         if(!file.open(QIODevice::ReadOnly))

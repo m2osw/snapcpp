@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </qresource>
   <qresource prefix="/xml/editor">
     <file>new-draft.xml</file>
+    <file>editor-test-page.xml</file>
   </qresource>
   <qresource prefix="/js/editor">
     <file>editor.js</file>
@@ -32,12 +33,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <file>checkmark-15x11.png</file>
     <file>dropdown-arrow-15x15.png</file>
     <file>drag-n-drop-128x128.png</file>
+    <file>radio-selected.png</file>
+    <file>radio-unselected.png</file>
   </qresource>
   <qresource prefix="/xsl/editor">
     <file>editor-form.xsl</file>
   </qresource>
   <qresource prefix="/css/editor">
     <file>editor.css</file>
+  </qresource>
+  <!-- WARNING: shared layout entry, name includes plugin namespace (editor-) -->
+  <qresource prefix="/xsl/layout">
+    <file>editor-test-parser.xsl</file>
   </qresource>
 </RCC>
 <!--

@@ -276,9 +276,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
           test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <!-- never use toolbar with checkmarks -->
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-          <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
+          <xsl:attribute name="class">editor-content no-toolbar</xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
             <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
           </xsl:if>
@@ -334,24 +335,39 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
           test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+        <!-- never use toolbar with radio buttons -->
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-          <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
-          <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
-            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
-          </xsl:if>
+          <xsl:attribute name="class">editor-content no-toolbar</xsl:attribute>
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
           </xsl:if>
 
-          <div class="radio-flag">
-            <div class="flag-box"></div>
-            <!-- the actual value of a radio is used to know whether the radio is selected or not -->
-            <div><xsl:attribute name="class">radio-area</xsl:attribute></div>
-          </div>
+          <ul class="radion-buttons">
+            <xsl:for-each select="value/item">
+              <li>
+                <!-- the actual value of a radio is used to know whether the radio is selected or not -->
+                <xsl:attribute name="class">radio-button<xsl:if test="@default='default'"> selected</xsl:if><xsl:if
+                    test="@class"><xsl:text> </xsl:text><xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+                <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+                <!-- TODO: here we've got a problem since this is viewed as
+                           ONE unit but if we have 10 items, we would need
+                           this to be viewed as 10... -->
+                <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+                  <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+                </xsl:if>
+                <div class="radio-flag-box"></div>
+                <div class="radio-area">
+                  <xsl:copy-of select="./node()"/>
+                </div>
+                <!-- in most cases we use the end-radio block to do a "clear: both;" -->
+                <div class="end-radio-item"></div>
+              </li>
+            </xsl:for-each>
+          </ul>
+          <!-- in most cases we use the end-radio block to do a "clear: both;" -->
+          <div class="end-radio"></div>
 
-          <xsl:copy-of select="label/node()"/>
-          <xsl:if test="required = 'required'"> <span class="required">*</span></xsl:if>
         </div>
         <xsl:call-template name="snap:common-parts"/>
       </div>

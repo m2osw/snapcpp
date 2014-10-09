@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.228
+ * Version: 0.0.3.236
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -214,7 +214,15 @@
  *      |                                                                   |
  *  +---+------------------------------+    +---------------------------+   |
  *  |                                  |    |                           +---+
- *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeImageBox  |   |
+ *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeRadio     |   |
+ *  |                                  |    |                           |   |
+ *  +----------------------------------+    +---------------------------+   |
+ *      ^                                                                   |
+ *      | Inherit                                                           |
+ *      |                                                                   |
+ *  +---+------------------------------+    +---------------------------+   |
+ *  |                                  |    |                           +---+
+ *  | EditorWidgetTypeLineEdit         |    | EditorWidgetTypeImageBox  |   |
  *  |                                  |    |                           |   |
  *  +----------------------------------+    +---------------------------+   |
  *      ^                                      ^                            |
@@ -222,17 +230,17 @@
  *      |                                      |                            |
  *  +---+------------------------------+    +---------------------------+   |
  *  |                                  |    |                           |   |
- *  | EditorWidgetTypeLineEdit         |    | EditorWidgetTypeDropped-  |   |
+ *  | EditorWidgetTypeDropdown         |    | EditorWidgetTypeDropped-  |   |
  *  |                                  |    | FileWithPreview           |   |
  *  +----------------------------------+    +---------------------------+   |
- *      ^                                                                   |
- *      | Inherit                                                           |
- *      |                                                                   |
- *  +---+------------------------------+    +---------------------------+   |
- *  |                                  |    |                           +---+
- *  | EditorWidgetTypeDropdown         |    | EditorWidgetTypeHidden    |
- *  |                                  |    |                           |
- *  +----------------------------------+    +---------------------------+
+ *                                                                          |
+ *                                                                          |
+ *                                                                          |
+ *                                          +---------------------------+   |
+ *                                          |                           +---+
+ *                                          | EditorWidgetTypeHidden    |
+ *                                          |                           |
+ *                                          +---------------------------+
  * \endcode
  */
 
@@ -5218,7 +5226,7 @@ snapwebsites.EditorWidgetTypeHidden = function()
 
 /** \brief Chain up the extension.
  *
- * This is the chain between this class and it's super.
+ * This is the chain between this class and its super.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeHidden, snapwebsites.EditorWidgetType);
 
@@ -5269,7 +5277,7 @@ snapwebsites.EditorWidgetTypeTextEdit = function()
 
 /** \brief Chain up the extension.
  *
- * This is the chain between this class and it's super.
+ * This is the chain between this class and its super.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeTextEdit, snapwebsites.EditorWidgetTypeContentEditable);
 
@@ -5376,7 +5384,7 @@ snapwebsites.EditorWidgetTypeLineEdit = function()
 
 /** \brief Chain up the extension.
  *
- * This is the chain between this class and it's super.
+ * This is the chain between this class and its super.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeLineEdit, snapwebsites.EditorWidgetTypeTextEdit);
 
@@ -5928,7 +5936,7 @@ snapwebsites.EditorWidgetTypeCheckmark = function()
 
 /** \brief Chain up the extension.
  *
- * This is the chain between this class and it's super.
+ * This is the chain between this class and its super.
  */
 snapwebsites.inherits(snapwebsites.EditorWidgetTypeCheckmark, snapwebsites.EditorWidgetType);
 
@@ -6028,6 +6036,102 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
 //
 //    data.result = edit_area.find(".checkmark-area").hasClass("checked") ? 1 : 0;
 //}
+
+
+
+/** \brief Editor widget type for Radio widgets.
+ *
+ * This widget defines a set of radio buttons in editor forms.
+ *
+ * @constructor
+ * @extends {snapwebsites.EditorWidgetType}
+ * @struct
+ */
+snapwebsites.EditorWidgetTypeRadio = function()
+{
+    snapwebsites.EditorWidgetTypeRadio.superClass_.constructor.call(this);
+
+    return this;
+};
+
+
+/** \brief Chain up the extension.
+ *
+ * This is the chain between this class and its super.
+ */
+snapwebsites.inherits(snapwebsites.EditorWidgetTypeRadio, snapwebsites.EditorWidgetType);
+
+
+/** \brief Return "radio".
+ *
+ * Return the name of the radio type.
+ *
+ * @return {string} The name of the radio type.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeRadio.prototype.getType = function() // virtual
+{
+    return "radio";
+};
+
+
+/** \brief Initialize the widget.
+ *
+ * This function initializes the checkmark widget.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetTypeRadio.prototype.initializeWidget = function(widget) // virtual
+{
+    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        select_radio = function(radio_button)
+            {
+                // select the current radio button
+                var radio = jQuery(radio_button);
+                if(!radio.hasClass("selected"))
+                {
+                    // remove all selected
+                    radio.parent().children("li").removeClass("selected");
+                    // then select this radio button
+                    radio.addClass("selected");
+                    c.attr("value", radio.attr("value"));
+                    c.focus();
+
+                    // tell the editor that something may have changed
+                    // TODO: call the widget function which in turn tells the
+                    //       editor instead of re-testing all the widgets?!
+                    editor_widget.getEditorBase().checkModified();
+                }
+            };
+
+    snapwebsites.EditorWidgetTypeRadio.superClass_.initializeWidget.call(this, widget);
+
+    c.keydown(function(e)
+        {
+            if(e.which === 0x20) // spacebar
+            {
+                e.preventDefault();
+                e.stopPropagation();
+
+                select_radio(c.find(":focus"));
+            }
+        });
+
+    w.find("li").click(function(e)
+        {
+            if(!(jQuery(e.target).is("a")))
+            {
+                // the default may do weird stuff, so avoid it!
+                e.preventDefault();
+                e.stopPropagation();
+
+                select_radio(this);
+            }
+        });
+};
 
 
 
@@ -6449,6 +6553,7 @@ jQuery(document).ready(
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeLineEdit());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDropdown());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeCheckmark());
+        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeRadio());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeImageBox());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDroppedFileWithPreview());
     }

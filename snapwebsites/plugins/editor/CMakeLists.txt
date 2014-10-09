@@ -57,6 +57,8 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 snap_validate_xml( content.xml content.dtd )
 snap_validate_xml( new-draft.xml form/snap-form.dtd )
 snap_validate_xml( editor-form.xsl layout/simplified-xslt20.dtd )
+snap_validate_xml( editor-test-page.xml editor/editor-form.dtd )
+snap_validate_xml( editor-test-parser.xsl layout/simplified-xslt20.dtd )
 
 # Unfortunate, but at this time this doesn't work too well...
 # (i.e. xmllint [as in libxml2] does not support this complex XSD schema)
@@ -75,7 +77,11 @@ add_library(editor SHARED
     editor.css
     content.xml
     editor-form.xsl
+    editor-test-page.xml
+    editor-test-parser.xsl
     new-draft.xml
+    radio-selected.png
+    radio-unselected.png
 )
 
 target_link_libraries( editor ${QT_LIBRARIES} )

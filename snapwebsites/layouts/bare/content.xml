@@ -68,7 +68,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>The cascading style sheets of the bare theme.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/info</link>
+    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="style" type="attachment/public" owner="output">
       <path>layout:/bare/style.css</path>
       <mime-type>text/css</mime-type>
