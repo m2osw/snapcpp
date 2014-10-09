@@ -248,7 +248,7 @@ void test_valid_emails()
             int max(v->f_count);
             if(r != TLD_RESULT_SUCCESS)
             {
-                error("error: unexpected returned value");
+                error("error: unexpected return value.");
             }
             else if(list.count() != max)
             {
@@ -367,7 +367,7 @@ void test_valid_emails()
             int max(v->f_count);
             if(r != TLD_RESULT_SUCCESS)
             {
-                error("error: unexpected returned value");
+                error("error: unexpected return value.");
             }
             else if(tld_email_count(list) != max)
             {
@@ -456,7 +456,7 @@ void test_valid_emails()
             tld_result r(list.parse(e, 0));
             if(r != TLD_RESULT_SUCCESS)
             {
-                error("error: unexpected returned value");
+                error("error: unexpected return value.");
             }
         }
     }
@@ -493,7 +493,7 @@ void test_valid_emails()
                     tld_result r(list.parse(e, 0));
                     if(r != TLD_RESULT_SUCCESS)
                     {
-                        error("error: unexpected returned value");
+                        error("error: unexpected return value.");
                     }
                 }
                 break;
@@ -525,7 +525,7 @@ void test_valid_emails()
             tld_result r(list.parse(e, 0));
             if(r != TLD_RESULT_SUCCESS)
             {
-                error("error: unexpected returned value");
+                error("error: unexpected return value.");
             }
         }
     }
@@ -565,7 +565,7 @@ void test_valid_emails()
                     tld_result r(list.parse(e, 0));
                     if(r != TLD_RESULT_SUCCESS)
                     {
-                        error("error: unexpected returned value");
+                        error("error: unexpected return value.");
                     }
                 }
                 break;
@@ -595,7 +595,7 @@ void test_valid_emails()
             tld_result r(list.parse(e, 0));
             if(r != TLD_RESULT_SUCCESS)
             {
-                error("error: unexpected returned value while testing a domain with a special character");
+                error("error: unexpected return value while testing a domain with a special character");
             }
         }
     }
@@ -603,11 +603,11 @@ void test_valid_emails()
     {
         if(tld_email_list::quote_string("Test quoting a simple comment", '(') != "(Test quoting a simple comment)")
         {
-            error("error: unexpected returned value when testing a simple comment quotation");
+            error("error: unexpected return value when testing a simple comment quotation");
         }
         if(tld_email_list::quote_string("Test (quoting) a complex )comment(", '(') != "(Test \\(quoting\\) a complex \\)comment\\()")
         {
-            error("error: unexpected returned value when testing a complex comment quotation");
+            error("error: unexpected return value when testing a complex comment quotation");
         }
     }
 }
@@ -677,8 +677,8 @@ const invalid_email list_of_invalid_emails[] =
     { TLD_RESULT_NULL, "(Bad Emails) alexis,m2osw.com" },
     { TLD_RESULT_INVALID, "(Bad Char) alexis@m2osw\001com" },
     { TLD_RESULT_NOT_FOUND, "(Bad Extension) alexis@m2osw.comm" },
-    { TLD_RESULT_INVALID, "(Bad Extension) alexis@m2osw.uk" },
-    { TLD_RESULT_INVALID, "(Bad Extension) alexis@m2osw.edu.uk" },
+    { TLD_RESULT_INVALID, "(Bad Extension) alexis@m2osw.ar" },
+    { TLD_RESULT_INVALID, "(Bad Extension) alexis@m2osw.nom.ar" },
     { TLD_RESULT_NO_TLD, "(Bad Extension) alexis@m2osw" },
     { TLD_RESULT_BAD_URI, "(Bad Extension) alexis@[m2osw..com]" },
 
@@ -702,7 +702,7 @@ void test_invalid_emails()
             if(r != v->f_result)
             {
                 std::stringstream ss;
-                ss << "error: unexpected return value. Got " << static_cast<int>(r) << ", expected " << static_cast<int>(v->f_result);
+                ss << "error: unexpected return value. Got " << static_cast<int>(r) << ", expected " << static_cast<int>(v->f_result) << " for \"" << v->f_input_email << "\" (C++)";
                 error(ss.str());
             }
         }
@@ -715,7 +715,7 @@ void test_invalid_emails()
             if(r != v->f_result)
             {
                 std::stringstream ss;
-                ss << "error: unexpected return value. Got " << static_cast<int>(r) << ", expected " << static_cast<int>(v->f_result);
+                ss << "error: unexpected return value. Got " << static_cast<int>(r) << ", expected " << static_cast<int>(v->f_result) << " for \"" << v->f_input_email << "\" (C)";
                 error(ss.str());
             }
             tld_email_free(list);

@@ -138,7 +138,7 @@ void test_invalid()
             char r[32], s[32];
             snprintf(r, sizeof(r), "%d", bad.result());
             snprintf(s, sizeof(s), "%d", bad.status());
-            error(std::string("error: bad.is_valid() of \"\" result is true?! (result: ") + r + ", status: " + s + ").");
+            error(std::string("error:test_invalid(1): bad.is_valid() of \"\" result is true?! (result: ") + r + ", status: " + s + ").");
             return;
         }
 
@@ -156,7 +156,7 @@ void test_invalid()
 
         if(bad.domain() != "")
         {
-            error("error: bad.domain() did not return \"\" as expected.");
+            error("error:test_invalid(1): bad.domain() did not return \"\" as expected.");
         }
 
         EXPECTED_THROW(sub_domains);
@@ -190,7 +190,7 @@ void test_invalid()
             char r[32], s[32];
             snprintf(r, sizeof(r), "%d", bad.result());
             snprintf(s, sizeof(s), "%d", bad.status());
-            error(std::string("error: bad.is_valid() of \"\" result is true?! (result: ") + r + ", status: " + s + ").");
+            error(std::string("error:test_invalid(2): bad.is_valid() of \"\" result is true?! (result: ") + r + ", status: " + s + ").");
             return;
         }
 
@@ -211,7 +211,7 @@ void test_invalid()
         // TBD: if we clear the f_domain then this would be ""
         if(bad.domain() != "www.example.unknown")
         {
-            error("error: bad.domain() did not return \"\" as expected.");
+            error("error:test_invalid(2): bad.domain() did not return \"\" as expected.");
         }
 
         EXPECTED_THROW(sub_domains);
@@ -233,11 +233,11 @@ void test_invalid()
     {
         if(verbose)
         {
-            printf("testing \"el.salvador.sv\"\n");
+            printf("testing \"el.eritrea.er\"\n");
         }
 
         // invalid TLD
-        std::string uri("el.salvador.sv");
+        std::string uri("el.eritrea.er");
         tld_object bad(uri);
 
         if(bad.is_valid())
@@ -245,7 +245,7 @@ void test_invalid()
             char r[32], s[32];
             snprintf(r, sizeof(r), "%d", bad.result());
             snprintf(s, sizeof(s), "%d", bad.status());
-            error(std::string("error: bad.is_valid() of \"\" result is true?! (result: ") + r + ", status: " + s + ").");
+            error(std::string("error:test_invalid(3): bad.is_valid() of \"\" result is true?! (result: ") + r + ", status: " + s + ").");
             return;
         }
 
@@ -264,9 +264,9 @@ void test_invalid()
         }
 
         // TBD: if we clear the f_domain then this would be ""
-        if(bad.domain() != "el.salvador.sv")
+        if(bad.domain() != "el.eritrea.er")
         {
-            error("error: bad.domain() did not return \"\" as expected.");
+            error("error:test_invalid(3): bad.domain() did not return \"\" as expected.");
         }
 
         EXPECTED_THROW(sub_domains);
@@ -279,9 +279,9 @@ void test_invalid()
             error("error: bad.category() did not return COUNTRY as expected.");
         }
 
-        if(bad.country() != "El Salvador")
+        if(bad.country() != "Eritrea")
         {
-            error("error: bad.country() did not return \"El Salvador\" as expected, got \"" + bad.country() + "\" instead.");
+            error("error: bad.country() did not return \"Eritrea\" as expected, got \"" + bad.country() + "\" instead.");
         }
     }
 }

@@ -41,76 +41,82 @@
 <tld>
   <!-- international (for the whole world) -->
   <area category="international">
-    .academy .agency .airforce .archi .associates .audio
+    .academy .active .agency .airforce .allfinanz .aquarelle .archi .army
+    .associates .auction .audio .autos
 
-    .bar .bargains .beer .best .bid .bike .bio .biz .black .blackfriday
-    .blue .boutique .build .buzz
+    .band .bar .bargains .beer .best .bible .bid .bike .bio .biz .black
+    .blackfriday .blue .bond .boo .boutique .build .business .buzz
 
-    .cab .camera .camp .capital .cards .care .career .careers .cash .catering
-    .center .cheap .christmas .church .claims .cleaning .clinic .clothing
-    .club .codes .coffee .college .com .community .company .computer
-    .condos .construction .consulting .cooking .cool .coop
+    .cab .camera .camp .capital .caravan .cards .care .careers .casa .cash
+    .catering .center .cheap .christmas .church .claims .cleaning
+    .click .clinic .clothing .club .codes .coffee .com .community .company
+    .computer .condos .construction .consulting .cooking .cool .coop
     .credit .creditcard .cruises
 
-    .dance .dating .democrat .diamonds .digital .direct
-    .directory .discount .domains
+    .dad .dance .dating .day .deals .degree .democrat .diamonds
+    .diet .digital .direct .directory .discount .domains
 
-    .edu .education .email .engineering .enterprises .equipment .estate
+    .eat .edu .education .email .engineering .enterprises .equipment .estate
     .eu.int .events .exchange .exposed
 
-    .fail .feedback .finance .financial .fish .fishing .fitness .flights
-    .foo .foundation .frogans .fund .furniture .futbol
+    .fail .fan .fashion .feedback .finance .financial .fish .fishing
+    .fitness .flights .fly .foo .forsale .foundation .frogans .fund
+    .furniture .futbol
 
-    .gallery .gift .glass .global .gop .graphics .gratis .gripe .guide
-    .guitars .guru
+    .gallery .garden .gbiz .gent .gift .gifts .gives .glass .gle .global
+    .globo .gop .graphics .green .gratis .gripe .group .guide .guitars .guru
 
-    .haus .hiphop .holdings .holiday .horse .host .house
+    .haus .healthcare .help .here .hermes .hiphop .hiv .holdings .holiday
+    .homes .horse .host .hosting .house .how
 
-    .immobilien .industries .info .ink .institute .insure
+    .immo .immobilien .industries .info .ing .ink .institute .insure
     .investments
 
     .jetzt .jobs .juegos
 
-    .kaufen .kim .kitchen .kred
+    .kaufen .kim .kitchen
 
     .land .lease .life .lighting .limited .limo .link .loans
-    .luxury
+    .lotto .luxe .luxury
 
-    .maison .management .marketing .media .meet .menu .mobi
-    .moda .moe .monash
+    .maison .management .market .marketing .media .meet .meme .menu .mini
+    .mobi .moda .moe .monash .mormon .mortgage .motorcycles .mov
 
-    .name .net .ninja
+    .name .navy .net .network .new .ninja
 
-    .org
+    .org .organic
 
-    .partners .parts .photo .photography .photos .pics .pictures
-    .pink .place .press .productions .properties .pub
+    .partners .parts .pharmacy .photo .photography .photos .physio
+    .pics .pictures .pink .pizza .place .poker .press .prod
+    .productions .properties .property .pub
 
     .post <!-- Also the .post is defined as "having a complex second level
             domain name rules", technically, it has no second level domain -->
 
     .qpon <!-- "coupon" -->
 
-    .recipes .red .reise .reisen .rentals .repair .report .republican
-    .rest .reviews .rich .rocks .rodeo
+    .realtor .recipes .red .rehab .reise .reisen .rentals .repair .report
+    .republican .rest .restaurant .reviews .rich .rip .rocks .rodeo .rsvp
 
-    .schule .services .sexy .shiksha .shoes .singles .social
-    .solar .solutions .soy .supplies .supply .support .surf
-    .systems
+    .scholarships .schule .seat .services .sew .sexy .shiksha .shoes
+    .singles .social .software .solar .solutions .soy .space
+    .supplies .supply .support .surf .systems
 
-    .tattoo .tax .technology .tel .tienda .tips .today .tools .town
+    .tattoo .tax .technology .tel .tienda .tips .today .tools .top .town
     .toys .trade .training .travel
 
     .university .uno
 
-    .vacations .ventures .viajes .villas .vision .vodka .vote .voting
+    .vacations .ventures .vet .viajes .villas .vision .vodka .vote .voting
     .voto .voyage
 
-    .wang .watch .webcam .website .wed .wiki .works .wtc .wtf
+    .wang .watch .webcam .website .wed .wedding .wiki .work .works .wtc .wtf
 
     .xxx .xyz
 
-    .zone
+    .yachts .yoga
+
+    .zip .zone
 
     .&#x0434;&#x0435;&#x0442;&#x0438; <!-- kids (Russian) -->
     .&#x043E;&#x043D;&#x043B;&#x0430;&#x0439;&#x043D; <!-- online (Russian) -->
@@ -315,32 +321,71 @@
     .&#x0438;&#x043A;&#x043E;&#x043C;.museum
 
     <forbid reason="deprecated">.nato</forbid>
-    <forbid reason="proposed">.loan .mail .med .shop .sport .web .wine</forbid>
+    <forbid reason="proposed">.career .college .kosher .loan .mail .med
+    .shop .sport .web .wine</forbid>
   </area>
 
   <!-- specialized TLDs -->
   <area category="brand">
-    .axa .citic .desi .dnp .mango .neustar .onl .ren .sohu
-    .&#x4E2D;&#x4FE1; <!-- citic (Chinese) -->
-    .&#xC0BC;&#xC131; <!-- samsung (Korean) -->
+    .abbott .abogado .accenture .android .axa
+    .bauhaus .bcn .bharti .bloomberg .bmw .bnl .bnpparibas
+    .cal .cartier .cba .cbn .cern .cfa .channel .chrome .citic
+    .commbank .crs .cuisinella .dabur .datsun .desi .dnp .doosan
+    .durban .dvag .emerck .erni .eurovision .everbank .firmdale
+    .flsmidth .frl .gdn .ggee .gmail .gmo .gmx .google .guge .ibm
+    .ifm .iinet .infiniti .ipiranga .ist .iwc .java .krd
+    .kred .lacaixa .latrobe .ltda .mango .montblanc .netbank
+    .neustar .nexus .ngo .nhk .nissan .nra .nrw .ong .onl .ooo .oracle
+    .otsuka .ovh .pictet .pohl .praxi .ren .samsung .sap .sarl .sca
+    .scb .schmidt .sharp .shriram .sky .sohu .spiegel .suzuki .taipei
+    .tatar .temasek .toshiba .tui .uol .verm&#x00F6;gensberater
+    .verm&#x00F6;gensberatung .versicherung .vlaanderen
+    .whoswho .williamhill .wme .yandex .youtube
+    .&#x4E2D;&#x4FE1; <!-- Citic (Chinese) -->
+    .&#xC0BC;&#xC131; <!-- Samsung (Korean) -->
+    .&#x4F5B;&#x5C71; <!-- Guangzhou YU Wei Information Technology Co., Ltd. -->
+    .&#x6148;&#x5584; <!-- Excellent First Limited -->
+    .&#x516B;&#x5366; <!-- Zodiac Scorpio Limited -->
+    .&#x0645;&#x0648;&#x0642;&#x0639; <!-- Suhub Electronic Establishment -->
+    .&#x65F6;&#x5C1A; <!-- RISE VICTORY LIMITED -->
+    .&#x6DE1;&#x9A6C;&#x9521; <!-- Temasek Holdings (Private) Limited -->
+    .&#x5546;&#x6807; <!-- HU YI GLOBAL INFORMATION RESOURCES(HOLDING) COMPANY.HONGKONG LIMITED -->
+    .&#x5546;&#x5E97; <!-- Wild Island, LLC -->
+    .&#x65B0;&#x95FB; <!-- Xinhua News Agency Guangdong Branch -->
+    .&#x5A31;&#x4E50; <!-- Will Bloom, LLC -->
+    .&#x8C37;&#x6B4C; <!-- Charleston Road Registry Inc. -->
+    .&#x7F51;&#x5E97; <!-- Zodiac Libra Limited -->
+    .&#x624B;&#x673A; <!-- Beijing RITT-Net Technology Development Co., Ltd -->
+    .&#x653F;&#x5E9C; <!-- Net-Chinese Co., Ltd. -->
+    .&#x0440;&#x0443;&#x0441; <!-- Rusnames Limited -->
+    .&#x30B0;&#x30FC;&#x30B0;&#x30EB; <!-- Charleston Road Registry Inc. -->
+    .&#x4F01;&#x4E1A; <!-- Dash McCook, LLC -->
+    .&#x5E7F;&#x4E1C; <!-- Guangzhou YU Wei Information Technology Co., Ltd. -->
   </area>
   <area category="professionals">
-    .accountants .actor .builders .ceo .contractors .dental .expert
-    .farm .florist .plumbing
+    .accountants .actor .attorney .builders .cancerresearch
+    .ceo .contractors .dental
+    .dentist .engineer .esq .expert .farm .florist .lawyer .lds
+    .leclerc .lgbt .plumbing .prof .surgery
+
+    <!-- "old" .pro -->
     .pro .aaa.pro .aca.pro .acct.pro .avocat.pro .bar.pro .cpa.pro .eng.pro
-    .jur.pro .law.pro .med.pro .recht.pro .surgery
+    .jur.pro .law.pro .med.pro .recht.pro
   </area>
   <area category="language">
-    .cat .eus .gal
-    <forbid reason="proposed">.bzh .ker .lli .scot</forbid>
+    .cat .eus .gal .irish .scot
+    <forbid reason="proposed">.bzh .ker .lli</forbid>
   </area>
   <area category="groups">
     <forbid reason="proposed">.kids .nai .eco .gay .fc</forbid>
   </area>
   <area category="region">
-    .aq .asia .berlin .cologne .country .eu .hamburg .int .international
-    .kiwi .koeln .london .miami .moscow .nagoya .nyc .okinawa .paris .quebec
-    .ruhr .ryukyu .saarland .tokyo .vegas .wien .yokohama
+    .alsace .amsterdam .aq .asia .barcelona .bayern .berlin .brussels
+    .budapest .capetown .city .cologne
+    .country .eu .hamburg .int .international .istanbul .joburg .kiwi
+    .koeln .london .madrid .melbourne .miami
+    .moscow .nagoya .nyc .okinawa .paris .quebec .rio .ruhr .ryukyu .saarland
+    .tirol .tokyo .vegas .wales .wien .yokohama
     .&#x043C;&#x043E;&#x0441;&#x043A;&#x0432;&#x0430; <!-- moscow (Russian) -->
     <!-- the .cs and .yu were assigned to countries that are no more
          because of splits; as such it is difficult to place them in
@@ -401,12 +446,12 @@
     .ac .com.ac .edu.ac .net.ac .gov.ac .org.ac .mil.ac
   </area>
   <area category="country" country="Australia">
-    .com.au .net.au .org.au .edu.au .gov.au .csiro.au .asn.au .id.au
-    .wa.edu.au .wa.gov.au .vic.edu.au .vic.gov.au .qld.edu.au .qld.gov.au
-    .sa.edu.au .sa.gov.au .tas.edu.au .tas.gov.au .nt.edu.au .nt.gov.au
-    .act.edu.au .act.gov.au .schools.nsw.edu.au .eq.edu.au .act.au .nsw.au
-    .nt.au .qld.au .sa.au .tas.au .vic.au .wa.au
-    <forbid reason="unused">.au .nsw.edu.au</forbid>
+    .act.au .act.edu.au .asn.au .au .com.au .edu.au .eq.edu.au .gov.au
+    .id.au .net.au .nsw.au .nt.au .nt.edu.au .nt.gov.au .org.au
+    .qld.au .qld.edu.au .qld.gov.au .sa.au .sa.edu.au .sa.gov.au
+    .schools.nsw.edu.au .tas.au .tas.edu.au .tas.gov.au
+    .vic.au .vic.edu.au .vic.gov.au .wa.au .wa.edu.au .wa.gov.au
+    <forbid reason="unused">.act.gov.au .csiro.au .nsw.edu.au</forbid>
     <forbid reason="deprecated">.archie.au .conf.au .gw.au .info.au .otc.au
     .oz.au .telememo.au</forbid>
   </area>
@@ -430,8 +475,8 @@
     .&#x09AC;&#x09BE;&#x0982;&#x09B2;&#x09BE;
   </area>
   <area category="country" country="Barbados">
-    .bb .co.bb .com.bb .net.bb .org.bb .gov.bb .edu.bb .info.bb .store.bb
-    .tv.bb .biz.bb
+    .bb .biz.bb .co.bb .com.bb .net.bb .org.bb .gov.bb .edu.bb .info.bb
+    .store.bb .tv.bb
   </area>
   <area category="country" country="Belarus">
     <!-- .ac.be is not official but we still require it here -->
@@ -468,6 +513,10 @@
     .bw .co.bw .org.bw
   </area>
   <area category="country" country="Bouvet Island">
+    <!-- the effective_tld_names.txt includes .bv as a valid name now.
+         it may become available as per:
+         http://www.norid.no/nytt/mulig-bruk-bv.en.html
+         -->
     <forbid reason="unused">.bv</forbid>
   </area>
   <area category="country" country="Brazil">
@@ -612,8 +661,7 @@
     .&#x0645;&#x0635;&#x0631;
   </area>
   <area category="country" country="El Salvador">
-    .edu.sv .gob.sv .com.sv .org.sv .red.sv
-    <forbid reason="unused">.sv</forbid>
+    .sv .com.sv .edu.sv .gob.sv .org.sv .red.sv
   </area>
   <area category="country" country="Equatorial Guinea">
     .gq
@@ -627,9 +675,7 @@
     .aip.ee .org.ee
   </area>
   <area category="country" country="Ethiopia">
-    <!-- only 3rd level authorized -->
-    <forbid reason="unused">.et</forbid>
-    .com.et .gov.et .org.et .edu.et .net.et .biz.et .name.et .info.et
+    .et .com.et .gov.et .org.et .edu.et .net.et .biz.et .name.et .info.et
   </area>
   <area category="country" country="Falkland Islands">
     <forbid reason="unused">.fk</forbid>
@@ -676,7 +722,7 @@
     .&#x10D2;&#x10D4;
   </area>
   <area category="country" country="Germany">
-    .de .com.de
+    .de
     <forbid reason="unused">.dd</forbid>
   </area>
   <area category="country" country="Ghana">
@@ -706,7 +752,8 @@
     <forbid reason="unused">.gt</forbid>
   </area>
   <area category="country" country="Guernsey">
-    .gg .co.gg .net.gg .org.gg .sch.gg .gov.gg
+    .gg .co.gg .net.gg .org.gg
+    <forbid reason="deprecated">.gov.gg .sch.gg</forbid>
   </area>
   <area category="country" country="Guinea">
     .gn .com.gn .ac.gn .gov.gn .org.gn .net.gn .edu.gn
@@ -758,7 +805,8 @@
     .&#x0B87;&#x0BA8;&#x0BCD;&#x0BA4;&#x0BBF;&#x0BAF;&#x0BBE;
   </area>
   <area category="country" country="Indonesia">
-    .id .ac.id .biz.id .co.id .go.id .mil.id .my.id .net.id .or.id .sch.id
+    .id .ac.id .biz.id .co.id .desa.id .go.id .mil.id .my.id .net.id
+    .or.id .sch.id
     .web.id
   </area>
   <area category="country" country="Iran">
@@ -772,8 +820,9 @@
     .iq .gov.iq .edu.iq .com.iq .mil.iq .org.iq .net.iq
   </area>
   <area category="country" country="Isle of Man">
-    .im .plc.co.im .net.im .co.im .org.im .ac.im .ltd.co.im .com.im .gov.im
-    .nic.im
+    .im .ac.im .co.im .com.im .ltd.co.im .net.im
+    .org.im .plc.co.im .tt.im .tv.im
+    <forbid reason="deprecated">.gov.im .nic.im</forbid>
   </area>
   <area category="country" country="Israel">
     .ac.il .co.il .org.il .net.il .k12.il .gov.il .muni.il .idf.il
@@ -781,50 +830,104 @@
   </area>
   <area category="country" country="Italy">
     .it .gov.it .edu.it
-    .agrigento.it .ag.it .alessandria.it .al.it .ancona.it .an.it .aosta.it
-    .aoste.it .ao.it .arezzo.it .ar.it .ascoli-piceno.it .ascolipiceno.it .ap.it
-    .asti.it .at.it .avellino.it .av.it .bari.it .ba.it
-    .andria-barletta-trani.it .andriabarlettatrani.it .trani-barletta-andria.it
-    .tranibarlettaandria.it .barletta-trani-andria.it .barlettatraniandria.it
-    .andria-trani-barletta.it .andriatranibarletta.it .trani-andria-barletta.it
-    .traniandriabarletta.it .bt.it .belluno.it .bl.it .benevento.it .bn.it
-    .bergamo.it .bg.it .biella.it .bi.it .bologna.it .bo.it .bolzano.it
-    .bozen.it .balsan.it .alto-adige.it .altoadige.it .suedtirol.it .bz.it
-    .brescia.it .bs.it .brindisi.it .br.it .cagliari.it .ca.it .caltanissetta.it
-    .cl.it .campobasso.it .cb.it .carboniaiglesias.it .carbonia-iglesias.it
-    .iglesias-carbonia.it .iglesiascarbonia.it .ci.it .caserta.it .ce.it
-    .catania.it .ct.it .catanzaro.it .cz.it .chieti.it .ch.it .como.it .co.it
-    .cosenza.it .cs.it .cremona.it .cr.it .crotone.it .kr.it .cuneo.it .cn.it
-    .dell-ogliastra.it .dellogliastra.it .ogliastra.it .og.it .enna.it .en.it
-    .ferrara.it .fe.it .fermo.it .fm.it .firenze.it .florence.it .fi.it
-    .foggia.it .fg.it .forli-cesena.it .forlicesena.it .cesena-forli.it
-    .cesenaforli.it .fc.it .frosinone.it .fr.it .genova.it .genoa.it .ge.it
-    .gorizia.it .go.it .grosseto.it .gr.it .imperia.it .im.it .isernia.it .is.it
-    .laquila.it .aquila.it .aq.it .la-spezia.it .laspezia.it .sp.it .latina.it
-    .lt.it .lecce.it .le.it .lecco.it .lc.it .livorno.it .li.it .lodi.it .lo.it
-    .lucca.it .lu.it .macerata.it .mc.it .mantova.it .mn.it .massa-carrara.it
-    .massacarrara.it .carrara-massa.it .carraramassa.it .ms.it .matera.it .mt.it
-    .medio-campidano.it .mediocampidano.it .campidano-medio.it
-    .campidanomedio.it .vs.it .messina.it .me.it .milano.it .milan.it .mi.it
-    .modena.it .mo.it .monza.it .monza-brianza.it .monzabrianza.it
-    .monzaebrianza.it .monzaedellabrianza.it .monza-e-della-brianza.it .mb.it
-    .napoli.it .naples.it .na.it .novara.it .no.it .nuoro.it .nu.it .oristano.it
-    .or.it .padova.it .padua.it .pd.it .palermo.it .pa.it .parma.it .pr.it
-    .pavia.it .pv.it .perugia.it .pg.it .pescara.it .pe.it .pesaro-urbino.it
-    .pesarourbino.it .urbino-pesaro.it .urbinopesaro.it .pu.it .piacenza.it
-    .pc.it .pisa.it .pi.it .pistoia.it .pt.it .pordenone.it .pn.it .potenza.it
-    .pz.it .prato.it .po.it .ragusa.it .rg.it .ravenna.it .ra.it
-    .reggio-calabria.it .reggiocalabria.it .rc.it .reggio-emilia.it
-    .reggioemilia.it .re.it .rieti.it .ri.it .rimini.it .rn.it .roma.it .rome.it
-    .rm.it .rovigo.it .ro.it .salerno.it .sa.it .sassari.it .ss.it .savona.it
-    .sv.it .siena.it .si.it .siracusa.it .sr.it .sondrio.it .so.it .taranto.it
-    .ta.it .tempio-olbia.it .tempioolbia.it .olbia-tempio.it .olbiatempio.it
-    .ot.it .teramo.it .te.it .terni.it .tr.it .torino.it .turin.it .to.it
-    .trapani.it .tp.it .trento.it .trentino.it .tn.it .treviso.it .tv.it
-    .trieste.it .ts.it .udine.it .ud.it .varese.it .va.it .venezia.it .venice.it
-    .ve.it .verbania.it .vb.it .vercelli.it .vc.it .verona.it .vr.it
-    .vibo-valentia.it .vibovalentia.it .vv.it .vicenza.it .vi.it .viterbo.it
-    .vt.it
+
+    .abr.it .abruzzo.it .ag.it .agrigento.it .al.it
+    .alessandria.it .altoadige.it .alto-adige.it .an.it .ancona.it
+    .andriabarlettatrani.it .andria-barletta-trani.it
+    .andriatranibarletta.it .andria-trani-barletta.it
+    .ao.it .aosta.it .aostavalley.it .aosta-valley.it .aoste.it
+    .ap.it .aq.it .aquila.it .arezzo.it .ar.it
+    .ascolipiceno.it .ascoli-piceno.it .asti.it
+    .at.it .av.it .avellino.it
+
+    .ba.it .balsan.it .bari.it .barlettatraniandria.it
+    .barletta-trani-andria.it .bas.it .basilicata.it .belluno.it
+    .benevento.it .bergamo.it .bg.it .bi.it .biella.it .bl.it
+    .bn.it .bo.it .bologna.it .bolzano.it .bozen.it
+    .br.it .brescia.it .brindisi.it .bs.it .bt.it .bz.it
+
+    .cagliari.it .ca.it .cal.it .calabria.it .caltanissetta.it .cam.it
+    .campania.it .campidano-medio.it .campidanomedio.it .campobasso.it
+    .carboniaiglesias.it .carbonia-iglesias.it .carrara-massa.it
+    .carraramassa.it .caserta.it .catania.it .catanzaro.it .cb.it .ce.it
+    .cesena-forli.it .cesenaforli.it .ch.it .chieti.it .ci.it
+    .cl.it .cn.it .co.it .como.it .cosenza.it .cr.it .cremona.it .crotone.it
+    .cs.it .ct.it .cuneo.it .cz.it
+
+    .dell-ogliastra.it .dellogliastra.it
+
+    .emilia-romagna.it .emiliaromagna.it .emr.it .en.it .enna.it
+
+    .fc.it .fe.it .fermo.it .ferrara.it .fg.it .fi.it .firenze.it
+    .florence.it .fm.it .foggia.it .forli-cesena.it .forlicesena.it
+    .fr.it .friuli-v-giulia.it .friuli-ve-giulia.it .friuli-vegiulia.it
+    .friuli-venezia-giulia.it .friuli-veneziagiulia.it .friuli-vgiulia.it
+    .friuliv-giulia.it .friulive-giulia.it .friulivegiulia.it
+    .friulivenezia-giulia.it .friuliveneziagiulia.it .friulivgiulia.it    
+    .frosinone.it .fvg.it
+
+    .ge.it .genoa.it .genova.it .go.it .gorizia.it .gr.it .grosseto.it
+
+    .iglesias-carbonia.it .iglesiascarbonia.it
+    .im.it .imperia.it .is.it .isernia.it
+
+    .kr.it
+
+    .laquila.it .la-spezia.it .laspezia.it .latina.it .laz.it .lazio.it
+    .lc.it .le.it .lecce.it .lecco.it .li.it .lig.it .liguria.it .livorno.it
+    .lo.it .lodi.it .lom.it .lombardia.it .lombardy.it .lt.it .lu.it
+    .lucania.it .lucca.it
+    
+    .macerata.it .mantova.it .mar.it .marche.it .massa-carrara.it
+    .massacarrara.it .matera.it .mb.it .mc.it .me.it .medio-campidano.it
+    .mediocampidano.it .messina.it .mi.it .milan.it .milano.it
+    .mn.it .modena.it .mo.it  .mol.it .molise.it .monza.it .monza-brianza.it
+    .monzabrianza.it .monzaebrianza.it .monzaedellabrianza.it
+    .monza-e-della-brianza.it .ms.it .mt.it
+
+    .na.it .naples.it .napoli.it .no.it .novara.it .nu.it .nuoro.it
+
+    .og.it .ogliastra.it .olbia-tempio.it .olbiatempio.it
+    .or.it .oristano.it .ot.it
+
+    .pa.it .padova.it .padua.it .palermo.it .parma.it .pavia.it .pc.it
+    .pd.it .pe.it .perugia.it .pesaro-urbino.it .pesarourbino.it
+    .pescara.it .pg.it .pi.it .piacenza.it .piedmont.it .piemonte.it
+    .pisa.it .pistoia.it .pn.it .pmn.it .po.it .pordenone.it .potenza.it
+    .pr.it .prato.it .pt.it .pu.it .pug.it .puglia.it .pv.it .pz.it
+
+    .ra.it .ragusa.it .ravenna.it .rc.it .re.it .reggio-calabria.it
+    .reggiocalabria.it .reggio-emilia.it .reggioemilia.it .rg.it .ri.it
+    .rieti.it .rimini.it .rm.it .rn.it .ro.it .roma.it .rome.it
+    .rovigo.it
+
+    .sa.it .salerno.it .sar.it .sardegna.it .sardinia.it .sassari.it
+    .savona.it .si.it .sic.it .sicilia.it .sicily.it .siena.it
+    .siracusa.it .so.it .sondrio.it .sp.it .sr.it .ss.it .suedtirol.it
+    .sv.it
+
+    .ta.it .taa.it .taranto.it .te.it .tempio-olbia.it .tempioolbia.it
+    .teramo.it .terni.it .tn.it .to.it .torino.it .tos.it .toscana.it
+    .tp.it .tr.it .trani-andria-barletta.it .traniandriabarletta.it
+    .trani-barletta-andria.it .tranibarlettaandria.it
+    .trapani.it .trentino.it .trentino-a-adige.it .trentino-aadige.it
+    .trentino-alto-adige.it .trentino-altoadige.it .trentino-s-tirol.it
+    .trentino-stirol.it .trentino-sud-tirol.it .trentino-sudtirol.it
+    .trentino-sued-tirol.it .trentino-suedtirol.it .trentinoa-adige.it
+    .trentinoaadige.it .trentinoalto-adige.it .trentinoaltoadige.it
+    .trentinos-tirol.it .trentinostirol.it .trentinosud-tirol.it
+    .trentinosudtirol.it .trentinosued-tirol.it .trentinosuedtirol.it
+    .trento.it .treviso.it .trieste.it .ts.it .turin.it .tuscany.it .tv.it
+
+    .ud.it .udine.it .umb.it .umbria.it .urbino-pesaro.it .urbinopesaro.it
+
+    .va.it .val-d-aosta.it .val-daosta.it .vald-aosta.it .valdaosta.it
+    .valle-aosta.it .valle-d-aosta.it .valle-daosta.it .valleaosta.it
+    .valled-aosta.it .valledaosta.it .vallee-aoste.it .valleeaoste.it
+    .vao.it .varese.it .vb.it .vc.it .vda.it .ve.it .ven.it .veneto.it
+    .venezia.it .venice.it .verbania.it .vercelli.it .verona.it
+    .vi.it .vibo-valentia.it .vibovalentia.it .vicenza.it
+    .viterbo.it .vr.it .vs.it .vt.it .vv.it
   </area>
   <area category="country" country="Jamaica">
     <forbid reason="unused">.jm</forbid>
@@ -872,15 +975,14 @@
     <forbid reason="unused">.kawasaki.jp .kitakyushu.jp .kobe.jp
     .nagoya.jp .sapporo.jp .sendai.jp .yokohama.jp</forbid>
 
-    <!-- 4th level registration under prefecture names (probably county
-         names?) -->
+    <!-- 4th level registration under prefecture names -->
     .aisai.aichi.jp .ama.aichi.jp .anjo.aichi.jp .asuke.aichi.jp
     .chiryu.aichi.jp .chita.aichi.jp .fuso.aichi.jp .gamagori.aichi.jp
     .handa.aichi.jp .hazu.aichi.jp .hekinan.aichi.jp .higashiura.aichi.jp
     .ichinomiya.aichi.jp .inazawa.aichi.jp .inuyama.aichi.jp .isshiki.aichi.jp
     .iwakura.aichi.jp .kanie.aichi.jp .kariya.aichi.jp .kasugai.aichi.jp
     .kira.aichi.jp .kiyosu.aichi.jp .komaki.aichi.jp .konan.aichi.jp
-    .kota.aichi.jp .mihama.aichi.jp .miyoshi.aichi.jp .nagakute.aichi.jp
+    .kota.aichi.jp .mihama.aichi.jp .miyoshi.aichi.jp
     .nishio.aichi.jp .nisshin.aichi.jp .obu.aichi.jp .oguchi.aichi.jp
     .oharu.aichi.jp .okazaki.aichi.jp .owariasahi.aichi.jp .seto.aichi.jp
     .shikatsu.aichi.jp .shinshiro.aichi.jp .shitara.aichi.jp .tahara.aichi.jp
@@ -1077,7 +1179,7 @@
     .morioka.iwate.jp .ninohe.iwate.jp .noda.iwate.jp
     .ofunato.iwate.jp .oshu.iwate.jp .otsuchi.iwate.jp
     .rikuzentakata.iwate.jp .shiwa.iwate.jp .shizukuishi.iwate.jp
-    .sumita.iwate.jp .takizawa.iwate.jp .tanohata.iwate.jp
+    .sumita.iwate.jp .tanohata.iwate.jp
     .tono.iwate.jp .yahaba.iwate.jp .yamada.iwate.jp
     .ayagawa.kagawa.jp .higashikagawa.kagawa.jp .kanonji.kagawa.jp
     .kotohira.kagawa.jp .manno.kagawa.jp .marugame.kagawa.jp
@@ -1406,16 +1508,20 @@
     .uenohara.yamanashi.jp .yamanakako.yamanashi.jp .yamanashi.yamanashi.jp
 
     .&#x65E5;&#x672C;
+
+    <forbid reason="deprecated">.nagakute.aichi.jp .takizawa.iwate.jp</forbid>
   </area>
   <area category="country" country="Jordan">
     .jo .com.jo .net.jo .gov.jo .edu.jo .org.jo .mil.jo .name.jo .sch.jo
     .&#x0627;&#x0644;&#x0627;&#x0631;&#x062F;&#x0646;
   </area>
   <area category="country" country="Jersey">
-    .je .co.je .net.je .org.je .sch.je .gov.je
+    .je .co.je .net.je .org.je
+    <forbid reason="deprecated">.sch.je .gov.je</forbid>
   </area>
   <area category="country" country="Kazakhstan">
     .kz .com.kz .edu.kz .gov.kz .mil.kz .net.kz .org.kz
+    .&#x049B;&#x0430;&#x0437; <!-- "Kaz", Kazakh -->
   </area>
   <area category="country" country="Kenya">
     <forbid reason="unused">.ke</forbid>
@@ -1471,13 +1577,14 @@
   <area category="country" country="Malaysia">
     <forbid reason="unused">.my</forbid>
     .com.my .net.my .org.my .gov.my .edu.my .sch.my .mil.my .name.my
+    .&#x0645;&#x0644;&#x064A;&#x0633;&#x064A;&#x0627; <!-- "Malaysia", Malay -->
   </area>
   <area category="country" country="Mali">
     .ml .com.ml .net.ml .org.ml .edu.ml .gov.ml .presse.ml .gouv.ml
   </area>
   <area category="country" country="Malta">
-    .com.mt .org.mt .net.mt .edu.mt .gov.mt
-    <forbid reason="unused">.mt</forbid>
+    .mt .com.mt .edu.mt .net.mt .org.mt
+    <forbid reason="deprecated">.gov.mt</forbid>
   </area>
   <area category="country" country="Marshall Islands">
     <forbid reason="unused">.mh</forbid>
@@ -1505,16 +1612,18 @@
   </area>
   <area category="country" country="Mongolia">
     .mn .gov.mn .edu.mn .org.mn
+    .&#x043C;&#x043E;&#x043D; <!-- "MOH", Mongolian -->
   </area>
   <area category="country" country="Montenegro">
     .me .co.me .net.me .org.me .edu.me .ac.me .gov.me .its.me .priv.me
   </area>
   <area category="country" country="Montserrat">
-    .ms .co.ms .com.ms .org.ms
+    .ms .com.ms .edu.ms .gov.ms .net.ms .org.ms
+    <forbid reason="deprecated">.co.ms</forbid>
   </area>
   <area category="country" country="Morocco">
     .ma .net.ma .ac.ma .org.ma .gov.ma .press.ma .co.ma
-    .&#x0627;&#x0644;&#x0645;&#x063A;&#x0631;&#x0628;
+    .&#x0627;&#x0644;&#x0645;&#x063A;&#x0631;&#x0628; <!-- "Morocco / Al-Maghrib" -->
   </area>
   <area category="country" country="Mozambique">
     <forbid reason="unused">.mz</forbid>
@@ -1542,9 +1651,10 @@
     .nc .asso.nc
   </area>
   <area category="country" country="New Zealand">
-    .ac.nz .co.nz .geek.nz .gen.nz .maori.nz .net.nz .org.nz .school.nz
-    .cri.nz .govt.nz .iwi.nz .parliament.nz .mil.nz .health.nz
-    <forbid reason="unused">.nz</forbid>
+    .nz <!-- since Oct 2013 -->
+    .ac.nz .co.nz .cri.nz .geek.nz .gen.nz .govt.nz .health.nz
+    .iwi.nz .kiwi.nz .maori.nz  .m&#x0101;ori.nz .mil.nz .net.nz
+    .org.nz .parliament.nz .school.nz
   </area>
   <area category="country" country="Nicaragua">
     .gob.ni .co.ni .com.ni .ac.ni .edu.ni .org.ni .nom.ni .net.ni .mil.ni
@@ -1554,8 +1664,9 @@
     .ne
   </area>
   <area category="country" country="Nigeria">
-    .ng .ac.ng .com.ng .org.ng .gov.ng .edu.ng .net.ng .sch.ng .name.ng .mobi.ng
-    .mil.ng
+    .ng .com.ng .edu.ng .gov.ng .name.ng .net.ng .org.ng
+    .sch.ng .mil.ng .mobi.ng
+    <forbid reason="deprecated">.ac.ng</forbid>
   </area>
   <area category="country" country="Niue">
     .nu
@@ -1728,10 +1839,11 @@
     .nordland.no .ostfold.no .telemark.no .vestfold.no</forbid>
   </area>
   <area category="country" country="Oman">
-    .com.om .co.om .edu.om .ac.om .sch.om .gov.om .net.om .org.om .mil.om
-    .museum.om .biz.om .pro.om .med.om
-    .&#x0639;&#x0645;&#x0627;&#x0646;
-    <forbid reason="unused">.om</forbid>
+    .om
+    .ac.om .biz.om .co.om .com.om .edu.om .gov.om .med.om .mil.om .museum.om
+    .net.om .org.om .pro.om
+    .&#x0639;&#x0645;&#x0627;&#x0646; <!-- "Oman" -->
+    <forbid reason="unused">.sch.om</forbid>
     <exceptions apply-to=".om">.mediaphone.om .nawrastelecom.om .nawras.om
     .omanmobile.om .omanpost.om .omantel.om .rakpetroleum.om .siemens.om
     .songfest.om .statecouncil.om</exceptions>
@@ -1745,7 +1857,7 @@
   </area>
   <area category="country" country="Palestinian territories">
     .ps .com.ps .net.ps .org.ps .edu.ps .gov.ps .plo.ps .sec.ps
-    .&#x0641;&#x0644;&#x0633;&#x0637;&#x064A;&#x0646;
+    .&#x0641;&#x0644;&#x0633;&#x0637;&#x064A;&#x0646; <!-- "Falasteen" -->
   </area>
   <area category="country" country="Panama">
     <!-- registrations are accepted under 3rd by some .pa exist -->
@@ -1868,7 +1980,7 @@
     .bryansk.ru .chelyabinsk.ru .chel.ru .ivanovo.ru .irkutsk.ru .koenig.ru
     .kaluga.ru .kemerovo.ru .kirov.ru .vyatka.ru .kostroma.ru .kurgan.ru
     .kursk.ru .lipetsk.ru .magadan.ru .mosreg.ru .murmansk.ru .nnov.ru .nov.ru
-    .novosibirsk.ru .nsk.ru .omsk.ru .orenburg.ru .oryol.ru .penza.ru .pskov.ru
+    .novosibirsk.ru .nsk.ru .omsk.ru .orenburg.ru .oryol.ru .penza.ru
     .rnd.ru .ryazan.ru .samara.ru .saratov.ru .sakhalin.ru .yuzhno-sakhalinsk.ru
     .e-burg.ru .yekaterinburg.ru .smolensk.ru .tambov.ru .tver.ru .tomsk.ru
     .tom.ru .tsk.ru .tula.ru .tyumen.ru .simbirsk.ru .vladimir.ru .volgograd.ru
@@ -1879,6 +1991,7 @@
     .norilsk.ru .snz.ru .oskol.ru .pyatigorsk.ru .rubtsovsk.ru .syzran.ru
     .tlt.ru .vdonsk.ru .zgrad.ru .chuvashia.ru .dudinka.ru .krasnoyarsk.ru
     .&#x0440;&#x0444;
+    <forbid reason="deprecated">.pskov.ru</forbid>
   </area>
   <area category="country" country="Rwanda">
     .rw .gov.rw .net.rw .edu.rw .ac.rw .com.rw .co.rw .int.rw .mil.rw .gouv.rw
@@ -1910,17 +2023,23 @@
   </area>
   <area category="country" country="Saudi Arabia">
     .sa .com.sa .edu.sa .sch.sa .med.sa .gov.sa .net.sa .org.sa .pub.sa
-    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x064A;&#x0629;
-    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x06CC;&#x0629;
-    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x06CC;&#x06C3;
-    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x064A;&#x0647;
+    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x064A;&#x0629; <!-- "AlSaudiah" -->
+    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x06CC;&#x0629; <!-- "AlSaudiah", variant -->
+    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x06CC;&#x06C3; <!-- "AlSaudiah", variant -->
+    .&#x0627;&#x0644;&#x0633;&#x0639;&#x0648;&#x062F;&#x064A;&#x0647; <!-- "AlSaudiah", variant -->
   </area>
   <area category="country" country="Senegal">
     .sn .art.sn .com.sn .edu.sn .gouv.sn .org.sn .perso.sn .univ.sn
   </area>
   <area category="country" country="Serbia">
     .rs .co.rs .org.rs .edu.rs .ac.rs .gov.rs .in.rs
-    .&#x0441;&#x0440;&#x0431;
+    .&#x0441;&#x0440;&#x0431; <!-- "cp6", sbr -->
+    .&#x043F;&#x0440;&#x002E;&#x0441;&#x0440;&#x0431; <!-- "np.cp6" -->
+    .&#x043E;&#x0440;&#x0433;&#x002E;&#x0441;&#x0440;&#x0431; <!-- "opr.cp6" -->
+    .&#x043E;&#x0431;&#x0440;&#x002E;&#x0441;&#x0440;&#x0431; <!-- "o6p.cp6" -->
+    .&#x043E;&#x0434;&#x002E;&#x0441;&#x0440;&#x0431; <!-- "oA.cp6" -->
+    .&#x0443;&#x043F;&#x0440;&#x002E;&#x0441;&#x0440;&#x0431; <!-- "ynp.cp6" -->
+    .&#x0430;&#x043A;&#x002E;&#x0441;&#x0440;&#x0431; <!-- "ak.cp6" -->
   </area>
   <area category="country" country="Seychelles">
     .sc .com.sc .net.sc .edu.sc .gov.sc .org.sc
@@ -1999,7 +2118,8 @@
     .fh.se .fhsk.se .fhv.se .g.se .h.se .i.se .k.se .komforb.se
     .kommunalforbund.se .komvux.se .l.se .lanbib.se .m.se .n.se
     .naturbruksgymn.se .o.se .org.se .p.se .parti.se .pp.se .press.se
-    .r.se .s.se .sshn.se .t.se .tm.se .u.se .w.se .x.se .y.se .z.se
+    .r.se .s.se .t.se .tm.se .u.se .w.se .x.se .y.se .z.se
+    <forbid reason="deprecated">.sshn.se</forbid>
   </area>
   <area category="country" country="Swaziland">
     .sz .co.sz .ac.sz .org.sz
@@ -2009,8 +2129,8 @@
   </area>
   <area category="country" country="Syria">
     .sy .edu.sy .gov.sy .net.sy .mil.sy .com.sy .org.sy .news.sy
-    .&#x0633;&#x0648;&#x0631;&#x064A;&#x0629;
-    .&#x0633;&#x0648;&#x0631;&#x064A;&#x0627;
+    .&#x0633;&#x0648;&#x0631;&#x064A;&#x0629; <!-- "Syria" -->
+    .&#x0633;&#x0648;&#x0631;&#x064A;&#x0627; <!-- "Syria", variant -->
   </area>
   <area category="country" country="Taiwan" nic="http://www.twnic.net/english/dn/dn_07a.htm">
     .tw .club.tw .com.tw .ebiz.tw .game.tw .gov.tw .idv.tw .mil.tw .net.tw
@@ -2024,8 +2144,8 @@
     .org.tj .per.tj .pro.tj .test.tj .web.tj
   </area>
   <area category="country" country="Tanzania" nic="http://www.tznic.or.tz/index.php/domains">
-    <forbid reason="unused">.tz</forbid>
-    .co.tz .ac.tz .go.tz .hotel.tz .info.tz .me.tz .mil.tz .mobi.tz .ne.tz
+    .tz
+    .ac.tz .co.tz .go.tz .hotel.tz .info.tz .me.tz .mil.tz .mobi.tz .ne.tz
     .or.tz .sc.tz .tv.tz
   </area>
   <area category="country" country="Thailand" nic="http://www.thnic.co.th">
@@ -2051,10 +2171,10 @@
     .&#x062A;&#x0648;&#x0646;&#x0633;
   </area>
   <area category="country" country="Turkey">
-    .com.tr .gen.tr .org.tr .biz.tr .info.tr .av.tr .dr.tr .pol.tr
-    .bel.tr .tsk.tr .bbs.tr .k12.tr .edu.tr .name.tr .net.tr .gov.tr
-    .web.tr .tel.tr .tv.tr .nc.tr .gov.nc.tr
-    <forbid reason="unused">.tr</forbid>
+    .tr
+    .av.tr .bbs.tr .bel.tr .biz.tr .com.tr .dr.tr .edu.tr .gen.tr .gov.tr
+    .gov.nc.tr .info.tr .k12.tr .kep.tr .mil.tr .name.tr .nc.tr .net.tr
+    .org.tr .pol.tr .tel.tr .tsk.tr .tv.tr .web.tr
     <exceptions apply-to=".tr">.nic.tr</exceptions>
   </area>
   <area category="country" country="Turkmenistan">
@@ -2091,15 +2211,16 @@
     <forbid reason="deprecated">.pro.ae .name.ae</forbid>
   </area>
   <area category="country" country="United Kingdom">
-    .ac.uk .co.uk .gov.uk .ltd.uk .me.uk .net.uk .org.uk .plc.uk
+    .uk .ac.uk .bl.uk .british-library.uk .co.uk .gov.uk .jet.uk
+    .ltd.uk .me.uk .mod.uk .national-library-scotland.uk .nel.uk
+    .net.uk .nhs.uk .nic.uk .nls.uk .org.uk .parliament.uk .plc.uk .police.uk
     <!-- for .sch.uk we need to know about the 3rd level -->
     <!-- there are a few .uk such as nic.uk but at this point we refuse it -->
-    <forbid reason="unused">.uk .sco .cymru .sch.uk</forbid>
-    <forbid reason="deprecated">.icnet.uk .govt.uk .orgn.uk .lea.uk .mil.uk
-    .nel.uk</forbid>
-    <exceptions apply-to=".uk">.bl.uk .british-library.uk .jet.uk
-    .mod.uk .nhs.uk .nic.uk .nls.uk .national-library-scotland.uk
-    .parliament.uk .police.uk</exceptions>
+    <forbid reason="unused">.gb .sco .cymru .sch.uk</forbid>
+    <forbid reason="deprecated">.icnet.uk .govt.uk .orgn.uk .lea.uk
+    .mil.uk</forbid>
+    <!--exceptions apply-to=".uk">.uk is now officially re-opened for
+    first level domain names</exceptions-->
   </area>
   <area category="country" country="United States">
     <!-- .gov and .mil are now viewed as generic top level domains
@@ -2139,10 +2260,10 @@
     .k12.ct.us .k12.dc.us .k12.de.us .k12.fl.us .k12.ga.us .k12.gu.us .k12.ia.us
     .k12.id.us .k12.il.us .k12.in.us .k12.ks.us .k12.ky.us .k12.la.us .k12.ma.us
     .k12.md.us .k12.me.us .k12.mi.us .k12.mn.us .k12.mo.us .k12.ms.us .k12.mt.us
-    .k12.nc.us .k12.nd.us .k12.ne.us .k12.nh.us .k12.nj.us .k12.nm.us .k12.nv.us
-    .k12.ny.us .k12.oh.us .k12.ok.us .k12.or.us .k12.pa.us .k12.pr.us .k12.ri.us
-    .k12.sc.us .k12.sd.us .k12.tn.us .k12.tx.us .k12.ut.us .k12.vi.us .k12.vt.us
-    .k12.va.us .k12.wa.us .k12.wi.us .k12.wv.us .k12.wy.us
+    .k12.nc.us .k12.ne.us .k12.nh.us .k12.nj.us .k12.nm.us .k12.nv.us .k12.ny.us
+    .k12.oh.us .k12.ok.us .k12.or.us .k12.pa.us .k12.pr.us .k12.ri.us .k12.sc.us
+    .k12.tn.us .k12.tx.us .k12.ut.us .k12.vi.us .k12.vt.us .k12.va.us .k12.wa.us
+    .k12.wi.us .k12.wy.us
     <!-- private K12 schools -->
     .pvt.k12.ak.us .pvt.k12.al.us .pvt.k12.ar.us .pvt.k12.as.us .pvt.k12.az.us
     .pvt.k12.ca.us .pvt.k12.co.us .pvt.k12.ct.us .pvt.k12.dc.us .pvt.k12.de.us
@@ -2211,7 +2332,7 @@
     .lib.mt.us .lib.nc.us .lib.nd.us .lib.ne.us .lib.nh.us .lib.nj.us .lib.nm.us
     .lib.nv.us .lib.ny.us .lib.oh.us .lib.ok.us .lib.or.us .lib.pa.us .lib.pr.us
     .lib.ri.us .lib.sc.us .lib.sd.us .lib.tn.us .lib.tx.us .lib.ut.us .lib.vi.us
-    .lib.vt.us .lib.va.us .lib.wa.us .lib.wi.us .lib.wv.us .lib.wy.us
+    .lib.vt.us .lib.va.us .lib.wa.us .lib.wi.us .lib.wy.us
     <!-- councils of government -->
     .cog.ak.us .cog.al.us .cog.ar.us .cog.as.us .cog.az.us .cog.ca.us .cog.co.us
     .cog.ct.us .cog.dc.us .cog.de.us .cog.fl.us .cog.ga.us .cog.gu.us .cog.hi.us
@@ -2251,6 +2372,8 @@
     <!-- .us also has city, town, ville, and county specification using a
          sub-domain as in (ci|town|vil|co).<city-name>.<state>.us
          there is nothing special we have to do for those here -->
+
+    <forbid reason="deprecated">.k12.nd.us .k12.sd.us .k12.wv.us .lib.wv.us</forbid>
   </area>
   <area category="country" country="United States Virgin Island">
     .vi .co.vi .org.vi .com.vi .net.vi .k12.vi
@@ -2263,11 +2386,14 @@
     .uz .co.uz .com.uz .net.uz .org.uz
   </area>
   <area category="country" country="Vanuatu">
-    .vu .gov.vu
+    .vu .com.vu .edu.vu .gov.vu .net.vu .org.vu
+    <!-- there are many more 2nd level .vu domains, but they do not
+         really seem to be in direct use at this point -->
   </area>
   <area category="country" country="Venezuela">
-    .co.ve .com.ve .e12.ve .edu.ve .info.ve .gob.ve .gov.ve .mil.ve .net.ve
-    .org.ve .tec.ve .web.ve
+    .arts.ve .co.ve .com.ve .e12.ve .edu.ve .firm.ve .gob.ve .gov.ve
+    .info.ve .int.ve .mil.ve .net.ve .org.ve .rec.ve .store.ve .tec.ve
+    .web.ve
     <forbid reason="reserved">.ve</forbid>
   </area>
   <area category="country" country="Vietnam">
@@ -2298,6 +2424,7 @@
        nor were assigned by the IANA, often referenced as private domains -->
   <area category="entrepreneurial">
     .ae.org
+    .africa.com
     .ap-northeast-1.compute.amazonaws.com
     .ap-southeast-1.compute.amazonaws.com
     .ap-southeast-2.compute.amazonaws.com
@@ -2307,6 +2434,9 @@
     .a.ssl.fastly.net
     .at-band-camp.net
     .ath.cx
+    .azier-mobile.net
+    .azurewebsites.net
+    .azure-mobile.net
     .barrel-of-knowledge.info
     .barrell-of-knowledge.info
     .betainabox.com
@@ -2361,14 +2491,21 @@
     .b.ssl.fastly.net
     .buyshouses.net
     .cechire.com
+    .cloudapp.net
     .cloudfront.net
     .cloudcontrolapp.com
     .cloudcontrolled.com
     .cn.com
+    .cn-north-1.compute.amazonaws.cn
     .co.ca
+    .co.com
     .codespot.com
+    .com.de
+    .compute.amazonaws.cn
     .compute.amazonaws.com
     .compute-1.amazonaws.com
+    .com.se
+    .cupcake.is
     .de.com
     .dnsalias.com
     .dnsalias.net
@@ -2421,6 +2558,8 @@
     .est-mon-blogueur.com
     .eu.com
     .eu-west-1.compute.amazonaws.com
+    .firebaseapp.com
+    .flynnhub.com
     .for-better.biz
     .for-more.biz
     .for-our.info
@@ -2489,6 +2628,7 @@
     .getmyip.com
     .gets-it.net
     .github.io
+    .githubusercontent.com
     .global.prod.fastly.net
     .global.ssl.fastly.net
     .go.dyndns.org
@@ -2520,6 +2660,7 @@
     .hu.net
     .iamallama.com
     .iki.fi
+    .in.net
     .in-the-band.net
     .is-a-anarchist.com
     .is-a-blogger.com
@@ -2615,16 +2756,20 @@
     .likes-pie.com
     .likescandy.com
     .merseine.nu
+    .mex.com
     .mine.nu
     .misconfused.org
     .mypets.ws
     .myphotos.cc
     .neat-url.com
+    .nfshost.com
+    .nid.io
     .no.com
     .nyc.mn
     .office-on-the.net
     .on-the-web.tv
     .operaunite.com
+    .outsystemscloud.com
     .podzone.net
     .podzone.org
     .qc.com
@@ -2673,6 +2818,7 @@
     .serveftp.net
     .serveftp.org
     .servegame.org
+    .service.gov.uk
     .shacknet.nu
     .simple-url.com
     .space-to-rent.com
@@ -2694,14 +2840,18 @@
     .webhop.info
     .webhop.net
     .webhop.org
+    .withgoogle.com
     .worse-than.tv
     .writesthisblog.com
+    .yolasite.com
     .z-1.compute-1.amazonaws.com
     .z-2.compute-1.amazonaws.com
+    .za.bz
     .za.com
     .za.net
     .za.org
     <forbid reason="unused">
+      .amazonaws.cn
       .amazonaws.com
       .fastly.net
       .her.name

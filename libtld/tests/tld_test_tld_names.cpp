@@ -176,7 +176,7 @@ void test_tlds()
             if(r == TLD_RESULT_SUCCESS)
             {
                 // if it worked then we have a problem
-                fprintf(stderr, "error: tld(\"%s\", &info) accepted when 2nd level names are not accepted.\n",
+                fprintf(stderr, "error: tld(\"%s\", &info) accepted when 2nd level names are not accepted by effective_tld_names.dat.\n",
                         it->c_str());
                 ++err_count;
             }
