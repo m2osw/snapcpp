@@ -135,7 +135,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         </xsl:if>
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-          <xsl:attribute name="class">editor-content image<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+          <xsl:attribute name="class">editor-content image no-toolbar<xsl:if test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
             <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
           </xsl:if>
