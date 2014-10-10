@@ -174,6 +174,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:template name="snap:dropdown">
     <xsl:param name="path"/>
     <xsl:param name="name"/>
+    <xsl:param name="value"/>
     <widget path="{$path}">
       <div field_type="dropdown">
         <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
@@ -185,8 +186,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <div class="snap-editor-dropdown-reset-value"><xsl:copy-of select="default/node()"/></div>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" has "display: none"
-               a script shows them on load once ready AND if the value is empty
-               also it is a "pointer-event: none;" -->
+               a script shows them on load once ready AND if the value is
+               empty also it is a "pointer-event: none;" -->
           <div class="snap-editor-background zordered">
             <div class="snap-editor-background-content">
               <!-- this div is placed OVER the next div -->
@@ -198,7 +199,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
           <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if test="not(@mode) or @mode = 'select-only'"> read-only</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
-            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+            <xsl:variable name="tabindex" select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/>
+            <xsl:attribute name="tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
+            <xsl:attribute name="original_tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
           </xsl:if>
           <xsl:if test="tooltip != ''">
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
@@ -208,24 +211,42 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <xsl:attribute name="spellcheck">false</xsl:attribute>
           </xsl:if>
 
+          <!-- WARNING: the order is VERY important -->
           <xsl:choose>
-            <xsl:when test="value/item[@default='default']">
-              <xsl:attribute name="value"><xsl:copy-of select="value/item[@default='default']/@value"/></xsl:attribute>
-              <xsl:copy-of select="value/item[@default='default']/node()"/>
+            <!-- search for one @value that matches $value, this is the preferred method of selection -->
+            <xsl:when test="preset/item[$value = @value]">
+              <xsl:attribute name="value"><xsl:copy-of select="$value"/></xsl:attribute>
+              <xsl:copy-of select="preset/item[$value = @value]"/>
+            </xsl:when>
+            <!-- value is defined, use it... -->
+            <xsl:when test="$value != ''">
+              <!-- if we did not match an @value, then we assume there are none (TBD?) -->
+              <xsl:copy-of select="$value"/>
+            </xsl:when>
+            <!-- programmer specified a default -->
+            <xsl:when test="preset/item[@default = 'default']">
+              <xsl:if test="preset/item[@default = 'default']/@value">
+                <xsl:attribute name="value"><xsl:copy-of select="preset/item[@default = 'default']/@value"/></xsl:attribute>
+              </xsl:if>
+              <xsl:copy-of select="preset/item[@default = 'default']/node()"/>
             </xsl:when>
             <xsl:otherwise>
+              <!-- otherwise stick the default value in there if there is one
+                   this can be something completely different from what
+                   appears in the list of items -->
               <xsl:copy-of select="default/node()"/>
             </xsl:otherwise>
           </xsl:choose>
         </div>
         <div>
           <xsl:choose>
-            <xsl:when test="count(value/item)">
+            <xsl:when test="count(preset/item)">
+              <!-- there are items, put them in a list for the dropdown -->
               <xsl:attribute name="class">dropdown-items zordered</xsl:attribute>
               <ul class="dropdown-selection">
-                <xsl:for-each select="value/item">
+                <xsl:for-each select="preset/item">
                   <li>
-                    <xsl:attribute name="class">dropdown-item<xsl:if test="@default='default'"> selected</xsl:if><xsl:if
+                    <xsl:attribute name="class">dropdown-item<xsl:if test="@default = 'default' or $value = @value or $value = node()"> selected</xsl:if><xsl:if
                         test="@class"><xsl:text> </xsl:text><xsl:value-of select="@class"/></xsl:if></xsl:attribute>
                     <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
                     <xsl:copy-of select="./node()"/>
@@ -234,7 +255,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               </ul>
             </xsl:when>
             <xsl:otherwise>
+              <!-- there are no items, create a default placeholder for the dropdown -->
               <xsl:attribute name="class">dropdown-items zordered disabled</xsl:attribute>
+              <!-- TODO: (1) translation, (2) let user choose what to put in there -->
               <div class="no-selection">No selection...</div>
             </xsl:otherwise>
           </xsl:choose>
@@ -258,6 +281,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:call-template name="snap:dropdown">
       <xsl:with-param name="path" select="@path"/>
       <xsl:with-param name="name" select="@id"/>
+      <xsl:with-param name="value" select="$value"/>
     </xsl:call-template>
   </xsl:template>
 
@@ -323,6 +347,33 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- RADIO BUTTONS WIDGET -->
   <!-- WARNING: we use this sub-template because of a Qt bug with variables
                 that do not properly get defined without such trickery -->
+  <xsl:template name="snap:radio_buttons">
+    <xsl:param name="name"/>
+    <xsl:param name="pos"/>
+    <ul class="radion-buttons">
+      <xsl:for-each select="preset/item">
+        <li>
+          <!-- the actual value of a radio is used to know whether the radio is selected or not -->
+          <!-- TODO: we would need to determine the default FIRST by testing the @value then by testing the node() in two separate loops -->
+          <xsl:attribute name="class">radio-button<xsl:if test="position() = number($pos)"> selected</xsl:if><xsl:if
+              test="@class"><xsl:text> </xsl:text><xsl:value-of select="@class"/></xsl:if></xsl:attribute>
+          <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
+          <!-- TODO: here we've got a problem since this is viewed as
+                     ONE unit but if we have 10 items, we would need
+                     this to be viewed as 10... -->
+          <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
+            <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
+          </xsl:if>
+          <div class="radio-flag-box"></div>
+          <div class="radio-area">
+            <xsl:copy-of select="./node()"/>
+          </div>
+          <!-- in most cases we use the end-radio block to do a "clear: both;" -->
+          <div class="end-radio-item"></div>
+        </li>
+      </xsl:for-each>
+    </ul>
+  </xsl:template>
   <xsl:template name="snap:radio">
     <xsl:param name="path"/>
     <xsl:param name="name"/>
@@ -343,28 +394,34 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
           </xsl:if>
 
-          <ul class="radion-buttons">
-            <xsl:for-each select="value/item">
-              <li>
-                <!-- the actual value of a radio is used to know whether the radio is selected or not -->
-                <xsl:attribute name="class">radio-button<xsl:if test="@default='default'"> selected</xsl:if><xsl:if
-                    test="@class"><xsl:text> </xsl:text><xsl:value-of select="@class"/></xsl:if></xsl:attribute>
-                <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
-                <!-- TODO: here we've got a problem since this is viewed as
-                           ONE unit but if we have 10 items, we would need
-                           this to be viewed as 10... -->
-                <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
-                  <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
-                </xsl:if>
-                <div class="radio-flag-box"></div>
-                <div class="radio-area">
-                  <xsl:copy-of select="./node()"/>
-                </div>
-                <!-- in most cases we use the end-radio block to do a "clear: both;" -->
-                <div class="end-radio-item"></div>
-              </li>
+          <!-- WARNING: the order is VERY important -->
+          <xsl:variable name="default_position">
+            <xsl:copy-of select="../../default/node()"/>
+            <xsl:for-each select="preset/item">
+              <!-- search for one @value that matches $value, this is the preferred method of selection -->
+              <xsl:if test="$value = @value">
+                <p><xsl:value-of select="position()"/></p>
+              </xsl:if>
             </xsl:for-each>
-          </ul>
+            <xsl:for-each select="preset/item">
+              <!-- maybe it is the current value -->
+              <xsl:if test="$value = node()">
+                <p><xsl:value-of select="position()"/></p>
+              </xsl:if>
+            </xsl:for-each>
+            <xsl:for-each select="preset/item">
+              <!-- programmer specified a default -->
+              <xsl:if test="@default = 'default'">
+                <p><xsl:value-of select="position()"/></p>
+              </xsl:if>
+            </xsl:for-each>
+            <p>-1</p>
+          </xsl:variable>
+
+          <xsl:call-template name="snap:radio_buttons">
+            <xsl:with-param name="name" select="@id"/>
+            <xsl:with-param name="pos" select="$default_position/p[1]/node()"/>
+          </xsl:call-template>
           <!-- in most cases we use the end-radio block to do a "clear: both;" -->
           <div class="end-radio"></div>
 

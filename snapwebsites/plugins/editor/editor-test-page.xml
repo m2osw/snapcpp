@@ -70,11 +70,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tooltip>Tooltip</tooltip>
     <help>Help</help>
     <default>Select one...</default>
-    <value>
+    <preset>
       <item value="1">First Item</item>
       <item value="2">Second Item</item>
       <item value="3">Third Item</item>
-    </value>
+    </preset>
+    <!-- define one of three defaults:
+          use the <value> (defined by editor.cpp if available, most often because it was saved in the database earlier)
+          use the item with ... default="default" ... if one exists
+          use the value of the <default> tag if defined -->
   </widget>
   <widget id="checkmark_widget" type="checkmark" field="editor::checkmark_widget" path="editor/checkmark_widget" auto-save="string">
     <tooltip>Tooltip</tooltip>
@@ -84,11 +88,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <widget id="radio_widget" type="radio" field="editor::radio_widget" path="editor/radio_widget" auto-save="string">
     <tooltip>Tooltip</tooltip>
     <help>Help</help>
-    <value>
+    <preset>
       <item value="1">One Month</item>
-      <item value="6" default="default">6 Months</item>
-      <item value="12">12 Months</item>
-    </value>
+      <item value="6">6 Months</item>
+      <item value="12" default="default">12 Months</item>
+    </preset>
+    <!-- define one of two defaults:
+          use the <value> (defined by editor.cpp if available, most often because it was saved in the database earlier)
+          use the item with ... default="default" ... if one exists -->
   </widget>
   <widget id="button_widget" type="button" path="editor/button_widget" auto-save="no">
     <tooltip>Tooltip</tooltip>
