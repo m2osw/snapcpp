@@ -396,16 +396,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
           <!-- WARNING: the order is VERY important -->
           <xsl:variable name="default_position">
-            <xsl:copy-of select="../../default/node()"/>
             <xsl:for-each select="preset/item">
               <!-- search for one @value that matches $value, this is the preferred method of selection -->
-              <xsl:if test="$value = @value">
+              <xsl:if test="$value != '' and $value = @value">
                 <p><xsl:value-of select="position()"/></p>
               </xsl:if>
             </xsl:for-each>
             <xsl:for-each select="preset/item">
               <!-- maybe it is the current value -->
-              <xsl:if test="$value = node()">
+              <xsl:if test="$value != '' and $value = node()">
                 <p><xsl:value-of select="position()"/></p>
               </xsl:if>
             </xsl:for-each>

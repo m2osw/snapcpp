@@ -90,8 +90,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>Help</help>
     <preset>
       <item value="1">One Month</item>
-      <item value="6">6 Months</item>
-      <item value="12" default="default">12 Months</item>
+      <item value="6" default="default">6 Months</item>
+      <item value="12">12 Months</item>
     </preset>
     <!-- define one of two defaults:
           use the <value> (defined by editor.cpp if available, most often because it was saved in the database earlier)
