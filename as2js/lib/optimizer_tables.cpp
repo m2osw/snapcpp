@@ -106,6 +106,9 @@ optimization_tables_t const g_optimizer_tables[] =
         POINTER_AND_COUNT(g_optimizer_bitwise_table)
     },
     {
+        POINTER_AND_COUNT(g_optimizer_compare_table)
+    },
+    {
         POINTER_AND_COUNT(g_optimizer_conditional_table)
     },
     {

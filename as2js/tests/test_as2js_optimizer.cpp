@@ -1115,6 +1115,9 @@ char const g_optimizer_assignments[] =
 char const g_optimizer_bitwise[] =
 #include "test_as2js_optimizer_bitwise.ci"
 ;
+char const g_optimizer_compare[] =
+#include "test_as2js_optimizer_compare.ci"
+;
 char const g_optimizer_conditional[] =
 #include "test_as2js_optimizer_conditional.ci"
 ;
@@ -1369,6 +1372,11 @@ void As2JsOptimizerUnitTests::test_optimizer_assignments()
 void As2JsOptimizerUnitTests::test_optimizer_bitwise()
 {
     run_tests(g_optimizer_bitwise, "test_parser_bitwise.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_compare()
+{
+    run_tests(g_optimizer_compare, "test_parser_compare.json");
 }
 
 void As2JsOptimizerUnitTests::test_optimizer_conditional()
