@@ -1176,7 +1176,7 @@ void snap_manager::on_domainNew_clicked()
     f_domain_org_rules = "";
     f_domain_rules->setText(
             "main {\n"
-            "\trequired host = \"www\\.\"\n;"
+            "  required host = \"www\\.\";\n"
             "};\n"
         );
 
@@ -1551,8 +1551,8 @@ void snap_manager::on_websiteNew_clicked()
     f_website_rules->setText("");
     f_website_rules->setText(
             "main {\n"
-            "\tprotocol = \"http\"\n;"
-            "\tport = \"80\";\n"
+            "  protocol = \"http\";\n"
+            "  port = \"80\";\n"
             "};\n"
         );
 
