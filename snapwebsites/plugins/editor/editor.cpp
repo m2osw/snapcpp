@@ -174,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 10, 8, 20, 5, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 10, 10, 15, 30, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -908,9 +908,11 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, post_value, is_secret);
                     if(widget_auto_save == "int8")
                     {
+                        bool ok(false);
                         signed char c;
                         if(widget_type == "checkmark")
                         {
+                            ok = true;
                             if(post_value == "0")
                             {
                                 c = 0;
@@ -922,19 +924,24 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         }
                         else
                         {
-                            bool ok(false);
                             c = post_value.toInt(&ok, 10);
                             if(!ok)
                             {
-                                f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
-                                    QString("field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
+                                messages->set_error(
+                                    "Type Conflict",
+                                    QString("Field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
                                             .arg(widget_name).arg(post_value),
-                                    "This is probably a hacker if we get the wrong value here. We should never get an invalid integer if checked by JavaScript.");
-                                NOTREACHED();
+                                    "This is probably a hacker if we get the wrong value here. We should never get an invalid integer if checked by JavaScript.",
+                                    false
+                                ).set_widget_name(widget_name);
                             }
                         }
-                        revision_row->cell(field_name)->setValue(c);
-                        current_value = QString("%1").arg(c);
+                        // do NOT save the result if it was not considered valid
+                        if(ok)
+                        {
+                            revision_row->cell(field_name)->setValue(c);
+                            current_value = QString("%1").arg(c);
+                        }
                     }
                     else if(widget_auto_save == "double")
                     {
@@ -943,14 +950,19 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         dbl = post_value.toDouble(&ok);
                         if(!ok)
                         {
-                            f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
-                                QString("field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
+                            messages->set_error(
+                                "Type Conflict",
+                                QString("Field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
                                         .arg(widget_name).arg(post_value),
-                                "The double number looks wrong to Qt.");
-                            NOTREACHED();
+                                "The double number looks wrong to Qt.",
+                                false
+                            ).set_widget_name(widget_name);
                         }
-                        revision_row->cell(field_name)->setValue(dbl);
-                        current_value = QString("%1").arg(dbl);
+                        else
+                        {
+                            revision_row->cell(field_name)->setValue(dbl);
+                            current_value = QString("%1").arg(dbl);
+                        }
                     }
                     else if(widget_auto_save == "ms-date-us")
                     {

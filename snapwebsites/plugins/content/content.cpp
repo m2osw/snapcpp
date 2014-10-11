@@ -4788,7 +4788,7 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
         // http://csnap.m2osw.com/verify-credentials#en/0.2
         // and:
         // http://csnap.m2osw.com/verify-credentials#en/0.3
-        QString const previous_revision_key(generate_revision_key(key, old_branch, previous_revision, locale));
+        QString const previous_revision_key(generate_revision_key(key, previous_branch, previous_revision, locale));
         QString const revision_key(generate_revision_key(key, branch, revision, locale));
         QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
 

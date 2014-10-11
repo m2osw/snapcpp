@@ -214,7 +214,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <!-- WARNING: the order is VERY important -->
           <xsl:choose>
             <!-- search for one @value that matches $value, this is the preferred method of selection -->
-            <xsl:when test="preset/item[$value = @value]">
+            <xsl:when test="$value != '' and preset/item[$value = @value]">
               <xsl:attribute name="value"><xsl:copy-of select="$value"/></xsl:attribute>
               <xsl:copy-of select="preset/item[$value = @value]"/>
             </xsl:when>
