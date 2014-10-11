@@ -915,7 +915,7 @@ optimization_entry_t const g_optimizer_logical_entry_conditional_logical_not_not
 optimization_entry_t const g_optimizer_logical_entry_not_not_not_a[] =
 {
     {
-        /* f_name */            "'!!!a' whatever 'a' is -> '!a'",
+        /* f_name */            "'!!!a' whatever 'a' is -> logical_not(a)",
         /* f_flags */           0,
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_logical_match_not_not_not_a),

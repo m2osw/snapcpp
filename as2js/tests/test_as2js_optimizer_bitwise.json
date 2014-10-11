@@ -1461,6 +1461,86 @@
                 }
             ]
         }
+    },
+
+    // ~number => number
+    {
+        //"verbose": true,
+        "name": "~0xF195BAFC3 -> 0x0E6A4503C",
+        "program": "~0xF195BAFC3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_NOT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xF195BAFC3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xE6A4503C
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // ~0.0 => number
+    {
+        //"verbose": true,
+        "name": "~0.0 -> 0xFFFFFFFF",
+        "program": "~0.0;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_NOT",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 0.0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 0xFFFFFFFF
+                        }
+                    ]
+                }
+            ]
+        }
     }
 
 ]

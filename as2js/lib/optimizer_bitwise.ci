@@ -47,6 +47,35 @@ namespace optimizer_details
 {
 
 
+/** \brief Match '~a'
+ *
+ * This table defines a match for the expression '~a' when a
+ * is a literal.
+ */
+optimization_match_t const g_optimizer_bitwise_match_not_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_not),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
 /** \brief Match 'a & b'
  *
  * This table defines a match for the expression 'a & b' when a and b
@@ -360,6 +389,22 @@ optimization_match_t const g_optimizer_bitwise_match_a_rotate_right_b[] =
 
 
 
+/** \brief Optimize '~number' to 'number'.
+ *
+ * This table defines the optimization of '~number' to 'number'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_not_a[] =
+{
+    {
+        /* f_name */            "~a, where a is a literal -> bitwise_not(a)",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_not_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_not_1_0)
+    }
+};
+
+
 /** \brief Optimize 'number & number' to 'number'.
  *
  * This table defines the optimization of 'number & number' to 'number'.
@@ -499,6 +544,11 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_rotate_right_b[] =
  */
 optimization_table_t const g_optimizer_bitwise_table[] =
 {
+    // bitwise NOT
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_not_a)
+    },
+
     // bitwise AND
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_and_b)

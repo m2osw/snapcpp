@@ -79,6 +79,57 @@ namespace as2js
  * Note that it is expected that you first Compile()
  * the nodes, but it is possible to call the optimizer
  * without first running any compilation.
+ *
+ * The optimizations are organized in C++ tables that get linked
+ * in the compiler as read-only static data. These are organized
+ * in many separate files because of the large amount of possible
+ * optimizations. Even at this point, some could probably get
+ * broken up in several separate files. There is a list of the
+ * various files in the optimizer:
+ *
+ * \li optimizer.cpp -- the main Optimizer object implementation;
+ * all the other files are considered private.
+ *
+ * \li optimizer_matches.ci and optimizer_matches.cpp -- the tables
+ * (.ci) and the functions (.cpp) used to match a tree of nodes
+ * and thus determine whether an optimization can be applied or not.
+ *
+ * \li optimizer_tables.cpp and optimizer_tables.h -- the top level
+ * tables of the optimizer. These are used to search for optimizations
+ * that can be applied against your tree of nodes. The header defines
+ * private classes, structures, etc.
+ *
+ * \li optimizer_values.ci -- a set of tables representing literal
+ * values as in some cases an optimization can be applied if a
+ * literal has a specific value.
+ *
+ * \li optimizer_optimize.ci and optimizer_optimize.cpp -- a set
+ * of optimizations defined using tables and corresponding functions
+ * to actually apply the optimizations to a tree of nodes.
+ *
+ * \li optimizer_additive.ci -- optimizations for '+' and '-', including
+ * string concatenations.
+ *
+ * \li optimizer_assignments.ci -- optimizations for all assignments, '=',
+ * '+=', '-=', '*=', etc.
+ *
+ * \li optimizer_bitwise.ci -- optimizations for '~', '&', '|', '^', '<<', '>>',
+ * '>>>', '<!', and '>!'.
+ *
+ * \li optimizer_compare.ci -- optimizations for '<=>'.
+ *
+ * \li optimizer_conditional.ci -- optimizations for 'a ? b : c'.
+ *
+ * \li optimizer_logical.ci -- optimizations for '!', '&&', '||', and '^^'.
+ *
+ * \li optimizer_multiplicative.ci -- optimizations for '*', '/', '%',
+ * and '**'.
+ *
+ * \li optimizer_relational.ci -- optimizations for '<', '<=', '>',
+ * and '>='.
+ *
+ * \li optimizer_statments.ci -- optimizations for 'if', 'while', 'do',
+ * and "directives" (blocks).
  */
 
 

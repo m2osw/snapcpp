@@ -135,6 +135,12 @@ Node::node_t const g_optimizer_match_bitwise_and[]
 };
 
 
+Node::node_t const g_optimizer_match_bitwise_not[]
+{
+    Node::node_t::NODE_BITWISE_NOT
+};
+
+
 Node::node_t const g_optimizer_match_bitwise_or[]
 {
     Node::node_t::NODE_BITWISE_OR
