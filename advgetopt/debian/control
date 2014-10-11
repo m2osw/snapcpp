@@ -4,7 +4,7 @@ Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
     doxygen, graphviz,
     snapcmakemodules (>= 1.0.23.18~saucy),
-    libcontrolledvars-dev (>= 1.4.15.18~saucy)
+    libcontrolledvars-dev (>= 1.4.15.19~saucy)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://snapwebsites.org/
