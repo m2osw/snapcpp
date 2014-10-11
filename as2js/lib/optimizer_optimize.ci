@@ -78,6 +78,14 @@ optimization_optimize_t const g_optimizer_optimize_bitwise_xor_1_2_0[] =
 
 
 /*** C ***/
+optimization_optimize_t const g_optimizer_optimize_compare_literals[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_COMPARE,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_concatenate_1_2_0[] =
 {
     {

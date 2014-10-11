@@ -242,6 +242,57 @@ void optimizer_func_BITWISE_XOR(node_pointer_vector_t const& node_array, optimiz
 }
 
 
+/** \brief Apply a COMPARE function.
+ *
+ * This function compares two literals and saves the result.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \exception exception_internal_error
+ * The function does not check whether the parameters are literals. They
+ * are assumed to be or can be converted as required. If a conversion
+ * fails (returns false) then this exception is raised.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_COMPARE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+    Node::pointer_t result;
+
+    compare_t c(Node::compare(node_array[src1], node_array[src2], false));
+    switch(c)
+    {
+	case compare_t::COMPARE_LESS:       // -1
+    case compare_t::COMPARE_EQUAL:      // 0
+	case compare_t::COMPARE_GREATER:    // +1
+        result.reset(new Node(Node::node_t::NODE_INT64));
+        {
+            Int64 i;
+            i.set(static_cast<Int64::int64_type>(c));
+            result->set_int64(i);
+        }
+        break;
+
+	case compare_t::COMPARE_UNORDERED:
+	case compare_t::COMPARE_ERROR:
+	case compare_t::COMPARE_UNDEFINED:
+        // any invalid answer, included unordered becomes undefined
+        result.reset(new Node(Node::node_t::NODE_UNDEFINED));
+        break;
+
+    }
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(result);
+}
+
+
 /** \brief Apply a CONCATENATE function.
  *
  * This function concatenates two strings and save the result.
@@ -1540,6 +1591,7 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_BITWISE_AND    */ OPTIMIZER_FUNC(BITWISE_AND),
     /* OPTIMIZATION_FUNCTION_BITWISE_OR     */ OPTIMIZER_FUNC(BITWISE_OR),
     /* OPTIMIZATION_FUNCTION_BITWISE_XOR    */ OPTIMIZER_FUNC(BITWISE_XOR),
+    /* OPTIMIZATION_FUNCTION_COMPARE        */ OPTIMIZER_FUNC(COMPARE),
     /* OPTIMIZATION_FUNCTION_CONCATENATE    */ OPTIMIZER_FUNC(CONCATENATE),
     /* OPTIMIZATION_FUNCTION_DIVIDE         */ OPTIMIZER_FUNC(DIVIDE),
     /* OPTIMIZATION_FUNCTION_LESS           */ OPTIMIZER_FUNC(LESS),

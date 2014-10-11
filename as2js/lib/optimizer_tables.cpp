@@ -48,6 +48,7 @@ SOFTWARE.
 #include    "optimizer_additive.ci"
 #include    "optimizer_assignments.ci"
 #include    "optimizer_bitwise.ci"
+#include    "optimizer_compare.ci"
 #include    "optimizer_conditional.ci"
 #include    "optimizer_logical.ci"
 #include    "optimizer_multiplicative.ci"

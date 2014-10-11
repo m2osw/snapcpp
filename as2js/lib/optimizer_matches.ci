@@ -73,6 +73,12 @@ Node::node_t const g_optimizer_match_arithmetic_assignments_except_add[]
 };
 
 
+Node::node_t const g_optimizer_match_compare[]
+{
+    Node::node_t::NODE_COMPARE
+};
+
+
 Node::node_t const g_optimizer_match_greater[]
 {
     Node::node_t::NODE_GREATER

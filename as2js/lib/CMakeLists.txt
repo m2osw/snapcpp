@@ -67,7 +67,7 @@ add_library( as2js SHARED
     node_type.cpp
     node_value.cpp
     optimizer.cpp
-    optimizer_compare.cpp
+    optimizer_matches.cpp
     optimizer_optimize.cpp
     optimizer_tables.cpp
     options.cpp
