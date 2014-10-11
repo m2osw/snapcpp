@@ -1,3 +1,9 @@
+snapwebsites (0.1.69.15~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 10 Oct 2014 18:17:38 -0700
+
 snapwebsites (0.1.69.14~trusty) trusty; urgency=high
 
   * Nightly build.
