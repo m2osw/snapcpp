@@ -57,7 +57,7 @@ installed on your system:
   make
   sudo make install
 
-To install the package exacetly where you would like it to be, you will
+To install the package exactly where you would like it to be, you will
 want to make sure that the cmake tool is called with the correct
 installation prefix.
 
