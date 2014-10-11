@@ -113,7 +113,7 @@ void optimizer_func_ADD(node_pointer_vector_t const& node_array, optimization_op
 }
 
 
-/** \brief Apply an BITWISE_AND function.
+/** \brief Apply a BITWISE_AND function.
  *
  * This function AND two numbers and saves the result in the 3rd position.
  *
@@ -156,7 +156,47 @@ void optimizer_func_BITWISE_AND(node_pointer_vector_t const& node_array, optimiz
 }
 
 
-/** \brief Apply an BITWISE_OR function.
+/** \brief Apply a BITWISE_NOT function.
+ *
+ * This function AND two numbers and saves the result in the 3rd position.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * Although the AND could be computed using 64 bits when handling integer
+ * we do 32 bits to make sure that we get a result as JavaScript would.
+ *
+ * \exception exception_internal_error
+ * The function may attempt to convert the input to floating point numbers.
+ * If that fails, this exception is raised. The Optimizer matching mechanism
+ * should, however, prevent all such problems.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_BITWISE_NOT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src(optimize->f_indexes[0]),
+             dst(optimize->f_indexes[1]);
+
+    if(!node_array[src]->to_int64())
+    {
+        throw exception_internal_error("optimizer used function to_int64() against a node that cannot be converted to an int64."); // LCOV_EXCL_LINE
+    }
+
+    // compute the result
+    // ~a
+    Int64 i1(node_array[src]->get_int64());
+    i1.set(~i1.get() & 0xFFFFFFFF);
+    node_array[src]->set_int64(i1);
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src]);
+}
+
+
+/** \brief Apply a BITWISE_OR function.
  *
  * This function OR two numbers and saves the result in the 3rd position.
  *
@@ -199,7 +239,7 @@ void optimizer_func_BITWISE_OR(node_pointer_vector_t const& node_array, optimiza
 }
 
 
-/** \brief Apply an BITWISE_XOR function.
+/** \brief Apply a BITWISE_XOR function.
  *
  * This function XOR two numbers and saves the result in the 3rd position.
  *
@@ -1589,6 +1629,7 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
 {
     /* OPTIMIZATION_FUNCTION_ADD            */ OPTIMIZER_FUNC(ADD),
     /* OPTIMIZATION_FUNCTION_BITWISE_AND    */ OPTIMIZER_FUNC(BITWISE_AND),
+    /* OPTIMIZATION_FUNCTION_BITWISE_NOT    */ OPTIMIZER_FUNC(BITWISE_NOT),
     /* OPTIMIZATION_FUNCTION_BITWISE_OR     */ OPTIMIZER_FUNC(BITWISE_OR),
     /* OPTIMIZATION_FUNCTION_BITWISE_XOR    */ OPTIMIZER_FUNC(BITWISE_XOR),
     /* OPTIMIZATION_FUNCTION_COMPARE        */ OPTIMIZER_FUNC(COMPARE),

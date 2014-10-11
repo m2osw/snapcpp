@@ -59,6 +59,14 @@ optimization_optimize_t const g_optimizer_optimize_bitwise_and_1_2_0[] =
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_bitwise_not_1_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_BITWISE_NOT,
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_bitwise_or_1_2_0[] =
 {
     {
