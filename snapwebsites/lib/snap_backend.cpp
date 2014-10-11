@@ -127,7 +127,7 @@ void snap_backend::udp_monitor::run()
             if( r < 1 || r >= static_cast<int>(sizeof(buf) - 1) )
             {
                 perror("udp_monitor::run(): f_udp_signal->timed_recv():");
-                SNAP_LOG_FATAL() << "error: an error occurred in the UDP recv() call, returned size: " << r;
+                SNAP_LOG_FATAL("snap_backend::udp_monitor::run(): an error occurred in the UDP recv() call, returned size: ")(r);
                 f_error = true;
                 break;
             }
@@ -299,7 +299,7 @@ void snap_backend::run_backend()
         auto p_server = f_server.lock();
         if(!p_server)
         {
-            throw snap_child_exception_no_server("snap_backend::process(): The p_server weak pointer could not be locked");
+            throw snap_child_exception_no_server("snap_backend::run_backend(): The p_server weak pointer could not be locked");
         }
 
         // verify that the "sites" table exists
@@ -308,7 +308,7 @@ void snap_backend::run_backend()
         {
             // the whole table is still missing after 5 minutes!
             // in this case it is an error instead of a fatal error
-            SNAP_LOG_ERROR("The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend!");
+            SNAP_LOG_ERROR("snap_backend::run_backend(): The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend!");
 
             // this applies to all the backends so we can as well exit
             // immediately instead of testing again and again
@@ -352,15 +352,15 @@ void snap_backend::run_backend()
     }
     catch( snap_exception const& except )
     {
-        SNAP_LOG_FATAL("snap_backend::process(): exception caught: ")(except.what());
+        SNAP_LOG_FATAL("snap_backend::run_backend(): exception caught: ")(except.what());
     }
     catch( std::exception const& std_except )
     {
-        SNAP_LOG_FATAL("snap_backend::process(): exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        SNAP_LOG_FATAL("snap_backend::run_backend(): exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
     }
     catch( ... )
     {
-        SNAP_LOG_FATAL("snap_backend::process(): unknown exception caught!");
+        SNAP_LOG_FATAL("snap_backend::run_backend(): unknown exception caught!");
     }
     exit(1);
     NOTREACHED();
@@ -450,7 +450,7 @@ void snap_backend::process_backend_uri(QString const& uri)
     auto p_server( f_server.lock() );
     if(!p_server)
     {
-        throw snap_logic_exception("server pointer is nullptr");
+        throw snap_logic_exception("snap_backend::process_backend_uri(): server pointer is NULL");
     }
 
     QString const action(p_server->get_parameter("__BACKEND_ACTION"));
@@ -461,7 +461,7 @@ void snap_backend::process_backend_uri(QString const& uri)
 #ifdef DEBUG
         if(actions.contains("list"))
         {
-            throw snap_logic_exception(QString("plugin \"%1\" makes use of an action named \"list\" which is reserved to the system")
+            throw snap_logic_exception(QString("snap_backend::process_backend_uri(): plugin \"%1\" makes use of an action named \"list\" which is reserved to the system")
                                                 .arg(dynamic_cast<plugins::plugin *>(actions["list"])->get_plugin_name()));
         }
 #endif
@@ -496,8 +496,9 @@ void snap_backend::process_backend_uri(QString const& uri)
         }
         else
         {
-            SNAP_LOG_ERROR() << "error: unknown action \"" << action << "\"";
+            SNAP_LOG_ERROR("snap_backend::process_backend_uri(): unknown action \"")(action)("\"");
             exit(1);
+            NOTREACHED();
         }
     }
     else
