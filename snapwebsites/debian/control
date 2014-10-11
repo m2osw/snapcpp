@@ -6,10 +6,10 @@ Build-Depends: debhelper, cmake,
     libmagic-dev, libmagick++-dev (>= 6.7.7.10-6ubuntu3),
     libqtwebkit-dev, libboost-dev, libxml2-utils, python-pip (>= 1.4.1-2),
     libzipios++-dev (>= 0.1.5.10m2osw1~saucy), zip,
-    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.13~trusty),
-    libcontrolledvars-dev (>= 1.4.15.13~trusty), libadvgetopt-dev (>= 1.0.15.13~trusty),
-    libtld-dev (>= 1.4.20.13~trusty), libqtcassandra-dev (>= 0.5.20.13~trusty),
-    libqtserialization-dev (>= 0.1.16.13~trusty), closure-linter (>= 2.3.13)
+    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.16~saucy),
+    libcontrolledvars-dev (>= 1.4.15.16~saucy), libadvgetopt-dev (>= 1.0.15.16~saucy),
+    libtld-dev (>= 1.4.20.16~saucy), libqtcassandra-dev (>= 0.5.20.16~saucy),
+    libqtserialization-dev (>= 0.1.16.16~saucy), closure-linter (>= 2.3.13)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
