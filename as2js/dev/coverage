@@ -64,10 +64,11 @@ then
     echo "Finished running the tests on `date`" >>test_log.txt
 else
     # brief test while working on a specific test
-    #BUILD/tests/test_as2js
+    BUILD/tests/test_as2js
+    #BUILD/tests/test_as2js As2JsParserUnitTests::test_parser_function
     #BUILD/tests/test_as2js As2JsLexerUnitTests
     #BUILD/tests/test_as2js As2JsNodeUnitTests
-    BUILD/tests/test_as2js As2JsOptimizerUnitTests
+    #BUILD/tests/test_as2js As2JsOptimizerUnitTests
     # just in case, remove the log file if there is one
     rm -f test_log.txt
 fi
@@ -95,26 +96,32 @@ genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.inf
 
 end_date=`date`
 
+# Statistics
+echo "<html><head><title>as2js $VERSION statistics</title></head><body>" >html/statistics.html
+echo "<h3>Statistics of the as2js $VERSION code</h3><pre>" >>html/statistics.html
+cloc $SOURCE/include/ $SOURCE/lib/ $SOURCE/src/ >>html/statistics.html
+echo "</pre><h3>Statistics of the as2js $VERSION tests</h3><pre>" >>html/statistics.html
+cloc $SOURCE/tests/ >>html/statistics.html
+echo "</pre><h3>Statistics of as2js scripts $VERSION</h3><pre>" >>html/statistics.html
+cloc $SOURCE/scripts/ >>html/statistics.html
+echo "</pre></body></html>" >>html/statistics.html
+
+# Test output (Logs)
+echo "<html><head><title>as2js $VERSION test logs</title></head><body><h3>Logs for the as2js $VERSION tests</h3><p>Tests started on $start_date and finished on $end_date</p><pre>" >html/test_log.html
+if -f test_log.txt
+then
+    # If test_log.txt does not exist, the user got the logs in the
+    # console already
+    cat test_log.txt >>html/test_log.html
+fi
+echo "</pre></body></html>" >>html/test_log.html
+
+
 if test -f test_log.txt
 then
     echo "***"
-    echo "*** publication to lcov.as2js.org (`date`)"
+    echo "*** publication to lcov.as2js.org ($end_date)"
     echo "***"
-
-    # Statistics
-    echo "<html><head><title>as2js $VERSION statistics</title></head><body>" >html/statistics.html
-    echo "<h3>Statistics of the as2js $VERSION code</h3><pre>" >>html/statistics.html
-    cloc $SOURCE/include/ $SOURCE/lib/ $SOURCE/src/ >>html/statistics.html
-    echo "</pre><h3>Statistics of the as2js $VERSION tests</h3><pre>" >>html/statistics.html
-    cloc $SOURCE/tests/ >>html/statistics.html
-    echo "</pre><h3>Statistics of as2js scripts $VERSION</h3><pre>" >>html/statistics.html
-    cloc $SOURCE/scripts/ >>html/statistics.html
-    echo "</pre></body></html>" >>html/statistics.html
-
-    # Test output (Logs)
-    echo "<html><head><title>as2js $VERSION test logs</title></head><body><h3>Logs for the as2js $VERSION tests</h3><p>Tests started on $start_date and finished on $end_date</p><pre>" >html/test_log.html
-    cat test_log.txt >>html/test_log.html
-    echo "</pre></body></html>" >>html/test_log.html
 
     # For publication, if that directory does not exist, you probably don't
     # have a website to display this data

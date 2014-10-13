@@ -1463,6 +1463,80 @@
         }
     },
 
+    // TODO: add a test in the parser to detect that ~~ becomes ~ and ~
+    // ~~~a => ~a
+    {
+        //"verbose": true,
+        "name": "~~~(a + b) -> ~(a +b)",
+        "program": "~~~(a + b);",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_NOT",
+                            "children": [
+                                {
+                                    "node type": "BITWISE_NOT",
+                                    "children": [
+                                        {
+                                            "node type": "BITWISE_NOT",
+                                            "children": [
+                                                {
+                                                    "node type": "ADD",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "a"
+                                                        },
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "b"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_NOT",
+                            "children": [
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "b"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
     // ~number => number
     {
         //"verbose": true,
@@ -1536,6 +1610,80 @@
                         {
                             "node type": "INT64",
                             "integer": 0xFFFFFFFF
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // TODO: move that test to the parser?
+    // !~a => !~a -- no optimization, but breaks the NOT MATCH in LOGICAL NOT + BITWISE NOT
+    {
+        //"verbose": true,
+        "name": "!~(a + b) -> !~(a +b)",
+        "program": "!~(a + b);",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "BITWISE_NOT",
+                                    "children": [
+                                        {
+                                            "node type": "ADD",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                },
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "b"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_NOT",
+                            "children": [
+                                {
+                                    "node type": "BITWISE_NOT",
+                                    "children": [
+                                        {
+                                            "node type": "ADD",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "a"
+                                                },
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "b"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 }

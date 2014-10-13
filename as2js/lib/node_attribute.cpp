@@ -38,6 +38,13 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 #include    "as2js/message.h"
 
+/** \file
+ * \brief Implementation of the Node class attributes.
+ *
+ * Node objects support a large set of attributes. Attributes can be added
+ * and removed from a Node. Some attributes are mutually exclusive.
+ */
+
 
 namespace as2js
 {
@@ -50,17 +57,100 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
+/** \brief Anonymous namespace for attribute internal definitions.
+ *
+ * The Node attributes are organized in groups. In most cases, only one
+ * attribute from the same group can be set at a time. Trying to set
+ * another attribute from the same group generates an error.
+ *
+ * The tables defined here are used to determine whether attributes are
+ * mutually exclusive.
+ *
+ * Note that such errors are considered to be bugs in the compiler. The
+ * implementation needs to be fixed if such errors are detected.
+ */
 namespace
 {
 
+/** \brief List of attribute groups.
+ *
+ * The following enumeration defines a set of group attributes. These
+ * are used internally to declare the list of attribute groups.
+ *
+ * \todo
+ * Add a class name to this enumeration, even if private, it still
+ * makes it a lot safer.
+ */
 enum
 {
+    /** \brief Conditional Compilation Group.
+     *
+     * This group includes the TRUE and FALSE attributes. A statement
+     * can be marked as TRUE (compiled in) or FALSE (left out). A
+     * statement cannot at the same time be TRUE and FALSE.
+     */
     ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION,
+
+    /** \brief Function Type Group.
+     *
+     * Functions can be marked as ABSTRACT, CONSTRUCTOR, INLINE, NATIVE,
+     * STATIC, and VIRTUAL. This group is used to detect whether a function
+     * is marked by more than one of these attributes.
+     *
+     * Note that this group has exceptions:
+     *
+     * \li A NATIVE CONSTRUCTOR is considered valid.
+     * \li A NATIVE VIRTUAL is considered valid.
+     * \li A NATIVE STATIC is considered valid.
+     * \li A STATIC INLINE is considered valid.
+     */
     ATTRIBUTES_GROUP_FUNCTION_TYPE,
+
+    /** \brief Function Contract Group.
+     *
+     * The function contract includes the REQUIRE ELSE and the
+     * ENSURE THEN, both of which cannot be assigned to one
+     * function simultaneously.
+     *
+     * Contracts are taken from the Effel language.
+     */
     ATTRIBUTES_GROUP_FUNCTION_CONTRACT,
+
+    /** \brief Switch Type Group.
+     *
+     * A 'switch' statement can be given a type: FOREACH, NOBREAK,
+     * or AUTOBREAK. Only one type can be specified.
+     *
+     * The AUTOBREAK idea comes from languages such as Ada and
+     * Visual BASIC which always break at the end of a case.
+     */
     ATTRIBUTES_GROUP_SWITCH_TYPE,
+
+    /** \brief Member Visibility Group.
+     *
+     * Variable and function members defined in a class can be given a
+     * specific visibility of PUBLIC, PRIVATE, or PROTECTED.
+     *
+     * All the visibilities are mutually exclusive.
+     *
+     * Note that the visibility capability can either use a direct
+     * attribute definition or a 'label' definition (as in C++).
+     * The 'label' definition is ignored when a direct attribute is
+     * used, in other words, the visibility can be contradictory in
+     * that case and the compiler still accepts the entry (TBD.)
+     */
     ATTRIBUTES_GROUP_MEMBER_VISIBILITY
 };
+
+
+/** \brief Table of group names.
+ *
+ * This table defines a set of names for the attribute groups. These
+ * are used whenever an error is generated in link with that given
+ * group.
+ *
+ * The index makes use of the group enumeration values.
+ */
 char const *g_attribute_groups[] =
 {
     [ATTRIBUTES_GROUP_CONDITIONAL_COMPILATION] = "true and false",
@@ -80,13 +170,19 @@ char const *g_attribute_groups[] =
  * of the specified attribute.
  *
  * The function verifies that the specified attribute (\p a) corresponds to
- * the type of data you are dealing with.
+ * the type of data you are dealing with. If not, an exception is raised.
  *
  * If the attribute was never set, this function returns false.
+ *
+ * \note
+ * All attributes are always considered false by default.
  *
  * \param[in] a  The attribute to retrieve.
  *
  * \return true if the attribute was set, false otherwise.
+ *
+ * \sa set_attribute()
+ * \sa verify_attribute()
  */
 bool Node::get_attribute(attribute_t a) const
 {
@@ -97,14 +193,18 @@ bool Node::get_attribute(attribute_t a) const
 
 /** \brief Set an attribute.
  *
- * This function sets the specified attribute \p a to the specified value \p v
- * in this Node object.
+ * This function sets the specified attribute \p a to the specified value
+ * \p v in this Node object.
  *
  * The function verifies that the specified attribute (\p a) corresponds to
  * the type of data you are dealing with.
  *
  * \param[in] a  The flag to set.
  * \param[in] v  The new value for the flag.
+ *
+ * \sa get_attribute()
+ * \sa verify_attribute()
+ * \sa verify_exclusive_attributes()
  */
 void Node::set_attribute(attribute_t a, bool v)
 {
@@ -124,12 +224,24 @@ void Node::set_attribute(attribute_t a, bool v)
 }
 
 
-/** \brief Verify that f corresponds to the data type.
+/** \brief Verify that \p a corresponds to the Node type.
  *
- * This function verifies that f corresponds to a valid flag according
- * to the type of this Node object.
+ * This function verifies that \p a corresponds to a valid attribute
+ * according to the type of this Node object.
  *
- * \param[in] a  The flag or attribute to check.
+ * \note
+ * At this point attributes can be assigned to any type of node
+ * exception a NODE_PROGRAM which only accepts the NODE_ATTR_DEFINED
+ * attribute.
+ *
+ * \exception exception_internal_error
+ * If the attribute is not valid for this node type,
+ * then this exception is raised.
+ *
+ * \param[in] a  The attribute to check.
+ *
+ * \sa set_attribute()
+ * \sa get_attribute()
  */
 void Node::verify_attribute(attribute_t a) const
 {
@@ -212,9 +324,19 @@ void Node::verify_attribute(attribute_t a) const
  * This function is not called if you clear an attribute since in that
  * case the default applies.
  *
+ * When attributes are found to be in conflict, it is not an internal
+ * error, so instead the function generates an error message and the
+ * function returns false. This means the compiler may end up generating
+ * more errors than one might want to get.
+ *
+ * \exception exception_internal_error
+ * This exception is raised whenever the parameter \p a is invalid.
+ *
  * \param[in] a  The attribute being set.
  *
- * \return true if the flags are not in conflict.
+ * \return true if the attributes are not in conflict.
+ *
+ * \sa set_attribute()
  */
 bool Node::verify_exclusive_attributes(attribute_t a) const
 {

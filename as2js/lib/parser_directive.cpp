@@ -318,6 +318,7 @@ void Parser::directive(Node::pointer_t& node)
         case Node::node_t::NODE_REGULAR_EXPRESSION:
         case Node::node_t::NODE_RETURN:
         case Node::node_t::NODE_SEMICOLON: // annotated empty statements are not allowed
+        case Node::node_t::NODE_SMART_MATCH: // TBD?
         case Node::node_t::NODE_STRING:
         case Node::node_t::NODE_SUBTRACT:
         case Node::node_t::NODE_SUPER:    // will accept commas too even in expressions
@@ -579,6 +580,8 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_OPEN_PARENTHESIS:
     case Node::node_t::NODE_OPEN_SQUARE_BRACKET:
     case Node::node_t::NODE_BITWISE_NOT:
+    case Node::node_t::NODE_SMART_MATCH: // if here, need to be broken up to ~ and ~
+    case Node::node_t::NODE_NOT_MATCH: // if here, need to be broken up to ! and ~
         expression(directive_node);
         break;
 
@@ -653,7 +656,6 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_MODULO:
     case Node::node_t::NODE_MULTIPLY:
     case Node::node_t::NODE_NOT_EQUAL:
-    case Node::node_t::NODE_NOT_MATCH:
     case Node::node_t::NODE_POWER:
     case Node::node_t::NODE_RANGE:
     case Node::node_t::NODE_REST:
@@ -663,7 +665,6 @@ void Parser::directive(Node::pointer_t& node)
     case Node::node_t::NODE_SHIFT_LEFT:
     case Node::node_t::NODE_SHIFT_RIGHT:
     case Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
-    case Node::node_t::NODE_SMART_MATCH:
     case Node::node_t::NODE_STRICTLY_EQUAL:
     case Node::node_t::NODE_STRICTLY_NOT_EQUAL:
     case Node::node_t::NODE_VARIABLE:

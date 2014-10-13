@@ -38,6 +38,20 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 
 
+/** \file
+ * \brief Compare two nodes against each others.
+ *
+ * This function is used to compare two nodes against each others. The
+ * compare is expected to return a compare_t enumeration value.
+ *
+ * At this time, the implementation only compares basic literals (i.e.
+ * integers, floating points, strings, Booleans, null, undefined.)
+ *
+ * \todo
+ * Implement a compare of object and array literals.
+ */
+
+
 namespace as2js
 {
 
@@ -55,8 +69,14 @@ namespace as2js
  * This function returns the result of comparing two nodes against each
  * others. The result is one of the compare_t values.
  *
- * If the function is used to compare nodes that are not literals,
- * then it returns an error.
+ * At this time, if the function is used to compare nodes that are not
+ * literals, then it returns COMPARE_ERROR.
+ *
+ * The function may return COMPARE_UNORDERED in strict mode or when
+ * comparing a value against a NaN.
+ *
+ * As per the ECMAScript refence, strings are compared as is in binary
+ * mode. We do not make use of Unicode or take the locale in account.
  *
  * \note
  * The compare is expected to work as defined in ECMAScript 5 (see 11.8.5,

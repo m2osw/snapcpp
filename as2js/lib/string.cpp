@@ -39,6 +39,17 @@ SOFTWARE.
 #include    <limits>
 
 
+/** \file
+ * \brief String implementation.
+ *
+ * We use the std::basic_string to create our own string using an int32_t
+ * for each character. This allows us to have full UTF-32 Unicode characters.
+ *
+ * This function redefines a few functions that the base string library
+ * does not offer because of the special character type we use.
+ */
+
+
 namespace as2js
 {
 
@@ -60,8 +71,8 @@ String::String()
  * input string.
  *
  * The input is considered to be ISO-8859-1 and thus it gets copied in
- * the string as is. If you have UTF-8 data, make sure to use the from_utf8()
- * function instead.
+ * the string as is (see the from_char() function.) If you have UTF-8
+ * data, make sure to use the from_utf8() function instead.
  *
  * Note that we cannot include '\0' characters in our strings. This function
  * stops at the first null terminator no matter what.
@@ -70,8 +81,12 @@ String::String()
  * The \p str pointer can be set to nullptr in which case the string is
  * considered empty.
  *
- * \param[in] str  A string, if not null terminated, make sure to define the size.
+ * \param[in] str  A string, if not null terminated, make sure to define
+ *                 the \p len parameter.
  * \param[in] len  The length of the string, if -1, expect a '\0'.
+ *
+ * \sa from_utf8()
+ * \sa from_char()
  */
 String::String(char const *str, int len)
     : basic_string()
@@ -85,7 +100,7 @@ String::String(char const *str, int len)
  * This function creates a string and initializes it with the specified
  * input string.
  *
- * The input is considered to be UCS-4 or UTF-16 depending on the width of
+ * The input is considered to be UTF-32 or UTF-16 depending on the width of
  * the wchar_t type.
  *
  * Note that we cannot include '\0' characters in our strings. This function
@@ -95,8 +110,11 @@ String::String(char const *str, int len)
  * The \p str pointer can be set to nullptr in which case the string is
  * considered empty.
  *
- * \param[in] str  A string, if not null terminated, make sure to define the size.
+ * \param[in] str  A string, if not null terminated, make sure to define
+ *                 the \p len parameter.
  * \param[in] len  The length of the string, if -1, expect a '\0'.
+ *
+ * \sa from_wchar()
  */
 String::String(wchar_t const *str, int len)
     : basic_string()
@@ -110,7 +128,7 @@ String::String(wchar_t const *str, int len)
  * This function creates a string and initializes it with the specified
  * input string.
  *
- * The input is considered to be UCS-4 and thus it gets copied as is.
+ * The input is considered to be UTF-32 and thus it gets copied as is.
  *
  * Note that we cannot include '\0' characters in our strings. This function
  * stops at the first null terminator no matter what.
@@ -119,8 +137,11 @@ String::String(wchar_t const *str, int len)
  * The \p str pointer can be set to nullptr in which case the string is
  * considered empty.
  *
- * \param[in] str  A string, if not null terminated, make sure to define the size.
+ * \param[in] str  A string, if not null terminated, make sure to define
+ *                 the \p len parameter.
  * \param[in] len  The length of the string, if -1, expect a '\0'.
+ *
+ * \sa from_as_char()
  */
 String::String(as_char_t const *str, int len)
     : basic_string()
@@ -133,10 +154,13 @@ String::String(as_char_t const *str, int len)
  *
  * This function copies str in this String.
  *
- * The input string is taken as ISO-8859-1. If it uses another format,
- * please make sure to use the correct function.
+ * The input is considered to be ISO-8859-1 and thus it gets copied in
+ * the string as is (see the from_char() function.) If you have UTF-8
+ * data, make sure to use the from_utf8() function instead.
  *
  * \param[in] str  The input string to copy in this String.
+ *
+ * \sa from_char()
  */
 String::String(std::string const& str)
     : basic_string()
@@ -149,10 +173,13 @@ String::String(std::string const& str)
  *
  * This function copies str in this String.
  *
- * The input string is taken as UTF-16 and as such converts the surrogates
- * (0xD800 to 0xDFFF) to UCS-4 characters as expected.
+ * The input string is taken as UTF-16 if wchar_t is 2 bytes and as
+ * such converts the surrogates (0xD800 to 0xDFFF) to UTF-32 characters
+ * as expected. If wchar_t is 4 bytes, the string is copied as is.
  *
  * \param[in] str  The input string to copy in this String.
+ *
+ * \sa from_wchar()
  */
 String::String(std::wstring const& str)
     : basic_string()
@@ -165,7 +192,7 @@ String::String(std::wstring const& str)
  *
  * This function copies str in this String.
  *
- * The input string is taken as UCS-4 and copy as is in its entirety.
+ * The input string is taken as UTF-32 and copied as is in its entirety.
  *
  * \param[in] str  The input string to copy in this String.
  */
@@ -184,6 +211,8 @@ String::String(std::basic_string<as_char_t> const& str)
  * \param[in] str  The string to copy in this String.
  *
  * \return A reference to this string.
+ *
+ * \sa from_char()
  */
 String& String::operator = (char const *str)
 {
@@ -195,12 +224,14 @@ String& String::operator = (char const *str)
 /** \brief Copy str in this String.
  *
  * This function copies str in this String. The string is viewed as
- * UTF-16. If another format is expected, make sure to use the
- * proper function.
+ * UTF-16 if wchar_t is 2 bytes, and UTF-32 if wchar_t is 4 bytes.
+ * If another format is expected, make sure to use the proper function.
  *
  * \param[in] str  The string to copy in this String.
  *
  * \return A reference to this string.
+ *
+ * \sa from_wchar()
  */
 String& String::operator = (wchar_t const *str)
 {
@@ -218,6 +249,8 @@ String& String::operator = (wchar_t const *str)
  * \param[in] str  The string to copy in this String.
  *
  * \return A reference to this string.
+ *
+ * \sa from_char()
  */
 String& String::operator = (std::string const& str)
 {
@@ -229,12 +262,14 @@ String& String::operator = (std::string const& str)
 /** \brief Copy str in this String.
  *
  * This function copies str in this String. The string is viewed as
- * UTF-16. If another format is expected, make sure to use the
- * proper function.
+ * UTF-16 if wchar_t is 2 bytes, and UTF-32 if wchar_t is 4 bytes.
+ * If another format is expected, make sure to use the proper function.
  *
  * \param[in] str  The string to copy in this String.
  *
  * \return A reference to this string.
+ *
+ * \sa from_wchar()
  */
 String& String::operator = (std::wstring const& str)
 {
@@ -246,7 +281,7 @@ String& String::operator = (std::wstring const& str)
 /** \brief Copy str in this String.
  *
  * This function copies str in this String. The string is viewed as
- * UCS-4. If another format is expected, make sure to use the
+ * UTF-32. If another format is expected, make sure to use the
  * proper function.
  *
  * \param[in] str  The string to copy in this String.
@@ -281,14 +316,14 @@ String& String::operator += (char const *str)
 /** \brief Append str to this String.
  *
  * This function appends str to this String. The string is viewed as
- * UTF-16. If another format is expected, make sure to use the
- * proper function. Note that under Operating Systems where wchar_t
- * is 4 bytes, the input is UTF-32, although if a pair of valid surrogates
- * are found, they still get converted.
+ * UTF-16 if wchar_t is 2 bytes, and UTF-32 if wchar_t is 4 bytes.
+ * If another format is expected, make sure to use the proper function.
  *
  * \param[in] str  The string to append to this String.
  *
  * \return A reference to this string.
+ *
+ * \sa from_wchar()
  */
 String& String::operator += (wchar_t const *str)
 {
@@ -336,8 +371,8 @@ String& String::operator += (std::string const& str)
 /** \brief Append str to this String.
  *
  * This function appends str to this String. The string is viewed as
- * UTF-16. If another format is expected, make sure to use the
- * proper function.
+ * UTF-16 if wchar_t is 2 bytes, and UTF-32 if wchar_t is 4 bytes.
+ * If another format is expected, make sure to use the proper function.
  *
  * \param[in] str  The string to append to this String.
  *
@@ -354,7 +389,7 @@ String& String::operator += (std::wstring const& str)
 /** \brief Append str to this String.
  *
  * This function append str to this String. The string is viewed as
- * UCS-4. If another format is expected, make sure to use the
+ * UTF-32. If another format is expected, make sure to use the
  * proper function.
  *
  * \param[in] str  The string to append to this String.
@@ -371,7 +406,7 @@ String& String::operator += (std::basic_string<as_char_t> const& str)
 /** \brief Append c to this String.
  *
  * This function append c to this String. The character is viewed as
- * UCS-4. If another format is expected, make sure to use the
+ * UTF-32. If another format is expected, make sure to use the
  * proper function.
  *
  * \param[in] c  The character to append to this String.
@@ -405,12 +440,14 @@ String& String::operator += (char const c)
 /** \brief Append c to this String.
  *
  * This function append c to this String. The character is viewed as
- * UCS-4. If another format is expected, make sure to use the
+ * UTF-32. If another format is expected, make sure to use the
  * proper function.
  *
  * \todo
  * Under MS-Windows the character is viewed as UTF-16, only we do
- * not properly manage surrogates at this point.
+ * not properly manage surrogates in this case (i.e. if you just
+ * added another surrogate, concatenate both surrogates in one
+ * UTF-32 character.)
  *
  * \param[in] c  The character to append to this String.
  *
@@ -495,9 +532,10 @@ String::conversion_result_t String::from_char(char const *str, int len)
  * \param[in] len  The maximum number of characters to copy, if -1, copy
  *                 up to the next null ('\0') character.
  *
- * \return STRING_INVALID: if the resulting character is not a valid UTF-32 character,
+ * \return STRING_INVALID: if a character is not a valid UTF-32 character,
  *         STRING_BAD: if the input is invalid,
- *         STRING_END: could not be converted (not enough data for last character),
+ *         STRING_END: could not be converted (not enough data for last
+ *                     surrogate character),
  *         STRING_GOOD: the new string is valid.
  */
 String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
@@ -573,7 +611,7 @@ String::conversion_result_t String::from_wchar(wchar_t const *str, int len)
 }
 
 
-/** \brief Copy a as_char_t string to this String.
+/** \brief Copy an as_char_t string to this String.
  *
  * This function copies an as_char_t string to this String. Since an
  * as_char_t string has the same character type as a String, this copy
@@ -647,9 +685,11 @@ String::conversion_result_t String::from_as_char(as_char_t const *str, int len)
  * \param[in] len  The maximum number of characters to copy, if -1, copy
  *                 up to the next null ('\0') character.
  *
- * \return STRING_INVALID: if the resulting character is not a valid UTF-32 character,
+ * \return STRING_INVALID: if the resulting character is not a valid
+ *                         UTF-32 character,
  *         STRING_BAD: if the input is invalid,
- *         STRING_END: could not be converted (not enough data for last character),
+ *         STRING_END: could not be converted (not enough data for last
+ *                     character),
  *         STRING_GOOD: the new string is valid.
  */
 String::conversion_result_t String::from_utf8(char const *str, int len)
@@ -746,7 +786,7 @@ String::conversion_result_t String::from_utf8(char const *str, int len)
  *
  * This function compares an ISO-8859-1 string against this String.
  * If you have a UTF-8 string, make sure to use from_utf8() first
- * and then compare two String's against each other.
+ * and then compare the two String's against each other.
  *
  * \param[in] str  The string to compare as ISO-8859-1.
  *
@@ -763,7 +803,7 @@ bool String::operator == (char const *str) const
  *
  * This function compares an ISO-8859-1 string against a String.
  * If you have a UTF-8 string, make sure to use from_utf8() first
- * and then compare two String's against each other.
+ * and then compare the two String's against each other.
  *
  * \param[in] str  The string to compare as ISO-8859-1.
  * \param[in] string  The String to compare with.
@@ -781,7 +821,7 @@ bool operator == (char const *str, String const& string)
  *
  * This function compares an ISO-8859-1 string against this String.
  * If you have a UTF-8 string, make sure to use from_utf8() first
- * and then compare two String's against each other.
+ * and then compare the two String's against each other.
  *
  * \param[in] str  The string to compare as ISO-8859-1.
  *
@@ -798,7 +838,7 @@ bool String::operator != (char const *str) const
  *
  * This function compares an ISO-8859-1 string against a String.
  * If you have a UTF-8 string, make sure to use from_utf8() first
- * and then compare two String's against each other.
+ * and then compare the two String's against each other.
  *
  * \param[in] str  The string to compare as ISO-8859-1.
  * \param[in] string  The String to compare with.
@@ -828,6 +868,8 @@ bool operator != (char const *str, String const& string)
  * should become obsolete at some point.
  *
  * \return true if the string is considered valid.
+ *
+ * \sa valid_character()
  */
 bool String::valid() const
 {
@@ -845,16 +887,18 @@ bool String::valid() const
 
 /** \brief Check whether a character is considered valid.
  *
- * The UCS-4 type is limited in the code points that can be used. This
+ * The UTF-32 type is limited in the code points that can be used. This
  * function returns true if the code point of \p c is considered valid.
  *
- * Characters in UCS-4 must be defined between 0 and 0x10FFFF inclusive,
+ * Characters in UTF-32 must be defined between 0 and 0x10FFFF inclusive,
  * except for code points 0xD800 to 0xDFFF which are used as surrogate
  * for UTF-16 encoding.
  *
  * \param[in] c  The character to be checked.
  *
  * \return true if c is considered valid.
+ *
+ * \sa valid()
  */
 bool String::valid_character(as_char_t c)
 {
@@ -1003,19 +1047,24 @@ bool String::is_number() const
 }
 
 
-/** \brief Convert a string to a floating point number.
+/** \brief Convert a string to an integer number.
  *
- * This function verifies that the string represents a valid floating
- * point number, if so, it converts it to such and returns the result.
+ * This function verifies that the string represents a valid integer
+ * number, if so, it converts it to such and returns the result.
  *
- * If the string does not represent a valid floating point, then the
- * function returns NaN.
+ * If the string does not represent a valid integer, then the function
+ * should return NaN. Unfortunately, there is not NaN integer. Instead
+ * it will return zero (0) or it will raise an exception.
  *
  * \note
  * When used by the lexer, it should always work since the lexer reads
- * floating points with the same expected syntax.
+ * integers with the same expected syntax.
  *
- * \return The string as a floating point.
+ * \exception exception_internal_error
+ * The string is not empty and it does not represent what is considered
+ * a valid JavaScript integer.
+ *
+ * \return The string converted to an integer.
  */
 Int64::int64_type String::to_int64() const
 {
@@ -1056,6 +1105,10 @@ Int64::int64_type String::to_int64() const
  * If the string does not represent a valid floating point, then the
  * function returns NaN.
  *
+ * \warning
+ * On an empty string, this function returns 0.0 and not NaN as expected
+ * in JavaScript.
+ *
  * \note
  * When used by the lexer, it should always work since the lexer reads
  * floating points with the same expected syntax.
@@ -1080,13 +1133,10 @@ Float64::float64_type String::to_float64() const
 
 /** \brief Check whether the string is considered true.
  *
- * A string that is empty is considered false. A string which is
- * not empty is generally considered true, however, if the string
- * represents the number 0, then it is still considered false.
+ * A string that is empty is considered false. Any other string is
+ * considered true.
  *
- * Note that any number of zeroes can be used: "000" == false.
- *
- * \return true if the string is considered true.
+ * \return true if the string is not empty.
  */
 bool String::is_true() const
 {
@@ -1094,7 +1144,7 @@ bool String::is_true() const
     {
         return false;
     }
-// Not too sure why I picked that up, but the documentation clearly says
+// Not too sure where I picked that up, but the documentation clearly says
 // that an empty string is false, anything else is true...
 //    if(is_int64())
 //    {
@@ -1169,7 +1219,7 @@ ssize_t String::utf8_length() const
  * \note
  * The function skips any character considered invalid. If you want to
  * know whether the resulting UTF-8 string is an exact representation
- * of this String, then call the valid() function.
+ * of this String, then first call the valid() function on the source.
  *
  * \todo
  * This String object is expected to not have any invalid characters
@@ -1233,6 +1283,7 @@ std::string String::to_utf8() const
  */
 std::ostream& operator << (std::ostream& out, String const& str)
 {
+    // Note: under MS-Windows we'd need to use str.to_wchar() instead
     out << str.to_utf8();
     return out;
 }

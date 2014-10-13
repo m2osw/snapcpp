@@ -38,6 +38,28 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 
 
+/** \file
+ * \brief Convert a Node object to another type.
+ *
+ * The conversion functions allow one to convert a certain number of
+ * Node objects from their current type to a different type.
+ *
+ * Most Node cannot be converted to anything else than the UNKNOWN
+ * Node type, which is used to <em>delete</em> a Node. The various
+ * conversion functions defined below let you know what types are
+ * accepted by each function.
+ *
+ * In most cases the conversion functions will return a Boolean
+ * value. If false, then the conversion did not happen. You are
+ * responsible for checking the result and act on it appropriately.
+ *
+ * Although a conversion function, the set_boolean() function is
+ * actually defined in the node_value.cpp file. It is done that way
+ * because it looks very similar to the set_int64(), set_float64(),
+ * and set_string() functions.
+ */
+
+
 namespace as2js
 {
 
@@ -51,15 +73,19 @@ namespace as2js
 
 /** \brief Transform any node to NODE_UNKNOWN
  *
- * This function mark the node as unknown. Absolutely any node can be
- * marked as unknown. It is particularly used by the compiler and
- * optimizer to cancel nodes that they cannot otherwise delete at
+ * This function marks the node as unknown. Absolutely any node can be
+ * marked as unknown. It is specifically used by the compiler and
+ * optimizer to cancel nodes that cannot otherwise be deleted at
  * the time they are working on the tree.
  *
- * All the children of an unknown node are ignored too.
+ * All the children of an unknown node are ignored too (considered
+ * as NODE_UNKNOWN, although they do not all get converted.)
  *
  * To remove all the unknown nodes once the compiler is finished,
  * one can call the clean_tree() function.
+ *
+ * \note
+ * The Node must not be locked.
  */
 void Node::to_unknown()
 {
@@ -74,7 +100,7 @@ void Node::to_unknown()
 
 /** \brief Transform a call in a NODE_AS node.
  *
- * This function transform a node defined as NODE_CALL into a NODE_AS.
+ * This function transforms a node defined as NODE_CALL into a NODE_AS.
  * The special casting syntax looks exactly like a function call. For
  * this reason the parser returns it as such. The compiler, however,
  * can determine whether the function name is really a function name
@@ -85,6 +111,9 @@ void Node::to_unknown()
  *     type ( expression )
  *     expression AS type
  * \endcode
+ *
+ * \note
+ * The Node must not be locked.
  *
  * \todo
  * We will need to verify that this is correct and does not introduce
@@ -112,7 +141,7 @@ bool Node::to_as()
 /** \brief Check whether a node can be converted to Boolean.
  *
  * This function is constant and can be used to see whether a node
- * represent true or false without actually converting the node.
+ * represents true or false without actually converting the node.
  *
  * \li NODE_TRUE -- returned as is
  * \li NODE_FALSE -- returned as is
@@ -120,13 +149,19 @@ bool Node::to_as()
  * \li NODE_UNDEFINED -- returns NODE_FALSE
  * \li NODE_INT64 -- returns NODE_TRUE unless the interger is zero
  *                   in which case NODE_FALSE is returned
- * \li NODE_FLOAT64 -- returns NODE_TRUE unless the floating point is zero
- *                     in which case NODE_FALSE is returned
+ * \li NODE_FLOAT64 -- returns NODE_TRUE unless the floating point is
+ *                     exactly zero in which case NODE_FALSE is returned
  * \li NODE_STRING -- returns NODE_TRUE unless the string is empty in
  *                    which case NODE_FALSE is returned
  * \li Any other node type -- returns NODE_UNDEFINED
  *
+ * Note that in this case we completely ignore the content of a string.
+ * The strings "false", "0.0", and "0" all represent Boolean 'true'.
+ *
  * \return NODE_TRUE, NODE_FALSE, or NODE_UNDEFINED depending on 'this' node
+ *
+ * \sa to_boolean()
+ * \sa set_boolean()
  */
 Node::node_t Node::to_boolean_type_only() const
 {
@@ -162,7 +197,7 @@ Node::node_t Node::to_boolean_type_only() const
 }
 
 
-/** \brief Convert this node to a boolean node.
+/** \brief Convert this node to a Boolean node.
  *
  * This function converts 'this' node to a Boolean node:
  *
@@ -177,7 +212,18 @@ Node::node_t Node::to_boolean_type_only() const
  * \li NODE_STRING -- converted to NODE_TRUE unless the string is empty
  *                    in which case it gets converted to NODE_FALSE
  *
+ * Other input types do not get converted and the function returns false.
+ *
+ * To just test the Boolean value of a node without converting it, call
+ * to_boolean_type_only() instead.
+ *
+ * \note
+ * The Node must not be locked.
+ *
  * \return true if the conversion succeeds.
+ *
+ * \sa to_boolean_type_only()
+ * \sa set_boolean()
  */
 bool Node::to_boolean()
 {
@@ -220,11 +266,24 @@ bool Node::to_boolean()
 }
 
 
-/** \brief Convert a member or assignment to a function call.
+/** \brief Convert a getter or setter to a function call.
  *
- * This function is used to convert a getter to a function call.
+ * This function is used to convert a getter ot a setter to
+ * a function call.
+ *
+ * A read from a member variable is a getter if the name of
+ * the field was actually defined as a 'get' function.
+ *
+ * A write to a member variable is a setter if the name of
+ * the field was actually defined as a 'set' function.
  *
  * \code
+ *     class foo_class
+ *     {
+ *         function get field() { ... }
+ *         function set field() { ... }
+ *     };
+ *
  *     // Convert a getter to a function call
  *     a = foo.field;
  *     a = foo.field_getter();
@@ -236,6 +295,13 @@ bool Node::to_boolean()
  *
  * The function returns false if 'this' node is not a NODE_MEMBER or
  * a NODE_ASSIGNMENT.
+ *
+ * \note
+ * This function has no way of knowing what's what.
+ * It just changes the f_type parameter of this node.
+ *
+ * \note
+ * The Node must not be locked.
  *
  * \return true if the conversion succeeded.
  */
@@ -266,6 +332,9 @@ bool Node::to_call()
  * \li NODE_PUBLIC -- "public"
  *
  * At this point this is used to transform these keywords in labels.
+ *
+ * \note
+ * The Node must not be locked.
  *
  * \return true if the conversion succeeded.
  */
@@ -306,8 +375,9 @@ bool Node::to_identifier()
 /** \brief Convert this node to a NODE_INT64.
  *
  * This function converts the node to an integer number,
- * just like JavaScript would do. This means converting the following
- * type of nodes:
+ * just like JavaScript would do (outside of the fact that
+ * JavaScript only supports floating points...) This means
+ * converting the following type of nodes as specified:
  *
  * \li NODE_INT64 -- no conversion
  * \li NODE_FLOAT64 -- convert to integer
@@ -318,15 +388,18 @@ bool Node::to_identifier()
  *                    not possible in an integer)
  * \li NODE_UNDEFINED -- convert to 0 (NaN is not possible in an integer)
  *
- * This function does not convert strings. You may use the to_number()
- * to get NODE_STRING converted although it will convert it to a
- * floating pointer number instead. To still get an integer call both
- * functions in a row:
+ * This function converts strings. If the string represents a
+ * valid integer, convert to that integer. In this case the full 64 bits
+ * are supported. If the string represents a floating point number, then
+ * the number is first converted to a floating point, then cast to an
+ * integer using the floor() function. If the floating point is too large
+ * for the integer, then the maximum or minimum number are used as the
+ * result. String that do not represent a number (integer or floating
+ * point) are transformed to zero (0). This is a similar behavior to
+ * the 'undefined' conversion.
  *
- * \code
- *    node->to_number();
- *    node->to_int64();
- * \endcode
+ * \note
+ * The Node must not be locked.
  *
  * \return true if the conversion succeeded.
  */
@@ -390,7 +463,7 @@ bool Node::to_int64()
 
 /** \brief Convert this node to a NODE_FLOAT64.
  *
- * This function converts the node to a floatingp point number,
+ * This function converts the node to a floating point number,
  * just like JavaScript would do. This means converting the following
  * type of nodes:
  *
@@ -402,8 +475,13 @@ bool Node::to_int64()
  * \li NODE_STRING -- convert to float if valid, otherwise NaN
  * \li NODE_UNDEFINED -- convert to NaN
  *
- * This function does not convert strings. You may use the to_number()
- * to get NODE_STRING converted.
+ * This function converts strings. If the string represents an integer,
+ * it will be converted to the nearest floating point number. If the
+ * string does not represent a number (including an empty string),
+ * then the float is set to NaN.
+ *
+ * \note
+ * The Node must not be locked.
  *
  * \return true if the conversion succeeded.
  */
@@ -452,6 +530,9 @@ bool Node::to_float64()
  *
  * This function converts a NODE_IDENTIFIER node to a NODE_LABEL node.
  *
+ * \note
+ * The Node must not be locked.
+ *
  * \return true if the conversion succeeded.
  */
 bool Node::to_label()
@@ -476,7 +557,15 @@ bool Node::to_label()
 
 /** \brief Convert this node to a number.
  *
- * This function converts the node to a number just like JavaScript would do.
+ * This function converts the node to a number pretty much
+ * like JavaScript would do, except that literals that represent
+ * an exact integers are converted to an integer instead of a
+ * floating point.
+ *
+ * If the node already is an integer or a floating point, then
+ * no conversion takes place, but it is considered valid and
+ * thus the function returns true.
+ *
  * This means converting the following type of nodes:
  *
  * \li NODE_INT64 -- no conversion
@@ -487,6 +576,13 @@ bool Node::to_label()
  * \li NODE_UNDEFINED -- convert to NaN (FLOAT64)
  * \li NODE_STRING -- converted to a float, NaN if not a valid float,
  *                    however, zero if empty.
+ *
+ * This function converts strings to a floating point, even if the
+ * value represents an integer. It is done that way because JavaScript
+ * expects a 'number' and that is expected to be a floating point.
+ *
+ * \note
+ * The Node must not be locked.
  *
  * \return true if the conversion succeeded.
  */
@@ -518,8 +614,11 @@ bool Node::to_number()
 
     case node_t::NODE_STRING:
         // JavaScript tends to force conversions from stings to numbers
-        // when possible (actually it always is, only strings often become
-        // NaN as a result)
+        // when possible (actually it nearly always is, and strings
+        // often become NaN as a result... the '+' and '+=' operators
+        // are an exception; also relational operators do not convert
+        // strings if both the left hand side and the right hand side
+        // are strings.)
         f_type = node_t::NODE_FLOAT64;
         f_float.set(f_str.to_float64());
         break;
@@ -536,7 +635,7 @@ bool Node::to_number()
 
 /** \brief Transform a node to a string.
  *
- * This function transform a node from what it is to a string. If the
+ * This function transforms a node from what it is to a string. If the
  * transformation is successful, the function returns true. Note that
  * the function does not throw if the type of 'this' cannot be
  * converted to a string.
@@ -551,6 +650,27 @@ bool Node::to_number()
  * \li NODE_FALSE -- changed to "false"
  * \li NODE_INT64 -- changed to a string representation
  * \li NODE_FLOAT64 -- changed to a string representation
+ *
+ * The conversion of a floating point is not one to one compatible with
+ * what a JavaScript implementation would otherwise do. This is due to
+ * the fact that Java tends to convert floating points in a slightly
+ * different way than C/C++. None the less, the results are generally
+ * very close (to the 4th decimal digit.)
+ *
+ * The NaN floating point is converted to the string "NaN".
+ *
+ * The floating point +0.0 and -0.0 numbers are converted to exactly "0".
+ *
+ * The floating point +Infinity is converted to the string "Infinity".
+ *
+ * The floating point -Infinity is converted to the string "-Infinity".
+ *
+ * Other numbers are converted as floating points with a decimal point,
+ * although floating points that represent an integer may be output as
+ * an integer.
+ *
+ * \note
+ * The Node must not be locked.
  *
  * \return true if the conversion succeeded, false otherwise.
  */
@@ -653,13 +773,19 @@ bool Node::to_string()
  * \endcode
  *
  * In the first case, (a) is transform with the content of variable
- * 'a' and that is used to access 'field'.
+ * 'a' and that resulting object is used to access 'field'.
  *
- * In the second case, 'a' represents an object and we are access
+ * In the second case, 'a' itself represents an object and we are accessing
  * that object's 'field' directly.
  *
- * \todo
- * Determine whether that really applies to JavaScript.
+ * \note
+ * Why do we need this distinction? Parenthesis used for grouping are
+ * not saved in the resulting tree of nodes. For that reason, at the time
+ * we parse that result, we could not distinguish between both
+ * expressions. With the NODE_VIDENTIFIER, we can correct that problem.
+ *
+ * \note
+ * The Node must not be locked.
  *
  * \exception exception_internal_error
  * This exception is raised if the input node is not a NODE_IDENTIFIER.
@@ -685,6 +811,9 @@ void Node::to_videntifier()
  * this function.
  *
  * The distinction makes it a lot easier to deal with the variable later.
+ *
+ * \note
+ * The Node must not be locked.
  *
  * \exception exception_internal_error
  * This exception is raised if 'this' node is not a NODE_VARIABLE.

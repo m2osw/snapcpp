@@ -423,6 +423,7 @@ public:
     };
 
                                 Node(node_t type);
+                                ~Node() noexcept(false);
 
     /** \brief Do not allow direct copies of nodes.
      *

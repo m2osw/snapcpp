@@ -77,7 +77,33 @@ namespace as2js
  * If the \p type parameter does not represent a valid type of node, then
  * the function throws. This means only valid type of nodes can be created.
  *
+ * Once created, a node representing a literal can have its value defined
+ * using one of the set_...() functions. Note that the set_boolean()
+ * function is a special case which converts the node to either NODE_TRUE
+ * or NODE_FALSE.
+ *
+ * It is also expected that you will set the position of the token using
+ * the set_position() function.
+ *
+ * \note
+ * At this time we accept all the different types at creation time. We
+ * may restrict this later to only nodes that are expected to be created
+ * in this way. For example, a NODE_VIDENTIFIER cannot be created directly,
+ * instead it is expected that you would create a NODE_IDENTIFIER and then
+ * call the to_videntifier() function to conver the node.
+ *
+ * \exception exception_incompatible_node_type
+ * This exception is raised of the specified type does not correspond to
+ * one of the allowed node_t::NODE_... definitions.
+ *
  * \param[in] type  The type of node to create.
+ *
+ * \sa to_videntifier()
+ * \sa set_boolean()
+ * \sa set_int64()
+ * \sa set_float64()
+ * \sa set_string()
+ * \sa set_position()
  */
 Node::Node(node_t type)
     : f_type(type)
@@ -281,6 +307,49 @@ Node::Node(node_t type)
 }
 
 
+/** \brief Verify that a node is clean when deleting it.
+ *
+ * This function ensures that a node is clean, as in, not locked,
+ * when it gets deleted.
+ *
+ * If we properly make use of the NodeLock, then a node cannot get
+ * deleted until all the locks get canceled with an unlock() call.
+ *
+ * \exception exception_exit
+ * A destructor should not throw, yet we want to have a drastic
+ * error because deleting a locked node is a bug. So the exit
+ * exception is raised here. This way, also, we can capture the
+ * exception in our unit tests. The side effect is that other
+ * parts of the Node object do not get properly cleaned up. It
+ * is fine in the unit test, and it is a totally fatal error
+ * otherwise, so I am not concerned with that problem.
+ * std::abort(), on the other hand, could not be properly tested
+ * from our unit tests (at least, not easily).
+ */
+Node::~Node() noexcept(false)
+{
+    if(f_lock > 0)
+    {
+        // Argh! A throw in a destructor... Yet this is a fatal
+        // error and it should never ever happen except in our
+        // unit tests to verify that it does catch such a bug
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_NOT_ALLOWED);
+        msg << "a node got deleted while still locked.";
+
+        // for security reasons, we do not try to throw another
+        // exception if the system is already trying to process
+        // an existing exception
+        if(std::uncaught_exception())
+        {
+            // still we cannot continue...
+            std::abort(); // LCOV_EXCL_LINE
+        }
+
+        throw exception_exit(1, "a node got deleted while still locked.");
+    }
+}
+
+
 
 /**********************************************************************/
 /**********************************************************************/
@@ -309,6 +378,8 @@ Node::Node(node_t type)
  * then this exception is raised.
  *
  * \return The operator of the switch statement, or NODE_UNKNOWN if undefined.
+ *
+ * \sa set_switch_operator()
  */
 Node::node_t Node::get_switch_operator() const
 {
@@ -333,6 +404,25 @@ Node::node_t Node::get_switch_operator() const
  * }
  * \endcode
  *
+ * The currently supported operators are:
+ *
+ * \li NODE_UNKNOWN -- remove the operator
+ * \li NODE_STRICTLY_EQUAL -- "===", this is considered the default
+ *                                   behavior for a JavaScript switch()
+ * \li NODE_EQUAL -- "=="
+ * \li NODE_NOT_EQUAL -- "!="
+ * \li NODE_STRICTLY_NOT_EQUAL -- "!=="
+ * \li NODE_MATCH -- "~="
+ * \li NODE_IN -- "in", this makes use of ranges
+ * \li NODE_IS -- "is"
+ * \li NODE_AS -- "as"
+ * \li NODE_INSTANCEOF -- "instanceof"
+ * \li NODE_LESS -- "<"
+ * \li NODE_LESS_EQUAL -- "<="
+ * \li NODE_GREATER -- ">"
+ * \li NODE_GREATER_EQUAL -- ">="
+ * \li NODE_DEFAULT -- this is the default label case
+ *
  * \exception exception_internal_error
  * If the function is called on a node of a type other than NODE_SWITCH
  * then this exception is raised. It will also raise this exception
@@ -340,6 +430,8 @@ Node::node_t Node::get_switch_operator() const
  * switch statement.
  *
  * \param[in] op  The new operator to save in this switch statement.
+ *
+ * \sa get_switch_operator()
  */
 void Node::set_switch_operator(node_t op)
 {
@@ -388,10 +480,10 @@ void Node::set_switch_operator(node_t op)
  * This function creates a new node that is expected to be used as a
  * replacement of this node.
  *
- * Note that this node does not get modified by this call.
+ * Note that the input node does not get modified by this call.
  *
  * This is similar to creating a node directly and then setting up the
- * position of the new node to the position information of this node.
+ * position of the new node to the position information of 'this' node.
  * In other words, a short hand for this:
  *
  * \code
@@ -402,6 +494,8 @@ void Node::set_switch_operator(node_t op)
  * \param[in] type  The type of the new node.
  *
  * \return A new node pointer.
+ *
+ * \sa set_position()
  */
 Node::pointer_t Node::create_replacement(node_t type) const
 {
@@ -433,6 +527,8 @@ Node::pointer_t Node::create_replacement(node_t type) const
  * a new type, but keeps the position information of the old node.
  *
  * \param[in] position  The new position to copy in this node.
+ *
+ * \sa get_position()
  */
 void Node::set_position(Position const& position)
 {
@@ -453,6 +549,8 @@ void Node::set_position(Position const& position)
  * and positions are all set to 1.
  *
  * \return The position of this node.
+ *
+ * \sa set_position()
  */
 Position const& Node::get_position() const
 {
@@ -480,7 +578,7 @@ Position const& Node::get_position() const
  * you can then replace it with another pointer.
  *
  * \code
- *     // do not throw because the link is already defined:
+ *     // do not throw because we reset the link first:
  *     node->set_link(Node::link_t::LINK_TYPE, nullptr);
  *     node->set_link(Node::link_t::LINK_TYPE, link);
  * \endcode
@@ -493,8 +591,13 @@ Position const& Node::get_position() const
  * a node that references another in this way may generate loops that
  * will not easily break when trying to release the whole tree.
  *
+ * \note
+ * The Node must not be locked.
+ *
  * \exception exception_index_out_of_range
- * The index is out of range.
+ * The index is out of range. Links make use of a very few predefined
+ * indexes such as Node::link_t::LINK_ATTRIBUTES. However,
+ * Node::link_t::LINK_max cannot be used as an index.
  *
  * \exception exception_already_defined
  * The link at that index is already defined and the function was called
@@ -504,7 +607,7 @@ Position const& Node::get_position() const
  * \param[in] index  The index of the link to save.
  * \param[in] link  A smart pointer to the link.
  *
- * \return A smart pointer to this link node.
+ * \sa get_link()
  */
 void Node::set_link(link_t index, pointer_t link)
 {
@@ -546,6 +649,14 @@ void Node::set_link(link_t index, pointer_t link)
  * Links are used to save information about a node such as its
  * type and attributes.
  *
+ * The function may return a null pointer. You are responsible
+ * for checking the validity of the link.
+ *
+ * \exception exception_index_out_of_range
+ * The index is out of range. Links make use of a very few predefined
+ * indexes such as Node::link_t::LINK_ATTRIBUTES. However,
+ * Node::link_t::LINK_max cannot be used as an index.
+ *
  * \param[in] index  The index of the link to retrieve.
  *
  * \return A smart pointer to this link node.
@@ -573,26 +684,30 @@ Node::pointer_t Node::get_link(link_t index)
 /**********************************************************************/
 
 
-/** \brief Add avariable to this node.
+/** \brief Add a variable to this node.
  *
- * A node can hold pointers to variable nodes. This is used to handle variable
- * scopes properly. Note that the \p variable parameter must be a node of
- * type NODE_VARIABLE.
+ * A node can hold pointers to variable nodes. This is used to
+ * handle variable scopes properly. Note that the \p variable
+ * parameter must be a node of type NODE_VARIABLE.
  *
  * \note
- * This is not an execution environment and as such the variables are simply
- * added one after another (not sorted, no attempt to later retrieve
- * variables by name.) This may change in the future.
+ * This is not an execution environment and as such the variables are
+ * simply added one after another (not sorted, no attempt to later
+ * retrieve variables by name.) This may change in the future though.
  *
  * \todo
  * Add a test of the node type so we can make sure we do not call this
- * function on nodes that cannot have variables.
+ * function on nodes that cannot have variables. For that purpose, we
+ * need to know what those types are.
  *
  * \exception exception_incompatible_node_type
  * This exception is raised if the \p variable parameter is not of type
  * NODE_VARIABLE.
  *
  * \param[in] variable  The variable to be added.
+ *
+ * \sa get_variable()
+ * \sa get_variable_size()
  */
 void Node::add_variable(pointer_t variable)
 {
@@ -601,7 +716,8 @@ void Node::add_variable(pointer_t variable)
         throw exception_incompatible_node_type("the variable parameter of the add_variable() function must be a NODE_VARIABLE");
     }
     // TODO: test the destination (i.e. this) to make sure only valid nodes
-    //       accept variables
+    //       accept variables; make it a separate function as all the
+    //       variable functions should call it!
 
     f_variables.push_back(variable);
 }
@@ -617,6 +733,9 @@ void Node::add_variable(pointer_t variable)
  * function on nodes that cannot have variables.
  *
  * \return The number of variables currently held in this node.
+ *
+ * \sa add_variable()
+ * \sa get_variable()
  */
 size_t Node::get_variable_size() const
 {
@@ -630,11 +749,22 @@ size_t Node::get_variable_size() const
  * index is out of the variable array bounds, then the function raises
  * an error.
  *
+ * The current boundaries are from 0 to get_variable_size() - 1. This
+ * set may be empty if no variables were added to this node.
+ *
+ * This function will not return a null pointer. An index out of range
+ * raises an exception instead.
+ *
  * \todo
  * Add a test of the node type so we can make sure we do not call this
  * function on nodes that cannot have variables.
  *
  * \param[in] index  The index of the variable to retrieve.
+ *
+ * \return A pointer to the specified variable.
+ *
+ * \sa add_variable()
+ * \sa get_variable_size()
  */
 Node::pointer_t Node::get_variable(int index) const
 {
@@ -668,7 +798,15 @@ Node::pointer_t Node::get_variable(int index) const
  * attached to it (i.e. if it is empty) then this exception is
  * raised.
  *
+ * \exception exception_already_defined
+ * If the label was already defined, then this exception is raised.
+ * Within one function each label must be unique, however, sub-functions
+ * have their own scope and thus can be a label with the same name as
+ * a label in their parent function.
+ *
  * \param[in] label  A smart pointer to the label node to add.
+ *
+ * \sa find_label()
  */
 void Node::add_label(pointer_t label)
 {
@@ -699,6 +837,10 @@ void Node::add_label(pointer_t label)
  * returned label will have the same name.
  *
  * \param[in] name  The name of the label to retrieve.
+ *
+ * \return A pointer to the label if it exists, a null pointer otherwise.
+ *
+ * \sa add_label()
  */
 Node::pointer_t Node::find_label(String const& name) const
 {

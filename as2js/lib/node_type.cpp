@@ -38,6 +38,17 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 
 
+/** \file
+ * \brief Implement node type functions.
+ *
+ * This file includes the implementation of various functions that
+ * directly work against the type of a node.
+ *
+ * It also includes a function one can use to convert a node_t
+ * into a string.
+ */
+
+
 namespace as2js
 {
 
@@ -50,19 +61,78 @@ namespace as2js
 /**********************************************************************/
 
 
+/** \brief Private definitions of the node type.
+ *
+ * Local declarations defining a table of node types and their name so
+ * we can convert a node type to a string. The main purpose of which is
+ * to generate meaningful errors (i.e. 'had a problem with node type #38',
+ * or 'had a problem with node of type "ABSTRACT"'.)
+ */
 namespace
 {
 
+/** \brief Structure used to define the name of each node type.
+ *
+ * This structure includes the node type and its name. Both are
+ * used to convert a numeric type to a string so one can write
+ * that string in error streams.
+ */
 struct type_name_t
 {
+    /** \brief The node type.
+     *
+     * The node type concerned by this entry.
+     */
     Node::node_t    f_type;
+
+    /** \brief The name of the node type.
+     *
+     * This pointer defines the name of the node type.
+     */
     char const *    f_name;
+
+    /** \brief The line number of the definition.
+     *
+     * This value defines the line number where the definition is found
+     * in this file. It is useful for debug purposes.
+     */
     int             f_line;
 };
 
+/** \brief Macro used to convert parameters into strings.
+ *
+ * \param[in] s  An identifier to be transformed in a string.
+ */
 #define    TO_STR_sub(s)            #s
+
+/** \brief Macro used to add a named type to the table of node types.
+ *
+ * \warning
+ * This macro cannot be used with the NODE_EOF type because the
+ * identifier EOF is generally defined to -1 and it gets replaced
+ * before the macro gets called resulting in an invalid definition.
+ *
+ * \warning
+ * This macro cannot be used with the NODE_NULL type because the
+ * identifier NULL is generally defined to 0 and it gets replaced
+ * before the macro gets called resulting in an invalid definition.
+ *
+ * \param[in] node  The name of the node type as an identifier.
+ */
 #define    NODE_TYPE_NAME(node)     { Node::node_t::NODE_##node, TO_STR_sub(node), __LINE__ }
 
+/** \brief List of node types with their name.
+ *
+ * This table defines a list of node types with their corresponding name
+ * defined as a string. The definitions make use of the NODE_TYPE_NAME()
+ * macro to better ensure validity of each entry (i.e. the identifier
+ * used with the NODE_TYPE_NAME() is transformed to a NODE_... name and
+ * the corresponding string make it impossible to have either
+ * non-synchronized.)
+ *
+ * The table is sorted by type (node_t::NODE_...). In debug mode, the
+ * type_to_string() function verifies that the order remains valid.
+ */
 type_name_t const g_node_type_name[] =
 {
     // EOF is -1 on most C/C++ computers... so we have to do this one by hand
@@ -242,10 +312,12 @@ type_name_t const g_node_type_name[] =
     NODE_TYPE_NAME(WHILE),
     NODE_TYPE_NAME(WITH),
     NODE_TYPE_NAME(YIELD),
-
-    // end list
-    //{ Node::node_t::NODE_UNKNOWN, nullptr, __LINE__ }
 };
+
+/** \brief Define the size of the node type table.
+ *
+ * This parameter represents the number of node type structures. 
+ */
 size_t const g_node_type_name_size = sizeof(g_node_type_name) / sizeof(g_node_type_name[0]);
 
 
@@ -260,12 +332,12 @@ size_t const g_node_type_name_size = sizeof(g_node_type_name) / sizeof(g_node_ty
  *
  * Note the value of the node types are not all sequencial. The lower
  * portion used one to one with characters has many sparse places.
- * However, the node constructor ensures that only valid strings get
- * created.
+ * However, the Node constructor ensures that only valid types get
+ * used.
  *
  * There are some functions available to convert a certain number of
- * nodes. These are used by the compiler and optimizer to implement
- * their functions.
+ * Node types. These are used by the compiler and optimizer to
+ * implement their functionality.
  *
  * \li to_unknown() -- change any node to NODE_UNKNOWN
  * \li to_as() -- change a NODE_CALL to a NODE_AS
@@ -281,6 +353,18 @@ size_t const g_node_type_name_size = sizeof(g_node_type_name) / sizeof(g_node_ty
  * \li to_var_attributes() -- change a NODE_VARIABLE to a NODE_VAR_ATTRIBUTES
  *
  * \return The current type of the node.
+ *
+ * \sa to_unknown()
+ * \sa to_as()
+ * \sa to_boolean()
+ * \sa to_call()
+ * \sa to_int64()
+ * \sa to_float64()
+ * \sa to_number()
+ * \sa to_string()
+ * \sa to_videntifier()
+ * \sa to_var_attributes()
+ * \sa set_boolean()
  */
 Node::node_t Node::get_type() const
 {
@@ -290,12 +374,22 @@ Node::node_t Node::get_type() const
 
 /** \brief Convert the specified type to a string.
  *
- * The type of the node (NODE_...) can be retrieved as a string using this
- * function. In pretty much all cases this is done whenever an error occurs
- * and not in normal circumstances. It is also used to debug the node tree.
+ * The type of a Node (node_t::NODE_...) can be retrieved as
+ * a string using this function. In pretty much all cases this
+ * is done whenever an error occurs and not in normal circumstances.
+ * It is also used to debug the node tree.
  *
- * Note that if you have a node, you probably want to call get_type_name()
- * instead.
+ * Note that if you have a node, you probably want to call
+ * get_type_name() instead.
+ *
+ * \exception exception_internal_error
+ * If the table of node type to name is invalid, then we raise
+ * this exception. Also, if the \p type parameter is not a valid
+ * type (i.e. NODE_max, or an undefined number such as 999) then
+ * this exception is also generated. Calling this function with
+ * an invalid should not happen when you use the get_type_name()
+ * function since the Node constructor prevents the use of invalid
+ * node types when creating nodes.
  *
  * \return A null terminated C-like string with the node name.
  *
@@ -330,15 +424,12 @@ char const *Node::type_to_string(node_t type)
     }
 #endif
 
-    size_t i, j, p;
-    int    r;
-
-    i = 0;
-    j = g_node_type_name_size;
+    size_t i(0);
+    size_t j(g_node_type_name_size);
     while(i < j)
     {
-        p = (j - i) / 2 + i;
-        r = static_cast<int>(g_node_type_name[p].f_type) - static_cast<int>(static_cast<node_t>(type));
+        size_t p((j - i) / 2 + i);
+        int r(static_cast<int>(g_node_type_name[p].f_type) - static_cast<int>(static_cast<node_t>(type)));
         if(r == 0)
         {
             return g_node_type_name[p].f_name;
@@ -377,18 +468,31 @@ char const *Node::get_type_name() const
 }
 
 
-/** \brief Return true if node represens a number.
+/** \brief Return true if Node represents a number.
  *
  * This function returns true if the node is an integer or a
- * floating point value.
+ * floating point value. This is tested using the Node type
+ * which should either be NODE_INT64 or NODE_FLOAT64.
  *
- * Note that this function returns false on a string that
+ * Note that means this function returns false on a string that
  * represents a valid number.
  *
  * Note that JavaScript also considered Boolean values and null as
- * valid numbers. To test such, use is_nan() instead
+ * valid numbers. To test such, use is_nan() instead.
  *
  * \return true if this node represents a number
+ *
+ * \sa is_nan()
+ * \sa is_int64()
+ * \sa is_boolean()
+ * \sa is_float64()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_number() const
 {
@@ -401,13 +505,26 @@ bool Node::is_number() const
  * When converting a node to a number (to_number() function) we accept a
  * certain number of parameters as numbers:
  *
- * \li Integers (unchanged)
- * \li Float points (unchanged)
- * \li True (1) or False (0)
- * \li Null (0)
- * \li Strings that represent valid numbers as a whole
+ * \li integers (unchanged)
+ * \li float points (unchanged)
+ * \li true (1) or false (0)
+ * \li null (0)
+ * \li strings that represent valid numbers as a whole
+ * \li undefined (NaN)
  *
- * \return true if the value could not be converted to a number.
+ * \return true if the value could not be converted to a number other than NaN.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_boolean()
+ * \sa is_float64()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_nan() const
 {
@@ -429,6 +546,18 @@ bool Node::is_nan() const
  * This function checks whether the type of the node is NODE_INT64.
  *
  * \return true if the node type is NODE_INT64.
+ *
+ * \sa is_number()
+ * \sa is_boolean()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_int64() const
 {
@@ -441,6 +570,18 @@ bool Node::is_int64() const
  * This function checks whether the type of the node is NODE_FLOAT64.
  *
  * \return true if the node type is NODE_FLOAT64.
+ *
+ * \sa is_number()
+ * \sa is_boolean()
+ * \sa is_int64()
+ * \sa is_nan()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_float64() const
 {
@@ -454,6 +595,18 @@ bool Node::is_float64() const
  * NODE_FALSE.
  *
  * \return true if the node type represents a boolean value.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_boolean() const
 {
@@ -466,6 +619,18 @@ bool Node::is_boolean() const
  * This function checks whether the type of the node is NODE_TRUE.
  *
  * \return true if the node type represents true.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_boolean()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_true() const
 {
@@ -478,6 +643,18 @@ bool Node::is_true() const
  * This function checks whether the type of the node is NODE_FALSE.
  *
  * \return true if the node type represents false.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_boolean()
+ * \sa is_true()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_false() const
 {
@@ -490,6 +667,18 @@ bool Node::is_false() const
  * This function checks whether the type of the node is NODE_STRING.
  *
  * \return true if the node type represents a string value.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_boolean()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_string() const
 {
@@ -502,6 +691,18 @@ bool Node::is_string() const
  * This function checks whether the type of the node is NODE_UNDEFINED.
  *
  * \return true if the node type represents the undefined value.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_boolean()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_null()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_undefined() const
 {
@@ -514,6 +715,18 @@ bool Node::is_undefined() const
  * This function checks whether the type of the node is NODE_NULL.
  *
  * \return true if the node type represents the null value.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_boolean()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_identifier()
+ * \sa is_literal()
  */
 bool Node::is_null() const
 {
@@ -527,10 +740,70 @@ bool Node::is_null() const
  * or NODE_VIDENTIFIER.
  *
  * \return true if the node type represents an identifier value.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_boolean()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_literal()
  */
 bool Node::is_identifier() const
 {
     return f_type == node_t::NODE_IDENTIFIER || f_type == node_t::NODE_VIDENTIFIER;
+}
+
+
+/** \brief Check whether this node represents a literal.
+ *
+ * Literals are:
+ *
+ * \li true or false
+ * \li floating point
+ * \li integer
+ * \li null
+ * \li string
+ * \li undefined
+ *
+ * If this node represents any one of those types, this function
+ * returns true.
+ *
+ * \return true if the node is a literal.
+ *
+ * \sa is_number()
+ * \sa is_int64()
+ * \sa is_float64()
+ * \sa is_nan()
+ * \sa is_boolean()
+ * \sa is_true()
+ * \sa is_false()
+ * \sa is_string()
+ * \sa is_undefined()
+ * \sa is_null()
+ * \sa is_identifier()
+ */
+bool Node::is_literal() const
+{
+    switch(f_type)
+    {
+    case node_t::NODE_FALSE:
+    case node_t::NODE_FLOAT64:
+    case node_t::NODE_INT64:
+    case node_t::NODE_NULL:
+    case node_t::NODE_STRING:
+    case node_t::NODE_TRUE:
+    case node_t::NODE_UNDEFINED:
+        return true;
+
+    default:
+        return false;
+
+    }
 }
 
 
@@ -541,11 +814,40 @@ bool Node::is_identifier() const
  *
  * Having a side effect means that the function of the node is to modify
  * something. For example an assignment modifies its destination which
- * is an obvious side effect.
+ * is an obvious side effect. The following node types are viewed as
+ * having a side effects:
+ *
+ * \li NODE_ASSIGNMENT[_...] -- all the assignment
+ * \li NODE_CALL -- a function call
+ * \li NODE_DECREMENT -- the '--' operator
+ * \li NODE_DELETE -- the 'delete' operator
+ * \li NODE_INCREMENT -- the '++' operator
+ * \li NODE_NEW -- the 'new' operator
+ * \li NODE_POST_DECREMENT -- the '--' operator
+ * \li NODE_POST_INCREMENT -- the '++' operator
  *
  * The test is run against this node and all of its children because if
  * any one node implies a modification, the tree as a whole implies a
  * modification and thus the function must return true.
+ *
+ * For optimizations, we will still be able to remove nodes wrapping
+ * nodes that have side effects. For example the following optimization
+ * is perfectly valid:
+ *
+ * \code
+ *      a + (b = 3);
+ *      // can be optimized to
+ *      b = 3;
+ * \endcode
+ *
+ * The one reason the previous statement may not be optimizable is if
+ * 'a' represents an object which has the '+' (addition) operator
+ * defined. Anyway, in that case the optimizer sees the following code
+ * which cannot be optimized:
+ *
+ * \code
+ *      a.operator_add(b = 3);
+ * \endcode
  *
  * \return true if this node has a side effect.
  */
@@ -634,42 +936,6 @@ bool Node::has_side_effects() const
     }
 
     return false;
-}
-
-
-/** \brief Check whether this node represents a literal.
- *
- * Literals are:
- *
- * \li true or false
- * \li floating point
- * \li integer
- * \li null
- * \li string
- * \li undefined
- *
- * If this node represents any one of those types, this function
- * returns true.
- *
- * \return true if the node is a literal.
- */
-bool Node::is_literal() const
-{
-    switch(f_type)
-    {
-    case node_t::NODE_FALSE:
-    case node_t::NODE_FLOAT64:
-    case node_t::NODE_INT64:
-    case node_t::NODE_NULL:
-    case node_t::NODE_STRING:
-    case node_t::NODE_TRUE:
-    case node_t::NODE_UNDEFINED:
-        return true;
-
-    default:
-        return false;
-
-    }
 }
 
 

@@ -38,6 +38,23 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 
 
+/** \file
+ * \brief Define a set of functions used to change the value of literals.
+ *
+ * The system supports a few direct literals:
+ *
+ * \li integers
+ * \li floating points
+ * \li strings
+ * \li identifiers
+ * \li labels
+ * \li class
+ *
+ * Each one of these can be set a value representing the literal as read
+ * in the source file. The functions below handle that value.
+ */
+
+
 namespace as2js
 {
 
@@ -53,15 +70,18 @@ namespace as2js
  *
  * This function saves a Boolean value in this node.
  *
- * Note that only two types of node can be assigned a Boolean value:
+ * Note that only two types of nodes can be assigned a Boolean value:
  *
  * NODE_TRUE and NODE_FALSE
  *
+ * This function converst the C++ Boolean value to either NODE_TRUE
+ * or NODE_FALSE.
+ *
  * \exception exception_internal_error
  * This exception is raised if the set_boolean() function is called on a
- * type of node that does not support a string.
+ * type of node that is not a Boolean node.
  *
- * \param[in] value  The Boolean to save in this node.
+ * \param[in] value  The C++ Boolean value to save in this node.
  */
 void Node::set_boolean(bool value)
 {
@@ -150,8 +170,11 @@ void Node::set_float64(Float64 value)
  *
  * Note that only a few types of nodes can be assigned a string:
  *
- * NODE_BREAK, NODE_CLASS, NODE_CONTINUE, NODE_IDENTIFIER, NODE_IMPORT,
- * NODE_LABEL, NODE_NAMESPACE, NODE_PACKAGE, and NODE_STRING
+ * NODE_BREAK, NODE_CLASS, NODE_CONTINUE, NODE_ENUM, NODE_FUNCTION,
+ * NODE_GOTO, NODE_IDENTIFIER, NODE_IMPORT, NODE_INTERFACE, NODE_LABEL,
+ * NODE_NAME, NODE_NAMESPACE, NODE_PACKAGE, NODE_PARAM,
+ * NODE_REGULAR_EXPRESSION, NODE_STRING, NODE_VARIABLE, NODE_VAR_ATTRIBUTES,
+ * and NODE_VIDENTIFIER
  *
  * \exception exception_internal_error
  * This exception is raised if the set_string() function is called on a
@@ -199,13 +222,9 @@ void Node::set_string(String const& value)
  * This function returns true or false depending on the node type:
  * NODE_TRUE or NODE_FALSE.
  *
- * Note that only two types of nodes can be assigned a string:
- *
- * NODE_TRUE and NODE_FALSE
- *
  * \exception exception_internal_error
  * This exception is raised if the get_boolean() function is called on a
- * type of node that does not support a Boolean.
+ * type of node which is not NODE_TRUE or NODE_FALSE.
  *
  * \return The Boolean value attached to this node.
  */
@@ -297,8 +316,11 @@ Float64 Node::get_float64() const
  *
  * Note that only a few types of nodes can be assigned a string:
  *
- * NODE_BREAK, NODE_CLASS, NODE_CONTINUE, NODE_IDENTIFIER, NODE_IMPORT,
- * NODE_LABEL, NODE_NAMESPACE, NODE_PACKAGE, and NODE_STRING
+ * NODE_BREAK, NODE_CLASS, NODE_CONTINUE, NODE_ENUM, NODE_FUNCTION,
+ * NODE_GOTO, NODE_IDENTIFIER, NODE_IMPORT, NODE_INTERFACE, NODE_LABEL,
+ * NODE_NAME, NODE_NAMESPACE, NODE_PACKAGE, NODE_PARAM,
+ * NODE_REGULAR_EXPRESSION, NODE_STRING, NODE_VARIABLE, NODE_VAR_ATTRIBUTES,
+ * and NODE_VIDENTIFIER
  *
  * \exception exception_internal_error
  * This exception is raised if the get_string() function is called on a

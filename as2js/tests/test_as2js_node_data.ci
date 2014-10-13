@@ -1680,7 +1680,7 @@ public:
     virtual void output(as2js::message_level_t message_level, as2js::err_code_t error_code, as2js::Position const& pos, std::string const& message)
     {
 
-//std::cerr<< "msg = " << pos.get_filename() << " / " << f_expected_pos.get_filename() << "\n";
+//std::cerr<< "\nmsg = " << pos.get_filename() << " / " << f_expected_pos.get_filename() << "\n";
 
         CPPUNIT_ASSERT(f_expected_call);
         CPPUNIT_ASSERT(message_level == f_expected_message_level);

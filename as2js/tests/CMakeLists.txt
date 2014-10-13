@@ -89,6 +89,8 @@ endfunction(json_to_cpp)
 
 
 json_to_cpp(parser_basics)
+json_to_cpp(parser_function)
+json_to_cpp(parser_variable)
 json_to_cpp(parser)
 
 
@@ -194,6 +196,8 @@ add_executable(${PROJECT_NAME}
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_relational.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_statements.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_function.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_variable.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
     test_as2js_position.cpp
     test_as2js_rc.cpp

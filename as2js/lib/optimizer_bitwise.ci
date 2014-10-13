@@ -76,6 +76,55 @@ optimization_match_t const g_optimizer_bitwise_match_not_a[] =
 };
 
 
+/** \brief Match '~~~a'
+ *
+ * This table defines a match for the expression '~~~a', where 'a' can
+ * be anything at all.
+ */
+optimization_match_t const g_optimizer_bitwise_match_not_not_not_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_not),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_not),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+            {
+                /* f_depth */               2,
+                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_not),
+                /* f_with_value */          nullptr,
+                /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+            },
+
+                {
+                    /* f_depth */               3,
+                    /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                    /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(), // match any node
+                    /* f_with_value */          nullptr,
+                    /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+                    /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+                }
+};
+
+
 /** \brief Match 'a & b'
  *
  * This table defines a match for the expression 'a & b' when a and b
@@ -405,6 +454,22 @@ optimization_entry_t const g_optimizer_bitwise_entry_not_a[] =
 };
 
 
+/** \brief Optimize '~~~a' to '~a'.
+ *
+ * This table defines the optimization of '~~~a' to '~a'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_not_not_not_a[] =
+{
+    {
+        /* f_name */            "~~~a -> ~a",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_not_not_not_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_move_3_1)
+    }
+};
+
+
 /** \brief Optimize 'number & number' to 'number'.
  *
  * This table defines the optimization of 'number & number' to 'number'.
@@ -547,6 +612,9 @@ optimization_table_t const g_optimizer_bitwise_table[] =
     // bitwise NOT
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_not_a)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_not_not_not_a)
     },
 
     // bitwise AND

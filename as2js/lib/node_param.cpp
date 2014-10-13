@@ -38,6 +38,17 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 
 
+/** \file
+ * \brief Handle nodes of type parameter.
+ *
+ * This file represents the implementation of the various
+ * parameter functions applying to nodes.
+ *
+ * Parameters are used to call functions. The list of
+ * parameters defined in this file represents such.
+ */
+
+
 namespace as2js
 {
 
@@ -58,21 +69,30 @@ namespace as2js
  * Also, the function cannot be called more than once and the size
  * parameter cannot be zero.
  *
+ * \exception exception_internal_error
+ * If this node is not of type NODE_PARAM_MATCH, if the function
+ * had been called before, or if the \p size parameter is zero,
+ * this exception is raised.
+ *
  * \param[in] size  The number of parameters (size > 0 must be true).
+ *
+ * \sa get_param_size()
+ * \sa get_param_depth()
+ * \sa get_param_index()
  */
 void Node::set_param_size(size_t size)
 {
     if(f_type != node_t::NODE_PARAM_MATCH)
     {
-        throw exception_internal_error("INTERNAL ERROR: set_param_depth() called with a node other than a NODE_PARAM_MATCH.");
+        throw exception_internal_error("INTERNAL ERROR: set_param_size() called with a node other than a NODE_PARAM_MATCH.");
     }
     if(f_param_depth.size() != 0)
     {
-        throw exception_internal_error("INTERNAL ERROR: set_param_depth() called twice.");
+        throw exception_internal_error("INTERNAL ERROR: set_param_size() called twice.");
     }
     if(size == 0)
     {
-        throw exception_internal_error("INTERNAL ERROR: set_param_depth() was called with a size of zero.");
+        throw exception_internal_error("INTERNAL ERROR: set_param_size() was called with a size of zero.");
     }
     f_param_depth.resize(size);
     f_param_index.resize(size);
@@ -81,10 +101,12 @@ void Node::set_param_size(size_t size)
 
 /** \brief Return the size of the parameter index and depth vectors.
  *
- * This function returns zero unless the set_param_size() was successfully
+ * This function returns zero until set_param_size() is successfully
  * called with a valid size.
  *
  * \return The current size of the parameter index and depth vectors.
+ *
+ * \sa set_param_size()
  */
 size_t Node::get_param_size() const
 {
@@ -96,11 +118,30 @@ size_t Node::get_param_size() const
  *
  * This function returns the depth parameter at the specified index.
  *
+ * This function cannot be called until the set_param_size() gets
+ * called with a valid size.
+ *
+ * \note
+ * The index here is named 'j' because it represents the final
+ * index in the function being called and not the index of the
+ * parameter being matched. See the set_param_index() to see
+ * the difference between the 'idx' and 'j' indexes.
+ *
+ * \exception std::out_of_range
+ * The function throws an exception if the \p j parameter is out
+ * of range. It should be defined between 0 and get_param_size() - 1.
+ *
+ * \param[in] j  The index of the depth to retrieve.
+ *
  * \return The depth of the type of this parameter.
+ *
+ * \sa set_param_size()
+ * \sa get_param_size()
+ * \sa set_param_depth()
  */
-Node::depth_t Node::get_param_depth(size_t idx) const
+Node::depth_t Node::get_param_depth(size_t j) const
 {
-    return f_param_depth.at(idx);
+    return f_param_depth.at(j);
 }
 
 
@@ -109,6 +150,16 @@ Node::depth_t Node::get_param_depth(size_t idx) const
  * When we search for a match of a function call, we check its parameters.
  * If a parameter has a higher class type definition, then it wins over
  * the others. This depth value represents that information.
+ *
+ * \note
+ * The index here is named 'j' because it represents the final
+ * index in the function being called and not the index of the
+ * parameter being matched. See the set_param_index() to see
+ * the difference between the 'idx' and 'j' indexes.
+ *
+ * \exception std::out_of_range
+ * The function throws an exception if the \p j parameter is out
+ * of range. It should be defined between 0 and get_param_size() - 1.
  *
  * \param[in] j  The index of the parameter for which we define the depth.
  *               (The order is the function being called order.)
@@ -152,13 +203,21 @@ void Node::set_param_depth(size_t j, depth_t depth)
  * order even though both functions define their parameters
  * in a different order.
  *
- * \param[in] j  The index of the parameter in the function being called.
+ * \exception std::out_of_range
+ * The function throws an exception if the \p idx parameter is out
+ * of range. It should be defined between 0 and get_param_size() - 1.
+ *
+ * \param[in] idx  The index of the parameter in the function being called.
  *
  * \return The index in the function definition.
+ *
+ * \sa set_param_size()
+ * \sa get_param_size()
+ * \sa set_param_index()
  */
-size_t Node::get_param_index(size_t j) const
+size_t Node::get_param_index(size_t idx) const
 {
-    return f_param_index.at(j);
+    return f_param_index.at(idx);
 }
 
 
@@ -167,12 +226,24 @@ size_t Node::get_param_index(size_t j) const
  * Save the index of the parameter in the function being called, opposed
  * to the index of the parameter in the function call.
  *
+ * See function get_param_index() for more details about the indexes.
+ *
+ * \exception std::out_of_range
+ * The function throws an exception if the \p idx or \p j parameters are
+ * out of range. They should both be defined between 0 and
+ * get_param_size() - 1.
+ *
  * \param[in] idx  The index in the function call.
  * \param[in] j  The index in the function being called.
+ *
+ * \sa set_param_size()
+ * \sa get_param_size()
+ * \sa get_param_index()
  */
 void Node::set_param_index(size_t idx, size_t j)
 {
-    if(idx >= f_param_index.size())
+    if(idx >= f_param_index.size()
+    || j >= f_param_index.size())
     {
         throw std::out_of_range("set_param_index() called with an index out of range");
     }
