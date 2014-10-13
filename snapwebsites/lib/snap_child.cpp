@@ -84,6 +84,13 @@ namespace snap
  * when the child was forked from the server.
  */
 
+/** \fn int64_t get_start_time() const
+ * \brief Retrieve the date when the child process started in seconds.
+ *
+ * This function returns the date in seconds (same as a Unix date)
+ * when the child was forked from the server.
+ */
+
 namespace
 {
 

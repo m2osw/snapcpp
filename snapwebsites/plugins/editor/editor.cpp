@@ -1564,6 +1564,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
     if(widget_type == "line-edit"
     //|| widget_type == "password" -- not yet implemented
     || widget_type == "checkbox"
+    || widget_type == "radio"
     //|| widget_type == "file" -- not yet implemented
     || widget_type == "image-box"
     || widget_type == "dropped-file-with-preview"
