@@ -40,6 +40,33 @@ SOFTWARE.
 #include    <iomanip>
 
 
+/** \file
+ * \brief Handle the display of a node.
+ *
+ * In order to debug the compiler, it is extremely practical to have
+ * a way to display it in a console. The functions defined here are
+ * used for that purpose.
+ *
+ * The display is pretty complicated because nodes can only have a
+ * certain set of flags and attributes and calling the corresponding
+ * functions to retrieve these flags and attributes throw if the
+ * node type is wrong. For that reason we have a large amount of
+ * very specialized code.
+ *
+ * The function gets 100% coverage from the Node test so we are
+ * confident that it is 99.9% correct.
+ *
+ * The output definition let you use a Node with the standard output
+ * functions of C++ as in:
+ *
+ * \code
+ *      std::cout << my_node << std::endl;
+ * \endcode
+ *
+ * \sa display()
+ */
+
+
 namespace as2js
 {
 
@@ -387,19 +414,13 @@ void Node::display_data(std::ostream& out) const
  * we are showing to the user. That way we know whether it is the root (.),
  * a child (-), a variable (=), or a label (:).
  *
- * \todo
- * We probably want to remove the \p parent parameter. I had it here because
- * I wanted to verify it as the old code had many problems with the tree
- * which would break while we were optimizing or compiling the code. The
- * set_parent() function is now working fine so the parent is not useful.
- *
  * \param[in,out] out  The output stream.
  * \param[in] indent  The current indentation. We start with 2.
  * \param[in] c  A character to start each line of output.
  */
 void Node::display(std::ostream& out, int indent, char c) const
 {
-    // this pointer
+    // this pointer and indentation
     out << this << ": " << std::setfill('0') << std::setw(2) << indent << std::setfill(' ') << c << std::setw(indent) << "";
 
     // display node data (integer, string, float, etc.)

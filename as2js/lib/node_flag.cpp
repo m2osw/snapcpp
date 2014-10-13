@@ -38,6 +38,34 @@ SOFTWARE.
 #include    "as2js/exceptions.h"
 
 
+/** \file
+ * \brief Handle the node flags.
+ *
+ * Nodes accept a large set of flags (42 at time of writing).
+ *
+ * Flags are specific to node types. In an earlier implementation,
+ * flags would overlap (i.e. the same bit would be used by different
+ * flags, which flag was determine by the type of node being used.)
+ * This was revamped to make use of unique flags in order to over
+ * potential bugs.
+ *
+ * Flags being specific to a node type, the various functions below
+ * make sure that the flags modified on a node are compatible with
+ * that node.
+ *
+ * \todo
+ * The conversion functions do not take flags in account. As far as
+ * I know, at this point we cannot convert a node of a type that
+ * accept a flag except with the to_unknown() function in which
+ * case flags become irrelevant anyway. We should test that the
+ * flags remain valid after a conversion.
+ *
+ * \todo
+ * Mutually exclusive flags are not currently verified in this
+ * code when it should be.
+ */
+
+
 namespace as2js
 {
 
@@ -56,13 +84,21 @@ namespace as2js
  * of the specified flag.
  *
  * The function verifies that the specified flag (\p f) corresponds to
- * the type of data you are dealing with.
+ * the Node type we are dealing with.
  *
  * If the flag was never set, this function returns false.
  *
+ * compare_all_flags() can be used to compare all the flags at once
+ * without having to load each flag one at a time. This is particularly
+ * useful in our unit tests.
+ *
  * \param[in] f  The flag to retrieve.
  *
- * \return true if the flag was set, false otherwise.
+ * \return true if the flag was set to true, false otherwise.
+ *
+ * \sa set_flag()
+ * \sa verify_flag()
+ * \sa compare_all_flags()
  */
 bool Node::get_flag(flag_t f) const
 {
@@ -77,10 +113,13 @@ bool Node::get_flag(flag_t f) const
  * in this Node object.
  *
  * The function verifies that the specified flag (\p f) corresponds to
- * the type of data you are dealing with.
+ * the Node type we are dealing with.
  *
  * \param[in] f  The flag to set.
  * \param[in] v  The new value for the flag.
+ *
+ * \sa get_flag()
+ * \sa verify_flag()
  */
 void Node::set_flag(flag_t f, bool v)
 {
@@ -95,11 +134,20 @@ void Node::set_flag(flag_t f, bool v)
  * to the type of this Node object.
  *
  * \todo
- * Move some of the external tests to here because some flags are
+ * Move some of the external tests (tests done by code in other
+ * places like the parser) to here because some flags are
  * mutally exclusive and we should prevent such from being set
  * simultaneously.
  *
+ * \exception exception_internal_error
+ * This function checks that the flag is allowed in the type of node.
+ * If not, this exception is raised because that represents a compiler
+ * bug.
+ *
  * \param[in] f  The flag to check.
+ *
+ * \sa set_flag()
+ * \sa get_flag()
  */
 void Node::verify_flag(flag_t f) const
 {
@@ -253,6 +301,8 @@ void Node::verify_flag(flag_t f) const
  * \param[in] s  The set of flags to compare with.
  *
  * \return true if \p s is equal to the node flags.
+ *
+ * \sa get_flag()
  */
 bool Node::compare_all_flags(flag_set_t const& s) const
 {

@@ -1329,10 +1329,13 @@ void As2JsNodeUnitTests::test_tree()
         CPPUNIT_ASSERT_THROW(parent->get_child(0), std::out_of_range);
         CPPUNIT_ASSERT_THROW(parent->get_child(1), std::out_of_range);
 
-        // now we properly test whether the append_child() function is used
+        // now we properly test whether the append_child(),
+        // insert_child(), and set_child() functions are used
         // with a null pointer (which is considered illegal)
         as2js::Node::pointer_t null_pointer;
         CPPUNIT_ASSERT_THROW(parent->append_child(null_pointer), as2js::exception_invalid_data);
+        CPPUNIT_ASSERT_THROW(parent->insert_child(123, null_pointer), as2js::exception_invalid_data);
+        CPPUNIT_ASSERT_THROW(parent->set_child(9, null_pointer), as2js::exception_invalid_data);
 
         for(int i(0); i < 20; ++i)
         {
@@ -1646,6 +1649,10 @@ void As2JsNodeUnitTests::test_tree()
         CPPUNIT_ASSERT(power->get_child(0) == member);
         CPPUNIT_ASSERT(power->get_child(1) == literal_seven);
 
+        // verify that a replace fails if the node pointer is null
+        as2js::Node::pointer_t null_pointer;
+        CPPUNIT_ASSERT_THROW(literal_seven->replace_with(null_pointer), as2js::exception_invalid_data);
+
         // replace with the old literal
         literal_seven->replace_with(literal);
         CPPUNIT_ASSERT(power->get_children_size() == 2);
@@ -1681,6 +1688,39 @@ void As2JsNodeUnitTests::test_tree()
             CPPUNIT_ASSERT(member->get_parent());
         }
         root->clean_tree();
+
+        // manual lock, no unlock before deletion...
+        {
+            as2js::Node *bad_lock(new as2js::Node(as2js::Node::node_t::NODE_UNKNOWN));
+            bad_lock->lock();
+            bool success(false);
+            try
+            {
+                // Somehow it looks like the message is not being checked
+                //test_callback c;
+                //c.f_expected_message_level = as2js::message_level_t::MESSAGE_LEVEL_FATAL;
+                //c.f_expected_error_code = as2js::err_code_t::AS_ERR_NOT_ALLOWED;
+                //c.f_expected_pos.set_filename("unknown-file");
+                //c.f_expected_pos.set_function("unknown-func");
+                //c.f_expected_message = "a node got deleted while still locked.";
+
+                delete bad_lock;
+            }
+            catch(as2js::exception_exit const&)
+            {
+                // NOTE: because of the exception we get a leak here
+                //       (i.e. exception in a destructor!!!)
+                success = true;
+            }
+            catch(...)
+            {
+                CPPUNIT_ASSERT(!"delete bad_lock; generated the wrong exception");
+            }
+            if(!success)
+            {
+                CPPUNIT_ASSERT(!"delete bad_lock; did not generate an exception");
+            }
+        }
 
         // check that the tree looks as expected
         CPPUNIT_ASSERT(root->get_children_size() == 2);
@@ -1764,16 +1804,31 @@ void As2JsNodeUnitTests::test_param()
         // second set the index, try with an out of range index too
         for(int i(-5); i < 0; ++i)
         {
+            CPPUNIT_ASSERT_THROW(match->set_param_index(i, rand() % 5), std::out_of_range);
             CPPUNIT_ASSERT_THROW(match->set_param_index(i, rand()), std::out_of_range);
         }
         size_t index[5];
         for(int i(0); i < 5; ++i)
         {
-            index[i] = rand();
+            index[i] = rand() % 5;
             match->set_param_index(i, index[i]);
+
+            // if 'j' is invalid, then just throw
+            // and do not change the valid value
+            for(int k(0); k < 10; ++k)
+            {
+                int j(0);
+                do
+                {
+                    j = rand();
+                }
+                while(j >= 0 && j <= 5);
+                CPPUNIT_ASSERT_THROW(match->set_param_index(i, j), std::out_of_range);
+            }
         }
         for(int i(5); i <= 10; ++i)
         {
+            CPPUNIT_ASSERT_THROW(match->set_param_index(i, rand() % 5), std::out_of_range);
             CPPUNIT_ASSERT_THROW(match->set_param_index(i, rand()), std::out_of_range);
         }
 
