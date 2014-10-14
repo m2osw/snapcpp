@@ -153,7 +153,7 @@ void QHtmlSerializer::endElement()
     {
         if(f_status != HTML_SERIALIZER_STATUS_ELEMENT_OPEN)
         {
-            throw std::runtime_error("data was written inside an empty HTML tag");
+            throw std::runtime_error(QString("data was written inside empty HTML tag \"%1\"").arg(e).toUtf8().data());
         }
         f_status = HTML_SERIALIZER_STATUS_READY;
 

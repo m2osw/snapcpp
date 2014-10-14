@@ -370,6 +370,12 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     }
     else if((n.startsWith("finball::data_") && n.endsWith("_count")) // TODO -- remove at some point since that is a cutomer's field
          || (n.startsWith("finball::data_") && n.endsWith("_amount")) // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan1" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan6" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan12" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan1" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan6" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan12" // TODO -- remove at some point since that is a cutomer's field
          )
     {
         // 64 bit float
