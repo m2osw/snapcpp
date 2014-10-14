@@ -128,6 +128,7 @@ enum class optimization_function_t
     OPTIMIZATION_FUNCTION_COMPARE,
     OPTIMIZATION_FUNCTION_CONCATENATE,
     OPTIMIZATION_FUNCTION_DIVIDE,
+    OPTIMIZATION_FUNCTION_EQUAL,
     OPTIMIZATION_FUNCTION_LESS,
     OPTIMIZATION_FUNCTION_LESS_EQUAL,
     OPTIMIZATION_FUNCTION_LOGICAL_NOT,
@@ -146,6 +147,7 @@ enum class optimization_function_t
     OPTIMIZATION_FUNCTION_SHIFT_LEFT,
     OPTIMIZATION_FUNCTION_SHIFT_RIGHT,
     OPTIMIZATION_FUNCTION_SHIFT_RIGHT_UNSIGNED,
+    OPTIMIZATION_FUNCTION_STRICTLY_EQUAL,
     OPTIMIZATION_FUNCTION_SUBTRACT,
     OPTIMIZATION_FUNCTION_SWAP,
     OPTIMIZATION_FUNCTION_TO_CONDITIONAL,
@@ -200,7 +202,7 @@ struct optimization_tables_t
 
 bool optimize_tree(Node::pointer_t node);
 bool match_tree(node_pointer_vector_t& node_array, Node::pointer_t node, optimization_match_t const *match, size_t match_size, uint8_t depth);
-void apply_functions(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize, size_t optimize_size);
+void apply_functions(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize, size_t optimize_size);
 
 
 }

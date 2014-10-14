@@ -48,6 +48,7 @@ class As2JsOptimizerUnitTests : public CPPUNIT_NS::TestFixture
         CPPUNIT_TEST( test_optimizer_bitwise );
         CPPUNIT_TEST( test_optimizer_compare );
         CPPUNIT_TEST( test_optimizer_conditional );
+        CPPUNIT_TEST( test_optimizer_equality );
         CPPUNIT_TEST( test_optimizer_logical );
         CPPUNIT_TEST( test_optimizer_multiplicative );
         CPPUNIT_TEST( test_optimizer_relational );
@@ -64,6 +65,7 @@ protected:
     void test_optimizer_bitwise();
     void test_optimizer_compare();
     void test_optimizer_conditional();
+    void test_optimizer_equality();
     void test_optimizer_logical();
     void test_optimizer_multiplicative();
     void test_optimizer_relational();

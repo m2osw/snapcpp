@@ -73,7 +73,7 @@ namespace
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_ADD(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_ADD(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -110,6 +110,7 @@ void optimizer_func_ADD(node_pointer_vector_t const& node_array, optimization_op
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -132,7 +133,7 @@ void optimizer_func_ADD(node_pointer_vector_t const& node_array, optimization_op
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_BITWISE_AND(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_BITWISE_AND(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -153,6 +154,7 @@ void optimizer_func_BITWISE_AND(node_pointer_vector_t const& node_array, optimiz
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -175,7 +177,7 @@ void optimizer_func_BITWISE_AND(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_BITWISE_NOT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_BITWISE_NOT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src(optimize->f_indexes[0]),
              dst(optimize->f_indexes[1]);
@@ -193,6 +195,7 @@ void optimizer_func_BITWISE_NOT(node_pointer_vector_t const& node_array, optimiz
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src]);
+    node_array[dst] = node_array[src];
 }
 
 
@@ -215,7 +218,7 @@ void optimizer_func_BITWISE_NOT(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_BITWISE_OR(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_BITWISE_OR(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -236,6 +239,7 @@ void optimizer_func_BITWISE_OR(node_pointer_vector_t const& node_array, optimiza
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -258,7 +262,7 @@ void optimizer_func_BITWISE_OR(node_pointer_vector_t const& node_array, optimiza
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_BITWISE_XOR(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_BITWISE_XOR(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -279,6 +283,7 @@ void optimizer_func_BITWISE_XOR(node_pointer_vector_t const& node_array, optimiz
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -298,7 +303,7 @@ void optimizer_func_BITWISE_XOR(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_COMPARE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_COMPARE(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -330,6 +335,7 @@ void optimizer_func_COMPARE(node_pointer_vector_t const& node_array, optimizatio
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(result);
+    node_array[dst] = result;
 }
 
 
@@ -350,7 +356,7 @@ void optimizer_func_COMPARE(node_pointer_vector_t const& node_array, optimizatio
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_CONCATENATE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_CONCATENATE(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -368,6 +374,7 @@ void optimizer_func_CONCATENATE(node_pointer_vector_t const& node_array, optimiz
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -394,7 +401,7 @@ void optimizer_func_CONCATENATE(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_DIVIDE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_DIVIDE(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -459,6 +466,37 @@ void optimizer_func_DIVIDE(node_pointer_vector_t const& node_array, optimization
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
+}
+
+
+/** \brief Apply an EQUAL function.
+ *
+ * This function checks source 1 against source 2. If source 1 is equal to
+ * source 2, then the function saves true in the destination, otherwise
+ * it saves false.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_EQUAL(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    compare_t c(Node::compare(node_array[src1], node_array[src2], false));
+    Node::pointer_t result(new Node(c == compare_t::COMPARE_EQUAL
+                                    ? Node::node_t::NODE_TRUE
+                                    : Node::node_t::NODE_FALSE));
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(result);
+    node_array[dst] = result;
 }
 
 
@@ -475,7 +513,7 @@ void optimizer_func_DIVIDE(node_pointer_vector_t const& node_array, optimization
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_LESS(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_LESS(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -488,6 +526,7 @@ void optimizer_func_LESS(node_pointer_vector_t const& node_array, optimization_o
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(result);
+    node_array[dst] = result;
 }
 
 
@@ -504,7 +543,7 @@ void optimizer_func_LESS(node_pointer_vector_t const& node_array, optimization_o
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_LESS_EQUAL(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_LESS_EQUAL(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -518,6 +557,7 @@ void optimizer_func_LESS_EQUAL(node_pointer_vector_t const& node_array, optimiza
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(result);
+    node_array[dst] = result;
 }
 
 
@@ -540,7 +580,7 @@ void optimizer_func_LESS_EQUAL(node_pointer_vector_t const& node_array, optimiza
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_LOGICAL_NOT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_LOGICAL_NOT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src(optimize->f_indexes[0]),
              dst(optimize->f_indexes[1]);
@@ -554,6 +594,7 @@ void optimizer_func_LOGICAL_NOT(node_pointer_vector_t const& node_array, optimiz
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src]);
+    node_array[dst] = node_array[src];
 }
 
 
@@ -580,7 +621,7 @@ void optimizer_func_LOGICAL_NOT(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_LOGICAL_XOR(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_LOGICAL_XOR(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -611,6 +652,7 @@ void optimizer_func_LOGICAL_XOR(node_pointer_vector_t const& node_array, optimiz
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -634,7 +676,7 @@ void optimizer_func_LOGICAL_XOR(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_MODULO(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_MODULO(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -694,6 +736,7 @@ void optimizer_func_MODULO(node_pointer_vector_t const& node_array, optimization
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -721,13 +764,14 @@ void optimizer_func_MODULO(node_pointer_vector_t const& node_array, optimization
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_MOVE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_MOVE(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src(optimize->f_indexes[0]),
              dst(optimize->f_indexes[1]);
 
     // move the source in place of the destination
     node_array[dst]->replace_with(node_array[src]);
+    node_array[dst] = node_array[src];
 }
 
 
@@ -749,7 +793,7 @@ void optimizer_func_MOVE(node_pointer_vector_t const& node_array, optimization_o
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_MULTIPLY(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_MULTIPLY(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -788,6 +832,7 @@ void optimizer_func_MULTIPLY(node_pointer_vector_t const& node_array, optimizati
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -806,7 +851,7 @@ void optimizer_func_MULTIPLY(node_pointer_vector_t const& node_array, optimizati
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_NEGATE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_NEGATE(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src(optimize->f_indexes[0]),
              dst(optimize->f_indexes[1]);
@@ -835,6 +880,7 @@ void optimizer_func_NEGATE(node_pointer_vector_t const& node_array, optimization
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src]);
+    node_array[dst] = node_array[src];
 }
 
 
@@ -856,7 +902,7 @@ void optimizer_func_NEGATE(node_pointer_vector_t const& node_array, optimization
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_POWER(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_POWER(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -886,6 +932,7 @@ void optimizer_func_POWER(node_pointer_vector_t const& node_array, optimization_
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -909,7 +956,7 @@ void optimizer_func_POWER(node_pointer_vector_t const& node_array, optimization_
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_REMOVE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_REMOVE(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src(optimize->f_indexes[0]);
 
@@ -946,7 +993,7 @@ void optimizer_func_REMOVE(node_pointer_vector_t const& node_array, optimization
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_SET_FLOAT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SET_FLOAT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t dst(optimize->f_indexes[0]),
              divisor(optimize->f_indexes[2]);
@@ -978,7 +1025,7 @@ void optimizer_func_SET_FLOAT(node_pointer_vector_t const& node_array, optimizat
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_SET_INTEGER(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SET_INTEGER(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t dst(optimize->f_indexes[0]);
 
@@ -1002,7 +1049,7 @@ void optimizer_func_SET_INTEGER(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_SET_NODE_TYPE(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SET_NODE_TYPE(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     Node::node_t node_type(static_cast<Node::node_t>(optimize->f_indexes[0]));
     uint32_t src(optimize->f_indexes[1]);
@@ -1017,6 +1064,7 @@ void optimizer_func_SET_NODE_TYPE(node_pointer_vector_t const& node_array, optim
         node->append_child(to_replace->get_child(0));
     }
     to_replace->replace_with(node);
+    node_array[src] = node;
 }
 
 
@@ -1041,7 +1089,7 @@ void optimizer_func_SET_NODE_TYPE(node_pointer_vector_t const& node_array, optim
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_SHIFT_LEFT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SHIFT_LEFT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -1076,6 +1124,7 @@ void optimizer_func_SHIFT_LEFT(node_pointer_vector_t const& node_array, optimiza
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -1100,7 +1149,7 @@ void optimizer_func_SHIFT_LEFT(node_pointer_vector_t const& node_array, optimiza
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_SHIFT_RIGHT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SHIFT_RIGHT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -1136,6 +1185,7 @@ void optimizer_func_SHIFT_RIGHT(node_pointer_vector_t const& node_array, optimiz
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -1160,7 +1210,7 @@ void optimizer_func_SHIFT_RIGHT(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_SHIFT_RIGHT_UNSIGNED(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SHIFT_RIGHT_UNSIGNED(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -1196,6 +1246,7 @@ void optimizer_func_SHIFT_RIGHT_UNSIGNED(node_pointer_vector_t const& node_array
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -1220,7 +1271,7 @@ void optimizer_func_SHIFT_RIGHT_UNSIGNED(node_pointer_vector_t const& node_array
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_ROTATE_LEFT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_ROTATE_LEFT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -1259,6 +1310,7 @@ void optimizer_func_ROTATE_LEFT(node_pointer_vector_t const& node_array, optimiz
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -1283,7 +1335,7 @@ void optimizer_func_ROTATE_LEFT(node_pointer_vector_t const& node_array, optimiz
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_ROTATE_RIGHT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_ROTATE_RIGHT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -1322,6 +1374,37 @@ void optimizer_func_ROTATE_RIGHT(node_pointer_vector_t const& node_array, optimi
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
+}
+
+
+/** \brief Apply an STRICTLY_EQUAL function.
+ *
+ * This function checks source 1 against source 2. If source 1 is equal to
+ * source 2, then the function saves true in the destination, otherwise
+ * it saves false.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_STRICTLY_EQUAL(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    compare_t c(Node::compare(node_array[src1], node_array[src2], true));
+    Node::pointer_t result(new Node(c == compare_t::COMPARE_EQUAL
+                                    ? Node::node_t::NODE_TRUE
+                                    : Node::node_t::NODE_FALSE));
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(result);
+    node_array[dst] = result;
 }
 
 
@@ -1341,7 +1424,7 @@ void optimizer_func_ROTATE_RIGHT(node_pointer_vector_t const& node_array, optimi
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_SUBTRACT(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SUBTRACT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -1378,6 +1461,7 @@ void optimizer_func_SUBTRACT(node_pointer_vector_t const& node_array, optimizati
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -1393,7 +1477,7 @@ void optimizer_func_SUBTRACT(node_pointer_vector_t const& node_array, optimizati
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_SWAP(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SWAP(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]);
@@ -1417,6 +1501,9 @@ void optimizer_func_SWAP(node_pointer_vector_t const& node_array, optimization_o
     p1->set_child(o1, n2);
     p2->set_child(o2, n1);
 
+    node_array[src1] = n2;
+    node_array[src2] = n1;
+
     // WARNING: we do not use the replace_with() function because we would
     //          otherwise lose the parent and offset information
 }
@@ -1439,7 +1526,7 @@ void optimizer_func_SWAP(node_pointer_vector_t const& node_array, optimization_o
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_TO_CONDITIONAL(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_TO_CONDITIONAL(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
@@ -1453,6 +1540,7 @@ void optimizer_func_TO_CONDITIONAL(node_pointer_vector_t const& node_array, opti
 
     // save the result replacing the specified destination
     node_array[dst]->replace_with(conditional);
+    node_array[dst] = conditional;
 }
 
 
@@ -1470,7 +1558,7 @@ void optimizer_func_TO_CONDITIONAL(node_pointer_vector_t const& node_array, opti
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_TO_FLOAT64(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_TO_FLOAT64(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     if(!node_array[optimize->f_indexes[0]]->to_float64())
     {
@@ -1493,7 +1581,7 @@ void optimizer_func_TO_FLOAT64(node_pointer_vector_t const& node_array, optimiza
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_TO_INT64(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_TO_INT64(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     if(!node_array[optimize->f_indexes[0]]->to_int64())
     {
@@ -1516,7 +1604,7 @@ void optimizer_func_TO_INT64(node_pointer_vector_t const& node_array, optimizati
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_TO_NUMBER(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_TO_NUMBER(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     if(!node_array[optimize->f_indexes[0]]->to_number())
     {
@@ -1538,7 +1626,7 @@ void optimizer_func_TO_NUMBER(node_pointer_vector_t const& node_array, optimizat
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_TO_STRING(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_TO_STRING(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     if(!node_array[optimize->f_indexes[0]]->to_string())
     {
@@ -1555,7 +1643,7 @@ void optimizer_func_TO_STRING(node_pointer_vector_t const& node_array, optimizat
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_WHILE_TRUE_TO_FOREVER(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_WHILE_TRUE_TO_FOREVER(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src(optimize->f_indexes[0]),
              dst(optimize->f_indexes[1]);
@@ -1567,6 +1655,7 @@ void optimizer_func_WHILE_TRUE_TO_FOREVER(node_pointer_vector_t const& node_arra
     Node::pointer_t e3(new Node(Node::node_t::NODE_EMPTY));
 
     node_array[dst]->replace_with(for_statement);
+    node_array[dst] = for_statement;
     for_statement->append_child(e1);
     for_statement->append_child(e2);
     for_statement->append_child(e3);
@@ -1610,7 +1699,7 @@ struct optimizer_optimize_function_t
      * \param[in] node_array  The array of nodes being optimized.
      * \param[in] optimize  The optimization parameters.
      */
-    void                        (*f_func)(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize);
+    void                        (*f_func)(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize);
 };
 
 
@@ -1635,6 +1724,7 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_COMPARE        */ OPTIMIZER_FUNC(COMPARE),
     /* OPTIMIZATION_FUNCTION_CONCATENATE    */ OPTIMIZER_FUNC(CONCATENATE),
     /* OPTIMIZATION_FUNCTION_DIVIDE         */ OPTIMIZER_FUNC(DIVIDE),
+    /* OPTIMIZATION_FUNCTION_EQUAL          */ OPTIMIZER_FUNC(EQUAL),
     /* OPTIMIZATION_FUNCTION_LESS           */ OPTIMIZER_FUNC(LESS),
     /* OPTIMIZATION_FUNCTION_LESS_EQUAL     */ OPTIMIZER_FUNC(LESS_EQUAL),
     /* OPTIMIZATION_FUNCTION_LOGICAL_NOT    */ OPTIMIZER_FUNC(LOGICAL_NOT),
@@ -1653,6 +1743,7 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_SHIFT_LEFT     */ OPTIMIZER_FUNC(SHIFT_LEFT),
     /* OPTIMIZATION_FUNCTION_SHIFT_RIGHT    */ OPTIMIZER_FUNC(SHIFT_RIGHT),
     /* OPTIMIZATION_FUNCTION_SHIFT_RIGHT_UNSIGNED */ OPTIMIZER_FUNC(SHIFT_RIGHT_UNSIGNED),
+    /* OPTIMIZATION_FUNCTION_STRICTLY_EQUAL */ OPTIMIZER_FUNC(STRICTLY_EQUAL),
     /* OPTIMIZATION_FUNCTION_SUBTRACT       */ OPTIMIZER_FUNC(SUBTRACT),
     /* OPTIMIZATION_FUNCTION_SWAP           */ OPTIMIZER_FUNC(SWAP),
     /* OPTIMIZATION_FUNCTION_TO_CONDITIONAL */ OPTIMIZER_FUNC(TO_CONDITIONAL),
@@ -1684,7 +1775,7 @@ size_t const g_optimizer_optimize_functions_size = sizeof(g_optimizer_optimize_f
  * \param[in] node  The node being optimized.
  * \param[in] optimize  The optimization function to apply.
  */
-void apply_one_function(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize)
+void apply_one_function(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
 #if defined(_DEBUG) || defined(DEBUG)
     // this loop will not catch the last entries if missing, otherwise,
@@ -1730,7 +1821,7 @@ void apply_one_function(node_pointer_vector_t const& node_array, optimization_op
  * \param[in] optimize  Pointer to the first optimization function.
  * \param[in] optimize_size  The number of optimization functions to apply.
  */
-void apply_functions(node_pointer_vector_t const& node_array, optimization_optimize_t const *optimize, size_t optimize_size)
+void apply_functions(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize, size_t optimize_size)
 {
     for(; optimize_size > 0; --optimize_size, ++optimize)
     {

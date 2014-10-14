@@ -115,6 +115,17 @@ optimization_optimize_t const g_optimizer_optimize_divide_1_2_0[] =
 
 
 
+/*** E ***/
+optimization_optimize_t const g_optimizer_optimize_equal_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_EQUAL,
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    }
+};
+
+
+
 /*** G ***/
 optimization_optimize_t const g_optimizer_optimize_greater_1_2_0[] =
 {
@@ -268,6 +279,18 @@ optimization_optimize_t const g_optimizer_optimize_negate_1_0[] =
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_not_equal_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_EQUAL,
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_NOT,
+        /* f_indexes */     { 0, 0, 0, 0, 0, 0 }
+    }
+};
+
 
 
 /*** P ***/
@@ -354,6 +377,26 @@ optimization_optimize_t const g_optimizer_optimize_shift_right_unsigned_1_2_0[] 
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_RIGHT_UNSIGNED,
         /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_strictly_equal_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_STRICTLY_EQUAL,
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_strictly_not_equal_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_STRICTLY_EQUAL,
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_NOT,
+        /* f_indexes */     { 0, 0, 0, 0, 0, 0 }
     }
 };
 

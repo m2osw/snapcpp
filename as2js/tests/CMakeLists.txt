@@ -99,6 +99,7 @@ json_to_cpp(optimizer_assignments)
 json_to_cpp(optimizer_bitwise)
 json_to_cpp(optimizer_compare)
 json_to_cpp(optimizer_conditional)
+json_to_cpp(optimizer_equality)
 json_to_cpp(optimizer_logical)
 json_to_cpp(optimizer_multiplicative)
 json_to_cpp(optimizer_relational)
@@ -191,6 +192,7 @@ add_executable(${PROJECT_NAME}
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_bitwise.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_compare.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_conditional.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_equality.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_logical.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_multiplicative.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_relational.ci

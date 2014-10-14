@@ -1121,6 +1121,9 @@ char const g_optimizer_compare[] =
 char const g_optimizer_conditional[] =
 #include "test_as2js_optimizer_conditional.ci"
 ;
+char const g_optimizer_equality[] =
+#include "test_as2js_optimizer_equality.ci"
+;
 char const g_optimizer_logical[] =
 #include "test_as2js_optimizer_logical.ci"
 ;
@@ -1382,6 +1385,11 @@ void As2JsOptimizerUnitTests::test_optimizer_compare()
 void As2JsOptimizerUnitTests::test_optimizer_conditional()
 {
     run_tests(g_optimizer_conditional, "test_parser_conditional.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_equality()
+{
+    run_tests(g_optimizer_equality, "test_parser_equality.json");
 }
 
 void As2JsOptimizerUnitTests::test_optimizer_logical()
