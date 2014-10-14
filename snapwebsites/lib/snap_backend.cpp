@@ -408,20 +408,27 @@ void snap_backend::process_backend_uri(QString const& uri)
         if(p == -1)
         {
             SNAP_LOG_FATAL("snap_backend::process_backend_uri() could not create a child process.");
-            // we don't try again, we just abandon the whole process
+            // we do not try again, we just abandon the whole process
             exit(1);
+            NOTREACHED();
         }
         // block until child is done
         //
         // XXX should we have a way to break the wait after a "long"
-        //     while in the event the child locks up...
-        int status;
+        //     while in the event the child locks up?
+        int status(0);
         wait(&status);
         // TODO: check status?
         return;
     }
 
-    f_uri.set_uri(uri);
+    // set the URI; if user supplied it, then it can fail!
+    if(!f_uri.set_uri(uri))
+    {
+        SNAP_LOG_FATAL("snap_backend::process_backend_uri() called with invalid URI: \"")(uri)("\", URI ignored.");
+        exit(1);
+        NOTREACHED();
+    }
 
     // child process initialization
     //connect_cassandra(); -- this is already done in process()...
