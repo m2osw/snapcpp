@@ -108,7 +108,7 @@ echo "</pre></body></html>" >>html/statistics.html
 
 # Test output (Logs)
 echo "<html><head><title>as2js $VERSION test logs</title></head><body><h3>Logs for the as2js $VERSION tests</h3><p>Tests started on $start_date and finished on $end_date</p><pre>" >html/test_log.html
-if -f test_log.txt
+if test -f test_log.txt
 then
     # If test_log.txt does not exist, the user got the logs in the
     # console already
