@@ -52,6 +52,7 @@ private:
         udp_monitor();
 
         // initialization
+        udp_signal_t get_signal() const;
         void set_signal( udp_signal_t signal );
         void set_backend( zpsnap_backend_t backend );
 
@@ -80,6 +81,7 @@ private:
     snap_thread                 f_thread;
 
     void                        process_backend_uri(QString const& uri);
+    std::string                 get_signal_name_from_action(QString const& action);
 };
 
 

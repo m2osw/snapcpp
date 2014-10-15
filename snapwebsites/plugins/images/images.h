@@ -36,7 +36,8 @@ enum name_t
     SNAP_NAME_IMAGES_ACTION,
     SNAP_NAME_IMAGES_MODIFIED,
     SNAP_NAME_IMAGES_ROW,
-    SNAP_NAME_IMAGES_SCRIPT
+    SNAP_NAME_IMAGES_SCRIPT,
+    SNAP_NAME_IMAGES_SIGNAL_NAME
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -85,6 +86,7 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(server::backend_action_map_t& actions);
     void                on_versions_libraries(filter::filter::token_info_t& token);
+    virtual char const *get_signal_name(QString const& action) const;
     virtual void        on_backend_action(QString const& action);
     virtual bool        on_path_execute(content::path_info_t& ipath);
 

@@ -1,4 +1,4 @@
-/*  utils/mkgmtime.h
+/*  lib/mkgmtime.h
 
     Copyright (C) 2010 DeSmuME team
 

@@ -350,6 +350,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::business_type_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::connection_accepted_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::connection_declined_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::invoice_start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::invoice_end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
     {
         // 64 bit value (microseconds)
@@ -376,6 +378,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::location_plan1" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::location_plan6" // TODO -- remove at some point since that is a cutomer's field
          || n == "finball::location_plan12" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::invoice_grand_total" // TODO -- remove at some point since that is a cutomer's field
          )
     {
         // 64 bit float

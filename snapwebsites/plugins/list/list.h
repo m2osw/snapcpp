@@ -40,6 +40,7 @@ enum name_t
     SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT,
     SNAP_NAME_LIST_PAGELIST,
     SNAP_NAME_LIST_SELECTOR,
+    SNAP_NAME_LIST_SIGNAL_NAME,
     SNAP_NAME_LIST_STANDALONE,
     SNAP_NAME_LIST_STANDALONELIST,
     SNAP_NAME_LIST_TABLE,
@@ -125,6 +126,7 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(server::backend_action_map_t& actions);
+    virtual char const *get_signal_name(QString const& action) const;
     virtual void        on_backend_action(QString const& action);
     void                on_backend_process();
     virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);

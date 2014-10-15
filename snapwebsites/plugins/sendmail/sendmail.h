@@ -83,6 +83,7 @@ enum name_t
     SNAP_NAME_SENDMAIL_PING,
     SNAP_NAME_SENDMAIL_PRECEDENCE,
     SNAP_NAME_SENDMAIL_SENDING_STATUS,
+    SNAP_NAME_SENDMAIL_SIGNAL_NAME,
     SNAP_NAME_SENDMAIL_STATUS,
     SNAP_NAME_SENDMAIL_STATUS_DELETED,
     SNAP_NAME_SENDMAIL_STATUS_FAILED,
@@ -204,6 +205,7 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     void                on_register_backend_action(server::backend_action_map_t& actions);
+    virtual char const *get_signal_name(QString const& action) const;
     virtual void        on_backend_action(QString const& action);
     virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                on_replace_token(content::path_info_t& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);

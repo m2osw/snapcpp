@@ -1,7 +1,7 @@
 // Found in DeSmuME
-// I modified it a tad bit so it would compile as C (opposed to C++)
+// Alexis modified it a tad bit so it would compile as C (opposed to C++)
 
-/*  utils/mkgmtime.c
+/*  lib/mkgmtime.c
 
     Copyright (C) 2010 DeSmuME team
 

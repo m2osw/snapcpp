@@ -3815,7 +3815,7 @@ void snap_child::connect_cassandra()
  * \param[in] table_name  The name of the table to create.
  * \param[in] comment  The comment to attach to the table.
  */
-QtCassandra::QCassandraTable::pointer_t snap_child::create_table(const QString& table_name, const QString& comment)
+QtCassandra::QCassandraTable::pointer_t snap_child::create_table(QString const& table_name, QString const& comment)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
@@ -3844,7 +3844,7 @@ QtCassandra::QCassandraTable::pointer_t snap_child::create_table(const QString& 
 void snap_child::canonicalize_domain()
 {
     // retrieve domain table
-    QString table_name(get_name(SNAP_NAME_DOMAINS));
+    QString const table_name(get_name(SNAP_NAME_DOMAINS));
     QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
     // row for that domain exists?
@@ -4019,7 +4019,7 @@ void snap_child::canonicalize_domain()
 void snap_child::canonicalize_website()
 {
     // retrieve website table
-    QString table_name(get_name(SNAP_NAME_WEBSITES));
+    QString const table_name(get_name(SNAP_NAME_WEBSITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
     // row for that website exists?
@@ -5320,7 +5320,7 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
     // retrieve site table if not there yet
     if(!f_site_table)
     {
-        QString table_name(get_name(SNAP_NAME_SITES));
+        QString const table_name(get_name(SNAP_NAME_SITES));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
         if(!table)
         {
@@ -5368,7 +5368,7 @@ void snap_child::set_site_parameter(QString const& name, QtCassandra::QCassandra
     // retrieve site table if not there yet
     if(!f_site_table)
     {
-        QString table_name(get_name(SNAP_NAME_SITES));
+        QString const table_name(get_name(SNAP_NAME_SITES));
         QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
         table->setComment("List of sites with their global parameters.");
         table->setColumnType("Standard"); // Standard or Super
@@ -6256,8 +6256,8 @@ QStringList snap_child::init_plugins()
 void snap_child::update_plugins(QStringList const& list_of_plugins)
 {
     // system updates run at most once every 10 minutes
-    QString core_last_updated(get_name(SNAP_NAME_CORE_LAST_UPDATED));
-    QString param_name(core_last_updated);
+    QString const core_last_updated(get_name(SNAP_NAME_CORE_LAST_UPDATED));
+    QString const param_name(core_last_updated);
     QtCassandra::QCassandraValue last_updated(get_site_parameter(param_name));
     if(last_updated.nullValue())
     {
@@ -6335,6 +6335,16 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
         if(new_plugin_threshold > plugin_threshold)
         {
             set_site_parameter(core_plugin_threshold, new_plugin_threshold);
+        }
+
+        // always mark when the site was last updated
+        {
+            // get the date right now, DO NOT RESET START DATE
+            struct timeval tv;
+            gettimeofday(&tv, nullptr);
+            int64_t const now = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
+                              + static_cast<int64_t>(tv.tv_usec);
+            set_site_parameter(get_name(SNAP_NAME_CORE_SITE_READY), now);
         }
     }
 }

@@ -79,6 +79,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
         return "list::selector";
 
+    case SNAP_NAME_LIST_SIGNAL_NAME:
+        return "pagelist_udp_signal";
+
     case SNAP_NAME_LIST_STANDALONE: // when present in list table as a column name of a site row: signals a website managed as a standalone site
         return "*standalone*";
 
@@ -561,7 +564,7 @@ void list::on_attach_to_session()
     if(f_ping_backend)
     {
         // send a PING to the backend
-        f_snap->udp_ping("pagelist_udp_signal", "PING");
+        f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_LIST_PAGELIST)));
     }
 }
 
@@ -698,6 +701,28 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
 }
 
 
+/** \brief Retrieve the name of the signal used by the list plugin.
+ *
+ * This function returns "pagelist_udp_signal". Note that it says "pagelist"
+ * instead of just "list" because the --list command line option already
+ * "allocates" the list action name.
+ *
+ * See also the SNAP_NAME_LIST_SIGNAL_NAME.
+ *
+ * \param[in] action  The concerned action.
+ *
+ * \return The name of the list UDP signal.
+ */
+char const *list::get_signal_name(QString const& action) const
+{
+    if(action == get_name(SNAP_NAME_LIST_PAGELIST))
+    {
+        return get_name(SNAP_NAME_LIST_SIGNAL_NAME);
+    }
+    return backend_action::get_signal_name(action);
+}
+
+
 /** \brief Start the page list server.
  *
  * When running the backend the user can ask to run the pagelist
@@ -709,7 +734,7 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * The loop updates all the lists as required, then it
  * falls asleep until the next UDP PING event received via the
- * pagelist_udp_signal IP:Port information.
+ * "pagelist_udp_signal" IP:Port information. (see get_signal_name().)
  *
  * Note that because the UDP signals are not 100% reliable, the
  * server actually sleeps for 5 minutes and checks for new pages
@@ -748,7 +773,7 @@ void list::on_backend_action(QString const& action)
         {
             throw list_exception_no_backend("could not determine the snap_backend pointer");
         }
-        backend->create_signal( "pagelist_udp_signal" );
+        backend->create_signal( get_signal_name(action) );
 
 // Test creating just one link (*:*)
 //content::path_info_t list_ipath;
@@ -809,7 +834,9 @@ void list::on_backend_action(QString const& action)
                             if(backend->stop_received())
                             {
                                 // clean STOP
-                                return;
+                                // we have to exit otherwise we'd get called again with
+                                // the next website!?
+                                exit(0);
                             }
                         }
                     }
@@ -820,8 +847,7 @@ void list::on_backend_action(QString const& action)
             //
             if( backend->get_error() )
             {
-                // TODO: see whether errors should generate a return
-                //       instead of an exit(1).
+                SNAP_LOG_FATAL("list::on_backend_action(): caught a UDP server error");
                 exit(1);
             }
 
@@ -834,7 +860,9 @@ void list::on_backend_action(QString const& action)
                 if(backend->stop_received())
                 {
                     // clean STOP
-                    return;
+                    // we have to exit otherwise we'd get called again with
+                    // the next website!?
+                    exit(0);
                 }
 
                 // Because there is a delay of LIST_PROCESSING_LATENCY
@@ -856,13 +884,15 @@ void list::on_backend_action(QString const& action)
                 wait.tv_nsec = (LIST_PROCESSING_LATENCY % 1000000) * 1000;
                 nanosleep(&wait, NULL);
             }
-            // else 5 min. time out or we received the STOP message
+            // else -- 5 min. time out or we received the STOP message
 
             // quickly end this process if the user requested a stop
             if(backend->stop_received())
             {
                 // clean STOP
-                return;
+                // we have to exit otherwise we'd get called again with
+                // the next website!?
+                exit(0);
             }
         }
     }

@@ -32,29 +32,28 @@ int main(int argc, char *argv[])
     //
     s->prepare_qtapp( argc, argv );
 
+	// get the proper message (Excuse the naming convension...)
     QString msg(s->get_parameter("__BACKEND_URI"));
     if(msg.isEmpty())
     {
         msg = "PING";
     }
+
+	// determine UDP server name
     if(s->get_parameter("__BACKEND_ACTION") == "sendmail")
     {
-        // use sendmail UDP information
         s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
     }
     else if(s->get_parameter("__BACKEND_ACTION") == "pagelist")
     {
-        // use sendmail UDP information
         s->udp_ping("pagelist_udp_signal", msg.toUtf8().data());
     }
     else if(s->get_parameter("__BACKEND_ACTION") == "snapserver")
     {
-        // use sendmail UDP information
         s->udp_ping("snapserver_udp_signal", msg.toUtf8().data());
     }
     else if(s->get_parameter("__BACKEND_ACTION") == "images")
     {
-        // use sendmail UDP information
         s->udp_ping("images_udp_signal", msg.toUtf8().data());
     }
 	else
@@ -64,7 +63,7 @@ int main(int argc, char *argv[])
 		snap::NOTREACHED();
 	}
 
-    // exit via the server so the server can clean itself up cleanly
+    // exit via the server so the server can clean itself up properly
     s->exit(0);
     snap::NOTREACHED();
 

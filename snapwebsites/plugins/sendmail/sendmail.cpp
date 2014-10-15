@@ -118,6 +118,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_SENDMAIL_SENDING_STATUS:
         return "sendmail::sending_status";
 
+    case SNAP_NAME_SENDMAIL_SIGNAL_NAME:
+        return "sendmail_udp_signal";
+
     case SNAP_NAME_SENDMAIL_STATUS:
         return "sendmail::status";
 
@@ -166,7 +169,7 @@ char const *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_logic_exception("Invalid SNAP_NAME_SENDMAIL_...");
+        throw snap_logic_exception(QString("Invalid SNAP_NAME_SENDMAIL_...").arg(static_cast<int>(name)));
 
     }
     NOTREACHED();
@@ -1523,7 +1526,7 @@ void sendmail::post_email(const email& e)
     table->row(get_name(SNAP_NAME_SENDMAIL_NEW))->cell(key)->setValue(value);
 
     // signal the listening server if IP is available (send PING)
-    f_snap->udp_ping("sendmail_udp_signal");
+    f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_SENDMAIL)));
 }
 
 
@@ -1570,6 +1573,25 @@ void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
 }
 
 
+/** \brief Retrieve the signal name for the sendmail plugin.
+ *
+ * This function returns "sendmail_udp_signal". See the definition
+ * of the SNAP_NAME_SENDMAIL_SIGNAL_NAME.
+ *
+ * \param[in] action  The concerned action.
+ *
+ * \return The name of the UDP signal used by sendmail.
+ */
+char const *sendmail::get_signal_name(QString const& action) const
+{
+    if(action == get_name(SNAP_NAME_SENDMAIL))
+    {
+        return get_name(SNAP_NAME_SENDMAIL_SIGNAL_NAME);
+    }
+    return backend_action::get_signal_name(action);
+}
+
+
 /** \brief Start the sendmail server.
  *
  * When running the backend the user can ask to run the sendmail
@@ -1581,7 +1603,7 @@ void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * The loop reads all the emails that are ready to be processed then
  * falls asleep until the next UDP PING event received via the
- * sendmail_udp_signal IP:Port information.
+ * "sendmail_udp_signal" IP:Port information. (see get_signal_name())
  *
  * Note that because the UDP signals are not 100% reliable, the
  * server actually sleeps for 5 minutes and checks for new emails
@@ -1605,18 +1627,16 @@ void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * \param[in] action  The action this function is being called with.
  */
-void sendmail::on_backend_action(const QString& action)
+void sendmail::on_backend_action(QString const& action)
 {
-    static_cast<void>(action);
-
     try
     {
-        f_backend = dynamic_cast<snap_backend*>(f_snap.get());
+        f_backend = dynamic_cast<snap_backend *>(f_snap.get());
         if(!f_backend)
         {
             throw sendmail_exception_no_backend("could not determine the snap_backend pointer");
         }
-        f_backend->create_signal( "sendmail_udp_signal" );
+        f_backend->create_signal( get_signal_name(action) );
 
         for(;;)
         {
@@ -1629,7 +1649,7 @@ void sendmail::on_backend_action(const QString& action)
             //
             if( f_backend->get_error() )
             {
-                // TODO: we probably should return here?
+                SNAP_LOG_FATAL("sendmail::on_backend_action(): caught a UDP server error");
                 exit(1);
             }
 
@@ -1647,7 +1667,9 @@ void sendmail::on_backend_action(const QString& action)
             if(f_backend->stop_received())
             {
                 // clean STOP
-                return;
+                // we have to exit otherwise we'd get called again with
+                // the next website!?
+                exit(0);
             }
         }
     }

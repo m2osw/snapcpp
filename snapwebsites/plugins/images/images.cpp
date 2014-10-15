@@ -54,18 +54,21 @@ char const *get_name(name_t name)
     case SNAP_NAME_IMAGES_ACTION:
         return "images";
 
+    case SNAP_NAME_IMAGES_MODIFIED:
+        return "images::modified";
+
     case SNAP_NAME_IMAGES_ROW:
         return "images";
 
     case SNAP_NAME_IMAGES_SCRIPT:
         return "images::script";
 
-    case SNAP_NAME_IMAGES_MODIFIED:
-        return "images::modified";
+    case SNAP_NAME_IMAGES_SIGNAL_NAME:
+        return "images_udp_signal";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_OUTPUT_...");
+        throw snap_logic_exception(QString("invalid SNAP_NAME_OUTPUT_... (%1)").arg(static_cast<int>(name)));
 
     }
     NOTREACHED();
@@ -669,7 +672,7 @@ void images::on_attach_to_session()
     if(f_ping_backend)
     {
         // send a PING to the backend
-        f_snap->udp_ping("images_udp_signal", "PING");
+        f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_IMAGES_ACTION)));
     }
 }
 
@@ -718,6 +721,25 @@ void images::on_versions_libraries(filter::filter::token_info_t& token)
     token.f_replacement += " (compiled with " MagickLibVersionText ")</li>";
 }
 
+
+/** \brief Return the name to use to create the UDP signal listener.
+ *
+ * This function returns the UDP signal listener name.
+ *
+ * \param[in] action  The concerned action.
+ *
+ * \return The name of the UDP signal for the image plugin.
+ */
+char const *images::get_signal_name(QString const& action) const
+{
+    if(action == get_name(SNAP_NAME_IMAGES_ACTION))
+    {
+        return get_name(SNAP_NAME_IMAGES_SIGNAL_NAME);
+    }
+    return backend_action::get_signal_name(action);
+}
+
+
 /** \brief Start the images transform server.
  *
  * When running the backend the user can ask to run the "images"
@@ -741,7 +763,7 @@ void images::on_backend_action(QString const& action)
         {
             throw images_exception_no_backend("could not determine the snap_backend pointer");
         }
-        f_backend->create_signal( "images_udp_signal" );
+        f_backend->create_signal( get_signal_name(action) );
 
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
@@ -762,8 +784,7 @@ void images::on_backend_action(QString const& action)
             //
             if( f_backend->get_error() )
             {
-                // TODO: see whether errors should generate a return
-                //       instead of an exit(1).
+                SNAP_LOG_FATAL("images::on_backend_action(): caught a UDP server error");
                 exit(1);
             }
 
@@ -784,7 +805,9 @@ void images::on_backend_action(QString const& action)
             if(f_backend->stop_received())
             {
                 // clean STOP
-                return;
+                // we have to exit otherwise we'd get called again with
+                // the next website!?
+                exit(0);
             }
         }
     }

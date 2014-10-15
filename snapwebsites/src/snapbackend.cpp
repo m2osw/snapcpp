@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 
         exitval = 0;
     }
-    catch( const snap::snap_exception& except )
+    catch( snap::snap_exception const& except )
     {
         SNAP_LOG_FATAL("snapbackend: exception caught: ")(except.what());
     }

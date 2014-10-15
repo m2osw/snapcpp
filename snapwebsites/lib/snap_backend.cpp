@@ -22,6 +22,7 @@
 #include "not_reached.h"
 
 #include <wait.h>
+#include <fcntl.h>
 
 
 namespace snap
@@ -52,6 +53,13 @@ char const *g_stop_message = "STOP";
 snap_backend::udp_monitor::udp_monitor()
     : snap_thread::snap_runner( "udp_monitor" )
 {
+}
+
+
+snap_backend::udp_signal_t snap_backend::udp_monitor::get_signal() const
+{
+    snap_thread::snap_lock lock( f_mutex );
+    return f_udp_signal;
 }
 
 
@@ -143,7 +151,7 @@ void snap_backend::udp_monitor::run()
                 f_stop_received = true;
 
                 // we have to push that or the listener is likely to
-                // continue to way for minutes...
+                // continue to wait for minutes...
                 //
                 f_message_fifo.push_back( buf );
                 break; // no need to listen for more
@@ -170,6 +178,20 @@ void snap_backend::udp_monitor::run()
  *
  * This class handles backend processing for the snapserver.
  *
+ * The process for backends works this way:
+ *
+ * \li Backend tool prepares the server
+ * \li Backend tool creates a snap_backend object.
+ * \li Backend tool calls run_backend()
+ * \li run_backend() connects to the database
+ * \li run_backend() checks whether the sites table exists
+ * \li if not ready -- wait until the sites table exists
+ * \li -- while waiting for the sites table, we also check UDP PING signals
+ *
+ * \note
+ * The constructor initializes the monitor and thread objects, however,
+ * the thread is only started when the child is called with an action.
+ *
  * \todo
  * Add more documentation about the backend and how it works.
  *
@@ -177,7 +199,7 @@ void snap_backend::udp_monitor::run()
  */
 snap_backend::snap_backend( server_pointer_t s )
     : snap_child(s)
-    , f_thread( "snap_backend", &f_monitor )
+    , f_thread( "snap_backend", &f_monitor ) // start in process_backend_uri()
 {
     f_monitor.set_backend( this );
 }
@@ -202,7 +224,10 @@ snap_backend::~snap_backend()
  */
 void snap_backend::create_signal( std::string const& name )
 {
-    f_monitor.set_signal( udp_get_server( name.c_str() ) );
+    if(!f_monitor.get_signal())
+    {
+        f_monitor.set_signal( udp_get_server( name.c_str() ) );
+    }
 }
 
 
@@ -302,19 +327,85 @@ void snap_backend::run_backend()
             throw snap_child_exception_no_server("snap_backend::run_backend(): The p_server weak pointer could not be locked");
         }
 
-        // verify that the "sites" table exists
-        QtCassandra::QCassandraTable::pointer_t sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
-        if(!sites_table)
+        // verify that the "sites" table exists and is ready
+        // this is a loop, we wait until the table gets ready
+        //
+        // NOTE: This is somewhat considered a hack; the proper fix (to be
+        //       created) will be to have a dry run of the server to create
+        //       the tables before you run snapinit to start anything
+        //       (i.e. something like snapsetup <uri>)
+        QString const action(p_server->get_parameter("__BACKEND_ACTION"));
+        QtCassandra::QCassandraTable::pointer_t sites_table;
         {
-            // the whole table is still missing after 5 minutes!
-            // in this case it is an error instead of a fatal error
-            SNAP_LOG_ERROR("snap_backend::run_backend(): The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend!");
+            std::unique_ptr<snap_thread::snap_thread_life> tl;
 
-            // this applies to all the backends so we can as well exit
-            // immediately instead of testing again and again
-            exit(1);
-            NOTREACHED();
+            bool emit_warning(true);
+            for(;;)
+            {
+                sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
+                if(sites_table)
+                {
+                    // table exists, we can move on for now
+                    break;
+                }
+
+                if(action.isEmpty())
+                {
+                    // this applies to all the backends so we can as well exit
+                    // immediately instead of testing again and again
+                    SNAP_LOG_FATAL("snap_backend::run_backend(): The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend immediate!");
+                    exit(1);
+                    NOTREACHED();
+                }
+
+                if(emit_warning)
+                {
+                    emit_warning = false;
+
+                    // the whole table is still missing after 5 minutes!
+                    // in this case it is an error instead of a fatal error
+                    SNAP_LOG_WARNING("snap_backend::run_backend(): The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend!");
+                }
+
+                if(!tl)
+                {
+                    std::string signal_name(get_signal_name_from_action(action));
+                    if(signal_name.empty())
+                    {
+                        SNAP_LOG_FATAL("snap_backend::run_backend(): The 'sites' table is not ready, this backend cannot be run at this time.");
+                        exit(1);
+                        NOTREACHED();
+                    }
+
+                    tl.reset(new snap_thread::snap_thread_life(&f_thread));
+                    create_signal(signal_name);
+                }
+                if(get_error())
+                {
+                    SNAP_LOG_FATAL("snap_backend::run_backend(): The 'sites' table is not ready and we got an error from the UDP server!");
+                    exit(1);
+                    NOTREACHED();
+                }
+                snap_backend::message_t message;
+                pop_message(message, 10 * 1000); // wait up to 10 seconds or STOP
+                if(stop_received())
+                {
+                    SNAP_LOG_INFO("snap_backend::run_backend(): Stopped while waiting for the 'sites' table to be ready.");
+                    exit(1);
+                    NOTREACHED();
+                }
+
+                // this applies to all the backends so we can as well exit
+                // immediately instead of testing again and again
+                //exit(1);
+                //NOTREACHED();
+                f_context->clearCache();
+            }
         }
+        // reset that signal server because otherwise the backend itself
+        // will fail; in most cases it is a nullptr by now anyway
+        udp_signal_t null_pointer;
+        f_monitor.set_signal( null_pointer );
 
         QString const uri( p_server->get_parameter("__BACKEND_URI") );
         if( !uri.isEmpty() )
@@ -364,6 +455,90 @@ void snap_backend::run_backend()
     }
     exit(1);
     NOTREACHED();
+}
+
+
+std::string snap_backend::get_signal_name_from_action(QString const& action)
+{
+    // in order to retrieve the signal name, we need a complete list of
+    // plugins as a child process gets, so here we create a child and let
+    // it determine the signal name
+    //
+    // we make use of pipes to retrieve the result once the child got it
+    int ps[2];
+    if(pipe2(ps, O_CLOEXEC) != 0)
+    {
+        SNAP_LOG_FATAL("snap_backend::get_signal_name_from_action() could not create pipes.");
+        // we do not try again, we just abandon the whole process
+        exit(1);
+        NOTREACHED();
+    }
+
+    const pid_t p = fork_child();
+    if(p != 0)
+    {
+        // no need for the write side here
+        close(ps[1]);
+
+        // parent process
+        if(p == -1)
+        {
+            SNAP_LOG_FATAL("snap_backend::get_signal_name_from_action() could not create a child process.");
+            // we do not try again, we just abandon the whole process
+            exit(1);
+            NOTREACHED();
+        }
+
+        char buf[256];
+        int sz(::read(ps[0], buf, sizeof(buf) - 1));
+        if(sz < 0)
+        {
+            SNAP_LOG_FATAL("snap_backend::get_signal_name_from_action() failed while reading from pipe.");
+            // we do not try again, we just abandon the whole process
+            exit(1);
+            NOTREACHED();
+        }
+        buf[sz] = '\0';
+        close(ps[0]);
+
+        // block until child is done
+        //
+        // XXX should we have a way to break the wait after a "long"
+        //     while in the event the child locks up?
+        int status(0);
+        wait(&status);
+        // TODO: check status?
+        return buf;
+    }
+
+    // no need for the read on this side
+    close(ps[0]);
+
+    // child process initialization
+    //connect_cassandra(); -- this is already done in process()...
+
+    // WARNING: this call checks the sites table for additional plugins
+    //          this should just fail with an empty string which is fine
+    //          because at the start the website cannot already have
+    //          additional plugins defined!
+    init_plugins();
+
+    auto p_server( f_server.lock() );
+    if(!p_server)
+    {
+        throw snap_logic_exception("snap_backend::get_signal_name_from_action(): server pointer is NULL");
+    }
+
+    server::backend_action_map_t actions;
+    p_server->register_backend_action(actions);
+    if(actions.contains(action))
+    {
+        char const *name(actions[action]->get_signal_name(action));
+        ::write(ps[1], name, strlen(name));
+    }
+
+    // for C++ we need a valid return here...
+    return "";
 }
 
 

@@ -60,9 +60,10 @@ enum name_t
     SNAP_NAME_CORE_REDIRECT,
     SNAP_NAME_CORE_RULES,
     SNAP_NAME_CORE_SERVER_PROTOCOL,
-    SNAP_NAME_CORE_SITE_NAME,
-    SNAP_NAME_CORE_SITE_SHORT_NAME,
     SNAP_NAME_CORE_SITE_LONG_NAME,
+    SNAP_NAME_CORE_SITE_NAME,
+    SNAP_NAME_CORE_SITE_READY,
+    SNAP_NAME_CORE_SITE_SHORT_NAME,
     SNAP_NAME_CORE_USER_COOKIE_NAME
 };
 char const *get_name(name_t name) __attribute__ ((const));
@@ -125,8 +126,9 @@ public:
     class backend_action
     {
     public:
-        virtual         ~backend_action() {}
-        virtual void    on_backend_action(QString const& action) = 0;
+        virtual                 ~backend_action() {}
+        virtual char const *    get_signal_name(QString const& action) const;
+        virtual void            on_backend_action(QString const& action) = 0;
     };
 
     class secure_field_flag_t

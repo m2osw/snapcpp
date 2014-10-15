@@ -171,21 +171,24 @@ char const *get_name(name_t name)
     case SNAP_NAME_CORE_SERVER_PROTOCOL:
         return "SERVER_PROTOCOL";
 
+    case SNAP_NAME_CORE_SITE_LONG_NAME:
+        return "core::site_long_name";
+
     case SNAP_NAME_CORE_SITE_NAME:
         return "core::site_name";
 
+    case SNAP_NAME_CORE_SITE_READY:
+        return "core::site_ready";
+
     case SNAP_NAME_CORE_SITE_SHORT_NAME:
         return "core::site_short_name";
-
-    case SNAP_NAME_CORE_SITE_LONG_NAME:
-        return "core::site_long_name";
 
     case SNAP_NAME_CORE_USER_COOKIE_NAME:
         return "core::user_cookie_name";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_CORE_...");
+        throw snap_logic_exception(QString("invalid SNAP_NAME_CORE_... (%1)").arg(static_cast<int>(name)));
 
     }
     NOTREACHED();
@@ -1051,15 +1054,17 @@ void server::detach()
  * processes the email by sending it to the mail server.
  *
  * \param[in] udp_addr_port  The IP addr and port ("addr:port") of the UDP server.
+ *
+ * \return A UDP server smart pointer.
  */
-server::udp_server_t server::udp_get_server( const QString& udp_addr_port )
+server::udp_server_t server::udp_get_server( QString const& udp_addr_port )
 {
     // TODO: we should have a common function to read and transform the
     //       parameter to a valid IP/Port pair (see above)
     //
     QString addr, port;
-    int bracket( udp_addr_port.lastIndexOf("]") );
-    int p( udp_addr_port.lastIndexOf(":") );
+    int const bracket( udp_addr_port.lastIndexOf("]") );
+    int const p( udp_addr_port.lastIndexOf(":") );
     if( (bracket != -1) && (p != -1) )
     {
         if(p > bracket)
@@ -1957,6 +1962,29 @@ bool quiet_error_callback::has_error() const
     return f_error;
 }
 
+
+/** \brief Retrieve the name of the signal used by this backend.
+ *
+ * The default get_signal_name() function returns a null pointer meaning
+ * that this action does not support signals. In most cases this means
+ * these actions are run by the CRON based backend calls.
+ *
+ * Plugins that loop until stopped have a signal name. This name can be
+ * used to send signals such as PING and STOP to that backend. The PING
+ * is expected to be used to run the process ASAP (i.e. another process
+ * made a change that this backend may be interested in checking out.)
+ *
+ * If the func returns the null pointer, no UDP listener is created.
+ *
+ * \param[in] action  The name of the action.
+ *
+ * \return nullptr or a pointer to a signal name.
+ */
+char const *server::backend_action::get_signal_name(QString const& action) const
+{
+    static_cast<void>(action);
+    return nullptr;
+}
 
 
 } // namespace snap
