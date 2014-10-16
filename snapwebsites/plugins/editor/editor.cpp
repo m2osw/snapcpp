@@ -530,6 +530,7 @@ void editor::process_new_draft()
 void editor::on_process_post(QString const& uri_path)
 {
     QString const editor_full_session(f_snap->postenv("_editor_session"));
+//std::cerr << "***\n*** process post of [" << uri_path << "] [" << editor_full_session << "]\n***\n";
     if(editor_full_session.isEmpty())
     {
         // if the _editor_session variable does not exist, do not consider this
@@ -550,6 +551,7 @@ void editor::on_process_post(QString const& uri_path)
         NOTREACHED();
     }
 
+//std::cerr << "***\n*** save mode [" << static_cast<int>(editor_save_mode) << "]\n***\n";
     // [0] -- session Id, [1] -- random number
     QStringList const session_data(editor_full_session.split("/"));
     if(session_data.size() != 2)

@@ -552,6 +552,12 @@ void list::on_modified_content(content::path_info_t& ipath)
  * \note
  * We may want to create another "real" end of session message?
  *
+ * \todo
+ * The on_attach_to_session() does NOT get called when we are running
+ * a backend. We probably want two additional signals: "before execute"
+ * and "after execute" (names are still TBD). Then this event would be
+ * changed to the "after execute" event.
+ *
  * \bug
  * There is a 10 seconds latency between the last hit and the time when
  * the list data is taken in account (see LIST_PROCESSING_LATENCY).

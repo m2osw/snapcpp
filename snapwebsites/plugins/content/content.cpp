@@ -175,6 +175,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_FILES_REFERENCE:
         return "content::files::reference";
 
+    case SNAP_NAME_CONTENT_RESETSTATUS:
+        return "resetstatus";
+
     case SNAP_NAME_CONTENT_FILES_SECURE: // -1 -- unknown, 0 -- unsecure, 1 -- secure
         return "content::files::secure";
 
@@ -3889,6 +3892,7 @@ void content::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN0(content, "server", server, save_content);
+    SNAP_LISTEN(content, "server", server, register_backend_action, _1);
     SNAP_LISTEN0(content, "server", server, backend_process);
 }
 
@@ -7543,6 +7547,91 @@ void content::on_save_content()
 }
 
 
+
+
+/** \brief Register the resetstatus action.
+ *
+ * This function registers this plugin as supporting the "resetstatus"
+ * actions.
+ *
+ * This can be used by an administrator to force a reset of all the statuses
+ * of all the nodes (usually only necessary for developers although once in
+ * a while it could happen that a page never gets reset properly.)
+ *
+ * \param[in,out] actions  The list of supported actions where we add ourselves.
+ */
+void content::on_register_backend_action(server::backend_action_map_t& actions)
+{
+    actions[get_name(SNAP_NAME_CONTENT_RESETSTATUS)] = this;
+}
+
+
+/** \brief Process various backend tasks.
+ *
+ * Content backend processes:
+ *
+ * \li Reset the status of pages that somehow got a working status
+ *     but that status never got reset.
+ *
+ * \li Check new attachements as those files may be or include viruses.
+ */
+void content::on_backend_action(QString const& action)
+{
+    if(action == get_name(SNAP_NAME_CONTENT_RESETSTATUS))
+    {
+        backend_action_reset_status();
+    }
+}
+
+
+void content::backend_action_reset_status()
+{
+    QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+
+    QtCassandra::QCassandraRowPredicate row_predicate;
+    // process 100 in a row
+    row_predicate.setCount(100);
+    for(;;)
+    {
+        content_table->clearCache();
+        uint32_t const count(content_table->readRows(row_predicate));
+        if(count == 0)
+        {
+            // no more lists to process
+            break;
+        }
+        QtCassandra::QCassandraRows const rows(content_table->rows());
+        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                o != rows.end(); ++o)
+        {
+            path_info_t ipath;
+            ipath.set_path(QString::fromUtf8(o.key().data()));
+            if(content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_STATUS)))
+            {
+                // do not use the normal interface, force any normal (something) to normal (normal)
+                QtCassandra::QCassandraValue status(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value());
+                if(status.nullValue())
+                {
+                    int32_t s(static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
+                            + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING) * 256));
+                    status.setInt32Value(s);
+                }
+                else
+                {
+                    int32_t s(status.int32Value());
+                    if((s & 0xFF) == static_cast<int>(path_info_t::status_t::state_t::NORMAL)
+                    && (s >> 8) != static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING))
+                    {
+                        s = static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
+                          + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING)) * 256;
+                        status.setInt32Value(s);
+                        content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->setValue(status);
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 /** \brief Process various backend tasks.

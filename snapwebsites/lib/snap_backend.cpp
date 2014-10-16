@@ -349,6 +349,7 @@ void snap_backend::run_backend()
                     break;
                 }
 
+//std::cerr << "no sites?! action is [" << action << "]\n";
                 if(action.isEmpty())
                 {
                     // this applies to all the backends so we can as well exit
@@ -364,7 +365,7 @@ void snap_backend::run_backend()
 
                     // the whole table is still missing after 5 minutes!
                     // in this case it is an error instead of a fatal error
-                    SNAP_LOG_WARNING("snap_backend::run_backend(): The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend!");
+                    SNAP_LOG_WARNING("snap_backend::run_backend(): The 'sites' table is still empty or nonexistent! Waiting before fully starting the \"")(action)("\" backend.");
                 }
 
                 if(!tl)
@@ -534,8 +535,16 @@ std::string snap_backend::get_signal_name_from_action(QString const& action)
     if(actions.contains(action))
     {
         char const *name(actions[action]->get_signal_name(action));
-        ::write(ps[1], name, strlen(name));
+        size_t const len(strlen(name));
+        ssize_t r(::write(ps[1], name, len));
+        if(r != static_cast<ssize_t>(len))
+        {
+            SNAP_LOG_ERROR("snap_backend::get_signal_name_from_action() failed while writing to pipe (wrote ")(r)(" instead of ")(len)(").");
+        }
     }
+
+    // the child just dies now, it served its purpose
+    exit(0);
 
     // for C++ we need a valid return here...
     return "";

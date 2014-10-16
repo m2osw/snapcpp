@@ -84,6 +84,7 @@ enum name_t
     SNAP_NAME_CONTENT_PREVENT_DELETE,
     SNAP_NAME_CONTENT_PRIMARY_OWNER,
     SNAP_NAME_CONTENT_PROCESSING_TABLE,
+    SNAP_NAME_CONTENT_RESETSTATUS,
     SNAP_NAME_CONTENT_REVISION_CONTROL,
     SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH,
     SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY,
@@ -569,7 +570,7 @@ private:
 
 
 
-class content : public plugins::plugin, public links::links_cloned
+class content : public plugins::plugin, public server::backend_action, public links::links_cloned
 {
 public:
     enum param_type_t
@@ -693,6 +694,8 @@ public:
     void                on_save_content();
     //virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     //void                on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_register_backend_action(server::backend_action_map_t& actions);
+    virtual void        on_backend_action(QString const& action);
     void                on_backend_process();
 
     SNAP_SIGNAL(new_content, (path_info_t& path), (path));
@@ -763,6 +766,7 @@ private:
 
     void        initial_update(int64_t variables_timestamp);
     void        content_update(int64_t variables_timestamp);
+    void        backend_action_reset_status();
     void        backend_process_status();
     void        backend_process_files();
 

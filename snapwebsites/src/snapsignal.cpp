@@ -1,5 +1,5 @@
 // Snap Websites Server -- to send UDP signals to backends
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,14 +32,14 @@ int main(int argc, char *argv[])
     //
     s->prepare_qtapp( argc, argv );
 
-	// get the proper message (Excuse the naming convension...)
+    // get the proper message (Excuse the naming convension...)
     QString msg(s->get_parameter("__BACKEND_URI"));
     if(msg.isEmpty())
     {
         msg = "PING";
     }
 
-	// determine UDP server name
+    // determine UDP server name
     if(s->get_parameter("__BACKEND_ACTION") == "sendmail")
     {
         s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
@@ -56,12 +56,12 @@ int main(int argc, char *argv[])
     {
         s->udp_ping("images_udp_signal", msg.toUtf8().data());
     }
-	else
-	{
-		std::cerr << "error: unknown/unsupported action." << std::endl;
-		s->exit(1);
-		snap::NOTREACHED();
-	}
+    else
+    {
+        std::cerr << "error: unknown/unsupported action." << std::endl;
+        s->exit(1);
+        snap::NOTREACHED();
+    }
 
     // exit via the server so the server can clean itself up properly
     s->exit(0);
@@ -70,5 +70,4 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-// vim: ts=4 sw=4
-
+// vim: ts=4 sw=4 et
