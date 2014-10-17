@@ -21,6 +21,7 @@
 #include "snap_exception.h"
 #include "qstring_stream.h"
 #include "log.h"
+#include "mkgmtime.h"
 
 #include <iostream>
 
@@ -765,20 +766,35 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S.%N"
             //
-            const QStringList datetime_split ( v.split(' ') );
-            const QStringList date_split     ( datetime_split[0].split('-') );
-            const QStringList time_split     ( datetime_split[1].split(':') );
+            QStringList const datetime_split ( v.split(' ') );
+            if(datetime_split.size() < 2)
+            {
+                return;
+            }
+            QStringList const date_split     ( datetime_split[0].split('-') );
+            QStringList const time_split     ( datetime_split[1].split(':') );
+            if(date_split.size() != 3)
+            {
+                return;
+            }
+            if(time_split.size() != 3)
+            {
+                return;
+            }
             //
             tm to;
+            memset(&to, 0, sizeof(to));
             to.tm_sec  = time_split[2].toInt();
             to.tm_min  = time_split[1].toInt();
             to.tm_hour = time_split[0].toInt();
-            to.tm_yday = date_split[2].toInt();
-            to.tm_mon  = date_split[1].toInt();
-            to.tm_year = date_split[0].toInt(); // TODO: handle the decimal part
+            to.tm_mday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt() - 1;
+            to.tm_year = date_split[0].toInt() - 1900; // TODO: handle the decimal part
+
+            int64_t ns((time_split[2].toDouble() - to.tm_sec) * 1000000.0);
             //
-            const time_t tt( mktime( &to ) );
-            cvalue.setUInt64Value( tt * 1000000 );
+            time_t const tt( mkgmtime( &to ) );
+            cvalue.setUInt64Value( tt * 1000000 + ns );
         }
         break;
 
@@ -786,19 +802,31 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S"
             //
-            const QStringList datetime_split ( v.split(' ') );
-            const QStringList date_split     ( datetime_split[0].split('-') );
-            const QStringList time_split     ( datetime_split[1].split(':') );
+            QStringList const datetime_split ( v.split(' ') );
+            if(datetime_split.size() < 2)
+            {
+                return;
+            }
+            QStringList const date_split     ( datetime_split[0].split('-') );
+            QStringList const time_split     ( datetime_split[1].split(':') );
+            if(date_split.size() != 3)
+            {
+                return;
+            }
+            if(time_split.size() != 3)
+            {
+                return;
+            }
             //
             tm to;
             to.tm_sec  = time_split[2].toInt();
             to.tm_min  = time_split[1].toInt();
             to.tm_hour = time_split[0].toInt();
-            to.tm_yday = date_split[2].toInt();
-            to.tm_mon  = date_split[1].toInt();
-            to.tm_year = date_split[0].toInt();
+            to.tm_mday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt() - 1;
+            to.tm_year = date_split[0].toInt() - 1900;
             //
-            const time_t tt( mktime( &to ) );
+            time_t const tt( mkgmtime( &to ) );
             cvalue.setUInt64Value( tt );
         }
         break;
@@ -808,8 +836,20 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
             // String will be of the form: "%Y-%m-%d %H:%M:%S.%N string"
             //
             QStringList datetime_split ( v.split(' ') );
+            if(datetime_split.size() < 2)
+            {
+                return;
+            }
             QStringList const date_split     ( datetime_split[0].split('-') );
             QStringList const time_split     ( datetime_split[1].split(':') );
+            if(date_split.size() != 3)
+            {
+                return;
+            }
+            if(time_split.size() != 3)
+            {
+                return;
+            }
             datetime_split.removeFirst();
             datetime_split.removeFirst();
             QString const str(datetime_split.join(" "));
@@ -818,15 +858,17 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
             to.tm_sec  = time_split[2].toInt();
             to.tm_min  = time_split[1].toInt();
             to.tm_hour = time_split[0].toInt();
-            to.tm_yday = date_split[2].toInt();
-            to.tm_mon  = date_split[1].toInt();
-            to.tm_year = date_split[0].toInt(); // TODO handle the microseconds decimal number
+            to.tm_mday = date_split[2].toInt();
+            to.tm_mon  = date_split[1].toInt() - 1;
+            to.tm_year = date_split[0].toInt() - 1900; // TODO handle the microseconds decimal number
+
+            int64_t ns((time_split[2].toDouble() - to.tm_sec) * 1000000.0);
             //
-            time_t const tt( mktime( &to ) );
+            time_t const tt( mkgmtime( &to ) );
 
             // concatenate the result
             QByteArray tms;
-            appendInt64Value( tms, tt * 1000000 );
+            appendInt64Value( tms, tt * 1000000 + ns );
             appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
         }
