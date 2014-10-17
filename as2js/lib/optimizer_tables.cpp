@@ -52,6 +52,7 @@ SOFTWARE.
 #include    "optimizer_conditional.ci"
 #include    "optimizer_equality.ci"
 #include    "optimizer_logical.ci"
+#include    "optimizer_match.ci"
 #include    "optimizer_multiplicative.ci"
 #include    "optimizer_relational.ci"
 #include    "optimizer_statements.ci"
@@ -117,6 +118,9 @@ optimization_tables_t const g_optimizer_tables[] =
     },
     {
         POINTER_AND_COUNT(g_optimizer_logical_table)
+    },
+    {
+        POINTER_AND_COUNT(g_optimizer_match_table)
     },
     {
         POINTER_AND_COUNT(g_optimizer_multiplicative_table)

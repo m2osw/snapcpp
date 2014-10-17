@@ -117,6 +117,8 @@ public:
 
     ssize_t                 utf8_length() const;
     std::string             to_utf8() const;
+
+    String                  simplified() const;
 };
 
 std::ostream& operator << (std::ostream& out, String const& str);

@@ -1127,6 +1127,9 @@ char const g_optimizer_equality[] =
 char const g_optimizer_logical[] =
 #include "test_as2js_optimizer_logical.ci"
 ;
+char const g_optimizer_match[] =
+#include "test_as2js_optimizer_match.ci"
+;
 char const g_optimizer_multiplicative[] =
 #include "test_as2js_optimizer_multiplicative.ci"
 ;
@@ -1395,6 +1398,16 @@ void As2JsOptimizerUnitTests::test_optimizer_equality()
 void As2JsOptimizerUnitTests::test_optimizer_logical()
 {
     run_tests(g_optimizer_logical, "test_parser_logical.json");
+}
+
+void As2JsOptimizerUnitTests::test_optimizer_match()
+{
+// regex is not well supported before 4.9.0
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)
+    run_tests(g_optimizer_match, "test_parser_match.json");
+#else
+    std::cerr << " -- warning: test As2JsOptimizerUnitTests::test_optimizer_match() skip since you are compiling with a g++ version prior to 4.9.0" << std::endl;
+#endif
 }
 
 void As2JsOptimizerUnitTests::test_optimizer_multiplicative()

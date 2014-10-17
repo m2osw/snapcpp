@@ -3,9 +3,9 @@
 
     // a ~= b
     {
-        //"verbose": true,
+        "verbose": true,
         "name": "\"ABC\" ~= `[A-Z]+` -> true",
-        "program": "\"ABC\" ~= `[A-Z]+`;",
+        "program": "use extended_operators; \"ABC\" ~= `[A-Z]+`;",
         "parser result": {
             "node type": "PROGRAM",
             "children": [

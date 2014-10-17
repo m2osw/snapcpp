@@ -204,6 +204,14 @@ optimization_optimize_t const g_optimizer_optimize_logical_xor_1_2_0[] =
 
 
 /*** M ***/
+optimization_optimize_t const g_optimizer_optimize_match_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MATCH,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_modulo_1_2_0[] =
 {
     {
@@ -284,6 +292,18 @@ optimization_optimize_t const g_optimizer_optimize_not_equal_1_2_0[] =
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_EQUAL,
         /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_NOT,
+        /* f_indexes */     { 0, 0, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_not_match_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MATCH,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
     },
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_LOGICAL_NOT,
@@ -377,6 +397,14 @@ optimization_optimize_t const g_optimizer_optimize_shift_right_unsigned_1_2_0[] 
     {
         /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SHIFT_RIGHT_UNSIGNED,
         /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_smart_match_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SMART_MATCH,
+        /* f_indexes */     { 2, 1, 0, 0, 0, 0 }
     }
 };
 

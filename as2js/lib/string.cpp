@@ -1271,6 +1271,99 @@ std::string String::to_utf8() const
 }
 
 
+/** \brief Make a simplified copy of this string.
+ *
+ * This function makes a copy of this string while removing spaces
+ * from the start, the end, and within the string keep a single
+ * space.
+ *
+ * If the string starts with a number, then only the number is kept.
+ *
+ * \note
+ * This function is primarily used to compare a string using the
+ * smart match operator.
+ *
+ * \return The simplified string.
+ */
+String String::simplified() const
+{
+    String result;
+
+    // TBD: should we limit the space check to spaces recognized by EMCAScript?
+    as_char_t const *wc = c_str();
+    while(*wc != '\0' && iswspace(*wc))
+    {
+        ++wc;
+    }
+
+    if(*wc >= '0' && *wc <= '9')
+    {
+        // read the number, ignore the rest
+        result += *wc;
+        ++wc;
+        while(*wc >= '0' && *wc <= '9')
+        {
+            result += *wc;
+            ++wc;
+        }
+        if(*wc == '.')
+        {
+            ++wc;
+            while(*wc >= '0' && *wc <= '9')
+            {
+                result += *wc;
+                ++wc;
+            }
+            if(*wc == 'e' || *wc == 'E')
+            {
+                result += *wc;
+                ++wc;
+                if(*wc == '+' || *wc == '-')
+                {
+                    result += *wc;
+                    ++wc;
+                }
+                while(*wc >= '0' && *wc <= '9')
+                {
+                    result += *wc;
+                    ++wc;
+                }
+            }
+        }
+        // ignore anything else
+    }
+    else
+    {
+        // read the string, but simplify the spaces
+        bool found_space(false);
+        for(; *wc != '\0'; ++wc)
+        {
+            if(iswspace(*wc))
+            {
+                found_space = true;
+            }
+            else
+            {
+                if(found_space)
+                {
+                    result += ' ';
+                    found_space = false;
+                }
+                result += *wc;
+            }
+        }
+    }
+
+    if(result.empty())
+    {
+        // make an empty string similar to zero
+        result = "0";
+    }
+
+    return result;
+}
+
+
 /** \brief Send string to output stream.
  *
  * This function sends this String to the specified output buffer. It is

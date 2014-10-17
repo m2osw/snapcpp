@@ -279,6 +279,12 @@ Node::node_t const g_optimizer_match_logical_xor[]
 
 
 /** M **/
+Node::node_t const g_optimizer_match_match[]
+{
+    Node::node_t::NODE_MATCH
+};
+
+
 Node::node_t const g_optimizer_match_minmax_assignments[]
 {
     Node::node_t::NODE_ASSIGNMENT_MAXIMUM,
@@ -307,6 +313,12 @@ Node::node_t const g_optimizer_match_not_equal[]
 };
 
 
+Node::node_t const g_optimizer_match_not_match[]
+{
+    Node::node_t::NODE_NOT_MATCH
+};
+
+
 Node::node_t const g_optimizer_match_numbers[]
 {
     Node::node_t::NODE_INT64,
@@ -326,6 +338,12 @@ Node::node_t const g_optimizer_match_power[]
 
 
 /** R **/
+Node::node_t const g_optimizer_match_regular_expression[]
+{
+    Node::node_t::NODE_REGULAR_EXPRESSION
+};
+
+
 Node::node_t const g_optimizer_match_rotate_left[]
 {
     Node::node_t::NODE_ROTATE_LEFT
@@ -356,6 +374,12 @@ Node::node_t const g_optimizer_match_shift_right[]
 Node::node_t const g_optimizer_match_shift_right_unsigned[]
 {
     Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED
+};
+
+
+Node::node_t const g_optimizer_match_smart_match[]
+{
+    Node::node_t::NODE_SMART_MATCH
 };
 
 

@@ -38,6 +38,8 @@ SOFTWARE.
 #include    "as2js/message.h"
 #include    "as2js/exceptions.h"
 
+#include    <regex>
+
 
 namespace as2js
 {
@@ -775,6 +777,73 @@ void optimizer_func_MOVE(node_pointer_vector_t& node_array, optimization_optimiz
 }
 
 
+/** \brief Apply a MATCH function.
+ *
+ * This function checks whether the left handside matches the regular
+ * expression in the right handside and returns true if it does and
+ * false if it does not.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \exception exception_internal_error
+ * The function does not check whether the parameters are numbers. They
+ * are assumed to be or can be converted to a number. The function uses
+ * the to_float64() just before the operation and if the conversion
+ * fails (returns false) then this exception is raised.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_MATCH(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    // if both are integers, keep it as an integer
+    std::regex::flag_type regex_flags(std::regex_constants::ECMAScript | std::regex_constants::nosubs);
+    String regex(node_array[src2]->get_string());
+    if(regex[0] == '/')
+    {
+        String::size_type pos(regex.find_last_of('/'));
+        String flags(regex.substr(pos + 1));
+        regex = regex.substr(1, pos - 1); // remove the /.../
+        if(flags.find('i') != String::npos)
+        {
+            regex_flags |= std::regex_constants::icase;
+        }
+    }
+    // g++ implementation of regex is still quite limited in g++ 4.8.x
+    // if you have 4.9.0, the following should work nicely for you, otherwise
+    // it does nothing...
+    // http://stackoverflow.com/questions/12530406/is-gcc4-7-buggy-about-regular-expressions
+    bool match_result(false);
+    try
+    {
+        std::basic_regex<as_char_t> js_regex(regex, regex_flags);
+        std::match_results<String::const_iterator> js_match;
+        std::regex_search(node_array[src1]->get_string(), js_match, js_regex);
+        match_result = js_match.empty();
+    }
+    catch(std::regex_error const&)
+    {
+        return;
+    }
+    catch(std::bad_cast const&)
+    {
+        return;
+    }
+
+    Node::pointer_t result(new Node(match_result ? Node::node_t::NODE_FALSE : Node::node_t::NODE_TRUE));
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(result);
+    node_array[dst] = result;
+}
+
+
 /** \brief Apply a MULTIPLY function.
  *
  * This function multiplies source 1 by source 2 and saves the result in
@@ -970,6 +1039,134 @@ void optimizer_func_REMOVE(node_pointer_vector_t& node_array, optimization_optim
         // simply remove from the parent, the smart pointers take care of the rest
         node_array[src]->set_parent(nullptr);
     }
+}
+
+
+/** \brief Apply an ROTATE_LEFT function.
+ *
+ * This function rotates the first number to the left by the number of bits
+ * indicated by the second number and saves the result in the 3rd position.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * Although the rotate left could be computed using 64 bits when handling
+ * integer we do 32 bits to make sure that we get a result as
+ * JavaScript would.
+ *
+ * \exception exception_internal_error
+ * The function attempts to convert the input to integer numbers.
+ * If that fails, this exception is raised. The Optimizer matching
+ * mechanism should, however, prevent all such problems.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_ROTATE_LEFT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    if(!node_array[src1]->to_int64()
+    || !node_array[src2]->to_int64())
+    {
+        throw exception_internal_error("optimizer used function to_int64() against a node that cannot be converted to an int64."); // LCOV_EXCL_LINE
+    }
+
+    // compute the result
+    // a >% b
+    Int64 i1(node_array[src1]->get_int64());
+    Int64 i2(node_array[src2]->get_int64());
+    Int64::int64_type v2(i2.get());
+    Int64::int64_type v2_and(v2 & 0x1F);
+    if(v2 < 0)
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
+        msg << "this static rotate amount is less than zero. " << v2_and << " will be used instead of " << v2 << ".";
+    }
+    else if(v2 >= 32)
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
+        msg << "this static rotate amount is larger than 31. " << v2_and << " will be used instead of " << v2 << ".";
+    }
+    // TODO: warn about v1 being larger than 32 bits?
+    uint32_t v1(i1.get());
+    if(v2_and != 0)
+    {
+        v1 = (v1 << v2_and) | (v1 >> (32 - v2_and));
+    }
+    i1.set(v1);
+    node_array[src1]->set_int64(i1);
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
+}
+
+
+/** \brief Apply an ROTATE_RIGHT function.
+ *
+ * This function rotates the first number to the left by the number of bits
+ * indicated by the second number and saves the result in the 3rd position.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * Although the rotate left could be computed using 64 bits when handling
+ * integer we do 32 bits to make sure that we get a result as
+ * JavaScript would.
+ *
+ * \exception exception_internal_error
+ * The function attempts to convert the input to integer numbers.
+ * If that fails, this exception is raised. The Optimizer matching
+ * mechanism should, however, prevent all such problems.
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_ROTATE_RIGHT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    if(!node_array[src1]->to_int64()
+    || !node_array[src2]->to_int64())
+    {
+        throw exception_internal_error("optimizer used function to_int64() against a node that cannot be converted to an int64."); // LCOV_EXCL_LINE
+    }
+
+    // compute the result
+    // a >% b
+    Int64 i1(node_array[src1]->get_int64());
+    Int64 i2(node_array[src2]->get_int64());
+    Int64::int64_type v2(i2.get());
+    Int64::int64_type v2_and(v2 & 0x1F);
+    if(v2 < 0)
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
+        msg << "this static rotate amount is less than zero. " << v2_and << " will be used instead of " << v2 << ".";
+    }
+    else if(v2 >= 32)
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
+        msg << "this static rotate amount is larger than 31. " << v2_and << " will be used instead of " << v2 << ".";
+    }
+    // TODO: warn about v1 being larger than 32 bits?
+    uint32_t v1(i1.get());
+    if(v2_and != 0)
+    {
+        v1 = (v1 >> v2_and) | (v1 << (32 - v2_and));
+    }
+    i1.set(v1);
+    node_array[src1]->set_int64(i1);
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(node_array[src1]);
+    node_array[dst] = node_array[src1];
 }
 
 
@@ -1250,131 +1447,48 @@ void optimizer_func_SHIFT_RIGHT_UNSIGNED(node_pointer_vector_t& node_array, opti
 }
 
 
-/** \brief Apply an ROTATE_LEFT function.
+/** \brief Apply an SMART_MATCH function.
  *
- * This function rotates the first number to the left by the number of bits
- * indicated by the second number and saves the result in the 3rd position.
- *
- * \li 0 -- source 1
- * \li 1 -- source 2
- * \li 2 -- destination
- *
- * Although the rotate left could be computed using 64 bits when handling
- * integer we do 32 bits to make sure that we get a result as
- * JavaScript would.
- *
- * \exception exception_internal_error
- * The function attempts to convert the input to integer numbers.
- * If that fails, this exception is raised. The Optimizer matching
- * mechanism should, however, prevent all such problems.
- *
- * \param[in] node_array  The array of nodes being optimized.
- * \param[in] optimize  The optimization parameters.
- */
-void optimizer_func_ROTATE_LEFT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
-{
-    uint32_t src1(optimize->f_indexes[0]),
-             src2(optimize->f_indexes[1]),
-             dst(optimize->f_indexes[2]);
-
-    if(!node_array[src1]->to_int64()
-    || !node_array[src2]->to_int64())
-    {
-        throw exception_internal_error("optimizer used function to_int64() against a node that cannot be converted to an int64."); // LCOV_EXCL_LINE
-    }
-
-    // compute the result
-    // a >% b
-    Int64 i1(node_array[src1]->get_int64());
-    Int64 i2(node_array[src2]->get_int64());
-    Int64::int64_type v2(i2.get());
-    Int64::int64_type v2_and(v2 & 0x1F);
-    if(v2 < 0)
-    {
-        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
-        msg << "this static rotate amount is less than zero. " << v2_and << " will be used instead of " << v2 << ".";
-    }
-    else if(v2 >= 32)
-    {
-        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
-        msg << "this static rotate amount is larger than 31. " << v2_and << " will be used instead of " << v2 << ".";
-    }
-    // TODO: warn about v1 being larger than 32 bits?
-    uint32_t v1(i1.get());
-    if(v2_and != 0)
-    {
-        v1 = (v1 << v2_and) | (v1 >> (32 - v2_and));
-    }
-    i1.set(v1);
-    node_array[src1]->set_int64(i1);
-
-    // save the result replacing the destination as specified
-    node_array[dst]->replace_with(node_array[src1]);
-    node_array[dst] = node_array[src1];
-}
-
-
-/** \brief Apply an ROTATE_RIGHT function.
- *
- * This function rotates the first number to the left by the number of bits
- * indicated by the second number and saves the result in the 3rd position.
+ * This function checks source 1 against source 2. String parameters
+ * first get simplified, then the function applies the EQUAL operator
+ * against both resulting values.
  *
  * \li 0 -- source 1
  * \li 1 -- source 2
  * \li 2 -- destination
  *
- * Although the rotate left could be computed using 64 bits when handling
- * integer we do 32 bits to make sure that we get a result as
- * JavaScript would.
- *
- * \exception exception_internal_error
- * The function attempts to convert the input to integer numbers.
- * If that fails, this exception is raised. The Optimizer matching
- * mechanism should, however, prevent all such problems.
- *
  * \param[in] node_array  The array of nodes being optimized.
  * \param[in] optimize  The optimization parameters.
  */
-void optimizer_func_ROTATE_RIGHT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+void optimizer_func_SMART_MATCH(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
 {
     uint32_t src1(optimize->f_indexes[0]),
              src2(optimize->f_indexes[1]),
              dst(optimize->f_indexes[2]);
 
-    if(!node_array[src1]->to_int64()
-    || !node_array[src2]->to_int64())
+    Node::pointer_t s1(node_array[src1]);
+    Node::pointer_t s2(node_array[src2]);
+
+    if(s1->get_type() == Node::node_t::NODE_STRING)
     {
-        throw exception_internal_error("optimizer used function to_int64() against a node that cannot be converted to an int64."); // LCOV_EXCL_LINE
+        s1.reset(new Node(Node::node_t::NODE_STRING));
+        s1->set_string(node_array[src1]->get_string().simplified());
     }
 
-    // compute the result
-    // a >% b
-    Int64 i1(node_array[src1]->get_int64());
-    Int64 i2(node_array[src2]->get_int64());
-    Int64::int64_type v2(i2.get());
-    Int64::int64_type v2_and(v2 & 0x1F);
-    if(v2 < 0)
+    if(s2->get_type() == Node::node_t::NODE_STRING)
     {
-        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
-        msg << "this static rotate amount is less than zero. " << v2_and << " will be used instead of " << v2 << ".";
+        s2.reset(new Node(Node::node_t::NODE_STRING));
+        s2->set_string(node_array[src2]->get_string().simplified());
     }
-    else if(v2 >= 32)
-    {
-        Message msg(message_level_t::MESSAGE_LEVEL_WARNING, err_code_t::AS_ERR_INVALID_NUMBER, node_array[src2]->get_position());
-        msg << "this static rotate amount is larger than 31. " << v2_and << " will be used instead of " << v2 << ".";
-    }
-    // TODO: warn about v1 being larger than 32 bits?
-    uint32_t v1(i1.get());
-    if(v2_and != 0)
-    {
-        v1 = (v1 >> v2_and) | (v1 << (32 - v2_and));
-    }
-    i1.set(v1);
-    node_array[src1]->set_int64(i1);
+
+    compare_t c(Node::compare(node_array[src1], node_array[src2], false));
+    Node::pointer_t result(new Node(c == compare_t::COMPARE_EQUAL
+                                    ? Node::node_t::NODE_TRUE
+                                    : Node::node_t::NODE_FALSE));
 
     // save the result replacing the destination as specified
-    node_array[dst]->replace_with(node_array[src1]);
-    node_array[dst] = node_array[src1];
+    node_array[dst]->replace_with(result);
+    node_array[dst] = result;
 }
 
 
@@ -1729,6 +1843,7 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_LESS_EQUAL     */ OPTIMIZER_FUNC(LESS_EQUAL),
     /* OPTIMIZATION_FUNCTION_LOGICAL_NOT    */ OPTIMIZER_FUNC(LOGICAL_NOT),
     /* OPTIMIZATION_FUNCTION_LOGICAL_XOR    */ OPTIMIZER_FUNC(LOGICAL_XOR),
+    /* OPTIMIZATION_FUNCTION_MATCH          */ OPTIMIZER_FUNC(MATCH),
     /* OPTIMIZATION_FUNCTION_MODULO         */ OPTIMIZER_FUNC(MODULO),
     /* OPTIMIZATION_FUNCTION_MOVE           */ OPTIMIZER_FUNC(MOVE),
     /* OPTIMIZATION_FUNCTION_MULTIPLY       */ OPTIMIZER_FUNC(MULTIPLY),
@@ -1743,6 +1858,7 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_SHIFT_LEFT     */ OPTIMIZER_FUNC(SHIFT_LEFT),
     /* OPTIMIZATION_FUNCTION_SHIFT_RIGHT    */ OPTIMIZER_FUNC(SHIFT_RIGHT),
     /* OPTIMIZATION_FUNCTION_SHIFT_RIGHT_UNSIGNED */ OPTIMIZER_FUNC(SHIFT_RIGHT_UNSIGNED),
+    /* OPTIMIZATION_FUNCTION_SMART_MATCH    */ OPTIMIZER_FUNC(SMART_MATCH),
     /* OPTIMIZATION_FUNCTION_STRICTLY_EQUAL */ OPTIMIZER_FUNC(STRICTLY_EQUAL),
     /* OPTIMIZATION_FUNCTION_SUBTRACT       */ OPTIMIZER_FUNC(SUBTRACT),
     /* OPTIMIZATION_FUNCTION_SWAP           */ OPTIMIZER_FUNC(SWAP),
