@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.20
+ * Version: 0.1.5.22
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -183,6 +183,35 @@ snapwebsites.charToHex = function(c) // static
     b = (c >> 4) & 15;
     return String.fromCharCode(b + (b >= 10 ? 55 : 48))
          + String.fromCharCode(a + (a >= 10 ? 55 : 48));
+};
+
+
+/** \brief Replace certain characters by their identity.
+ *
+ * When adding a string to an HTML attribute, you want to escape a certain
+ * number of characters. This function transforms those few characters as
+ * follow:
+ *
+ * \li & -- changed to &amp;
+ * \li " -- changed to &quot;
+ * \li ' -- changed to &#39; -- &apos; is not considered a valid HTML entity...
+ * \li < -- changed to &lt;
+ * \li > -- changed to &gt;
+ *
+ * Other characters do not have to be converted even if they could be. This
+ * way the function is simply faster.
+ *
+ * @param {string} str  The input string to convert.
+ *
+ * @return {string}  The converted string.
+ */
+snapwebsites.htmlEscape = function(str) // static
+{
+    return str.replace(/&/g, '&amp;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
 };
 
 

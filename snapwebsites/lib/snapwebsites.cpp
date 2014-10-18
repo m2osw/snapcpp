@@ -680,12 +680,7 @@ void server::config(int argc, char *argv[])
 
     // We want the servername for later.
     //
-    f_servername = argv[0];
-    std::string::size_type const slash = f_servername.find_last_of( '/' );
-    if( slash != std::string::npos )
-    {
-        f_servername = f_servername.substr( slash+1 );
-    }
+    f_servername = f_opt->get_program_name();
 
     // Keep the server in the foreground?
     //
