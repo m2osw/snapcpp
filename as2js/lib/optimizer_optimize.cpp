@@ -819,24 +819,72 @@ void optimizer_func_MATCH(node_pointer_vector_t& node_array, optimization_optimi
     // if you have 4.9.0, the following should work nicely for you, otherwise
     // it does nothing...
     // http://stackoverflow.com/questions/12530406/is-gcc4-7-buggy-about-regular-expressions
-    bool match_result(false);
+    int match_result(-1);
     try
     {
         std::basic_regex<as_char_t> js_regex(regex, regex_flags);
         std::match_results<String::const_iterator> js_match;
         std::regex_search(node_array[src1]->get_string(), js_match, js_regex);
-        match_result = js_match.empty();
+        match_result = js_match.empty() ? 1 : 0;
     }
     catch(std::regex_error const&)
     {
-        return;
     }
     catch(std::bad_cast const&)
     {
-        return;
     }
 
-    Node::pointer_t result(new Node(match_result ? Node::node_t::NODE_FALSE : Node::node_t::NODE_TRUE));
+    Node::pointer_t result;
+    if(match_result == -1)
+    {
+        // the regular expression is not valid, so we cannot optimize it
+        // to true or false, instead we generate an error now and transform
+        // the code to a throw
+        //
+        //    throw new SyntaxError(errmsg, fileName, lineNumber);
+        //
+        // important note: any optimization has to do something or the
+        //                 optimizer tries again indefinitely...
+        //
+        result.reset(new Node(Node::node_t::NODE_THROW));
+        // TODO: we need to create a SyntaxError object
+
+        Node::pointer_t call(new Node(Node::node_t::NODE_CALL));
+        result->append_child(call);
+
+        Node::pointer_t syntax_error(new Node(Node::node_t::NODE_IDENTIFIER));
+        syntax_error->set_string("SyntaxError");
+        call->append_child(syntax_error);
+
+        Node::pointer_t params(new Node(Node::node_t::NODE_LIST));
+        call->append_child(params);
+
+        Node::pointer_t message(new Node(Node::node_t::NODE_STRING));
+        String errmsg("regular expression \"");
+        errmsg += regex;
+        errmsg += "\" could not be compiled by std::regex.";
+        message->set_string(errmsg);
+        params->append_child(message);
+
+        Position const& pos(node_array[src2]->get_position());
+
+        Node::pointer_t filename(new Node(Node::node_t::NODE_STRING));
+        filename->set_string(pos.get_filename());
+        params->append_child(filename);
+
+        Node::pointer_t line_number(new Node(Node::node_t::NODE_INT64));
+        Int64 ln;
+        ln.set(pos.get_line());
+        line_number->set_int64(ln);
+        params->append_child(line_number);
+
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_NUMBER, pos);
+        msg << errmsg;
+    }
+    else
+    {
+        result.reset(new Node(match_result == 0 ? Node::node_t::NODE_FALSE : Node::node_t::NODE_TRUE));
+    }
 
     // save the result replacing the destination as specified
     node_array[dst]->replace_with(result);
