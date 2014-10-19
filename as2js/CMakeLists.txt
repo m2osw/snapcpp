@@ -80,6 +80,7 @@ find_package( AdvGetOpt        REQUIRED )
 find_package( ControlledVars   REQUIRED )
 find_package( SnapDoxygen      REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
+find_package( ICU              REQUIRED )
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for as2js!")
