@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.22
+ * Version: 0.1.5.23
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -879,6 +879,23 @@ snapwebsites.Output.makeButton = function(element) // static
             }
         });
 };
+
+
+jQuery.fn.extend({
+    /** \brief Apply the makeButton() function to a jQuery() object.
+     *
+     * This function calls our snapwebsites.Output.makeButton() function
+     * on all the objects in this jQuery and returns the necessary reference
+     * to continue the jQuery chain.
+     */
+    makeButton: function()
+    {
+        return this.each(function(){
+                snapwebsites.Output.makeButton(this);
+            });
+    }
+});
+
 
 
 // auto-initialize
