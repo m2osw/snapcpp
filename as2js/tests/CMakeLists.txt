@@ -34,6 +34,12 @@ if(QT_FOUND)
 endif(QT_FOUND)
 find_package( ICU )
 
+# All the tests require cppunit all the packages we just checked
+#
+# The "tools" defined here are for the tests so ignore them too if the
+# tests do not get generated
+if(CPPUNIT_FOUND AND QT_FOUND AND ICU)
+
 ##
 ## Unicode character determination (helper executable)
 ##
@@ -53,7 +59,6 @@ target_link_libraries( ${PROJECT_NAME}
     ${ICU_LIBRARIES}
     ${ICU_I18N_LIBRARIES}
 )
-
 
 
 ##
@@ -113,8 +118,6 @@ json_to_cpp(optimizer_statements)
 ##
 
 
-# All the tests require cppunit
-if(CPPUNIT_FOUND)
 
 # Test library objects
 # Using cppunit does not require a function
@@ -370,7 +373,7 @@ endif()
 
 
 else(CPPUNIT_FOUND)
-message("No test will be created because you do not seem to have cppunit available")
+    message("No test will be created because you do not seem to have cppunit, ICU, Qt, and libqxcppunit available")
 endif(CPPUNIT_FOUND)
 
 # vim: ts=4 sw=4 et
