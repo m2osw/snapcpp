@@ -887,6 +887,22 @@ jQuery.fn.extend({
      * This function calls our snapwebsites.Output.makeButton() function
      * on all the objects in this jQuery and returns the necessary reference
      * to continue the jQuery chain.
+     *
+     * We use this function when we setup a click() handler on a button,
+     * for example:
+     *
+     * \code
+     *    jQuery(".add-user-button")
+     *      .makeButton()
+     *      .focus()
+     *      .click(function(e)
+     *          {
+     *              ...snip...
+     *          });
+     * \endcode
+     *
+     * This gives users the possibility to use Enter, Space, or Click
+     * with the Mouse on that button.
      */
     makeButton: function()
     {
