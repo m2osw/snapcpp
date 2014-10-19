@@ -45,11 +45,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=shadow -Wno-error=unused-para
 
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapDoxygen REQUIRED )
+find_package( ZLIB REQUIRED )
 
 configure_file(
     ${CMAKE_SOURCE_DIR}/zipios++/zipios-config.h.in
     ${CMAKE_BINARY_DIR}/zipios++/zipios-config.h
-    )
+)
 
 AddDoxygenTarget( zipios 0 1 5 )
 
