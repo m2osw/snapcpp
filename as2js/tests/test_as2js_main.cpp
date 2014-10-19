@@ -166,7 +166,11 @@ int unittest_main(int argc, char *argv[])
             0,
             "gui",
             nullptr,
+#ifdef HAVE_QT4
             "start the GUI version if available",
+#else
+            "GUI version not available; this option will fail",
+#endif
             advgetopt::getopt::no_argument
         },
         {
