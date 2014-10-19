@@ -29,6 +29,7 @@
 
 find_package( CppUnit )
 find_package( QxCppUnit )
+find_package( QxRunner )
 find_package( Qt4 4.8.0 COMPONENTS QtCore QtGui ) # TODO: we really want to find qxcppunitd and qxrunnerd, should probably be part of CppUnit
 if(QT_FOUND)
     include( ${QT_USE_FILE} )
@@ -158,12 +159,12 @@ json_to_cpp(optimizer_statements)
 project(test_as2js)
 
 # TODO: add proper Qt stuff
-if(QT_FOUND AND LIBQXCPPUNIT_FOUND)
+if(QT_FOUND AND LIBQXCPPUNIT_FOUND AND LIBQXRUNNER_FOUND)
     set(HAVE_QT4 1)
     add_definitions(-DHAVE_QT4)
-else(QT_FOUND AND LIBQXCPPUNIT_FOUND)
-    message("No GUI tests will be created because you do not seem to have libqt4-dev and libqxcppunit available")
-endif(QT_FOUND AND LIBQXCPPUNIT_FOUND)
+else(QT_FOUND AND LIBQXCPPUNIT_FOUND AND LIBQXRUNNER_FOUND)
+    message("No GUI tests will be created because you do not seem to have libqt4-dev, libqxcppunit-dev, libqxrunner-dev available")
+endif(QT_FOUND AND LIBQXCPPUNIT_FOUND AND LIBQXRUNNER_FOUND)
 
 include_directories(
     SYSTEM
