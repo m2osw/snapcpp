@@ -1308,6 +1308,7 @@ String String::simplified() const
         }
         if(*wc == '.')
         {
+            result += *wc;
             ++wc;
             while(*wc >= '0' && *wc <= '9')
             {

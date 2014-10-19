@@ -551,7 +551,7 @@ void optimizer_func_LESS_EQUAL(node_pointer_vector_t& node_array, optimization_o
              src2(optimize->f_indexes[1]),
              dst(optimize->f_indexes[2]);
 
-    compare_t c(Node::compare(node_array[src1], node_array[src2], false));
+    compare_t const c(Node::compare(node_array[src1], node_array[src2], false));
     Node::pointer_t result(new Node(c == compare_t::COMPARE_LESS
                                  || c == compare_t::COMPARE_EQUAL
                                         ? Node::node_t::NODE_TRUE
@@ -1529,7 +1529,7 @@ void optimizer_func_SMART_MATCH(node_pointer_vector_t& node_array, optimization_
         s2->set_string(node_array[src2]->get_string().simplified());
     }
 
-    compare_t c(Node::compare(node_array[src1], node_array[src2], false));
+    compare_t const c(Node::compare(s1, s2, false));
     Node::pointer_t result(new Node(c == compare_t::COMPARE_EQUAL
                                     ? Node::node_t::NODE_TRUE
                                     : Node::node_t::NODE_FALSE));
@@ -1559,7 +1559,7 @@ void optimizer_func_STRICTLY_EQUAL(node_pointer_vector_t& node_array, optimizati
              src2(optimize->f_indexes[1]),
              dst(optimize->f_indexes[2]);
 
-    compare_t c(Node::compare(node_array[src1], node_array[src2], true));
+    compare_t const c(Node::compare(node_array[src1], node_array[src2], true));
     Node::pointer_t result(new Node(c == compare_t::COMPARE_EQUAL
                                     ? Node::node_t::NODE_TRUE
                                     : Node::node_t::NODE_FALSE));

@@ -33,6 +33,9 @@ SOFTWARE.
 
 */
 
+
+// regex is not well supported before 4.9.0
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)
 namespace as2js
 {
 namespace optimizer_details
@@ -106,40 +109,6 @@ optimization_match_t const g_optimizer_relational_match_a_not_match_b[] =
 };
 
 
-optimization_match_t const g_optimizer_relational_match_a_smart_match_b[] =
-{
-    {
-        /* f_depth */               0,
-        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_smart_match),
-        /* f_with_value */          nullptr,
-        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
-    },
-
-        {
-            /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
-            /* f_with_value */          nullptr,
-            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
-        },
-
-        {
-            /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_regular_expression),
-            /* f_with_value */          nullptr,
-            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
-            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
-        }
-};
-
-
 
 
 
@@ -170,18 +139,6 @@ optimization_entry_t const g_optimizer_relational_entry_a_not_match_b[] =
 };
 
 
-optimization_entry_t const g_optimizer_relational_entry_a_smart_match_b[] =
-{
-    {
-        /* f_name */                "'a ~~ b', with a as a literal and b as a regular expression -> smart_match(a, b)",
-        /* f_flags */               0,
-
-        /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_relational_match_a_smart_match_b),
-        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_smart_match_1_2_0)
-    }
-};
-
-
 
 
 
@@ -198,20 +155,12 @@ optimization_entry_t const g_optimizer_relational_entry_a_smart_match_b[] =
  */
 optimization_table_t const g_optimizer_match_table[] =
 {
-// regex is not well supported before 4.9.0
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)
     // regular expressions matches
     {
         /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_relational_entry_a_match_b)
     },
     {
         /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_relational_entry_a_not_match_b)
-    },
-#endif
-
-    // "smart" matches (very similar to '==', with a few extensions)
-    {
-        /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_relational_entry_a_smart_match_b)
     }
 };
 
@@ -222,5 +171,6 @@ optimization_table_t const g_optimizer_match_table[] =
 // namespace optimizer_details
 }
 // namespace as2js
+#endif
 
 // vim: ts=4 sw=4 et

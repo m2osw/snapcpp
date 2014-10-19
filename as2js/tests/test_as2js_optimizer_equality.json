@@ -3609,6 +3609,992 @@
                 }
             ]
         }
+    },
+
+    // a ~~ b
+    {
+        "verbose": true,
+        "name": "\"ABC\" ~~ \"XYZ\" -> false",
+        "program": "use extended_operators; \"ABC\" ~~ \"XYZ\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "ABC"
+                                },
+                                {
+                                    "node type": "STRING",
+                                    "label": "XYZ"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "\"XYZ\" ~~ \"ABC\" -> false",
+        "program": "use extended_operators; \"XYZ\" ~~ \"ABC\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "XYZ"
+                                },
+                                {
+                                    "node type": "STRING",
+                                    "label": "ABC"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "\"ABC\" ~~ \"ABC\" -> true",
+        "program": "use extended_operators; \"ABC\" ~~ \"ABC\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "ABC"
+                                },
+                                {
+                                    "node type": "STRING",
+                                    "label": "ABC"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "33 ~~ 44 -> false",
+        "program": "use extended_operators; 33 ~~ 44;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 33
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 44
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "44 ~~ 33 -> false",
+        "program": "use extended_operators; 44 ~~ 33;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 44
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 33
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "33 ~~ 33 -> true",
+        "program": "use extended_operators; 33 ~~ 33;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 33
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 33
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "3.3 ~~ 4.4 -> false",
+        "program": "use extended_operators; 3.3 ~~ 4.4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 4.4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "4.4 ~~ 3.3 -> false",
+        "program": "use extended_operators; 4.4 ~~ 3.3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 4.4
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "3.3 ~~ 3.3 -> true",
+        "program": "use extended_operators; 3.3 ~~ 3.3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "\"3.3\" ~~ 4.4 -> false",
+        "program": "use extended_operators; \"3.3\" ~~ 4.4;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "3.3"
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 4.4
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "\"4.4\" ~~ 3.3 -> false",
+        "program": "use extended_operators; \"4.4\" ~~ 3.3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "4.4"
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "\"3.3\" ~~ 3.3 -> true",
+        "program": "use extended_operators; \"3.3\" ~~ 3.3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "3.3"
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "\"3.3xyz\" ~~ 3.3 -> true",
+        "program": "use extended_operators; \"3.3xyz\" ~~ 3.3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": "3.3xyz"
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "3.3 ~~ \"4.4\" -> false",
+        "program": "use extended_operators; 3.3 ~~ \"4.4\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                },
+                                {
+                                    "node type": "STRING",
+                                    "label": "4.4"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "4.4 ~~ \"3.3\" -> false",
+        "program": "use extended_operators; 4.4 ~~ \"3.3\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 4.4
+                                },
+                                {
+                                    "node type": "STRING",
+                                    "label": "3.3"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "4.4 ~~ \"   3.3   \" -> false",
+        "program": "use extended_operators; 4.4 ~~ \"   3.3   \";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 4.4
+                                },
+                                {
+                                    "node type": "STRING",
+                                    "label": "   3.3   "
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "3.3 ~~ \"3.3\" -> true",
+        "program": "use extended_operators; 3.3 ~~ \"3.3\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                },
+                                {
+                                    "node type": "STRING",
+                                    "label": "3.3"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "3.3 ~~ \" 3.3 and more\" -> true",
+        "program": "use extended_operators; 3.3 ~~ \" 3.3 and more\";",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.3
+                                },
+                                {
+                                    "node type": "STRING",
+                                    "label": " 3.3 and more"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "-Infinity ~~ +Infinity -> false",
+        "program": "use extended_operators; -Infinity ~~ +Infinity;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "+Infinity ~~ -Infinity -> false",
+        "program": "use extended_operators; +Infinity ~~ -Infinity;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FALSE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "+Infinity ~~ +Infinity -> true",
+        "program": "use extended_operators; +Infinity ~~ +Infinity;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "ADD",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ~~ b
+    {
+        //"verbose": true,
+        "name": "-Infinity ~~ -Infinity -> true",
+        "program": "use extended_operators; -Infinity ~~ -Infinity;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SMART_MATCH",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": Infinity
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "TRUE"
+                        }
+                    ]
+                }
+            ]
+        }
     }
 
 ]

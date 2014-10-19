@@ -119,9 +119,12 @@ optimization_tables_t const g_optimizer_tables[] =
     {
         POINTER_AND_COUNT(g_optimizer_logical_table)
     },
+// regex is not well supported before 4.9.0
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)
     {
         POINTER_AND_COUNT(g_optimizer_match_table)
     },
+#endif
     {
         POINTER_AND_COUNT(g_optimizer_multiplicative_table)
     },
