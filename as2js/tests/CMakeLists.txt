@@ -38,7 +38,7 @@ find_package( ICU )
 #
 # The "tools" defined here are for the tests so ignore them too if the
 # tests do not get generated
-if(CPPUNIT_FOUND AND QT_FOUND AND ICU)
+if(CPPUNIT_FOUND AND ICU_FOUND)
 
 ##
 ## Unicode character determination (helper executable)
@@ -160,6 +160,8 @@ project(test_as2js)
 if(QT_FOUND)
     set(HAVE_QT4 1)
     add_definitions(-DHAVE_QT4)
+else(QT_FOUND)
+    message("No GUI tests will be created because you do not seem to have libqt4-dev and libqxcppunit available")
 endif(QT_FOUND)
 
 include_directories(
@@ -372,8 +374,8 @@ endif()
 
 
 
-else()
-    message("No test will be created because you do not seem to have cppunit, ICU, Qt, and libqxcppunit available")
-endif()
+else(CPPUNIT_FOUND AND ICU_FOUND)
+    message("No test will be created because you do not seem to have libcppunit-dev and libicu-dev available")
+endif(CPPUNIT_FOUND AND ICU_FOUND)
 
 # vim: ts=4 sw=4 et
