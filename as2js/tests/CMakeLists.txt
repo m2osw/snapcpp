@@ -372,8 +372,8 @@ endif()
 
 
 
-else(CPPUNIT_FOUND)
+else()
     message("No test will be created because you do not seem to have cppunit, ICU, Qt, and libqxcppunit available")
-endif(CPPUNIT_FOUND)
+endif()
 
 # vim: ts=4 sw=4 et
