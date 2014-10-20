@@ -82,6 +82,7 @@ private:
     typedef uint32_t                                search_error_t;
     typedef uint32_t                                search_flag_t;
 
+    static search_error_t const SEARCH_ERROR_NONE                   = 0x00000000;
     static search_error_t const SEARCH_ERROR_PRIVATE                = 0x00000001;
     static search_error_t const SEARCH_ERROR_PROTECTED              = 0x00000002;
     static search_error_t const SEARCH_ERROR_PROTOTYPE              = 0x00000004;
@@ -183,7 +184,7 @@ private:
     void                function(Node::pointer_t function_node);
     bool                get_attribute(Node::pointer_t node, Node::attribute_t const a);
     unsigned long       get_attributes(Node::pointer_t& node);
-    search_flag_t       get_err_flags() const { return f_err_flags; }
+    search_error_t      get_err_flags() const { return f_err_flags; }
     void                goto_directive(Node::pointer_t& goto_node);
     bool                has_abstract_functions(Node::pointer_t class_node, Node::pointer_t list, Node::pointer_t& /*out*/ func);
     void                identifier_to_attrs(Node::pointer_t node, Node::pointer_t a);
@@ -210,7 +211,7 @@ private:
     bool                resolve_name(Node::pointer_t list, Node::pointer_t id, Node::pointer_t& /*out*/ resolution, Node::pointer_t params, int const search_flags);
     Node::pointer_t     return_directive(Node::pointer_t return_node);
     bool                select_best_func(Node::pointer_t params, Node::pointer_t& /*out*/ resolution);
-    void                set_err_flags(search_flag_t flags) { f_err_flags = flags; }
+    void                set_err_flags(search_error_t flags) { f_err_flags = flags; }
     bool                special_identifier(Node::pointer_t expr);
     void                switch_directive(Node::pointer_t& switch_node);
     void                throw_directive(Node::pointer_t& throw_node);
@@ -229,7 +230,7 @@ private:
     Options::pointer_t          f_options;
     Node::pointer_t             f_program;
     InputRetriever::pointer_t   f_input_retriever;
-    controlled_vars::auto_init<search_flag_t, 0>  f_err_flags;    // when searching a name and it doesn't get resolve, emit these errors
+    controlled_vars::auto_init<search_error_t, 0>  f_err_flags;    // when searching a name and it doesn't get resolve, emit these errors
     Node::pointer_t             f_scope;        // with() and use namespace list
     module_map_t                f_modules;      // already loaded files (external modules)
 };

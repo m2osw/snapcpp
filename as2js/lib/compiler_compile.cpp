@@ -222,7 +222,7 @@ void Compiler::find_labels(Node::pointer_t function_node, Node::pointer_t node)
 void Compiler::print_search_errors(Node::pointer_t name)
 {
     // all failed, check whether we have errors...
-    if(f_err_flags == 0)
+    if(f_err_flags == SEARCH_ERROR_NONE)
     {
         return;
     }
