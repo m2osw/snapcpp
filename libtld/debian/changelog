@@ -1,3 +1,9 @@
+libtld (1.4.20.42~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- R. Douglas Barbieri <doug@dooglio.net>  Tue, 21 Oct 2014 14:00:12 -0700
+
 libtld (1.4.20.41~trusty) trusty; urgency=high
 
   * Nightly build.
