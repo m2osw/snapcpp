@@ -1,3 +1,9 @@
+as2js (0.1.13.40~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 21 Oct 2014 04:01:34 -0700
+
 as2js (0.1.13.39~trusty) trusty; urgency=high
 
   * Nightly build.
