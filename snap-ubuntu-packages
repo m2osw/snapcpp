@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Install various packages in order for the snap-server to compile
+# at once--this is also available on our website; make sure to use sudo
+# This is a helper script, you would be told about all of those libraries
+# by the various projects cmake scripts.
+#
+
+apt-get install \
+    closure-linter \
+    cmake \
+    doxygen \
+    gcc \
+    g++ \
+    libboost-dev \
+    liblog4cplus-dev \
+    libmagic-dev \
+    libmagick++-dev \
+    libqt4-dev \
+    libssl-dev \
+    libxml2-utils \
+    zip \
+    zlib1g-dev
+
+
+# Optional:
+
+if test "$1" = "--optional"
+then
+    apt-get install \
+       graphviz \
+       libicu-dev \
+       libqxcppunit-dev
+else
+    echo
+    echo "WARNING:"
+    echo "  Not installing optional packages by default. Re-run the script"
+    echo "  the --optional command line option to force the installation"
+    echo "  of the optional packages."
+    echo
+fi
+
+# vim: ts=4 sw=4 et
