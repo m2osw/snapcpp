@@ -6,7 +6,7 @@ set( THRIFT_VERS       0.9.0                                              )
 set( DISTFILE_PATH     ${PROJECT_SOURCE_DIR}/thrift-${THRIFT_VERS}.tar.gz )
 set( ROOT_DIR          ${PROJECT_BINARY_DIR}                              )
 set( BUILD_DIR         ${ROOT_DIR}/thrift-${THRIFT_VERS}                  )
-set( DIST_DIR          ${ROOT_DIR}/dist                                   )
+set( DIST_DIR          ${CMAKE_BINARY_DIR}/dist                                   )
 set( CONFIGURE_TARGETS ${BUILD_DIR}/config.log                            )
 set( CONFIG_ARGS
     --without-csharp
