@@ -134,6 +134,20 @@ watchdog_server::pointer_t watchdog_server::instance()
 }
 
 
+/** \brief Print the version string to stderr.
+ *
+ * This function prints out the version string of this server to the standard
+ * error stream.
+ *
+ * This is a virtual function so that way servers and daemons that derive
+ * from snap::server have a chance to show their own version.
+ */
+void watchdog_server::show_version()
+{
+    std::cerr << SNAPWATCHDOG_VERSION_STRING << std::endl;
+}
+
+
 void watchdog_server::watchdog()
 {
     SNAP_LOG_INFO("watchdog_server::watchdog(): starting watchdog daemon.");

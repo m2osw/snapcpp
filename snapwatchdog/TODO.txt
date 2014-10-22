@@ -1,0 +1,11 @@
+
+A few things that still need to be done in this project:
+
+  1. Remove required dependency on Cassandra, we should have a version
+     that works without any database because these servers will anyway
+     be capable of sending their data to each others.
+
+  2. Implement all the network shit... listener, PING reply, data sharing
+
+  3. Plugin for Snap! Websites to look at the data.
+

@@ -22,6 +22,8 @@
 #include <snapwebsites/process.h>
 #include <snapwebsites/qdomhelpers.h>
 
+#include <QRegExp>
+
 #include "poison.h"
 
 
@@ -157,13 +159,29 @@ std::cerr << "starting on processes...\n";
     QDomElement e(snap_dom::create_element(parent, "processes"));
 
     QStringList name_list(process_names.split(','));
-    QVector<QSharedPointer<QRegExp> > re_names;
+    struct process_name_t
+    {
+        QString                     f_name;
+        QSharedPointer<QRegExp>     f_re;
+    };
+    QVector<process_name_t> re_names;
     {
         int const max_names(name_list.count());
         for(int idx(0); idx < max_names; ++idx)
         {
-std::cerr << "add regex [" << name_list[idx] << "]\n";
-            re_names.push_back(QSharedPointer<QRegExp>(new QRegExp(name_list[idx])));
+            process_name_t n;
+            int pos(name_list[idx].indexOf(':'));
+            if(pos > 0)
+            {
+                n.f_name = name_list[idx].mid(0, pos);
+                n.f_re = QSharedPointer<QRegExp>(new QRegExp(name_list[idx].mid(pos + 1)));
+            }
+            else
+            {
+                n.f_name = name_list[idx];
+                n.f_re = QSharedPointer<QRegExp>(new QRegExp(name_list[idx]));
+            }
+            re_names.push_back(n);
         }
     }
 
@@ -183,7 +201,7 @@ std::cerr << "add regex [" << name_list[idx] << "]\n";
                 QDomElement proc(doc.createElement("process"));
                 e.appendChild(proc);
 
-                proc.setAttribute("name", re_names[j]->pattern());
+                proc.setAttribute("name", re_names[j].f_name);
                 proc.setAttribute("error", "missing");
             }
             break;
@@ -194,8 +212,7 @@ std::cerr << "add regex [" << name_list[idx] << "]\n";
         {
             name = name.substr(p + 1);
         }
-        QString utf8_name;
-        utf8_name = QString::fromUtf8(name.c_str());
+        QString utf8_name(QString::fromUtf8(name.c_str()));
 
         QString cmdline(utf8_name);
         int count_max(info->get_args_size());
@@ -205,27 +222,21 @@ std::cerr << "add regex [" << name_list[idx] << "]\n";
             if(info->get_arg(c) != "")
             {
                 cmdline += " ";
-                QString arg;
-                arg = QString::fromUtf8(info->get_arg(c).c_str());
-                cmdline += arg;
+                cmdline += QString::fromUtf8(info->get_arg(c).c_str());
             }
         }
         int const max_re(re_names.count());
-std::cerr << "check process [" << name << "] -> [" << cmdline << "]\n";
+//std::cerr << "check process [" << name << "] -> [" << cmdline << "]\n";
         for(int j(0); j < max_re; ++j)
         {
-            if(re_names[j]->indexIn(cmdline) != -1)
+            if(re_names[j].f_re->indexIn(cmdline) != -1)
             {
-                // remove from the list, if the list is empty, we are
-                // done; if the list is not empty by the time we return
-                // some processes are missing
-                re_names.remove(j);
-
                 QDomElement proc(doc.createElement("process"));
                 e.appendChild(proc);
 
-                proc.setAttribute("name", utf8_name);
+                proc.setAttribute("name", re_names[j].f_name);
 
+                proc.setAttribute("cmdline", cmdline);
                 proc.setAttribute("pcpu", QString("%1").arg(info->get_pcpu()));
                 proc.setAttribute("total_size", QString("%1").arg(info->get_total_size()));
                 proc.setAttribute("resident", QString("%1").arg(info->get_resident_size()));
@@ -241,6 +252,11 @@ std::cerr << "check process [" << name << "] -> [" << cmdline << "]\n";
                 proc.setAttribute("stime", QString("%1").arg(stime));
                 proc.setAttribute("cutime", QString("%1").arg(cutime));
                 proc.setAttribute("cstime", QString("%1").arg(cstime));
+
+                // remove from the list, if the list is empty, we are
+                // done; if the list is not empty by the time we return
+                // some processes are missing
+                re_names.remove(j);
                 break;
             }
         }
