@@ -1,0 +1,5 @@
+snapwatchdog (0.1.0) trusty; urgency=high
+
+  * Initial release of snapwatchdog.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sub, 19 Oct 2014 18:41:25 -0800

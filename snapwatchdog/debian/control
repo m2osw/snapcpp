@@ -1,0 +1,27 @@
+Source: snapwatchdog
+Priority: extra
+Maintainer: Alexis Wilke <alexis@m2osw.com>
+Build-Depends: debhelper, cmake,
+    snapcmakemodules (>= 1.0.23.36~trusty),
+    libsnapwebsites-dev (>= 0.1.70.4~trusty)
+Standards-Version: 3.9.4
+Section: libs
+Homepage: http://www.snapwebsites.org/
+Vcs-Git: git://git.code.sf.net/p/snapcpp/code
+Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
+
+Package: snapwatchdog
+Section: utils
+Architecture: any
+Depends: adduser, libsnapwebsites (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Recommends: cassandra (>= 2.0.3)
+Suggests: snapwebsites (= ${binary:Version})
+Description: Track status and health of any number of servers.
+ Snap! Watchdog is a tool that works on any number of servers to
+ gather various information that let you know how your server is
+ doing.
+ .
+ This package installs the server daemon that communicates with
+ other watchdogs and a Cassandra server.
+
+# vim: ts=4 sw=4 et
