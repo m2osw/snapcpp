@@ -6,11 +6,12 @@ rm -rf BUILD
 mkdir BUILD
 cd BUILD
 
+# You may change the compiler with something like this:
+# (The CMAKE_C_COMPILER and CMAKE_CXX_COMPILER will NOT work)
+#export CC=gcc-4.9
+#export CXX=g++-4.9 cmake
+
 # Configure and generate (Debug or Release)
 cmake -DCMAKE_BUILD_TYPE=Debug ..
-
-# You may change the compiler with something like this instead:
-# CC=gcc-4.9 CXX=g++-4.9 cmake -DCMAKE_BUILD_TYPE=Debug ..
-# The CMAKE_C_COMPILER and CMAKE_CXX_COMPILER will NOT work with thrift.
 
 make
