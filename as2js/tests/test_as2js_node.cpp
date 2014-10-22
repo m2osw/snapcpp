@@ -1113,10 +1113,7 @@ void As2JsNodeUnitTests::test_conversions()
                 CPPUNIT_ASSERT(node->to_float64());
                 // probably always true here; we had false in the loop prior
                 CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_FLOAT64);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-                CPPUNIT_ASSERT(node->get_float64().get() == static_cast<as2js::Float64::float64_type>(j.get()));
-#pragma GCC diagnostic pop
+                CPPUNIT_ASSERT(fabs(node->get_float64().get() - static_cast<as2js::Float64::float64_type>(j.get())) < 0.0001);
             }
 
             {

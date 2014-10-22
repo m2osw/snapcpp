@@ -1750,10 +1750,7 @@ void As2JsStringUnitTests::test_number()
         CPPUNIT_ASSERT(str1.is_float64());
         CPPUNIT_ASSERT(str1.is_number());
         CPPUNIT_ASSERT(str1.to_int64() == value);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-        CPPUNIT_ASSERT(str1.to_float64() == static_cast<double>(value));
-#pragma GCC diagnostic pop
+        CPPUNIT_ASSERT(fabs(str1.to_float64() - static_cast<double>(value)) < 0.0001);
         CPPUNIT_ASSERT(str1.is_true());
     }
 
