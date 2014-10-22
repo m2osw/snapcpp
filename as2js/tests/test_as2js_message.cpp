@@ -461,9 +461,12 @@ void As2JsMessageUnitTests::test_operator()
     for(int idx(0); idx < 256; ++idx)
     {
         signed long ci(
+#if (ULONG_MAX) != 0xfffffffful
                   (static_cast<unsigned long>(rand()) << 48)
                 ^ (static_cast<unsigned long>(rand()) << 32)
-                ^ (static_cast<unsigned long>(rand()) << 16)
+                ^
+#endif
+                  (static_cast<unsigned long>(rand()) << 16)
                 ^ (static_cast<unsigned long>(rand()) <<  0));
         {
             std::stringstream str;
@@ -481,9 +484,12 @@ void As2JsMessageUnitTests::test_operator()
     for(int idx(0); idx < 256; ++idx)
     {
         unsigned long ci(
+#if (ULONG_MAX) != 0xfffffffful
                   (static_cast<unsigned long>(rand()) << 48)
                 ^ (static_cast<unsigned long>(rand()) << 32)
-                ^ (static_cast<unsigned long>(rand()) << 16)
+                ^
+#endif
+                  (static_cast<unsigned long>(rand()) << 16)
                 ^ (static_cast<unsigned long>(rand())));
         {
             std::stringstream str;
