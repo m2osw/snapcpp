@@ -164,6 +164,7 @@ public:
     static int          version_major();
     static int          version_minor();
     static int          version_patch();
+    virtual void        show_version();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
