@@ -16,6 +16,7 @@ apt-get install \
     liblog4cplus-dev \
     libmagic-dev \
     libmagick++-dev \
+    libprocps3-dev \
     libqt4-dev \
     libssl-dev \
     libxml2-utils \
