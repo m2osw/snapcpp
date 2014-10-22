@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "snapwebsites.h"
+#include "snap_config.h"
 #include "not_reached.h"
 
 
@@ -55,6 +56,18 @@ int main(int argc, char *argv[])
     else if(s->get_parameter("__BACKEND_ACTION") == "images")
     {
         s->udp_ping("images_udp_signal", msg.toUtf8().data());
+    }
+    else if(s->get_parameter("__BACKEND_ACTION") == "snapwatchdog")
+    {
+        // here is why we probably want to have one file with all the UDP info
+        snap::snap_config wc;
+        // TODO: hard coded path is totally WRONG!
+        wc.read_config_file( "/etc/snapwebsites/snapwatchdog.conf" );
+        if(wc.contains("snapwatchdog_udp_signal"))
+        {
+            s->set_parameter("snapwatchdog_udp_signal", wc["snapwatchdog_udp_signal"]);
+        }
+        s->udp_ping("snapwatchdog_udp_signal", msg.toUtf8().data());
     }
     else
     {

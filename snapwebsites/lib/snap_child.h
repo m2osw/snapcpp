@@ -384,7 +384,7 @@ protected:
     void                        canonicalize_website();
     void                        canonicalize_options();
     void                        site_redirect();
-    QStringList                 init_plugins();
+    QStringList                 init_plugins(bool const add_defaults);
 
     server_pointer_t                            f_server;
     controlled_vars::flbool_t                   f_is_child;

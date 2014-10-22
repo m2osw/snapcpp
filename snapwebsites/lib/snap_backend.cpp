@@ -186,7 +186,8 @@ void snap_backend::udp_monitor::run()
  * \li run_backend() connects to the database
  * \li run_backend() checks whether the sites table exists
  * \li if not ready -- wait until the sites table exists
- * \li -- while waiting for the sites table, we also check UDP PING signals
+ * \li -- while waiting for the sites table, we also check UDP STOP and
+ *        PING signals
  *
  * \note
  * The constructor initializes the monitor and thread objects, however,
@@ -312,6 +313,7 @@ void snap_backend::run_backend()
     {
         init_start_date();
 
+        // somewhat fake being a child (we are not here)
         f_is_child = true;
         f_child_pid = getpid();
         f_socket = -1;
@@ -370,7 +372,7 @@ void snap_backend::run_backend()
 
                 if(!tl)
                 {
-                    std::string signal_name(get_signal_name_from_action(action));
+                    std::string const signal_name(get_signal_name_from_action(action));
                     if(signal_name.empty())
                     {
                         SNAP_LOG_FATAL("snap_backend::run_backend(): The 'sites' table is not ready, this backend cannot be run at this time.");
@@ -404,7 +406,7 @@ void snap_backend::run_backend()
             }
         }
         // reset that signal server because otherwise the backend itself
-        // will fail; in most cases it is a nullptr by now anyway
+        // will fail; in most cases it is already a nullptr anyway
         udp_signal_t null_pointer;
         f_monitor.set_signal( null_pointer );
 
@@ -522,7 +524,7 @@ std::string snap_backend::get_signal_name_from_action(QString const& action)
     //          this should just fail with an empty string which is fine
     //          because at the start the website cannot already have
     //          additional plugins defined!
-    init_plugins();
+    init_plugins(true);
 
     auto p_server( f_server.lock() );
     if(!p_server)
@@ -580,12 +582,12 @@ std::string snap_backend::get_signal_name_from_action(QString const& action)
  */
 void snap_backend::process_backend_uri(QString const& uri)
 {
-    // create a child process so the data between sites doesn't get
+    // create a child process so the data between sites does not get
     // shared (also the Cassandra data would remain in memory increasing
     // the foot print each time we run a new website,) but the worst
     // are the plugins; we can request a plugin to be unloaded but
     // frankly the system is not very well written to handle that case.
-    const pid_t p = fork_child();
+    pid_t const p(fork_child());
     if(p != 0)
     {
         // parent process
@@ -615,7 +617,7 @@ void snap_backend::process_backend_uri(QString const& uri)
     }
 
     // child process initialization
-    //connect_cassandra(); -- this is already done in process()...
+    //connect_cassandra(); -- this is already done in run_backend()...
 
     // process the f_uri parameter
     canonicalize_domain();
@@ -632,7 +634,7 @@ void snap_backend::process_backend_uri(QString const& uri)
     //       it; it is a lot faster to use f_snap->get_start_date()
     f_uri.set_option("start_date", QString("%1").arg(f_start_date));
 
-    init_plugins();
+    init_plugins(true);
 
     canonicalize_options();
 

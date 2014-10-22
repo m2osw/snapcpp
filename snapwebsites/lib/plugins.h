@@ -154,6 +154,10 @@ bool verify_plugin_name(QString const& name);
  * other files, make sure to define your code inside namespace
  * snap and namespace \<name> (like you do in your header file.)
  *
+ * \todo
+ * Look in a way to avoid the qInitResources_... if the plugin
+ * has no resources.
+ *
  * \param[in] name  The name of the plugin.
  * \param[in] major  The major version of the plugin.
  * \param[in] minor  The minor version of the plugin.

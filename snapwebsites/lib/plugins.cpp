@@ -80,7 +80,7 @@ QStringList list_all(const QString& plugin_path)
  *
  * \return true if all the modules were loaded.
  */
-bool load(const QString& plugin_paths, plugin_ptr_t server, const QStringList& list_of_plugins)
+bool load(QString const& plugin_paths, plugin_ptr_t server, QStringList const& list_of_plugins)
 {
 // Doug;
 // "This defeats the purpose of a shared_ptr, but this is because all plugins are treated as barepointers. This needs to be fixed in another iteration..."

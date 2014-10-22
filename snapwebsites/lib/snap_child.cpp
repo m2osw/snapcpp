@@ -117,8 +117,7 @@ char const *g_minimum_plugins[] =
     "server_access",
     "sessions",
     "taxonomy",
-    "users",
-    nullptr
+    "users"
 };
 
 char const *g_week_day_name[] =
@@ -2453,25 +2452,23 @@ void snap_child::init_start_date()
  *
  * Use this method to fork child processes. If SNAP_NO_FORK is on,
  * then respect the "--nofork" command line option.
+ *
+ * \return The child PID, 0 if not forking, -1 if an error occurs
  */
 pid_t snap_child::fork_child()
 {
 #ifdef SNAP_NO_FORK
-    pid_t p = 0;
-    //
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
-    if( !server->nofork() )
+    if( server->nofork() )
     {
-        p = fork();
+        return 0;
     }
-#else
-    pid_t p = fork();
 #endif
-    return p;
+    return fork();
 }
 
 
@@ -2514,7 +2511,7 @@ bool snap_child::process(int socket)
 
 // to avoid the fork use 1 on the next line
 // (much easier to debug a crashing problem in a snap child!)
-    const pid_t p = fork_child();
+    pid_t const p(fork_child());
     if(p != 0)
     {
         // parent process
@@ -2574,7 +2571,7 @@ SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(
         f_uri.set_option("start_date", QString("%1").arg(f_start_date));
 
         // start the plugins and there initialization
-        QStringList list_of_plugins(init_plugins());
+        QStringList list_of_plugins(init_plugins(true));
 
         // run updates if any
         update_plugins(list_of_plugins);
@@ -6143,8 +6140,13 @@ QString snap_child::get_unique_number()
  * \li path
  * \li filter
  * \li robotstxt
+ *
+ * \param[in] add_defaults  Whether the default Snap! plugins are to be
+ *                          added to the list of plugins (important for
+ *                          the Snap! server itself, not so much for other
+ *                          servers using plugins.)
  */
-QStringList snap_child::init_plugins()
+QStringList snap_child::init_plugins(bool const add_defaults)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
@@ -6153,13 +6155,18 @@ QStringList snap_child::init_plugins()
     }
 
     // load the plugins for this website
-    QtCassandra::QCassandraValue plugins(get_site_parameter(get_name(SNAP_NAME_CORE_PLUGINS)));
-    QString site_plugins(plugins.stringValue());
+    QString site_plugins(server->get_parameter("plugins")); // forced by .conf?
     if(site_plugins.isEmpty())
     {
-        // if the list of plugins is empty in the site parameters
-        // then get the default from the server configuration
-        site_plugins = server->get_parameter("default_plugins");
+        // maybe user defined his list of plugins in his website
+        QtCassandra::QCassandraValue plugins(get_site_parameter(get_name(SNAP_NAME_CORE_PLUGINS)));
+        site_plugins = plugins.stringValue();
+        if(site_plugins.isEmpty())
+        {
+            // if the list of plugins is empty in the site parameters
+            // then get the default from the server configuration
+            site_plugins = server->get_parameter("default_plugins");
+        }
     }
     QStringList list_of_plugins(site_plugins.split(","));
 
@@ -6175,16 +6182,19 @@ QStringList snap_child::init_plugins()
     }
 
     // ensure a certain minimum number of plugins
-    for(int i(0); g_minimum_plugins[i] != nullptr; ++i)
+    if(add_defaults)
     {
-        if(!list_of_plugins.contains(g_minimum_plugins[i]))
+        for(size_t i(0); i < sizeof(g_minimum_plugins) / sizeof(g_minimum_plugins[0]); ++i)
         {
-            list_of_plugins << g_minimum_plugins[i];
+            if(!list_of_plugins.contains(g_minimum_plugins[i]))
+            {
+                list_of_plugins << g_minimum_plugins[i];
+            }
         }
     }
 
     // load the plugins
-    const QString plugins_path( server->get_parameter("plugins_path") );
+    QString const plugins_path( server->get_parameter("plugins_path") );
     if( plugins_path.isEmpty() )
     {
         // Sanity check

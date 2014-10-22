@@ -878,6 +878,474 @@ void process::set_output_callback(process_output_callback *callback)
 }
 
 
+
+
+
+
+
+
+/** \brief Initialize the proc_info object.
+ *
+ * This function saves the proc_t pointer and flags in this object.
+ *
+ * \exception snap_process_exception_data_not_available
+ * If the pointer p is null, the function raises this exception.
+ *
+ * \param[in] p  The proc_t pointer as returned by readproc().
+ * \param[in] flags  The set of flags from the PROCTAB used to read this data.
+ */
+process_list::proc_info::proc_info(std::shared_ptr<proc_t> p, int flags)
+    : f_proc(p)
+    , f_flags(flags)
+{
+    if(!f_proc)
+    {
+        throw snap_process_exception_data_not_available("process_list::proc_info::proc_info(): parameter p cannot be a null pointer");
+    }
+}
+
+
+/** \brief Get the process identifier.
+ *
+ * This function retrieves the process identifier of this proc_info object.
+ *
+ * \return The process identifier.
+ */
+pid_t process_list::proc_info::get_pid() const
+{
+    // 't' stands for 'task' which is a process or a thread
+    return static_cast<pid_t>(f_proc->tid);
+}
+
+
+/** \brief Get the parent process identifier.
+ *
+ * This function retrieves the parent process identifier of this
+ * proc_info object.
+ *
+ * \return The parent process identifier.
+ */
+pid_t process_list::proc_info::get_ppid() const
+{
+    return static_cast<pid_t>(f_proc->ppid);
+}
+
+
+/** \brief Get the parent process identifier.
+ *
+ * This function retrieves the parent process identifier of this
+ * proc_info object.
+ *
+ * \param[out] major  The major page fault since last update.
+ * \param[out] minor  The minor page fault since last update.
+ *
+ * \return The parent process identifier.
+ */
+void process_list::proc_info::get_page_faults(unsigned long& major, unsigned long& minor) const
+{
+    major = f_proc->maj_delta;
+    minor = f_proc->min_delta;
+}
+
+
+/** \brief Get the immediate percent of CPU usage for this process.
+ *
+ * This function retrieves the CPU usage as a percent of total CPU
+ * available.
+ *
+ * \return The immediate CPU usage as a percent.
+ */
+unsigned process_list::proc_info::get_pcpu() const
+{
+    return f_proc->pcpu;
+}
+
+
+/** \brief Get the immediate process status.
+ *
+ * This function retrieves the CPU status of the process.
+ *
+ * The status is one of the following:
+ *
+ * \li D -- uninterruptible sleep (usually I/O)
+ * \li R -- running or runnable
+ * \li S -- Sleeping
+ * \li T -- stopped by a job control signal or trace
+ * \li W -- paging (should not occur)
+ * \li X -- dead (should never appear)
+ * \li Z -- defunct zombie process
+ *
+ * \return The immediate CPU usage as a percent.
+ */
+char process_list::proc_info::get_status() const
+{
+    return f_proc->state;
+}
+
+
+/** \brief Get the amount of time spent by this process.
+ *
+ * This function gives you information about the four variables
+ * available cummulating the amount of time the process spent
+ * running so far.
+ *
+ * \param[out] utime  The accumulated user time of this very task.
+ * \param[out] stime  The accumulated kernel time of this very task.
+ * \param[out] cutime  The accumulated user time of this task and
+ *                     its children.
+ * \param[out] cstime  The accumulated kernel time of this task
+ *                     and its children.
+ */
+void process_list::proc_info::get_times(unsigned long long& utime,
+                                         unsigned long long& stime,
+                                         unsigned long long& cutime,
+                                         unsigned long long& cstime) const
+{
+    utime = f_proc->utime;
+    stime = f_proc->stime;
+    cutime = f_proc->cutime;
+    cstime = f_proc->cstime;
+}
+
+
+/** \brief Get the kernel priority of this process.
+ *
+ * This function returns the kernel priority of the process.
+ *
+ * \return The process kernel priority.
+ */
+long process_list::proc_info::get_priority() const
+{
+    return f_proc->priority;
+}
+
+
+/** \brief Get the unix nice of this process.
+ *
+ * This function returns the unix nice of the process.
+ *
+ * \return The process unix nice.
+ */
+long process_list::proc_info::get_nice() const
+{
+    return f_proc->nice;
+}
+
+
+/** \brief Get the size of this process.
+ *
+ * This function returns the total size of the process defined as
+ * the virtual memory size.
+ *
+ * \return The process total virtual size.
+ */
+long process_list::proc_info::get_total_size() const
+{
+    return f_proc->size;
+}
+
+
+/** \brief Get the resident size of this process.
+ *
+ * This function returns the resident total size of the process.
+ *
+ * This size represents the amount of real memory currently used by
+ * the process.
+ *
+ * \return The process resident memory size.
+ */
+long process_list::proc_info::get_resident_size() const
+{
+    return f_proc->resident;
+}
+
+
+/** \brief Get the process (command) name.
+ *
+ * This function return the name of the command. This includes the full
+ * path.
+ *
+ * This field is available only if field_t::COMMAND_LINE was set.
+ *
+ * \return The process name.
+ */
+std::string process_list::proc_info::get_process_name() const
+{
+    if((f_flags & (PROC_FILLCOM | PROC_FILLARG)) == 0)
+    {
+        throw snap_process_exception_data_not_available("process_list::proc_info::get_process_name(): data not available");
+    }
+
+    if(f_proc->cmdline == nullptr)
+    {
+        return "";
+    }
+
+    return f_proc->cmdline[0];
+}
+
+
+/** \brief Get the number of arguments defined on the command line.
+ *
+ * This function counts the number of arguments, including all the many
+ * empty arguments.
+ *
+ * Count will be positive or null. The count does not include the command
+ * line (program name.)
+ *
+ * \return Count the number of arguments.
+ */
+int process_list::proc_info::get_args_size() const
+{
+    if(f_count == -1)
+    {
+        char **s(f_proc->cmdline);
+        if(s != nullptr)
+        {
+            while(*s != nullptr)
+            {
+                ++s;
+            }
+            f_count = static_cast<int32_t>(s - f_proc->cmdline - 1);
+        }
+        if(f_count < 0)
+        {
+            // it could be negative if we could not even get the command
+            // line program name (in most cases: permission denied)
+            f_count = 0;
+        }
+    }
+
+    return f_count;
+}
+
+
+/** \brief Get the argument at the specified index.
+ *
+ * This function returns one of the arguments of the command line of
+ * this process. Note that very often arguments are empty strings.
+ *
+ * \param[in] index  The index of the argument to retrieve.
+ *
+ * \return The specified argument.
+ */
+std::string process_list::proc_info::get_arg(int index) const
+{
+    if(static_cast<uint32_t>(index) >= static_cast<uint32_t>(f_count))
+    {
+        throw snap_process_exception_data_not_available(QString("process_list::proc_info::get_arg(): index %1 is larger than f_count %1").arg(index).arg(f_count));
+    }
+
+    return f_proc->cmdline[index + 1];
+}
+
+
+/** \brief Get the controlling terminal of this process.
+ *
+ * This function returns the full device number of the
+ * controlling terminal.
+ *
+ * \return The number of the process controlling terminal.
+ */
+int process_list::proc_info::get_tty() const
+{
+    return f_proc->resident;
+}
+
+
+/** \brief Convert a field number to a process flag.
+ *
+ * This function converts a field number to a process flag.
+ *
+ * \li field_t::MEMORY -- get the various memory fields.
+ * \li field_t::STATUS -- retrieve the current status of the process
+ * such as 'R' for running and 'S' for sleeping.
+ * \li field_t::STATISTICS -- read the variable statistics.
+ * \li field_t::WAIT_CHANNEL -- kernel wait channel.
+ * \li field_t::COMMAND_LINE -- command line with arguments.
+ * \li field_t::ENVIRON -- environment at the time the process started.
+ * \li field_t::USER_NAME -- user name owner of the process.
+ * \li field_t::GROUP_NAME -- group name owner of the process.
+ * \li field_t::CONTROL_GROUPS -- list of control groups.
+ * \li field_t::SUPPLEMENTARY_GROUPS -- supplementary groups.
+ * \li field_t::OUT_OF_MEMORY -- information about various OOM events.
+ * \li field_t::NAMESPACE -- process namespace (to hide sub-pids.)
+ *
+ * \param[in] fld  The field number to convert.
+ *
+ * \return The PROC_... flag corresponding to the specified field.
+ */
+int process_list::field_to_flag(field_t fld) const
+{
+    switch(fld)
+    {
+    case field_t::MEMORY:
+        return PROC_FILLMEM;
+
+    case field_t::STATUS:
+        return PROC_FILLSTATUS;
+
+    case field_t::STATISTICS:
+        return PROC_FILLSTAT;
+
+    case field_t::WAIT_CHANNEL:
+        return PROC_FILLWCHAN;
+
+    case field_t::COMMAND_LINE:
+        return PROC_FILLCOM | PROC_FILLARG;
+
+    case field_t::ENVIRON:
+        return PROC_FILLENV;
+
+    case field_t::USER_NAME:
+        return PROC_FILLUSR;
+
+    case field_t::GROUP_NAME:
+        return PROC_FILLGRP;
+
+    case field_t::CGROUP:
+        return PROC_FILLCGROUP;
+
+    case field_t::SUPPLEMENTARY_GROUP:
+        return PROC_FILLSUPGRP;
+
+    case field_t::OOM:
+        return PROC_FILLOOM;
+
+    case field_t::NAMESPACE:
+        return PROC_FILLNS;
+
+    }
+    throw snap_process_exception_unknown_flag("process_list::field_to_flag(): invalid field number");
+}
+
+
+/** \brief Check whether a field was set or cleared.
+ *
+ * \param[in] fld  The field to check.
+ *
+ * \return true if the field was set, false otherwise.
+ */
+bool process_list::get_field(field_t fld) const
+{
+    return (f_flags & field_to_flag(fld)) != 0;
+}
+
+
+/** \brief Set a field.
+ *
+ * Set the flag so the specified field(s) get loaded on calls to the next()
+ * function.
+ *
+ * This function must be called once per field group you are interested in.
+ *
+ * Note that each field corresponds to a file in the /proc file system.
+ * It is smart to really only get those that you really need.
+ *
+ * \param[in] fld  The field to set.
+ */
+void process_list::set_field(field_t fld)
+{
+    if(f_proctab)
+    {
+        throw snap_process_exception_already_initialized("process_list::set_flag(): process flags cannot be set after next() was called");
+    }
+    f_flags |= field_to_flag(fld);
+}
+
+
+/** \brief Clear a field.
+ *
+ * Clear the flag so the specified field(s) do NOT get loaded on calls to
+ * the next() function.
+ *
+ * This function can be used to reset fields that were previously set
+ * with the set_field() function.
+ *
+ * \param[in] fld  The field to clear.
+ */
+void process_list::clear_field(field_t fld)
+{
+    if(f_proctab)
+    {
+        throw snap_process_exception_already_initialized("process_list::set_flag(): process flags cannot be reset after next() was called");
+    }
+    f_flags &= ~field_to_flag(fld);
+}
+
+
+/** \brief Reset the listing of processes.
+ *
+ * This function reset the list of processes by clearing the internal
+ * pointer to the PROCTAB object.
+ *
+ * This can be called at any time.
+ *
+ * After a call to rewind() you may change the sets of flags with calls
+ * to set_field() and clear_field().
+ */
+void process_list::rewind()
+{
+    f_proctab.reset();
+}
+
+
+/** \brief Read the next process.
+ *
+ * This function reads the information about the next process and
+ * returns it in a shared pointer. The shared pointer can simply
+ * be destroyed to release any memory allocated by the process_list
+ * object.
+ *
+ * The object returned holds a pointer to the proc_t data
+ * as read by the readproc() function. You can find this structure
+ * and additional information in /usr/include/proc/readproc.h (assuming
+ * you have the libprocps3-dev package installed.)
+ *
+ * \return A shared pointer to a proc_t structure.
+ */
+process_list::proc_info_pointer_t process_list::next()
+{
+    struct deleters
+    {
+        static void delete_proctab(PROCTAB *ptr)
+        {
+            if(ptr != nullptr)
+            {
+                closeproc(ptr);
+            }
+        }
+
+        static void delete_proc(proc_t *ptr)
+        {
+            if(ptr != nullptr)
+            {
+                freeproc(ptr);
+            }
+        }
+    };
+
+    if(!f_proctab)
+    {
+        f_proctab = std::shared_ptr<PROCTAB>(openproc(f_flags, 0, 0), deleters::delete_proctab);
+        if(!f_proctab)
+        {
+            throw snap_process_exception_openproc("process_list::next(): openproc() failed opening \"proc\", cannot read processes.");
+        }
+    }
+
+    // I tested and if readproc() is called again after returning NULL, it
+    // continues to return NULL so no need to do anything more
+    std::shared_ptr<proc_t> p(std::shared_ptr<proc_t>(readproc(f_proctab.get(), nullptr), deleters::delete_proc));
+    if(p)
+    {
+        return proc_info_pointer_t(new proc_info(p, f_flags));
+    }
+
+    return proc_info_pointer_t();
+}
+
+
 } // namespace snap
 
 // vim: ts=4 sw=4 et

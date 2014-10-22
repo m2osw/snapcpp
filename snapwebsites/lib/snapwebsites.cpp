@@ -268,7 +268,7 @@ namespace
             'c',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "config",
-            "/etc/snapwebsites/snapserver.conf",
+            nullptr,
             "Specify the configuration file to load at startup.",
             advgetopt::getopt::optional_argument
         },
@@ -468,6 +468,64 @@ server::pointer_t server::instance()
 }
 
 
+/** \brief Return the current server pointer.
+ *
+ * When deriving from the snap server, you cannot put the pointer in
+ * another variable than the g_instance pointer. However, you cannot
+ * allocate the right type of server if you call the instance()
+ * function because it does not use a factory model that allows you
+ * to create any type of server.
+ *
+ * Instead, you call this get_instance() function and if it returns
+ * a pointer, you create your own server and save its pointer in
+ * the g_instance variable using the set_instance() function.
+ *
+ * \code
+ *      pointer_t my_server(get_instance());
+ *      if(!my_server)
+ *      {
+ *          ...
+ *          set_instance(new my_server_class);
+ *          ...
+ *      }
+ * \endcode
+ *
+ * \return The server instance if defined, may return a null pointer.
+ */
+server::pointer_t server::get_instance()
+{
+    return g_instance;
+}
+
+
+/** \brief When creating a server using a different factory.
+ *
+ * This function is used when one create a server using a different
+ * factory than the main Snap Server factor (i.e. the
+ * server::instance() function.) For example, the watchdog_server
+ * uses this function to save a pointer of itself here.
+ *
+ * Note that the other server must be derived from the snap::server
+ * class, obviously.
+ *
+ * See the get_instance() for more information about how to allocate
+ * a new server. As an example, check out the lib/snapwatchdog.cpp file.
+ *
+ * \param[in] other_server  The other type of server to save in this instance.
+ *
+ * \return A pointer to the new instance of the server.
+ */
+server::pointer_t server::set_instance(pointer_t other_server)
+{
+    if(g_instance)
+    {
+        throw snap_logic_exception("server::set_instance() cannot be called more than once.");
+    }
+
+    return g_instance = other_server;
+}
+
+
 /** \brief Return the description of this plugin.
  *
  * This function returns the English description of this plugin.
@@ -512,6 +570,7 @@ int64_t server::do_update(int64_t last_updated)
  * signals in the server.
  */
 server::server()
+    : f_config_filename("/etc/snapwebsites/snapserver.conf")
 {
     set_version(SNAPWEBSITES_VERSION_MAJOR, SNAPWEBSITES_VERSION_MINOR);
 
@@ -598,8 +657,10 @@ void server::usage()
         server_name = f_servername;
     }
 
-    f_opt->usage(advgetopt::getopt::no_error, "Usage: %s -<arg> ...\n", server_name.c_str());
+    std::cerr << "Configuration File: " << f_config_filename << std::endl << std::endl;
 
+    f_opt->usage(advgetopt::getopt::no_error, "Usage: %s -<arg> ...\n", server_name.c_str());
+    NOTREACHED();
     exit(1);
 }
 
@@ -753,14 +814,20 @@ void server::config(int argc, char *argv[])
         }
     }
 
+    f_parameters.set_cmdline_params( cmd_line_params );
+
+    // handle configuration file
+    if( f_opt->is_defined( "config" ) )
+    {
+        f_config_filename = f_opt->get_string( "config" ).c_str();
+    }
+    f_parameters.read_config_file( f_config_filename );
+
     if( help || f_opt->is_defined( "help" ) )
     {
         usage();
         exit(1);
     }
-
-    f_parameters.set_cmdline_params( cmd_line_params );
-    f_parameters.read_config_file( f_opt->get_string( "config" ).c_str() );
 
     // the name of the server is mandatory, use hostname by default
     if(f_parameters["server_name"] == "")
@@ -922,6 +989,11 @@ void server::prepare_qtapp( int argc, char *argv[] )
  * later provide a way for plugins to create different contexts but at
  * this point we expect all of them to only make use of the Core provided
  * context.
+ *
+ * \todo
+ * If we do not call this function, the f_cassandra_host and f_cassandra_port
+ * do not get defined. This is a problem that should be addressed at some
+ * point.
  */
 void server::prepare_cassandra()
 {
@@ -1013,7 +1085,7 @@ void server::detach()
     }
 
     // detaching using fork()
-    pid_t child_pid = fork();
+    pid_t const child_pid(fork());
     if(child_pid == 0)
     {
         // this is the child, make sure we keep the log alive
@@ -1021,7 +1093,7 @@ void server::detach()
         return;
     }
 
-    // since we're quitting immediately we do not need to save the child_pid
+    // since we are quitting immediately we do not need to save the child_pid
 
     if(child_pid == -1)
     {
@@ -1808,36 +1880,6 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
 void server::udp_ping(char const *name, char const *message)
 {
     udp_ping_server( get_parameter(name), message );
-#if 0
-    QString addr, port;
-    int bracket(udp_addr_port.lastIndexOf("]"));
-    int p(udp_addr_port.lastIndexOf(":"));
-    if(bracket != -1 && p != -1)
-    {
-        if(p > bracket)
-        {
-            // IPv6 port specification
-            addr = udp_addr_port.mid(0, bracket + 1); // include the ']'
-            port = udp_addr_port.mid(p + 1); // ignore the ':'
-        }
-        else
-        {
-            throw snapwebsites_exception_invalid_parameters("invalid [IPv6]:port specification, port missing for UDP ping");
-        }
-    }
-    else if(p != -1)
-    {
-        // IPv4 port specification
-        addr = udp_addr_port.mid(0, p); // ignore the ':'
-        port = udp_addr_port.mid(p + 1); // ignore the ':'
-    }
-    else
-    {
-        throw snapwebsites_exception_invalid_parameters("invalid IPv4:port specification, port missing for UDP ping");
-    }
-    udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
-    client.send(message, strlen(message)); // we do not send the '\0'
-#endif
 }
 
 

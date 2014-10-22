@@ -66,20 +66,20 @@ void snap_cassandra::connect( snap_config const& config )
 
     // TODO:
     // We must stay "alive" waiting for the cassandra server to come up.
-    // This will take entries into the configuration file:
-    // wait_interval, and wait_max_tries.
+    // This takes entries into the configuration file:
+    // wait_interval and wait_max_tries.
     //
-    int wait_interval  = config["wait_interval"].toInt();
+    int wait_interval(config["wait_interval"].toInt());
     if(wait_interval < 5)
     {
         wait_interval = 5;
     }
-    int wait_max_tries = config["wait_max_tries"].toInt();
+    int wait_max_tries(config["wait_max_tries"].toInt());
     f_cassandra = QtCassandra::QCassandra::create();
     Q_ASSERT(f_cassandra);
     while( !f_cassandra->connect(f_cassandra_host, f_cassandra_port) )
     {
-        // if wait_max_tries is 1 we're about to call exit(1) so we're not going
+        // if wait_max_tries is 1 we're about to call exit(1) so we are not going
         // to retry once more
         if(wait_max_tries != 1)
         {

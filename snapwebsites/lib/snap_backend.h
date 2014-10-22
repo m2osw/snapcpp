@@ -28,8 +28,8 @@ public:
     typedef controlled_vars::ptr_auto_init<snap_backend>    zpsnap_backend_t;
     typedef std::string                                     message_t;
 
-    snap_backend( server_pointer_t s );
-    ~snap_backend();
+                snap_backend( server_pointer_t s );
+    virtual     ~snap_backend();
 
     void        create_signal( const std::string& name );
 

@@ -18,12 +18,12 @@
 #      it under the terms of the GNU General Public License as published by
 #      the Free Software Foundation; either version 2 of the License, or
 #      (at your option) any later version.
-#     
+#
 #      This program is distributed in the hope that it will be useful,
 #      but WITHOUT ANY WARRANTY; without even the implied warranty of
 #      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #      GNU General Public License for more details.
-#     
+#
 #      You should have received a copy of the GNU General Public License
 #      along with this program; if not, write to the Free Software
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
@@ -67,8 +67,11 @@ endif()
 set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
 
 find_package( AdvGetOpt        REQUIRED )
+find_package( Boost            REQUIRED )
 find_package( ControlledVars   REQUIRED )
 find_package( LibTLD           REQUIRED )
+find_package( LibXml2          REQUIRED )
+find_package( ProcPS           REQUIRED )
 find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
@@ -76,7 +79,13 @@ find_package( SnapDoxygen      REQUIRED )
 find_package( Thrift           REQUIRED )
 find_package( ZLIB             REQUIRED )
 find_package( ZipIos++         REQUIRED 0.1.5.9 )
-find_program( ZIP zip REQUIRED )
+
+find_program( ZIP zip               REQUIRED )
+find_program( CLOSURELINTER gjslint REQUIRED DOC "verify that Google JavaScript linter is installed: sudo apt-get install closure-linter" )
+
+if( "${XMLLINT_EXECUTABLE}" STREQUAL "XMLLINT_EXECUTABLE-NOTFOUND" )
+    message( FATAL_ERROR "xmllint was not found, you need to install libxml2-utils" )
+endif()
 
 if( "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" )
     message("Debug is in effect for snapwebsites!")
@@ -92,7 +101,7 @@ endif()
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
-include_directories( 
+include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/lib
     ${PROJECT_BINARY_DIR}

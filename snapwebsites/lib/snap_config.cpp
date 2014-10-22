@@ -65,8 +65,10 @@ void snap_config::set_cmdline_params( const parameter_map_t& params )
 
 
 /** \brief Read the configuration file into memory.
+ *
+ * \param[in] filename  The name of the file to read the parameters from.
  */
-void snap_config::read_config_file( const QString& filename )
+void snap_config::read_config_file( QString const& filename )
 {
     // read the configuration file now
     QFile c;
@@ -79,12 +81,14 @@ void snap_config::read_config_file( const QString& filename )
         // read it, unfortunately
         std::stringstream ss;
         ss << "cannot read configuration file \"" << filename.toUtf8().data() << "\"";
-        SNAP_LOG_ERROR() << ss.str() << ".";
+        SNAP_LOG_FATAL() << ss.str() << ".";
         syslog( LOG_CRIT, "%s, server not started. (in server::config())", ss.str().c_str() );
         exit(1);
     }
 
     // read the configuration file variables as parameters
+    //
+    // TODO: use C++ and getline() so we do not have to limit the length of a line
     char buf[1024];
     for(int line(1); c.readLine(buf, sizeof(buf)) > 0; ++line)
     {

@@ -28,16 +28,16 @@ class snap_config
 public:
     typedef QMap<QString, QString> parameter_map_t;
 
-    snap_config();
+                    snap_config();
 
-    void clear();
-    void set_cmdline_params( const parameter_map_t& params );
-    void read_config_file( const QString& filename );
+    void            clear();
+    void            set_cmdline_params( parameter_map_t const& params );
+    void            read_config_file( QString const& filename );
 
-    QString& operator []( const QString& name );
-    QString  operator []( const QString& name ) const;
+    QString&        operator []( QString const& name );
+    QString         operator []( QString const& name ) const;
 
-    bool contains( const QString& name ) const;
+    bool            contains( QString const& name ) const;
 
 private:
     parameter_map_t f_parameters;

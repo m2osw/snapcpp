@@ -64,6 +64,7 @@ include_directories(
         ${MAGIC_INCLUDE_PATH}
         ${LOG4CPLUS_INCLUDE_DIR}
         ${QT_INCLUDES}
+        ${LIBPROCPS_INCLUDE_DIRS}
 )
 
 QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
@@ -80,6 +81,7 @@ add_library( ${PROJECT_NAME} SHARED
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
     log.cpp                                     # log4cplus support
     mkgmtime.c                                  # mktime() with a UTC time
+    mounts.cpp                                  # read /proc/mounts or some other mount point file
     plugins.cpp                                 # plugins loader and list
     process.cpp                                 # run a process optionally with pipes
     qdomhelpers.cpp                             # Qt extensions to help with the DOM
@@ -122,6 +124,7 @@ target_link_libraries( ${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
     ${MAGIC_LIBRARY}
+    ${LIBPROCPS_LIBRARIES}
     ${THRIFT_LIBRARIES}
     pthread
     dl
@@ -144,9 +147,5 @@ install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h
     DESTINATION include/snapwebsites
 )
-
-# At this time we suppose that all the plugins are compiled
-# within our environment, however, we probably want to consider
-# installing our headers at some point.
 
 # vim: ts=4 sw=4 et nocindent

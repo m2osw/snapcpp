@@ -398,6 +398,8 @@ logger::~logger()
 
     log4cplus::LogLevel ll(log4cplus::FATAL_LOG_LEVEL);
     int sll(-1);  // syslog level if log4cplus not available (if -1 don't syslog() anything)
+    bool console(false);
+    char const *level_str(nullptr);
     switch(f_log_level)
     {
     case LOG_LEVEL_OFF:
@@ -407,16 +409,22 @@ logger::~logger()
     case LOG_LEVEL_FATAL:
         ll = log4cplus::FATAL_LOG_LEVEL;
         sll = LOG_CRIT;
+        console = true;
+        level_str = "fatal error";
         break;
 
     case LOG_LEVEL_ERROR:
         ll = log4cplus::ERROR_LOG_LEVEL;
         sll = LOG_ERR;
+        console = true;
+        level_str = "error";
         break;
 
     case LOG_LEVEL_WARNING:
         ll = log4cplus::WARN_LOG_LEVEL;
         sll = LOG_WARNING;
+        console = true;
+        level_str = "warning";
         break;
 
     case LOG_LEVEL_INFO:
@@ -450,27 +458,40 @@ logger::~logger()
             }
             syslog(sll, "%s (%s:%s: %d)", f_message.toUtf8().data(), f_file.get(), f_func.get(), static_cast<int32_t>(f_line));
         }
-        return;
-    }
-    if(!f_func)
-    {
-        // TBD: how should we really include the function name to the log4cplus messages?
-        //
-        // Note: we permit ourselves to modify f_message since we are in the destructor
-        //       about to leave this object anyway.
-        f_message += QString(" (in function \"%1()\")").arg(f_func);
-    }
-
-    // actually emit the log
-    if(LOG_SECURITY_SECURE == f_security)
-    {
-        // generally this at least goes in the /var/log/syslog
-        // and it may also go in a secure log file (i.e. not readable by everyone)
-        g_secure_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line);
     }
     else
     {
-        g_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line);
+        if(!f_func)
+        {
+            // TBD: how should we really include the function name to the log4cplus messages?
+            //
+            // Note: we permit ourselves to modify f_message since we are in the destructor
+            //       about to leave this object anyway.
+            f_message += QString(" (in function \"%1()\")").arg(f_func);
+        }
+
+        // actually emit the log
+        if(LOG_SECURITY_SECURE == f_security)
+        {
+            // generally this at least goes in the /var/log/syslog
+            // and it may also go in a secure log file (i.e. not readable by everyone)
+            //
+            g_secure_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line);
+        }
+        else
+        {
+            g_logger.log(ll, LOG4CPLUS_C_STR_TO_TSTRING(f_message.toUtf8().data()), f_file, f_line);
+
+            // full logger used, do not report error in console, logger can
+            // do it if the user wants to
+            //
+            console = false;
+        }
+    }
+
+    if(console && isatty(fileno(stdout)))
+    {
+        std::cerr << level_str << ":" << f_file.get() << ":" << f_line << ": " << f_message.toUtf8().data() << std::endl;
     }
 }
 

@@ -19,6 +19,9 @@
 #include "snap_thread.h"
 
 #include <map>
+#include <memory>
+
+#include <proc/readproc.h>
 
 #include <QString>
 #include <QStringList>
@@ -30,18 +33,52 @@ namespace snap
 class snap_process_exception : public snap_exception
 {
 public:
-    snap_process_exception(const char *whatmsg) : snap_exception("snap_process", whatmsg) {}
+    snap_process_exception(const char *       whatmsg) : snap_exception("snap_process", whatmsg) {}
     snap_process_exception(const std::string& whatmsg) : snap_exception("snap_process", whatmsg) {}
-    snap_process_exception(const QString& whatmsg) : snap_exception("snap_process", whatmsg) {}
+    snap_process_exception(const QString&     whatmsg) : snap_exception("snap_process", whatmsg) {}
 };
 
 class snap_process_exception_invalid_mode_error : public snap_process_exception
 {
 public:
-    snap_process_exception_invalid_mode_error(const char *whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_invalid_mode_error(const char *       whatmsg) : snap_process_exception(whatmsg) {}
     snap_process_exception_invalid_mode_error(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_invalid_mode_error(const QString& whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_invalid_mode_error(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
 };
+
+class snap_process_exception_already_initialized : public snap_process_exception
+{
+public:
+    snap_process_exception_already_initialized(const char *       whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_already_initialized(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_already_initialized(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+};
+
+class snap_process_exception_unknown_flag : public snap_process_exception
+{
+public:
+    snap_process_exception_unknown_flag(const char *       whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_unknown_flag(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_unknown_flag(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+};
+
+class snap_process_exception_openproc : public snap_process_exception
+{
+public:
+    snap_process_exception_openproc(const char *       whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_openproc(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_openproc(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+};
+
+class snap_process_exception_data_not_available : public snap_process_exception
+{
+public:
+    snap_process_exception_data_not_available(const char *       whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_data_not_available(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_data_not_available(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+};
+
+
 
 class process
 {
@@ -105,6 +142,81 @@ private:
     snap_thread::snap_mutex     f_mutex;
     int                         f_pid;
 };
+
+
+class process_list
+{
+public:
+    enum class field_t
+    {
+        // current status
+        MEMORY,
+        STATUS,
+        STATISTICS,
+
+        // info on startup
+        COMMAND_LINE,
+        ENVIRON,
+
+        // user/group info
+        USER_NAME,
+        GROUP_NAME,
+        CGROUP,
+        SUPPLEMENTARY_GROUP,
+
+        // other
+        OOM,
+        WAIT_CHANNEL,
+        NAMESPACE
+    };
+
+    class proc_info
+    {
+    public:
+        pid_t                       get_pid() const;
+        pid_t                       get_ppid() const;
+        void                        get_page_faults(unsigned long& major, unsigned long& minor) const;
+        unsigned                    get_pcpu() const;
+        char                        get_status() const;
+        void                        get_times(unsigned long long& utime, unsigned long long& stime, unsigned long long& cutime, unsigned long long& cstime) const;
+        long                        get_priority() const;
+        long                        get_nice() const;
+        long                        get_total_size() const;
+        long                        get_resident_size() const;
+        std::string                 get_process_name() const;
+        int                         get_args_size() const;
+        std::string                 get_arg(int index) const;
+        int                         get_tty() const;
+
+    private:
+        friend class process_list;
+
+        typedef controlled_vars::auto_init<int32_t, -1>   m1_count_t;
+
+                                    proc_info(std::shared_ptr<proc_t> p, int flags);
+                                    proc_info(proc_info const&) = delete;
+        proc_info&                  operator = (proc_info const&) = delete;
+
+        std::shared_ptr<proc_t>     f_proc;
+        controlled_vars::zint32_t   f_flags;
+        mutable m1_count_t          f_count;
+    };
+    typedef std::shared_ptr<proc_info>      proc_info_pointer_t;
+
+    bool                        get_field(field_t fld) const;
+    void                        set_field(field_t fld);
+    void                        clear_field(field_t fld);
+
+    void                        rewind();
+    proc_info_pointer_t         next();
+
+private:
+    int                         field_to_flag(field_t fld) const;
+
+    std::shared_ptr<PROCTAB>    f_proctab;
+    controlled_vars::zint32_t   f_flags;
+};
+
 
 } // namespace snap
 // vim: ts=4 sw=4 et

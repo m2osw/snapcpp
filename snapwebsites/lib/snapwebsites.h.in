@@ -151,46 +151,47 @@ public:
     };
 
 
-    typedef QMap<QString, backend_action *> backend_action_map_t;
-    typedef std::shared_ptr<server>         pointer_t;
+    typedef QMap<QString, backend_action *>                 backend_action_map_t;
+    typedef std::shared_ptr<server>                         pointer_t;
+    typedef QSharedPointer<udp_client_server::udp_server>   udp_server_t;
 
-    static pointer_t instance();
-    virtual ~server();
+    static pointer_t    instance();
+    virtual             ~server();
 
-    static void exit( const int code );
+    static void         exit( const int code );
 
-    static char const *version();
-    static int version_major();
-    static int version_minor();
-    static int version_patch();
-    virtual QString description() const;
-    virtual int64_t do_update(int64_t last_updated);
+    static char const * version();
+    static int          version_major();
+    static int          version_minor();
+    static int          version_patch();
+    virtual QString     description() const;
+    virtual int64_t     do_update(int64_t last_updated);
 
-    void usage();
-    void setup_as_backend();
-    bool is_debug() const { return f_debug; }
-    bool is_foreground() const { return f_foreground; }
-    bool is_backend() const { return f_backend; }
-    void config( int argc, char *argv[] );
-    QString get_parameter(QString const& param_name) const;
-    void set_parameter( const QString& param_name, const QString& value );
-    void prepare_qtapp( int argc, char *argv[] );
-    void prepare_cassandra();
+    void                usage();
+    void                setup_as_backend();
+    bool                is_debug() const { return f_debug; }
+    bool                is_foreground() const { return f_foreground; }
+    bool                is_backend() const { return f_backend; }
+    void                set_default_config_filename(QString const& filename) { f_config_filename = filename; }
+    void                config( int argc, char *argv[] );
+    QString             get_parameter(QString const& param_name) const;
+    void                set_parameter( const QString& param_name, const QString& value );
+    void                prepare_qtapp( int argc, char *argv[] );
+    void                prepare_cassandra();
     QtCassandra::QCassandraTable::pointer_t create_table(QtCassandra::QCassandraContext::pointer_t context, QString table_name, QString comment);
-    void detach();
-    void listen();
-    void backend();
-    int cassandra_port() const { return f_cassandra_port; }
-    const QString& cassandra_host() const { return f_cassandra_host; }
-    void udp_ping(char const *name, char const *message = "PING");
+    void                detach();
+    void                listen();
+    void                backend();
+    int                 cassandra_port() const { return f_cassandra_port; }
+    QString const&      cassandra_host() const { return f_cassandra_host; }
+    void                udp_ping(char const *name, char const *message = "PING");
 
-    unsigned long connections_count();
+    unsigned long       connections_count();
 
-    std::string servername() const;
+    std::string         servername() const;
 
-    typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
-    static udp_server_t udp_get_server ( const QString& udp_addr_port );
-    static void         udp_ping_server( const QString& udp_addr_port, char const *message = "PING" );
+    static udp_server_t udp_get_server ( QString const& udp_addr_port );
+    static void         udp_ping_server( QString const& udp_addr_port, char const *message = "PING" );
 
 #ifdef SNAP_NO_FORK
     bool nofork() const;
@@ -219,11 +220,19 @@ public:
     SNAP_SIGNAL_WITH_MODE(add_snap_expr_functions, (snap_expr::functions_t& functions), (functions), NEITHER);
     SNAP_SIGNAL_WITH_MODE(output_result, (QString const& uri_path, QByteArray& output), (uri_path, output), NEITHER);
 
+protected:
+                                server();
+    static server::pointer_t    get_instance();
+    static server::pointer_t    set_instance(pointer_t server);
+
+    // See TODO in server::prepare_cassandra()
+    QString                                 f_cassandra_host;
+    controlled_vars::zint32_t               f_cassandra_port;
+    snap_config                             f_parameters;
+
 private:
     //typedef QMap<QString, QString>                parameter_map_t;
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
-
-    server();
 
     static void sighandler( int sig );
 
@@ -236,11 +245,7 @@ private:
     controlled_vars::fbool_t                f_debug;
     controlled_vars::fbool_t                f_foreground;
     controlled_vars::fbool_t                f_backend;
-    //QString                                 f_config;
-    snap_config                             f_parameters;
-    //parameter_map_t                         f_parameters;
-    QString                                 f_cassandra_host;
-    controlled_vars::zint32_t               f_cassandra_port;
+    QString                                 f_config_filename;
 
     controlled_vars::zuint64_t              f_connections_count;
     snap_child_vector_t                     f_children_running;
