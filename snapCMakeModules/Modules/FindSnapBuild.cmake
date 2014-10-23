@@ -143,7 +143,7 @@ function( ConfigureMakeProject )
 	# RDB: Thu Jun 26 13:45:46 PDT 2014
 	# Adding "debuild" target.
 	#
-	set( DEBUILD_PLATFORM "saucy"                          CACHE STRING "Name of the Debian/Ubuntu platform to build against." )
+	set( DEBUILD_PLATFORM "trusty"                         CACHE STRING "Name of the Debian/Ubuntu platform to build against." )
 	set( DEBUILD_EMAIL    "Build Server <build@m2osw.com>" CACHE STRING "Email address of the package signer."                 )
 	set( EMAIL_ADDY ${DEBUILD_EMAIL} )
 	separate_arguments( EMAIL_ADDY )
