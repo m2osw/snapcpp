@@ -577,7 +577,7 @@ server::server()
     // default parameters -- we may want to have a separate function and
     //                       maybe some clear separate variables?
     f_parameters["listen"]         = "0.0.0.0:4004";
-    f_parameters["plugins"]        = "/usr/lib/snapwebsites/plugins";
+    f_parameters["plugins_path"]   = "/usr/lib/snapwebsites/plugins";
     f_parameters["qs_path"]        = "q";
     f_parameters["qs_action"]      = "a";
     f_parameters["server_name"]    = "";
