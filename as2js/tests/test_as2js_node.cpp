@@ -1113,7 +1113,7 @@ void As2JsNodeUnitTests::test_conversions()
                 CPPUNIT_ASSERT(node->to_float64());
                 // probably always true here; we had false in the loop prior
                 CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_FLOAT64);
-                CPPUNIT_ASSERT(fabs(node->get_float64().get() - static_cast<as2js::Float64::float64_type>(j.get())) < 0.0001);
+                CPPUNIT_ASSERT(as2js_test::nearly_equal(node->get_float64().get(), static_cast<as2js::Float64::float64_type>(j.get()), 0.0001));
             }
 
             {
