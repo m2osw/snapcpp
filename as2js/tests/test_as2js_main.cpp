@@ -33,6 +33,7 @@ SOFTWARE.
 
 */
 
+#include    "test_as2js_main.h"
 #include    "license.h"
 
 #include    "as2js/as2js.h"
