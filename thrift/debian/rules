@@ -12,20 +12,8 @@
 %:
 	dh $@ 
 
-#override_dh_auto_configure:
-#	dh_auto_configure -- \
-#        --without-csharp \
-#        --without-java \
-#        --without-erlang \
-#        --without-python \
-#        --without-perl \
-#        --without-php \
-#        --without-php_extension \
-#        --without-ruby \
-#        --without-haskell \
-#        --without-go \
-#        --without-d \
-#        --disable-coverage
+override_dh_auto_configure:
+        dh_auto_configure -- -DCMAKE_INSTALL_PREFIX=../debian/tmp/usr
 
 override_dh_auto_test:
 
