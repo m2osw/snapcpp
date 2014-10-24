@@ -82,13 +82,18 @@ namespace as2js
  * The compare is expected to work as defined in ECMAScript 5 (see 11.8.5,
  * 11.9.3, and 11.9.6).
  *
+ * The nearly equal is only used by the smart match operator. This is an
+ * addition by as2js which is somewhat like the ~~ operator defined by
+ * perl.
+ *
  * \param[in] lhs  The left hand side node.
  * \param[in] rhs  The right hand side node.
  * \param[in] strict  Whether the compare is strict or lousy (== versus ===).
+ * \param[in] nearly_equal  Use the nearly_equal() against floats.
  *
  * \return One of the compare_t values representing the comparison result.
  */
-compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bool const strict)
+compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bool const strict, bool const nearly_equal)
 {
     if(!lhs->is_literal() || !rhs->is_literal())
     {
@@ -128,6 +133,10 @@ compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bo
         {
         case node_t::NODE_FLOAT64:
             // NaN is a special case we have to take in account
+            if(nearly_equal && lhs->get_float64().nearly_equal(rhs->get_float64()))
+            {
+                return compare_t::COMPARE_EQUAL;
+            }
             return lhs->get_float64().compare(rhs->get_float64());
 
         case node_t::NODE_INT64:
@@ -238,6 +247,11 @@ compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bo
         // failure (cannot convert)
         throw exception_internal_error("INTERNAL ERROR: could not convert a literal node to a floating point (rhs)."); // LCOV_EXCL_LINE
 
+    }
+
+    if(nearly_equal && lhs->get_float64().nearly_equal(rhs->get_float64()))
+    {
+        return compare_t::COMPARE_EQUAL;
     }
 
     return lf.compare(rf);

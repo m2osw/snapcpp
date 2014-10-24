@@ -481,7 +481,7 @@ public:
     Float64                     get_float64() const;
     String const&               get_string() const;
 
-    static compare_t            compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bool const strict);
+    static compare_t            compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bool const strict, bool const nearly_equal);
 
     pointer_t                   create_replacement(node_t type) const;
 

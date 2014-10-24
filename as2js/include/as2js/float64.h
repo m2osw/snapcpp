@@ -139,6 +139,34 @@ public:
                                                       : compare_t::COMPARE_GREATER);
                     }
 
+    static float64_type default_epsilon()
+                    {
+                        return 0.00001;
+                    }
+
+    bool            nearly_equal(Float64 const& rhs, float64_type epsilon = default_epsilon())
+                    {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                        // already equal?
+                        if(f_float == rhs.f_float)
+                        {
+                            return true;
+                        }
+
+                        float64_type const diff = fabs(f_float - rhs.f_float);
+                        if(f_float == 0.0
+                        || rhs.f_float == 0.0
+                        || diff < std::numeric_limits<double>::min())
+                        {
+                            return diff < (epsilon * std::numeric_limits<double>::min());
+                        }
+
+                        return diff / (fabs(f_float) + fabs(rhs.f_float)) < epsilon;
+#pragma GCC diagnostic pop
+                    }
+ 
+
 private:
     controlled_vars::fauto_init<float64_type>    f_float;
 };

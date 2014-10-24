@@ -50,26 +50,6 @@ extern  bool            g_gui;
 extern  bool            g_run_stdout_destructive;
 extern  bool            g_save_parser_tests;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-template<typename F>
-bool nearly_equal(F a, F b, F epsilon)
-{
-    // already equal?
-    if(a == b)
-    {
-        return true;
-    }
-
-    F const diff = fabs(a - b);
-    if(a == 0.0 || b == 0.0 || diff < std::numeric_limits<double>::min())
-    {
-        return diff < (epsilon * std::numeric_limits<double>::min());
-    }
-
-    return diff / (fabs(a) + fabs(b)) < epsilon;
-}
-#pragma GCC diagnostic pop
 
 class obj_setenv
 {

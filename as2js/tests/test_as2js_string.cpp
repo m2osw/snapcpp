@@ -1750,7 +1750,9 @@ void As2JsStringUnitTests::test_number()
         CPPUNIT_ASSERT(str1.is_float64());
         CPPUNIT_ASSERT(str1.is_number());
         CPPUNIT_ASSERT(str1.to_int64() == value);
-        CPPUNIT_ASSERT(as2js_test::nearly_equal(str1.to_float64(), static_cast<double>(value), 0.0001));
+        as2js::Float64 flt1(str1.to_float64());
+        as2js::Float64 flt2(static_cast<double>(value));
+        CPPUNIT_ASSERT(flt1.nearly_equal(flt2, 0.0001));
         CPPUNIT_ASSERT(str1.is_true());
     }
 
