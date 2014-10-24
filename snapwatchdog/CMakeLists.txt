@@ -98,7 +98,7 @@ include_directories(
 ##
 ## Compiling
 ##
-#add_subdirectory(cmake)         # SnapWebsites CMake Modules
+add_subdirectory(cmake)         # SnapWebsites CMake Modules
 add_subdirectory(lib)           # Common code which is too specialized to create a separate library
 add_subdirectory(plugins)       # Plug-ins (i.e. modular functionality)
 add_subdirectory(src)           # Actual Snap! Websites server

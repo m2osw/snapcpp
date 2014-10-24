@@ -1,0 +1,13 @@
+#!/bin/sh -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if [ "$1" = "purge" ]
+then
+	rm -rf /var/lib/snapwebsites/snapwatchdog
+fi
+
+#DEBHELPER#
+
+# vim: ts=4 sw=4 et nocindent

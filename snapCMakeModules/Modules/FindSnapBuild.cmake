@@ -174,7 +174,7 @@ function( ConfigureMakeProject )
 			1> ${BUILD_DIR}/${ARG_PROJECT_NAME}_debuild.log
 		WORKING_DIRECTORY ${SRC_DIR}
 		DEPENDS ${ARG_PROJECT_NAME}-incdeps
-		COMMENT "Building debian package for ${ARG_PROJECT_NAME}"
+		COMMENT "Building debian source package for ${ARG_PROJECT_NAME}"
 		)
 	add_custom_target(
 		${ARG_PROJECT_NAME}-dput
