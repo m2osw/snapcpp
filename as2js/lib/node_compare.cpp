@@ -249,7 +249,7 @@ compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, co
 
     }
 
-    if(mode == compare_mode_t::COMPARE_SMART && lhs->get_float64().nearly_equal(rhs->get_float64()))
+    if(mode == compare_mode_t::COMPARE_SMART && lf.nearly_equal(rf))
     {
         return compare_t::COMPARE_EQUAL;
     }
