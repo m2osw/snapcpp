@@ -10,10 +10,32 @@ Homepage: http://www.snapwebsites.org/
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/snapwebsites
 
+Package: libsnapwatchdog-dev
+Section: libdevel
+Architecture: any
+Depends: libsnapwatchdog (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Track status and health of any number of servers.
+ Snap! Watchdog is a tool that works on any number of servers to
+ gather various information that let you know how your server is
+ doing.
+ .
+ This is the developer package.
+
+Package: libsnapwatchdog
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Track status and health of any number of servers.
+ Snap! Watchdog is a tool that works on any number of servers to
+ gather various information that let you know how your server is
+ doing.
+ .
+ This is the base library binary package.
+
 Package: snapwatchdog
 Section: utils
 Architecture: any
-Depends: adduser, libsnapwebsites (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: adduser, libsnapwatchdog (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Recommends: cassandra (>= 2.0.3)
 Suggests: snapwebsites (= ${binary:Version})
 Description: Track status and health of any number of servers.
