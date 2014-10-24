@@ -88,12 +88,12 @@ namespace as2js
  *
  * \param[in] lhs  The left hand side node.
  * \param[in] rhs  The right hand side node.
- * \param[in] strict  Whether the compare is strict or lousy (== versus ===).
- * \param[in] nearly_equal  Use the nearly_equal() against floats.
+ * \param[in] mode  Whether the compare is strict, lousy, or smart
+ *                  (===, ==, ~~).
  *
  * \return One of the compare_t values representing the comparison result.
  */
-compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bool const strict, bool const nearly_equal)
+compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, compare_mode_t const mode)
 {
     if(!lhs->is_literal() || !rhs->is_literal())
     {
@@ -133,7 +133,7 @@ compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bo
         {
         case node_t::NODE_FLOAT64:
             // NaN is a special case we have to take in account
-            if(nearly_equal && lhs->get_float64().nearly_equal(rhs->get_float64()))
+            if(mode == compare_mode_t::COMPARE_SMART && lhs->get_float64().nearly_equal(rhs->get_float64()))
             {
                 return compare_t::COMPARE_EQUAL;
             }
@@ -164,7 +164,7 @@ compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bo
 
     // if strict mode is turned on, we cannot compare objects
     // that are not of the same type (i.e. no conversions allowed)
-    if(strict)
+    if(mode == compare_mode_t::COMPARE_STRICT)
     {
         return compare_t::COMPARE_UNORDERED;
     }
@@ -249,7 +249,7 @@ compare_t Node::compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bo
 
     }
 
-    if(nearly_equal && lhs->get_float64().nearly_equal(rhs->get_float64()))
+    if(mode == compare_mode_t::COMPARE_SMART && lhs->get_float64().nearly_equal(rhs->get_float64()))
     {
         return compare_t::COMPARE_EQUAL;
     }
