@@ -33,7 +33,7 @@ project(snapwatchdog_cmake)
 
 install(
     FILES 
-        FindSnapWebsites.cmake
+        FindSnapWatchdog.cmake
     DESTINATION
         share/cmake-2.8/Modules
     )
