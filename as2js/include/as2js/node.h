@@ -422,6 +422,13 @@ public:
         LINK_max
     };
 
+    enum class compare_mode_t
+    {
+        COMPARE_STRICT,     // ===
+        COMPARE_LOOSE,      // ==
+        COMPARE_SMART       // ~~
+    };
+
                                 Node(node_t type);
                                 ~Node() noexcept(false);
 
@@ -481,7 +488,7 @@ public:
     Float64                     get_float64() const;
     String const&               get_string() const;
 
-    static compare_t            compare(Node::pointer_t const lhs, Node::pointer_t const rhs, bool const strict, bool const nearly_equal);
+    static compare_t            compare(Node::pointer_t const lhs, Node::pointer_t const rhs, compare_mode_t const mode);
 
     pointer_t                   create_replacement(node_t type) const;
 
