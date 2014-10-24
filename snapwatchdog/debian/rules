@@ -8,16 +8,6 @@
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
-BUILD=$(CURDIR)/obj-build
 
 %:
-	dh $@ -- -B $(BUILD)
-
-override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_INSTALL_PREFIX=../debian/tmp/usr
-
-override_dh_auto_install:
-	make -C $(BUILD) install
-
-override_dh_auto_test:
-
+	dh $@ 
