@@ -1,3 +1,9 @@
+cassview (0.0.28.47~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 25 Oct 2014 03:02:38 -0700
+
 cassview (0.0.28.46~trusty) trusty; urgency=high
 
   * Nightly build.
