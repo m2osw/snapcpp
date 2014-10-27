@@ -60,7 +60,104 @@ SNAP_PLUGIN_START(path, 1, 0)
 
 
 
+class path_error_callback : public permission_error_callback
+{
+public:
+    path_error_callback(snap_child *snap, content::path_info_t ipath)
+        : f_snap(snap)
+        , f_ipath(ipath)
+        //, f_plugin(nullptr)
+    {
+    }
 
+    void set_plugin(plugins::plugin *p)
+    {
+        f_plugin = p;
+    }
+
+    void on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details, bool const err_by_mime_type)
+    {
+        if(err_by_mime_type && f_plugin)
+        {
+            // will this plugin handle that error?
+            permission_error_callback::error_by_mime_type *handle_error(dynamic_cast<permission_error_callback::error_by_mime_type *>(f_plugin.get()));
+            if(handle_error)
+            {
+                // attempt to inform the user using the proper type of data
+                // so that way it is easier to debug than sending HTML
+                try
+                {
+                    // define a default error name if undefined
+                    QString http_name;
+                    f_snap->define_http_name(err_code, http_name);
+
+                    // log the error
+                    SNAP_LOG_FATAL("path::on_error(): ")(err_details)(" (")(static_cast<int>(err_code))(" ")(err_name)(": ")(err_description)(")");
+
+                    // On error we do not return the HTTP protocol, only the Status field
+                    // it just needs to be first to make sure it works right
+                    f_snap->set_header("Status", QString("%1 %2\n")
+                            .arg(static_cast<int>(err_code))
+                            .arg(http_name));
+
+                    // content type has to be defined by the handler, also
+                    // the output auto-generated
+                    //f_snap->set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
+                    //f_snap->output_result(HEADER_MODE_ERROR, html.toUtf8());
+                    handle_error->on_handle_error_by_mime_type(err_code, err_name, err_description, f_ipath.get_key());
+                }
+                catch(...)
+                {
+                    // ignore all errors because at this point we must die quickly.
+                    SNAP_LOG_FATAL("path.cpp:on_error(): try/catch caught an exception");
+                }
+
+                // exit with an error
+                exit(1);
+                NOTREACHED();
+            }
+        }
+        f_snap->die(err_code, err_name, err_description, err_details);
+        NOTREACHED();
+    }
+
+    void on_redirect(
+            /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
+            /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t const http_code)
+    {
+        // TODO: remove this message dependency
+        messages::messages::instance()->set_error(err_name, err_description, err_details, err_security);
+        server_access::server_access *server_access_plugin(server_access::server_access::instance());
+        if(server_access_plugin->is_ajax_request())
+        {
+            // Since the user sent an AJAX request, returning
+            // a redirect won't work as expected... instead we
+            // reply with a redirect in AJAX.
+            //
+            // TODO: The redirect requires the result of the AJAX
+            //       request to be 'true'... verify that this is
+            //       not in conflict with what we are trying to
+            //       achieve here
+            //
+//std::cerr << "***\n*** PATH Permission denied, but we can ask user for credentials with a redirect...\n***\n";
+            server_access_plugin->create_ajax_result(f_ipath, true);
+            server_access_plugin->ajax_redirect(QString("/%1").arg(path), "_top");
+            server_access_plugin->ajax_output();
+            f_snap->output_result(snap_child::HEADER_MODE_REDIRECT, f_snap->get_output());
+            f_snap->exit(0);
+        }
+        else
+        {
+            f_snap->page_redirect(path, http_code, err_description, err_details);
+        }
+        NOTREACHED();
+    }
+
+private:
+    zpsnap_child_t          f_snap;
+    content::path_info_t&   f_ipath;
+    plugins::plugin_zptr_t  f_plugin;
+};
 
 
 /** \brief Called by plugins that can handle dynamic paths.
@@ -259,7 +356,8 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
                         "An internal error occured and this page cannot properly be displayed at this time.",
                         QString("User tried to access page \"%1\" but its status state is %2.")
                                 .arg(ipath.get_key())
-                                .arg(static_cast<int>(status.get_state())));
+                                .arg(static_cast<int>(status.get_state())),
+                        false);
             return nullptr;
 
         case content::path_info_t::status_t::state_t::NORMAL:
@@ -272,7 +370,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
         // get the modified date so we can setup the Last-Modified HTTP header field
         // it is also another way to determine that a path is valid
         QtCassandra::QCassandraValue const value(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value());
-        QString const owner = content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue();
+        QString const owner(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
         if(value.nullValue() || owner.isEmpty())
         {
             err_callback.on_error(snap_child::HTTP_CODE_NOT_FOUND,
@@ -281,7 +379,8 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
                         QString("User tried to access page \"%1\" but it does not look valid (null value? %2, empty owner? %3)")
                                 .arg(ipath.get_key())
                                 .arg(static_cast<int>(value.nullValue()))
-                                .arg(static_cast<int>(owner.isEmpty())));
+                                .arg(static_cast<int>(owner.isEmpty())),
+                        false);
             return nullptr;
         }
         // TODO: this is not correct anymore! (we're getting the creation date, not last mod.)
@@ -305,7 +404,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
     }
     else
     {
-        // this key doesn't exist as is in the database, but...
+        // this key does not exist as is in the database, but...
         // it may be a dynamically defined path, check for a
         // plugin that would have defined such a path
 //std::cerr << "Testing for page dynamically [" << ipath.get_cpath() << "]\n";
@@ -328,6 +427,11 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
     if(owner_plugin != nullptr)
     {
         // got a valid plugin, verify that the user has permission
+        path_error_callback *pec(dynamic_cast<path_error_callback *>(&err_callback));
+        if(pec)
+        {
+            pec->set_plugin(owner_plugin);
+        }
         verify_permissions(ipath, err_callback);
     }
 
@@ -469,57 +573,7 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
     // that it will be BEFORE the path module verifies the permissions
     check_for_redirect(ipath);
 
-    class error_callback : public permission_error_callback
-    {
-    public:
-        error_callback(snap_child *snap, content::path_info_t ipath)
-            : f_snap(snap)
-            , f_ipath(ipath)
-        {
-        }
-
-        void on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
-        {
-            f_snap->die(err_code, err_name, err_description, err_details);
-            NOTREACHED();
-        }
-
-        void on_redirect(
-                /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
-                /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t http_code)
-        {
-            // TODO: remove this message dependency
-            messages::messages::instance()->set_error(err_name, err_description, err_details, err_security);
-            server_access::server_access *server_access_plugin(server_access::server_access::instance());
-            if(server_access_plugin->is_ajax_request())
-            {
-                // Since the user sent an AJAX request, returning
-                // a redirect won't work as expected... instead we
-                // reply with a redirect in AJAX.
-                //
-                // TODO: The redirect requires the result of the AJAX
-                //       request to be 'true'... verify that this is
-                //       not in conflict with what we're trying to
-                //       achieve here
-                //
-//std::cerr << "***\n*** PATH Permission denied, but we can ask user for credentials with a redirect...\n***\n";
-                server_access_plugin->create_ajax_result(f_ipath, true);
-                server_access_plugin->ajax_redirect(QString("/%1").arg(path), "_top");
-                server_access_plugin->ajax_output();
-                f_snap->output_result(snap_child::HEADER_MODE_REDIRECT, f_snap->get_output());
-                f_snap->exit(0);
-            }
-            else
-            {
-                f_snap->page_redirect(path, http_code, err_description, err_details);
-            }
-            NOTREACHED();
-        }
-
-    private:
-        zpsnap_child_t          f_snap;
-        content::path_info_t&   f_ipath;
-    } main_page_error_callback(f_snap, ipath);
+    path_error_callback main_page_error_callback(f_snap, ipath);
 
     f_last_modified = 0;
     plugins::plugin *path_plugin(get_plugin(ipath, main_page_error_callback));

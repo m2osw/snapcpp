@@ -1450,7 +1450,7 @@ void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
  * specify the name of the field, and one or two URLs as in:
  *
  * \code
- * snapbackend [--config snapserver.conf] --action createlink \
+ * snapbackend [--config snapserver.conf] --action deletelink \
  *      --param SOURCE_LINK_NAME=users::author \
  *              SOURCE_LINK=http://csnap.example.com/ \
  *              DESTINATION_LINK_NAME=users::authored_pages \
@@ -1460,7 +1460,7 @@ void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
  * snapbackend [--config snapserver.conf] --action deletelink \
  *      --param SOURCE_LINK_NAME=users::author \
  *              SOURCE_LINK=http://csnap.example.com/ \
- *              'LINK_MODE=1'
+ *              LINK_MODE=1
  * \endcode
  *
  * If you have problems with this action (it does not seem to work,)
@@ -1557,7 +1557,7 @@ void links::on_backend_action(QString const& action)
 
             content::path_info_t source_ipath;
             source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
-            if(content_table->exists(source_ipath.get_key()))
+            if(!content_table->exists(source_ipath.get_key()))
             {
                 SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
                 exit(1);
@@ -1581,7 +1581,7 @@ void links::on_backend_action(QString const& action)
 
             content::path_info_t source_ipath;
             source_ipath.set_path(f_snap->get_server_parameter("SOURCE_LINK"));
-            if(content_table->exists(source_ipath.get_key()))
+            if(!content_table->exists(source_ipath.get_key()))
             {
                 SNAP_LOG_FATAL("invalid source URI \"")(source_ipath.get_key())("\", page does not exist.");
                 exit(1);
@@ -1593,7 +1593,7 @@ void links::on_backend_action(QString const& action)
 
             content::path_info_t destination_ipath;
             destination_ipath.set_path(f_snap->get_server_parameter("DESTINATION_LINK"));
-            if(content_table->exists(destination_ipath.get_key()))
+            if(!content_table->exists(destination_ipath.get_key()))
             {
                 SNAP_LOG_FATAL("invalid destination URI \"")(destination_ipath.get_key())("\", page does not exist.");
                 exit(1);

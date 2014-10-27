@@ -63,12 +63,36 @@ public:
     snap_expr_exception_invalid_parameter_type(QString const&     what_msg) : snap_expr_exception(what_msg) {}
 };
 
+class snap_expr_exception_invalid_parameter_value : public snap_expr_exception
+{
+public:
+    snap_expr_exception_invalid_parameter_value(char const *       what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_parameter_value(std::string const& what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_parameter_value(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+};
+
 class snap_expr_exception_not_accessible : public snap_expr_exception
 {
 public:
     snap_expr_exception_not_accessible(char const *       what_msg) : snap_expr_exception(what_msg) {}
     snap_expr_exception_not_accessible(std::string const& what_msg) : snap_expr_exception(what_msg) {}
     snap_expr_exception_not_accessible(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+};
+
+class snap_expr_exception_not_ready : public snap_expr_exception
+{
+public:
+    snap_expr_exception_not_ready(char const *       what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_ready(std::string const& what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_ready(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+};
+
+class snap_expr_exception_invalid_data : public snap_expr_exception
+{
+public:
+    snap_expr_exception_invalid_data(char const *       what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_data(std::string const& what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_data(QString const&     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 

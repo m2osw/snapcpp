@@ -92,10 +92,18 @@ public:
 class permission_error_callback
 {
 public:
+    class error_by_mime_type
+    {
+    public:
+        virtual                 ~error_by_mime_type() {}
+
+        virtual void            on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path) = 0;
+    };
+
     virtual                 ~permission_error_callback() {}
 
-    virtual void            on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details) = 0;
-    virtual void            on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t http_code) = 0;
+    virtual void            on_error(snap_child::http_code_t const err_code, QString const& err_name, QString const& err_description, QString const& err_details, bool const err_by_mime_type) = 0;
+    virtual void            on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t const http_code) = 0;
 };
 
 // a simple specialization of the permission_error_callback that quiet
@@ -106,8 +114,8 @@ class quiet_error_callback : public permission_error_callback
 public:
                     quiet_error_callback(snap_child *snap, bool log);
 
-    virtual void    on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details);
-    virtual void    on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t http_code);
+    virtual void    on_error(snap_child::http_code_t const err_code, QString const& err_name, QString const& err_description, QString const& err_details, bool const err_by_mime_type);
+    virtual void    on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t const http_code);
 
     void            clear_error();
     bool            has_error() const;
@@ -149,7 +157,6 @@ public:
 
         controlled_vars::fbool_t    f_secure;
     };
-
 
     typedef QMap<QString, backend_action *>                 backend_action_map_t;
     typedef std::shared_ptr<server>                         pointer_t;
@@ -246,6 +253,7 @@ private:
     controlled_vars::fbool_t                f_debug;
     controlled_vars::fbool_t                f_foreground;
     controlled_vars::fbool_t                f_backend;
+    QMap<QString, bool>                     f_created_table;
     QString                                 f_config_filename;
 
     controlled_vars::zuint64_t              f_connections_count;

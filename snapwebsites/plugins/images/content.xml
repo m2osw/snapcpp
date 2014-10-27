@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Administrate different parameters in link with images uploaded to this website.</p>]]>
     </param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
     <!-- TBD: add a list of those pages? -->
   </content>
   <content path="/admin/images/scripts" owner="output">
@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>The pages under this administration page define scripts applied to images. These may be automatically added as required by different plugins. An administrator can also add his own scripts.</p>]]>
     </param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
     <!-- TBD: add a list of those pages? -->
   </content>
 </snap-tree>

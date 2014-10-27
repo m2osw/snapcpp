@@ -1051,8 +1051,21 @@ void server::prepare_cassandra()
 
 /** \brief Create a table in the specified context.
  *
- * The function checks whether the named table exists, if not it creates it with
- * default parameters. The result is a shared pointer to the table in question.
+ * The function checks whether the named table exists, if not it
+ * creates it with default parameters. The result is a shared pointer
+ * to the table in question.
+ *
+ * By default tables are just created in the Cassandra node you are
+ * connected with. In order to use the table, it has to have been
+ * propagated. This is done with a synchronization call. That call
+ * is performed by this very function the first time a table is
+ * queried if that table was created in an earlier call to this
+ * function, then the synchronization function gets called and blocks
+ * the process until the table was propagated. The current initialization
+ * process expects the create_table() to be called a first time when
+ * your plugin initial_update() is called, then called again once the
+ * table is necessary. Therefore, this create_table() uses a 'call me
+ * twice' scheme where the second call ensures the synchrony.
  *
  * \todo
  * Provide a structure that includes the different table parameters instead of
@@ -1084,6 +1097,17 @@ QtCassandra::QCassandraTable::pointer_t server::create_table(QtCassandra::QCassa
         table->setMaxCompactionThreshold(22);
         table->setReplicateOnWrite(1);
         table->create();
+
+        f_created_table[table_name] = true;
+    }
+    else if(f_created_table.contains(table_name))
+    {
+        // one single synchronization call for all the tables created
+        // thus far is enough.
+        f_created_table.clear();
+
+        // table(s) were created, we must wait for them to be synchronized
+        context->parentCassandra()->synchronizeSchemaVersions();
     }
     return table;
 }
@@ -1671,7 +1695,7 @@ std::string server::servername() const
  */
 
 
-/** \fn permission_error_callback::on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
+/** \fn permission_error_callback::on_error(snap_child::http_code_t const err_code, QString const& err_name, QString const& err_description, QString const& err_details, bool const err_by_mime_type)
  * \brief Generate an error.
  *
  * This function is called if an error is generated. If so then the function
@@ -1687,10 +1711,11 @@ std::string server::servername() const
  * \param[in] err_name  The name of the error such as "Service Not Available".
  * \param[in] err_description  HTML message about the problem.
  * \param[in] err_details  Server side text message with details that are logged only.
+ * \param[in] err_by_mime_type  If returning an error, do not return HTML when this element MIME type is something else, instead send a file of that type, but still with the HTTP error code supplied.
  */
 
 
-/** \fn permission_error_callback::on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t http_code)
+/** \fn permission_error_callback::on_redirect(QString const& err_name, QString const& err_description, QString const& err_details, bool err_security, QString const& path, snap_child::http_code_t const http_code)
  * \brief Generate a message and redirect the user.
  *
  * This function is called if an error is generated, but an error that can
@@ -1934,14 +1959,18 @@ quiet_error_callback::quiet_error_callback(snap_child *snap, bool log)
  * \param[in] err_name  The name of the error being generated.
  * \param[in] err_description  A more complete description of the error.
  * \param[in] err_details  The internal details about the error (for system administrators only).
+ * \param[in] err_by_mime_type  If returning an error, do not return HTML when this element MIME type is something else, instead send a file of that type, but still with the HTTP error code supplied.
  */
-void quiet_error_callback::on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details)
+void quiet_error_callback::on_error(snap_child::http_code_t const err_code, QString const& err_name, QString const& err_description, QString const& err_details, bool const err_by_mime_type)
 {
+    // since we ignore the error here anyway we can ignore this flag...
+    static_cast<void>(err_by_mime_type);
+
     f_error = true;
 
     if(f_log)
     {
-        // log the error so users know something happened
+        // log the error so administrators know something happened
         SNAP_LOG_ERROR("error #")(static_cast<int>(err_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details);
     }
 }
@@ -1967,13 +1996,14 @@ void quiet_error_callback::on_error(snap_child::http_code_t err_code, QString co
  */
 void quiet_error_callback::on_redirect(
         /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
-        /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t http_code)
+        /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t const http_code)
 {
     static_cast<void>(err_security);
 
     f_error = true;
     if(f_log)
     {
+        // log the feat so administrators know something happened
         SNAP_LOG_ERROR("error #")(static_cast<int>(http_code))(":")(err_name)(": ")(err_description)(" -- ")(err_details)(" (would redirect to: \"")(path)("\")");
     }
 }

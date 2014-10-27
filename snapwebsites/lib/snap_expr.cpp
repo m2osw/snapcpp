@@ -1462,7 +1462,7 @@ public:
     {
         if(!g_context)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("cell() function not available, g_context is NULL");
+            throw snap_expr_exception_not_ready("cell() function not available, g_context is NULL");
         }
         if(sub_results.size() != 3)
         {
@@ -1494,7 +1494,7 @@ public:
     {
         if(!g_context)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("cell_exists() function not available, g_context is NULL");
+            throw snap_expr_exception_not_ready("cell_exists() function not available, g_context is NULL");
         }
         if(sub_results.size() != 3)
         {
@@ -1610,7 +1610,7 @@ public:
             {
                 if(f_index >= f_sub_results.size())
                 {
-                    throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call format(), your format requires more parameters than is currently allowed");
+                    throw snap_expr_exception_invalid_data("invalid number of parameters to call format(), your format requires more parameters than is currently allowed");
                 }
                 variable_t const& r(f_sub_results[f_index]);
                 ++f_position;
@@ -1692,7 +1692,7 @@ public:
                 if(code < 0 || code > 0x110000
                 || (code >= 0xD800 && code <= 0xDFFF))
                 {
-                    throw snap_expr_exception_invalid_number_of_parameters("invalid character code in format(), only valid Unicode characters are allowed");
+                    throw snap_expr_exception_invalid_data("invalid character code in format(), only valid Unicode characters are allowed");
                 }
                 if(QChar::requiresSurrogates(code))
                 {
@@ -2175,7 +2175,7 @@ public:
     {
         if(!g_context)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("row_exists() function not available, g_context is NULL");
+            throw snap_expr_exception_not_ready("row_exists() function not available, g_context is NULL");
         }
         if(sub_results.size() != 2)
         {
@@ -2323,7 +2323,7 @@ public:
     {
         if(!g_context)
         {
-            throw snap_expr_exception_invalid_number_of_parameters("table_exists() function not available, g_context is NULL");
+            throw snap_expr_exception_not_ready("table_exists() function not available, g_context is NULL");
         }
         if(sub_results.size() != 1)
         {

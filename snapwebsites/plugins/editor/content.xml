@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Change your WYSIWYG editor behavior.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/admin/settings/editor/test">
     <param name="content::title" revision="revision">Test of the WYSIWYG Editor</param>
@@ -32,16 +32,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <param name="layout::layout" revision="global">"editor-test";</param>
     <param name="editor::layout" revision="global" overwrite="yes">"editor-test-page";</param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/private</link>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website</link>
-    <link name="permissions::edit" to="permissions::edit" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/private</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
   </content>
   <content path="/admin/drafts">
     <param name="content::title" revision="revision">Draft Manager</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>List of your drafts and create a new draft.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <!-- TODO: do something to specify how the list needs to be paged -->
     <param name="list::original_item_key_script" overwrite="yes">
       <![CDATA[(branch := int32(cell("content", page, "content::revision_control::current_branch")),
@@ -58,8 +58,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Enter the following information and click Create Draft to create a new Draft. Once created, you will be able to work on your draft until it is ready for publication. At that point it is removed from the list of drafts and moved to the list of pages of the type you selected.</p>[form::source]]]>
     </param>
-    <!--link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link-->
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <!--link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link-->
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <param name="form::source">new-draft</param>
     <param name="content::final">1</param>
     <link name="menu::admin" to="menu::admin" mode="1:*">/types/taxonomy/system/menu/item/admin</link>
@@ -69,7 +69,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>List of your pages that were deleted (i.e. moved to the trashcan).</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <!-- TODO: do something to specify how the list needs to be paged -->
     <param name="list::original_item_key_script" overwrite="yes">
       <![CDATA[(branch := int32(cell("content", page, "content::revision_control::current_branch")),
@@ -87,7 +87,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>JavaScript code for the Snap! WYSIWYG Editor.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="editor" type="attachment/public">
       <path>:/js/editor/editor.js</path>
       <mime-type>text/javascript</mime-type>
@@ -103,8 +103,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Images used by the editor plugin.</p>]]>
     </param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <!-- let the content plugin server the image -->
     <attachment name="buttons" type="attachment/public">
       <path>:/images/editor/buttons.png</path>
@@ -174,16 +174,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>This type is used to create new pages when going through the New Draft creation process. The page is also assigned a <em>final</em> type from the start, but assigning a page content type of, for example, page/public would make the draft public immediatly.</p>]]>
     </param>
-    <!--link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/??</link-->
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
-    <link name="permissions::edit" to="permissions::edit" mode="*:*">/types/permissions/rights/edit/page</link>
+    <!--link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/??</link-->
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/edit/page</link>
   </content>
   <content path="/css/editor">
     <param name="content::title" revision="revision">Default CSS for Editor Forms</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The cascading style sheets for editor forms generated by the editor.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="style" type="attachment/public">
       <path>qrc:/css/editor/editor.css</path>
       <mime-type>text/css</mime-type>

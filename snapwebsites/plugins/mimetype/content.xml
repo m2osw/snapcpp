@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>The different JavaScripts generated to handle the determination of a file type from its content.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="mimetype-basics" type="attachment/public">
       <path>:/js/mimetype/mimetype-basics.js</path>
       <mime-type>text/javascript</mime-type>
@@ -38,8 +38,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Set of images offered and used by Core.</p>]]>
     </param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/attachment/public</link>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="file-aac" type="attachment/public">
       <path>:/images/mimetype/file-aac.png</path>
       <mime-type>image/png</mime-type>

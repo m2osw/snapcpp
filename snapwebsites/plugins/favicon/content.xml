@@ -21,18 +21,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/favicon.ico">
     <param name="content::final" type="int8" revision="global">1</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
   </content>
   <content path="/default-favicon.ico">
     <param name="content::final" type="int8" revision="global">1</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
   </content>
   <content path="/admin/settings/favicon">
     <param name="content::title" revision="revision">Favorite Icon Settings (favicon.ico)</param>
     <param name="content::body" revision="revision">[form::source]</param>
     <param name="form::source">settings</param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="menu::admin" to="menu::admin" mode="1:*">/types/taxonomy/system/menu/item/admin</link>
   </content>
 </snap-tree>

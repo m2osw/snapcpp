@@ -306,6 +306,7 @@ public:
     QString                     get_server_parameter(QString const& name);
     QtCassandra::QCassandraValue get_site_parameter(QString const& name);
     void                        set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value);
+    void                        improve_signature(QString const& path, QString& signature);
     QtCassandra::QCassandraContext::pointer_t get_context() { return f_context; }
     QString const&              get_domain_key() const { return f_domain_key; }
     QString const&              get_website_key() const { return f_website_key; }

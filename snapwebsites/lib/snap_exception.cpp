@@ -58,7 +58,7 @@ snap_exception_base::snap_exception_base()
 void snap_exception_base::output_stack_trace()
 {
     void *array[STACK_TRACE_DEPTH];
-    int const size = backtrace( array, STACK_TRACE_DEPTH );
+    int const size(backtrace( array, STACK_TRACE_DEPTH ));
 
     // Output to log
     //

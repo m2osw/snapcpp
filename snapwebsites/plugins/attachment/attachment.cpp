@@ -18,10 +18,14 @@
 #include "attachment.h"
 
 #include "../messages/messages.h"
+#include "../permissions/permissions.h"
 
+#include "log.h"
 #include "not_reached.h"
 
 #include <iostream>
+
+#include <QFile>
 
 #include "poison.h"
 
@@ -94,6 +98,7 @@ void attachment::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(attachment, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(attachment, "content", content::content, page_cloned, _1);
     SNAP_LISTEN(attachment, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(attachment, "permissions", permissions::permissions, permit_redirect_to_login_on_not_allowed, _1, _2);
 }
 
 
@@ -146,7 +151,7 @@ int64_t attachment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 10, 2, 23, 58, 12, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 10, 26, 2, 58, 12, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -282,7 +287,7 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     {
         // somehow the file key is not available
         f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
-                QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
+                QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
                         .arg(field_name)
                         .arg(QString::fromAscii(attachment_key.binaryValue().toHex()))
@@ -296,7 +301,7 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     {
         // somehow the file data is not available
         f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
-                QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
+                QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\".")
                         .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
                         .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
@@ -321,8 +326,8 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     || content_type == "text/css"
     || content_type == "text/xml")
     {
-        // TBD -- we probably should check what's defined inside those
-        //        files before assuming it's using UTF-8.
+        // TBD -- we probably should check what is defined inside those
+        //        files before assuming it is using UTF-8.
         content_type += "; charset=utf-8";
     }
     f_snap->set_header("Content-Type", content_type);
@@ -451,6 +456,286 @@ void attachment::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells
     // overwrite the source with the cells we allow to copy "further"
     source_cells = left_cells;
 }
+
+
+void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path)
+{
+    struct default_error_t
+    {
+        default_error_t(snap_child *snap, snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path)
+            : f_snap(snap)
+            , f_err_code(err_code)
+            , f_err_name(err_name)
+            , f_err_description(err_description)
+            , f_path(path)
+        {
+        }
+
+        void emit_error(QString const& more_details)
+        {
+            // log the extract details, we do not need to re-log the error
+            // info which the path plugin has already done
+            if(!more_details.isEmpty())
+            {
+                SNAP_LOG_FATAL("attachment::on_handle_error_by_mime_type(): ")(more_details);
+            }
+
+            // force header to text/html anywa
+            f_snap->set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", snap_child::HEADER_MODE_EVERYWHERE);
+
+            // get signature, if we are here, we have Cassandra so directly
+            // get that value
+            QString const site_key(f_snap->get_site_key());
+            QtCassandra::QCassandraValue site_name(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_NAME)));
+            QString signature(QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue()));
+            f_snap->improve_signature(f_path, signature);
+
+            // same error as in the snap_child::die() function
+            // (although with time it will certainly change...)
+            QString const html(QString("<html><head>"
+                            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
+                            "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
+                            "<title>Snap Server Error</title>"
+                            "</head>"
+                            "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
+                    .arg(snap::get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
+                    .arg(static_cast<int>(f_err_code))
+                    .arg(f_err_name)
+                    .arg(f_err_description)
+                    .arg(signature));
+            f_snap->output_result(snap_child::HEADER_MODE_ERROR, html.toUtf8());
+        }
+
+    private:
+        zpsnap_child_t          f_snap;
+        snap_child::http_code_t f_err_code;
+        QString const&          f_err_name;
+        QString const&          f_err_description;
+        QString const&          f_path;
+    } default_err(f_snap, err_code, err_name, err_description, path);
+
+    // in this case we want to return a file with the same format as the
+    // one pointed to by ipath, only we send a default "not allowed" version
+    // of it (i.e. for an image, send a GIF that clearly shows "image not
+    // allowed" or something that clearly tells us that a permission prevents
+    // us from seening the file
+    //
+    // this replaces the default HTML usually sent with such errors because
+    // those are really not talkative
+    //
+    // see the die() function in the snap_child class for other information
+    // about these things
+    QString field_name;
+    content::path_info_t attachment_ipath;
+    // TODO: the renamed_path / attachment_field are not available here because
+    //       the server does not know about the path_content_t type...
+    //QString const renamed(ipath.get_parameter("renamed_path"));
+    //if(renamed.isEmpty())
+    {
+        attachment_ipath.set_path(path);
+        field_name = content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA);
+    }
+    //else
+    //{
+    //    // TODO: that data may NOT be available yet in which case a plugin
+    //    //       needs to offer it... how do we do that?!
+    //    attachment_ipath.set_path(renamed);
+    //    field_name = ipath.get_parameter("attachment_field");
+    //}
+
+    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    if(attachment_key.nullValue())
+    {
+        // somehow the file key is not available
+        default_err.emit_error(
+                    QString("Could not find field \"%1\" of file \"%2\" in revision table.")
+                            .arg(field_name)
+                            .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+        return;
+    }
+
+    QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
+    if(!files_table->exists(attachment_key.binaryValue())
+    || !files_table->row(attachment_key.binaryValue())->exists(field_name))
+    {
+        // somehow the file data is not available
+        default_err.emit_error(
+                QString("Could not find field \"%1\" of file \"%2\" in files table.")
+                        .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
+                        .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
+        return;
+    }
+
+    QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(attachment_key.binaryValue()));
+
+    // TODO: If the user is loading the file as an attachment,
+    //       we need those headers (TBD--would we reaaly want to do that
+    //       here? probably, although that means we offer the user a
+    //       download with nothingness inside.)
+
+    //int pos(cpath.lastIndexOf('/'));
+    //QString basename(cpath.mid(pos + 1));
+    //f_snap->set_header("Content-Disposition", "attachment; filename=" + basename);
+
+    //f_snap->set_header("Content-Transfer-Encoding", "binary");
+
+    // get the attachment MIME type and tweak it if it is a known text format
+    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    QString const content_type(attachment_mime_type.stringValue());
+    if(content_type == "text/html")
+    {
+        default_err.emit_error("The attachment being downloaded is text/html, displaying default error.");
+        return;
+    }
+
+    // if known text format, use UTF-8 as the charset
+    QString content_type_header(content_type);
+    if(content_type == "text/javascript"
+    || content_type == "text/css"
+    || content_type == "text/xml")
+    {
+        // TBD -- we probably should check what is defined inside those
+        //        files before assuming it is using UTF-8.
+        content_type_header += "; charset=utf-8";
+    }
+    f_snap->set_header("Content-Type", content_type_header, snap_child::HEADER_MODE_EVERYWHERE);
+
+    // dynamic JavaScript error--we may also want to put a console.log()
+    if(content_type == "text/javascript")
+    {
+        QString const js(QString("/* an error occurred while reading this .js file:\n"
+                        " * %1 %2\n"
+                        " * %3\n"
+                        " */\n")
+                .arg(static_cast<int>(err_code))
+                .arg(QString(err_name).replace("*/", "**"))
+                .arg(QString(err_description).replace("*/", "**")));
+        f_snap->output_result(snap_child::HEADER_MODE_ERROR, js.toUtf8());
+        return;
+    }
+
+    // dynamic CSS error--I'm not too sure we could show something on the
+    //                    screen as a result
+    if(content_type == "text/css")
+    {
+        QString const css(QString("/* An error occurred while reading this .css file:\n"
+                        " * %1 %2\n"
+                        " * %3\n"
+                        " */\n")
+                .arg(static_cast<int>(err_code))
+                .arg(QString(err_name).replace("*/", "**"))
+                .arg(QString(err_description).replace("*/", "**")));
+        f_snap->output_result(snap_child::HEADER_MODE_ERROR, css.toUtf8());
+        return;
+    }
+
+    // dynamic XML error--we create a "noxml" XML file
+    if(content_type == "text/xml")
+    {
+        QString const css(QString("<?xml version=\"1.0\"?><!-- an error occurred while reading this .css file:\n"
+                        "%1 %2\n"
+                        "%3\n"
+                        "%4\n"
+                        "--><noxml></noxml>\n")
+                .arg(static_cast<int>(err_code))
+                .arg(QString(err_name).replace("--", "=="))
+                .arg(QString(err_description).replace("--", "==")));
+        f_snap->output_result(snap_child::HEADER_MODE_ERROR, css.toUtf8());
+        return;
+    }
+
+    // obviously, since the file is not authorized we cannot send the
+    // actual file data which we could access with the following line:
+    //QtCassandra::QCassandraValue data(file_row->cell(field_name)->value());
+
+    // the actual file data now; this is defined using the MIME type
+    // (and the error code?)
+    QStringList const mime_type_parts(content_type.split('/'));
+    if(mime_type_parts.size() != 2)
+    {
+        // no recovery on that one for now
+        default_err.emit_error(QString("Could not break MIME type \"%1\" in two strings.").arg(content_type));
+        return;
+    }
+    QString const major_mime_type(mime_type_parts[0]);
+    QString const minor_mime_type(mime_type_parts[1]);
+
+    // now check the following in that order:
+    //
+    //    1. Long name in the database
+    //    2. Long name in resources
+    //    3. Short name in the database
+    //    5. Short name in resources
+    //
+    QtCassandra::QCassandraValue data;
+    QString const long_name(QString("%1::%2::%3")
+                .arg(major_mime_type)
+                .arg(minor_mime_type)
+                .arg(static_cast<int>(err_code)));
+    if(files_table->row(content::get_name(content::SNAP_NAME_CONTENT_ERROR_FILES))->exists(long_name))
+    {
+        // long name exists in the database, use it
+        data = files_table->row(content::get_name(content::SNAP_NAME_CONTENT_ERROR_FILES))->cell(long_name)->value();
+    }
+    else
+    {
+        QString const short_name(QString("%1::%2")
+                    .arg(major_mime_type)
+                    .arg(minor_mime_type));
+
+        // try with the long name in the resources
+        QString const long_filename(QString(":/plugins/%1/mime-types/%2.xml").arg(get_plugin_name()).arg(long_name));
+        QFile long_rsc_content(long_filename);
+        if(long_rsc_content.open(QFile::ReadOnly))
+        {
+            data.setBinaryValue(long_rsc_content.readAll());
+        }
+        else if(files_table->row(content::get_name(content::SNAP_NAME_CONTENT_ERROR_FILES))->exists(short_name))
+        {
+            // short name exists in the database, use it
+            data = files_table->row(content::get_name(content::SNAP_NAME_CONTENT_ERROR_FILES))->cell(short_name)->value();
+        }
+        else
+        {
+            // try with the short name in the resources
+            QString const short_filename(QString(":/plugins/%1/mime-types/%2.xml").arg(get_plugin_name()).arg(short_name));
+            QFile short_rsc_content(short_filename);
+            if(short_rsc_content.open(QFile::ReadOnly))
+            {
+                data.setBinaryValue(short_rsc_content.readAll());
+            }
+            else
+            {
+                // no data available, use the default HTML as fallback
+                default_err.emit_error(QString("Could not find file for MIME type \"%1\" in database or resources.").arg(content_type));
+                return;
+            }
+        }
+    }
+
+    f_snap->output(data.binaryValue());
+}
+
+
+void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t& ipath, bool& redirect_to_login)
+{
+    // this is a signal, we get called whatever the ipath (i.e. it is not
+    // specific to a plugin derived from a certain class so not specific
+    // to the attachment.)
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    if(content_table->exists(ipath.get_key())
+    && content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+    {
+        QString const owner(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+        if(owner == get_plugin_name())
+        {
+            // we own this page (attachment)
+            redirect_to_login = false;
+        }
+    }
+}
+
 
 
 SNAP_PLUGIN_END()

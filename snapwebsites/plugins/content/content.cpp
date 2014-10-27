@@ -133,6 +133,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_CREATED:
         return "content::created";
 
+    case SNAP_NAME_CONTENT_ERROR_FILES:
+        return "error_files";
+
     case SNAP_NAME_CONTENT_DESCRIPTION:
         return "content::description";
 
@@ -3962,6 +3965,7 @@ int64_t content::do_update(int64_t last_updated)
 void content::initial_update(int64_t variables_timestamp)
 {
     static_cast<void>(variables_timestamp);
+
     get_content_table();
     get_branch_table();
     get_revision_table();

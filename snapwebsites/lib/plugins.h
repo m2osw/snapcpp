@@ -17,6 +17,7 @@
 #pragma once
 
 #include <controlled_vars/controlled_vars_auto_init.h>
+#include <controlled_vars/controlled_vars_ptr_auto_init.h>
 
 #include <stdexcept>
 #include <memory>
@@ -71,15 +72,16 @@ public:
     virtual int64_t                     do_update(int64_t last_updated);
 
 private:
-    const QString                       f_name;
-    const QString                       f_filename;
+    QString const                       f_name;
+    QString const                       f_filename;
     mutable controlled_vars::zint64_t   f_last_modification;
     controlled_vars::zint32_t           f_version_major;
     controlled_vars::zint32_t           f_version_minor;
 };
 
-typedef std::shared_ptr<plugin> plugin_ptr_t;
-typedef QMap<QString, plugin *> plugin_list_t;
+typedef std::shared_ptr<plugin>                 plugin_ptr_t;
+typedef QMap<QString, plugin *>                 plugin_list_t;
+typedef controlled_vars::ptr_auto_init<plugin>  plugin_zptr_t;
 
 QStringList list_all(QString const& plugin_path);
 bool load(QString const& plugin_path, plugin_ptr_t server, QStringList const& list_of_plugins);

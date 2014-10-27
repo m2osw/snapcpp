@@ -491,9 +491,9 @@ void editor::process_new_draft()
     // give edit permission of the draft
     // <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     {
-        QString const link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_EDIT));
+        QString const link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_ACTION_EDIT));
         bool const source_unique(false);
-        QString const link_to(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_EDIT));
+        QString const link_to(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const destination_unique(false);
         content::path_info_t type_ipath;
         // TBD -- should this includes the type of page?

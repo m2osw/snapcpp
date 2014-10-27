@@ -600,7 +600,7 @@ void users::on_process_cookies()
     cookie.set_expire_in(86400 * 5);  // 5 days
     cookie.set_http_only(); // make it a tad bit safer
     f_snap->set_cookie(cookie);
-//printf("session id [%s]\n", f_info->get_session_key().toUtf8().data());
+//std::cerr << "user session id [" << f_info->get_session_key() << "] [" << f_user_key << "]\n";
 }
 
 

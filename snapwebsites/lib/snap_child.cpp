@@ -5295,6 +5295,27 @@ QString snap_child::get_server_parameter(QString const& name)
 }
 
 
+/** \brief Improve signature to place at the bottom of a page.
+ *
+ * This signal can be used to generate a signature to place at the bottom
+ * of a page. In most cases, this very simple signature function is only
+ * used on error pages, although plugins that generate rather generic
+ * content are welcome to use it too.
+ *
+ * \param[in] path  The path to the page that is being generated.
+ * \param[out] signature  The signature string, the result is saved here.
+ */
+void snap_child::improve_signature(QString const& path, QString& signature)
+{
+    server::pointer_t server(f_server.lock());
+    if(!server)
+    {
+        throw snap_logic_exception("server pointer is nullptr");
+    }
+    return server->improve_signature(path, signature);
+}
+
+
 /** \brief Retreive a website wide parameter.
  *
  * This function reads a column from the sites table using the site key as
@@ -5365,27 +5386,26 @@ void snap_child::set_site_parameter(QString const& name, QtCassandra::QCassandra
     // retrieve site table if not there yet
     if(!f_site_table)
     {
-        QString const table_name(get_name(SNAP_NAME_SITES));
-        QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
-        table->setComment("List of sites with their global parameters.");
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        //table->setMemtableThroughputInMb(247);
-        //table->setMemtableOperationsInMillions(1.1578125);
-        table->setGcGraceSeconds(864000);
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
-        table->create();
+        server::pointer_t server( f_server.lock() );
+        if(!server)
+        {
+            throw snap_logic_exception("server pointer is nullptr");
+        }
 
-        f_site_table = table;
+        // create
+        server->create_table(f_context, get_name(SNAP_NAME_SITES), "List of sites with their global parameters.");
 
-        // mandatory fields
-        f_site_table->row(f_site_key)->cell(QString(get_name(SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
+        // get the pointer after synchronization
+        f_site_table = server->create_table(f_context, get_name(SNAP_NAME_SITES), "List of sites with their global parameters.");
+
+        // mandatory field if this is not the first field being written
+        //
+        // TODO: this "mandatory field" is incorrect because only one
+        //       website gets to create this table...
+        if(name != get_name(SNAP_NAME_CORE_SITE_NAME))
+        {
+            f_site_table->row(f_site_key)->cell(QString(get_name(SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
+        }
     }
 
 //fprintf(stderr, "Setting [%s] parameter\n", name.toUtf8().data());
@@ -5567,7 +5587,7 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
         }
 
         QString signature;
-        const QString site_key(get_site_key());
+        QString const site_key(get_site_key());
         if(f_cassandra)
         {
             // TODO: the description could also come from a user defined page
@@ -5575,12 +5595,12 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
             //       4XX errors though)
 
             QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
-            signature = QString("<a href=\"%1\">%2</a>").arg(get_site_key()).arg(site_name.stringValue());
+            signature = QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue());
             server->improve_signature(f_uri.path(), signature);
         }
         else if(!site_key.isEmpty())
         {
-            signature = QString("<a href=\"%1\">%2</a>").arg(get_site_key()).arg(get_site_key());
+            signature = QString("<a href=\"%1\">%1</a>").arg(site_key);
             server->improve_signature(f_uri.path(), signature);
         }
         // else -- no signature...

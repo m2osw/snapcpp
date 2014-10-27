@@ -58,29 +58,53 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER:
+        return "permissions::action::administer";
+
+    case SNAP_NAME_PERMISSIONS_ACTION_EDIT:
+        return "permissions::action::edit";
+
+    case SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE:
+        return "action";
+
     case SNAP_NAME_PERMISSIONS_ACTION_PATH:
         return "types/permissions/actions";
 
-    case SNAP_NAME_PERMISSIONS_ADMINISTER:
-        return "permissions::administer";
+    case SNAP_NAME_PERMISSIONS_ADMINISTER_NAMESPACE:
+        return "administer";
+
+    case SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER:
+        return "permissions::direct::action::administer";
+
+    case SNAP_NAME_PERMISSIONS_DIRECT_ACTION_EDIT:
+        return "permissions::direct::action::edit";
+
+    case SNAP_NAME_PERMISSIONS_DIRECT_ACTION_VIEW:
+        return "permissions::direct::action::view";
+
+    case SNAP_NAME_PERMISSIONS_DIRECT_GROUP:
+        return "permissions::direct::group";
+
+    case SNAP_NAME_PERMISSIONS_DIRECT_GROUP_RETURNING_REGISTERED_USER:
+        return "permissions::direct::group::returning_registered_user";
+
+    case SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE:
+        return "direct";
 
     case SNAP_NAME_PERMISSIONS_DYNAMIC:
         return "permissions::dynamic";
 
-    case SNAP_NAME_PERMISSIONS_EDIT:
-        return "permissions::edit";
+    case SNAP_NAME_PERMISSIONS_EDIT_NAMESPACE:
+        return "edit";
 
-    case SNAP_NAME_PERMISSIONS_GROUP:
-        return "permissions::group";
-
-    case SNAP_NAME_PERMISSIONS_GROUP_RETURNING_REGISTERED_USER:
-        return "permissions::group::returning_registered_user";
-
-    case SNAP_NAME_PERMISSIONS_GROUPS:
-        return "permissions::groups";
+    case SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE:
+        return "group";
 
     case SNAP_NAME_PERMISSIONS_GROUPS_PATH:
         return "types/permissions/groups";
+
+    case SNAP_NAME_PERMISSIONS_LINK_BACK:
+        return "permissions::link_back";
 
     case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER:
         return "permissions::login_status::spammer";
@@ -115,8 +139,11 @@ char const *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_USERS_PATH:
         return "types/permissions/users";
 
-    case SNAP_NAME_PERMISSIONS_VIEW:
-        return "permissions::view";
+    case SNAP_NAME_PERMISSIONS_ACTION_VIEW:
+        return "permissions::action::view";
+
+    case SNAP_NAME_PERMISSIONS_VIEW_NAMESPACE:
+        return "view";
 
     default:
         // invalid index
@@ -328,8 +355,8 @@ const QString& permissions::sets_t::get_action() const
 
 /** \brief Rights the user has are added with this function.
  *
- * This function is to be used to add rights that the user has. A
- * right is a link path (i.e. /types/permissions/rights/\<name>).
+ * This function is to be used to add rights that the user has.
+ * A right is a link path (i.e. /types/permissions/rights/\<name>).
  *
  * If the same right is added more than once, then only one instance is
  * kept. Actually, if a better right is added, the old not as good right
@@ -351,11 +378,19 @@ const QString& permissions::sets_t::get_action() const
  * /type/permissions/rights/administer/website
  *
  * # then all those rights get removed:
- * /type/permissions/rights/administer/website/layout
+ * /type/permissions/rights/administer/website/feed/create
+ * /type/permissions/rights/administer/website/feed/read
+ * /type/permissions/rights/administer/website/feed/settings
  * /type/permissions/rights/administer/website/info
- * /type/permissions/rights/administer/website/feed
+ * /type/permissions/rights/administer/website/layout/images
+ * /type/permissions/rights/administer/website/layout/stylesheets
  * ...
  * \endcode
+ *
+ * \note
+ * Internally rights are saved with an ending slash (/) which makes it
+ * a lot faster to compare them against each other witht the startsWith()
+ * function.
  *
  * \param[in] right  The right being added.
  */
@@ -375,10 +410,10 @@ void permissions::sets_t::add_user_right(QString right)
         {
             if(right.startsWith(f_user_rights[i]))
             {
-                // we're done, that right is already here
+                // we are done, that right is already here
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "  USER RIGHT -> [" << right << "] (ignore, better already there)" << std::endl;
+                std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (ignore, \"better\" [shrunk/smaller] already there)" << std::endl;
 #endif
 #endif
                 return;
@@ -405,7 +440,7 @@ void permissions::sets_t::add_user_right(QString right)
                 }
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "  USER RIGHT -> [" << right << "] (shrunk)" << std::endl;
+                std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (shrunk)" << std::endl;
 #endif
 #endif
                 return;
@@ -418,7 +453,7 @@ void permissions::sets_t::add_user_right(QString right)
                 // that's exactly the same, no need to have it twice
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "  USER RIGHT -> [" << right << "] (already present)" << std::endl;
+                std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (already present)" << std::endl;
 #endif
 #endif
                 return;
@@ -430,7 +465,7 @@ void permissions::sets_t::add_user_right(QString right)
     f_user_rights.push_back(right);
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-    std::cout << "  USER RIGHT -> [" << right << "] (add)" << std::endl;
+    std::cout << "[" << getpid() << "]  USER RIGHT -> [" << right << "] (add)" << std::endl;
 #endif
 #endif
 }
@@ -500,7 +535,7 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
     {
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add, new plugin)" << std::endl;
+        std::cout << "[" << getpid() << "]  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add, new plugin)" << std::endl;
 #endif
 #endif
         f_plugin_permissions[plugin].push_back(right);
@@ -521,7 +556,7 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
                 // the new right is generally considered easier to get
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << set[i] << "] (REMOVING)" << std::endl;
+                std::cout << "[" << getpid() << "]  PLUGIN [" << plugin << "] PERMISSION -> [" << set[i] << "] (REMOVING)" << std::endl;
 #endif
 #endif
                 set.remove(i);
@@ -536,7 +571,7 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
                 // this new right is harder to get, ignore it
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (skipped)" << std::endl;
+                std::cout << "[" << getpid() << "]  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (skipped)" << std::endl;
 #endif
 #endif
                 return;
@@ -549,7 +584,7 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
                 // that's exactly the same, no need to have it twice
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-                std::cout << "  PLUGIN [" << right << "] PERMISSION -> [" << right << "] (already present)" << std::endl;
+                std::cout << "[" << getpid() << "]  PLUGIN [" << right << "] PERMISSION -> [" << right << "] (already present)" << std::endl;
 #endif
 #endif
                 return;
@@ -562,7 +597,7 @@ void permissions::sets_t::add_plugin_permission(const QString& plugin, QString r
     set.push_back(right);
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-    std::cout << "  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add right)" << std::endl;
+    std::cout << "[" << getpid() << "]  PLUGIN [" << plugin << "] PERMISSION -> [" << right << "] (add)" << std::endl;
 #endif
 #endif
 }
@@ -607,12 +642,12 @@ bool permissions::sets_t::allowed() const
     {
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "f_user_rights.size()=" << f_user_rights.size() << ", f_plugin_permissions.size() = " << f_plugin_permissions.size() << std::endl;
-        std::cout << "sets are not allowed!" << std::endl;
+        //std::cout << "f_user_rights.size()=" << f_user_rights.size() << ", f_plugin_permissions.size() = " << f_plugin_permissions.size() << std::endl;
+        std::cout << "--- intersection of these sets is empty; user is not allowed access to that page!" << std::endl;
 #endif
 #endif
         // if the plugins added nothing, there are no rights to compare
-        // or worst, the user have no rights at all (Should not happen,
+        // or worst, the user has no rights at all (Should not happen,
         // although someone could add a plugin testing something such as
         // your IP address to strip you off all your rights unless you
         // have an IP address considered "valid")
@@ -621,12 +656,12 @@ bool permissions::sets_t::allowed() const
 
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-std::cout << "final USER RIGHTS:" << std::endl;
+std::cout << "[" << getpid() << "] final USER RIGHTS:" << std::endl;
 for(int i(0); i < f_user_rights.size(); ++i)
 {
     std::cout << "  [" << f_user_rights[i] << "]" << std::endl;
 }
-std::cout << "final PLUGIN PERMISSIONS:" << std::endl;
+std::cout << "[" << getpid() << "] final PLUGIN PERMISSIONS:" << std::endl;
 for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
         pp != f_plugin_permissions.end();
         ++pp)
@@ -657,8 +692,8 @@ for(req_sets_t::const_iterator pp(f_plugin_permissions.begin());
             // maps it may not be any faster
             for(int j(0); j < max_rights; ++j)
             {
-                const QString& plugin_permission ( *i               );
-                const QString& user_right        ( f_user_rights[j] );
+                QString const& plugin_permission ( *i               );
+                QString const& user_right        ( f_user_rights[j] );
                 if( plugin_permission.startsWith(user_right) )
                 {
                     //break 2;
@@ -889,26 +924,39 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
 
                     // add assigned groups
                     {
-                        QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+                        QString const link_start_name(
+                                    QString("%1::%2::%3")
+                                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                        .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                                        .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
                         links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
                         while(link_ctxt->next_link(right_info))
                         {
                             QString const right_key(right_info.key());
+
+                            // user -> permissions::direct::group-...
                             perms->add_user_rights(right_key, sets);
                         }
                     }
 
                     // we can also assign permissions directly to a user so get those too
                     {
-                        QString const link_start_name(QString("%1::%2").arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE)).arg(sets.get_action()));
+                        QString const link_start_name(
+                                    QString("%1::%2::%3::%4")
+                                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                        .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                                        .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                                        .arg(sets.get_action()));
                         links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
                         while(link_ctxt->next_link(right_info))
                         {
                             QString const right_key(right_info.key());
+
+                            // user -> permissions::action::...
                             perms->add_user_rights(right_key, sets);
                         }
                     }
@@ -925,7 +973,7 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
                     // add assigned groups
                     // by groups limited to returning registered users, not the logged in registered user
                     {
-                        QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_GROUP_RETURNING_REGISTERED_USER));
+                        QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_DIRECT_GROUP_RETURNING_REGISTERED_USER));
                         links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
@@ -950,7 +998,7 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
  * The plugins that capture this function are expected to add plugin
  * permissions to the sets (with the add_plugin_permission() function.)
  * No user rights should be modified in this process. Those are taken
- * cared of by the get_user_rights().
+ * cared of by the get_user_rights() signal.
  *
  * Note that for plugins we use the term permissions because the plugin
  * allows that capability, whereas a user has rights. However, in the end,
@@ -968,7 +1016,7 @@ bool permissions::get_user_rights_impl(permissions *perms, sets_t& sets)
  * qualified name:
  *
  * \code
- *   users::users::get_plugin_name();
+ *   users::users::instance()->get_plugin_name();
  * \endcode
  *
  * \note
@@ -1003,10 +1051,18 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
                 break;
             }
         }
-        if(*s != '\0')
+        // XXX: I changed "*s != '\0'" with '==', I think I made a mistake
+        //      before and used '!=' when I only wanted to add that page
+        //      if we are on it (i.e. add "user/123" to the permissions)
+        if(*s == '\0')
         {
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+std::cerr << "from " << user_id << " -> ";
+#endif
+#endif
             sets.add_plugin_permission(content::content::instance()->get_plugin_name(), ipath.get_key());
-            //"types/permissions/rights/view/page/private"
+            //"user/###/..."
         }
     }
 
@@ -1062,17 +1118,35 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
 
     content::path_info_t page_ipath;
     page_ipath.set_path(key);
-    QString const link_start_name("permissions::" + sets.get_action());
     {
         // check local links for this action
-        links::link_info info(link_start_name, false, key, page_ipath.get_branch());
+        QString const direct_link_start_name(
+                        QString("%1::%2::%3::%4")
+                            .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                            .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                            .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                            .arg(sets.get_action()));
+        links::link_info info(direct_link_start_name, false, key, page_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
         while(link_ctxt->next_link(right_info))
         {
             QString const right_key(right_info.key());
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+std::cerr << "direct: ";
+#endif
+#endif
+            // page -> permissions::direct::action::...
             sets.add_plugin_permission(content::content::instance()->get_plugin_name(), right_key);
         }
+
+        // TODO: should we add support for groups directly from a page?
+        //QString const direct_link_start_name(
+        //                QString("%1::%2::%3")
+        //                    .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+        //                    .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+        //                    .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)))
     }
 
     {
@@ -1084,30 +1158,50 @@ bool permissions::get_plugin_permissions_impl(permissions *perms, sets_t& sets)
         links::link_info content_type_info;
         if(link_ctxt->next_link(content_type_info)) // use if() since it is unique on this end
         {
-            content::path_info_t tpath;
-            tpath.set_path(content_type_info.key());
+            content::path_info_t type_ipath;
+            type_ipath.set_path(content_type_info.key());
 
             {
                 // read from the content type now
-                links::link_info perm_info(link_start_name, false, tpath.get_key(), tpath.get_branch());
+                QString const link_start_name(
+                            QString("%1::%2::%3")
+                                .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                                .arg(sets.get_action()));
+                links::link_info perm_info(link_start_name, false, type_ipath.get_key(), type_ipath.get_branch());
                 link_ctxt = links::links::instance()->new_link_context(perm_info);
                 links::link_info right_info;
                 while(link_ctxt->next_link(right_info))
                 {
                     QString const right_key(right_info.key());
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+std::cerr << "page type: ";
+#endif
+#endif
+                    // page -> page type -> permissions::action::...
                     sets.add_plugin_permission(content::content::instance()->get_plugin_name(), right_key);
                 }
             }
 
             {
-                // finally, check if there are groups defined for this content type
-                // groups here function the same way as user groups
-                links::link_info perm_info(get_name(SNAP_NAME_PERMISSIONS_GROUPS), false, tpath.get_key(), tpath.get_branch());
+                // finally, check for groups defined in this content type;
+                // groups here function the same way as user groups: they are recursive
+                QString const link_start_name(QString("%1::%2")
+                                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                        .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
+                links::link_info perm_info(link_start_name, false, type_ipath.get_key(), type_ipath.get_branch());
                 link_ctxt = links::links::instance()->new_link_context(perm_info);
                 links::link_info right_info;
                 while(link_ctxt->next_link(right_info))
                 {
                     QString const right_key(right_info.key());
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+std::cerr << "page group: ";
+#endif
+#endif
+                    // page -> page type -> permissions::group::...
                     add_plugin_permissions(content::content::instance()->get_plugin_name(), right_key, sets);
                 }
             }
@@ -1161,7 +1255,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
 {
     if(action.isEmpty())
     {
-        // always emit this error, that's a programmer bug, not a standard
+        // always emit this error, that is a programmer bug, not a standard
         // user problem that can happen so do not use the err_callback
         f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
                 "Access Denied",
@@ -1176,14 +1270,19 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
     path::path::instance()->access_allowed(user_path, ipath, action, login_status, allowed);
     if(!allowed.allowed())
     {
+        // by default we allow redirects to the login page;
+        // the signal may set the flag to false to prevent such redirects
+        bool redirect_to_login(true);
+        permit_redirect_to_login_on_not_allowed(ipath, redirect_to_login);
+
         users::users *users_plugin(users::users::instance());
         if(users_plugin->get_user_key().isEmpty())
         {
             // special case of spammers
             if(users_plugin->user_is_a_spammer())
             {
-                // force a redirect on error not from the home page
-                if(ipath.get_cpath() != "")
+                // force a redirect on error, but not from the home page
+                if(ipath.get_cpath() != "" && redirect_to_login)
                 {
                     // spammers are expected to have enough rights to access
                     // the home page so we try to redirect them there
@@ -1203,12 +1302,13 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                     err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                             "Access Denied",
                             "You are not authorized to access our website.",
-                            QString("spammer trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()));
+                            QString("spammer trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()),
+                            false);
                 }
                 return;
             }
 
-            if(ipath.get_cpath() == "login")
+            if(ipath.get_cpath() == "login" || !redirect_to_login)
             {
                 // An IP, Agent, etc. based test could get us here...
                 err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
@@ -1216,15 +1316,17 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                         action != "view"
                             ? QString("You are not authorized to access the login page with action \"%1\".").arg(action)
                             : "Somehow you are not authorized to access the login page.",
-                        QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()));
+                        QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()),
+                        true);
                 return;
             }
 
             // user is anonymous, there is hope, he may have access once
             // logged in
+            //
             // TODO all redirects need to also include a valid action!
             //
-            // Repairs SNAP-46: don't set referrer to non-main page paths.
+            // Repairs SNAP-46: do not set referrer to non-main page paths.
             //
             if( ipath.is_main_page() )
             {
@@ -1244,9 +1346,9 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
         }
         else
         {
-            if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED))
+            if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED) && redirect_to_login)
             {
-                // allowed if logged in
+                // allowed if logged in?
                 content::permission_flag allowed_if_logged_in;
                 path::path::instance()->access_allowed(user_path, ipath, action, get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
                 if(allowed_if_logged_in.allowed())
@@ -1281,7 +1383,8 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
             err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
                     "Access Denied",
                     QString("You are not authorized to apply this action (%1) to this page (%2).").arg(action).arg(ipath.get_key()),
-                    QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_key()));
+                    QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_key()),
+                    true);
         }
         return;
     }
@@ -1324,7 +1427,7 @@ QString const& permissions::get_login_status()
         f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
         if(!users_plugin->user_is_a_spammer())
         {
-            QString const& user_path(get_user_path());
+            QString const user_path(get_user_path());
             if(user_path.isEmpty())
             {
                 f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
@@ -1418,7 +1521,7 @@ void permissions::on_access_allowed(QString const& user_path, content::path_info
         NOTREACHED();
     }
 
-    // setup a sets object which will hold all the user's sets
+    // setup a 'sets' object
     sets_t sets(user_path, ipath, action, login_status);
 
     // first we get the user rights for that action because in most cases
@@ -1426,9 +1529,12 @@ void permissions::on_access_allowed(QString const& user_path, content::path_info
     // (intersection of an empty set with anything else is the empty set)
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-    std::cout << "retrieving USER rights... [" << sets.get_action() << "] [" << sets.get_login_status() << "] [" << ipath.get_cpath() << "]" << std::endl;
+    std::cout << std::endl << "[" << getpid() << "]: retrieving USER rights from all plugins... ["
+            << sets.get_action() << "] [" << login_status << "] ["
+            << ipath.get_cpath() << "]" << std::endl;
 #endif
 #endif
+    // get all of user's rights
     get_user_rights(this, sets);
     if(sets.get_user_rights_count() != 0)
     {
@@ -1438,13 +1544,13 @@ void permissions::on_access_allowed(QString const& user_path, content::path_info
         }
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "retrieving PLUGIN permissions... [" << sets.get_action() << "]" << std::endl;
+        std::cout << "[" << getpid() << "] retrieving PLUGIN permissions... [" << sets.get_action() << "]" << std::endl;
 #endif
 #endif
         get_plugin_permissions(this, sets);
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "now compute the intersection!" << std::endl;
+        std::cout << "[" << getpid() << "] now compute the intersection!" << std::endl;
 #endif
 #endif
         if(sets.allowed())
@@ -1474,7 +1580,7 @@ void permissions::add_user_rights(QString const& group, sets_t& sets)
     // function although we instead generate an error.)
     //
     // TODO: we probably want to change that "contains()" call with
-    //       a "startWith()" but we need to know whether "group"
+    //       a "startsWith()" but we need to know whether "group"
     //       may include the protocol, domain name, port...
     if(group.contains(get_name(SNAP_NAME_PERMISSIONS_RIGHTS_PATH)))
     {
@@ -1514,7 +1620,11 @@ void permissions::recursive_add_user_rights(QString const& group, sets_t& sets)
 
     // get the rights at this level
     {
-        QString const link_start_name("permissions::" + sets.get_action());
+        QString const link_start_name(
+                        QString("%1::%2::%3")
+                            .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                            .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                            .arg(sets.get_action()));
         links::link_info info(link_start_name, false, group_ipath.get_key(), group_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
@@ -1593,7 +1703,7 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(!content_table->exists(group))
     {
-        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\" (plugin)");
+        throw permissions_exception_invalid_group_name("caller is trying to access group \"" + group + "\" which does not exist (recursive_add_plugin_permissions)");
     }
 
     content::path_info_t ipath;
@@ -1601,7 +1711,12 @@ void permissions::recursive_add_plugin_permissions(QString const& plugin_name, Q
 
     // get the rights at this level
     {
-        QString const link_start_name("permissions::" + sets.get_action());
+        // this is always an immediate action (no "direct" namespace)
+        QString const link_start_name(
+                    QString("%1::%2::%3")
+                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                        .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                        .arg(sets.get_action()));
         links::link_info info(link_start_name, false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
@@ -1720,12 +1835,15 @@ void permissions::on_backend_action(QString const& action)
                 .arg(action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT) ? "root" : "root/administrator"));
 
         // now link that user to that high level permission
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+        QString const link_name(QString("%1::%2::%3")
+                .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
         bool const source_multi(false);
         links::link_info source(link_name, source_multi, user_ipath.get_key(), user_ipath.get_branch());
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const destination_multi(false);
-        links::link_info destination(link_to, destination_multi, dpath.get_key(), dpath.get_branch());
+        links::link_info destination(link_name, destination_multi, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
     }
 }
@@ -1793,8 +1911,8 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
     //          very confusing on this one since user ipath looks very much
     //          like the user, doesn't it?
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_VIEW));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_VIEW));
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_VIEW));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1802,8 +1920,8 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
         links::links::instance()->create_link(source, destination);
     }
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_EDIT));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_EDIT));
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_EDIT));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1811,8 +1929,8 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
         links::links::instance()->create_link(source, destination);
     }
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ADMINISTER));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_ADMINISTER));
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1822,8 +1940,11 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
 
     // link the user to his private group right
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_GROUP));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_GROUP));
+        QString const link_name(QString("%1::%2::%3")
+                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
+                        .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                        .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1837,8 +1958,8 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
     // TBD: should we have a way to prevent the user from editing his
     //      information?
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_VIEW));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_VIEW));
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_VIEW));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
@@ -1846,8 +1967,8 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
         links::links::instance()->create_link(source, destination);
     }
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_EDIT));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_EDIT));
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_EDIT));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
@@ -1855,8 +1976,8 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
         links::links::instance()->create_link(source, destination);
     }
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ADMINISTER));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_ADMINISTER));
+        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
@@ -1872,14 +1993,25 @@ namespace details
 
 void call_perms(snap_expr::variable_t& result, snap_expr::variable_t::variable_vector_t const& sub_results)
 {
-    if(sub_results.size() != 3)
+    if(sub_results.size() < 3 || sub_results.size() > 4)
     {
-        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call perms() expected exactly 3");
+        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call perms() expected 3 or 4 parameters");
     }
-    QString path(sub_results[0].get_string("perms(1)"));
-    QString user_path(sub_results[1].get_string("perms(2)"));
-    QString action(sub_results[2].get_string("perms(3)"));
-//std::cerr << "perms(\"" << path << "\", \"" << user_path << "\", \"" << action << "\")\n";
+    QString const path(sub_results[0].get_string("perms(1)"));
+    QString const user_path(sub_results[1].get_string("perms(2)"));
+    QString const action(sub_results[2].get_string("perms(3)"));
+    QString status;
+    if(sub_results.size() == 4)
+    {
+        status = sub_results[3].get_string("perms(4)");
+    }
+    else
+    {
+        // this is the default status, not too sure that is the best default
+        // though...
+        status = "returning_registered";
+    }
+//std::cerr << "perms(\"" << path << "\", \"" << user_path << "\", \"" << action << "\", \"" << status << "\")\n";
 
     // setup the parameters to the access_allowed() signal
     content::path_info_t ipath;
@@ -1888,11 +2020,35 @@ void call_perms(snap_expr::variable_t& result, snap_expr::variable_t::variable_v
     quiet_error_callback err_callback(content::content::instance()->get_snap(), false);
     path::path::instance()->validate_action(ipath, action, err_callback);
 
-    // TODO: we probably need to allow the end user to select the status
-    //       (note that for lists we check again when we display the list)
-    char const *login_status(get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED));
+    name_t status_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
+    if(status == "spammer")
+    {
+        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER;
+    }
+    else if(status == "visitor")
+    {
+        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR;
+    }
+    else if(status == "returning_visitor")
+    {
+        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR;
+    }
+    else if(status == "returning_registered")
+    {
+        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED;
+    }
+    else if(status == "registered")
+    {
+        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED;
+    }
+    else
+    {
+        throw snap_expr::snap_expr_exception_invalid_parameter_value("invalid parameter value to for status expected one of: spammer, visitory, returning_visitor, returning_registered, or registered");
+    }
 
-    // check whether that user is allowed that action with that path
+    char const *login_status(get_name(status_name));
+
+    // check whether that user is allowed that action with that path and given status
     content::permission_flag allowed;
     path::path::instance()->access_allowed(user_path, ipath, action, login_status, allowed);
 
@@ -1900,6 +2056,7 @@ void call_perms(snap_expr::variable_t& result, snap_expr::variable_t::variable_v
     QtCassandra::QCassandraValue value;
     value.setBoolValue(allowed.allowed());
     result.set_value(snap_expr::variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+//std::cerr << "\n***\n*** exit call perms " << (allowed.allowed() ? "allowed!" : "forbidden") << "\n***\n";
 }
 
 

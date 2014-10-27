@@ -54,7 +54,9 @@ public:
 
 
 
-class attachment : public plugins::plugin, public path::path_execute
+class attachment : public plugins::plugin,
+                   public path::path_execute,
+                   public permission_error_callback::error_by_mime_type
 {
 public:
                         attachment();
@@ -69,6 +71,8 @@ public:
     virtual bool        on_path_execute(content::path_info_t& ipath);
     void                on_page_cloned(content::content::cloned_tree_t const& tree);
     void                on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+    virtual void        on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path);
+    void                on_permit_redirect_to_login_on_not_allowed(content::path_info_t& ipath, bool& redirect_to_login);
 
 private:
     void                content_update(int64_t variables_timestamp);

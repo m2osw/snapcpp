@@ -5,7 +5,7 @@
 core:	; @echo $@
 
 antivirus: content form output versions	; @echo $@
-attachment: path	; @echo $@
+attachment: path permissions	; @echo $@
 char_chart: sitemapxml	; @echo $@
 content: links	; @echo $@
 editor: attachment form sitemapxml mimetype sendmail server_access	; @echo $@

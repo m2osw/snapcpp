@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </content>
   <content path="/sitemap.txt">
     <param name="content::final" type="int8" revision="global">1</param>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
   </content>
   <content path="/admin/settings/sitemapxml">
     <param name="content::title" revision="revision">sitemap.xml settings</param>

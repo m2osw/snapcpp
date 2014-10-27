@@ -355,7 +355,6 @@ void snapdb::drop_tables(bool all)
     // a live system!
     context->dropTable("branch");
     context->dropTable("content");
-    context->dropTable("revision");
     context->dropTable("emails");
     context->dropTable("files");
     context->dropTable("layout");
@@ -375,6 +374,7 @@ void snapdb::drop_tables(bool all)
         // for those who also want to test the snapmanager work too
         context->dropTable("domains");
         context->dropTable("websites");
+        context->dropTable("serverstats");
     }
 }
 

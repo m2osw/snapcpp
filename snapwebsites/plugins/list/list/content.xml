@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>JavaScript code to help with lists on client's computer.</p>]]>
     </param>
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="jquery" type="attachment/public">
       <path>:/js/list/list.js</path>
       <mime-type>text/javascript</mime-type>
@@ -39,11 +39,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <!-- use another type to "better" categorize a list, this one type is final -->
     <param name="content::final" type="int8" revision="global">1</param>
     <!-- permissions of this page are still TBD -->
-    <link name="permissions::administer" to="permissions::administer" mode="*:*">/types/permissions/rights/administer</link>
-    <link name="permissions::create" to="permissions::create" mode="*:*">/types/permissions/rights/create</link>
-    <link name="permissions::delete" to="permissions::delete" mode="*:*">/types/permissions/rights/delete</link>
-    <link name="permissions::edit" to="permissions::edit" mode="*:*">/types/permissions/rights/administer</link>
-    <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::direct::action::create" to="permissions::link_back" mode="*:*">/types/permissions/rights/create</link>
+    <link name="permissions::direct::action::delete" to="permissions::link_back" mode="*:*">/types/permissions/rights/delete</link>
+    <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+    <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view</link>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
