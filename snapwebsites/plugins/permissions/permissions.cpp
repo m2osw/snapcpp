@@ -70,6 +70,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_ACTION_PATH:
         return "types/permissions/actions";
 
+    case SNAP_NAME_PERMISSIONS_ACTION_VIEW:
+        return "permissions::action::view";
+
     case SNAP_NAME_PERMISSIONS_ADMINISTER_NAMESPACE:
         return "administer";
 
@@ -138,9 +141,6 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_PERMISSIONS_USERS_PATH:
         return "types/permissions/users";
-
-    case SNAP_NAME_PERMISSIONS_ACTION_VIEW:
-        return "permissions::action::view";
 
     case SNAP_NAME_PERMISSIONS_VIEW_NAMESPACE:
         return "view";
@@ -1308,7 +1308,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                 return;
             }
 
-            if(ipath.get_cpath() == "login" || !redirect_to_login)
+            if(ipath.get_cpath() == "login")
             {
                 // An IP, Agent, etc. based test could get us here...
                 err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
@@ -1317,6 +1317,19 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                             ? QString("You are not authorized to access the login page with action \"%1\".").arg(action)
                             : "Somehow you are not authorized to access the login page.",
                         QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()),
+                        true);
+                return;
+            }
+            if(!redirect_to_login)
+            {
+                // The login page is accessible but we do not want to redirect
+                // on this file (i.e. probably an attachment)
+                err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
+                        "Access Denied",
+                        action != "view"
+                            ? QString("You are not authorized to access this document with action \"%1\".").arg(action)
+                            : "Somehow you are not authorized to download this document.",
+                        QString("user trying to \"%1\" on page \"%2\" with unsufficient rights. Not redirecting to /login either (enough rights, but avoid redirect on attachment and such.)").arg(action).arg(ipath.get_cpath()),
                         true);
                 return;
             }
