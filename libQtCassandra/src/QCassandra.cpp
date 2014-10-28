@@ -1094,6 +1094,14 @@ bool QCassandra::isConnected() const
  * end software. The synchronization is very costly (it may wait
  * seconds!)
  *
+ * \note
+ * From a context, you may useparentCassandra() function to retrieve
+ * the QCassandra object and then setup the schem.
+ *
+ * \code
+ *      context->parentCassandra()->synchronizeSchemaVersions(3600);
+ * \endcode
+ *
  * \exception std::runtime_error()
  * If the nodes do not get synchronized in the number of seconds
  * specified here, the function throws this exception.

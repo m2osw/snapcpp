@@ -2318,6 +2318,9 @@ void QCassandraTable::prepareTableDefinition(void *data) const
  * table->setMaxCompactionThreshold(22);
  * table->setReplicateOnWrite(1);
  * table->create();
+ *
+ * // you also may want to call this function (see note below):
+ * QCassandra::synchronizeSchemaVersions()
  * \endcode
  *
  * \note
@@ -2328,7 +2331,7 @@ void QCassandraTable::prepareTableDefinition(void *data) const
  * function. If you are to create multiple tables, you can create all the
  * tables at once, then synchronize them all at once which should give
  * time for the Cassandra nodes to replicate the first few tables while
- * you create the last few.
+ * you create the last few and thus saving you time.
  *
  * \sa update()
  * \sa QCassandraContext::create()
