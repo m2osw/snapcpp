@@ -73,7 +73,7 @@ void Compiler::variable_to_attrs(Node::pointer_t node, Node::pointer_t var_node)
 
     // compute the expression
     expression(a);
-    f_optimizer->optimize(a);
+    Optimizer::optimize(a);
 
     switch(a->get_type())
     {

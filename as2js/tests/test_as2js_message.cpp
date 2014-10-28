@@ -659,6 +659,22 @@ void As2JsMessageUnitTests::test_operator()
         }
         CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
     }
+
+    // test with pointers
+    for(int idx(0); idx <= 255; ++idx)
+    {
+        int *ptr(new int[5]);
+        {
+            std::stringstream str;
+            str << ptr;
+            c.f_expected_call = true;
+            c.f_got_called = false;
+            c.f_expected_message = str.str();
+            as2js::Message msg(as2js::message_level_t::MESSAGE_LEVEL_ERROR, as2js::err_code_t::AS_ERR_CANNOT_COMPILE, pos);
+            msg << ptr;
+        }
+        CPPUNIT_ASSERT(c.f_expected_call == c.f_got_called);
+    }
 }
 
 

@@ -108,7 +108,7 @@ optimization_match_t const g_optimizer_multiplicative_match_a_multiply_NaN[] =
         {
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_identifier),
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -157,7 +157,7 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_multiply_a[] =
         {
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_identifier),
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -225,7 +225,7 @@ optimization_match_t const g_optimizer_multiplicative_match_a_divide_NaN[] =
         {
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_identifier),
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -274,7 +274,7 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_divide_a[] =
         {
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_identifier),
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -342,7 +342,7 @@ optimization_match_t const g_optimizer_multiplicative_match_a_modulo_NaN[] =
         {
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_identifier),
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -391,7 +391,7 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_modulo_a[] =
         {
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_identifier),
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -459,7 +459,7 @@ optimization_match_t const g_optimizer_multiplicative_match_a_power_NaN[] =
         {
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_identifier),
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -508,7 +508,7 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_power_a[] =
         {
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
-            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_identifier),
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),

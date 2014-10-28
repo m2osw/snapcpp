@@ -2891,6 +2891,16 @@ void Lexer::get_token()
             f_result_float64.set_infinity();
             return;
 
+        case 0xFFFD: // REPACEMENT CHARACTER
+            // Java has defined character FFFD as representing NaN so if
+            // found in the input we take it as such...
+            //
+            // see Unicode pri74:
+            // http://www.unicode.org/review/resolved-pri.html
+            f_result_type = Node::node_t::NODE_FLOAT64;
+            f_result_float64.set_NaN();
+            return;
+
         default:
             if(c > ' ' && c < 0x7F)
             {

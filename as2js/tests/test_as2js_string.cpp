@@ -1823,5 +1823,139 @@ void As2JsStringUnitTests::test_concatenation()
 }
 
 
+void As2JsStringUnitTests::test_simplified()
+{
+    // remove spaces at the start
+    {
+        as2js::String str("    blah");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "blah");
+    }
+
+    // remove spaces at the end
+    {
+        as2js::String str("blah    ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "blah");
+    }
+
+    // remove spaces at the start and end
+    {
+        as2js::String str("    blah    ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "blah");
+    }
+
+    // simplify spaces inside
+    {
+        as2js::String str("blah    foo");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "blah foo");
+    }
+
+    // simplify all spaces inside
+    {
+        as2js::String str("    blah    foo    ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "blah foo");
+    }
+
+    // simplify spaces inside, including newlines
+    {
+        as2js::String str("blah  \n  foo");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "blah foo");
+    }
+
+    // empty strings become zero
+    {
+        as2js::String str("");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "0");
+    }
+    {
+        as2js::String str("     ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "0");
+    }
+
+    // simplify to the number: just spaces around
+    {
+        as2js::String str("  3.14159  ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "3.14159");
+        CPPUNIT_ASSERT(simplified.is_float64());
+        CPPUNIT_ASSERT(simplified.is_number());
+        CPPUNIT_ASSERT(as2js::Float64(simplified.to_float64()).nearly_equal(3.14159, 1e-8));
+    }
+
+    // simplify to the number: spaces and left over
+    {
+        as2js::String str("  3.14159 ignore that part  ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "3.14159");
+        CPPUNIT_ASSERT(simplified.is_float64());
+        CPPUNIT_ASSERT(simplified.is_number());
+        CPPUNIT_ASSERT(as2js::Float64(simplified.to_float64()).nearly_equal(3.14159, 1e-8));
+    }
+
+    // simplify to the number: sign, spaces and left over
+    {
+        as2js::String str("  +3.14159 ignore that part  ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "+3.14159");
+        CPPUNIT_ASSERT(simplified.is_float64());
+        CPPUNIT_ASSERT(simplified.is_number());
+        CPPUNIT_ASSERT(as2js::Float64(simplified.to_float64()).nearly_equal(3.14159, 1e-8));
+    }
+    {
+        as2js::String str("  -314159 ignore that part  ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "-314159");
+        CPPUNIT_ASSERT(simplified.is_int64());
+        CPPUNIT_ASSERT(simplified.to_int64() == -314159);
+        CPPUNIT_ASSERT(simplified.is_float64());
+        CPPUNIT_ASSERT(simplified.is_number());
+        CPPUNIT_ASSERT(as2js::Float64(simplified.to_float64()).nearly_equal(-314159, 1e-8));
+    }
+
+    // simplify to the number: sign, exponent, spaces and left over
+    {
+        as2js::String str("  +0.00314159e3 ignore that part  ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "+0.00314159e3");
+        CPPUNIT_ASSERT(simplified.is_float64());
+        CPPUNIT_ASSERT(simplified.is_number());
+        CPPUNIT_ASSERT(as2js::Float64(simplified.to_float64()).nearly_equal(3.14159, 1e-8));
+    }
+    {
+        as2js::String str("  +0.00314159e+3 ignore that part  ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "+0.00314159e+3");
+        CPPUNIT_ASSERT(simplified.is_float64());
+        CPPUNIT_ASSERT(simplified.is_number());
+        CPPUNIT_ASSERT(as2js::Float64(simplified.to_float64()).nearly_equal(3.14159, 1e-8));
+    }
+    {
+        as2js::String str("  -314159e-5 ignore that part  ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "-314159");
+        CPPUNIT_ASSERT(simplified.is_int64());
+        CPPUNIT_ASSERT(simplified.to_int64() == -314159);
+        CPPUNIT_ASSERT(simplified.is_float64());
+        CPPUNIT_ASSERT(simplified.is_number());
+        CPPUNIT_ASSERT(as2js::Float64(simplified.to_float64()).nearly_equal(-314159, 1e-8));
+    }
+    {
+        as2js::String str("  -314159.e-5 ignore that part  ");
+        as2js::String simplified(str.simplified());
+        CPPUNIT_ASSERT(simplified == "-314159.e-5");
+        CPPUNIT_ASSERT(simplified.is_float64());
+        CPPUNIT_ASSERT(simplified.is_number());
+        CPPUNIT_ASSERT(as2js::Float64(simplified.to_float64()).nearly_equal(-3.14159, 1e-8));
+    }
+}
+
+
 
 // vim: ts=4 sw=4 et

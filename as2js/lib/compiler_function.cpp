@@ -308,7 +308,7 @@ void Compiler::function(Node::pointer_t function_node)
     && (get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT) || get_attribute(function_node, Node::attribute_t::NODE_ATTR_NATIVE))
     && (function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID) || function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER)))
     {
-        f_optimizer->optimize(directive_list_node);
+        Optimizer::optimize(directive_list_node);
         find_labels(function_node, directive_list_node);
 //fprintf(stderr, "ARGH! 2nd call...\n");
         end_list = directive_list(directive_list_node);

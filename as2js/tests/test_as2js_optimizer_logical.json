@@ -875,6 +875,48 @@
         }
     },
 
+    // undefined && a => undefined
+    {
+        //"verbose": true,
+        "name": "undefined && a -> undefined",
+        "program": "undefined && a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "LOGICAL_AND",
+                            "children": [
+                                {
+                                    "node type": "UNDEFINED"
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "UNDEFINED"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
     // true || a => true
     {
         //"verbose": true,

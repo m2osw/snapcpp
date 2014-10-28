@@ -1176,7 +1176,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
         {
             // try to optimize the expression before to compile it
             // (it can make a huge difference!)
-            f_optimizer->optimize(left);
+            Optimizer::optimize(left);
             //Node::pointer_t right(expr->get_child(1));
 
             resolve_member(left, 0, SEARCH_FLAG_SETTER);
@@ -1283,7 +1283,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
 
     // try to optimize the expression before to compile it
     // (it can make a huge difference!)
-    f_optimizer->optimize(expr);
+    Optimizer::optimize(expr);
 
     switch(expr->get_type())
     {

@@ -1296,6 +1296,12 @@ String String::simplified() const
         ++wc;
     }
 
+    // accept a signed number
+    if(*wc == '-' || *wc == '+')
+    {
+        result += *wc;
+        ++wc;
+    }
     if(*wc >= '0' && *wc <= '9')
     {
         // read the number, ignore the rest

@@ -892,6 +892,88 @@ void optimizer_func_MATCH(node_pointer_vector_t& node_array, optimization_optimi
 }
 
 
+/** \brief Apply a MAXIMUM function.
+ *
+ * This function compares two values and keep the largest one.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_MAXIMUM(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    Node::pointer_t result;
+
+    Node::pointer_t n1(node_array[src1]);
+    Node::pointer_t n2(node_array[src2]);
+    if(n1->is_float64() && n1->get_float64().is_NaN())
+    {
+        result = n2;
+    }
+    else if(n2->is_float64() && n2->get_float64().is_NaN())
+    {
+        result = n1;
+    }
+    else
+    {
+        compare_t const c(Node::compare(n1, n2, Node::compare_mode_t::COMPARE_LOOSE));
+        result = c == compare_t::COMPARE_GREATER ? n1 : n2;
+    }
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(result);
+    node_array[dst] = result;
+}
+
+
+/** \brief Apply a MINIMUM function.
+ *
+ * This function compares two values and keep the smallest one.
+ *
+ * \li 0 -- source 1
+ * \li 1 -- source 2
+ * \li 2 -- destination
+ *
+ * \param[in] node_array  The array of nodes being optimized.
+ * \param[in] optimize  The optimization parameters.
+ */
+void optimizer_func_MINIMUM(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+{
+    uint32_t src1(optimize->f_indexes[0]),
+             src2(optimize->f_indexes[1]),
+             dst(optimize->f_indexes[2]);
+
+    Node::pointer_t result;
+
+    Node::pointer_t n1(node_array[src1]);
+    Node::pointer_t n2(node_array[src2]);
+    if(n1->is_float64() && n1->get_float64().is_NaN())
+    {
+        result = n2;
+    }
+    else if(n2->is_float64() && n2->get_float64().is_NaN())
+    {
+        result = n1;
+    }
+    else
+    {
+        compare_t const c(Node::compare(n1, n2, Node::compare_mode_t::COMPARE_LOOSE));
+        result = c == compare_t::COMPARE_LESS ? n1 : n2;
+    }
+
+    // save the result replacing the destination as specified
+    node_array[dst]->replace_with(result);
+    node_array[dst] = result;
+}
+
+
 /** \brief Apply a MULTIPLY function.
  *
  * This function multiplies source 1 by source 2 and saves the result in
@@ -1218,39 +1300,39 @@ void optimizer_func_ROTATE_RIGHT(node_pointer_vector_t& node_array, optimization
 }
 
 
-/** \brief Apply a SET_FLOAT function.
- *
- * This function sets the value of a float node. This is used when an
- * optimization can determine the result of a numeric expression and
- * a simple float can be set as the result.
- *
- * For example, a bitwise operation with NaN returns zero. This
- * function can be used for that purpose.
- *
- * \li 0 -- node to be modified, it must be a NODE_FLOAT64
- * \li 1 -- dividend (taken as a signed 16 bit value)
- * \li 2 -- divisor (unsigned)
- *
- * The value is offset 1 divided by offset 2. Note however that
- * both of those values are only 16 bits... If the divisor is zero
- * then we use NaN as the value.
- *
- * \param[in] node_array  The array of nodes being optimized.
- * \param[in] optimize  The optimization parameters.
- */
-void optimizer_func_SET_FLOAT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
-{
-    uint32_t dst(optimize->f_indexes[0]),
-             divisor(optimize->f_indexes[2]);
-
-    int32_t  dividend(static_cast<int16_t>(optimize->f_indexes[1]));
-
-    double value(divisor == 0 ? NAN : static_cast<double>(dividend) / static_cast<double>(divisor));
-
-    Float64 v(node_array[dst]->get_float64());
-    v.set(value);
-    node_array[dst]->set_float64(v);
-}
+///** \brief Apply a SET_FLOAT function.
+// *
+// * This function sets the value of a float node. This is used when an
+// * optimization can determine the result of a numeric expression and
+// * a simple float can be set as the result.
+// *
+// * For example, a bitwise operation with NaN returns zero. This
+// * function can be used for that purpose.
+// *
+// * \li 0 -- node to be modified, it must be a NODE_FLOAT64
+// * \li 1 -- dividend (taken as a signed 16 bit value)
+// * \li 2 -- divisor (unsigned)
+// *
+// * The value is offset 1 divided by offset 2. Note however that
+// * both of those values are only 16 bits... If the divisor is zero
+// * then we use NaN as the value.
+// *
+// * \param[in] node_array  The array of nodes being optimized.
+// * \param[in] optimize  The optimization parameters.
+// */
+//void optimizer_func_SET_FLOAT(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+//{
+//    uint32_t dst(optimize->f_indexes[0]),
+//             divisor(optimize->f_indexes[2]);
+//
+//    int32_t  dividend(static_cast<int16_t>(optimize->f_indexes[1]));
+//
+//    double value(divisor == 0 ? NAN : static_cast<double>(dividend) / static_cast<double>(divisor));
+//
+//    Float64 v(node_array[dst]->get_float64());
+//    v.set(value);
+//    node_array[dst]->set_float64(v);
+//}
 
 
 /** \brief Apply a SET_INTEGER function.
@@ -1706,27 +1788,27 @@ void optimizer_func_TO_CONDITIONAL(node_pointer_vector_t& node_array, optimizati
 }
 
 
-/** \brief Apply a TO_FLOAT64 function.
- *
- * This function transforms a node to a floating point number. The
- * to_float64() HAS to work against that node or you will get an
- * exception.
- *
- * \exception exception_internal_error
- * The function attempts to convert the input to a floating point number.
- * If that fails, this exception is raised. The Optimizer matching mechanism
- * should, however, prevent all such problems.
- *
- * \param[in] node_array  The array of nodes being optimized.
- * \param[in] optimize  The optimization parameters.
- */
-void optimizer_func_TO_FLOAT64(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
-{
-    if(!node_array[optimize->f_indexes[0]]->to_float64())
-    {
-        throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a floating point number."); // LCOV_EXCL_LINE
-    }
-}
+///** \brief Apply a TO_FLOAT64 function.
+// *
+// * This function transforms a node to a floating point number. The
+// * to_float64() HAS to work against that node or you will get an
+// * exception.
+// *
+// * \exception exception_internal_error
+// * The function attempts to convert the input to a floating point number.
+// * If that fails, this exception is raised. The Optimizer matching mechanism
+// * should, however, prevent all such problems.
+// *
+// * \param[in] node_array  The array of nodes being optimized.
+// * \param[in] optimize  The optimization parameters.
+// */
+//void optimizer_func_TO_FLOAT64(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+//{
+//    if(!node_array[optimize->f_indexes[0]]->to_float64())
+//    {
+//        throw exception_internal_error("optimizer used function to_float64() against a node that cannot be converted to a floating point number."); // LCOV_EXCL_LINE
+//    }
+//}
 
 
 /** \brief Apply a TO_INT64 function.
@@ -1775,26 +1857,26 @@ void optimizer_func_TO_NUMBER(node_pointer_vector_t& node_array, optimization_op
 }
 
 
-/** \brief Apply a TO_STRING function.
- *
- * This function transforms a node to a string. The to_string() HAS to work
- * against that node or you will get an exception.
- *
- * \exception exception_internal_error
- * The function attempts to convert the input to a string.
- * If that fails, this exception is raised. The Optimizer matching mechanism
- * should, however, prevent all such problems.
- *
- * \param[in] node_array  The array of nodes being optimized.
- * \param[in] optimize  The optimization parameters.
- */
-void optimizer_func_TO_STRING(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
-{
-    if(!node_array[optimize->f_indexes[0]]->to_string())
-    {
-        throw exception_internal_error("optimizer used function to_string() against a node that cannot be converted to a string."); // LCOV_EXCL_LINE
-    }
-}
+///** \brief Apply a TO_STRING function.
+// *
+// * This function transforms a node to a string. The to_string() HAS to work
+// * against that node or you will get an exception.
+// *
+// * \exception exception_internal_error
+// * The function attempts to convert the input to a string.
+// * If that fails, this exception is raised. The Optimizer matching mechanism
+// * should, however, prevent all such problems.
+// *
+// * \param[in] node_array  The array of nodes being optimized.
+// * \param[in] optimize  The optimization parameters.
+// */
+//void optimizer_func_TO_STRING(node_pointer_vector_t& node_array, optimization_optimize_t const *optimize)
+//{
+//    if(!node_array[optimize->f_indexes[0]]->to_string())
+//    {
+//        throw exception_internal_error("optimizer used function to_string() against a node that cannot be converted to a string."); // LCOV_EXCL_LINE
+//    }
+//}
 
 
 /** \brief Apply a WHILE_TRUE_TO_FOREVER function.
@@ -1892,6 +1974,8 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_LOGICAL_NOT    */ OPTIMIZER_FUNC(LOGICAL_NOT),
     /* OPTIMIZATION_FUNCTION_LOGICAL_XOR    */ OPTIMIZER_FUNC(LOGICAL_XOR),
     /* OPTIMIZATION_FUNCTION_MATCH          */ OPTIMIZER_FUNC(MATCH),
+    /* OPTIMIZATION_FUNCTION_MAXIMUM        */ OPTIMIZER_FUNC(MAXIMUM),
+    /* OPTIMIZATION_FUNCTION_MINIMUM        */ OPTIMIZER_FUNC(MINIMUM),
     /* OPTIMIZATION_FUNCTION_MODULO         */ OPTIMIZER_FUNC(MODULO),
     /* OPTIMIZATION_FUNCTION_MOVE           */ OPTIMIZER_FUNC(MOVE),
     /* OPTIMIZATION_FUNCTION_MULTIPLY       */ OPTIMIZER_FUNC(MULTIPLY),
@@ -1901,7 +1985,7 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_ROTATE_LEFT    */ OPTIMIZER_FUNC(ROTATE_LEFT),
     /* OPTIMIZATION_FUNCTION_ROTATE_RIGHT   */ OPTIMIZER_FUNC(ROTATE_RIGHT),
     /* OPTIMIZATION_FUNCTION_SET_INTEGER    */ OPTIMIZER_FUNC(SET_INTEGER),
-    /* OPTIMIZATION_FUNCTION_SET_FLOAT      */ OPTIMIZER_FUNC(SET_FLOAT),
+    ///* OPTIMIZATION_FUNCTION_SET_FLOAT      */ OPTIMIZER_FUNC(SET_FLOAT),
     /* OPTIMIZATION_FUNCTION_SET_NODE_TYPE  */ OPTIMIZER_FUNC(SET_NODE_TYPE),
     /* OPTIMIZATION_FUNCTION_SHIFT_LEFT     */ OPTIMIZER_FUNC(SHIFT_LEFT),
     /* OPTIMIZATION_FUNCTION_SHIFT_RIGHT    */ OPTIMIZER_FUNC(SHIFT_RIGHT),
@@ -1911,10 +1995,10 @@ optimizer_optimize_function_t g_optimizer_optimize_functions[] =
     /* OPTIMIZATION_FUNCTION_SUBTRACT       */ OPTIMIZER_FUNC(SUBTRACT),
     /* OPTIMIZATION_FUNCTION_SWAP           */ OPTIMIZER_FUNC(SWAP),
     /* OPTIMIZATION_FUNCTION_TO_CONDITIONAL */ OPTIMIZER_FUNC(TO_CONDITIONAL),
-    /* OPTIMIZATION_FUNCTION_TO_FLOAT64     */ OPTIMIZER_FUNC(TO_FLOAT64),
+    ///* OPTIMIZATION_FUNCTION_TO_FLOAT64     */ OPTIMIZER_FUNC(TO_FLOAT64),
     /* OPTIMIZATION_FUNCTION_TO_INT64       */ OPTIMIZER_FUNC(TO_INT64),
     /* OPTIMIZATION_FUNCTION_TO_NUMBER      */ OPTIMIZER_FUNC(TO_NUMBER),
-    /* OPTIMIZATION_FUNCTION_TO_STRING      */ OPTIMIZER_FUNC(TO_STRING),
+    ///* OPTIMIZATION_FUNCTION_TO_STRING      */ OPTIMIZER_FUNC(TO_STRING),
     /* OPTIMIZATION_FUNCTION_WHILE_TRUE_TO_FOREVER */ OPTIMIZER_FUNC(WHILE_TRUE_TO_FOREVER)
 };
 

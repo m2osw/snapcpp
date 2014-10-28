@@ -833,6 +833,271 @@
         }
     },
 
+    // 3-a -> 3-a, integers
+    {
+        //"verbose": true,
+        "name": "3 - a -> 3 - a, with integers",
+        "program": "3 - a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 3
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 3
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a+3 -> sum(a,3), integers
+    {
+        //"verbose": true,
+        "name": "a + 3 -> sum(a, 3), with integers",
+        "program": "a + 3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a+3.5 -> sum(a,3.5), floats
+    {
+        //"verbose": true,
+        "name": "a + 3.5 -> sum(a, 3.5), with floats",
+        "program": "a + 3.5;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.5
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.5
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 3.5-a -> 3.5-a, floats
+    {
+        //"verbose": true,
+        "name": "3.5 - a -> 3.5 - a, with floats",
+        "program": "3.5 - a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.5
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.5
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a+NaN -> sum(a,NaN), floats
+    {
+        //"verbose": true,
+        "name": "a + NaN -> sum(a, NaN), with floats",
+        "program": "a + NaN;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ADD",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
     // a+b -> sum(a,b), integers
     {
         //"verbose": true,
@@ -1945,6 +2210,59 @@
                         {
                             "node type": "STRING",
                             "label": "7.15 With float"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // "" - a -> "" - a, undefined, string
+    {
+        //"verbose": true,
+        "name": "\"\" - a -> \"\" - a",
+        "program": "\"\" - a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": ""
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "SUBTRACT",
+                            "children": [
+                                {
+                                    "node type": "STRING",
+                                    "label": ""
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
                         }
                     ]
                 }

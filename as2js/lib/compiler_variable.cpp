@@ -69,7 +69,7 @@ bool Compiler::replace_constant_variable(Node::pointer_t& replace, Node::pointer
             continue;
         }
 
-        f_optimizer->optimize(set);
+        Optimizer::optimize(set);
 
         if(set->get_children_size() != 1)
         {

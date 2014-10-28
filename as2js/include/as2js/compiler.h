@@ -226,7 +226,6 @@ private:
     void                with(Node::pointer_t& with_node);
 
     mtime_t                     f_time;         // time when the compiler is created
-    Optimizer::pointer_t        f_optimizer;
     Options::pointer_t          f_options;
     Node::pointer_t             f_program;
     InputRetriever::pointer_t   f_input_retriever;

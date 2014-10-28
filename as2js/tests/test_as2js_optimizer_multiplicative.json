@@ -353,6 +353,144 @@
         }
     },
 
+    // a() * NaN -> a() * NaN
+    {
+        "verbose": true,
+        "name": "a() * NaN -> a() * NaN",
+        "program": "a() * NaN;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MULTIPLY",
+                            "children": [
+                                {
+                                    "node type": "CALL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "LIST"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MULTIPLY",
+                            "children": [
+                                {
+                                    "node type": "CALL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "LIST"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // NaN * a() -> NaN * a()
+    {
+        "verbose": true,
+        "name": "NaN * a() -> NaN * a()",
+        "program": "NaN * a();",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MULTIPLY",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                },
+                                {
+                                    "node type": "CALL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "LIST"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MULTIPLY",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                },
+                                {
+                                    "node type": "CALL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "LIST"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
     // a / b -> divide(a, b)
     {
         //"verbose": true,
@@ -705,6 +843,117 @@
         }
     },
 
+    // a / 0 -> divide(a, 0)
+    {
+        //"verbose": true,
+        "name": "123 / 0 -> Infinity",
+        "program": "123 / 0;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "division by zero of integers returning +Infinity or -Infinity.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "DIVIDE",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 123
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": Infinity
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a / 0 -> divide(a, 0)
+    {
+        //"verbose": true,
+        "name": "-123 / 0 -> -Infinity",
+        "program": "-123 / 0;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "division by zero of integers returning +Infinity or -Infinity.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "DIVIDE",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 123
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": -Infinity
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
     // a % b -> modulo(a, b)
     {
         //"verbose": true,
@@ -1034,6 +1283,117 @@
                                 {
                                     "node type": "FLOAT64",
                                     "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": NaN
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a / 0 -> modulo(a, 0)
+    {
+        //"verbose": true,
+        "name": "123 % 0 -> NaN",
+        "program": "123 % 0;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "division by zero for a modulo of integers returning NaN.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MODULO",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 123
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": NaN
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a / 0 -> modulo(a, 0)
+    {
+        //"verbose": true,
+        "name": "-123 % 0 -> NaN",
+        "program": "-123 % 0;",
+        "expected messages": [
+            {
+                "message level": 3,
+                "error code": "INVALID_NUMBER",
+                "line #": 1,
+                "message": "division by zero for a modulo of integers returning NaN.",
+                "options": 0
+            }
+        ],
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MODULO",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 123
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
                                 }
                             ]
                         }
@@ -1402,6 +1762,144 @@
                         {
                             "node type": "FLOAT64",
                             "float": NaN
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a() * 3.5 -> a() * 3.5
+    {
+        "verbose": true,
+        "name": "a() * 3.5 -> a() * 3.5",
+        "program": "a() * 3.5;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MULTIPLY",
+                            "children": [
+                                {
+                                    "node type": "CALL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "LIST"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.5
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MULTIPLY",
+                            "children": [
+                                {
+                                    "node type": "CALL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "LIST"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.5
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 3.5 * a() -> 3.5 * a()
+    {
+        "verbose": true,
+        "name": "3.5 * a() -> 3.5 * a()",
+        "program": "3.5 * a();",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MULTIPLY",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.5
+                                },
+                                {
+                                    "node type": "CALL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "LIST"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MULTIPLY",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 3.5
+                                },
+                                {
+                                    "node type": "CALL",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "LIST"
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 }

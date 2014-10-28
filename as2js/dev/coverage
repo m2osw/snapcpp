@@ -2,7 +2,31 @@
 
 set -e
 
-if test $1 = "--full"
+if test "$1" = "--help" -o "$1" = "-h"
+then
+    echo "Usage: $0 [--opt]"
+    echo "where --opt is one of:"
+    echo "   --all          run all tests, except special RC and Stream cases"
+    echo "   --db           run all the database tests"
+    echo "   --float64      run all float64 tests"
+    echo "   --full         run all tests and publish to the world"
+    echo "   --int64        run all int64 tests"
+    echo "   --json         run all json tests"
+    echo "   --lexer        run all lexer tests"
+    echo "   --message      run all message tests"
+    echo "   --node         run all node tests"
+    echo "   --optimizer    run all optimizer tests"
+    echo "   --option       run all option tests"
+    echo "   --parser       run all parser tests"
+    echo "   --position     run all position tests"
+    echo "   --rc           run all rc tests, including the special case"
+    echo "   --stream       run all stream tests, including the special case"
+    echo "   --string       run all string tests"
+    echo "   --version      run all version tests"
+    exit 1;
+fi
+
+if test "$1" = "--full"
 then
     FULL=true
     shift
@@ -63,12 +87,66 @@ then
     echo >>test_log.txt
     echo "Finished running the tests on `date`" >>test_log.txt
 else
-    # brief test while working on a specific test
-    BUILD/tests/test_as2js
-    #BUILD/tests/test_as2js As2JsParserUnitTests::test_parser_function
-    #BUILD/tests/test_as2js As2JsLexerUnitTests
-    #BUILD/tests/test_as2js As2JsNodeUnitTests
-    #BUILD/tests/test_as2js As2JsOptimizerUnitTests
+    # "brief" test while working on a specific test
+    if test "$1" == "--all"
+    then
+        BUILD/tests/test_as2js
+    elif test "$1" == "--db"
+    then
+        BUILD/tests/test_as2js As2JsDBUnitTests
+    elif test "$1" == "--float64"
+    then
+        BUILD/tests/test_as2js As2JsFloat64UnitTests
+    elif test "$1" == "--int64"
+    then
+        BUILD/tests/test_as2js As2JsInt64UnitTests
+    elif test "$1" == "--json"
+    then
+        BUILD/tests/test_as2js As2JsJSONUnitTests
+    elif test "$1" == "--lexer"
+    then
+        BUILD/tests/test_as2js As2JsLexerUnitTests
+    elif test "$1" == "--message"
+    then
+        BUILD/tests/test_as2js As2JsMessageUnitTests
+    elif test "$1" == "--node"
+    then
+        BUILD/tests/test_as2js As2JsNodeUnitTests
+    elif test "$1" == "--optimizer"
+    then
+        BUILD/tests/test_as2js As2JsOptimizerUnitTests
+    elif test "$1" == "--option"
+    then
+        BUILD/tests/test_as2js As2JsOptionsUnitTests
+    elif test "$1" == "--parser"
+    then
+        BUILD/tests/test_as2js As2JsParserUnitTests
+    elif test "$1" == "--position"
+    then
+        BUILD/tests/test_as2js As2JsPositionUnitTests
+    elif test "$1" == "--rc"
+    then
+        BUILD/tests/test_as2js As2JsRCUnitTests
+        BUILD/tests/test_as2js As2JsRCUnitTests::test_empty_home
+    elif test "$1" == "--stream"
+    then
+        BUILD/tests/test_as2js As2JsStreamUnitTests
+        BUILD/tests/test_as2js --destructive As2JsStreamUnitTests::test_stdout_destructive
+    elif test "$1" == "--string"
+    then
+        BUILD/tests/test_as2js As2JsStringUnitTests
+    elif test "$1" == "--version"
+    then
+        BUILD/tests/test_as2js As2JsVersionUnitTests
+    elif test -z "$1"
+    then
+        # Do it all, but not published
+        BUILD/tests/test_as2js
+        BUILD/tests/test_as2js As2JsRCUnitTests::test_empty_home
+        BUILD/tests/test_as2js --destructive As2JsStreamUnitTests::test_stdout_destructive
+    else
+        BUILD/text/test_as2js $1
+    fi
     # just in case, remove the log file if there is one
     rm -f test_log.txt
 fi
@@ -84,12 +162,12 @@ gcov -o ../BUILD/src/CMakeFiles/as2js.dir/as2js.cpp.gcno ../../../src/as2js.cpp
 cd ..
 
 
-lcov --capture --directory BUILD --output-file coverage.info
-# The following lcov options can be used under Ubuntu 14.10+
+#lcov --capture --directory BUILD --output-file coverage.info
+# The following lcov options can be used under Ubuntu 14.04+
 # Use --no-external and --base-directory $SOURCE
 # to avoid /usr/include and other unwanted files
 # (only available in lcov version 1.10+)
-#lcov --capture --no-external --directory BUILD --base-directory $SOURCE --output-file coverage.info
+lcov --capture --no-external --directory BUILD --base-directory $SOURCE --output-file coverage.info
 mkdir -p html
 genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.info --output-directory html
 

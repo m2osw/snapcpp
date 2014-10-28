@@ -108,22 +108,49 @@ void As2JsFloat64UnitTests::test_float64()
         CPPUNIT_ASSERT(!random.is_negative_infinity());
         CPPUNIT_ASSERT(random.classified_infinity() == 0);
 
-        CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(random.compare(copy)));
-        CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
-        if(q < r)
+        for(int j(0); j <= 10; ++j)
         {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
-        }
-        else if(q > r)
-        {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
-        }
-        else
-        {
-            CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
-            CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
+            // 1.0, 0.1, 0.01, ... 0.000000001
+            double const epsilon(pow(10.0, static_cast<double>(-j)));
+
+            bool nearly_equal(false);
+            {
+                as2js::Float64::float64_type const diff = fabs(random.get() - copy.get());
+                if(random.get() == 0.0
+                || copy.get() == 0.0
+                || diff < std::numeric_limits<double>::min())
+                {
+                    nearly_equal = diff < (epsilon * std::numeric_limits<double>::min());
+                }
+                else
+                {
+                    nearly_equal = diff / (fabs(random.get()) + fabs(copy.get())) < epsilon;
+                }
+            }
+
+            CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(random.compare(copy)));
+            CPPUNIT_ASSERT(as2js::compare_utils::is_ordered(copy.compare(random)));
+            if(q < r)
+            {
+                CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_LESS);
+                CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_GREATER);
+                CPPUNIT_ASSERT(!(random.nearly_equal(copy, epsilon) ^ nearly_equal));
+                CPPUNIT_ASSERT(!(copy.nearly_equal(random, epsilon) ^ nearly_equal));
+            }
+            else if(q > r)
+            {
+                CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_GREATER);
+                CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_LESS);
+                CPPUNIT_ASSERT(!(random.nearly_equal(copy, epsilon) ^ nearly_equal));
+                CPPUNIT_ASSERT(!(copy.nearly_equal(random, epsilon) ^ nearly_equal));
+            }
+            else
+            {
+                CPPUNIT_ASSERT(random.compare(copy) == as2js::compare_t::COMPARE_EQUAL);
+                CPPUNIT_ASSERT(copy.compare(random) == as2js::compare_t::COMPARE_EQUAL);
+                CPPUNIT_ASSERT(random.nearly_equal(copy, epsilon));
+                CPPUNIT_ASSERT(copy.nearly_equal(random, epsilon));
+            }
         }
 
         float s3(rand() & 1 ? -1 : 1);
@@ -245,6 +272,7 @@ void As2JsFloat64UnitTests::test_special_numbers()
 
     // start with zero
     CPPUNIT_ASSERT(special.get() == 0.0);
+    CPPUNIT_ASSERT(special.nearly_equal(0.0));
 
     // create a random number to compare with
     double s1(rand() & 1 ? -1 : 1);
@@ -284,6 +312,8 @@ void As2JsFloat64UnitTests::test_special_numbers()
     CPPUNIT_ASSERT(special.compare(r) == as2js::compare_t::COMPARE_UNORDERED);
     CPPUNIT_ASSERT(r.compare(special) == as2js::compare_t::COMPARE_UNORDERED);
     CPPUNIT_ASSERT(special.classified_infinity() == 0);
+    CPPUNIT_ASSERT(!special.nearly_equal(p));
+    CPPUNIT_ASSERT(!special.nearly_equal(special));
 
     // test Infinity
     special.set_infinity(); // +inf
@@ -310,6 +340,8 @@ void As2JsFloat64UnitTests::test_special_numbers()
     CPPUNIT_ASSERT(special.compare(r) == as2js::compare_t::COMPARE_GREATER);
     CPPUNIT_ASSERT(r.compare(special) == as2js::compare_t::COMPARE_LESS);
     CPPUNIT_ASSERT(special.classified_infinity() == 1);
+    CPPUNIT_ASSERT(!special.nearly_equal(p));
+    CPPUNIT_ASSERT(special.nearly_equal(special));
 
     as2js::Float64 pinf;
     pinf.set_infinity();
@@ -340,9 +372,62 @@ void As2JsFloat64UnitTests::test_special_numbers()
     CPPUNIT_ASSERT(special.compare(r) == as2js::compare_t::COMPARE_LESS);
     CPPUNIT_ASSERT(r.compare(special) == as2js::compare_t::COMPARE_GREATER);
     CPPUNIT_ASSERT(special.classified_infinity() == -1);
+    CPPUNIT_ASSERT(!special.nearly_equal(p));
+    CPPUNIT_ASSERT(special.nearly_equal(special));
 
     CPPUNIT_ASSERT(pinf.compare(special) != as2js::compare_t::COMPARE_EQUAL);
     CPPUNIT_ASSERT(special.compare(pinf) != as2js::compare_t::COMPARE_EQUAL);
+    CPPUNIT_ASSERT(!pinf.nearly_equal(special));
+    CPPUNIT_ASSERT(!special.nearly_equal(pinf));
+}
+
+
+void As2JsFloat64UnitTests::test_nearly_equal()
+{
+    // exactly equal
+    {
+        as2js::Float64 f1(3.14159);
+        as2js::Float64 f2(3.14159);
+        CPPUNIT_ASSERT(f1.nearly_equal(f2));
+    }
+
+    // nearly equal at +/-1e-5
+    {
+        as2js::Float64 f1(3.14159);
+        as2js::Float64 f2(3.14158);
+        CPPUNIT_ASSERT(f1.nearly_equal(f2));
+    }
+
+    // nearly equal at +/-1e-6
+    {
+        as2js::Float64 f1(3.1415926);
+        as2js::Float64 f2(3.1415936);
+        CPPUNIT_ASSERT(f1.nearly_equal(f2));
+    }
+
+    // nearly equal at +/-1e-4 -- fails
+    {
+        as2js::Float64 f1(3.1415926);
+        as2js::Float64 f2(3.1416926);
+        CPPUNIT_ASSERT(!f1.nearly_equal(f2));
+    }
+
+    // nearly equal, very different
+    {
+        as2js::Float64 f1(3.1415926);
+        as2js::Float64 f2(-3.1415926);
+        CPPUNIT_ASSERT(!f1.nearly_equal(f2));
+    }
+    {
+        as2js::Float64 f1(3.1415926);
+        as2js::Float64 f2(0.0);
+        CPPUNIT_ASSERT(!f1.nearly_equal(f2));
+    }
+    {
+        as2js::Float64 f1(0.0);
+        as2js::Float64 f2(3.1415926);
+        CPPUNIT_ASSERT(!f1.nearly_equal(f2));
+    }
 }
 
 

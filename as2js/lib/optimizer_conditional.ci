@@ -81,6 +81,7 @@ optimization_match_t const g_optimizer_conditional_match_true_condition[] =
         }
 };
 
+
 optimization_match_t const g_optimizer_conditional_match_false_condition[] =
 {
     {
@@ -125,6 +126,74 @@ optimization_match_t const g_optimizer_conditional_match_false_condition[] =
 };
 
 
+optimization_match_t const g_optimizer_conditional_match_minimum_literals[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_minimum),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+optimization_match_t const g_optimizer_conditional_match_maximum_literals[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_maximum),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_any_literal),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
 
 
 
@@ -152,6 +221,30 @@ optimization_entry_t const g_optimizer_conditional_entry_false_condition[] =
 };
 
 
+optimization_entry_t const g_optimizer_conditional_entry_minimum[] =
+{
+    {
+        /* f_name */                "'a <? b' where a and b are literals -> 'min(a, b)'",
+        /* f_flags */               0,
+
+        /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_conditional_match_minimum_literals),
+        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_minimum_1_2_0)
+    }
+};
+
+
+optimization_entry_t const g_optimizer_conditional_entry_maximum[] =
+{
+    {
+        /* f_name */                "'a >? b' where a and b are literals -> 'max(a, b)'",
+        /* f_flags */               0,
+
+        /* f_match[_count] */       POINTER_AND_COUNT(g_optimizer_conditional_match_maximum_literals),
+        /* f_optimize[_count] */    POINTER_AND_COUNT(g_optimizer_optimize_maximum_1_2_0)
+    }
+};
+
+
 
 /** \brief List of conditional entries.
  *
@@ -167,6 +260,12 @@ optimization_table_t const g_optimizer_conditional_table[] =
     },
     {
         /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_conditional_entry_false_condition)
+    },
+    {
+        /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_conditional_entry_minimum)
+    },
+    {
+        /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_conditional_entry_maximum)
     }
 };
 

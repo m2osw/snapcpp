@@ -93,6 +93,270 @@
                 }
             ]
         }
+    },
+
+    // a <? b => a
+    {
+        //"verbose": true,
+        "name": "a <? b -> a",
+        "program": "use extended_operators; 3 <? 10;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MINIMUM",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 10
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // NaN <? a => a
+    {
+        //"verbose": true,
+        "name": "NaN <? a -> a",
+        "program": "use extended_operators; NaN <? 10.3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MINIMUM",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 10.3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": 10.3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a <? NaN => a
+    {
+        //"verbose": true,
+        "name": "a <? NaN -> a",
+        "program": "use extended_operators; 10.3 <? NaN;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MINIMUM",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 10.3
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": 10.3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a >? b => a
+    {
+        //"verbose": true,
+        "name": "a >? b -> a",
+        "program": "use extended_operators; 3 >? 10;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MAXIMUM",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 3
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 10
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "INT64",
+                            "integer": 10
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // NaN >? a => a
+    {
+        //"verbose": true,
+        "name": "NaN >? a -> a",
+        "program": "use extended_operators; NaN >? 10.3;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MAXIMUM",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 10.3
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": 10.3
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a >? NaN => a
+    {
+        //"verbose": true,
+        "name": "a >? NaN -> a",
+        "program": "use extended_operators; 10.3 >? NaN;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "MAXIMUM",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": 10.3
+                                },
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": NaN
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "FLOAT64",
+                            "float": 10.3
+                        }
+                    ]
+                }
+            ]
+        }
     }
 
 ]

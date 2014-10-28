@@ -35,57 +35,62 @@ SOFTWARE.
 
 #include    "as2js/optimizer.h"
 #include    "as2js/message.h"
-//#include    "as2js/exceptions.h"
 #include    "optimizer_tables.h"
-
-//#include    <controlled_vars/controlled_vars_no_enum_init.h>
-
-//#include    <math.h>
 
 
 namespace as2js
 {
+namespace Optimizer
+{
 
 
-/** \class class Optimizer
- * \brief The as2js optimizer.
+/** \brief The as2js optimizer.
  *
- * Finally, once the program was parsed and then compiled
- * one usually wants to optimize it. This means removing
- * all the possible expressions and statements which can
- * be removed to make the code more efficient. The
- * optimizations applied can be tweaked using the options,
- * however, the options have already been parsed and thus
- * they are found directly in the nodes.
+ * This function goes through all the available optimizations and
+ * processes them whenever they apply to your code.
  *
- * The code, after you ran the compiler looks like this:
+ * Errors may be generated whenever a problem is found.
  *
- *    Optimizer::pointer_t optimizer(Optimizer::CreateOptimizer());
- *    optimize->Optimize(root);
+ * Also some potential errors such as a division or modulo by
+ * zero can legally occur in your input program so in that case the
+ * optimizer generates a warning to let you know that such a division
+ * was found, but no error to speak of.
  *
- * The optimize() function goes through the list of
- * nodes defined in the root parameter and it tries to
- * remove all possible expressions and functions which
- * will have no effect in the final output (by default,
- * certain things such as x + 0, are not removed since it
- * has an effect!).
+ * The function reports the total number of errors that were generated
+ * while optimizing.
  *
- * The root parameter may be what was returned by the parse()
- * function of the Parser object. However, in most cases, the
- * compiler only optimizes part of the tree as required (because
- * many parts cannot be optimized and it will make things
- * generally faster.)
+ * At any point after parsing, the program can be passed through
+ * the optimizer. This means removing all the possible expressions and
+ * statements which can be removed to make the code smaller in the end.
+ * The optimizations applied can be tweaked using options ('use ...;').
  *
- * Note that it is expected that you first Compile()
- * the nodes, but it is possible to call the optimizer
- * without first running any compilation.
+ * In most cases the compiler already takes care of calling the optimizer
+ * at appropriate times. Since it is a static function, it can directly
+ * be called as in:
+ *
+ * \code
+ *    Optimizer::Optimize(root);
+ * \endcode
+ *
+ * Where root is a Node representing the root of the optimization (anything
+ * outside of the root does not get optimized.)
+ *
+ * The optimize() function tries to remove all possible expressions
+ * and statements which will have no effect in the final output
+ * (by default, certain things such as x + 0, may not be removed since
+ * such may have an effect... if x is a string, then x + 0 concatenates
+ * zero to that string.)
+ *
+ * The root parameter may be what was returned by the Parser::parse()
+ * function of the. However, in most cases, the compiler only optimizes
+ * part of the tree as required (because many parts cannot be optimized
+ * and it will make things generally faster.)
  *
  * The optimizations are organized in C++ tables that get linked
  * in the compiler as read-only static data. These are organized
  * in many separate files because of the large amount of possible
- * optimizations. Even at this point, some could probably get
- * broken up in several separate files. There is a list of the
- * various files in the optimizer:
+ * optimizations. There is a list of the various files in the
+ * optimizer:
  *
  * \li optimizer.cpp -- the main Optimizer object implementation;
  * all the other files are considered private.
@@ -120,7 +125,12 @@ namespace as2js
  *
  * \li optimizer_conditional.ci -- optimizations for 'a ? b : c'.
  *
+ * \li optimizer_equality.ci -- optimizations for '==', '!=', '===', '!==',
+ * and '~~'.
+ *
  * \li optimizer_logical.ci -- optimizations for '!', '&&', '||', and '^^'.
+ *
+ * \li optimizer_match.ci -- optimizations for '~=' and '!~'.
  *
  * \li optimizer_multiplicative.ci -- optimizations for '*', '/', '%',
  * and '**'.
@@ -130,22 +140,6 @@ namespace as2js
  *
  * \li optimizer_statments.ci -- optimizations for 'if', 'while', 'do',
  * and "directives" (blocks).
- */
-
-
-/** \brief Optimize the specified node.
- *
- * This function goes through all the available optimizations and
- * processes them whenever they apply to your code.
- *
- * Errors may be generated whenever a problem is found. For example,
- * a division or modulo by zero can legally occur in your input
- * program. In that case the optimizer generates an error to let you
- * know that such a division is not legal and the compiler cannot
- * generate the output.
- *
- * The optimizer reports the total number of errors that were generated
- * while optimizing.
  *
  * \important
  * It is important to note that this function is not unlikely going
@@ -158,7 +152,7 @@ namespace as2js
  *
  * \return The number of errors generated while optimizing.
  */
-int Optimizer::optimize(Node::pointer_t& node)
+int optimize(Node::pointer_t& node)
 {
     int const errcnt(Message::error_count());
 
@@ -3621,6 +3615,8 @@ void Optimizer::conditional(Node::pointer_t& conditional_node)
 
 
 
+}
+// namespace Optimizer
 }
 // namespace as2js
 

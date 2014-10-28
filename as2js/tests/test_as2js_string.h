@@ -48,6 +48,7 @@ class As2JsStringUnitTests : public CPPUNIT_NS::TestFixture
         CPPUNIT_TEST( test_utf32 );
         CPPUNIT_TEST( test_number );
         CPPUNIT_TEST( test_concatenation );
+        CPPUNIT_TEST( test_simplified );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -60,6 +61,7 @@ protected:
     void test_utf32();
     void test_number();
     void test_concatenation();
+    void test_simplified();
 };
 
 #endif

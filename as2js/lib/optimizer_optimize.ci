@@ -212,6 +212,22 @@ optimization_optimize_t const g_optimizer_optimize_match_1_2_0[] =
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_minimum_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MINIMUM,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_maximum_1_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_MAXIMUM,
+        /* f_indexes */     { 1, 2, 0, 0, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_modulo_1_2_0[] =
 {
     {

@@ -2429,6 +2429,10 @@ token_t const g_tokens[] =
         "\xE2\x88\x9E", // 0x221E -- INFINITY
         g_result_keyword_infinity
     },
+    {
+        "\xEF\xBF\xBD", // 0xFFFD -- REPLACEMENT CHARACTER
+        g_result_keyword_nan
+    },
 
     /******************
      * OPERATORS      *

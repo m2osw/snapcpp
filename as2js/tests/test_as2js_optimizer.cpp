@@ -1287,9 +1287,8 @@ void run_tests(char const *data, char const *filename)
                 }
             }
 
-            // try the optimizer
-            as2js::Optimizer optimizer;
-            optimizer.optimize(root);
+            // run the optimizer
+            as2js::Optimizer::optimize(root);
 
             tc.got_called();
 
@@ -1315,15 +1314,13 @@ void As2JsOptimizerUnitTests::test_optimizer_invalid_nodes()
     // empty node does nothing, return false
     {
         as2js::Node::pointer_t node;
-        as2js::Optimizer optimizer;
-        CPPUNIT_ASSERT(!optimizer.optimize(node));
+        CPPUNIT_ASSERT(!as2js::Optimizer::optimize(node));
     }
 
     // unknown node does nothing, return false
     {
         as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_UNKNOWN));
-        as2js::Optimizer optimizer;
-        CPPUNIT_ASSERT(!optimizer.optimize(node));
+        CPPUNIT_ASSERT(!as2js::Optimizer::optimize(node));
         CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_UNKNOWN);
         CPPUNIT_ASSERT(node->get_children_size() == 0);
     }
@@ -1349,8 +1346,7 @@ void As2JsOptimizerUnitTests::test_optimizer_invalid_nodes()
         node_add->append_child(node_twenty);
 
         // optimization does not happen
-        as2js::Optimizer optimizer;
-        CPPUNIT_ASSERT_THROW(!optimizer.optimize(node_add), as2js::exception_internal_error);
+        CPPUNIT_ASSERT_THROW(!as2js::Optimizer::optimize(node_add), as2js::exception_internal_error);
 
         // verify that nothing changed
         CPPUNIT_ASSERT(node_add->get_type() == as2js::Node::node_t::NODE_ADD);

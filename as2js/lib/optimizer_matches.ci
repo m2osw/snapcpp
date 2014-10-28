@@ -285,6 +285,18 @@ Node::node_t const g_optimizer_match_match[]
 };
 
 
+Node::node_t const g_optimizer_match_maximum[]
+{
+    Node::node_t::NODE_MAXIMUM
+};
+
+
+Node::node_t const g_optimizer_match_minimum[]
+{
+    Node::node_t::NODE_MINIMUM
+};
+
+
 Node::node_t const g_optimizer_match_minmax_assignments[]
 {
     Node::node_t::NODE_ASSIGNMENT_MAXIMUM,

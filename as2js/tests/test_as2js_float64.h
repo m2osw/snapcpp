@@ -44,6 +44,7 @@ class As2JsFloat64UnitTests : public CPPUNIT_NS::TestFixture
     CPPUNIT_TEST_SUITE( As2JsFloat64UnitTests );
         CPPUNIT_TEST( test_float64 );
         CPPUNIT_TEST( test_special_numbers );
+        CPPUNIT_TEST( test_nearly_equal );
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -52,6 +53,7 @@ public:
 protected:
     void test_float64();
     void test_special_numbers();
+    void test_nearly_equal();
 };
 
 #endif

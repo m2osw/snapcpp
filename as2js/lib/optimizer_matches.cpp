@@ -141,12 +141,15 @@ bool match_node(node_pointer_vector_t& node_array, Node::pointer_t node, optimiz
         case Node::node_t::NODE_STRICTLY_EQUAL:
             switch(node->get_type())
             {
-            case Node::node_t::NODE_STRING:
-                if(node->get_string() != value->f_string)
-                {
-                    return false;
-                }
-                break;
+            // This is not yet accessible (as in, nothing makes use of it
+            // and I'm not totally sure it will come up, re-add later if
+            // useful.)
+            //case Node::node_t::NODE_STRING:
+            //    if(node->get_string() != value->f_string)
+            //    {
+            //        return false;
+            //    }
+            //    break;
 
             case Node::node_t::NODE_INT64:
                 if(node->get_int64().get() != value->f_int64)
