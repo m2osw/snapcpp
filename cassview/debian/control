@@ -6,7 +6,7 @@ Build-Depends: debhelper, cmake,
     snapcmakemodules (>= 1.0.23.51~trusty), libqtcassandra-dev (>= 0.5.7), libcontrolledvars-dev (>= 1.4.15.51~trusty),
     libsnapwebsites-dev (>= 0.1.70.19~trusty)
 Standards-Version: 3.9.4
-Section: libs
+Section: admin
 Homepage: http://www.snapwebsites.org/
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Vcs-Bzr: lp:snapcpp

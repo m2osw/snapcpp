@@ -1,5 +1,5 @@
 Source: zipios++
-Section: devel
+Section: libs
 Priority: optional
 Maintainer: Masayuki Hatta (mhatta) <mhatta@debian.org>
 Build-Depends: cmake, debhelper (>> 4.0.0), doxygen, graphviz, graphicsmagick-imagemagick-compat, libcppunit-dev, libz-dev,
