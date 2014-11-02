@@ -16,11 +16,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "ui_snap-manager-initialize-website.h"
+#include "ui_snap-manager-initialize-websitebox.h"
 
 #include <snapwebsites/snap_initialize_website.h>
 
-class snap_manager_initialize_website : public QDialog, public Ui_initializeWebsite
+class snap_manager_initialize_website : public QDialog, public Ui_initializeWebsiteBox
 {
     Q_OBJECT
 
