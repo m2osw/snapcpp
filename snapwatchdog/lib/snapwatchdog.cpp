@@ -219,8 +219,8 @@ void watchdog_server::define_server_name()
 
 void watchdog_server::check_cassandra()
 {
-    snap_cassandra cassandra;
-    cassandra.connect(f_parameters);
+    snap_cassandra cassandra( f_parameters );
+    cassandra.connect();
     cassandra.init_context();
 
     QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
