@@ -787,7 +787,26 @@ void QCassandraPrivate::insertValue(const QString& table_name, const QByteArray&
         consistency_level = f_parent->defaultConsistencyLevel();
     }
 
-    f_client->insert(rkey, column_parent, column, static_cast<org::apache::cassandra::ConsistencyLevel::type>(static_cast<cassandra_consistency_level_t>(consistency_level)));
+    for(int retry(0);; ++retry)
+    {
+        try
+        {
+            f_client->insert(rkey, column_parent, column, static_cast<org::apache::cassandra::ConsistencyLevel::type>(static_cast<cassandra_consistency_level_t>(consistency_level)));
+            return;
+        }
+        catch(::apache::thrift::TException& e)
+        {
+            if(retry >= 5)
+            {
+//std::cerr << "insertValue() failed.\n";
+                throw;
+            }
+            struct timeval to;
+            to.tv_sec = 0;
+            to.tv_usec = 100000; // 100ms
+            select(0, nullptr, nullptr, nullptr, &to);
+        }
+    }
 }
 
 /** \brief Get a value from the Cassandra database.
@@ -829,15 +848,29 @@ void QCassandraPrivate::getValue(const QString& table_name, const QByteArray& ro
     // higher levels as required (doing it here would prevent many
     // features from working without having to transmit a shit load
     // of information from this level)
-    //try {
-        f_client->get(column_result, rkey, column_path, static_cast<org::apache::cassandra::ConsistencyLevel::type>(static_cast<cassandra_consistency_level_t>(consistency_level)));
-    //}
-    //catch(org::apache::cassandra::NotFoundException& /*e*/) {
-    //    // this happens when a column is missing and thus we cannot
-    //    // read it; in this case we return NULL in value.
-    //    value.setNullValue();
-    //    return;
-    //}
+    for(int retry(0);; ++retry)
+    {
+        try {
+          f_client->get(column_result, rkey, column_path, static_cast<org::apache::cassandra::ConsistencyLevel::type>(static_cast<cassandra_consistency_level_t>(consistency_level)));
+          break;
+        }
+        catch(org::apache::cassandra::NotFoundException& /*e*/) {
+//std::cerr << "getValue() not found exception.\n";
+            throw;
+        }
+        catch(::apache::thrift::TException const& e)
+        {
+            if(retry >= 5)
+            {
+//std::cerr << "getValue() failed.\n";
+                throw;
+            }
+            struct timeval to;
+            to.tv_sec = 0;
+            to.tv_usec = 100000; // 100ms
+            select(0, nullptr, nullptr, nullptr, &to);
+        }
+    }
 
     if(!column_result.__isset.column) {
         throw std::runtime_error("attempt to retrieve a cell failed");
@@ -1147,9 +1180,7 @@ uint32_t QCassandraPrivate::getRowSlices(QCassandraTable& table, QCassandraRowPr
     }
 
     try {
-//printf("start/end [%s]/[%s] OR [%s]/[%s]\n",
-//                key_range.start_key.c_str(), key_range.end_key.c_str(),
-//                key_range.start_token.c_str(), key_range.end_token.c_str());
+//std::cerr << "start/end ["<< key_range.start_key<< "]/[" << key_range.end_key<< "] OR ["<< key_range.start_token<<"]/[" << key_range.end_token<< "]\n";
         f_client->get_range_slices(results, column_parent, slice_predicate, key_range, static_cast<org::apache::cassandra::ConsistencyLevel::type>(static_cast<cassandra_consistency_level_t>(consistency_level)));
     }
     // Wondering whether the invalid request exception is what 0.8.0 was
@@ -1165,6 +1196,16 @@ uint32_t QCassandraPrivate::getRowSlices(QCassandraTable& table, QCassandraRowPr
         }
         throw;
     }
+    // Too many nodes are down to continue processing.
+    // This can also happen if the initialization of a context includes a
+    // data center name which is invalid (because if Cassandra cannot find
+    // that data center it will not be happy about it!)
+    // It can also happen if the replication factor is larger than the
+    // number of nodes available.
+    //catch(const org::apache::cassandra::UnavailableException& e)
+    //{
+    //    throw;
+    //}
 
     // we got results, copy the data to the table cache
     int adjust(0);

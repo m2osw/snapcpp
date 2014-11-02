@@ -280,6 +280,7 @@ class QCassandraContextPrivate : public org::apache::cassandra::KsDef {};
  * \param[in] cassandra  The QCassandra object owning this context.
  * \param[in] context_name  The name of the Cassandra context.
  *
+ * \sa contextName()
  * \sa setLockTableName()
  * \sa setLockHostName()
  * \sa QCassandra::context()
@@ -340,11 +341,22 @@ QString QCassandraContext::contextName() const
 
 /** \brief Set the context strategy class.
  *
- * This function is used to change the class of the context to a new
- * strategy. The strategy class is used to handle reads and writes
- * according to the use of the corresponding context.
+ * This function is used to change the strategy class of the context to a
+ * new strategy. The strategy class (called the placement_strategy in
+ * CLI/CQL) is used to handle reads and writes according to the use of the
+ * corresponding context.
+ *
+ * \note
+ * If not set, this library automatically assigns the local strategy
+ * by default:
+ *
+ * \code
+ *      ks->strategy_class = "org.apache.cassandra.locator.LocalStrategy";
+ * \endcode
  *
  * \param[in] strategy_class  The new strategy class.
+ *
+ * \sa strategyClass()
  */
 void QCassandraContext::setStrategyClass(const QString& strategy_class)
 {
@@ -358,6 +370,10 @@ void QCassandraContext::setStrategyClass(const QString& strategy_class)
  * the nodes of the Cassandra system.
  *
  * \return The strategy class.
+ *
+ * \sa descriptionOption()
+ * \sa descriptionOptions()
+ * \sa setStrategyClass()
  */
 QString QCassandraContext::strategyClass() const
 {
@@ -366,20 +382,30 @@ QString QCassandraContext::strategyClass() const
 
 /** \brief Replace all the context description options.
  *
- * This function overwrites all the description options with the ones
- * specified in the input parameter.
+ * This function overwrites all the "description" options (this is called
+ * the strategy_options in the CLI or CQL) with the ones specified in the
+ * input parameter.
  *
  * This function can be used to clear all the options by passing an
- * empty options parameter.
+ * empty \p options parameter. Note that any existing options get overwritten
+ * and that includes the replication factor.
+ *
+ * To avoid overwriting existing options, you may want to consider using
+ * the setDescriptionOption() function instead.
  *
  * \warning
- * Since version 1.1, the replication_factor has become a full
- * option and the definition found directly in the KsDef structure
- * is ignored. This means overwriting all the options may have
+ * Since Cassandra version 1.1, the replication_factor has become a full
+ * option and the definition found directly in the KsDef structure is
+ * ignored. This means overwriting all the options may have
  * the unwanted side effect of deleting the replication_factor
- * under your feet.
+ * under your feet (i.e. it should be defined in your \p options
+ * parameter to make sure it will not get deleted.)
  *
  * \param[in] options  The replacing options
+ *
+ * \sa setReplicationFactor()
+ * \sa descriptionOptions()
+ * \sa setDescriptionOption()
  */
 void QCassandraContext::setDescriptionOptions(const QCassandraContextOptions& options)
 {
@@ -405,6 +431,10 @@ void QCassandraContext::setDescriptionOptions(const QCassandraContextOptions& op
  * invalid. If you are going to modify the options, make a copy of the map.
  *
  * \return A reference to the map of context options.
+ *
+ * \sa setDescriptionOptions()
+ * \sa setDescriptionOption()
+ * \sa descriptionOption()
  */
 const QCassandraContext::QCassandraContextOptions& QCassandraContext::descriptionOptions() const
 {
@@ -415,15 +445,25 @@ const QCassandraContext::QCassandraContextOptions& QCassandraContext::descriptio
  *
  * This function sets the specified \p option to the specified \p value.
  *
+ * \warning
+ * The CQL language shows a field named "class" as part of the strategy
+ * options. Setting that parameter actually prevents the creation of
+ * context. You want to limit your setup to "replication_factor" and
+ * valid data center names.
+ *
  * \param[in] option  The option to set.
  * \param[in] value  The new value the option to set.
+ *
+ * \sa descriptionOption()
+ * \sa descriptionOptions()
+ * \sa setDescriptionOptions()
  */
 void QCassandraContext::setDescriptionOption(const QString& option, const QString& value)
 {
     f_options[option] = value;
 
     if(option == "replication_factor") {
-        f_private->__set_replication_factor(f_options["replication_factor"].toInt());
+        f_private->__set_replication_factor(value.toInt());
     }
 }
 
@@ -442,6 +482,7 @@ void QCassandraContext::setDescriptionOption(const QString& option, const QStrin
  */
 QString QCassandraContext::descriptionOption(const QString& option) const
 {
+    // avoid creating an entry if it is not defined
     if(!f_options.contains(option)) {
         return "";
     }
@@ -602,6 +643,29 @@ const QCassandraTable& QCassandraContext::operator [] (const QString& table_name
  *
  * This function sets the replication factor of the context.
  *
+ * The replication factor is only used if you set the replication
+ * strategy to "SimpleStrategy". In all other cases, it is ignored.
+ *
+ * When setting up the replication factor for a strategy set to
+ * "NetworkTopologyStrategy", then you need to set replication
+ * factors using data center names as in:
+ *
+ * \code
+ *    // get a new context (assuming "my_context" does not exist in Cassandra)
+ *    // (use findContext() to know whether a context exists)
+ *    QtCassandra::QCassandraContext::pointer_t context = cassandra->context("my_context");
+ *
+ *    context->setStrategyClass("org.apache.cassandra.locator.NetworkTopologyStrategy");
+ *
+ *    QtCassandra::QCassandraContextOptions options;
+ *    options["dc1"] = 3;
+ *    options["dc2"] = 2;
+ *    options["dc3"] = 5;
+ *    context->setDescriptionOptions(options);
+ *
+ *    context->createContext();
+ * \endcode
+ *
  * \deprecated
  * Since version 1.1 of Cassandra, the context replication
  * factor is viewed as a full option. This function automatically
@@ -612,6 +676,10 @@ const QCassandraTable& QCassandraContext::operator [] (const QString& table_name
  * older version of Cassandra. Let me know if that's the case.
  *
  * \param[in] factor  The new replication factor.
+ *
+ * \sa replicationFactor()
+ * \sa unsetReplicationFactor()
+ * \sa hasReplicationFactor()
  */
 void QCassandraContext::setReplicationFactor(int32_t factor)
 {
@@ -627,6 +695,10 @@ void QCassandraContext::setReplicationFactor(int32_t factor)
  * In general it is not necessary to call this function unless you
  * are initializing a new context and you want to make sure that
  * the default replication factor is used.
+ *
+ * \sa setReplicationFactor()
+ * \sa replicationFactor()
+ * \sa hasReplicationFactor()
  */
 void QCassandraContext::unsetReplicationFactor()
 {
@@ -638,6 +710,10 @@ void QCassandraContext::unsetReplicationFactor()
  * This function retrieves the current status of the replication factor parameter.
  *
  * \return True if the replication factor parameter is defined.
+ *
+ * \sa setReplicationFactor()
+ * \sa replicationFactor()
+ * \sa unsetReplicationFactor()
  */
 bool QCassandraContext::hasReplicationFactor() const
 {
@@ -652,6 +728,10 @@ bool QCassandraContext::hasReplicationFactor() const
  * If the replication factor is not defined, zero is returned.
  *
  * \return The current replication factor.
+ *
+ * \sa setReplicationFactor()
+ * \sa hasReplicationFactor()
+ * \sa unsetReplicationFactor()
  */
 int32_t QCassandraContext::replicationFactor() const
 {
@@ -668,6 +748,10 @@ int32_t QCassandraContext::replicationFactor() const
  * context (this is the default.)
  *
  * \param[in] durable_writes  Set whether writes are durable.
+ *
+ * \sa durableWrites()
+ * \sa unsetDurableWrites()
+ * \sa hasDurableWrites()
  */
 void QCassandraContext::setDurableWrites(bool durable_writes)
 {
@@ -679,6 +763,10 @@ void QCassandraContext::setDurableWrites(bool durable_writes)
  * This function marks the durable write flag as not set. This does
  * not otherwise change the flag. It will just not be sent over the
  * network and the default will be used when required.
+ *
+ * \sa durableWrites()
+ * \sa setDurableWrites()
+ * \sa hasDurableWrites()
  */
 void QCassandraContext::unsetDurableWrites()
 {
@@ -690,6 +778,10 @@ void QCassandraContext::unsetDurableWrites()
  * This function retrieves the current status of the durable writes parameter.
  *
  * \return True if the durable writes parameter is defined.
+ *
+ * \sa durableWrites()
+ * \sa setDurableWrites()
+ * \sa unsetDurableWrites()
  */
 bool QCassandraContext::hasDurableWrites() const
 {
@@ -702,6 +794,10 @@ bool QCassandraContext::hasDurableWrites() const
  * context is temporary (false) or permanent (true).
  *
  * \return The current durable writes flag status.
+ *
+ * \sa hasDurableWrites()
+ * \sa setDurableWrites()
+ * \sa unsetDurableWrites()
  */
 bool QCassandraContext::durableWrites() const
 {
@@ -716,6 +812,8 @@ bool QCassandraContext::durableWrites() const
  * This function is called internally to parse a KsDef object.
  *
  * \param[in] data  The pointer to the KsDef object.
+ *
+ * \sa prepareContextDefinition()
  */
 void QCassandraContext::parseContextDefinition(const void *data)
 {
@@ -774,7 +872,16 @@ void QCassandraContext::parseContextDefinition(const void *data)
  * keyspace definition later used to create a keyspace or to
  * update an existing keyspace.
  *
+ * \todo
+ * Verify that the strategy options are properly defined for the strategy
+ * class (i.e. the "replication_factor" parameter is only for SimpleStrategy
+ * and a list of at least one data center for other strategies.) However,
+ * I'm not 100% sure that this is good idea since a user may add strategies
+ * that we do not know anything about!
+ *
  * \param[out] data  The output keyspace definition.
+ *
+ * \sa parseContextDefinition()
  */
 void QCassandraContext::prepareContextDefinition(void *data) const
 {
@@ -784,10 +891,6 @@ void QCassandraContext::prepareContextDefinition(void *data) const
     if(ks->strategy_class == "") {
         ks->strategy_class = "org.apache.cassandra.locator.LocalStrategy";
     }
-
-    // TBD: if we know the Cassandra server version, we should
-    //      handle the replication_factor definition here and
-    //      either set it directly or insert it as an option
 
     // copy the options
     ks->strategy_options.clear();
@@ -863,20 +966,34 @@ void QCassandraContext::makeCurrent()
  *
  * \code
  * QtCassandra::QCassandraContext context("qt_cassandra_test_context");
- * // default strategy is LocalStrategy which you usually don't want
+ * // default strategy is LocalStrategy which you usually do not want
  * context.setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
  * context.setDurableWrites(true); // by default this is 'true'
  * context.setReplicationFactor(1); // by default this is undefined
  * ...  // add tables before calling create() if you also want tables
- * context.create(context);
+ * context.create();
  * \endcode
  *
- * Note that the replication factor is not set by default, but it is a required
- * parameter unless you use a Network cluster settings.
+ * With newer versions of Cassandra (since 1.1) and a network or local
+ * strategy you have to define the replication factors using your data
+ * center names (the "replication_factor" parameter is ignored in that
+ * case):
  *
- * Also, the replication factor cannot be set to 1 if you have more than one
- * node (I may be wrong, but in my tests it failed with a replication factor
- * of one in a cluster of 3 nodes.)
+ * \code
+ * context.setDescriptionOption("strategy_class", "org.apache.cassandra.locator.NetworkTopologyStrategy");
+ * context.setDescriptionOption("data_center1", "3");
+ * context.setDescriptionOption("data_center2", "3");
+ * context.setDurableWrites(true);
+ * context.create();
+ * \endcode
+ *
+ * Note that the replication factor is not set by default, yet it is a required
+ * parameter.
+ *
+ * Also, the replication factor can be set to 1, although if you have more
+ * than one node it is probably a poor choice. You probably want a minimum
+ * of 3 for the replication factor, and you probably want a minimum of
+ * 3 nodes in any live cluster.
  *
  * \warning
  * After this call, if you are to use the context immediately, you want to
