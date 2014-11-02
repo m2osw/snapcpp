@@ -69,6 +69,7 @@ QT4_WRAP_UI(SNAP_MANAGER_UIS_H
     snap-manager-mainwindow.ui
     snap-manager-aboutbox.ui
     snap-manager-helpbox.ui
+    snap-manager-initialize-websitebox.ui
     snap-manager-decode-utf8-dialog.ui
     snap-manager-connectform.ui
     snap-manager-domainform.ui
@@ -77,6 +78,7 @@ QT4_WRAP_CPP(SNAP_MANAGER_MOC_CXX
     snap-manager.h
     snap-manager-about.h
     snap-manager-help.h
+    snap-manager-initialize-website.h
     snap-manager-decode-utf8.h
 )
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
@@ -96,6 +98,7 @@ add_executable( ${PROJECT_NAME}
     snap-manager.cpp
     snap-manager-about.cpp
     snap-manager-help.cpp
+    snap-manager-initialize-website.cpp
     snap-manager-decode-utf8.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_UIS_H}

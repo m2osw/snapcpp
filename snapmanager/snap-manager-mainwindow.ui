@@ -658,6 +658,7 @@ p, li { white-space: pre-wrap; }
     </property>
     <addaction name="actionResetDomainsIndex"/>
     <addaction name="actionResetWebsitesIndex"/>
+    <addaction name="actionInitializeWebsite"/>
     <addaction name="separator"/>
     <addaction name="actionDecodeUTF8"/>
    </widget>
@@ -730,6 +731,11 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="text">
     <string>Reset &amp;Domains Index</string>
+   </property>
+  </action>
+  <action name="actionInitializeWebsite">
+   <property name="text">
+    <string>&amp;Initialize a Website</string>
    </property>
   </action>
   <action name="actionAddComputeToLockTable">

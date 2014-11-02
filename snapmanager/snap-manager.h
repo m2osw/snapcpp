@@ -17,22 +17,42 @@
 #ifndef SNAP_MANAGER_H
 #define SNAP_MANAGER_H
 
+#include "snap-manager-initialize-website.h"
+
 #include <snapwebsites/snapwebsites.h>
 #include <snapwebsites/row_model.h>
 #include <snapwebsites/table_model.h>
 
-#include <boost/shared_ptr.hpp>
-#include <QtCore/QMap>
-#include <QtCore/QPointer>
-#include <QtNetwork/QTcpSocket>
-#include <QtGui/QMainWindow>
 #include <QtCassandra/QCassandra.h>
 #include <QtCassandra/QCassandraContext.h>
+
+#include <QMap>
+#include <QPointer>
+#include <QTcpSocket>
+#include <QMainWindow>
+#include <QMessageBox>
 
 #include "ui_snap-manager-mainwindow.h"
 
 // We do not use namespaces because that doesn't work too well with
 // Qt tools such as moc.
+
+// get a child that MUST exist
+template<class T>
+T *getChild(QWidget *parent, const char *name)
+{
+    T *w = parent->findChild<T *>(name);
+    if(w == nullptr)
+    {
+            QString error(QString("Can't find the widget: %1.").arg(name));
+            QMessageBox msg(QMessageBox::Critical, "Internal Error", error, QMessageBox::Ok, parent);
+            msg.exec();
+            exit(1);
+            /*NOTREACHED*/
+    }
+
+    return w;
+}
 
 class snap_manager : public QMainWindow, public Ui_MainWindow
 {
@@ -52,6 +72,7 @@ private slots:
     void on_f_cassandraDisconnectButton_clicked();
     void reset_domains_index();
     void reset_websites_index();
+    void initialize_website();
     void OnAboutToQuit();
     void on_hostList_itemClicked(QListWidgetItem *item);
     void on_hostFilter_clicked();
@@ -104,6 +125,7 @@ private:
 
     QPointer<QWidget>               f_about;
     QPointer<QWidget>               f_help;
+    QPointer<snap_manager_initialize_website> f_initialize_website_window;
     QPointer<QWidget>               f_decode_utf8;
     QPointer<QTabWidget>            f_tabs;
     QPointer<QWidget>               f_tab_connect;
@@ -113,6 +135,7 @@ private:
 
     QPointer<QAction>               f_reset_domains_index;
     QPointer<QAction>               f_reset_websites_index;
+    QPointer<QAction>               f_initialize_website;
 
     // computer hosts
     QString                         f_host_org_name;

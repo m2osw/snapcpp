@@ -23,17 +23,10 @@ class snap_manager_about : public QDialog, public Ui_aboutSnapManager
     Q_OBJECT
 
 public:
-    snap_manager_about(QWidget *parent);
-    virtual ~snap_manager_about();
-
-private slots:
-    void clicked();
-
-signals:
-    void click_now();
+                snap_manager_about(QWidget *parent);
+    virtual     ~snap_manager_about();
 
 private:
-    void random();
 };
 
 
