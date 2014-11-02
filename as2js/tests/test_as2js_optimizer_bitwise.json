@@ -1689,6 +1689,560 @@
                 }
             ]
         }
+    },
+
+    // a & 0xFFFFFFFF -> a | 0
+    {
+        //"verbose": true,
+        "name": "a & 0xFFFFFFFF -> a | 0",
+        "program": "a & 0xFFFFFFFF;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xFFFFFFFF
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_OR",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // 0xFFFFFFFF & a -> 0 | a
+    {
+        //"verbose": true,
+        "name": "0xFFFFFFFF & a -> 0 | a",
+        "program": "0xFFFFFFFF & a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xFFFFFFFF
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_OR",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // -1 & a -> 0 | a
+    {
+        //"verbose": true,
+        "name": "-1 & a -> 0 | a",
+        "program": "-1 & a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 1
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_OR",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // -2 & a -> 0 | a
+    {
+        //"verbose": true,
+        "name": "-2 & a -> 0 | a",
+        "program": "-2 & a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 2
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": -2
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // -1.0 & a -> 0 | a
+    {
+        //"verbose": true,
+        "name": "-1.0 & a -> 0 | a",
+        "program": "-1.0 & a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": 1.0
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_OR",
+                            "children": [
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // -2.0 & a -> 0 | a
+    {
+        //"verbose": true,
+        "name": "-2.0 & a -> 0 | a",
+        "program": "-2.0 & a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": 2.0
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_AND",
+                            "children": [
+                                {
+                                    "node type": "FLOAT64",
+                                    "float": -2.0
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // a ^ 0xFFFFFFFF -> ~a
+    {
+        //"verbose": true,
+        "name": "a ^ 0xFFFFFFFF -> ~a",
+        "program": "a ^ 0xFFFFFFFF;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_XOR",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xFFFFFFFF
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_NOT",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // -a ^ 0xFFFFFFFF -> ~-a
+    {
+        //"verbose": true,
+        "name": "-a ^ 0xFFFFFFFF -> ~-a",
+        "program": "-a ^ 0xFFFFFFFF;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_XOR",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "INT64",
+                                    "integer": 0xFFFFFFFF
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_NOT",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // -1 ^ a -> ~a
+    {
+        //"verbose": true,
+        "name": "-1 ^ a -> ~a",
+        "program": "-1 ^ a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_XOR",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "INT64",
+                                            "integer": 1
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_NOT",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // -1.0 ^ a -> ~a
+    {
+        //"verbose": true,
+        "name": "-1.0 ^ a -> ~a",
+        "program": "-1.0 ^ a;",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_XOR",
+                            "children": [
+                                {
+                                    "node type": "SUBTRACT",
+                                    "children": [
+                                        {
+                                            "node type": "FLOAT64",
+                                            "float": 1.0
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "optimizer result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "BITWISE_NOT",
+                            "children": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "a"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
     }
 
 ]

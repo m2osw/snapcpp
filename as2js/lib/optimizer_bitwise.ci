@@ -115,7 +115,7 @@ optimization_match_t const g_optimizer_bitwise_match_not_not_not_a[] =
 
                 {
                     /* f_depth */               3,
-                    /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                    /* f_match_flags */         0,
                     /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(), // match any node
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -156,6 +156,82 @@ optimization_match_t const g_optimizer_bitwise_match_a_and_b[] =
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'a & 0xFFFFFFFF'
+ *
+ * This table defines a match for the expression 'a & 0xFFFFFFFF'.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_and_max32bit[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_and),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          g_optimizer_value_max32bit,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match '0xFFFFFFFF & a'
+ *
+ * This table defines a match for the expression '0xFFFFFFFF & a'.
+ */
+optimization_match_t const g_optimizer_bitwise_match_max32bit_and_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_and),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          g_optimizer_value_max32bit,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -234,6 +310,84 @@ optimization_match_t const g_optimizer_bitwise_match_a_xor_b[] =
             /* f_depth */               1,
             /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
             /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match 'a ^ 0xFFFFFFFF'
+ *
+ * This table defines a match for the expression 'a ^ 0xFFFFFFFF' when a and
+ * b are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_a_xor_max32bit[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_xor),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_with_value */          nullptr,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          g_optimizer_value_max32bit,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        }
+};
+
+
+/** \brief Match '0xFFFFFFFF ^ a'
+ *
+ * This table defines a match for the expression '0xFFFFFFFF ^ a' when a and
+ * b are numbers.
+ */
+optimization_match_t const g_optimizer_bitwise_match_max32bit_xor_a[] =
+{
+    {
+        /* f_depth */               0,
+        /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+        /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_bitwise_xor),
+        /* f_with_value */          nullptr,
+        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+    },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_node_types[_count] */  POINTER_AND_COUNT(g_optimizer_match_numbers),
+            /* f_with_value */          g_optimizer_value_max32bit,
+            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
+            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
+            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
+        },
+
+        {
+            /* f_depth */               1,
+            /* f_match_flags */         0,
+            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
@@ -486,6 +640,38 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_and_b[] =
 };
 
 
+/** \brief Optimize 'a & 0xFFFFFFFF' to 'a | 0'.
+ *
+ * This table defines the optimization of 'a & 0xFFFFFFFF' to 'a | 0'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_and_max32bit[] =
+{
+    {
+        /* f_name */            "a & 0xFFFFFFFF -> a | 0",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_and_max32bit),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_and_max32bit_to_or_zero_2_0)
+    }
+};
+
+
+/** \brief Optimize '0xFFFFFFFF & a' to '0 | a'.
+ *
+ * This table defines the optimization of '0xFFFFFFFF & a' to '0 | a'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_max32bit_and_a[] =
+{
+    {
+        /* f_name */            "'0xFFFFFFFF & a' -> '0 | a'",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_max32bit_and_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_and_max32bit_to_or_zero_1_0)
+    }
+};
+
+
 /** \brief Optimize 'number | number' to 'number'.
  *
  * This table defines the optimization of 'number | number' to 'number'.
@@ -514,6 +700,38 @@ optimization_entry_t const g_optimizer_bitwise_entry_a_xor_b[] =
 
         /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_xor_b),
         /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_xor_1_2_0)
+    }
+};
+
+
+/** \brief Optimize 'a ^ 0xFFFFFFFF' to '~a'.
+ *
+ * This table defines the optimization of 'a ^ 0xFFFFFFFF' to '~a'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_a_xor_max32bit[] =
+{
+    {
+        /* f_name */            "a ^ 0xFFFFFFFF -> ~a",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_a_xor_max32bit),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_xor_to_not_1_0_0)
+    }
+};
+
+
+/** \brief Optimize '0xFFFFFFFF ^ a' to '~a'.
+ *
+ * This table defines the optimization of '0xFFFFFFFF ^ a' to '~a'.
+ */
+optimization_entry_t const g_optimizer_bitwise_entry_max32bit_xor_a[] =
+{
+    {
+        /* f_name */            "0xFFFFFFFF ^ a -> ~a",
+        /* f_flags */           0,
+
+        /* f_match */           POINTER_AND_COUNT(g_optimizer_bitwise_match_max32bit_xor_a),
+        /* f_optimize */        POINTER_AND_COUNT(g_optimizer_optimize_bitwise_xor_to_not_2_0_0)
     }
 };
 
@@ -621,6 +839,12 @@ optimization_table_t const g_optimizer_bitwise_table[] =
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_and_b)
     },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_and_max32bit)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_max32bit_and_a)
+    },
 
     // bitwise OR
     {
@@ -630,6 +854,12 @@ optimization_table_t const g_optimizer_bitwise_table[] =
     // bitwise XOR
     {
         /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_xor_b)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_a_xor_max32bit)
+    },
+    {
+        /* f_entry */           POINTER_AND_COUNT(g_optimizer_bitwise_entry_max32bit_xor_a)
     },
 
     // shift

@@ -59,6 +59,38 @@ optimization_optimize_t const g_optimizer_optimize_bitwise_and_1_2_0[] =
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_bitwise_and_max32bit_to_or_zero_1_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_INT64,
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_INTEGER,
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_NODE_TYPE,
+        /* f_indexes */     { static_cast<index_t>(Node::node_t::NODE_BITWISE_OR), 0, 0, 0, 0, 0 }
+    }
+};
+
+optimization_optimize_t const g_optimizer_optimize_bitwise_and_max32bit_to_or_zero_2_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_TO_INT64,
+        /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_INTEGER,
+        /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_NODE_TYPE,
+        /* f_indexes */     { static_cast<index_t>(Node::node_t::NODE_BITWISE_OR), 0, 0, 0, 0, 0 }
+    }
+};
+
 optimization_optimize_t const g_optimizer_optimize_bitwise_not_1_0[] =
 {
     {
@@ -83,6 +115,30 @@ optimization_optimize_t const g_optimizer_optimize_bitwise_xor_1_2_0[] =
     }
 };
 
+optimization_optimize_t const g_optimizer_optimize_bitwise_xor_to_not_1_0_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_NODE_TYPE,
+        /* f_indexes */     { static_cast<index_t>(Node::node_t::NODE_BITWISE_NOT), 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_REMOVE,
+        /* f_indexes */     { 2, 0, 0, 0, 0, 0 }
+    }
+};
+
+
+optimization_optimize_t const g_optimizer_optimize_bitwise_xor_to_not_2_0_0[] =
+{
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_SET_NODE_TYPE,
+        /* f_indexes */     { static_cast<index_t>(Node::node_t::NODE_BITWISE_NOT), 0, 0, 0, 0, 0 }
+    },
+    {
+        /* f_function */    optimization_function_t::OPTIMIZATION_FUNCTION_REMOVE,
+        /* f_indexes */     { 1, 0, 0, 0, 0, 0 }
+    }
+};
 
 
 /*** C ***/

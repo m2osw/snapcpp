@@ -75,7 +75,7 @@ optimization_match_t const g_optimizer_additive_match_plus_a[] =
 
         {
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -154,7 +154,7 @@ optimization_match_t const g_optimizer_additive_match_a_plus_b[] =
 //
 //        {
 //            /* f_depth */               1,
-//            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+//            /* f_match_flags */         0,
 //            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
 //            /* f_with_value */          nullptr,
 //            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -230,7 +230,7 @@ optimization_match_t const g_optimizer_additive_match_zero_minus_a[] =
 
         {
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),

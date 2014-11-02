@@ -62,7 +62,7 @@ optimization_match_t const g_optimizer_conditional_match_true_condition[] =
 
         { // a
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -72,7 +72,7 @@ optimization_match_t const g_optimizer_conditional_match_true_condition[] =
 
         { // b
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -106,7 +106,7 @@ optimization_match_t const g_optimizer_conditional_match_false_condition[] =
 
         { // a
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -116,7 +116,7 @@ optimization_match_t const g_optimizer_conditional_match_false_condition[] =
 
         { // b
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),

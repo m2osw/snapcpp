@@ -104,7 +104,7 @@ optimization_match_t const g_optimizer_logical_match_true_and_a[] =
 
         {
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -142,7 +142,7 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 
         {
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -175,7 +175,7 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 //
 //        {
 //            /* f_depth */               1,
-//            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+//            /* f_match_flags */         0,
 //            /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
 //            /* f_with_value */          g_optimizer_value_no_side_effects,
 //            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -223,7 +223,7 @@ optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
 
             {
                 /* f_depth */               2,
-                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                /* f_match_flags */         0,
                 /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -233,7 +233,7 @@ optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
 
             {
                 /* f_depth */               2,
-                /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                /* f_match_flags */         0,
                 /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -243,7 +243,7 @@ optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
 
         {
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -281,7 +281,7 @@ optimization_match_t const g_optimizer_logical_match_true_or_a[] =
 
         {
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -319,7 +319,7 @@ optimization_match_t const g_optimizer_logical_match_false_or_a[] =
 
         {
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -502,7 +502,7 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
 
         { // a
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -532,7 +532,7 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
 
                 {
                     /* f_depth */               3,
-                    /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                    /* f_match_flags */         0,
                     /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -542,7 +542,7 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
 
         { // c
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -552,7 +552,7 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
 
         { // d
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -600,7 +600,7 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
 
                 {
                     /* f_depth */               3,
-                    /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                    /* f_match_flags */         0,
                     /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -610,7 +610,7 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
 
         { // b
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -620,7 +620,7 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
 
         { // c
             /* f_depth */               1,
-            /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+            /* f_match_flags */         0,
             /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
@@ -669,7 +669,7 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
 
                 {
                     /* f_depth */               3,
-                    /* f_match_flags */         OPTIMIZATION_MATCH_FLAG_CHILDREN,
+                    /* f_match_flags */         0,
                     /* f_node_types[_count] */  NULL_POINTER_AND_COUNT(), // match any node
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),

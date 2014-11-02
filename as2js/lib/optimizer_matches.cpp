@@ -137,6 +137,35 @@ bool match_node(node_pointer_vector_t& node_array, Node::pointer_t node, optimiz
             }
             break;
 
+        case Node::node_t::NODE_BITWISE_AND:
+            switch(node->get_type())
+            {
+            case Node::node_t::NODE_INT64:
+                {
+                    uint32_t mask(static_cast<uint32_t>(value->f_float64));
+                    if((node->get_int64().get() & mask) != value->f_int64)
+                    {
+                        return false;
+                    }
+                }
+                break;
+
+            case Node::node_t::NODE_FLOAT64:
+                {
+                    uint32_t mask(static_cast<uint32_t>(value->f_float64));
+                    if((static_cast<uint32_t>(node->get_float64().get()) & mask) != value->f_int64)
+                    {
+                        return false;
+                    }
+                }
+                break;
+
+            default:
+                throw exception_internal_error("INTERNAL ERROR: optimizer optimization_literal_t table used against an unsupported node type."); // LCOV_EXCL_LINE
+
+            }
+            break;
+
         case Node::node_t::NODE_EQUAL:
         case Node::node_t::NODE_STRICTLY_EQUAL:
             switch(node->get_type())

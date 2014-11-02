@@ -57,6 +57,15 @@ optimization_match_t::optimization_literal_t const g_optimizer_value_identifier_
 };
 
 
+optimization_match_t::optimization_literal_t const g_optimizer_value_max32bit[] =
+{
+    Node::node_t::NODE_BITWISE_AND,
+    "",
+    0xFFFFFFFF,
+    4294967295.0  // mask 0xFFFFFFFF
+};
+
+
 optimization_match_t::optimization_literal_t const g_optimizer_value_nan[] =
 {
     Node::node_t::NODE_EQUAL,
