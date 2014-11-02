@@ -100,6 +100,7 @@ add_library( ${PROJECT_NAME} SHARED
     snap_exception.cpp                          # exception stack backtrack
     snap_expr.cpp                               # snap C-like expression compiler and execution environment
     snap_image.cpp                              # image handling
+    snap_initialize_website.cpp                 # initialize website by sending an Apache-like query to the server
     snap_magic.cpp                              # support for MIME type
     snap_parser.cpp                             # lexer/parser for all our script like entries
     snap_pipe.cpp                               # RAII popen()/pclose() class

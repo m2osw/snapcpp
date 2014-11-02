@@ -262,8 +262,8 @@ private:
 
     getopt_ptr_t                            f_opt;
 
-    std::auto_ptr<snap_listen_thread>       f_listen_runner;
-    std::auto_ptr<snap_thread>              f_listen_thread;
+    std::unique_ptr<snap_listen_thread>     f_listen_runner;
+    std::unique_ptr<snap_thread>            f_listen_thread;
 
 #ifdef SNAP_NO_FORK
     controlled_vars::zbool_t                f_nofork;

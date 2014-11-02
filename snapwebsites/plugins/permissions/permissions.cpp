@@ -106,8 +106,20 @@ char const *get_name(name_t name)
     case SNAP_NAME_PERMISSIONS_GROUPS_PATH:
         return "types/permissions/groups";
 
-    case SNAP_NAME_PERMISSIONS_LINK_BACK:
-        return "permissions::link_back";
+    case SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER:
+        return "permissions::link_back::administer";
+
+    case SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT:
+        return "permissions::link_back::edit";
+
+    case SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP:
+        return "permissions::link_back::group";
+
+    case SNAP_NAME_PERMISSIONS_LINK_BACK_NAMESPACE:
+        return "link_back";
+
+    case SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW:
+        return "permissions::link_back::view";
 
     case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER:
         return "permissions::login_status::spammer";
@@ -1854,7 +1866,7 @@ void permissions::on_backend_action(QString const& action)
                 .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
         bool const source_multi(false);
         links::link_info source(link_name, source_multi, user_ipath.get_key(), user_ipath.get_branch());
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP);
         bool const destination_multi(false);
         links::link_info destination(link_name, destination_multi, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
@@ -1925,7 +1937,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
     //          like the user, doesn't it?
     {
         QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_VIEW));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1934,7 +1946,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
     }
     {
         QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_EDIT));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1943,7 +1955,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
     }
     {
         QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1957,7 +1969,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
                         .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
                         .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
                         .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1972,7 +1984,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
     //      information?
     {
         QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_VIEW));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
@@ -1981,7 +1993,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
     }
     {
         QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_EDIT));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
@@ -1990,7 +2002,7 @@ void permissions::on_user_verified(content::path_info_t& ipath, int64_t identifi
     }
     {
         QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());

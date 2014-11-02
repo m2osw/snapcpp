@@ -3957,8 +3957,14 @@ int64_t content::do_update(int64_t last_updated)
 
 /** \brief First update to run for the content plugin.
  *
- * This function is the first update for the content plugin. It installs
- * the initial index page.
+ * This function is the first update for the content plugin. It creates
+ * the tables.
+ *
+ * \note
+ * We reset the cached pointer to the tables to make sure that they get
+ * synchronized when used for the first time (very first initialization
+ * only, do_update() is not generally called anyway, unless you are a
+ * developer with the debug mode turned on.)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
@@ -3967,9 +3973,19 @@ void content::initial_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     get_content_table();
+    f_content_table.reset();
+
     get_branch_table();
+    f_branch_table.reset();
+
     get_revision_table();
+    f_revision_table.reset();
+
     get_files_table();
+    f_files_table.reset();
+
+    get_processing_table();
+    f_processing_table.reset();
 }
 
 
@@ -7235,6 +7251,17 @@ void content::on_save_content()
         // (unless that field is already defined!)
         path_info_t ipath;
         ipath.set_path(d->f_path);
+
+        // for top level directories, send a trace() in case we are
+        // initializing on a remote machine, it may be slow enough to
+        // make sense to present such
+        QString const cpath(ipath.get_cpath());
+        QStringList const cpath_segments(cpath.split('/'));
+        if(cpath_segments.size() < 3)
+        {
+            f_snap->trace(QString("Saving \"%1\".\n").arg(ipath.get_key()));
+        }
+
         path_info_t::status_t status(ipath.get_status());
         if(status.is_error())
         {
@@ -7430,6 +7457,7 @@ void content::on_save_content()
     // link the nodes together (on top of the parent/child links)
     // this is done as a second step so we're sure that all the source and
     // destination rows exist at the time we create the links
+    f_snap->trace("Generate links between various pages.\n");
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
@@ -7444,6 +7472,7 @@ void content::on_save_content()
     // attachments are pages too, only they require a valid parent to be
     // created and many require links to work (i.e. be assigned a type)
     // so we add them after the basic content and links
+    f_snap->trace("Save attachment to database.\n");
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
     {
@@ -7515,6 +7544,7 @@ void content::on_save_content()
     // once in a while, defaults are not enough; for example the shorturl
     // needs to generate a shorturl, there is no real default other than:
     // that page has no shorturl.)
+    f_snap->trace("Generate missing pages (parents of other pages).\n");
     f_updating = true;
     for(content_block_map_t::iterator d(f_blocks.begin());
             d != f_blocks.end(); ++d)
@@ -7536,7 +7566,7 @@ void content::on_save_content()
                 create_content(ipath, d->f_owner, type_key.mid(pos + 37));
             }
         }
-        // else -- if the path doesn't start with site_key we've got a problem
+        // else -- if the path does not start with site_key we have got a problem
 
         path_info_t ipath;
         ipath.set_path(d->f_path);
@@ -7546,7 +7576,7 @@ void content::on_save_content()
     }
     f_updating = false;
 
-    // we're done with that set of data, release it from memory
+    // we are done with that set of data, release it from memory
     f_blocks.clear();
 }
 

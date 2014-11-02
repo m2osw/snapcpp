@@ -376,6 +376,9 @@ void snapdb::drop_tables(bool all)
         context->dropTable("websites");
         context->dropTable("serverstats");
     }
+
+    // wait until all the tables are 100% dropped
+    context->parentCassandra()->synchronizeSchemaVersions();
 }
 
 

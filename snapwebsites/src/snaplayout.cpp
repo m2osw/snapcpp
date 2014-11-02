@@ -211,39 +211,49 @@ public:
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
-    snap_cassandra  f_cassandra;
 
     // Layout file structure
     //
     struct fileinfo_t
     {
+        fileinfo_t()
+            : f_filetime(0)
+        {
+        }
+
+        fileinfo_t( QString const& fn, QByteArray const& content, time_t const time )
+            : f_filename(fn)
+            , f_content(content)
+            , f_filetime(time)
+        {
+        }
+
         QString    f_filename;
         QByteArray f_content;
         time_t     f_filetime;
-
-        fileinfo_t() : f_filetime(0) {}
-        fileinfo_t( QString const& fn, QByteArray const& content, time_t const time )
-            : f_filename(fn), f_content(content), f_filetime(time) {}
     };
     typedef std::vector<fileinfo_t>   fileinfo_list_t;
-    fileinfo_list_t                   f_fileinfo_list;
-
-    // Common attributes
-    //
-    getopt_ptr_t                    f_opt;
-    controlled_vars::fbool_t        f_verbose;
-    snap_config                     f_parameters;
 
     // Private methods
     //
     QCassandraContext::pointer_t    get_snap_context();
+
+    // Common attributes
+    //
+    snap_config                     f_parameters;
+    snap_cassandra                  f_cassandra;
+    fileinfo_list_t                 f_fileinfo_list;
+    getopt_ptr_t                    f_opt;
+    controlled_vars::fbool_t        f_verbose;
 };
 
 
 snap_layout::snap_layout(int argc, char *argv[])
-    //: f_cassandra() )
+    //: f_parameters() -- auto-init
+    : f_cassandra( f_parameters )
     //, f_fileinfo_list -- auto-init
-    : f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, "SNAPSERVER_OPTIONS" ) )
+    , f_opt( new advgetopt::getopt( argc, argv, g_snaplayout_options, g_configuration_files, "SNAPSERVER_OPTIONS" ) )
+    //, f_verbose(false) -- auto-init
 {
     if( f_opt->is_defined( "help" ) )
     {
@@ -632,7 +642,7 @@ QCassandraContext::pointer_t snap_layout::get_snap_context()
         f_parameters["cassandra_port"] = f_opt->get_string( "port" ).c_str();
     }
 
-    f_cassandra.connect( f_parameters );
+    f_cassandra.connect();
     if( !f_cassandra.is_connected() )
     {
         std::cerr << "error: connecting to cassandra server on host='"

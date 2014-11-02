@@ -1012,8 +1012,8 @@ void server::prepare_qtapp( int argc, char *argv[] )
  */
 void server::prepare_cassandra()
 {
-    snap_cassandra cassandra;
-    cassandra.connect( f_parameters );
+    snap_cassandra cassandra( f_parameters );
+    cassandra.connect();
     cassandra.init_context();
     QtCassandra::QCassandraContext::pointer_t context( cassandra.get_snap_context() );
     Q_ASSERT( context );
@@ -1025,7 +1025,8 @@ void server::prepare_cassandra()
     //
     f_cassandra_host = cassandra.get_cassandra_host();
     f_cassandra_port = cassandra.get_cassandra_port();
-    //
+
+    // setup the server name, this is important for locks
     context->setHostName(f_parameters["server_name"]);
 
     // create missing tables

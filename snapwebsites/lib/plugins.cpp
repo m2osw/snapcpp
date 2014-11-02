@@ -113,7 +113,7 @@ bool load(QString const& plugin_paths, plugin_ptr_t server, QStringList const& l
 // check the lock). And the act of handing it out is indeed sharing it.
 //
 // "However, thinking on it, perhaps instead of a shared_ptr, we really need an
-// auto_ptr, or at least some way of making sure the object really does get
+// unique_ptr, or at least some way of making sure the object really does get
 // destroyed properly (destructor of a main class). Presently destruction is
 // ignored, which isn't a problem for now, but possibly could be if the server,
 // on exit, must restore a shared resource that is used by another process

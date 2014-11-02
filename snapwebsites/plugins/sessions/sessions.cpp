@@ -909,9 +909,28 @@ int64_t sessions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2012, 12, 29, 13, 45, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief First update to run for the sessions plugin.
+ *
+ * This function is the first update for the sessions plugin. It creates
+ * the sessions table.
+ *
+ * \note
+ * We do not cache the sessions table pointer.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ */
+void sessions::initial_update(int64_t variables_timestamp)
+{
+    static_cast<void>(variables_timestamp);
+
+    get_sessions_table();
 }
 
 

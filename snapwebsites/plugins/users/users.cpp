@@ -330,9 +330,28 @@ int64_t users::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
+    SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2014, 7, 7, 2, 9, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
+/** \brief First update to run for the users plugin.
+ *
+ * This function is the first update for the users plugin. It creates
+ * the users table.
+ *
+ * \note
+ * We do not cache the users table pointer.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ */
+void users::initial_update(int64_t variables_timestamp)
+{
+    static_cast<void>(variables_timestamp);
+
+    get_users_table();
 }
 
 

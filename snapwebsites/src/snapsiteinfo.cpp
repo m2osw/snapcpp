@@ -5,8 +5,8 @@
  * Description:
  *      Command line tool to manipulate the snap "sites" table. This can
  *      also be done from the cassview GUI and the snapmanager tool. This
- *      tool allows you to automate certain setups if you need to have
- *      such for your website.
+ *      tool allows you to automate certain setups (i.e. write shell scripts)
+ *      if you need to have such for your websites.
  *
  * License:
  *      Copyright (c) 2012-2014 Made to Order Software Corp.

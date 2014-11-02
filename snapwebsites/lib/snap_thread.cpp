@@ -534,7 +534,7 @@ void snap_thread::snap_lock::unlock()
  *
  * \param[in] name  The name of this thread runner.
  */
-snap_thread::snap_runner::snap_runner(const QString& name)
+snap_thread::snap_runner::snap_runner(QString const& name)
     //: f_mutex() -- auto-init
     //, f_thread(nullptr) -- auto-init
     : f_name(name)
@@ -663,7 +663,7 @@ snap_thread *snap_thread::snap_runner::get_thread() const
  * \param[in] name  The name of the process.
  * \param[in] runner  The runner (the actual thread) to handle.
  */
-snap_thread::snap_thread(const QString& name, snap_runner *runner)
+snap_thread::snap_thread(QString const& name, snap_runner *runner)
     : f_name(name)
     , f_runner(runner)
     //, f_running(false) -- auto-init

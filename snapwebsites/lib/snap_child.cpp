@@ -2579,10 +2579,7 @@ SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(
         canonicalize_options();    // find the language, branch, and revision specified by the user
 
         // finally, "execute" the page being accessed
-        if(!f_is_being_initialized)
-        {
-            execute();
-        }
+        execute();
 
         // we could delete ourselves but really only the socket is an
         // object that needs to get cleaned up properly and it is done
@@ -2826,7 +2823,7 @@ void snap_child::read_environment()
             // #INIT
             if(f_name == "#INIT")
             {
-                // user wants to initialize the database
+                // user wants to initialize a website
                 f_snap->mark_for_initialization();
             }
             else
@@ -2838,9 +2835,9 @@ void snap_child::read_environment()
                     NOTREACHED();
                 }
             }
-            // TODO add support for a version: #START=1.2
+            // TODO add support for a version: #START=1.2 or #INIT=1.2
             //      so that way the server can cleanly "break" if the
-            //      snap.cgi version is not compatible
+            //      snap.cgi or other client version is not compatible
 
             f_started = true;
             f_name.clear();
@@ -3363,6 +3360,8 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
 #endif
     r.run();
     f_has_post = r.has_post();
+
+    trace("#START\n");
 }
 
 
@@ -3545,14 +3544,6 @@ void snap_child::snap_statistics()
  */
 void snap_child::setup_uri()
 {
-    // If the server is being initialized, use a phony URI
-    // which we anyway won't execute
-    if(f_is_being_initialized)
-    {
-        f_uri.set_uri("http://www.example.com/");
-        return;
-    }
-
     // PROTOCOL
     if(f_env.count("HTTPS") == 1)
     {
@@ -3573,7 +3564,9 @@ void snap_child::setup_uri()
     // HOST (domain name including all sub-domains)
     if(f_env.count("HTTP_HOST") != 1)
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "HTTP_HOST is required but not defined in your request.", "HTTP_HOST was not defined in the user request");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                    "HTTP_HOST is required but not defined in your request.",
+                    "HTTP_HOST was not defined in the user request");
         NOTREACHED();
     }
     QString host(f_env["HTTP_HOST"]);
@@ -3585,7 +3578,9 @@ void snap_child::setup_uri()
     }
     if(host.isEmpty())
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "HTTP_HOST is required but is empty in your request.", "HTTP_HOST was defined but there was no domain name");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                    "HTTP_HOST is required but is empty in your request.",
+                    "HTTP_HOST was defined but there was no domain name");
         NOTREACHED();
     }
     f_uri.set_domain(host);
@@ -3593,7 +3588,9 @@ void snap_child::setup_uri()
     // PORT
     if(f_env.count("SERVER_PORT") != 1)
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "", "SERVER_PORT is required but not defined in your request.", "SERVER_PORT was not defined in the user request");
+        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+                    "SERVER_PORT is required but not defined in your request.",
+                    "SERVER_PORT was not defined in the user request");
         NOTREACHED();
     }
     f_uri.set_port(f_env["SERVER_PORT"]);
@@ -3673,19 +3670,19 @@ void snap_child::setup_uri()
     }
     f_uri.set_option("extension", extension);
 
-//fprintf(stderr, "set path to: [%s]\n", f_uri.query_option(qs_path).toUtf8().data());
+//std::cerr << "    set path to: [" << f_uri.query_option(qs_path) << "]\n";
 //
-//fprintf(stderr, "original [%s]\n", f_uri.get_original_uri().toUtf8().data());
-//fprintf(stderr, "uri [%s] + #! [%s]\n", f_uri.get_uri().toUtf8().data(), f_uri.get_uri(true).toUtf8().data());
-//fprintf(stderr, "protocol [%s]\n", f_uri.protocol().toUtf8().data());
-//fprintf(stderr, "full domain [%s]\n", f_uri.full_domain().toUtf8().data());
-//fprintf(stderr, "top level domain [%s]\n", f_uri.top_level_domain().toUtf8().data());
-//fprintf(stderr, "domain [%s]\n", f_uri.domain().toUtf8().data());
-//fprintf(stderr, "sub-domains [%s]\n", f_uri.sub_domains().toUtf8().data());
-//fprintf(stderr, "port [%d]\n", f_uri.get_port());
-//fprintf(stderr, "path [%s] (%s)\n", f_uri.path().toUtf8().data(), qs_path.toUtf8().data());
-//fprintf(stderr, "query string [%s]\n", f_uri.query_string().toUtf8().data());
-//fprintf(stderr, "q=[%s]\n", f_uri.query_option("q").toUtf8().data());
+//std::cerr << "        original [" << f_uri.get_original_uri() << "]\n";
+//std::cerr << "             uri [" << f_uri.get_uri() << "] + #! [" << f_uri.get_uri(true) << "]\n";
+//std::cerr << "        protocol [" << f_uri.protocol() << "]\n";
+//std::cerr << "     full domain [" << f_uri.full_domain() << "]\n";
+//std::cerr << "top level domain [" << f_uri.top_level_domain() << "]\n";
+//std::cerr << "          domain [" << f_uri.domain() << "]\n";
+//std::cerr << "     sub-domains [" << f_uri.sub_domains() << "]\n";
+//std::cerr << "            port [" << f_uri.get_port() << "]\n";
+//std::cerr << "            path [" << f_uri.path() << "] (" << qs_path << ")\n";
+//std::cerr << "    query string [" << f_uri.query_string() << "]\n";
+//std::cerr << "               q=[" << f_uri.query_option("q") << "]\n";
 }
 
 
@@ -3853,13 +3850,6 @@ void snap_child::canonicalize_domain()
         NOTREACHED();
     }
 
-    if(f_is_being_initialized)
-    {
-        // the URI is phony anyway, accept it as is
-        f_website_key = f_domain_key;
-        return;
-    }
-
     // get the core::rules
     QtCassandra::QCassandraValue value(table->row(f_domain_key)->cell(QString(get_name(SNAP_NAME_CORE_RULES)))->value());
     if(value.nullValue())
@@ -4025,15 +4015,6 @@ void snap_child::canonicalize_website()
         // this website doesn't exist; i.e. that's a 404
         die(HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_website_key + "\" which was not defined as a website.");
         NOTREACHED();
-    }
-
-    if(f_is_being_initialized)
-    {
-        // the URI is phony anyway, accept it as is
-        f_site_key = "http://www.example.com/";
-        f_original_site_key = f_site_key;
-        f_site_key_with_slash = f_site_key;
-        return;
     }
 
     // get the core::rules
@@ -5198,7 +5179,7 @@ QString snap_child::cookie(const QString& name) const
  *
  * \return The URL matching the calling convention.
  */
-QString snap_child::snap_url(const QString& url) const
+QString snap_child::snap_url(QString const& url) const
 {
     if(snapenv("CLEAN_SNAP_URL") == "1")
     {
@@ -5525,6 +5506,51 @@ bool snap_child::empty_output() const
 }
 
 
+/** \brief Trace in case we are initializing the website.
+ *
+ * While initializing (when a request was sent using #INIT instead of
+ * #START) then we immediately send data back using the trace() functions.
+ *
+ * \param[in] data  The data to send to the listener.
+ *                  Generally a printable string.
+ */
+void snap_child::trace(QString const& data)
+{
+    trace(std::string(data.toUtf8().data()));
+}
+
+
+/** \brief Trace in case we are initializing the website.
+ *
+ * While initializing (when a request was sent using #INIT instead of
+ * #START) then we immediately send data back using the trace() functions.
+ *
+ * \param[in] data  The data to send to the listener.
+ *                  Generally a printable string.
+ */
+void snap_child::trace(std::string const& data)
+{
+    if(f_is_being_initialized)
+    {
+        write(data.c_str(), data.size());
+    }
+}
+
+
+/** \brief Trace in case we are initializing the website.
+ *
+ * While initializing (when a request was sent using #INIT instead of
+ * #START) then we immediately send data back using the trace() functions.
+ *
+ * \param[in] data  The data to send to the listener.
+ *                  Generally a printable string.
+ */
+void snap_child::trace(char const *data)
+{
+    trace(std::string(data));
+}
+
+
 /** \brief Generate an HTTP error and exit the child process.
  *
  * This function kills the child process after sending an HTTP
@@ -5568,58 +5594,67 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
         // log the error
         SNAP_LOG_FATAL("snap child process: ")(err_details)(" (")(static_cast<int>(err_code))(" ")(err_name)(": ")(err_description)(")");
 
-        // On error we do not return the HTTP protocol, only the Status field
-        // it just needs to be first to make sure it works right
-        set_header("Status", QString("%1 %2\n")
-                .arg(static_cast<int>(err_code))
-                .arg(err_name));
-
-        // content type is HTML, we reset this header because it could have
-        // been changed to something else and prevent the error from showing
-        // up in the browser
-        set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
-
-        // Generate the signature
-        server::pointer_t server( f_server.lock() );
-        if(!server)
+        if(f_is_being_initialized)
         {
-            throw snap_logic_exception("server pointer is nullptr");
+            // send initialization process the info about the error
+            trace(QString("Error: die() called: %1 (%2 %3: %4)\n").arg(err_details).arg(static_cast<int>(err_code)).arg(err_name).arg(err_description));
+            trace("#END\n");
         }
-
-        QString signature;
-        QString const site_key(get_site_key());
-        if(f_cassandra)
+        else
         {
-            // TODO: the description could also come from a user defined page
-            //       so that way it can get translated (only for some
-            //       4XX errors though)
+            // On error we do not return the HTTP protocol, only the Status field
+            // it just needs to be first to make sure it works right
+            set_header("Status", QString("%1 %2\n")
+                    .arg(static_cast<int>(err_code))
+                    .arg(err_name));
 
-            QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
-            signature = QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue());
-            server->improve_signature(f_uri.path(), signature);
+            // content type is HTML, we reset this header because it could have
+            // been changed to something else and prevent the error from showing
+            // up in the browser
+            set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
+
+            // Generate the signature
+            server::pointer_t server( f_server.lock() );
+            if(!server)
+            {
+                throw snap_logic_exception("server pointer is nullptr");
+            }
+
+            QString signature;
+            QString const site_key(get_site_key());
+            if(f_cassandra)
+            {
+                // TODO: the description could also come from a user defined page
+                //       so that way it can get translated (only for some
+                //       4XX errors though)
+
+                QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
+                signature = QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue());
+                server->improve_signature(f_uri.path(), signature);
+            }
+            else if(!site_key.isEmpty())
+            {
+                signature = QString("<a href=\"%1\">%1</a>").arg(site_key);
+                server->improve_signature(f_uri.path(), signature);
+            }
+            // else -- no signature...
+
+            // HTML output
+            QString const html(QString("<html><head>"
+                            "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
+                            "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
+                            "<title>Snap Server Error</title>"
+                            "</head>"
+                            "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
+                    .arg(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
+                    .arg(static_cast<int>(err_code))
+                    .arg(err_name)
+                    .arg(err_description)
+                    .arg(signature));
+
+            // in case there are any cookies, send them along too
+            output_result(HEADER_MODE_ERROR, html.toUtf8());
         }
-        else if(!site_key.isEmpty())
-        {
-            signature = QString("<a href=\"%1\">%1</a>").arg(site_key);
-            server->improve_signature(f_uri.path(), signature);
-        }
-        // else -- no signature...
-
-        // HTML output
-        QString const html(QString("<html><head>"
-                        "<meta http-equiv=\"%1\" content=\"text/html; charset=utf-8\"/>"
-                        "<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\"/>"
-                        "<title>Snap Server Error</title>"
-                        "</head>"
-                        "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
-                .arg(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
-                .arg(static_cast<int>(err_code))
-                .arg(err_name)
-                .arg(err_description)
-                .arg(signature));
-
-        // in case there are any cookies, send them along too
-        output_result(HEADER_MODE_ERROR, html.toUtf8());
     }
     catch(...)
     {
@@ -6001,7 +6036,6 @@ void snap_child::output_headers(header_mode_t modes)
     {
         // If status is defined, it should not be 200
         write((f_header["status"].f_header + "\n").toLatin1().data());
-//printf("%s", (f_header["status"] + "\n").toLatin1().data());
     }
 
     // Now output all the other headers except the cookies
@@ -6012,7 +6046,6 @@ void snap_child::output_headers(header_mode_t modes)
         if((it.value().f_modes & modes) != 0 && it.key() != "status")
         {
             write((it.value().f_header + "\n").toLatin1().data());
-//printf("%s", (it.value().f_header + "\n").toLatin1().data());
         }
     }
 
@@ -6334,6 +6367,8 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
             //       function itself.
             if(p != nullptr) // && p->last_modification() > plugin_threshold)
             {
+                trace("Updating plugin \"" + plugin_name + "\"\n");
+
                 // the plugin changed, we want to call do_update() on it!
                 if(p->last_modification() > new_plugin_threshold)
                 {
@@ -6341,7 +6376,7 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
                 }
                 // run the updates as required
                 // we have a date/time for each plugin since each has
-                // it's own list of date/time checks
+                // its own list of date/time checks
                 QString const specific_param_name(QString("%1::%2").arg(core_last_updated).arg(plugin_name));
                 QtCassandra::QCassandraValue specific_last_updated(get_site_parameter(specific_param_name));
                 if(specific_last_updated.nullValue())
@@ -6407,7 +6442,9 @@ void snap_child::finish_update()
         {
             throw snap_logic_exception("server pointer is nullptr");
         }
+        trace("Save content in database.\n");
         server->save_content();
+        trace("Initialization content now saved in database.\n");
     }
 }
 
@@ -6668,8 +6705,21 @@ void snap_child::execute()
         NOTREACHED();
     }
 
-    // created a page, output it now
-    output_result(HEADER_MODE_NO_ERROR, f_output.buffer());
+    if(f_is_being_initialized)
+    {
+        trace("Initialization succeeded.\n");
+        trace("#END\n");
+
+        // TODO: should we also sent the headers and output buffer?
+        //       we could send that righ after the #END mark
+        //       (this could be done by removing the if/else so the
+        //       output_result() function gets called either way!)
+    }
+    else
+    {
+        // created a page, output it now
+        output_result(HEADER_MODE_NO_ERROR, f_output.buffer());
+    }
 }
 
 

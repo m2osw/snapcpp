@@ -186,6 +186,7 @@ char const *get_name(name_t name)
 list::list()
     //: f_snap(nullptr) -- auto-init
     //, f_list_table(nullptr) -- auto-init
+    //, f_listref_table(nullptr) -- auto-init
     //, f_check_expressions() -- auto-init
     //, f_item_key_expressions() -- auto-init
     //, f_ping_backend(false) -- auto-init
@@ -281,7 +282,13 @@ int64_t list::do_update(int64_t last_updated)
 /** \brief First update to run for the list plugin.
  *
  * This function is the first update for the list plugin. It creates
- * the list table.
+ * the list and listref tables.
+ *
+ * \note
+ * We reset the cached pointer to the tables to make sure that they get
+ * synchronized when used for the first time (very first initialization
+ * only, do_update() is not generally called anyway, unless you are a
+ * developer with the debug mode turned on.)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
@@ -290,7 +297,10 @@ void list::initial_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     get_list_table();
+    f_list_table.reset();
+
     get_listref_table();
+    f_listref_table.reset();
 }
 
 

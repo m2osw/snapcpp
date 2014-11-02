@@ -290,7 +290,7 @@ void favicon::on_process_form_post(content::path_info_t& ipath, sessions::sessio
 		// TODO: this "...::direct::action::..." is probably not correct
         QString const source_link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER));
         bool const source_unique(false);
-        QString const destination_link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const destination_link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
         bool const destination_unique(false);
         links::link_info source(source_link_name, source_unique, spath.get_key(), spath.get_branch());
         links::link_info destination(destination_link_name, destination_unique, dpath.get_key(), dpath.get_branch());

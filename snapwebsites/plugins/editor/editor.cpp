@@ -493,7 +493,7 @@ void editor::process_new_draft()
     {
         QString const link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_ACTION_EDIT));
         bool const source_unique(false);
-        QString const link_to(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LINK_BACK));
+        QString const link_to(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
         bool const destination_unique(false);
         content::path_info_t type_ipath;
         // TBD -- should this includes the type of page?

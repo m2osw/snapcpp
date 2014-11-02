@@ -163,8 +163,14 @@ int64_t shorturl::do_update(int64_t last_updated)
 
 /** \brief First update to run for the shorturl plugin.
  *
- * This function is the first update for the shorturl plugin. It installs
- * the initial index page.
+ * This function is the first update for the shorturl plugin. It creates
+ * the shorturl table.
+ *
+ * \note
+ * We reset the cached pointer to the table to make sure that they get
+ * synchronized when used for the first time (very first initialization
+ * only, do_update() is not generally called anyway, unless you are a
+ * developer with the debug mode turned on.)
  *
  * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
  */
@@ -173,6 +179,7 @@ void shorturl::initial_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     get_shorturl_table();
+    f_shorturl_table.reset();
 }
 
 

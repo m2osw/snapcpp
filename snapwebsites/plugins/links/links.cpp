@@ -723,6 +723,12 @@ int64_t links::do_update(int64_t last_updated)
  * the initial data required by the links plugin. Especially, it creates
  * the links table.
  *
+ * \note
+ * We reset the cached pointer to the table to make sure that they get
+ * synchronized when used for the first time (very first initialization
+ * only, do_update() is not generally called anyway, unless you are a
+ * developer with the debug mode turned on.)
+ *
  * \param[in] variables_timestamp  The timestamp for all the variables added
  *                        to the database by this update (in micro-seconds).
  */
@@ -731,8 +737,8 @@ void links::initial_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     // read the links table to create it
-    // as we are at it, we can always save it in our f_links_table
-    f_links_table = get_links_table();
+    get_links_table();
+    f_links_table.reset();
 }
 
 

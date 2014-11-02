@@ -180,7 +180,8 @@ public:
     QString                 get_from_session(session_info const& info, QString const& name);
 
 private:
-    void content_update(int64_t variables_timestamp);
+    void                    initial_update(int64_t variables_timestamp);
+    void                    content_update(int64_t variables_timestamp);
 
     QtCassandra::QCassandraTable::pointer_t get_sessions_table();
 

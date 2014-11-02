@@ -31,9 +31,9 @@ namespace snap
 class snap_cassandra
 {
 public:
-    snap_cassandra();
+                    snap_cassandra( snap_config const& parameters );
 
-    void            connect( snap_config const& config );
+    void            connect();
     void            init_context();
     QtCassandra::QCassandraContext::pointer_t get_snap_context();
 
@@ -42,9 +42,10 @@ public:
     bool            is_connected() const;
 
 private:
-    QtCassandra::QCassandra::pointer_t f_cassandra;
-    QString                            f_cassandra_host;
-    controlled_vars::zint32_t          f_cassandra_port;
+    QtCassandra::QCassandra::pointer_t  f_cassandra;
+    QString                             f_cassandra_host;
+    controlled_vars::zint32_t           f_cassandra_port;
+    snap_config const&                  f_parameters;
 };
 
 

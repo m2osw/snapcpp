@@ -31,6 +31,10 @@ ${BINDIR}/snaplayout ${LAYOUTDIR}/white/white_layout.zip
 ${BINDIR}/snapserver --no-log -c ${CONFIGFILE} --add-host
 
 # TODO: add ability in snapserver to init the website from command-line
+#       the library now has that capability, we need a command line
+#       tool to run it, but it cannot really be here for websites, only
+#       for the sites table... (not much help really!) and the server
+#       needs to be running by itself (without backends)
 
 # To setup the bare theme
 # (but we cannot run it at this point yet because the database was not

@@ -18,6 +18,7 @@
 #include "tcp_client_server.h"
 
 #include <sstream>
+#include <iostream>
 
 #include <string.h>
 #include <unistd.h>
@@ -181,18 +182,77 @@ int tcp_client::get_port() const
     return f_port;
 }
 
-/** \brief Get the TCP client address.
+/** \brief Get the TCP server address.
  *
- * This function returns the address used when creating the TCP address.
+ * This function returns the address used when creating the TCP address as is.
  * Note that this is the address of the server where the client is connected
  * and not the address where the client is running (although it may be the
  * same.)
+ *
+ * Use the get_socket_name() function to retrieve the client's TCP address.
  *
  * \return The TCP client address.
  */
 std::string tcp_client::get_addr() const
 {
     return f_addr;
+}
+
+/** \brief Get the TCP client port.
+ *
+ * This function retrieve the port of the client (used on your computer).
+ * This is retrieved from the socket using the getsockname() function.
+ *
+ * \return The port.
+ */
+int tcp_client::get_client_port() const
+{
+    struct sockaddr addr;
+    socklen_t len(sizeof(addr));
+    getsockname(f_socket, &addr, &len);
+    // Note: I know the port is at the exact same location in both
+    //       structures in Linux but it could change on other Unices
+    if(addr.sa_family == AF_INET)
+    {
+        // IPv4
+        return reinterpret_cast<sockaddr_in *>(&addr)->sin_port;
+    }
+    if(addr.sa_family == AF_INET6)
+    {
+        // IPv6
+        return reinterpret_cast<sockaddr_in6 *>(&addr)->sin6_port;
+    }
+    return -1;
+}
+
+/** \brief Get the TCP client address.
+ *
+ * This function retrieve the IP address of the client (your computer).
+ * This is retrieved from the socket using the getsockname() function.
+ *
+ * \return The IP address as a string.
+ */
+std::string tcp_client::get_client_addr() const
+{
+    struct sockaddr addr;
+    socklen_t len(sizeof(addr));
+    getsockname(f_socket, &addr, &len);
+    char buf[BUFSIZ];
+    switch(addr.sa_family)
+    {
+    case AF_INET:
+        inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in *>(&addr)->sin_addr, buf, sizeof(buf));
+        break;
+
+    case AF_INET6:
+        inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 *>(&addr)->sin6_addr, buf, sizeof(buf));
+        break;
+
+    default:
+        return "unknown.address.family";
+
+    }
+    return buf;
 }
 
 /** \brief Read data from the socket.

@@ -372,6 +372,9 @@ public:
     void                        output(wchar_t const *data);
     bool                        empty_output() const;
     void                        output_result(header_mode_t mode, QByteArray output_data);
+    void                        trace(QString const& data);
+    void                        trace(std::string const& data);
+    void                        trace(char const *data);
 
     void                        udp_ping(char const *name, char const *message = "PING");
 

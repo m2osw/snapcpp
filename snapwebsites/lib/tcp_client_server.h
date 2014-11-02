@@ -17,6 +17,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <memory>
 
 #include <arpa/inet.h>
 
@@ -46,12 +47,16 @@ public:
 class tcp_client
 {
 public:
+    typedef std::shared_ptr<tcp_client>     pointer_t;
+
                         tcp_client(std::string const& addr, int port);
                         ~tcp_client();
 
     int                 get_socket() const;
     int                 get_port() const;
+    int                 get_client_port() const;
     std::string         get_addr() const;
+    std::string         get_client_addr() const;
 
     int                 read(char *buf, size_t size);
     int                 read_line(std::string& line);
@@ -67,6 +72,8 @@ private:
 class tcp_server
 {
 public:
+    typedef std::shared_ptr<tcp_server>     pointer_t;
+
     static int const    MAX_CONNECTIONS = 50;
 
                         tcp_server(std::string const& addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
@@ -79,7 +86,7 @@ public:
     bool                get_keepalive() const;
 
     void                keepalive(bool yes = true);
-    int                 accept( const int max_wait_ms = -1 );
+    int                 accept( int const max_wait_ms = -1 );
     int                 get_last_accepted_socket() const;
 
 private:

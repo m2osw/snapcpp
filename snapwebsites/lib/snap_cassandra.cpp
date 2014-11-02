@@ -30,23 +30,24 @@ namespace snap
 {
 
 
-snap_cassandra::snap_cassandra()
+snap_cassandra::snap_cassandra( snap_config const& parameters )
+    : f_parameters(parameters)
 {
     // empty
 }
 
-void snap_cassandra::connect( snap_config const& config )
+void snap_cassandra::connect()
 {
     // This function connects to the Cassandra database, but it doesn't
     // keep the connection. We are the server and the connection would
     // not be shared properly between all the children.
-    f_cassandra_host = config["cassandra_host"];
+    f_cassandra_host = f_parameters["cassandra_host"];
     if(f_cassandra_host.isEmpty())
     {
         f_cassandra_host = "localhost";
     }
     //
-    QString port_str( config["cassandra_port"] );
+    QString port_str( f_parameters["cassandra_port"] );
     if(port_str.isEmpty())
     {
         port_str = "9160";
@@ -66,15 +67,15 @@ void snap_cassandra::connect( snap_config const& config )
 
     // TODO:
     // We must stay "alive" waiting for the cassandra server to come up.
-    // This takes entries into the configuration file:
+    // This takes entries into the f_parameters file:
     // wait_interval and wait_max_tries.
     //
-    int wait_interval(config["wait_interval"].toInt());
+    int wait_interval(f_parameters["wait_interval"].toInt());
     if(wait_interval < 5)
     {
         wait_interval = 5;
     }
-    int wait_max_tries(config["wait_max_tries"].toInt());
+    int wait_max_tries(f_parameters["wait_max_tries"].toInt());
     f_cassandra = QtCassandra::QCassandra::create();
     Q_ASSERT(f_cassandra);
     while( !f_cassandra->connect(f_cassandra_host, f_cassandra_port) )
@@ -109,10 +110,79 @@ void snap_cassandra::init_context()
     QtCassandra::QCassandraContext::pointer_t context( get_snap_context() );
     if( !context )
     {
-        const QString context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
+        // create a new context
+        QString const context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
+        SNAP_LOG_INFO("Creating \"")(context_name)("\"...");
         context = f_cassandra->context(context_name);
-        context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
-        context->setReplicationFactor(1);
+
+        // this is the default for contexts, but just in case we were
+        // to change that default at a later time...
+        context->setDurableWrites(true);
+
+        // TODO: add support for replications defined as a % so if we
+        //       discover 10 nodes, we user 5 when replication is 50%
+        //       (however, once set, we do not change this number...)
+        int rep(3);
+        QString replication(f_parameters["cassandra_replication"]);
+        if(!replication.isEmpty())
+        {
+            bool ok(false);
+            rep = replication.toInt(&ok);
+            if(!ok)
+            {
+                SNAP_LOG_ERROR("unknown replication \"")(replication)("\", falling back to \"3\"");
+                rep = 3;
+                replication = "3";
+            }
+        }
+
+        // for developers testing with a few nodes in a single data center,
+        // SimpleStrategy is good enough; for anything larger ("a real
+        // cluster",) it won't work right
+        QString const strategy(f_parameters["cassandra_strategy"]);
+        if(strategy == "simple")
+        {
+            context->setStrategyClass("org.apache.cassandra.locator.SimpleStrategy");
+
+            // for simple strategy, use the replication_factor parameter
+            // (see http://www.datastax.com/documentation/cql/3.0/cql/cql_reference/create_keyspace_r.html)
+            context->setReplicationFactor(rep);
+        }
+        else
+        {
+            if(strategy == "local")
+            {
+                context->setStrategyClass("org.apache.cassandra.locator.LocalStrategy");
+            }
+            else
+            {
+                if(!strategy.isEmpty() && strategy != "network")
+                {
+                    SNAP_LOG_ERROR("unknown strategy \"")(strategy)("\", falling back to \"network\"");
+                }
+                context->setStrategyClass("org.apache.cassandra.locator.NetworkTopologyStrategy");
+            }
+
+            // here each data center gets a replication factor
+            QString const data_centers(f_parameters["cassandra_data_centers"]);
+            QStringList const names(data_centers.split(','));
+            bool found(false);
+            int const max_names(names.size());
+            for(int idx(0); idx < max_names; ++idx)
+            {
+                // remove all spaces in each name
+                QString const name(names[idx].simplified());
+                if(!name.isEmpty())
+                {
+                    context->setDescriptionOption(name, replication);
+                    found = true;
+                }
+            }
+            if(!found)
+            {
+                SNAP_LOG_FATAL("the list of data centers is required when creating a context in a cluster which is not using \"simple\" as its strategy");
+            }
+        }
         context->create();
         // we don't put the tables in here so we can call the create_table()
         // and have the tables created as required (i.e. as we add new ones

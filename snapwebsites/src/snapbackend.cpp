@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
         // prepare the database
         s->prepare_cassandra();
 
-        // listen to connections
+        // run backends
         s->backend();
 
         exitval = 0;
