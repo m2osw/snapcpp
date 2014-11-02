@@ -1,5 +1,5 @@
 Source: thrift
-Section: devel
+Section: libs
 Priority: extra
 Build-Depends: debhelper (>= 5), build-essential, cmake (>= 2.8.0),
     autoconf, automake, pkg-config, libtool, bison, flex, libboost-dev | libboost1.40-bin,
@@ -14,6 +14,7 @@ XS-Python-Version: >= 2.4
 
 Package: thrift-compiler
 Architecture: any
+Section: devel
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Compiler for Thrift definition files
  Thrift is a software framework for scalable cross-language services
@@ -26,6 +27,7 @@ Description: Compiler for Thrift definition files
 
 Package: libthrift0
 Architecture: any
+Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Thrift C++ library
  Thrift is a software framework for scalable cross-language services

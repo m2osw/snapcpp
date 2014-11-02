@@ -2,15 +2,16 @@ Source: libtld
 Priority: optional
 Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: debhelper, cmake, libqt4-dev (>= 4.8.3), doxygen, graphviz,
-    snapcmakemodules (>= 1.0.23.49~trusty), libboost-dev | libboost1.49-dev
+    snapcmakemodules (>= 1.0.23.54~trusty), libboost-dev | libboost1.49-dev
 Standards-Version: 3.9.4
-Section: devel
+Section: libs
 Homepage: http://snapwebsites.org/project/libtld
 Vcs-Git: git://git.code.sf.net/p/snapcpp/code
 Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/libtld
 
 Package: libtld
 Architecture: any
+Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: C/C++ library used to verify domain names by extracting their TLD
  Runtime library of the libtld project.
@@ -26,6 +27,7 @@ Description: C/C++ library used to verify domain names by extracting their TLD
 
 Package: libtld-dev
 Architecture: any
+Section: libdevel
 Depends: libtld (= ${binary:Version}), ${misc:Depends}
 Description: C/C++ library used to verify domain names by extracting their TLD
  Development files (header and static library.)
@@ -41,6 +43,7 @@ Description: C/C++ library used to verify domain names by extracting their TLD
 
 Package: libtld-doc
 Architecture: all
+Section: doc
 Depends: ${misc:Depends}
 Description: C/C++ library used to verify domain names by extracting their TLD
  Documentation on how to use the libtld library.
