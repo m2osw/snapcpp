@@ -12,10 +12,10 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/libQtSerializa
 Package: libqtserialization-dev
 Section: libdevel
 Architecture: any
-Depends: libqtserialization (= ${binary:Version}), ${misc:Depends}
+Depends: libqtserialization (= ${binary:Version}), ${misc:Depends}, libqt4-dev, libthrift-dev
 Description: Serialization Made Easy with Qt
  The libQtSerialization library is a Qt extension that makes it really easy to
- serialize your data in a forward and backward compatible way1.
+ serialize your data in a forward and backward compatible way.
  The library is composed of two sides: the QWriter which helps you serialize
  data, and the QReader that helps you unserialize data.
  The writer is quiet straight forward. Pretty much, all you have to do is call
@@ -23,6 +23,8 @@ Description: Serialization Made Easy with Qt
  The reader is a little more complex so the serialization can support special
  cases, especially sub-classes (so you can save a tree of classes) and array of
  classes (your tree may be composed of multiple instances of a given object.)
+ .
+ This is the development package.
 
 Package: libqtserialization-doc
 Section: doc
@@ -37,6 +39,8 @@ Description: Serialization Made Easy with Qt
  The reader is a little more complex so the serialization can support special
  cases, especially sub-classes (so you can save a tree of classes) and array of
  classes (your tree may be composed of multiple instances of a given object.)
+ .
+ This is the documentation package.
 
 Package: libqtserialization
 Section: libs
@@ -52,5 +56,7 @@ Description: Serialization Made Easy with Qt
  The reader is a little more complex so the serialization can support special
  cases, especially sub-classes (so you can save a tree of classes) and array of
  classes (your tree may be composed of multiple instances of a given object.)
+ .
+ This is the runtime package.
 
 # vim: ts=4 sw=4 et

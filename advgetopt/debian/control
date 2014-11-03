@@ -14,7 +14,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/advgetopt/
 Package: libadvgetopt-dev
 Section: libdevel
 Architecture: any
-Depends: libadvgetopt (= ${binary:Version}), ${misc:Depends}
+Depends: libadvgetopt (= ${binary:Version}), ${misc:Depends}, libcontrolledvars-dev
 Description: Development package for AdvGetOpt library.
  Provides the advgetopt::getopt class, which parses command line options (from
  argc/argv). It is very advanced and is capable to read many different

@@ -14,7 +14,7 @@ Vcs-Browser: http://sourceforge.net/p/snapcpp/code/ci/master/tree/libQtCassandra
 Package: libqtcassandra-dev
 Section: libdevel
 Architecture: any
-Depends: libqtcassandra (= ${binary:Version}), ${misc:Depends}
+Depends: libqtcassandra (= ${binary:Version}), ${misc:Depends}, libqt4-dev, libcontrolledvars-dev
 Description: C++ bindings to the Cassandra database server.
  The libQtCassandra library is an advanced C++ library used to access Cassandra
  servers in C++.
