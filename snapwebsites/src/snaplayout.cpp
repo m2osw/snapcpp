@@ -101,6 +101,14 @@ namespace
             advgetopt::getopt::optional_argument
         },
         {
+            'x',
+            advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
+            "extract",
+            nullptr,
+            "extract a file from the specified layout and filename",
+            advgetopt::getopt::no_argument
+        },
+        {
             'h',
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "host",
@@ -208,6 +216,7 @@ public:
     void load_image(QString const& filename, QByteArray const& content, QString& row_name);
     void set_theme();
     void remove_theme();
+    void extract_file();
 
 private:
     typedef std::shared_ptr<advgetopt::getopt>    getopt_ptr_t;
@@ -276,6 +285,12 @@ snap_layout::snap_layout(int argc, char *argv[])
             exit(1);
             /*NOTREACHED*/
         }
+        if( f_opt->is_defined( "extract" ) )
+        {
+            std::cerr << "usage: snaplayout --extract <layout name> <filename>" << std::endl;
+            exit(1);
+            /*NOTREACHED*/
+        }
         if( f_opt->is_defined( "remove-theme" ) )
         {
             std::cerr << "usage: snaplayout --remove-theme <layout name>" << std::endl;
@@ -287,7 +302,8 @@ snap_layout::snap_layout(int argc, char *argv[])
         /*NOTREACHED*/
     }
     if(!f_opt->is_defined("set-theme")
-    && !f_opt->is_defined("remove-theme"))
+    && !f_opt->is_defined("remove-theme")
+    && !f_opt->is_defined("extract"))
     {
         for( int idx(0); idx < f_opt->size( "--" ); ++idx )
         {
@@ -828,6 +844,11 @@ void snap_layout::add_files()
             exit(1);
         }
 
+        if(f_verbose && cell_name != filename)
+        {
+            std::cout << "info: saving file \"" << filename << "\" in field \"" << cell_name << "\"." << std::endl;
+        }
+
         table->row(row_name)->cell(cell_name)->setValue(content);
 
         // set last modification time
@@ -943,7 +964,7 @@ void snap_layout::remove_theme()
 
     if(!table->row(row_name)->exists("theme"))
     {
-        std::cerr << "warning: it looks like the \"" << row_name << "\" layout did not exist (no \"theme\" found)." << std::endl;
+        std::cerr << "warning: it looks like the \"" << row_name << "\" layout does not exist (no \"theme\" found)." << std::endl;
     }
 
     // drop the entire row; however, remember that does not really delete
@@ -953,6 +974,84 @@ void snap_layout::remove_theme()
     if(f_verbose)
     {
         std::cout << "info: theme \"" << row_name << "\" dropped." << std::endl;
+    }
+}
+
+
+void snap_layout::extract_file()
+{
+    auto const arg_count( f_opt->size("--") );
+    if( arg_count != 2 )
+    {
+        std::cerr << "error: the --extract command expects 2 arguments: layout name and filename. Got " << arg_count << " at this point." << std::endl;
+        exit(1);
+    }
+
+    QCassandraContext::pointer_t context( get_snap_context() );
+
+    QCassandraTable::pointer_t table(context->findTable("layout"));
+    if(!table)
+    {
+        std::cerr << "warning: \"layout\" table not found. If you do not yet have a layout table then no theme files can be extracted." << std::endl;
+        exit(1);
+    }
+
+    QString const row_name( f_opt->get_string( "--", 0 ).c_str() );
+    if(!table->exists(row_name))
+    {
+        std::cerr << "warning: \"" << row_name << "\" layout not found." << std::endl;
+        exit(1);
+    }
+
+    if(!table->row(row_name)->exists("theme"))
+    {
+        std::cerr << "warning: it looks like the \"" << row_name << "\" layout does not fully exist (no \"theme\" found)." << std::endl;
+        // try to continue anyway
+    }
+
+    QtCassandra::QCassandraRow::pointer_t row(table->row(row_name));
+
+    QString const filename( f_opt->get_string( "--", 1 ).c_str() );
+    int const slash_pos(filename.lastIndexOf('/'));
+    QString basename;
+    if(slash_pos != -1)
+    {
+        basename = filename.mid(slash_pos + 1);
+    }
+    else
+    {
+        basename = filename;
+    }
+    if(!row->exists(basename))
+    {
+        int const extension_pos(basename.lastIndexOf('.'));
+        if(extension_pos > 0)
+        {
+            basename = basename.mid(0, extension_pos);
+        }
+        if(!row->exists(basename))
+        {
+            std::cerr << "error: file \"" << filename << "\" does not exist in this layout." << std::endl;
+            exit(1);
+        }
+    }
+
+    // TODO: if we reach here, the cell may have been dropped earlier...
+    QtCassandra::QCassandraValue value(row->cell(basename)->value());
+
+    {
+        QFile output(filename);
+        if(!output.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        {
+            std::cerr << "error: could not create file \"" << filename << "\" to write the data." << std::endl;
+            exit(1);
+        }
+        output.write(value.binaryValue());
+    }
+
+    if(f_verbose)
+    {
+        std::cout << "info: extracted \"" << basename << "\" from theme \"" << row_name << "\" and saved the result in \"" << filename << "\"." << std::endl;
     }
 }
 
@@ -968,6 +1067,10 @@ void snap_layout::run()
     else if( f_opt->is_defined( "remove-theme" ) )
     {
         remove_theme();
+    }
+    else if( f_opt->is_defined( "extract" ) )
+    {
+        extract_file();
     }
     else
     {

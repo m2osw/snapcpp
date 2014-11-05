@@ -17,6 +17,7 @@
 
 #include "sendmail.h"
 
+#include "../content/content.h"
 #include "../output/output.h"
 #include "../users/users.h"
 
@@ -1715,6 +1716,23 @@ void sendmail::on_backend_action(QString const& action)
  */
 void sendmail::process_emails()
 {
+    {
+        // clear some caches so things work better in the long run
+        users::users *users_plugin(users::users::instance());
+        QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+        users_table->clearCache();
+
+        content::content *content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+        content_table->clearCache();
+
+        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+        branch_table->clearCache();
+
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        revision_table->clearCache();
+    }
+
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     QtCassandra::QCassandraRow::pointer_t row(table->row(get_name(SNAP_NAME_SENDMAIL_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -1738,7 +1756,7 @@ void sendmail::process_emails()
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
             QtCassandra::QCassandraCell::pointer_t cell(*c);
-            const QtCassandra::QCassandraValue value(cell->value());
+            QtCassandra::QCassandraValue const value(cell->value());
             if(!value.nullValue())
             {
                 email e;
@@ -1775,7 +1793,7 @@ void sendmail::process_emails()
  */
 void sendmail::attach_email(const email& e)
 {
-    QString to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
+    QString const to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
 
     // transform To: ... in a list of emails
     tld_email_list list;
@@ -1790,7 +1808,7 @@ void sendmail::attach_email(const email& e)
     QtCassandra::QCassandraRow::pointer_t lists(table->row(get_name(SNAP_NAME_SENDMAIL_LISTS)));
 
     // read all the emails
-    const QString& site_key(e.get_site_key());
+    QString const& site_key(e.get_site_key());
     tld_email_list::tld_email_t m;
     bool is_list(false);
     while(list.next(m))
@@ -1873,7 +1891,7 @@ void sendmail::attach_user_email(const email& e)
     // TBD: would we need to have a lock to test whether the user
     //      exists? since we're not about to add it ourselves, I
     //      do not think it is necessary
-    QString to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
+    QString const to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
     if(list.parse(to.toStdString(), 0) != TLD_RESULT_SUCCESS)
     {
@@ -1885,7 +1903,7 @@ void sendmail::attach_user_email(const email& e)
     {
         throw sendmail_exception_invalid_argument("To: field does not include at least one email");
     }
-    QString key(m.f_email_only.c_str());
+    QString const key(m.f_email_only.c_str());
     QtCassandra::QCassandraRow::pointer_t row(table->row(key));
     QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
@@ -1924,7 +1942,7 @@ void sendmail::attach_user_email(const email& e)
         freq_value = users_table->row(key)->cell(get_name(SNAP_NAME_SENDMAIL_FREQUENCY))->value();
     }
 
-    const char *immediate(get_name(SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE));
+    char const *immediate(get_name(SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE));
     QString frequency(immediate);
     if(!freq_value.nullValue())
     {
@@ -1967,7 +1985,7 @@ void sendmail::attach_user_email(const email& e)
         unix_date = mkgmtime(&t);
     }
 
-    QString index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(key));
+    QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(key));
 
     QtCassandra::QCassandraValue index_value;
     const char *index(get_name(SNAP_NAME_SENDMAIL_INDEX));

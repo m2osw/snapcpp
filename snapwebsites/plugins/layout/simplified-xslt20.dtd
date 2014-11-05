@@ -140,6 +140,7 @@ DTD of the XSLT 2.0.
               field_name CDATA #IMPLIED
               field_type CDATA #IMPLIED
               form_name CDATA #IMPLIED
+              invoice_number CDATA #IMPLIED
               title CDATA "">
 
 <!ELEMENT form ANY>
