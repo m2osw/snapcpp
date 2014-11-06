@@ -182,7 +182,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           select="classes"/> dropdown <xsl:value-of select="$name"/><xsl:if
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
-          test="state = 'disabled'"> disabled</xsl:if></xsl:attribute>
+          test="state = 'disabled'"> disabled</xsl:if><xsl:if
+          test="not(@mode) or @mode = 'select-only'"> read-only</xsl:if></xsl:attribute>
         <div class="snap-editor-dropdown-reset-value"><xsl:copy-of select="default/node()"/></div>
         <xsl:if test="background-value != ''">
           <!-- by default "snap-editor-background" has "display: none"
@@ -197,7 +198,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         </xsl:if>
         <div>
           <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-          <xsl:attribute name="class">editor-content<xsl:if test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if><xsl:if test="not(@mode) or @mode = 'select-only'"> read-only</xsl:if></xsl:attribute>
+          <xsl:attribute name="class">editor-content<xsl:if
+                test="@no-toolbar or /editor-form/no-toolbar"> no-toolbar</xsl:if></xsl:attribute>
           <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
             <xsl:variable name="tabindex" select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/>
             <xsl:attribute name="tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>

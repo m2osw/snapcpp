@@ -6740,9 +6740,15 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                     {
                         param_type = PARAM_TYPE_STRING;
                     }
-                    else if(type == "float")
+                    else if(type == "float"
+                         || type == "float32")
                     {
-                        param_type = PARAM_TYPE_FLOAT;
+                        param_type = PARAM_TYPE_FLOAT32;
+                    }
+                    else if(type == "double"
+                         || type == "float64")
+                    {
+                        param_type = PARAM_TYPE_FLOAT64;
                     }
                     else if(type == "int8")
                     {
@@ -7400,9 +7406,16 @@ void content::on_save_content()
                         param_table->row(row_key)->cell(p->f_name)->setValue(*data);
                         break;
 
-                    case PARAM_TYPE_FLOAT:
+                    case PARAM_TYPE_FLOAT32:
                         {
                             float const v(data->toFloat(&ok));
+                            param_table->row(row_key)->cell(p->f_name)->setValue(v);
+                        }
+                        break;
+
+                    case PARAM_TYPE_FLOAT64:
+                        {
+                            double const v(data->toDouble(&ok));
                             param_table->row(row_key)->cell(p->f_name)->setValue(v);
                         }
                         break;

@@ -945,7 +945,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                             current_value = QString("%1").arg(c);
                         }
                     }
-                    else if(widget_auto_save == "double")
+                    else if(widget_auto_save == "double"
+                         || widget_auto_save == "float64")
                     {
                         double dbl;
                         bool ok(false);
@@ -1029,7 +1030,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                                 current_value = QString("%1").arg(v);
                             }
                         }
-                        else if(widget_auto_save == "double")
+                        else if(widget_auto_save == "double"
+                             || widget_auto_save == "float64")
                         {
                             double const v(value.doubleValue());
                             current_value = QString("%1").arg(v);
@@ -2745,7 +2747,8 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                     }
                 }
             }
-            else if(widget_auto_save == "double")
+            else if(widget_auto_save == "double"
+                 || widget_auto_save == "float64")
             {
                 // if the value is null, it's as if it were not defined
                 // (we actually make sure there is at least one double)

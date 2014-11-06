@@ -5319,6 +5319,8 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
                 return;
             }
 
+            // TBD: we may need to allow various keys when the widget is
+            //      marked as 'read-only' (i.e. Ctrl-C, arrows, etc.)
             if(widget.is(".read-only")
             || widget.is(".disabled"))
             {

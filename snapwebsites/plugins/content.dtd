@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                 overwrite (yes|no) "no"
                 force-namespace (yes|no) "yes"
                 revision (global|branch|revision) "branch"
-                type (binary|float|int8|string) "string">
+                type (binary|float|float32|double|float64|int8|string) "string">
 
 <!ELEMENT link (#PCDATA)>
 <!ATTLIST link name CDATA #REQUIRED
