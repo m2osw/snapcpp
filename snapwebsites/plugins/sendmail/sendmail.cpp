@@ -1518,7 +1518,7 @@ void sendmail::post_email(const email& e)
     }
 
     copy.set_site_key(f_snap->get_site_key());
-    QString key(f_snap->get_unique_number());
+    QString const key(f_snap->get_unique_number());
     copy.set_email_key(key);
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     QtCassandra::QCassandraValue value;
@@ -1885,11 +1885,11 @@ void sendmail::attach_user_email(const email& e)
     //      the sendmail reference in the user plugin)
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     users::users *users_plugin(users::users::instance());
-    const char *email_key(users::get_name(users::SNAP_NAME_USERS_ORIGINAL_EMAIL));
+    char const *email_key(users::get_name(users::SNAP_NAME_USERS_ORIGINAL_EMAIL));
     QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
 
     // TBD: would we need to have a lock to test whether the user
-    //      exists? since we're not about to add it ourselves, I
+    //      exists? since we are not about to add it ourselves, I
     //      do not think it is necessary
     QString const to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
@@ -1911,7 +1911,7 @@ void sendmail::attach_user_email(const email& e)
     if(email_data.nullValue())
     {
         // the user does not yet exist, we only email people who have some
-        // sort an account because otherwise we could not easily track
+        // sort of account because otherwise we could not easily track
         // people's wishes (i.e. whether they do not want to receive our
         // emails); this system allows us to block all emails
         users_plugin->register_user(m.f_email_only.c_str(), "!");
@@ -2060,7 +2060,7 @@ void sendmail::run_emails()
                     sendemail(key, list[i]);
                 }
             }
-            // we're done with that email, get rid of it from the index
+            // we are done with that email, get rid of it from the index
             row->dropCell(column_key);
         }
     }
@@ -2210,7 +2210,7 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
         }
         else
         {
-            SNAP_LOG_ERROR("an error occurred while executing html2text (exit code: ")(r)(")");
+            SNAP_LOG_ERROR("An error occurred while executing html2text (exit code: ")(r)(")");
         }
     }
 
