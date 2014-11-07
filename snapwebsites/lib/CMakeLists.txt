@@ -77,6 +77,7 @@ add_library( ${PROJECT_NAME} SHARED
     dbutils.cpp                                 # and column data.
     dom_util.cpp                                # DOM utilities
     floats.cpp                                  # Floats helper functions
+    fuzzy_string_compare.cpp                    # Compare strings in a fuzzy manner
     http_cookie.cpp                             # HTTP cookie, server side
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
     log.cpp                                     # log4cplus support

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.236
+ * Version: 0.0.3.241
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -2811,7 +2811,7 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  * The EditorForm inherits the EditorFormBase.
  *
  * \code
- * class EditorFormBase
+ * class EditorFormBase : public ServerAccessCallbacks
  * {
  * public:
  *      function EditorFormBase(editor_base, session) : EditorFormBase;
@@ -3290,10 +3290,13 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      var editorWidgets_: Object;             // map of editor objects
  *      var widgetInitialized_: boolean;        // whether the form was initialized
  *      var saveDialog_: EditorSaveDialog;      // a reference to the save dialog
- *      var mode: string;                       // general mode the form is used as
+ *      var mode_: string;                      // general mode the form is used as
  *      var toolbarAutoVisible: boolean;        // whether to show the toolbar automatically
  *      var modified_: boolean;                 // one or more fields changed
- *      var saveFunctionOnSuccess_: function(); // function called in case the save succeeded
+ *      var saveFunctionOnSuccess_: function(editor_form: EditorForm, result: snapwebsites.ServerAccessCallbacks.ResultData);
+ *                                              // function called in case the save succeeded
+ *      var saveFunctionOnError_: function(editor_form: EditorForm, result: snapwebsites.ServerAccessCallbacks.ResultData);
+ *                                              // function called in case the save failed
  *      var savedData_: Object;                 // a set of objects to know whether things changed while saving
  *      var serverAccess_: ServerAccess;        // a ServerAccess object to send the AJAX
  * };
@@ -3492,10 +3495,21 @@ snapwebsites.EditorForm.prototype.modified_ = false;
  * This reference points to a function that gets called in the event
  * of a successful save. You may define one such function.
  *
- * @type {?function()}
+ * @type {?function(snapwebsites.EditorForm, snapwebsites.ServerAccessCallbacks.ResultData)}
  * @private
  */
 snapwebsites.EditorForm.prototype.saveFunctionOnSuccess_ = null;
+
+
+/** \brief A function to call on a successful save.
+ *
+ * This reference points to a function that gets called in the event
+ * of a failed save. You may define one such function.
+ *
+ * @type {?function(snapwebsites.EditorForm, snapwebsites.ServerAccessCallbacks.ResultData)}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.saveFunctionOnError_ = null;
 
 
 /** \brief An object of the data as sent to the server.
@@ -3628,18 +3642,34 @@ snapwebsites.EditorForm.titleToURI = function(title) // static
 
 /** \brief A function to call on a successful save.
  *
- * If defined, this function is called when the Save function is
+ * If defined, this function is called when the Save function
  * returned a successful result and is not asked to redirect the
  * user.
  *
  * This is particularly useful if you used a form in a popup that
  * should be closed on success.
  *
- * @param {function()} f  A function to call on success.
+ * @param {function(snapwebsites.EditorForm, snapwebsites.ServerAccessCallbacks.ResultData)} f  A function to call on success.
  */
 snapwebsites.EditorForm.prototype.setSaveFunctionOnSuccess = function(f)
 {
     this.saveFunctionOnSuccess_ = f;
+};
+
+
+/** \brief A function to call on an error while saving.
+ *
+ * If defined, this function is called when the Save function
+ * returned with a failed result.
+ *
+ * This is particularly useful if your C++ function generated some data
+ * in the result structure and you want to make use of it.
+ *
+ * @param {function(snapwebsites.EditorForm, snapwebsites.ServerAccessCallbacks.ResultData)} f  A function to call on failure.
+ */
+snapwebsites.EditorForm.prototype.setSaveFunctionOnError = function(f)
+{
+    this.saveFunctionOnError_ = f;
 };
 
 
@@ -3685,7 +3715,7 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
     // successful (but only if we're not going to redirect the user)
     if(!result.will_redirect && this.saveFunctionOnSuccess_)
     {
-        this.saveFunctionOnSuccess_();
+        this.saveFunctionOnSuccess_(this, result);
     }
 };
 
@@ -3715,8 +3745,15 @@ snapwebsites.EditorForm.prototype.serverAccessError = function(result) // virtua
 {
     // TODO: do we have to anything with this error message? We
     //       should always have messages in the AJAX, but we may reach
-    //       this function for other reasons...
-    //alert(result.error_message);
+    //       this function for other reasons... messages are displayed
+    //       by the serverAccess directly
+
+    // in case the manager of the form wants to know that an error
+    // occured and get the corresponding result information
+    if(this.saveFunctionOnError_)
+    {
+        this.saveFunctionOnError_(this, result);
+    }
 };
 
 
