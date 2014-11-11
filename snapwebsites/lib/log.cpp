@@ -48,15 +48,14 @@ namespace
     log4cplus::Logger   g_logger;
     log4cplus::Logger   g_secure_logger;
 
-    typedef enum
+    enum class logging_type_t
         { unconfigured_logger
         , console_logger
         , file_logger
         , conffile_logger
         , syslog_logger
-        }
-        logging_type_t;
-    logging_type_t      g_logging_type( unconfigured_logger );
+        };
+    logging_type_t      g_logging_type( logging_type_t::unconfigured_logger );
 }
 // no name namespace
 
@@ -70,12 +69,12 @@ namespace
  */
 void unconfigure()
 {
-    if(g_logging_type != unconfigured_logger )
+    if(g_logging_type != logging_type_t::unconfigured_logger )
     {
         // shutdown the previous version before re-configuring
         // (this is done after a fork() call.)
         log4cplus::Logger::shutdown();
-        g_logging_type = unconfigured_logger;
+        g_logging_type = logging_type_t::unconfigured_logger;
     }
 }
 
@@ -120,7 +119,7 @@ void configureConsole()
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
-    g_logging_type    = console_logger;
+    g_logging_type    = logging_type_t::console_logger;
     g_logger          = log4cplus::Logger::getInstance("snap");
     g_secure_logger   = log4cplus::Logger::getInstance("security");
 
@@ -172,7 +171,7 @@ void configureLogfile( QString const& logfile )
 
     g_log_config_filename.clear();
     g_log_output_filename = logfile;
-    g_logging_type        = file_logger;
+    g_logging_type        = logging_type_t::file_logger;
     g_logger              = log4cplus::Logger::getInstance("snap");
     g_secure_logger       = log4cplus::Logger::getInstance("security");
 
@@ -217,7 +216,7 @@ void configureSysLog()
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
-    g_logging_type    = syslog_logger;
+    g_logging_type    = logging_type_t::syslog_logger;
     g_logger          = log4cplus::Logger::getInstance("snap");
     g_secure_logger   = log4cplus::Logger::getInstance("security");
 
@@ -263,7 +262,7 @@ void configureConffile(QString const& filename)
     }
 
     g_log_config_filename   = filename;
-    g_logging_type          = conffile_logger;
+    g_logging_type          = logging_type_t::conffile_logger;
     log4cplus::PropertyConfigurator::doConfigure(LOG4CPLUS_C_STR_TO_TSTRING(filename.toUtf8().data()));
     g_logger                = log4cplus::Logger::getInstance("snap");
     g_secure_logger         = log4cplus::Logger::getInstance("security");
@@ -283,19 +282,19 @@ void reconfigure()
 {
     switch( g_logging_type )
     {
-    case console_logger:
+    case logging_type_t::console_logger:
         configureConsole();
         break;
 
-    case file_logger:
+    case logging_type_t::file_logger:
         configureLogfile( g_log_output_filename );
         break;
 
-    case conffile_logger:
+    case logging_type_t::conffile_logger:
         configureConffile( g_log_config_filename );
         break;
 
-    case syslog_logger:
+    case logging_type_t::syslog_logger:
         configureSysLog();
         break;
 
@@ -315,7 +314,7 @@ void reconfigure()
  */
 bool is_configured()
 {
-    return g_logging_type != unconfigured_logger;
+    return g_logging_type != logging_type_t::unconfigured_logger;
 }
 
 
@@ -497,7 +496,7 @@ logger::~logger()
     }
 
     // TBD: is the exists() call doing anything for us here?
-    if( (g_logging_type == unconfigured_logger) || !log4cplus::Logger::exists(LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
+    if( (g_logging_type == logging_type_t::unconfigured_logger) || !log4cplus::Logger::exists(LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
     {
         // not even configured, return immediately
         if(sll != -1)
