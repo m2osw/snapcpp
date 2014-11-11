@@ -94,6 +94,7 @@ private:
 void configureConsole  ();
 void configureLogfile  ( const QString& logfile  );
 void configureConffile ( const QString& filename );
+void configureSysLog   ();
 void reconfigure();
 bool is_configured();
 void setLogOutputLevel( log_level_t level );
