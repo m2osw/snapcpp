@@ -316,4 +316,30 @@ install(
 )
 
 
+################################################################################
+# Snap Bounced Email Handler
+#
+# This is kicked off by the mail server if the email bounces. It saves
+# the offending email into the cassanda database for later processing.
+#
+project(snapbounce)
+
+add_executable(${PROJECT_NAME}
+    snapbounce.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${QT_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
 # vim: ts=4 sw=4 et

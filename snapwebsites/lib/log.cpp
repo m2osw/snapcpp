@@ -29,6 +29,7 @@
 #include <log4cplus/logger.h>
 #include <log4cplus/fileappender.h>
 #include <log4cplus/consoleappender.h>
+#include <log4cplus/syslogappender.h>
 
 #include <QFileInfo>
 
@@ -47,8 +48,14 @@ namespace
     log4cplus::Logger   g_logger;
     log4cplus::Logger   g_secure_logger;
 
-    typedef enum { unconfigured_logger, console_logger, file_logger, conffile_logger } logging_type_t;
-    logging_type_t      g_logging_type( unconfigured_logger );
+    enum class logging_type_t
+        { unconfigured_logger
+        , console_logger
+        , file_logger
+        , conffile_logger
+        , syslog_logger
+        };
+    logging_type_t      g_logging_type( logging_type_t::unconfigured_logger );
 }
 // no name namespace
 
@@ -62,12 +69,12 @@ namespace
  */
 void unconfigure()
 {
-    if(g_logging_type != unconfigured_logger )
+    if(g_logging_type != logging_type_t::unconfigured_logger )
     {
         // shutdown the previous version before re-configuring
         // (this is done after a fork() call.)
         log4cplus::Logger::shutdown();
-        g_logging_type = unconfigured_logger;
+        g_logging_type = logging_type_t::unconfigured_logger;
     }
 }
 
@@ -112,7 +119,7 @@ void configureConsole()
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
-    g_logging_type    = console_logger;
+    g_logging_type    = logging_type_t::console_logger;
     g_logger          = log4cplus::Logger::getInstance("snap");
     g_secure_logger   = log4cplus::Logger::getInstance("security");
 
@@ -124,10 +131,7 @@ void configureConsole()
 
 /** \brief Configure log4cplus system turning on the rolling file appender.
  *
- * This function is the default called in case the user has not specified
- * a configuration file to read.
- *
- * It sets up a default appender to the standard lo
+ * This function is called when the user has specified to write logs to a file.
  *
  * \note
  * This function marks that the logger was configured. The other functions
@@ -167,9 +171,54 @@ void configureLogfile( QString const& logfile )
 
     g_log_config_filename.clear();
     g_log_output_filename = logfile;
-    g_logging_type        = file_logger;
+    g_logging_type        = logging_type_t::file_logger;
     g_logger              = log4cplus::Logger::getInstance("snap");
     g_secure_logger       = log4cplus::Logger::getInstance("security");
+
+    g_logger.addAppender( appender );
+    g_secure_logger.addAppender( appender );
+    setLogOutputLevel( LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+}
+
+
+/** \brief Configure log4cplus system to the syslog.
+ *
+ * Set up the logging to be routed to the syslog.
+ *
+ * \note
+ * This function marks that the logger was configured. The other functions
+ * do not work (do nothing) until this happens. In case of the server,
+ * configure() is called from the server::config() function. If no configuration
+ * file is defined then the other functions will do nothing.
+ *
+ * Format documentation:
+ * http://log4cplus.sourceforge.net/docs/html/classlog4cplus_1_1PatternLayout.html
+ *
+ * \sa fatal()
+ * \sa error()
+ * \sa warning()
+ * \sa info()
+ * \sa server::config()
+ * \sa unconfigure()
+ */
+void configureSysLog()
+{
+    unconfigure();
+
+    const std::string servername( server::instance()->servername() );
+    log4cplus::SharedAppenderPtr appender( new log4cplus::SysLogAppender( servername ) );
+    const log4cplus::tstring pattern
+                ( boost::replace_all_copy(servername, "%", "%%").c_str()
+                + log4cplus::tstring("[%i]:%b:%L:%h: %m%n")
+                );
+    appender->setLayout( std::auto_ptr<log4cplus::Layout>( new log4cplus::PatternLayout(pattern)) );
+    appender->setThreshold( log4cplus::INFO_LOG_LEVEL );
+
+    g_log_config_filename.clear();
+    g_log_output_filename.clear();
+    g_logging_type    = logging_type_t::syslog_logger;
+    g_logger          = log4cplus::Logger::getInstance("snap");
+    g_secure_logger   = log4cplus::Logger::getInstance("security");
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
@@ -213,7 +262,7 @@ void configureConffile(QString const& filename)
     }
 
     g_log_config_filename   = filename;
-    g_logging_type          = conffile_logger;
+    g_logging_type          = logging_type_t::conffile_logger;
     log4cplus::PropertyConfigurator::doConfigure(LOG4CPLUS_C_STR_TO_TSTRING(filename.toUtf8().data()));
     g_logger                = log4cplus::Logger::getInstance("snap");
     g_secure_logger         = log4cplus::Logger::getInstance("security");
@@ -233,16 +282,20 @@ void reconfigure()
 {
     switch( g_logging_type )
     {
-    case console_logger:
+    case logging_type_t::console_logger:
         configureConsole();
         break;
 
-    case file_logger:
+    case logging_type_t::file_logger:
         configureLogfile( g_log_output_filename );
         break;
 
-    case conffile_logger:
+    case logging_type_t::conffile_logger:
         configureConffile( g_log_config_filename );
+        break;
+
+    case logging_type_t::syslog_logger:
+        configureSysLog();
         break;
 
     default:
@@ -261,7 +314,7 @@ void reconfigure()
  */
 bool is_configured()
 {
-    return g_logging_type != unconfigured_logger;
+    return g_logging_type != logging_type_t::unconfigured_logger;
 }
 
 
@@ -443,7 +496,7 @@ logger::~logger()
     }
 
     // TBD: is the exists() call doing anything for us here?
-    if( (g_logging_type == unconfigured_logger) || !log4cplus::Logger::exists(LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
+    if( (g_logging_type == logging_type_t::unconfigured_logger) || !log4cplus::Logger::exists(LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
     {
         // not even configured, return immediately
         if(sll != -1)
