@@ -48,10 +48,12 @@
 #endif
 
 #include <exception>
-#include <map>
 #include <memory>
-#include <sstream>
 #include <vector>
+#include <iostream>
+#include <fstream>
+
+#include "qstring_stream.h"
 
 namespace
 {
@@ -230,6 +232,20 @@ void snap_bounce::usage()
 
 void snap_bounce::read_stdin()
 {
+    std::cout << "read_stdin():" << std::endl;
+    QStringList email_body;
+    while( (std::cin.rdstate() & std::ifstream::eofbit) == 0 )
+    {
+        std::string line;
+        std::getline( std::cin, line );
+        email_body << line.c_str();
+    }
+
+    std::cout << std::endl << "email_body:" << std::endl;
+    for( const QString line : email_body )
+    {
+        std::cout << "\t" << line << std::endl;
+    }
 }
 
 
