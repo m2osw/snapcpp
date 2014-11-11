@@ -56,6 +56,14 @@ public:
     editor_exception_invalid_editor_form_xml(QString const&     what_msg) : editor_exception(what_msg) {}
 };
 
+class editor_exception_too_many_tags : public editor_exception
+{
+public:
+    editor_exception_too_many_tags(char const *       what_msg) : editor_exception(what_msg) {}
+    editor_exception_too_many_tags(std::string const& what_msg) : editor_exception(what_msg) {}
+    editor_exception_too_many_tags(QString const&     what_msg) : editor_exception(what_msg) {}
+};
+
 class editor_exception_invalid_xslt_data : public editor_exception
 {
 public:
@@ -153,6 +161,7 @@ public:
     SNAP_SIGNAL(replace_uri_token, (editor_uri_token& token_info), (token_info));
     SNAP_SIGNAL_WITH_MODE(dynamic_editor_widget, (content::path_info_t& cpath, QString const& name, QDomDocument& editor_widgets), (cpath, name, editor_widgets), NEITHER);
     SNAP_SIGNAL_WITH_MODE(init_editor_widget, (content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row), (ipath, field_id, field_type, widget, row), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(new_attachment_saved, (content::attachment_file& the_attachment, QDomElement const& widget, QDomElement const& attachment_tag), (the_attachment, widget, attachment_tag), NEITHER);
 
 private:
     void                content_update(int64_t variables_timestamp);

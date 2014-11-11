@@ -46,7 +46,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/types/permissions/rights/view/attachment">
     <param name="content::title" revision="revision">View Page Right</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>View an attachment.</p><p>This right is used to mark attachments.</p>]]>
+      <![CDATA[<p>View an attachment.</p><p>This right is used to mark attachments. Only high level administrators are expected to be given the "view any attachment" permission, if even.</p><p>Note that attachments dropped in a form are given this permission by default so they are not visible.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/attachment/public">

@@ -174,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 11, 7, 2, 47, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 11, 7, 22, 5, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -581,7 +581,10 @@ void editor::on_process_post(QString const& uri_path)
         break;
 
     case sessions::sessions::session_info::SESSION_INFO_MISSING:
-        f_snap->die(snap_child::HTTP_CODE_GONE, "Editor Session Gone", "It looks like you attempted to submit editor content without first loading it.", "User sent editor content with a session identifier that is not available.");
+        f_snap->die(snap_child::HTTP_CODE_GONE,
+                    "Editor Session Gone",
+                    "It looks like you attempted to submit editor content without first loading it.",
+                    "User sent editor content with a session identifier that is not available.");
         NOTREACHED();
         return;
 
@@ -589,15 +592,25 @@ void editor::on_process_post(QString const& uri_path)
         // TODO:
         // this is a harsh one! We need to save that data as a Draft, whatever
         // the Save mode we got. That way if the user wanted to keep his
-        // data he'll be able to do so from the draft (update the message to
+        // data he will be able to do so from the draft (update the message to
         // correspond to the new mode/possibilities!)
-        messages->set_http_error(snap_child::HTTP_CODE_GONE, "Editor Timeout", "Sorry! You sent this request back to Snap! way too late. It timed out. Please re-enter your information and re-submit.", "User did not click the submit button soon enough, the server session timed out.", true);
+        messages->set_http_error(snap_child::HTTP_CODE_GONE,
+                                 "Editor Timeout",
+                                 "Sorry! You sent this request back to Snap! way too late. It timed out. Please re-enter your information and re-submit.",
+                                 "User did not click the submit button soon enough, the server session timed out.",
+                                 true);
+        editor_save_mode = EDITOR_SAVE_MODE_AUTO_DRAFT;
         break;
 
     case sessions::sessions::session_info::SESSION_INFO_USED_UP:
         // this should not happen because we do not mark editor sessions
         // for one time use
-        messages->set_http_error(snap_child::HTTP_CODE_CONFLICT, "Editor Already Submitted", "This editor session was already processed.", "The user submitted the same session more than once.", true);
+        messages->set_http_error(snap_child::HTTP_CODE_CONFLICT,
+                                 "Editor Already Submitted",
+                                 "This editor session was already processed.",
+                                 "The user submitted the same session more than once.",
+                                 true);
+        editor_save_mode = EDITOR_SAVE_MODE_AUTO_DRAFT;
         break;
 
     default:
@@ -607,6 +620,8 @@ void editor::on_process_post(QString const& uri_path)
 
     server_access::server_access *server_access_plugin(server_access::server_access::instance());
 
+    // TODO: if we generated an error, we do not even get a way to save
+    //       the data to a draft
     if(messages->get_error_count() == 0)
     {
         // verify that the session random number is compatible
@@ -759,9 +774,9 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 {
 
 //
-// TODO -- the verification phase needs to be moved in a separate function
+// TODO -- the verification phase needs to be moved to a separate function
 //         that gets called whatever the "process post" function was called
-//         (at this point drafts and such won't work right)
+//         (at this point drafts and such will not work right)
 //
 //         Unfortunately the saving of the data is intricately intermingled
 //         from what I can tell... although if we could extract the
@@ -998,7 +1013,23 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     {
                         // like a string, but convert inline images too
                         QString value(post_value);
-                        QString const widget_force_filename(widget.attribute("force-filename", "")); // this one is #IMPLIED
+                        // TODO: test the new implementation of
+                        //       the "force-filename"
+                        QDomNodeList attachment_tags(widget.elementsByTagName("attachment"));
+                        int const max_attachments(attachment_tags.size());
+                        if(max_attachments >= 2)
+                        {
+                            throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
+                        }
+                        QString widget_force_filename; // this one is #IMPLIED
+                        if(max_attachments == 1)
+                        {
+                            QDomElement attachment_tag(attachment_tags.at(0).toElement());
+                            if(!attachment_tag.isNull())
+                            {
+                                widget_force_filename = attachment_tag.attribute("force-filename", ""); // this one is #IMPLIED
+                            }
+                        }
                         parse_out_inline_img(ipath, value, widget_force_filename);
                         revision_row->cell(field_name)->setValue(value);
                         current_value = value;
@@ -1200,22 +1231,72 @@ void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessi
 {
     static_cast<void>(info);
 
-    QString widget_names(f_snap->postenv("_editor_widget_names"));
+    // get the editor widgets and save them in a map
+    typedef std::map<QString, QDomElement> widget_map_t;
+    widget_map_t widgets_by_name;
+    QDomDocument editor_widgets(get_editor_widgets(ipath));
+    QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
+    int const max_widgets(widgets.size());
+    for(int i(0); i < max_widgets; ++i)
+    {
+        QDomElement widget(widgets.at(i).toElement());
+        QString const widget_name(widget.attribute("id"));
+        widgets_by_name[widget_name] = widget;
+        //QString const field_name(widget.attribute("field"));
+        //QString const widget_type(widget.attribute("type"));
+        //QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
+        //bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
+    }
+
+    QString const default_attachment_owner(attachment::attachment::instance()->get_plugin_name());
+
+    QString const widget_names(f_snap->postenv("_editor_widget_names"));
 //std::cerr << "***\n*** Editor Processing POST... [" << ipath.get_key() << "::" << widget_names << "]\n***\n";
 
-    QStringList names(widget_names.split(","));
+    QStringList const names(widget_names.split(","));
     for(int i(0); i < names.size(); ++i)
     {
-        // TODO: All those names may be tainted, we MUST verify them to make
-        //       the editor secure.
+        widget_map_t::const_iterator w(widgets_by_name.find(names[i]));
+        if(w == widgets_by_name.end())
+        {
+            // TBD: should we check each field name BEFORE saving anything?
+            f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Field Name Not Acceptable",
+                QString("Editor widget named \"%1\" is not valid.").arg(names[i]),
+                "Somehow the client sent us a reply with an invalid name.");
+            NOTREACHED();
+        }
+        QDomNodeList attachment_tags(w->second.elementsByTagName("attachment"));
+        int const max_attachments(attachment_tags.size());
+        if(max_attachments >= 2)
+        {
+            throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
+        }
+        QString attachment_type("attachment"); // extremely restrained by default (i.e. visible by a "root" user only)
+        QString attachment_owner(default_attachment_owner);
+        QDomElement attachment_tag;
+        if(max_attachments == 1)
+        {
+            attachment_tag = attachment_tags.at(0).toElement();
+            if(!attachment_tag.isNull())
+            {
+                attachment_type = attachment_tag.attribute("type", "attachment");
+                attachment_owner = attachment_tag.attribute("owner", default_attachment_owner);
+            }
+        }
+
         content::attachment_file the_attachment(f_snap, f_snap->postfile(names[i]));
         the_attachment.set_multiple(false);
         the_attachment.set_parent_cpath(ipath.get_cpath());
         the_attachment.set_field_name(names[i]);
-        the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
-        // TODO: determine the correct attachment permission (public by default is probably wrong!)
-        the_attachment.set_attachment_type("attachment/public");
-        // TODO: define the locale in some ways... for now we use "neutral"
+        the_attachment.set_attachment_owner(attachment_owner);
+        the_attachment.set_attachment_type(attachment_type);
+
+        // TBD: give others the opportunity to tweak the attachment and
+        //      its parameters before it gets saved in the database
+        //      (i.e. you may want to dynamically define the type)
+        //blah();
+
+        // TODO: define the locale in some ways... for now we use "", i.e. neutral
         content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
         QString const attachment_cpath(the_attachment.get_attachment_cpath());
         if(!attachment_cpath.isEmpty())
@@ -1239,6 +1320,8 @@ void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessi
                 server_access_plugin->ajax_append_data("attachment-icon", (site_key + "images/mimetype/file-unknown.png").toUtf8());
             }
         }
+
+        new_attachment_saved(the_attachment, w->second, attachment_tag);
     }
 }
 
