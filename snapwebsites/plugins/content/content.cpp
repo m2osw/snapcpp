@@ -5427,7 +5427,6 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     int64_t const start_date(f_snap->get_start_date());
     row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 
-    //QString const branch_key(generate_branch_key(key, branch_number));
     QtCassandra::QCassandraRow::pointer_t data_row(branch_table->row(ipath.get_branch_key()));
     data_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     data_row->cell(get_name(SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
@@ -5459,13 +5458,11 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     QStringList parts(ipath.get_cpath().split('/', QString::SkipEmptyParts));
     while(parts.count() > 0)
     {
-        QString src(parts.join("/"));
-        src = site_key + src;
+        QString const src(QString("%1%2").arg(site_key).arg(parts.join("/")));
         parts.pop_back();
-        QString dst(parts.join("/"));
-        dst = site_key + dst;
+        QString const dst(QString("%1%2").arg(site_key).arg(parts.join("/")));
 
-        // TBD: 3rd parameter should be true or false?
+        // TBD: 2nd parameter should be true or false?
         parent_branch = get_current_branch(dst, true);
 
         // TBD: is the use of the system branch always correct here?

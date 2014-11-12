@@ -1,3 +1,15 @@
+libtld (1.4.20.67~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 12 Nov 2014 03:01:34 -0800
+
+libtld (1.4.20.66~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 11 Nov 2014 03:01:20 -0800
+
 libtld (1.4.20.65~trusty) trusty; urgency=high
 
   * Nightly build.

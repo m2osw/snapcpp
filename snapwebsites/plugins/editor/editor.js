@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.241
+ * Version: 0.0.3.244
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -3901,7 +3901,7 @@ snapwebsites.EditorForm.prototype.setSaving = function(new_status, will_redirect
     //                instead of the body!
     if(!will_redirect)
     {
-        snapwebsites.PopupInstance.darkenPage(new_status ? 150 : -150, false);
+        snapwebsites.PopupInstance.darkenPage(new_status ? 150 : -150, new_status);
     }
 };
 
@@ -4951,10 +4951,12 @@ snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
     {
         // generate an error
         //
-        // TODO: we don't yet have code to dynamically generate errors
+        // TODO: we do not yet have code to dynamically generate errors
         //       (we can show messages when created by the server, and
         //       want the same thing with errors, but that's not yet
         //       available...)
+        //       -- This is not correct anymore, we now do have a way to
+        //          dynamically generate errors!
         //
     }
 };
@@ -6137,7 +6139,6 @@ snapwebsites.EditorWidgetTypeRadio.prototype.initializeWidget = function(widget)
                     // then select this radio button
                     radio.addClass("selected");
                     c.attr("value", radio.attr("value"));
-                    c.focus();
 
                     // tell the editor that something may have changed
                     // TODO: call the widget function which in turn tells the

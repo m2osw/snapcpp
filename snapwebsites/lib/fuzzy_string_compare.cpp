@@ -34,10 +34,16 @@ namespace snap
  * This algorithm comes from Wikipedia:
  * https://en.wikipedia.org/wiki/Levenshtein_distance
  *
+ * \important
+ * The function does not change the case of the string. If you want
+ * to compare case insensitive, make sure to convert the string to
+ * lowercase first. You may also want to simplify the string (i.e.
+ * remove additional white spaces, or even remove all white spaces.)
+ *
  * \param[in] s  The left hand side string.
  * \param[in] t  The right hand side string.
  *
- * \return The Levenshtein Distance between \p s and \p t.
+ * \return The Levenshtein distance between \p s and \p t.
  */
 int levenshtein_distance(std::wstring s, std::wstring t)
 {
