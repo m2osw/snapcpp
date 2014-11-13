@@ -96,6 +96,7 @@ endfunction(json_to_cpp)
 
 
 json_to_cpp(parser_basics)
+json_to_cpp(parser_class)
 json_to_cpp(parser_function)
 json_to_cpp(parser_variable)
 json_to_cpp(parser)
@@ -112,6 +113,8 @@ json_to_cpp(optimizer_match)
 json_to_cpp(optimizer_multiplicative)
 json_to_cpp(optimizer_relational)
 json_to_cpp(optimizer_statements)
+
+json_to_cpp(compiler_class)
 
 
 
@@ -184,6 +187,7 @@ include_directories(
 add_executable(${PROJECT_NAME}
     test_as2js_main.cpp
 
+    test_as2js_compiler.cpp
     test_as2js_db.cpp
     test_as2js_float64.cpp
     test_as2js_int64.cpp
@@ -195,6 +199,7 @@ add_executable(${PROJECT_NAME}
     test_as2js_optimizer.cpp
     test_as2js_options.cpp
     test_as2js_parser.cpp
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_compiler_class.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_additive.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_assignments.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_bitwise.ci
@@ -207,6 +212,7 @@ add_executable(${PROJECT_NAME}
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_relational.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_statements.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_class.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_function.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_variable.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci

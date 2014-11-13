@@ -1,4 +1,4 @@
-/* function.js -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* as_init.asc -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -33,23 +33,7 @@ SOFTWARE.
 
 */
 
-native package Global
-{
 
-class Function extends Object
-{
-    function Function() : Function;
-    function Function(var in value: Function) : Function;
-
-    function toString(Void) : String;
-    function apply(var in thisArg: Object, var in argArray: Array) : Object;
-    function call(var in thisArg: Object, var in ... args) : Object;
-    function bind(var in thisArg: Object, var in ... args) : Function;
-
-    var length; /* number of arguments defined */
-};
+import Native;
 
 
-}
-
-// vim: ts=4 sw=4 et

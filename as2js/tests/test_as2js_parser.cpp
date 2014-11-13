@@ -1182,6 +1182,9 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
 char const g_basics[] =
 #include "test_as2js_parser_basics.ci"
 ;
+char const g_class[] =
+#include "test_as2js_parser_class.ci"
+;
 char const g_function[] =
 #include "test_as2js_parser_function.ci"
 ;
@@ -1434,6 +1437,12 @@ found_option:
 void As2JsParserUnitTests::test_parser_basics()
 {
     run_tests(g_basics, "test_parser_basics.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_class()
+{
+    run_tests(g_class, "test_parser_class.json");
 }
 
 

@@ -37,8 +37,10 @@ native package Global
 {
 
 
-class Boolean : public Object
+class Boolean extends Object
 {
+    use extended_operators(2);
+
     function Boolean(var in value: Boolean := false) : Boolean;
 
     function toString(var in base: Number := undefined) : String;
@@ -70,7 +72,7 @@ class Boolean : public Object
     function >?  (var in value: Boolean) : Boolean;
 
     // assignment operators
-    function =   (var in value: Boolean) : Boolean;
+    function :=  (var in value: Boolean) : Boolean;
 
     function &&= (var in value: Boolean) : Boolean;
 

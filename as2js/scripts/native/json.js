@@ -37,51 +37,16 @@ native package Global
 {
 
 
-class JSON : public Object
+class JSON extends Object
 {
     // the JSON object cannot be instantiated
     private function JSON(var in json: JSON := undefined) : JSON;
 
-    static function parse(var in text: String, var in reviver: Function(var in element: Object) : Object) : Object;
-    static function stringigy(var in value: Object, var in replacer: Array := undefined, var in space: String := undefined) : String;
-    static function stringigy(var in value: Object, var in replacer: Array := undefined, var in space: Number := undefined) : String;
-    static function stringigy(var in value: Object, var in replacer: Function(var in key: String, var in value: Object) : Object := undefined, var in space: String := undefined) : String;
-    static function stringigy(var in value: Object, var in replacer: Function(var in key: String, var in value: Object) : Object := undefined, var in space: Number := undefined) : String;
-};
-
-
-class NativeError : public Error
-{
-};
-
-
-class EvalError : public NativeError
-{
-};
-
-
-class RangeError : public NativeError
-{
-};
-
-
-class ReferenceError : public NativeError
-{
-};
-
-
-class SyntaxError : public NativeError
-{
-};
-
-
-class TypeError : public NativeError
-{
-};
-
-
-class URIError : public NativeError
-{
+    static function parse(var in text: String, var in reviver: function(var in element: Object) : Object) : Object;
+    static function stringify(var in value: Object, var in replacer: Array := undefined, var in space: String := undefined) : String;
+    static function stringify(var in value: Object, var in replacer: Array := undefined, var in space: Number := undefined) : String;
+    static function stringify(var in value: Object, var in replacer: function(var in key: String, var in value: Object) : Object := undefined, var in space: String := undefined) : String;
+    static function stringify(var in value: Object, var in replacer: function(var in key: String, var in value: Object) : Object := undefined, var in space: Number := undefined) : String;
 };
 
 

@@ -39,9 +39,9 @@ native package Global
 // TBD: what would be the best place to define such things?
 enum CompareResult
 {
-    LESS = -1,
-    EQUAL = 0,
-    GREATER = 1
+    LESS := -1,
+    EQUAL := 0,
+    GREATER := 1
 };
 
 

@@ -36,7 +36,7 @@ SOFTWARE.
 native package Global
 {
 
-class Math : public Object
+class Math extends Object
 {
     // the Math object cannot be instantiated
     private function Math(var in m: Math := undefined) : Math;
@@ -45,7 +45,7 @@ class Math : public Object
     static function acos(var in x: Number) : Number;
     static function asin(var in x: Number) : Number;
     static function atan(var in x: Number) : Number;
-    static function atan2(var in y: Number; var in x: Number) : Number;
+    static function atan2(var in y: Number, var in x: Number) : Number;
     static function ceil(var in x: Number) : Number;
     static function cos(var in x: Number) : Number;
     static function exp(var in x: Number) : Number;
@@ -53,21 +53,21 @@ class Math : public Object
     static function log(var in x: Number) : Number;
     static function max(var in ... x: Number) : Number;
     static function min(var in ... x: Number) : Number;
-    static function pow(var in x: Number; var in y: Number) : Number;
+    static function pow(var in x: Number, var in y: Number) : Number;
     static function random() : Number;
     static function round(var in x: Number) : Number;
     static function sin(var in x: Number) : Number;
     static function sqrt(var in x: Number) : Number;
     static function tan(var in x: Number) : Number;
 
-    var const E;
-    var const LN10;
-    var const LN2;
-    var const LOG2E;
-    var const LOG10E;
-    var const PI;
-    var const SQRT1_2;
-    var const SQRT2;
+    const var E;
+    const var LN10;
+    const var LN2;
+    const var LOG2E;
+    const var LOG10E;
+    const var PI;
+    const var SQRT1_2;
+    const var SQRT2;
 };
 
 

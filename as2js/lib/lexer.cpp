@@ -35,6 +35,7 @@ SOFTWARE.
 
 #include    "as2js/lexer.h"
 
+#include    "as2js/exceptions.h"
 #include    "as2js/message.h"
 
 #include    <iomanip>
@@ -698,6 +699,14 @@ Lexer::Lexer(Input::pointer_t input, Options::pointer_t options)
     //, f_result_int64(0) -- auto-init
     //, f_result_float64(0.0) -- auto-init
 {
+    if(!f_input)
+    {
+        throw exception_invalid_data("The 'input' pointer cannot be null in the Lexer() constructor.");
+    }
+    if(!f_options)
+    {
+        throw exception_invalid_data("The 'options' pointer cannot be null in the Lexer() constructor.");
+    }
 }
 
 
@@ -832,7 +841,7 @@ void Lexer::ungetc(Input::char_t c)
 {
     // WARNING: we do not use the f_input ungetc() because otherwise
     //          it would count lines, paragraphs, or pages twice,
-    //          which is a problem...
+    //          which would be a problem...
     if(c > 0 && c < 0x110000)
     {
         // unget only if not an invalid characters (especially not EOF)
@@ -2535,8 +2544,7 @@ void Lexer::get_token()
                 f_result_type = Node::node_t::NODE_EQUAL;
                 return;
             }
-            if(f_options
-            && (f_options->get_option(Options::option_t::OPTION_EXTENDED_OPERATORS) & 2) != 0)
+            if((f_options->get_option(Options::option_t::OPTION_EXTENDED_OPERATORS) & 2) != 0)
             {
                 // This one most people will not understand it...
                 // The '=' operator by itself is often missused and thus a
@@ -2923,14 +2931,17 @@ void Lexer::get_token()
 /** \brief Check whether a given option is set.
  *
  * Because the lexer checks options in many places, it makes use of this
- * helper function to avoid having to check the f_options pointer
- * every single time.
+ * helper function to simplify the many tests in the rest of the code.
  *
  * This function checks whether the specified option is set. If so,
  * then it returns true, otherwise it returns false.
  *
- * If no option were specified when the Lexer object was created,
- * then the function always returns false.
+ * \note
+ * Some options may be set to values other than 0 and 1. In that case
+ * this function cannot be used. Right now, this function returns true
+ * if the option is \em set, meaning that the option value is not zero.
+ * For example, the OPTION_EXTENDED_OPERATORS option may be set to
+ * 0, 1, 2, or 3.
  *
  * \param[in] option  The option to check.
  *
@@ -2938,12 +2949,7 @@ void Lexer::get_token()
  */
 bool Lexer::has_option_set(Options::option_t option) const
 {
-    if(f_options)
-    {
-        return f_options->get_option(option) != 0;
-    }
-
-    return false;
+    return f_options->get_option(option) != 0;
 }
 
 

@@ -221,8 +221,7 @@ bool Compiler::find_module(String const& filename, Node::pointer_t& result)
     parser.reset();
 
 #if 0
-fprintf(stderr, "%s module:\n", fn);
-result.Display(stderr);
+std::cerr << "+++++\n \"" << filename << "\" module:\n" << *result << "\n+++++\n";
 #endif
 
     if(!result)
@@ -441,7 +440,7 @@ void Compiler::load_internal_packages(char const *module)
         {
             continue;
         }
-        // we've got a file of interest
+        // we got a file of interest
         // TODO: we want to keep this package in RAM since
         //       we already parsed it!
         Node::pointer_t p(load_module(module, ent->d_name));
@@ -679,12 +678,26 @@ void Compiler::internal_imports()
         // read the resource file
         g_rc.init_rc(static_cast<bool>(f_input_retriever));
 
-        g_global_import = load_module("global", "as_init.js");
-        g_system_import = load_module("system", "as_init.js");
+        // TBD: at this point we only have native scripts
+        //      we need browser scripts, for sure...
+        //      and possibly some definitions of extensions such as jQuery
+        //      however, at this point we do not have a global or system
+        //      set of modules
+        //g_global_import = load_module("global", "as_init.js");
+        //g_system_import = load_module("system", "as_init.js");
         g_native_import = load_module("native", "as_init.js");
     }
 
-    g_db->load(g_rc.get_db());
+    if(!g_db)
+    {
+        g_db.reset(new Database);
+    }
+    if(!g_db->load(g_rc.get_db()))
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_UNEXPECTED_DATABASE, pos);
+        msg << "Failed reading the compiler database. You may need to delete it and try again or fix the resource file to point to the right file.";
+        return;
+    }
 
     if(!g_db_loaded)
     {
@@ -692,12 +705,12 @@ void Compiler::internal_imports()
 
         // global defines the basic JavaScript classes such
         // as Object and String.
-        load_internal_packages("global");
+        //load_internal_packages("global");
 
         // the system defines Browser classes such as XMLNode
-        load_internal_packages("system");
+        //load_internal_packages("system");
 
-        // ???
+        // the ECMAScript low level definitions
         load_internal_packages("native");
 
         // this saves the internal packages info for fast query

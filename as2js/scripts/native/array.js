@@ -36,7 +36,7 @@ SOFTWARE.
 native package Global
 {
 
-class Array : public Object
+class Array extends Object
 {
     function Array(Void) : Array;
     function Array(var in value: Array) : Array;
@@ -61,18 +61,18 @@ class Array : public Object
     function reverse(Void) : Array;
     function shift(Void) : Object;
     function slice(var in start: Number, var in end: Number) : Array;
-    function sort(var in comparefn: Function(var in j: Number, var in k: Number) : CompareResult := undefined) : Array;
+    function sort(var in comparefn: function(var in j: Number, var in k: Number) : CompareResult := undefined) : Array;
     function splice(var in start: Number, var in deleteCount: Number, var in ... items: Object) : Array;
     function unshift(var in ... items: Object) : Number;
     function indexOf(var in searchElement: Object, var in fromIndex: Number := undefined) : Number;
     function lastIndexOf(var in searchElement: Object, var in fromIndex: Number := undefined) : Number;
-    function every(var in callbackfn: Function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Boolean;
-    function some(var in callbackfn: Function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Boolean;
-    function forEach(var in callbackfn: Function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Void;
-    function map(var in callbackfn: Function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Array;
-    function filter(var in callbackfn: Function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Array;
-    function reduce(var in callbackfn: Function(var in previousValue: Object, var in currentValue: Object, var in currentIndex: Number, var in obj: Array) : Void, initialValue: Object := undefined) : Object;
-    function reduceRight(var in callbackfn: Function(var in previousValue: Object, var in currentValue: Object, var in currentIndex: Number, var in obj: Array) : Void, initialValue: Object := undefined) : Object;
+    function every(var in callbackfn: function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Boolean;
+    function some(var in callbackfn: function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Boolean;
+    function forEach(var in callbackfn: function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Void;
+    function map(var in callbackfn: function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Array;
+    function filter(var in callbackfn: function(var in element: Object, var in index: Number, var in obj: Array) : Boolean, var in thisArg: Object := undefined) : Array;
+    function reduce(var in callbackfn: function(var in previousValue: Object, var in currentValue: Object, var in currentIndex: Number, var in obj: Array) : Void, initialValue: Object := undefined) : Object;
+    function reduceRight(var in callbackfn: function(var in previousValue: Object, var in currentValue: Object, var in currentIndex: Number, var in obj: Array) : Void, initialValue: Object := undefined) : Object;
 
     var length;
 };

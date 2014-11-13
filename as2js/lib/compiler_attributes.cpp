@@ -386,7 +386,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
 
     // a function which has a body cannot be intrinsic
     if(node->get_attribute(Node::attribute_t::NODE_ATTR_NATIVE)
-    && node->get_type() != Node::node_t::NODE_FUNCTION)
+    && node->get_type() == Node::node_t::NODE_FUNCTION)
     {
         NodeLock ln(node);
         size_t const max(node->get_children_size());
@@ -401,7 +401,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
                 if(has_direct_native)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NATIVE, node->get_position());
-                    msg << "'intrinsic' is not permitted on a function with a body.";
+                    msg << "'native' is not permitted on a function with a body.";
                 }
                 node->set_attribute(Node::attribute_t::NODE_ATTR_NATIVE, false);
                 break;

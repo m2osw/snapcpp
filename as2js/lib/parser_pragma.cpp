@@ -34,6 +34,7 @@ SOFTWARE.
 */
 
 #include    "as2js/parser.h"
+
 #include    "as2js/message.h"
 
 
@@ -274,12 +275,6 @@ void Parser::pragma()
 
 void Parser::pragma_option(Options::option_t option, bool prima, Node::pointer_t& argument, Options::option_value_t value)
 {
-    // did we get any option object? create one if not
-    if(!f_options)
-    {
-        f_options.reset(new Options);
-    }
-
     // user overloaded the value?
     // if argument is a null pointer, then keep the input value as is
     if(argument) switch(argument->get_type())

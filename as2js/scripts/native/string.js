@@ -37,7 +37,7 @@ native package Global
 {
 
 
-class String : public Object
+class String extends Object
 {
     function String(var in value: String := 0.0) : Number;
 
@@ -88,7 +88,7 @@ class String : public Object
     function **  (var in value: Number) : Number;
 
     function ~=  (var in value: Number) : Number;
-    function ~!  (var in value: Number) : Number;
+    function !~  (var in value: Number) : Number;
 
     function *   (var in value: Number) : Number;
     function /   (var in value: Number) : Number;
@@ -131,7 +131,7 @@ class String : public Object
     function >?  (var in value: Number) : Number;
 
     // assignment operators
-    function =   (var in value: Number) : Number;
+    function :=  (var in value: Number) : Number;
 
     function **= (var in value: Number) : Number;
 
@@ -145,8 +145,8 @@ class String : public Object
     function <<= (var in value: Number) : Number;
     function >>= (var in value: Number) : Number;
     function >>>=(var in value: Number) : Number;
-    function <|= (var in value: Number) : Number;
-    function >|= (var in value: Number) : Number;
+    function <%= (var in value: Number) : Number;
+    function >%= (var in value: Number) : Number;
 
     function &=  (var in value: Number) : Number;
 

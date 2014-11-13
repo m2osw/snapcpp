@@ -37,7 +37,7 @@ native package Global
 {
 
 
-class RegExp : public Object
+class RegExp extends Object
 {
     function RegExp(Void) : RegExp;
     function RegExp(var in value: RegExp, var in flags: String) : RegExp;
@@ -47,10 +47,10 @@ class RegExp : public Object
     function test(var in string: String) : Boolean;
     function toString(Void) : String;
 
-    var const source: String;
-    var const global: Boolean;
-    var const ignoreCase: Boolean;
-    var const multiline: Boolean;
+    const var source: String;
+    const var global: Boolean;
+    const var ignoreCase: Boolean;
+    const var multiline: Boolean;
     var lastIndex: Number;
 };
 

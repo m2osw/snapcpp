@@ -77,10 +77,42 @@ void Parser::class_declaration(Node::pointer_t& node, Node::node_t type)
     }
 
     // *** INHERITANCE ***
+    if(f_node->get_type() == Node::node_t::NODE_COLON)
+    {
+        // if we have a colon, followed by private, protected, or public
+        // then it looks like a C++ declaration
+        Node::pointer_t save(f_node);
+        get_token();
+        if(f_node->get_type() != Node::node_t::NODE_PRIVATE
+        && f_node->get_type() != Node::node_t::NODE_PROTECTED
+        && f_node->get_type() != Node::node_t::NODE_PUBLIC)
+        {
+            unget_token(f_node);
+            f_node = save;
+        }
+    }
     while(f_node->get_type() == Node::node_t::NODE_EXTENDS
-       || f_node->get_type() == Node::node_t::NODE_IMPLEMENTS)
+       || f_node->get_type() == Node::node_t::NODE_IMPLEMENTS
+       || f_node->get_type() == Node::node_t::NODE_PRIVATE
+       || f_node->get_type() == Node::node_t::NODE_PROTECTED
+       || f_node->get_type() == Node::node_t::NODE_PUBLIC)
     {
         Node::pointer_t inherits(f_node);
+
+        // this is used because C++ programmers are not unlikely to use one
+        // of those keywords instead of 'exends' or 'implements'
+        if(f_node->get_type() == Node::node_t::NODE_PRIVATE
+        || f_node->get_type() == Node::node_t::NODE_PROTECTED
+        || f_node->get_type() == Node::node_t::NODE_PUBLIC)
+        {
+            // just skip the keyword and read the expression as expected
+            // the expression can be a list
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INCOMPATIBLE, f_lexer->get_input()->get_position());
+            msg << "please use 'extends' or 'implements' to define a list of base classes. 'public', 'private', and 'protected' are used in C++ only.";
+
+            inherits = f_node->create_replacement(Node::node_t::NODE_EXTENDS);
+        }
+
         node->append_child(inherits);
 
         get_token();

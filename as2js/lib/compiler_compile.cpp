@@ -49,28 +49,42 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-/* The following functions "compile" the code.
+/** \brief "Compile" the code, which means optimize and make compatible.
  *
- * This mainly means that it (1) tries to resolve all the references
- * that are found in the current tree; (2) load the libraries referenced
- * by the different import instructions which are necessary (or at least
- * seem to be).
+ * The following functions "compile" the code:
  *
- * If you also want to optimize the tree, you will need to call the
- * Optimize() function after you compiled. This will optimize expressions
- * such as 5 + 13 to just 18. This needs to happen at the end because the
- * reference resolution can endup in the replacement of an identifier by
- * a literal which can then be optimized. Trying to optimize too soon
- * would miss a large percentage of possible optimizations.
+ * \li It will optimize everything it can by reducing expressions that
+ *     can be computed at "compile" time;
+ * \li It transforms advanced features of as2js such as classes into
+ *     JavaScript compatible code such as prototypes.
+ *
+ * On other words, it means that the compiler (1) tries to resolve all
+ * the references that are found in the current tree; (2) loads the
+ * libraries referenced by the different import instructions which
+ * are necessary (or at least seem to be); (3) and run the optimizer
+ * against the code at various times.
+ *
+ * The compiler calls the optimizer for you because it is important in
+ * various places and the optimizations applied will vary depending on
+ * the compiler changes and further changes may be applied after the
+ * optimizations. So on return the tree is expected to be 100% compatible
+ * with a JavaScript all browser interpreters and optimized as much as
+ * possible to be output as minimized as can be.
+ *
+ * \param[in,out] root  The root node or program to compile.
+ *
+ * \return The number of errors generated while compiling. If zero, no errors
+ *         so you can proceed with the tree.
  */
-
 int Compiler::compile(Node::pointer_t& root)
 {
-    // all the "use namespace ... / with ..." currently in effect
-    f_scope = root->create_replacement(Node::node_t::NODE_SCOPE);
+    int const errcnt(Message::error_count());
 
     if(root)
     {
+        // all the "use namespace ... / with ..." currently in effect
+        f_scope = root->create_replacement(Node::node_t::NODE_SCOPE);
+
         if(root->get_type() == Node::node_t::NODE_PROGRAM)
         {
             program(root);
@@ -95,7 +109,7 @@ int Compiler::compile(Node::pointer_t& root)
         }
     }
 
-    return Message::error_count();
+    return Message::error_count() - errcnt;
 }
 
 

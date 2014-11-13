@@ -37,7 +37,7 @@ native package Global
 {
 
 
-class Date : public Object
+class Date extends Object
 {
     function Date(Void) : Date;
     function Date(var in value: Date) : Date;

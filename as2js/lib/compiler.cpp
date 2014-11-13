@@ -45,10 +45,21 @@ namespace as2js
 
 
 
-Compiler::Compiler()
+/** \brief Initialize the compiler object.
+ *
+ * The compiler includes many sub-classes that it initializes here.
+ * Especially, it calls the internal_imports() function to load all
+ * the internal modules, database, resource file.
+ *
+ * The options parameter represents the command line options setup
+ * by a user and within the code with the 'use' keyword (i.e. pragmas).
+ *
+ * \param[in] options  The options object to use while compiling.
+ */
+Compiler::Compiler(Options::pointer_t options)
     : f_time(time(nullptr))
     //, f_optimizer(nullptr) -- auto-init
-    //, f_options(nullptr) -- auto-init
+    , f_options(options)
     //, f_program(nullptr) -- auto-init
     //, f_input_retriever(nullptr) -- auto-init
     //, f_err_flags(0) -- auto-init
@@ -74,19 +85,10 @@ InputRetriever::pointer_t Compiler::set_input_retriever(InputRetriever::pointer_
 }
 
 
-void Compiler::set_options(Options::pointer_t options)
-{
-    f_options = options;
-}
 
 
 
 
-
-bool Compiler::isspace(int c)
-{
-    return c == ' ' || c == '\t';
-}
 
 
 

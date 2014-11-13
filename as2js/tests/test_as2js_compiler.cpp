@@ -1,4 +1,4 @@
-/* test_as2js_optimizer.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_compiler.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
 
 /*
 
@@ -33,10 +33,10 @@ SOFTWARE.
 
 */
 
-#include    "test_as2js_optimizer.h"
+#include    "test_as2js_compiler.h"
 #include    "test_as2js_main.h"
 
-#include    "as2js/optimizer.h"
+#include    "as2js/compiler.h"
 #include    "as2js/parser.h"
 #include    "as2js/exceptions.h"
 #include    "as2js/message.h"
@@ -52,11 +52,12 @@ SOFTWARE.
 #include    <iomanip>
 
 #include    <cppunit/config/SourcePrefix.h>
-CPPUNIT_TEST_SUITE_REGISTRATION( As2JsOptimizerUnitTests );
+CPPUNIT_TEST_SUITE_REGISTRATION( As2JsCompilerUnitTests );
 
 namespace
 {
 
+bool            g_created_rc = false;
 
 struct err_to_string_t
 {
@@ -65,7 +66,7 @@ struct err_to_string_t
     int                     f_line;
 };
 
-#define    TO_STR_sub(s)            #s
+#define    TO_STR_sub(s)       #s
 #define    ERROR_NAME(err)     { as2js::err_code_t::AS_ERR_##err, TO_STR_sub(err), __LINE__ }
 
 err_to_string_t const g_error_table[] =
@@ -167,7 +168,7 @@ as2js::err_code_t str_to_error_code(as2js::String const& error_name)
         }
     }
     std::cerr << "Error name \"" << error_name << "\" not found.\n";
-    CPPUNIT_ASSERT(!"error name not found, test_as2js_optimizer.cpp bug");
+    CPPUNIT_ASSERT(!"error name not found, test_as2js_compiler.cpp bug");
     return as2js::err_code_t::AS_ERR_NONE;
 }
 
@@ -182,7 +183,7 @@ char const *error_code_to_str(as2js::err_code_t const& error_code)
         }
     }
     std::cerr << "Error code \"" << static_cast<int>(error_code) << "\" not found.\n";
-    CPPUNIT_ASSERT(!"error code not found, test_as2js_optimizer.cpp bug");
+    CPPUNIT_ASSERT(!"error code not found, test_as2js_compiler.cpp bug");
     return "unknown";
 }
 
@@ -474,7 +475,7 @@ as2js::Node::flag_t str_to_flag_code(as2js::String const& flag_name)
             return g_flag_table[idx].f_flag;
         }
     }
-    CPPUNIT_ASSERT(!"flag code not found, test_as2js_optimizer.cpp bug");
+    CPPUNIT_ASSERT(!"flag code not found, test_as2js_compiler.cpp bug");
     return as2js::Node::flag_t::NODE_FLAG_max;
 }
 
@@ -488,7 +489,7 @@ as2js::String flag_to_str(as2js::Node::flag_t& flg)
             return g_flag_table[idx].f_name;
         }
     }
-    CPPUNIT_ASSERT(!"flag code not found, test_as2js_optimizer.cpp bug");
+    CPPUNIT_ASSERT(!"flag code not found, test_as2js_compiler.cpp bug");
     return "";
 }
 
@@ -706,7 +707,7 @@ as2js::Node::attribute_t str_to_attribute_code(as2js::String const& attr_name)
             return g_attribute_table[idx].f_attribute;
         }
     }
-    CPPUNIT_ASSERT(!"attribute code not found, test_as2js_optimizer.cpp bug");
+    CPPUNIT_ASSERT(!"attribute code not found, test_as2js_compiler.cpp bug");
     return as2js::Node::attribute_t::NODE_ATTR_max;
 }
 
@@ -720,7 +721,7 @@ as2js::String attribute_to_str(as2js::Node::attribute_t& attr)
             return g_attribute_table[idx].f_name;
         }
     }
-    CPPUNIT_ASSERT(!"attribute code not found, test_as2js_optimizer.cpp bug");
+    CPPUNIT_ASSERT(!"attribute code not found, test_as2js_compiler.cpp bug");
     return "";
 }
 
@@ -1006,11 +1007,11 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
             switch(static_cast<as2js::Node::link_t>(link_idx))
             {
             case as2js::Node::link_t::LINK_INSTANCE:
-                CPPUNIT_ASSERT(!"optimizer does not use LINK_INSTANCE");
+                CPPUNIT_ASSERT(!"compiler does not use LINK_INSTANCE");
                 break;
 
             case as2js::Node::link_t::LINK_TYPE:
-                CPPUNIT_ASSERT(!"optimizer does not use LINK_TYPE");
+                CPPUNIT_ASSERT(!"compiler does not use LINK_TYPE");
                 break;
 
             case as2js::Node::link_t::LINK_ATTRIBUTES:
@@ -1018,11 +1019,11 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
                 break;
 
             case as2js::Node::link_t::LINK_GOTO_EXIT:
-                CPPUNIT_ASSERT(!"optimizer does not use LINK_GOTO_EXIT");
+                CPPUNIT_ASSERT(!"compiler does not use LINK_GOTO_EXIT");
                 break;
 
             case as2js::Node::link_t::LINK_GOTO_ENTER:
-                CPPUNIT_ASSERT(!"optimizer does not use LINK_GOTO_ENTER");
+                CPPUNIT_ASSERT(!"compiler does not use LINK_GOTO_ENTER");
                 break;
 
             case as2js::Node::link_t::LINK_max:
@@ -1099,46 +1100,46 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
 
 
 //
-// JSON data used to test the optimizer, most of the work is in this table
+// JSON data used to test the compiler, most of the work is in this table
 // these are long JSON strings! It is actually generated using the
-// json_to_string tool and the test_as2js_optimizer_*.json source files.
+// json_to_string tool and the test_as2js_compiler_*.json source files.
 //
 // Note: the top entries are arrays so we can execute programs in the
 //       order we define them...
 //
-char const g_optimizer_additive[] =
-#include "test_as2js_optimizer_additive.ci"
+char const g_compiler_class[] =
+#include "test_as2js_compiler_class.ci"
 ;
-char const g_optimizer_assignments[] =
-#include "test_as2js_optimizer_assignments.ci"
-;
-char const g_optimizer_bitwise[] =
-#include "test_as2js_optimizer_bitwise.ci"
-;
-char const g_optimizer_compare[] =
-#include "test_as2js_optimizer_compare.ci"
-;
-char const g_optimizer_conditional[] =
-#include "test_as2js_optimizer_conditional.ci"
-;
-char const g_optimizer_equality[] =
-#include "test_as2js_optimizer_equality.ci"
-;
-char const g_optimizer_logical[] =
-#include "test_as2js_optimizer_logical.ci"
-;
-char const g_optimizer_match[] =
-#include "test_as2js_optimizer_match.ci"
-;
-char const g_optimizer_multiplicative[] =
-#include "test_as2js_optimizer_multiplicative.ci"
-;
-char const g_optimizer_relational[] =
-#include "test_as2js_optimizer_relational.ci"
-;
-char const g_optimizer_statements[] =
-#include "test_as2js_optimizer_statements.ci"
-;
+//char const g_compiler_assignments[] =
+//#include "test_as2js_compiler_assignments.ci"
+//;
+//char const g_compiler_bitwise[] =
+//#include "test_as2js_compiler_bitwise.ci"
+//;
+//char const g_compiler_compare[] =
+//#include "test_as2js_compiler_compare.ci"
+//;
+//char const g_compiler_conditional[] =
+//#include "test_as2js_compiler_conditional.ci"
+//;
+//char const g_compiler_equality[] =
+//#include "test_as2js_compiler_equality.ci"
+//;
+//char const g_compiler_logical[] =
+//#include "test_as2js_compiler_logical.ci"
+//;
+//char const g_compiler_match[] =
+//#include "test_as2js_compiler_match.ci"
+//;
+//char const g_compiler_multiplicative[] =
+//#include "test_as2js_compiler_multiplicative.ci"
+//;
+//char const g_compiler_relational[] =
+//#include "test_as2js_compiler_relational.ci"
+//;
+//char const g_compiler_statements[] =
+//#include "test_as2js_compiler_statements.ci"
+//;
 
 
 
@@ -1167,7 +1168,7 @@ void run_tests(char const *data, char const *filename)
     as2js::JSON::pointer_t json_data(new as2js::JSON);
     as2js::JSON::JSONValue::pointer_t json(json_data->parse(in));
 
-    // verify that the optimizer() did not fail
+    // verify that the compiler() did not fail
     CPPUNIT_ASSERT(!!json);
     CPPUNIT_ASSERT(json->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_ARRAY);
 
@@ -1287,8 +1288,10 @@ void run_tests(char const *data, char const *filename)
                 }
             }
 
-            // run the optimizer
-            as2js::Optimizer::optimize(root);
+            // run the compiler
+            as2js::Options::pointer_t options(new as2js::Options);
+            as2js::Compiler compiler(options);
+            compiler.compile(root);
 
             tc.got_called();
 
@@ -1306,21 +1309,169 @@ void run_tests(char const *data, char const *filename)
 // no name namespace
 
 
-
-
-
-void As2JsOptimizerUnitTests::test_optimizer_invalid_nodes()
+void As2JsCompilerUnitTests::setUp()
 {
+    // verify that this user does not have existing rc files because
+    // that can interfer with the tests! (and we do not want to delete
+    // those under his/her feet)
+
+    // AS2JS_RC variable
+    CPPUNIT_ASSERT(getenv("AS2JS_RC") == nullptr);
+
+    // local file
+    struct stat st;
+    CPPUNIT_ASSERT(stat("as2js/as2js.rc", &st) == -1);
+
+    // user defined .config file
+    as2js::String home;
+    home.from_utf8(getenv("HOME"));
+    as2js::String config(home);
+    config += "/.config/as2js/as2js.rc";
+    std::string cfg(config.to_utf8());
+    CPPUNIT_ASSERT(stat(cfg.c_str(), &st) == -1);
+
+    // system defined configuration file
+    CPPUNIT_ASSERT(stat("/etc/as2js/as2js.rc", &st) == -1);
+
+    // we do not want a test.db or it could conflict with this test
+    CPPUNIT_ASSERT(stat("test.db", &st) == -1);
+
+    // Now check that we have the scripts directories, we expect
+    // the test to be run from the root directory of the source
+    // tree, although if you have different scripts you could run
+    // from somewhere else, only make sure those scripts are somehow
+    // accessible
+    CPPUNIT_ASSERT(stat("scripts", &st) == 0);
+    CPPUNIT_ASSERT(stat("scripts/extensions", &st) == 0);
+    CPPUNIT_ASSERT(stat("scripts/global", &st) == 0);
+    CPPUNIT_ASSERT(stat("scripts/native", &st) == 0);
+    CPPUNIT_ASSERT(stat("scripts/system", &st) == 0);
+}
+
+
+void As2JsCompilerUnitTests::tearDown()
+{
+    if(g_created_rc)
+    {
+        // ignore errors on these few calls
+        unlink("as2js/as2js.rc");
+        rmdir("as2js");
+    }
+}
+
+
+class input_retriever : public as2js::InputRetriever
+{
+public:
+    virtual as2js::Input::pointer_t retrieve(as2js::String const& filename)
+    {
+        if(filename == "")
+        {
+        }
+
+        return as2js::Input::pointer_t();
+    }
+
+};
+
+
+void init_rc()
+{
+    // The .rc file cannot be captured by the input retriever
+    // so instead we create a file in the current directory
+    char pwd[PATH_MAX + 1];
+    CPPUNIT_ASSERT(getcwd(pwd, sizeof(pwd)) == pwd);
+    pwd[PATH_MAX] = '\0';
+    as2js::String spwd;
+    std::string tpwd;
+    for(char const *s(pwd); *s != '\0'; ++s)
+    {
+        if(*s == '\'') // just in case, but it probably will never happen...
+        {
+            tpwd += '\\';
+        }
+        tpwd += *s;
+    }
+    spwd.from_utf8(tpwd.c_str());
+    as2js::String rc("// rc test file\n");
+    rc += "{\n"
+          "  'scripts': '";
+                rc += spwd;
+                rc += "/scripts',\n"
+          "  'db': '";
+                rc += spwd;
+                rc += "/test.db',\n"
+          "  'temporary_variable_name': '@temp$'\n"
+          "}\n";
+
+    g_created_rc = true;
+    mkdir("as2js", 0700);
+    as2js::FileOutput output;
+    CPPUNIT_ASSERT(output.open("as2js/as2js.rc"));
+    output.write(rc);
+}
+
+
+void init_compiler(as2js::Compiler& compiler)
+{
+    // The .rc file cannot be captured by the input retriever
+    // so instead we create a file in the current directory
+
+    // setup an input retriever which in most cases just returns nullptr
+    compiler.set_input_retriever(as2js::InputRetriever::pointer_t(new input_retriever));
+}
+
+
+void As2JsCompilerUnitTests::test_compiler_invalid_nodes()
+{
+std::cerr << "\n";
     // empty node does nothing, return false
     {
         as2js::Node::pointer_t node;
-        CPPUNIT_ASSERT(!as2js::Optimizer::optimize(node));
+        init_rc();
+std::cerr << "build compiler...\n";
+        test_callback tc(true);
+        as2js::Options::pointer_t options(new as2js::Options);
+
+        //test_callback::expected_t expected;
+        //expected.f_message_level = static_cast<as2js::message_level_t>(message.find("message level")->second->get_int64().get());
+        //expected.f_error_code = str_to_error_code(message.find("error code")->second->get_string());
+        //expected.f_pos.set_filename("unknown-file");
+        //as2js::JSON::JSONValue::object_t::const_iterator func_it(message.find("function name"));
+        //if(func_it == message.end())
+        //{
+        //    expected.f_pos.set_function("unknown-func");
+        //}
+        //else
+        //{
+        //    expected.f_pos.set_function(func_it->second->get_string());
+        //}
+        //as2js::JSON::JSONValue::object_t::const_iterator line_it(message.find("line #"));
+        //if(line_it != message.end())
+        //{
+        //    int64_t lines(line_it->second->get_int64().get());
+        //    for(int64_t l(1); l < lines; ++l)
+        //    {
+        //        expected.f_pos.new_line();
+        //    }
+        //}
+        //expected.f_message = message.find("message")->second->get_string();
+        //tc.f_expected.push_back(expected);
+
+        as2js::Compiler compiler(options);
+std::cerr << "init compiler...\n";
+        init_compiler(compiler);
+std::cerr << "compile empty node...\n";
+        CPPUNIT_ASSERT(compiler.compile(node) != 0);
     }
+return;
 
     // unknown node does nothing, return false
     {
         as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_UNKNOWN));
-        CPPUNIT_ASSERT(!as2js::Optimizer::optimize(node));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Compiler compiler(options);
+        CPPUNIT_ASSERT(compiler.compile(node) != 0);
         CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_UNKNOWN);
         CPPUNIT_ASSERT(node->get_children_size() == 0);
     }
@@ -1346,7 +1497,9 @@ void As2JsOptimizerUnitTests::test_optimizer_invalid_nodes()
         node_add->append_child(node_twenty);
 
         // optimization does not happen
-        CPPUNIT_ASSERT_THROW(!as2js::Optimizer::optimize(node_add), as2js::exception_internal_error);
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Compiler compiler(options);
+        CPPUNIT_ASSERT_THROW(compiler.compile(node_add) != 0, as2js::exception_internal_error);
 
         // verify that nothing changed
         CPPUNIT_ASSERT(node_add->get_type() == as2js::Node::node_t::NODE_ADD);
@@ -1361,65 +1514,65 @@ void As2JsOptimizerUnitTests::test_optimizer_invalid_nodes()
 }
 
 
-void As2JsOptimizerUnitTests::test_optimizer_additive()
+void As2JsCompilerUnitTests::test_compiler_class()
 {
-    run_tests(g_optimizer_additive, "test_optimizer_additive.json");
+    run_tests(g_compiler_class, "test_compiler_class.json");
 }
 
-void As2JsOptimizerUnitTests::test_optimizer_assignments()
-{
-    run_tests(g_optimizer_assignments, "test_optimizer_assignments.json");
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_bitwise()
-{
-    run_tests(g_optimizer_bitwise, "test_optimizer_bitwise.json");
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_compare()
-{
-    run_tests(g_optimizer_compare, "test_optimizer_compare.json");
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_conditional()
-{
-    run_tests(g_optimizer_conditional, "test_optimizer_conditional.json");
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_equality()
-{
-    run_tests(g_optimizer_equality, "test_optimizer_equality.json");
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_logical()
-{
-    run_tests(g_optimizer_logical, "test_optimizer_logical.json");
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_match()
-{
-// regex is not well supported before 4.9.0
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)
-    run_tests(g_optimizer_match, "test_optimizer_match.json");
-#else
-    std::cerr << " -- warning: test As2JsOptimizerUnitTests::test_optimizer_match() skip since you are compiling with a g++ version prior to 4.9.0" << std::endl;
-#endif
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_multiplicative()
-{
-    run_tests(g_optimizer_multiplicative, "test_optimizer_multiplicative.json");
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_relational()
-{
-    run_tests(g_optimizer_relational, "test_optimizer_relational.json");
-}
-
-void As2JsOptimizerUnitTests::test_optimizer_statements()
-{
-    run_tests(g_optimizer_statements, "test_optimizer_statements.json");
-}
+//void As2JsCompilerUnitTests::test_compiler_assignments()
+//{
+//    run_tests(g_compiler_assignments, "test_compiler_assignments.json");
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_bitwise()
+//{
+//    run_tests(g_compiler_bitwise, "test_compiler_bitwise.json");
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_compare()
+//{
+//    run_tests(g_compiler_compare, "test_compiler_compare.json");
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_conditional()
+//{
+//    run_tests(g_compiler_conditional, "test_compiler_conditional.json");
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_equality()
+//{
+//    run_tests(g_compiler_equality, "test_compiler_equality.json");
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_logical()
+//{
+//    run_tests(g_compiler_logical, "test_compiler_logical.json");
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_match()
+//{
+//// regex is not well supported before 4.9.0
+//#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)
+//    run_tests(g_compiler_match, "test_compiler_match.json");
+//#else
+//    std::cerr << " -- warning: test As2JsOptimizerUnitTests::test_compiler_match() skip since you are compiling with a g++ version prior to 4.9.0" << std::endl;
+//#endif
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_multiplicative()
+//{
+//    run_tests(g_compiler_multiplicative, "test_compiler_multiplicative.json");
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_relational()
+//{
+//    run_tests(g_compiler_relational, "test_compiler_relational.json");
+//}
+//
+//void As2JsCompilerUnitTests::test_compiler_statements()
+//{
+//    run_tests(g_compiler_statements, "test_compiler_statements.json");
+//}
 
 
 

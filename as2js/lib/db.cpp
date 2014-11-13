@@ -326,7 +326,11 @@ void Database::save() const
     if(f_json)
     {
         String const header("// Database used by the AS2JS Compiler (as2js)\n"
+                            "//\n"
                             "// DO NOT EDIT UNLESS YOU KNOW WHAT YOU ARE DOING\n"
+                            "// If you have a problem because of the database, just delete the file\n"
+                            "// and the compiler will re-generate it.\n"
+                            "//\n"
                             "// Copyright (c) 2005-2014 by Made to Order Software Corp.\n"
                             "// This file is written in UTF-8\n"
                             "// You can safely modify it with an editor supporting UTF-8\n"
@@ -336,8 +340,8 @@ void Database::save() const
                             "//   \"package_name\": {\n"
                             "//     \"element_name\": {\n"
                             "//       \"filename\": \"<full path filename>\",\n"
-                            "//       \"type\": \"<type name>\",\n"
-                            "//       \"line\": <line number>\n"
+                            "//       \"line\": <line number>,\n"
+                            "//       \"type\": \"<type name>\"\n"
                             "//     },\n"
                             "//     <...other elements...>\n"
                             "//   },\n"

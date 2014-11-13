@@ -70,10 +70,9 @@ class Compiler
 public:
     typedef std::shared_ptr<Compiler>   pointer_t;
 
-                                Compiler();
+                                Compiler(Options::pointer_t options);
     virtual                     ~Compiler();
 
-    void                        set_options(Options::pointer_t options);
     InputRetriever::pointer_t   set_input_retriever(InputRetriever::pointer_t retriever);
     int                         compile(Node::pointer_t& root);
 
@@ -125,7 +124,6 @@ private:
     void                load_internal_packages(char const *module);
     void                read_db();
     void                write_db();
-    static bool         isspace(int c);
     bool                find_module(String const& filename, Node::pointer_t& result);
     void                find_packages_add_database_entry(String const& package_name, Node::pointer_t& element, char const *type);
     void                find_packages_save_package_elements(Node::pointer_t package, String const& package_name);

@@ -37,7 +37,7 @@ native package Global
 {
 
 
-class Number : public Object
+class Number extends Object
 {
     function Number(var in value: Number := 0.0) : Number;
 
@@ -62,7 +62,7 @@ class Number : public Object
     function **  (var in value: Number) : Number;
 
     function ~=  (var in value: Number) : Boolean;
-    function ~!  (var in value: Number) : Boolean;
+    function !~  (var in value: Number) : Boolean;
 
     function *   (var in value: Number) : Number;
     function /   (var in value: Number) : Number;
@@ -105,7 +105,7 @@ class Number : public Object
     function >?  (var in value: Number) : Number;
 
     // assignment operators
-    function =   (var in value: Number) : Number;
+    function :=  (var in value: Number) : Number;
 
     function **= (var in value: Number) : Number;
 
@@ -119,8 +119,8 @@ class Number : public Object
     function <<= (var in value: Number) : Number;
     function >>= (var in value: Number) : Number;
     function >>>=(var in value: Number) : Number;
-    function <|= (var in value: Number) : Number;
-    function >|= (var in value: Number) : Number;
+    function <%= (var in value: Number) : Number;
+    function >%= (var in value: Number) : Number;
 
     function &=  (var in value: Number) : Number;
 
@@ -140,11 +140,11 @@ class Number : public Object
     var length;
 
     // constants
-    var const MIN_VALUE;
-    var const MAX_VALUE;
-    var const NaN;
-    var const NEGATIVE_INFINITY;
-    var const POSITIVE_INFINITY;
+    const var MIN_VALUE;
+    const var MAX_VALUE;
+    //const var NaN; -- this is 100% internal in as2js
+    const var NEGATIVE_INFINITY;
+    const var POSITIVE_INFINITY;
 };
 
 

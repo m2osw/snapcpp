@@ -37,7 +37,7 @@ native package Global
 {
 
 
-class Error : public Object
+class Error extends Object
 {
     function Error(var in e: Error) : Error;
     function Error(var in message: String := undefined) : Error;
@@ -49,37 +49,37 @@ class Error : public Object
 };
 
 
-class NativeError : public Error
+class NativeError extends Error
 {
 };
 
 
-class EvalError : public NativeError
+class EvalError extends NativeError
 {
 };
 
 
-class RangeError : public NativeError
+class RangeError extends NativeError
 {
 };
 
 
-class ReferenceError : public NativeError
+class ReferenceError extends NativeError
 {
 };
 
 
-class SyntaxError : public NativeError
+class SyntaxError extends NativeError
 {
 };
 
 
-class TypeError : public NativeError
+class TypeError extends NativeError
 {
 };
 
 
-class URIError : public NativeError
+class URIError extends NativeError
 {
 };
 
