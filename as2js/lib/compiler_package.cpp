@@ -694,7 +694,7 @@ void Compiler::internal_imports()
     }
     if(!g_db->load(g_rc.get_db()))
     {
-        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_UNEXPECTED_DATABASE, pos);
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_UNEXPECTED_DATABASE /*, pos*/);
         msg << "Failed reading the compiler database. You may need to delete it and try again or fix the resource file to point to the right file.";
         return;
     }
