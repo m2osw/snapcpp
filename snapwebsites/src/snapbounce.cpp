@@ -31,6 +31,7 @@
 
 #include <advgetopt/advgetopt.h>
 
+#include <QtCassandra/QCassandraContext.h>
 #include <QtCassandra/QCassandraTable.h>
 
 #include <QFile>
@@ -48,10 +49,14 @@
 #endif
 
 #include <exception>
-#include <map>
 #include <memory>
-#include <sstream>
 #include <vector>
+#include <iostream>
+#include <fstream>
+
+#include "qstring_stream.h"
+
+using namespace QtCassandra;
 
 namespace
 {
@@ -165,6 +170,7 @@ private:
     advgetopt::getopt    f_opt;
     snap::snap_config    f_config;
     snap::snap_cassandra f_cassandra;
+    QStringList          f_email_body;
 
     snap_bounce( int argc, char *argv[] );
 
@@ -230,11 +236,47 @@ void snap_bounce::usage()
 
 void snap_bounce::read_stdin()
 {
+    std::cout << "read_stdin():" << std::endl;
+    while( (std::cin.rdstate() & std::ifstream::eofbit) == 0 )
+    {
+        std::string line;
+        std::getline( std::cin, line );
+        f_email_body << line.c_str();
+    }
+
+    std::cout << std::endl << "f_email_body:" << std::endl;
+    for( const QString line : f_email_body )
+    {
+        std::cout << "\t" << line << std::endl;
+    }
 }
 
 
 void snap_bounce::store_email()
 {
+    // Send f_email_body's contents to cassandra, specifically in the "emails/bounced" table/row.
+    //
+    QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
+
+    QCassandraTable::pointer_t table(context->findTable("emails"));
+    if(!table)
+    {
+        table = context->table("email");
+        table->setComment("Table containing email addresses");
+        table->setColumnType("Standard"); // Standard or Super
+        table->setKeyValidationClass("BytesType");
+        table->setDefaultValidationClass("BytesType");
+        table->setComparatorType("BytesType");
+        table->setKeyCacheSavePeriodInSeconds(14400);
+        table->setMemtableFlushAfterMins(60);
+        table->setGcGraceSeconds(864000);
+        table->setMinCompactionThreshold(4);
+        table->setMaxCompactionThreshold(22);
+        table->setReplicateOnWrite(1);
+        table->create();
+    }
+
+    //(*table)["bounced"] //[f_opt.get_string("sender").c_str()]
 }
 
 
