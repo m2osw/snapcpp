@@ -3154,28 +3154,24 @@ void As2JsLexerUnitTests::test_tokens()
         // this represents 2^(# of options) which right now is 2048
         // we also check with entry 2048 to allow a test with the default
         // (i.e. a nullptr as the Options pointer)
-        for(size_t opt(0); opt <= (1 << g_options_size); ++opt)
+        for(size_t opt(0); opt < (1 << g_options_size); ++opt)
         {
             as2js::String str;
             str.from_utf8(g_tokens[idx].f_input);
             as2js::Input::pointer_t input(new as2js::StringInput(str));
-            as2js::Options::pointer_t options;
             std::map<as2js::Options::option_t, bool> option_map;
-            if(opt != (1 << g_options_size))
+
+            as2js::Options::pointer_t options(new as2js::Options);
+            for(size_t o(0); o < g_options_size; ++o)
             {
-                // if not equal to max. then create an actual options
-                // object; otherwise we use the default (nullptr)
-                options.reset(new as2js::Options);
-                for(size_t o(0); o < g_options_size; ++o)
+                as2js::Options::option_t option(g_options[o]);
+                option_map[option] = (opt & (1 << o)) != 0;
+                if(option_map[option])
                 {
-                    as2js::Options::option_t option(g_options[o]);
-                    option_map[option] = (opt & (1 << o)) != 0;
-                    if(option_map[option])
-                    {
-                        options->set_option(g_options[o], 1);
-                    }
+                    options->set_option(g_options[o], 1);
                 }
             }
+
             as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
             CPPUNIT_ASSERT(lexer->get_input() == input);
             as2js::Node::pointer_t token(lexer->get_next_token());
@@ -3344,7 +3340,8 @@ void As2JsLexerUnitTests::test_valid_strings()
         str += '0';
         str += quote;
         as2js::Input::pointer_t input(new as2js::StringInput(str));
-        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
         CPPUNIT_ASSERT(lexer->get_input() == input);
         as2js::Node::pointer_t token(lexer->get_next_token());
 //std::cerr << "token = " << *token << "\n";
@@ -4087,7 +4084,8 @@ void As2JsLexerUnitTests::test_invalid_numbers()
         tc.f_expected.push_back(expected);
 
         as2js::Input::pointer_t input(new as2js::StringInput(str));
-        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
         CPPUNIT_ASSERT(lexer->get_input() == input);
         as2js::Node::pointer_t token(lexer->get_next_token());
         tc.got_called();
@@ -4109,7 +4107,8 @@ void As2JsLexerUnitTests::test_invalid_numbers()
         tc.f_expected.push_back(expected);
 
         as2js::Input::pointer_t input(new as2js::StringInput(str));
-        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
         CPPUNIT_ASSERT(lexer->get_input() == input);
         as2js::Node::pointer_t token(lexer->get_next_token());
         tc.got_called();
@@ -4131,7 +4130,8 @@ void As2JsLexerUnitTests::test_invalid_numbers()
         tc.f_expected.push_back(expected);
 
         as2js::Input::pointer_t input(new as2js::StringInput(str));
-        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
         CPPUNIT_ASSERT(lexer->get_input() == input);
         as2js::Node::pointer_t token(lexer->get_next_token());
         tc.got_called();
@@ -4156,7 +4156,8 @@ void As2JsLexerUnitTests::test_invalid_numbers()
         tc.f_expected.push_back(expected);
 
         as2js::Input::pointer_t input(new as2js::StringInput(str));
-        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
         CPPUNIT_ASSERT(lexer->get_input() == input);
         as2js::Node::pointer_t token(lexer->get_next_token());
         tc.got_called();
@@ -4181,7 +4182,8 @@ void As2JsLexerUnitTests::test_invalid_numbers()
         tc.f_expected.push_back(expected);
 
         as2js::Input::pointer_t input(new as2js::StringInput(str));
-        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
         CPPUNIT_ASSERT(lexer->get_input() == input);
         as2js::Node::pointer_t token(lexer->get_next_token());
         tc.got_called();
@@ -4206,7 +4208,8 @@ void As2JsLexerUnitTests::test_invalid_numbers()
         tc.f_expected.push_back(expected);
 
         as2js::Input::pointer_t input(new as2js::StringInput(str));
-        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
         CPPUNIT_ASSERT(lexer->get_input() == input);
         as2js::Node::pointer_t token(lexer->get_next_token());
         tc.got_called();
@@ -4231,7 +4234,8 @@ void As2JsLexerUnitTests::test_invalid_numbers()
         tc.f_expected.push_back(expected);
 
         as2js::Input::pointer_t input(new as2js::StringInput(str));
-        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, nullptr));
+        as2js::Options::pointer_t options(new as2js::Options);
+        as2js::Lexer::pointer_t lexer(new as2js::Lexer(input, options));
         CPPUNIT_ASSERT(lexer->get_input() == input);
         as2js::Node::pointer_t token(lexer->get_next_token());
         tc.got_called();

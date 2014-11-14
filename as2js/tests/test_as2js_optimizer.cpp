@@ -1219,7 +1219,8 @@ void run_tests(char const *data, char const *filename)
             as2js::String program_source(program_value->get_string());
 //std::cerr << "prog = [" << program_source << "]\n";
             as2js::StringInput::pointer_t prog_text(new as2js::StringInput(program_source));
-            as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, nullptr));
+            as2js::Options::pointer_t options(new as2js::Options);
+            as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, options));
 
             test_callback tc(verbose);
 

@@ -1267,27 +1267,21 @@ void run_tests(char const *data, char const *filename)
         as2js::JSON::JSONValue::pointer_t name(prog.find(name_string)->second);
         std::cout << "  -- working on \"" << name->get_string() << "\" " << (slow ? "" : "...") << std::flush;
 
-        for(size_t opt(0); opt <= (1 << g_options_size); ++opt)
+        for(size_t opt(0); opt < (1 << g_options_size); ++opt)
         {
             if(slow && ((opt + 1) % 250) == 0)
             {
                 std::cout << "." << std::flush;
             }
 //std::cerr << "\n***\n*** OPTIONS:";
-            as2js::Options::pointer_t options;
-            if(opt != (1 << g_options_size))
+            as2js::Options::pointer_t options(new as2js::Options);
+            for(size_t o(0); o < g_options_size; ++o)
             {
-                // if not equal to max. then create an actual options
-                // object; otherwise we use the default (nullptr)
-                options.reset(new as2js::Options);
-                for(size_t o(0); o < g_options_size; ++o)
+                if((opt & (1 << o)) != 0)
                 {
-                    if((opt & (1 << o)) != 0)
-                    {
-                        options->set_option(g_options[o].f_option,
-                                options->get_option(g_options[o].f_option) | g_options[o].f_value);
+                    options->set_option(g_options[o].f_option,
+                            options->get_option(g_options[o].f_option) | g_options[o].f_value);
 //std::cerr << " " << g_options[o].f_name << "=" << g_options[o].f_value;
-                    }
                 }
             }
 //std::cerr << "\n***\n";

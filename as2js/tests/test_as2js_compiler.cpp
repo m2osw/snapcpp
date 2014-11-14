@@ -57,7 +57,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION( As2JsCompilerUnitTests );
 namespace
 {
 
-bool            g_created_rc = false;
+bool            g_created_files = false;
 
 struct err_to_string_t
 {
@@ -1351,9 +1351,10 @@ void As2JsCompilerUnitTests::setUp()
 
 void As2JsCompilerUnitTests::tearDown()
 {
-    if(g_created_rc)
+    if(g_created_files)
     {
         // ignore errors on these few calls
+        unlink("test.db");
         unlink("as2js/as2js.rc");
         rmdir("as2js");
     }
@@ -1377,6 +1378,8 @@ public:
 
 void init_rc()
 {
+    g_created_files = true;
+
     // The .rc file cannot be captured by the input retriever
     // so instead we create a file in the current directory
     char pwd[PATH_MAX + 1];
@@ -1404,7 +1407,6 @@ void init_rc()
           "  'temporary_variable_name': '@temp$'\n"
           "}\n";
 
-    g_created_rc = true;
     mkdir("as2js", 0700);
     as2js::FileOutput output;
     CPPUNIT_ASSERT(output.open("as2js/as2js.rc"));
@@ -1424,57 +1426,51 @@ void init_compiler(as2js::Compiler& compiler)
 
 void As2JsCompilerUnitTests::test_compiler_invalid_nodes()
 {
-std::cerr << "\n";
-    // empty node does nothing, return false
+    // empty node does absolutely nothing
     {
         as2js::Node::pointer_t node;
         init_rc();
-std::cerr << "build compiler...\n";
         test_callback tc(true);
         as2js::Options::pointer_t options(new as2js::Options);
 
-        //test_callback::expected_t expected;
-        //expected.f_message_level = static_cast<as2js::message_level_t>(message.find("message level")->second->get_int64().get());
-        //expected.f_error_code = str_to_error_code(message.find("error code")->second->get_string());
-        //expected.f_pos.set_filename("unknown-file");
-        //as2js::JSON::JSONValue::object_t::const_iterator func_it(message.find("function name"));
-        //if(func_it == message.end())
-        //{
-        //    expected.f_pos.set_function("unknown-func");
-        //}
-        //else
-        //{
-        //    expected.f_pos.set_function(func_it->second->get_string());
-        //}
-        //as2js::JSON::JSONValue::object_t::const_iterator line_it(message.find("line #"));
-        //if(line_it != message.end())
-        //{
-        //    int64_t lines(line_it->second->get_int64().get());
-        //    for(int64_t l(1); l < lines; ++l)
-        //    {
-        //        expected.f_pos.new_line();
-        //    }
-        //}
-        //expected.f_message = message.find("message")->second->get_string();
-        //tc.f_expected.push_back(expected);
-
         as2js::Compiler compiler(options);
-std::cerr << "init compiler...\n";
         init_compiler(compiler);
-std::cerr << "compile empty node...\n";
-        CPPUNIT_ASSERT(compiler.compile(node) != 0);
+        CPPUNIT_ASSERT(compiler.compile(node) == 0);
     }
-return;
 
-    // unknown node does nothing, return false
+    // all node types other than ROOT and PROGRAM generate an error
+    for(int i(-1); i < static_cast<int>(as2js::Node::node_t::NODE_max); ++i)
     {
-        as2js::Node::pointer_t node(new as2js::Node(as2js::Node::node_t::NODE_UNKNOWN));
+        as2js::Node::pointer_t node;
+        try
+        {
+            node.reset(new as2js::Node(as2js::Node::node_t::NODE_UNKNOWN));
+        }
+        catch(as2js::exception_incompatible_node_type&)
+        {
+            // many node types cannot be created (we have gaps in our numbers)
+            continue;
+        }
+
+        test_callback tc(true);
+        {
+            test_callback::expected_t expected;
+            expected.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
+            expected.f_error_code = as2js::err_code_t::AS_ERR_INTERNAL_ERROR;
+            expected.f_pos.set_filename("unknown-file");
+            expected.f_pos.set_function("unknown-func");
+            //expected.f_pos.new_line(); -- line 1
+            expected.f_message = "the Compiler::compile() function expected a root or a program node to start with.";
+            tc.f_expected.push_back(expected);
+        }
+
         as2js::Options::pointer_t options(new as2js::Options);
         as2js::Compiler compiler(options);
         CPPUNIT_ASSERT(compiler.compile(node) != 0);
         CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_UNKNOWN);
         CPPUNIT_ASSERT(node->get_children_size() == 0);
     }
+return;
 
     // a special case where an optimization occurs on a node without a parent
     // (something that should not occur in a real tree)
