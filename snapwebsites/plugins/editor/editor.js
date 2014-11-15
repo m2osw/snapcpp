@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.244
+ * Version: 0.0.3.245
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -3204,8 +3204,8 @@ snapwebsites.EditorSaveDialog.prototype.open = function()
  * save dialog gets closed.
  *
  * \note
- * This function does not change the dialog buttons status. The
- * save function is expected to call the setStatus() function
+ * This function does not change the status of the dialog buttons.
+ * The save function is expected to call the setStatus() function
  * for that purpose.
  */
 snapwebsites.EditorSaveDialog.prototype.close = function()
@@ -3238,7 +3238,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
     // dialog even exists?
     if(!this.saveDialogPopup_)
     {
-        throw new Error("setStatus() called without the dialog defined.");
+        throw new Error("EditorSaveDialog.setStatus() called without a save dialog popup defined.");
     }
 //#endif
 
@@ -3853,6 +3853,9 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
     else
     {
         this.setSaving(false, false);
+
+        // the serverAccess callback would otherwise call the close
+        this.getSaveDialog().close();
     }
 };
 

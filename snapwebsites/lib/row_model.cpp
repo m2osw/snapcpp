@@ -54,13 +54,13 @@ Qt::ItemFlags row_model::flags( const QModelIndex & idx ) const
 }
 
 
-void row_model::displayError( const std::exception& except, const QString& message ) const
+void row_model::displayError( std::exception const& except, QString const& message ) const
 {
     emit exceptionCaught( except.what(), message );
 }
 
 
-QVariant row_model::data( const QModelIndex & idx, int role ) const
+QVariant row_model::data( QModelIndex const & idx, int role ) const
 {
     if( !f_row )
     {
@@ -81,7 +81,7 @@ QVariant row_model::data( const QModelIndex & idx, int role ) const
     try
     {
         QCassandraCells const& cell_list(f_row->cells());
-        const auto cell( (cell_list.begin() + idx.row()).value() );
+        auto const cell( (cell_list.begin() + idx.row()).value() );
 
         if( role == Qt::UserRole )
         {
@@ -289,4 +289,4 @@ bool row_model::removeRows ( int row, int count, const QModelIndex & )
 // namespace snap
 
 
-// vim: ts=4 sw=4 et syntax=cpp.doxygen
+// vim: ts=4 sw=4 et

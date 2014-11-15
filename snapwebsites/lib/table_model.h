@@ -32,7 +32,12 @@ class table_model
     Q_OBJECT
 
     public:
-        table_model() : f_rowCount(1000), f_rowsRemaining(0), f_pos(0) {}
+        table_model()
+            : f_rowCount(1000)
+            , f_rowsRemaining(0)
+            , f_pos(0)
+        {
+        }
 
         QtCassandra::QCassandraTable::pointer_t getTable() const;
         void setTable( QtCassandra::QCassandraTable::pointer_t t );
@@ -46,15 +51,16 @@ class table_model
 
         // Fecth more
         //
-        bool canFetchMore ( const QModelIndex & /* index */ ) const;
-        void fetchMore    ( const QModelIndex & /* index */ );
+        bool            canFetchMore ( const QModelIndex & /* index */ ) const;
+        void            fetchMore    ( const QModelIndex & /* index */ );
 
     private:
         QtCassandra::QCassandraTable::pointer_t f_table;
         QtCassandra::QCassandraRowPredicate     f_rowp;
-        int f_rowCount;
-        int f_rowsRemaining;
-        int f_pos;
+        // TODO: use controlled_vars instead of constructor
+        int                                     f_rowCount;
+        int                                     f_rowsRemaining;
+        int                                     f_pos;
 };
 
 }
