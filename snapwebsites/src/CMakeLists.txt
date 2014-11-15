@@ -330,6 +330,7 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
+    uuid
     ${QTCASSANDRA_LIBRARIES}
     ${QT_LIBRARIES}
     ${THRIFT_LIBRARIES}

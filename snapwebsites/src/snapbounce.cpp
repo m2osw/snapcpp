@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <uuid/uuid.h>
 
 #define USE_OPEN_FD
 #ifdef USE_OPEN_FD
@@ -98,7 +99,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
             nullptr,
-            "Show usage and exit.",
+            "[optional] Show usage and exit.",
             advgetopt::getopt::no_argument
         },
         {
@@ -106,7 +107,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "nolog",
             nullptr,
-            "Only output to the console, not the syslog.",
+            "[optional] Only output to the console, not the syslog.",
             advgetopt::getopt::no_argument
         },
         {
@@ -114,7 +115,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "config",
             "/etc/snapwebsites/snapserver.conf",
-            "Configuration file from which to get cassandra server details.",
+            "[optional] Configuration file from which to get cassandra server details.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -122,7 +123,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
-            "show the version of the snapinit executable",
+            "[optional] show the version of the snapinit executable",
             advgetopt::getopt::no_argument
         },
         {
@@ -130,7 +131,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "sender",
             nullptr,
-            "Sender of the email.",
+            "[required] Sender of the email.",
             advgetopt::getopt::required_argument
         },
         {
@@ -138,7 +139,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "recipient",
             nullptr,
-            "Intended recipient of the email.",
+            "[required] Intended recipient of the email.",
             advgetopt::getopt::required_argument
         },
         {
@@ -193,7 +194,7 @@ snap_bounce::snap_bounce( int argc, char *argv[] )
         exit(1);
     }
 
-    if( f_opt.is_defined( "help" ) )
+    if( f_opt.is_defined( "help" ) || !f_opt.is_defined( "sender" ) || !f_opt.is_defined( "recipient" ) )
     {
         usage();
         exit(1);
@@ -280,6 +281,19 @@ void snap_bounce::read_stdin()
 }
 
 
+namespace
+{
+    QString generate_uuid()
+    {
+        uuid_t uuid;
+        uuid_generate_random( uuid );
+        char unique_key[37];
+        uuid_unparse( uuid, unique_key );
+        return unique_key;
+    }
+}
+
+
 void snap_bounce::store_email()
 {
     // Send f_email_body's contents to cassandra, specifically in the "emails/bounced" table/row.
@@ -295,8 +309,7 @@ void snap_bounce::store_email()
     }
 
     auto& bounced( (*table)["bounced"] );
-    const QString count( QString("%1").arg(bounced.cellCount()) );
-    bounced[count] = f_email_body.join("\n");
+    bounced[generate_uuid()] = f_email_body.join("\n");
 }
 
 
