@@ -35,16 +35,16 @@ class row_model
     Q_OBJECT
 
     public:
-        row_model() {}
+                        row_model() {}
 
         QtCassandra::QCassandraRow::pointer_t   getRow() const;
         void                                    setRow( QtCassandra::QCassandraRow::pointer_t c );
 
-        Qt::ItemFlags   flags       ( const QModelIndex & index ) const;
-        QVariant        data        ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
-        QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-        int             rowCount    ( const QModelIndex & parent = QModelIndex() ) const;
-        int             columnCount ( const QModelIndex & parent = QModelIndex() ) const;
+        Qt::ItemFlags   flags         ( const QModelIndex & index ) const;
+        QVariant        data          ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
+        QVariant        headerData    ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
+        int             rowCount      ( const QModelIndex & parent = QModelIndex() ) const;
+        int             columnCount   ( const QModelIndex & parent = QModelIndex() ) const;
 
         // Write access
         //
@@ -53,23 +53,23 @@ class row_model
 
         // Resizable methods
         //
-        bool insertNewRow( const QString& new_name, const QString& new_value );
-        bool insertRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
-        bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
+        bool            insertNewRow  ( const QString& new_name, const QString& new_value );
+        bool            insertRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
+        bool            removeRows    ( int row, int count, const QModelIndex & parent = QModelIndex() );
 
     signals:
-        void exceptionCaught( const QString& what, const QString& message ) const;
+        void            exceptionCaught( const QString& what, const QString& message ) const;
 
     private:
-        QtCassandra::QCassandraRow::pointer_t   f_row;
-        QString f_newName;
-        QString f_newValue;
+        void            displayError( const std::exception& except, const QString& message ) const;
 
-        void displayError( const std::exception& except, const QString& message ) const;
+        QtCassandra::QCassandraRow::pointer_t   f_row;
+        QString                                 f_newName;
+        QString                                 f_newValue;
 };
 
 }
 // namespace snap
 
 
-// vim: ts=4 sw=4 et syntax=cpp.doxygen
+// vim: ts=4 sw=4 et

@@ -174,7 +174,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 11, 7, 22, 5, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 11, 13, 18, 7, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -557,6 +557,8 @@ void editor::on_process_post(QString const& uri_path)
     if(session_data.size() != 2)
     {
         // should never happen on a valid user
+        // TBD: lose the data in this case? The user browser may have
+        //      inadvertedly deleted the session cookie?
         f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                 "The session identification is not valid.",
                 QString("User gave us an unknown session identifier (%1).").arg(editor_full_session));
@@ -581,6 +583,9 @@ void editor::on_process_post(QString const& uri_path)
         break;
 
     case sessions::sessions::session_info::SESSION_INFO_MISSING:
+        // TBD: We may have a special "trash like draft area" where we can
+        // save such data, although someone who waits that long... plus if
+        // we have an auto-close, this would not happen anyway
         f_snap->die(snap_child::HTTP_CODE_GONE,
                     "Editor Session Gone",
                     "It looks like you attempted to submit editor content without first loading it.",

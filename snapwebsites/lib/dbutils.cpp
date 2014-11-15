@@ -204,7 +204,7 @@ int dbutils::get_display_len() const
 }
 
 
-void dbutils::set_display_len( const int val )
+void dbutils::set_display_len( int const val )
 {
     f_displayLen = val;
 }

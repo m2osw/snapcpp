@@ -46,9 +46,15 @@ void table_model::setTable( QCassandraTable::pointer_t t )
 
     if( f_table )
     {
+        // add a filter and add the start/end column names (see snapdb with '%')
+        QCassandraColumnRangePredicate::pointer_t columnp( new QCassandraColumnRangePredicate );
+        columnp->setCount(f_rowCount); // TODO: define a column count too
+
+        // add a filter capability and add words in start/end here (see snapdb with '%')
         f_rowp.setStartRowName("");
         f_rowp.setEndRowName("");
         f_rowp.setCount(f_rowCount); // 1000 is the default for now
+        f_rowp.setColumnPredicate(columnp);
         f_rowsRemaining = f_table->readRows( f_rowp );
         f_pos = 0;
     }
@@ -69,14 +75,17 @@ void table_model::fetchMore(const QModelIndex & model_index)
 {
     static_cast<void>(model_index);
 
-    if( !f_table ) return;
+    if( !f_table )
+    {
+        return;
+    }
 
     try
     {
         //f_table->clearCache();
         f_rowsRemaining = f_table->readRows( f_rowp );
 
-        const int itemsToFetch( qMin(f_rowCount, f_rowsRemaining) );
+        int const itemsToFetch( qMin(f_rowCount, f_rowsRemaining) );
 
         beginInsertRows( QModelIndex(), f_pos, f_pos+itemsToFetch-1 );
         endInsertRows();
