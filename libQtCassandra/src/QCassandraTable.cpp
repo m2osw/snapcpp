@@ -2267,8 +2267,7 @@ void QCassandraTable::prepareTableDefinition(void *data) const
     for(QtCassandra::QCassandraColumnDefinitions::const_iterator
             c = f_column_definitions.begin();
             c != f_column_definitions.end();
-            ++c)
-    {
+            ++c) {
         org::apache::cassandra::ColumnDef col;
         (*c)->prepareColumnDefinition(&col);
         cf->column_metadata.push_back(col);
@@ -2340,8 +2339,7 @@ void QCassandraTable::prepareTableDefinition(void *data) const
 void QCassandraTable::create()
 {
     auto context( f_context.lock() );
-    if(!context)
-    {
+    if(!context) {
         throw std::runtime_error("this table was dropped and is not attached to a context anymore");
     }
     context->createTable(this);
@@ -2374,8 +2372,7 @@ void QCassandraTable::create()
 void QCassandraTable::update()
 {
     auto context( f_context.lock() );
-    if(!context)
-    {
+    if(!context) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(!f_from_cassandra) {
@@ -2427,8 +2424,7 @@ void QCassandraTable::clearCache()
 void QCassandraTable::truncate()
 {
     auto context( f_context.lock() );
-    if(!context)
-    {
+    if(!context) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
@@ -2481,8 +2477,7 @@ void QCassandraTable::truncate()
 uint32_t QCassandraTable::readRows(QCassandraRowPredicate& row_predicate)
 {
     auto context( f_context.lock() );
-    if(!context)
-    {
+    if(!context) {
         throw std::runtime_error("table was dropped and is not attached to a context anymore");
     }
     if(f_from_cassandra) {
