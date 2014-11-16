@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <uuid/uuid.h>
 
 #define USE_OPEN_FD
 #ifdef USE_OPEN_FD
@@ -53,6 +54,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 #include "qstring_stream.h"
 
@@ -97,7 +99,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "help",
             nullptr,
-            "Show usage and exit.",
+            "[optional] Show usage and exit.",
             advgetopt::getopt::no_argument
         },
         {
@@ -105,7 +107,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "nolog",
             nullptr,
-            "Only output to the console, not the syslog.",
+            "[optional] Only output to the console, not the syslog.",
             advgetopt::getopt::no_argument
         },
         {
@@ -113,7 +115,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "config",
             "/etc/snapwebsites/snapserver.conf",
-            "Configuration file from which to get cassandra server details.",
+            "[optional] Configuration file from which to get cassandra server details.",
             advgetopt::getopt::optional_argument
         },
         {
@@ -121,7 +123,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "version",
             nullptr,
-            "show the version of the snapinit executable",
+            "[optional] show the version of the snapinit executable",
             advgetopt::getopt::no_argument
         },
         {
@@ -129,7 +131,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "sender",
             nullptr,
-            "Sender of the email.",
+            "[required] Sender of the email.",
             advgetopt::getopt::required_argument
         },
         {
@@ -137,7 +139,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
             "recipient",
             nullptr,
-            "Intended recipient of the email.",
+            "[required] Intended recipient of the email.",
             advgetopt::getopt::required_argument
         },
         {
@@ -170,6 +172,7 @@ private:
     advgetopt::getopt    f_opt;
     snap::snap_config    f_config;
     snap::snap_cassandra f_cassandra;
+    //std::string          f_recipient;
     QStringList          f_email_body;
 
     snap_bounce( int argc, char *argv[] );
@@ -188,6 +191,12 @@ snap_bounce::snap_bounce( int argc, char *argv[] )
     if(f_opt.is_defined("version"))
     {
         std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+        exit(1);
+    }
+
+    if( f_opt.is_defined( "help" ) || !f_opt.is_defined( "sender" ) || !f_opt.is_defined( "recipient" ) )
+    {
+        usage();
         exit(1);
     }
 
@@ -230,24 +239,57 @@ snap_bounce::pointer_t snap_bounce::instance()
 void snap_bounce::usage()
 {
     f_opt.usage( advgetopt::getopt::no_error, "snapinit" );
-    throw std::invalid_argument( "usage" );
+    //throw std::invalid_argument( "usage" );
 }
 
 
 void snap_bounce::read_stdin()
 {
-    std::cout << "read_stdin():" << std::endl;
+    //const std::string final_recipient( "Final-Recipient:" );
+    //std::cout << "read_stdin():" << std::endl;
+    f_email_body << QString("Sender:    %1").arg(f_opt.get_string("sender").c_str());
+    f_email_body << QString("Recipient: %1").arg(f_opt.get_string("recipient").c_str());
     while( (std::cin.rdstate() & std::ifstream::eofbit) == 0 )
     {
         std::string line;
         std::getline( std::cin, line );
         f_email_body << line.c_str();
+
+        #if 0
+        // Attempt to extract Final-Recipient.
+        // For example "Final-Recipient: rfc822; pleasebounce@dooglio.net"
+        if( line.substr( 0, final_recipient.size() ) == final_recipient )
+        {
+            auto semicolon_it = std::find_if( line.begin(), line.end(), []( const char ch ) { return ch == ';'; } );
+            if( semicolon_it != line.end() )
+            {
+                semicolon_it++;
+                std::for_each( semicolon_it, line.end(), [this]( const char ch ) { if( ch != ' ' ) f_recipient.push_back(ch); } );
+            }
+        }
+        #endif
     }
 
+    #if 0
+    std::cout << "recipient=" << f_recipient << std::endl;
     std::cout << std::endl << "f_email_body:" << std::endl;
     for( const QString line : f_email_body )
     {
         std::cout << "\t" << line << std::endl;
+    }
+    #endif
+}
+
+
+namespace
+{
+    QString generate_uuid()
+    {
+        uuid_t uuid;
+        uuid_generate_random( uuid );
+        char unique_key[37];
+        uuid_unparse( uuid, unique_key );
+        return unique_key;
     }
 }
 
@@ -261,22 +303,13 @@ void snap_bounce::store_email()
     QCassandraTable::pointer_t table(context->findTable("emails"));
     if(!table)
     {
-        table = context->table("email");
-        table->setComment("Table containing email addresses");
-        table->setColumnType("Standard"); // Standard or Super
-        table->setKeyValidationClass("BytesType");
-        table->setDefaultValidationClass("BytesType");
-        table->setComparatorType("BytesType");
-        table->setKeyCacheSavePeriodInSeconds(14400);
-        table->setMemtableFlushAfterMins(60);
-        table->setGcGraceSeconds(864000);
-        table->setMinCompactionThreshold(4);
-        table->setMaxCompactionThreshold(22);
-        table->setReplicateOnWrite(1);
-        table->create();
+        // We don't want to bother with trying to create the "emails" table.
+        // If it isn't there, then we'll just have to lose this email for now.
+        return;
     }
 
-    //(*table)["bounced"] //[f_opt.get_string("sender").c_str()]
+    auto& bounced( (*table)["bounced"] );
+    bounced[generate_uuid()] = f_email_body.join("\n");
 }
 
 
