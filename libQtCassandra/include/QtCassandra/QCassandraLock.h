@@ -44,8 +44,6 @@
 namespace QtCassandra
 {
 
-class QCassandraContext;
-
 // QtCassandra lock object
 class QCassandraLock : public QObject
 {
