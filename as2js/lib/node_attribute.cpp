@@ -72,6 +72,45 @@ namespace as2js
 namespace
 {
 
+
+/** \brief Array of attribute names.
+ *
+ * This array is used to convert an attribute to a string. It can also
+ * be used to convert a string to an attribute.
+ */
+char const *g_attribute_names[static_cast<int>(Node::attribute_t::NODE_ATTR_max)] =
+{
+    "PUBLIC",
+    "PRIVATE",
+    "PROTECTED",
+    "INTERNAL",
+    "TRANSIENT",
+    "VOLATILE",
+    "STATIC",
+    "ABSTRACT",
+    "VIRTUAL",
+    "ARRAY",
+    "INLINE",
+    "REQUIRE_ELSE",
+    "ENSURE_THEN",
+    "NATIVE",
+    "DEPRECATED",
+    "UNSAFE",
+    "CONSTRUCTOR",
+    //  "CONST"         ); -- this is a flag, not needed here
+    "FINAL",
+    "ENUMERABLE",
+    "TRUE",
+    "FALSE",
+    "UNUSED",
+    "DYNAMIC",
+    "FOREACH",
+    "NOBREAK",
+    "AUTOBREAK",
+    "DEFINED"
+};
+
+
 /** \brief List of attribute groups.
  *
  * The following enumeration defines a set of group attributes. These
@@ -312,7 +351,9 @@ void Node::verify_attribute(attribute_t a) const
     //             an enumeration is missing in this case
     }
 
-    throw exception_internal_error("attribute / type missmatch in Node::verify_attribute()");
+    std::stringstream ss;
+    ss << "node " << get_type_name() << " does not like attribute " << attribute_to_string(a) << " in Node::verify_attribute()";
+    throw exception_internal_error(ss.str());
 }
 
 
@@ -504,6 +545,27 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
 bool Node::compare_all_attributes(attribute_set_t const& s) const
 {
     return f_attributes == s;
+}
+
+
+/** \brief Convert an attribute to a string.
+ *
+ * This function converts an attribute to a string. This is most often used
+ * to print out an error about an attribute.
+ *
+ * \param[in] attr  The attribute to convert to a string.
+ *
+ * \return A static string pointer representing the attribute.
+ */
+char const *Node::attribute_to_string(attribute_t const attr)
+{
+    if(static_cast<int>(attr) < 0
+    || attr >= attribute_t::NODE_ATTR_max)
+    {
+        throw exception_internal_error("unknown attribute number in Node::attribute_to_string()");
+    }
+
+    return g_attribute_names[static_cast<int>(attr)];
 }
 
 

@@ -294,6 +294,8 @@ void As2JsNodeUnitTests::test_type()
             CPPUNIT_ASSERT_THROW(node->get_attribute(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
             CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), true), as2js::exception_internal_error);
             CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), false), as2js::exception_internal_error);
+            CPPUNIT_ASSERT_THROW(node->attribute_to_string(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
+            CPPUNIT_ASSERT_THROW(as2js::Node::attribute_to_string(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
         }
         for(int j(static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_max));
                 j <= static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_max) + 5;
@@ -302,6 +304,8 @@ void As2JsNodeUnitTests::test_type()
             CPPUNIT_ASSERT_THROW(node->get_attribute(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
             CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), true), as2js::exception_internal_error);
             CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), false), as2js::exception_internal_error);
+            CPPUNIT_ASSERT_THROW(node->attribute_to_string(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
+            CPPUNIT_ASSERT_THROW(as2js::Node::attribute_to_string(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
         }
 
         // attributes can be assigned to all types except NODE_PROGRAM
@@ -324,6 +328,43 @@ void As2JsNodeUnitTests::test_type()
                 // since we reset them all we won't have a problem with conflicts in this loop
                 node->set_attribute(static_cast<as2js::Node::attribute_t>(j), false);
                 CPPUNIT_ASSERT(!node->get_attribute(static_cast<as2js::Node::attribute_t>(j)));
+            }
+            char const *attr_name1(node->attribute_to_string(static_cast<as2js::Node::attribute_t>(j)));
+            CPPUNIT_ASSERT(attr_name1 != nullptr);
+            char const *attr_name2(as2js::Node::attribute_to_string(static_cast<as2js::Node::attribute_t>(j)));
+            CPPUNIT_ASSERT(attr_name2 != nullptr);
+            CPPUNIT_ASSERT(strcmp(attr_name1, attr_name2) == 0);
+
+            switch(static_cast<as2js::Node::attribute_t>(j))
+            {
+            case as2js::Node::attribute_t::NODE_ATTR_PUBLIC:       CPPUNIT_ASSERT(strcmp(attr_name1, "PUBLIC")         == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_PRIVATE:      CPPUNIT_ASSERT(strcmp(attr_name1, "PRIVATE")        == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_PROTECTED:    CPPUNIT_ASSERT(strcmp(attr_name1, "PROTECTED")      == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_INTERNAL:     CPPUNIT_ASSERT(strcmp(attr_name1, "INTERNAL")       == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_TRANSIENT:    CPPUNIT_ASSERT(strcmp(attr_name1, "TRANSIENT")      == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_VOLATILE:     CPPUNIT_ASSERT(strcmp(attr_name1, "VOLATILE")       == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_STATIC:       CPPUNIT_ASSERT(strcmp(attr_name1, "STATIC")         == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_ABSTRACT:     CPPUNIT_ASSERT(strcmp(attr_name1, "ABSTRACT")       == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_VIRTUAL:      CPPUNIT_ASSERT(strcmp(attr_name1, "VIRTUAL")        == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_ARRAY:        CPPUNIT_ASSERT(strcmp(attr_name1, "ARRAY")          == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_INLINE:       CPPUNIT_ASSERT(strcmp(attr_name1, "INLINE")         == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_REQUIRE_ELSE: CPPUNIT_ASSERT(strcmp(attr_name1, "REQUIRE_ELSE")   == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_ENSURE_THEN:  CPPUNIT_ASSERT(strcmp(attr_name1, "ENSURE_THEN")    == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_NATIVE:       CPPUNIT_ASSERT(strcmp(attr_name1, "NATIVE")         == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_DEPRECATED:   CPPUNIT_ASSERT(strcmp(attr_name1, "DEPRECATED")     == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_UNSAFE:       CPPUNIT_ASSERT(strcmp(attr_name1, "UNSAFE")         == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_CONSTRUCTOR:  CPPUNIT_ASSERT(strcmp(attr_name1, "CONSTRUCTOR")    == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_FINAL:        CPPUNIT_ASSERT(strcmp(attr_name1, "FINAL")          == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_ENUMERABLE:   CPPUNIT_ASSERT(strcmp(attr_name1, "ENUMERABLE")     == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_TRUE:         CPPUNIT_ASSERT(strcmp(attr_name1, "TRUE")           == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_FALSE:        CPPUNIT_ASSERT(strcmp(attr_name1, "FALSE")          == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_UNUSED:       CPPUNIT_ASSERT(strcmp(attr_name1, "UNUSED")         == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_DYNAMIC:      CPPUNIT_ASSERT(strcmp(attr_name1, "DYNAMIC")        == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_FOREACH:      CPPUNIT_ASSERT(strcmp(attr_name1, "FOREACH")        == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_NOBREAK:      CPPUNIT_ASSERT(strcmp(attr_name1, "NOBREAK")        == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_AUTOBREAK:    CPPUNIT_ASSERT(strcmp(attr_name1, "AUTOBREAK")      == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_DEFINED:      CPPUNIT_ASSERT(strcmp(attr_name1, "DEFINED")        == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_max:          CPPUNIT_ASSERT(!"attribute max should not be checked in this test"); break;
             }
         }
     }

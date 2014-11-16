@@ -53,12 +53,12 @@ namespace as2js
 void Compiler::program(Node::pointer_t program_node)
 {
     // This is the root. Whenever you search to resolve a reference,
-    // don't go past that node! What's in the parent of a program is
+    // do not go past that node! What's in the parent of a program is
     // not part of that program...
     f_program = program_node;
 
 #if 0
-std::cerr << program_node;
+std::cerr << "program:\n" << *program_node << "\n";
 #endif
     // get rid of any declaration marked false
     size_t const org_max(program_node->get_children_size());
