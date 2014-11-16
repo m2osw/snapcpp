@@ -7,6 +7,7 @@ then
     echo "Usage: $0 [--opt]"
     echo "where --opt is one of:"
     echo "   --all          run all tests, except special RC and Stream cases"
+    echo "   --compiler     run all the compiler tests"
     echo "   --db           run all the database tests"
     echo "   --float64      run all float64 tests"
     echo "   --full         run all tests and publish to the world"
@@ -46,6 +47,7 @@ echo "***"
 mkdir -p tmp/coverage
 rm -rf tmp/coverage/*
 cd tmp/coverage
+ln -s ../../scripts scripts
 mkdir BUILD
 cd BUILD
 # request coverage in this build
@@ -91,6 +93,9 @@ else
     if test "$1" == "--all"
     then
         BUILD/tests/test_as2js
+    elif test "$1" == "--compiler"
+    then
+        BUILD/tests/test_as2js As2JsCompilerUnitTests
     elif test "$1" == "--db"
     then
         BUILD/tests/test_as2js As2JsDBUnitTests

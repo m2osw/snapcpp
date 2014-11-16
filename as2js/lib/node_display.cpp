@@ -448,47 +448,47 @@ void Node::display(std::ostream& out, int indent, char c) const
             : f_out(out)
             , f_attributes(attrs)
         {
-            display_attribute(attribute_t::NODE_ATTR_PUBLIC,         "PUBLIC"        );
-            display_attribute(attribute_t::NODE_ATTR_PRIVATE,        "PRIVATE"       );
-            display_attribute(attribute_t::NODE_ATTR_PROTECTED,      "PROTECTED"     );
-            display_attribute(attribute_t::NODE_ATTR_INTERNAL,       "INTERNAL"      );
-            display_attribute(attribute_t::NODE_ATTR_TRANSIENT,      "TRANSIENT"     );
-            display_attribute(attribute_t::NODE_ATTR_VOLATILE,       "VOLATILE"      );
+            display_attribute(attribute_t::NODE_ATTR_PUBLIC);
+            display_attribute(attribute_t::NODE_ATTR_PRIVATE);
+            display_attribute(attribute_t::NODE_ATTR_PROTECTED);
+            display_attribute(attribute_t::NODE_ATTR_INTERNAL);
+            display_attribute(attribute_t::NODE_ATTR_TRANSIENT);
+            display_attribute(attribute_t::NODE_ATTR_VOLATILE);
 
-            display_attribute(attribute_t::NODE_ATTR_STATIC,         "STATIC"        );
-            display_attribute(attribute_t::NODE_ATTR_ABSTRACT,       "ABSTRACT"      );
-            display_attribute(attribute_t::NODE_ATTR_VIRTUAL,        "VIRTUAL"       );
-            display_attribute(attribute_t::NODE_ATTR_ARRAY,          "ARRAY"         );
-            display_attribute(attribute_t::NODE_ATTR_INLINE,         "INLINE"        );
+            display_attribute(attribute_t::NODE_ATTR_STATIC);
+            display_attribute(attribute_t::NODE_ATTR_ABSTRACT);
+            display_attribute(attribute_t::NODE_ATTR_VIRTUAL);
+            display_attribute(attribute_t::NODE_ATTR_ARRAY);
+            display_attribute(attribute_t::NODE_ATTR_INLINE);
 
-            display_attribute(attribute_t::NODE_ATTR_REQUIRE_ELSE,   "REQUIRE_ELSE"  );
-            display_attribute(attribute_t::NODE_ATTR_ENSURE_THEN,    "ENSURE_THEN"   );
+            display_attribute(attribute_t::NODE_ATTR_REQUIRE_ELSE);
+            display_attribute(attribute_t::NODE_ATTR_ENSURE_THEN);
 
-            display_attribute(attribute_t::NODE_ATTR_NATIVE,         "NATIVE"        );
+            display_attribute(attribute_t::NODE_ATTR_NATIVE);
 
-            display_attribute(attribute_t::NODE_ATTR_DEPRECATED,     "DEPRECATED"    );
-            display_attribute(attribute_t::NODE_ATTR_UNSAFE,         "UNSAFE"        );
+            display_attribute(attribute_t::NODE_ATTR_DEPRECATED);
+            display_attribute(attribute_t::NODE_ATTR_UNSAFE);
 
-            display_attribute(attribute_t::NODE_ATTR_CONSTRUCTOR,    "CONSTRUCTOR"   );
+            display_attribute(attribute_t::NODE_ATTR_CONSTRUCTOR);
 
-            //display_attribute(attribute_t::NODE_ATTR_CONST,          "CONST"         ); -- this is a flag, not needed here
-            display_attribute(attribute_t::NODE_ATTR_FINAL,          "FINAL"         );
-            display_attribute(attribute_t::NODE_ATTR_ENUMERABLE,     "ENUMERABLE"    );
+            //display_attribute(attribute_t::NODE_ATTR_CONST); -- this is a flag, not needed here
+            display_attribute(attribute_t::NODE_ATTR_FINAL);
+            display_attribute(attribute_t::NODE_ATTR_ENUMERABLE);
 
-            display_attribute(attribute_t::NODE_ATTR_TRUE,           "TRUE"          );
-            display_attribute(attribute_t::NODE_ATTR_FALSE,          "FALSE"         );
-            display_attribute(attribute_t::NODE_ATTR_UNUSED,         "UNUSED"        );
+            display_attribute(attribute_t::NODE_ATTR_TRUE);
+            display_attribute(attribute_t::NODE_ATTR_FALSE);
+            display_attribute(attribute_t::NODE_ATTR_UNUSED);
 
-            display_attribute(attribute_t::NODE_ATTR_DYNAMIC,        "DYNAMIC"       );
+            display_attribute(attribute_t::NODE_ATTR_DYNAMIC);
 
-            display_attribute(attribute_t::NODE_ATTR_FOREACH,        "FOREACH"       );
-            display_attribute(attribute_t::NODE_ATTR_NOBREAK,        "NOBREAK"       );
-            display_attribute(attribute_t::NODE_ATTR_AUTOBREAK,      "AUTOBREAK"     );
+            display_attribute(attribute_t::NODE_ATTR_FOREACH);
+            display_attribute(attribute_t::NODE_ATTR_NOBREAK);
+            display_attribute(attribute_t::NODE_ATTR_AUTOBREAK);
 
-            display_attribute(attribute_t::NODE_ATTR_DEFINED,        "DEFINED"       );
+            display_attribute(attribute_t::NODE_ATTR_DEFINED);
         }
 
-        void display_attribute(attribute_t a, char const *n)
+        void display_attribute(attribute_t a)
         {
             if(f_attributes[static_cast<size_t>(a)])
             {
@@ -497,7 +497,7 @@ void Node::display(std::ostream& out, int indent, char c) const
                     f_first = false;
                     f_out << " attrs:";
                 }
-                f_out << " " << n;
+                f_out << " " << Node::attribute_to_string(a);
             }
         }
 

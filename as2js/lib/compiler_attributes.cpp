@@ -339,7 +339,9 @@ void Compiler::prepare_attributes(Node::pointer_t node)
     && node->get_type() != Node::node_t::NODE_PROGRAM)
     {
         Node::pointer_t parent(node->get_parent());
-        if(parent)
+        if(parent
+        && parent->get_type() != Node::node_t::NODE_PACKAGE
+        && parent->get_type() != Node::node_t::NODE_PROGRAM)
         {
             // recurse against all parents as required
             prepare_attributes(parent);

@@ -18,6 +18,8 @@
 #include "snap-manager-initialize-website.h"
 #include "snap-manager.h"
 
+#include <QSettings>
+
 #include <stdio.h>
 
 snap_manager_initialize_website::snap_manager_initialize_website(QWidget *snap_parent)
@@ -33,6 +35,13 @@ snap_manager_initialize_website::snap_manager_initialize_website(QWidget *snap_p
 {
     setWindowModality(Qt::ApplicationModal);
     setupUi(this);
+
+    QSettings settings( this );
+    //restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
+    //restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
+    //
+    websiteURL->setText( settings.value( "initialization_url",  ""   ).toString() );
+    port      ->setText( settings.value( "initialization_port", "80" ).toString() );
 
     // setup widgets
     f_close_button = getChild<QPushButton>(this, "closeButton");
@@ -57,6 +66,11 @@ snap_manager_initialize_website::~snap_manager_initialize_website()
 void snap_manager_initialize_website::close()
 {
     hide();
+
+    QSettings settings( this );
+    settings.setValue( "initialization_url",  websiteURL->text()  );
+    settings.setValue( "initialization_port", port      ->text()  );
+    //settings.setValue( "geometry",            saveGeometry()           );
 }
 
 

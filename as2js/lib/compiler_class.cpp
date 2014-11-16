@@ -1177,6 +1177,9 @@ void Compiler::class_directive(Node::pointer_t& class_node)
             extend_class(class_node, child->get_child(0));
             break;
 
+        case Node::node_t::NODE_EMPTY:
+            break;
+
         default:
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INTERNAL_ERROR, class_node->get_position());

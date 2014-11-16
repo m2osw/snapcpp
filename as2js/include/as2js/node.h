@@ -501,6 +501,7 @@ public:
     bool                        get_attribute(attribute_t f) const;
     void                        set_attribute(attribute_t f, bool v);
     bool                        compare_all_attributes(attribute_set_t const& s) const;
+    static char const *         attribute_to_string(attribute_t const attr);
 
     // switch operator: switch(...) with(<operator>)
     node_t                      get_switch_operator() const;

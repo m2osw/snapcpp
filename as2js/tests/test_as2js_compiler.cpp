@@ -1099,6 +1099,71 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
 }
 
 
+
+class input_retriever : public as2js::InputRetriever
+{
+public:
+    virtual as2js::Input::pointer_t retrieve(as2js::String const& filename)
+    {
+        if(filename == "")
+        {
+        }
+
+        return as2js::Input::pointer_t();
+    }
+
+};
+
+
+void init_rc()
+{
+    g_created_files = true;
+
+    // The .rc file cannot be captured by the input retriever
+    // so instead we create a file in the current directory
+    char pwd[PATH_MAX + 1];
+    CPPUNIT_ASSERT(getcwd(pwd, sizeof(pwd)) == pwd);
+    pwd[PATH_MAX] = '\0';
+    as2js::String spwd;
+    std::string tpwd;
+    for(char const *s(pwd); *s != '\0'; ++s)
+    {
+        if(*s == '\'') // just in case, but it probably will never happen...
+        {
+            tpwd += '\\';
+        }
+        tpwd += *s;
+    }
+    spwd.from_utf8(tpwd.c_str());
+    as2js::String rc("// rc test file\n");
+    rc += "{\n"
+          "  'scripts': '";
+                rc += spwd;
+                rc += "/scripts',\n"
+          "  'db': '";
+                rc += spwd;
+                rc += "/test.db',\n"
+          "  'temporary_variable_name': '@temp$'\n"
+          "}\n";
+
+    mkdir("as2js", 0700);
+    as2js::FileOutput output;
+    CPPUNIT_ASSERT(output.open("as2js/as2js.rc"));
+    output.write(rc);
+}
+
+
+void init_compiler(as2js::Compiler& compiler)
+{
+    // The .rc file cannot be captured by the input retriever
+    // so instead we create a file in the current directory
+
+    // setup an input retriever which in most cases just returns nullptr
+    compiler.set_input_retriever(as2js::InputRetriever::pointer_t(new input_retriever));
+}
+
+
+
 //
 // JSON data used to test the compiler, most of the work is in this table
 // these are long JSON strings! It is actually generated using the
@@ -1182,8 +1247,8 @@ void run_tests(char const *data, char const *filename)
     slow_string.from_utf8("slow");
     as2js::String parser_result_string;
     parser_result_string.from_utf8("parser result");
-    as2js::String optimizer_result_string;
-    optimizer_result_string.from_utf8("optimizer result");
+    as2js::String compiler_result_string;
+    compiler_result_string.from_utf8("compiler result");
     as2js::String expected_messages_string;
     expected_messages_string.from_utf8("expected messages");
 
@@ -1215,13 +1280,32 @@ void run_tests(char const *data, char const *filename)
         as2js::JSON::JSONValue::pointer_t name(prog.find(name_string)->second);
         std::cout << "  -- working on \"" << name->get_string() << "\" " << (slow ? "" : "...") << std::flush;
 
+        for(size_t opt(0); opt < (1 << g_options_size); ++opt)
         {
+            if(slow && ((opt + 1) % 250) == 0)
+            {
+                std::cout << "." << std::flush;
+            }
+//std::cerr << "\n***\n*** OPTIONS:";
+            as2js::Options::pointer_t options(new as2js::Options);
+            for(size_t o(0); o < g_options_size; ++o)
+            {
+                if((opt & (1 << o)) != 0)
+                {
+                    options->set_option(g_options[o].f_option,
+                            options->get_option(g_options[o].f_option) | g_options[o].f_value);
+//std::cerr << " " << g_options[o].f_name << "=" << g_options[o].f_value;
+                }
+            }
+//std::cerr << "\n***\n";
+
             as2js::JSON::JSONValue::pointer_t program_value(prog.find(program_string)->second);
             as2js::String program_source(program_value->get_string());
 //std::cerr << "prog = [" << program_source << "]\n";
             as2js::StringInput::pointer_t prog_text(new as2js::StringInput(program_source));
-            as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, nullptr));
+            as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, options));
 
+            init_rc();
             test_callback tc(verbose);
 
             // no errors exepected while parsing (if you want to test errors
@@ -1229,12 +1313,10 @@ void run_tests(char const *data, char const *filename)
             as2js::Node::pointer_t root(parser->parse());
 
             // verify the parser result, that way we can make sure we are
-            // testing the tree we want to test in the optimizer
+            // testing the tree we want to test with the compiler
             verify_result(prog.find(parser_result_string)->second, root, verbose);
 
-            // now the optimizer may end up generating messages...
-            // (there are not many, mainly things like division by zero
-            // and illegal operation.)
+            // now the compiler may end up generating messages...
             as2js::JSON::JSONValue::object_t::const_iterator expected_msg_it(prog.find(expected_messages_string));
             if(expected_msg_it != prog.end())
             {
@@ -1289,7 +1371,6 @@ void run_tests(char const *data, char const *filename)
             }
 
             // run the compiler
-            as2js::Options::pointer_t options(new as2js::Options);
             as2js::Compiler compiler(options);
             compiler.compile(root);
 
@@ -1297,7 +1378,7 @@ void run_tests(char const *data, char const *filename)
 
             // the result is object which can have children
             // which are represented by an array of objects
-            verify_result(prog.find(optimizer_result_string)->second, root, verbose);
+            verify_result(prog.find(compiler_result_string)->second, root, verbose);
         }
 
         std::cout << " OK\n";
@@ -1361,76 +1442,13 @@ void As2JsCompilerUnitTests::tearDown()
 }
 
 
-class input_retriever : public as2js::InputRetriever
-{
-public:
-    virtual as2js::Input::pointer_t retrieve(as2js::String const& filename)
-    {
-        if(filename == "")
-        {
-        }
-
-        return as2js::Input::pointer_t();
-    }
-
-};
-
-
-void init_rc()
-{
-    g_created_files = true;
-
-    // The .rc file cannot be captured by the input retriever
-    // so instead we create a file in the current directory
-    char pwd[PATH_MAX + 1];
-    CPPUNIT_ASSERT(getcwd(pwd, sizeof(pwd)) == pwd);
-    pwd[PATH_MAX] = '\0';
-    as2js::String spwd;
-    std::string tpwd;
-    for(char const *s(pwd); *s != '\0'; ++s)
-    {
-        if(*s == '\'') // just in case, but it probably will never happen...
-        {
-            tpwd += '\\';
-        }
-        tpwd += *s;
-    }
-    spwd.from_utf8(tpwd.c_str());
-    as2js::String rc("// rc test file\n");
-    rc += "{\n"
-          "  'scripts': '";
-                rc += spwd;
-                rc += "/scripts',\n"
-          "  'db': '";
-                rc += spwd;
-                rc += "/test.db',\n"
-          "  'temporary_variable_name': '@temp$'\n"
-          "}\n";
-
-    mkdir("as2js", 0700);
-    as2js::FileOutput output;
-    CPPUNIT_ASSERT(output.open("as2js/as2js.rc"));
-    output.write(rc);
-}
-
-
-void init_compiler(as2js::Compiler& compiler)
-{
-    // The .rc file cannot be captured by the input retriever
-    // so instead we create a file in the current directory
-
-    // setup an input retriever which in most cases just returns nullptr
-    compiler.set_input_retriever(as2js::InputRetriever::pointer_t(new input_retriever));
-}
-
-
 void As2JsCompilerUnitTests::test_compiler_invalid_nodes()
 {
     // empty node does absolutely nothing
     {
         as2js::Node::pointer_t node;
         init_rc();
-        test_callback tc(true);
+        test_callback tc(false);
         as2js::Options::pointer_t options(new as2js::Options);
 
         as2js::Compiler compiler(options);
@@ -1452,7 +1470,7 @@ void As2JsCompilerUnitTests::test_compiler_invalid_nodes()
             continue;
         }
 
-        test_callback tc(true);
+        test_callback tc(false);
         {
             test_callback::expected_t expected;
             expected.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
@@ -1469,43 +1487,6 @@ void As2JsCompilerUnitTests::test_compiler_invalid_nodes()
         CPPUNIT_ASSERT(compiler.compile(node) != 0);
         CPPUNIT_ASSERT(node->get_type() == as2js::Node::node_t::NODE_UNKNOWN);
         CPPUNIT_ASSERT(node->get_children_size() == 0);
-    }
-return;
-
-    // a special case where an optimization occurs on a node without a parent
-    // (something that should not occur in a real tree)
-    {
-        // ADD
-        //   INT64 = 3
-        //   INT64 = 20
-        as2js::Node::pointer_t node_add(new as2js::Node(as2js::Node::node_t::NODE_ADD));
-
-        as2js::Node::pointer_t node_three(new as2js::Node(as2js::Node::node_t::NODE_INT64));
-        as2js::Int64 three;
-        three.set(3);
-        node_three->set_int64(three);
-        node_add->append_child(node_three);
-
-        as2js::Node::pointer_t node_twenty(new as2js::Node(as2js::Node::node_t::NODE_INT64));
-        as2js::Int64 twenty;
-        twenty.set(20);
-        node_twenty->set_int64(twenty);
-        node_add->append_child(node_twenty);
-
-        // optimization does not happen
-        as2js::Options::pointer_t options(new as2js::Options);
-        as2js::Compiler compiler(options);
-        CPPUNIT_ASSERT_THROW(compiler.compile(node_add) != 0, as2js::exception_internal_error);
-
-        // verify that nothing changed
-        CPPUNIT_ASSERT(node_add->get_type() == as2js::Node::node_t::NODE_ADD);
-        CPPUNIT_ASSERT(node_add->get_children_size() == 2);
-        CPPUNIT_ASSERT(node_three->get_type() == as2js::Node::node_t::NODE_INT64);
-        CPPUNIT_ASSERT(node_three->get_children_size() == 0);
-        CPPUNIT_ASSERT(node_three->get_int64().compare(three) == as2js::compare_t::COMPARE_EQUAL);
-        CPPUNIT_ASSERT(node_twenty->get_type() == as2js::Node::node_t::NODE_INT64);
-        CPPUNIT_ASSERT(node_twenty->get_children_size() == 0);
-        CPPUNIT_ASSERT(node_twenty->get_int64().compare(twenty) == as2js::compare_t::COMPARE_EQUAL);
     }
 }
 
