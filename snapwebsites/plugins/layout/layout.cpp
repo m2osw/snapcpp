@@ -245,6 +245,10 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
                 // define limit with the original last_updated because
                 // the order in which we read the layouts has nothing to
                 // do with the order in which they were last updated
+                //
+                // TODO: change the algorithm to use one last_updated time
+                //       per layout (just like plugins, having a single
+                //       time definition is actually bogus)
                 int64_t const limit(install_layout(name, last_updated));
                 if(limit > new_last_updated)
                 {
@@ -1461,13 +1465,15 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     {
         if(last_updated != 0)
         {
-            SNAP_LOG_ERROR("Could not read \"")(layout_ipath.get_branch_key())(".")(get_name(SNAP_NAME_LAYOUT_BOXES))("\" from the layout, error is ignored now so your plugin can fix it.");
+            SNAP_LOG_ERROR("Could not read \"")(layout_ipath.get_branch_key())(".")
+                    (get_name(SNAP_NAME_LAYOUT_BOXES))
+                    ("\" from the layout, error is ignored now so your plugin can fix it.");
             return last_updated;
         }
         f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
-                "Layout \"" + layout_name + "\" content.xml file does not define the layout::boxes entry for this layout.",
-                "layout::install_layout() the content.xml did not define \"" + layout_ipath.get_branch_key() + "->[layout::boxes]\" as expected.");
+                QString("Layout \"%1\" content.xml file does not define the layout::boxes entry for this layout.").arg(layout_name),
+                QString("layout::install_layout() the content.xml did not define \"%1->[layout::boxes]\" as expected.").arg(layout_ipath.get_branch_key()));
         NOTREACHED();
     }
 
@@ -1701,13 +1707,14 @@ void layout::add_layout_from_resources(QString const& name)
     QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
 
     {
-        QFile file(QString(":/xsl/layout/%1-body-parser.xsl").arg(name));
+        QString const body(QString(":/xsl/layout/%1-body-parser.xsl").arg(name));
+        QFile file(body);
         if(!file.open(QIODevice::ReadOnly))
         {
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Sendmail Body Layout Unavailable",
-                    "Could not read \":/xsl/layout/sendmail-body-parser.xsl\" from the Qt resources.",
-                    "sendmail::content_update() could not open sendmail-body-parser.xsl resource file.");
+                    "Body Layout Unavailable",
+                    QString("Could not read \"%1\" from the Qt resources.").arg(body),
+                    "layout::add_layout_from_resources() could not open resource file for a body file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
@@ -1715,13 +1722,14 @@ void layout::add_layout_from_resources(QString const& name)
     }
 
     {
-        QFile file(QString(":/xsl/layout/%1-theme-parser.xsl").arg(name));
+        QString const theme(QString(":/xsl/layout/%1-theme-parser.xsl").arg(name));
+        QFile file(theme);
         if(!file.open(QIODevice::ReadOnly))
         {
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
-                    "Sendmail Theme Layout Unavailable",
-                    "Could not read sendmail-theme-parser.xsl from the Qt resources.",
-                    "sendmail::content_update() could not open \":/xsl/layout/sendmail-theme-parser.xsl\" resource file.");
+                    "Theme Layout Unavailable",
+                    QString("Could not read \"%1\" from the Qt resources.").arg(theme),
+                    "layout::add_layout_from_resources() could not open resource file for a theme file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
@@ -1729,13 +1737,14 @@ void layout::add_layout_from_resources(QString const& name)
     }
 
     {
-        QFile file(QString(":/xml/layout/%1-content.xml").arg(name));
+        QString const content(QString(":/xml/layout/%1-content.xml").arg(name));
+        QFile file(content);
         if(!file.open(QIODevice::ReadOnly))
         {
             f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Sendmail Theme Content Unavailable",
-                    "Could not read content.xml from the Qt resources.",
-                    "sendmail::content_update() could not open \":/xml/layout/content.xml\" resource file.");
+                    QString("Could not read \"%1\" from the Qt resources.").arg(content),
+                    "layout::add_layout_from_resources() could not open resource file for a content.xml file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());

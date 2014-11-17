@@ -511,7 +511,7 @@ void users::on_process_cookies()
         QString const session_cookie(f_snap->cookie(user_cookie_name));
         QStringList const parameters(session_cookie.split("/"));
         QString const session_key(parameters[0]);
-        QString random_key; // no random key?
+        QString random_key; // TODO: really support the case of "no random key"???
         if(parameters.size() > 1)
         {
             random_key = parameters[1];
@@ -606,6 +606,9 @@ void users::on_process_cookies()
         //       we generate a new random identifier (doing it on each access
         //       generates a lot of problems when the browser tries to load
         //       many things at the same time)
+        //
+        // TBD: this is not working right if the user attempts to open
+        //      multiple pages quickly at the same time
         bool const new_random(f_info->get_date() + 60 * 5 * 1000000 < f_snap->get_start_date());
         sessions::sessions::instance()->save_session(*f_info, new_random);
     }
@@ -3137,7 +3140,7 @@ void users::verify_email(QString const& email)
     info.set_object_path("/user/" + email);
     info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(86400 * 3);  // 3 days
-    QString session(sessions::sessions::instance()->create_session(info));
+    QString const session(sessions::sessions::instance()->create_session(info));
     e.add_parameter(get_name(SNAP_NAME_USERS_VERIFY_EMAIL), session);
 
     // send the email

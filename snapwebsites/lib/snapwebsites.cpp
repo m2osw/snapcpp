@@ -1477,7 +1477,7 @@ void server::sighandler( int sig )
  */
 void server::process_connection(int socket)
 {
-    snap_child* child;
+    snap_child *child;
 
     // we're handling one more connection, whether it works or
     // not we increase our internal counter

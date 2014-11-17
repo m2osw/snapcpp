@@ -6575,7 +6575,7 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
         QDomNode content_node(content_nodes.at(i));
         if(!content_node.isElement())
         {
-            // we're only interested in elements
+            // we are only interested in elements
             continue;
         }
         QDomElement content_element(content_node.toElement());
@@ -7243,6 +7243,12 @@ void content::on_save_content()
 
     QString const primary_owner(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER));
     QString const site_key(f_snap->get_site_key_with_slash());
+
+    // lock the entire website (this does not prevent others from accessing
+    // the site, however, it prevents them from upgrading the database at the
+    // same time... note that this is one lock per website)
+    QtCassandra::QCassandraLock lock(f_snap->get_context(),  QString("%1#updating").arg(site_key));
+
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
     QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
@@ -7286,7 +7292,6 @@ void content::on_save_content()
         else
         {
             status.set_working(path_info_t::status_t::working_t::UPDATING);
-            //status.reset_state(path_info_t::state_t::CREATING, path_info_t::working_t::CREATING);
             ipath.set_status(status);
         }
 
