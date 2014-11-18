@@ -296,6 +296,12 @@ namespace
 
 void snap_bounce::store_email()
 {
+    f_cassandra.connect();
+    if( !f_cassandra.is_connected() )
+    {
+        throw snap::snap_exception( "Cannot connect to Cassandra!" );
+    }
+
     // Send f_email_body's contents to cassandra, specifically in the "emails/bounced" table/row.
     //
     QCassandraContext::pointer_t context( f_cassandra.get_snap_context() );
