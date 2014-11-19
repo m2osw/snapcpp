@@ -401,6 +401,22 @@ snapwebsites.BufferToMIMESystemImages.prototype.bufferToMIME = function(buf)
     {
         return "image/jpeg";
     }
+    // Picassa has a comment before the JFIF
+    if(buf[0] === 0xFF
+    && buf[1] === 0xD8
+    && buf[2] === 0xFF
+    && buf[3] === 0xE0
+    && buf[4] === 0x00
+    && buf[5] === 0x08
+    && buf[6] === 0x50  // P
+    && buf[7] === 0x69  // i
+    && buf[8] === 0x63  // c
+    && buf[9] === 0x61  // a
+    && buf[10] === 0x73  // s
+    && buf[11] === 0x61) // a
+    {
+        return "image/jpeg";
+    }
 
     // Image PNG
     if(buf[0] === 0x89

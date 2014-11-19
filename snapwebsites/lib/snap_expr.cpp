@@ -2188,6 +2188,26 @@ public:
         result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
+    static void call_segment(variable_t& result, variable_t::variable_vector_t const& sub_results)
+    {
+        if(sub_results.size() != 3)
+        {
+            throw snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call segment() expected exactly 3");
+        }
+        QString const str(sub_results[0].get_string("segment(1)"));
+        QString const sep(sub_results[1].get_string("segment(2)"));
+        int64_t const idx(sub_results[2].get_integer("segment(3)"));
+        QStringList list(str.split(sep));
+        if(idx >= 0 && idx < list.size())
+        {
+            result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, list[idx]);
+        }
+        else
+        {
+            result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, "");
+        }
+    }
+
     static void call_string(variable_t& result, variable_t::variable_vector_t const& sub_results)
     {
         if(sub_results.size() != 1)
@@ -3333,6 +3353,10 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
     { // check whether a row exists in a table
         "row_exists",
         expr_node::call_row_exists
+    },
+    { // retrieve a segment
+        "segment",
+        expr_node::call_segment
     },
     { // convert the parameter to a string
         "string",

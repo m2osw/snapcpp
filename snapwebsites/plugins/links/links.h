@@ -187,7 +187,7 @@ public:
         || f_branch == snap_version::SPECIAL_VERSION_UNDEFINED
         || f_branch == snap_version::SPECIAL_VERSION_EXTENDED)
         {
-            throw snap_logic_exception(QString("link_key() was requested with the branch still undefined (name: \"%1\", key: \"%2\"").arg(f_name).arg(f_key));
+            throw snap_logic_exception(QString("link_key() was requested with the branch still undefined (name: \"%1\", key: \"%2\")").arg(f_name).arg(f_key));
         }
         return QString("%1#%2/%3").arg(f_key).arg(f_branch).arg(f_name);
     }

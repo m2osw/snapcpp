@@ -2017,7 +2017,7 @@ void users::process_login_form(login_mode_t login_mode)
     messages::messages::instance()->set_error(
         "Could Not Log You In",
         validation_required
-          ? "Your account was not yet validated. Please make sure to first follow the link we sent in your email. If you did not yet receive that email, we can send you another <a href=\"/verify/resend\">confirmation email</a>."
+          ? "Your account was not yet <a href=\"/verify\" title=\"Click here to enter a verification code\">validated</a>. Please make sure to first follow the link we sent in your email. If you did not yet receive that email, we can send you another <a href=\"/verify/resend\">confirmation email</a>."
           : "Your email or password were incorrect. If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?",
         details,
         false // should this one be true?
