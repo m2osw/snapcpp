@@ -1,0 +1,36 @@
+Inspired from: http://iamsto.wordpress.com/2012/04/07/how-to-handle-bounce-emails-in-postfix-with-script/
+
+1) Create transport map in main.cf, and postmap the map
+
+# tail -1 /usr/local/etc/postfix/main.cf
+
+	transport_maps = hash:/usr/local/etc/postfix/transport.maps
+
+# cat /usr/local/etc/postfix/transport.maps
+
+	mydomain.com bounces:
+
+* Where "mydomain.com" is the domain you wish to grab the bounces from...
+
+# postmap /usr/local/etc/postfix/transport.maps
+
+2) Create user for executing the script (can not be root, can not be postfix master user! ) – no shell, nologin
+
+# useradd bounce
+
+3) Create pipe service in master.cf (pipe service name: bounces , as it’s bounces: in the transport map). Simple usage.
+
+# tail -2 /usr/local/etc/postfix/master.cf
+
+	bounces unix – n n – - pipe
+		flags=FRq user=bounce argv=/usr/bin/snapbounce ${sender} ${recipient}
+
+4) Make sure your snapserver configuration is in order (/etc/snapwebsites/snapserver.conf). It must have the Cassandra ip and port:
+
+	# Host & Port to connect to Cassandra
+	cassandra_host=10.0.0.2
+	cassandra_port=9160
+
+5) Make sure the Cassandra server is up and running.
+
+6) Restart postfix so the changes take effect.
