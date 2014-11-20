@@ -1,14 +1,4 @@
-usr/bin/cxpath \
-usr/bin/snapbackend \
-usr/bin/snapdb \
-usr/bin/snapimg \
-usr/bin/snapserver \
-usr/bin/snapsiteinfo \
-usr/bin/snapexpr \
-usr/bin/snapinit \
-usr/bin/snaplayout \
-usr/bin/snapsignal \
-usr/bin
+usr/bin/cxpath usr/bin/snapbackend usr/bin/snapdb usr/bin/snapimg usr/bin/snapserver usr/bin/snapsiteinfo usr/bin/snapexpr usr/bin/snapinit usr/bin/snaplayout usr/bin/snapsignal usr/bin
 usr/share/snapwebsites/layouts/*
 conf/log.conf etc/snapwebsites/
 conf/snapserver.conf etc/snapwebsites/
