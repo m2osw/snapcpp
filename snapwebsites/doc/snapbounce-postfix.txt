@@ -23,7 +23,7 @@ Inspired from: http://iamsto.wordpress.com/2012/04/07/how-to-handle-bounce-email
 # tail -2 /usr/local/etc/postfix/master.cf
 
 	bounces unix – n n – - pipe
-		flags=FRq user=bounce argv=/usr/bin/snapbounce ${sender} ${recipient}
+		flags=FRq user=bounce argv=/usr/bin/snapbounce --sender ${sender} --recipient ${recipient}
 
 4) Make sure your snapserver configuration is in order (/etc/snapwebsites/snapserver.conf). It must have the Cassandra ip and port:
 
