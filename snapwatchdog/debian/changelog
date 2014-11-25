@@ -1,3 +1,33 @@
+snapwatchdog (0.1.0.35~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 24 Nov 2014 03:03:03 -0800
+
+snapwatchdog (0.1.0.34~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 23 Nov 2014 03:02:34 -0800
+
+snapwatchdog (0.1.0.33~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 22 Nov 2014 03:02:47 -0800
+
+snapwatchdog (0.1.0.32~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 21 Nov 2014 03:02:52 -0800
+
+snapwatchdog (0.1.0.31~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 20 Nov 2014 03:03:11 -0800
+
 snapwatchdog (0.1.0.30~trusty) trusty; urgency=high
 
   * Nightly build.
