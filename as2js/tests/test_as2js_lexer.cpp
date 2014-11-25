@@ -3142,6 +3142,27 @@ controlled_vars::zint32_t   test_callback::g_error_count;
 
 
 
+void As2JsLexerUnitTests::test_invalid_pointers()
+{
+    // valid input, but not options
+    {
+        as2js::String str("program");
+        as2js::Input::pointer_t input(new as2js::StringInput(str));
+        CPPUNIT_ASSERT_THROW(new as2js::Lexer(input, nullptr), as2js::exception_invalid_data);
+    }
+
+    // valid options, but not input
+    {
+        as2js::Options::pointer_t options(new as2js::Options);
+        CPPUNIT_ASSERT_THROW(new as2js::Lexer(nullptr, options), as2js::exception_invalid_data);
+    }
+
+    // both input and options are invalid
+    CPPUNIT_ASSERT_THROW(new as2js::Lexer(nullptr, nullptr), as2js::exception_invalid_data);
+}
+
+
+
 void As2JsLexerUnitTests::test_tokens()
 {
     for(size_t idx(0); idx < g_tokens_size; ++idx)

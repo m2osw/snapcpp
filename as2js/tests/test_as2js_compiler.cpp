@@ -192,8 +192,9 @@ char const *error_code_to_str(as2js::err_code_t const& error_code)
 class test_callback : public as2js::MessageCallback
 {
 public:
-    test_callback(bool verbose)
+    test_callback(bool verbose, bool parser)
         : f_verbose(verbose)
+        , f_parser(parser)
     {
         as2js::Message::set_message_callback(this);
         g_warning_count = as2js::Message::warning_count();
@@ -211,6 +212,7 @@ public:
     {
         // skip trace messages which happen all the time because of the
         // lexer debug option
+        // Note: the lexer debug was removed if I'm correct
         if(message_level == as2js::message_level_t::MESSAGE_LEVEL_TRACE)
         {
             return;
@@ -223,7 +225,15 @@ public:
             std::cerr << "msg = " << message << "\n";
             std::cerr << "page = " << pos.get_page() << "\n";
             std::cerr << "line = " << pos.get_line() << "\n";
-            std::cerr << "error_code = " << static_cast<int>(error_code) << " (" << error_code_to_str(error_code) << ")\n";
+            std::cerr << "error_code[" << static_cast<int>(message_level) << "] = " << static_cast<int>(error_code) << " (" << error_code_to_str(error_code) << ")\n";
+        }
+
+        if(f_parser)
+        {
+            std::cerr << "\n                 >>> WARNING <<<\n"
+                         "  >>> You got an error from the parser. These should not happen here.\n"
+                         "  >>> If you need to test something in the parser, move your test to the\n"
+                         "  >>> test_as2js_parser_*.json files instead.\n\n";
         }
 
         CPPUNIT_ASSERT(!f_expected.empty());
@@ -235,7 +245,7 @@ public:
             std::cerr << "page = " << pos.get_page() << " / " << f_expected[0].f_pos.get_page() << "\n";
             std::cerr << "line = " << pos.get_line() << " / " << f_expected[0].f_pos.get_line() << "\n";
             std::cerr << "page line = " << pos.get_page_line() << " / " << f_expected[0].f_pos.get_page_line() << "\n";
-            std::cerr << "error_code = " << static_cast<int>(error_code) << " (" << error_code_to_str(error_code) << ") / " << static_cast<int>(f_expected[0].f_error_code) << " (" << error_code_to_str(f_expected[0].f_error_code) << ")\n";
+            std::cerr << "error_code[" << static_cast<int>(message_level) << " / " << static_cast<int>(f_expected[0].f_message_level) << "] = " << static_cast<int>(error_code) << " (" << error_code_to_str(error_code) << ") / " << static_cast<int>(f_expected[0].f_error_code) << " (" << error_code_to_str(f_expected[0].f_error_code) << ")\n";
         }
 
         CPPUNIT_ASSERT(f_expected[0].f_call);
@@ -290,6 +300,7 @@ public:
 
     std::vector<expected_t>     f_expected;
     controlled_vars::fbool_t    f_verbose;
+    controlled_vars::fbool_t    f_parser;
 
     static controlled_vars::zint32_t   g_warning_count;
     static controlled_vars::zint32_t   g_error_count;
@@ -1115,7 +1126,7 @@ public:
 };
 
 
-void init_rc()
+void init_rc(bool bad_script = false)
 {
     g_created_files = true;
 
@@ -1139,8 +1150,15 @@ void init_rc()
     rc += "{\n"
           "  'scripts': '";
                 rc += spwd;
-                rc += "/scripts',\n"
-          "  'db': '";
+    if(bad_script)
+    {
+                rc += "/no-scripts-here',\n";
+    }
+    else
+    {
+                rc += "/scripts',\n";
+    }
+    rc += "  'db': '";
                 rc += spwd;
                 rc += "/test.db',\n"
           "  'temporary_variable_name': '@temp$'\n"
@@ -1175,12 +1193,12 @@ void init_compiler(as2js::Compiler& compiler)
 char const g_compiler_class[] =
 #include "test_as2js_compiler_class.ci"
 ;
-//char const g_compiler_assignments[] =
-//#include "test_as2js_compiler_assignments.ci"
-//;
-//char const g_compiler_bitwise[] =
-//#include "test_as2js_compiler_bitwise.ci"
-//;
+char const g_compiler_expression[] =
+#include "test_as2js_compiler_expression.ci"
+;
+char const g_compiler_enum[] =
+#include "test_as2js_compiler_enum.ci"
+;
 //char const g_compiler_compare[] =
 //#include "test_as2js_compiler_compare.ci"
 //;
@@ -1233,7 +1251,7 @@ void run_tests(char const *data, char const *filename)
     as2js::JSON::pointer_t json_data(new as2js::JSON);
     as2js::JSON::JSONValue::pointer_t json(json_data->parse(in));
 
-    // verify that the compiler() did not fail
+    // verify that the parse() did not fail
     CPPUNIT_ASSERT(!!json);
     CPPUNIT_ASSERT(json->get_type() == as2js::JSON::JSONValue::type_t::JSON_TYPE_ARRAY);
 
@@ -1306,7 +1324,7 @@ void run_tests(char const *data, char const *filename)
             as2js::Parser::pointer_t parser(new as2js::Parser(prog_text, options));
 
             init_rc();
-            test_callback tc(verbose);
+            test_callback parser_tc(verbose, true);
 
             // no errors exepected while parsing (if you want to test errors
             // in the parser, use the test_as2js_parser.cpp test instead)
@@ -1315,6 +1333,8 @@ void run_tests(char const *data, char const *filename)
             // verify the parser result, that way we can make sure we are
             // testing the tree we want to test with the compiler
             verify_result(prog.find(parser_result_string)->second, root, verbose);
+
+            test_callback tc(verbose, false);
 
             // now the compiler may end up generating messages...
             as2js::JSON::JSONValue::object_t::const_iterator expected_msg_it(prog.find(expected_messages_string));
@@ -1329,6 +1349,8 @@ void run_tests(char const *data, char const *filename)
                     as2js::JSON::JSONValue::pointer_t message_value(msg_array[j]);
                     as2js::JSON::JSONValue::object_t const& message(message_value->get_object());
 
+                    bool ignore_message(false);
+
                     as2js::JSON::JSONValue::object_t::const_iterator const message_options_iterator(message.find("options"));
                     if(message_options_iterator != message.end())
                     {
@@ -1342,6 +1364,63 @@ void run_tests(char const *data, char const *filename)
 //else
 //std::cerr << "_________\nLine #<undefined>\n";
 //}
+                        as2js::String const message_options(message_options_iterator->second->get_string());
+                        for(as2js::as_char_t const *s(message_options.c_str()), *start(s);; ++s)
+                        {
+                            if(*s == ',' || *s == '|' || *s == '\0')
+                            {
+                                as2js::String opt_name(start, s - start);
+                                for(size_t o(0); o < g_options_size; ++o)
+                                {
+                                    if(g_options[o].f_name == opt_name)
+                                    {
+                                        ignore_message = (opt & (1 << o)) != 0;
+//std::cerr << "+++ pos option [" << opt_name << "] " << ignore_message << "\n";
+                                        goto found_option;
+                                    }
+                                    else if(g_options[o].f_neg_name == opt_name)
+                                    {
+                                        ignore_message = (opt & (1 << o)) == 0;
+//std::cerr << "+++ neg option [" << opt_name << "] " << ignore_message << "\n";
+                                        goto found_option;
+                                    }
+                                }
+                                std::cerr << "Option \"" << opt_name << "\" not found in our list of valid options\n";
+                                CPPUNIT_ASSERT(!"option name from JSON not found in g_options");
+
+found_option:
+                                if(*s == '\0')
+                                {
+                                    break;
+                                }
+                                if(*s == '|')
+                                {
+                                    if(ignore_message)
+                                    {
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    if(!ignore_message)
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                // skip commas
+                                do
+                                {
+                                    ++s;
+                                }
+                                while(*s == ',' || *s == '|');
+                                start = s;
+                            }
+                        }
+                    }
+
+                    if(!ignore_message)
+                    {
                         test_callback::expected_t expected;
                         expected.f_message_level = static_cast<as2js::message_level_t>(message.find("message level")->second->get_int64().get());
                         expected.f_error_code = str_to_error_code(message.find("error code")->second->get_string());
@@ -1444,11 +1523,36 @@ void As2JsCompilerUnitTests::tearDown()
 
 void As2JsCompilerUnitTests::test_compiler_invalid_nodes()
 {
+    // missing as2js.rc file
+    {
+        // as2js.rc checked before the options (this is not a really good
+        // test I guess... as the order is only fortuitous)
+        CPPUNIT_ASSERT_THROW(new as2js::Compiler(nullptr), as2js::exception_exit);
+    }
+    {
+        as2js::Options::pointer_t options(new as2js::Options);
+        CPPUNIT_ASSERT_THROW(new as2js::Compiler(options), as2js::exception_exit);
+    }
+
+    // test invalid path to scripts
+    {
+        init_rc(true);
+        as2js::Options::pointer_t options(new as2js::Options);
+        CPPUNIT_ASSERT_THROW(new as2js::Compiler(options), as2js::exception_exit);
+        tearDown();
+    }
+
+    init_rc();
+
+    // the options pointer is required
+    {
+        CPPUNIT_ASSERT_THROW(new as2js::Compiler(nullptr), as2js::exception_invalid_data);
+    }
+
     // empty node does absolutely nothing
     {
         as2js::Node::pointer_t node;
-        init_rc();
-        test_callback tc(false);
+        test_callback tc(false, false);
         as2js::Options::pointer_t options(new as2js::Options);
 
         as2js::Compiler compiler(options);
@@ -1470,7 +1574,7 @@ void As2JsCompilerUnitTests::test_compiler_invalid_nodes()
             continue;
         }
 
-        test_callback tc(false);
+        test_callback tc(false, false);
         {
             test_callback::expected_t expected;
             expected.f_message_level = as2js::message_level_t::MESSAGE_LEVEL_ERROR;
@@ -1496,16 +1600,16 @@ void As2JsCompilerUnitTests::test_compiler_class()
     run_tests(g_compiler_class, "test_compiler_class.json");
 }
 
-//void As2JsCompilerUnitTests::test_compiler_assignments()
-//{
-//    run_tests(g_compiler_assignments, "test_compiler_assignments.json");
-//}
-//
-//void As2JsCompilerUnitTests::test_compiler_bitwise()
-//{
-//    run_tests(g_compiler_bitwise, "test_compiler_bitwise.json");
-//}
-//
+void As2JsCompilerUnitTests::test_compiler_enum()
+{
+    run_tests(g_compiler_enum, "test_compiler_enum.json");
+}
+
+void As2JsCompilerUnitTests::test_compiler_expression()
+{
+    run_tests(g_compiler_expression, "test_compiler_expression.json");
+}
+
 //void As2JsCompilerUnitTests::test_compiler_compare()
 //{
 //    run_tests(g_compiler_compare, "test_compiler_compare.json");

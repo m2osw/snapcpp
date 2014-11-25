@@ -164,7 +164,7 @@ private:
     void                enum_directive(Node::pointer_t& enum_node);
     void                expression(Node::pointer_t expr, Node::pointer_t params = Node::pointer_t());
     bool                expression_new(Node::pointer_t expr);
-    void                extend_class(Node::pointer_t class_node, Node::pointer_t extend_name);
+    void                extend_class(Node::pointer_t class_node, bool const extend, Node::pointer_t extend_name);
     void                finally(Node::pointer_t& finally_node);
     bool                find_any_field(Node::pointer_t link, Node::pointer_t field, int& funcs, Node::pointer_t& resolution, Node::pointer_t params, int const search_flags);
     Node::depth_t       find_class(Node::pointer_t class_type, Node::pointer_t type, Node::depth_t depth);

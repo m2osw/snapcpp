@@ -3616,6 +3616,467 @@
                 }
             ]
         }
+    },
+
+    // calling functions in many different ways
+    {
+        //"verbose": true,
+        "slow": true,
+        "name": "valid and invalid function calls",
+        "program": "call.func1(r: ...);\n\
+call.func2(a, b, c, d: ...);\n\
+call.func3(a: this, b: this.param * 123, c: ...);\n\
+call.func4(n: 4, param * 3, rest: ...);\n\
+call.func5(count: this.length, param: 3, rest: ..., and: invalid);\n\
+call.func6('here', r1: ..., r2: ..., r3: ...);\n\
+call.func7(first: ..., oops);\n\
+call.func8(one, ...);\n\
+call.func9(...);\n",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INVALID_REST",
+                "line #": 5,
+                "message": "'...' was expected to be the last expression in this function call."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_REST",
+                "line #": 6,
+                "message": "'...' was expected to be the last expression in this function call."
+            },
+            {
+                "message level": 2,
+                "error code": "INVALID_REST",
+                "line #": 7,
+                "message": "'...' was expected to be the last expression in this function call."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func1"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "NAME",
+                                            "label": "r",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func2"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "a"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "b"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "c"
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "d",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func3"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "NAME",
+                                            "label": "a",
+                                            "children": [
+                                                {
+                                                    "node type": "THIS"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "b",
+                                            "children": [
+                                                {
+                                                    "node type": "MULTIPLY",
+                                                    "children": [
+                                                        {
+                                                            "node type": "MEMBER",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "THIS"
+                                                                },
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "param"
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "node type": "INT64",
+                                                            "integer": 123
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "c",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func4"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "NAME",
+                                            "label": "n",
+                                            "children": [
+                                                {
+                                                    "node type": "INT64",
+                                                    "integer": 4
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "MULTIPLY",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "param"
+                                                },
+                                                {
+                                                    "node type": "INT64",
+                                                    "integer": 3
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "rest",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func5"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "NAME",
+                                            "label": "count",
+                                            "children": [
+                                                {
+                                                    "node type": "MEMBER",
+                                                    "children": [
+                                                        {
+                                                            "node type": "THIS"
+                                                        },
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "length"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "param",
+                                            "children": [
+                                                {
+                                                    "node type": "INT64",
+                                                    "integer": 3
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "rest",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "and",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "invalid"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func6"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "STRING",
+                                            "label": "here"
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "r1",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "r2",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "NAME",
+                                            "label": "r3",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func7"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "NAME",
+                                            "label": "first",
+                                            "children": [
+                                                {
+                                                    "node type": "REST"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "oops"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func8"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "one"
+                                        },
+                                        {
+                                            "node type": "REST"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "node type": "CALL",
+                            "children": [
+                                {
+                                    "node type": "MEMBER",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "call"
+                                        },
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "func9"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "LIST",
+                                    "children": [
+                                        {
+                                            "node type": "REST"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
     }
 
 ]

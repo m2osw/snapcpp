@@ -42,10 +42,21 @@ SOFTWARE.
 class As2JsParserUnitTests : public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE( As2JsParserUnitTests );
+        CPPUNIT_TEST( test_parser_array );
         CPPUNIT_TEST( test_parser_basics );
         CPPUNIT_TEST( test_parser_class );
+        CPPUNIT_TEST( test_parser_enum );
+        CPPUNIT_TEST( test_parser_for );
         CPPUNIT_TEST( test_parser_function );
+        CPPUNIT_TEST( test_parser_if );
+        CPPUNIT_TEST( test_parser_pragma );
+        CPPUNIT_TEST( test_parser_switch );
+        CPPUNIT_TEST( test_parser_synchronized );
+        CPPUNIT_TEST( test_parser_trycatch );
+        CPPUNIT_TEST( test_parser_type );
         CPPUNIT_TEST( test_parser_variable );
+        CPPUNIT_TEST( test_parser_while );
+        CPPUNIT_TEST( test_parser_yield );
         CPPUNIT_TEST( test_parser );
     CPPUNIT_TEST_SUITE_END();
 
@@ -53,10 +64,21 @@ public:
     //virtual void setUp();
 
 protected:
+    void test_parser_array();
     void test_parser_basics();
     void test_parser_class();
+    void test_parser_enum();
+    void test_parser_for();
     void test_parser_function();
+    void test_parser_if();
+    void test_parser_pragma();
+    void test_parser_switch();
+    void test_parser_synchronized();
+    void test_parser_trycatch();
+    void test_parser_type();
     void test_parser_variable();
+    void test_parser_while();
+    void test_parser_yield();
     void test_parser();
 };
 

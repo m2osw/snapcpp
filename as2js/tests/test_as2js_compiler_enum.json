@@ -1,0 +1,101 @@
+// enum
+[
+
+    // simple empty enum
+    {
+        "verbose": true,
+        "slow": true,
+        "name": "empty enum",
+        "program": "enum empty {};",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ENUM",
+                            "label": "empty",
+                            "children": [
+                                {
+                                    "node type": "EMPTY"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "compiler result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "attributes": "DEFINED",
+                    "children": [
+                        {
+                            "node type": "ENUM",
+                            "attributes": "DEFINED",
+                            "label": "empty",
+                            "children": [
+                                {
+                                    "node type": "EMPTY"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // simple well defined enum
+    {
+        "verbose": true,
+        "slow": true,
+        "name": "well defined enum",
+        "program": "enum well { DEPTH = 3, DIAMETER = 8, HEIGHT = 5 };",
+        "parser result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "ENUM",
+                            "label": "well",
+                            "children": [
+                                {
+                                    "node type": "EMPTY"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "compiler result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "attributes": "DEFINED",
+                    "children": [
+                        {
+                            "node type": "ENUM",
+                            "attributes": "DEFINED",
+                            "label": "well",
+                            "children": [
+                                {
+                                    "node type": "EMPTY"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+]
+// vim: ts=4 sw=4 et

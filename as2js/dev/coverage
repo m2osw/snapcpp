@@ -150,7 +150,7 @@ else
         BUILD/tests/test_as2js As2JsRCUnitTests::test_empty_home
         BUILD/tests/test_as2js --destructive As2JsStreamUnitTests::test_stdout_destructive
     else
-        BUILD/text/test_as2js $1
+        BUILD/tests/test_as2js $1
     fi
     # just in case, remove the log file if there is one
     rm -f test_log.txt

@@ -1179,18 +1179,52 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
 // Note: the top entries are arrays so we can execute programs in the
 //       order we define them...
 //
+char const g_array[] =
+#include "test_as2js_parser_array.ci"
+;
 char const g_basics[] =
 #include "test_as2js_parser_basics.ci"
 ;
 char const g_class[] =
 #include "test_as2js_parser_class.ci"
 ;
+char const g_enum[] =
+#include "test_as2js_parser_enum.ci"
+;
+char const g_if[] =
+#include "test_as2js_parser_if.ci"
+;
+char const g_for[] =
+#include "test_as2js_parser_for.ci"
+;
 char const g_function[] =
 #include "test_as2js_parser_function.ci"
+;
+char const g_pragma[] =
+#include "test_as2js_parser_pragma.ci"
+;
+char const g_switch[] =
+#include "test_as2js_parser_switch.ci"
+;
+char const g_synchronized[] =
+#include "test_as2js_parser_synchronized.ci"
+;
+char const g_trycatch[] =
+#include "test_as2js_parser_trycatch.ci"
+;
+char const g_type[] =
+#include "test_as2js_parser_type.ci"
 ;
 char const g_variable[] =
 #include "test_as2js_parser_variable.ci"
 ;
+char const g_while[] =
+#include "test_as2js_parser_while.ci"
+;
+char const g_yield[] =
+#include "test_as2js_parser_yield.ci"
+;
+// TODO: specialize all those parts!
 char const g_data[] =
 #include "test_as2js_parser.ci"
 ;
@@ -1428,6 +1462,12 @@ found_option:
 
 
 
+void As2JsParserUnitTests::test_parser_array()
+{
+    run_tests(g_array, "test_parser_array.json");
+}
+
+
 void As2JsParserUnitTests::test_parser_basics()
 {
     run_tests(g_basics, "test_parser_basics.json");
@@ -1440,9 +1480,57 @@ void As2JsParserUnitTests::test_parser_class()
 }
 
 
+void As2JsParserUnitTests::test_parser_enum()
+{
+    run_tests(g_enum, "test_parser_enum.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_for()
+{
+    run_tests(g_for, "test_parser_for.json");
+}
+
+
 void As2JsParserUnitTests::test_parser_function()
 {
     run_tests(g_function, "test_parser_function.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_if()
+{
+    run_tests(g_if, "test_parser_if.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_pragma()
+{
+    run_tests(g_pragma, "test_parser_pragma.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_synchronized()
+{
+    run_tests(g_synchronized, "test_parser_synchronized.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_switch()
+{
+    run_tests(g_switch, "test_parser_switch.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_trycatch()
+{
+    run_tests(g_trycatch, "test_parser_trycatch.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_type()
+{
+    run_tests(g_type, "test_parser_type.json");
 }
 
 
@@ -1452,6 +1540,19 @@ void As2JsParserUnitTests::test_parser_variable()
 }
 
 
+void As2JsParserUnitTests::test_parser_while()
+{
+    run_tests(g_while, "test_parser_while.json");
+}
+
+
+void As2JsParserUnitTests::test_parser_yield()
+{
+    run_tests(g_yield, "test_parser_yield.json");
+}
+
+
+// TODO: remove once everything is "properly" typed
 void As2JsParserUnitTests::test_parser()
 {
     run_tests(g_data, "test_parser.json");

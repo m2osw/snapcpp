@@ -451,6 +451,7 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
         Node::pointer_t list(link->get_child(idx));
         if(list->get_type() != Node::node_t::NODE_DIRECTIVE_LIST)
         {
+            // extends, implements, empty...
             continue;
         }
 
@@ -471,7 +472,7 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
                     }
                 }
             }
-            else
+            else if(child->get_type() != Node::node_t::NODE_EMPTY)
             {
                 if(check_name(list, j, resolution, field, params, search_flags))
                 {
@@ -485,7 +486,7 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
                         else if(inst != resolution)
                         {
                             // if already defined, it should be the same or
-                            // we have a problem
+                            // we have a real problem
                             throw exception_internal_error("found a LINK_INSTANCE twice, but it was different each time");
                         }
                         return true;
@@ -1143,24 +1144,69 @@ void Compiler::declare_class(Node::pointer_t class_node)
 }
 
 
-void Compiler::extend_class(Node::pointer_t class_node, Node::pointer_t extend_name)
+void Compiler::extend_class(Node::pointer_t class_node, bool const extend, Node::pointer_t extend_name)
 {
     expression(extend_name);
 
     Node::pointer_t super(extend_name->get_link(Node::link_t::LINK_INSTANCE));
     if(super)
     {
-        if(get_attribute(super, Node::attribute_t::NODE_ATTR_FINAL))
+        switch(super->get_type())
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_FINAL, class_node->get_position());
-            msg << "class '" << super->get_string() << "' is marked final and it cannot be extended by '" << class_node->get_string() << "'.";
+        case Node::node_t::NODE_CLASS:
+            if(class_node->get_type() == Node::node_t::NODE_INTERFACE)
+            {
+                // (super) 'class A', 'interface B extends A'
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CLASS, class_node->get_position());
+                msg << "class '" << super->get_string() << "' cannot extend interface '" << class_node->get_string() << "'.";
+            }
+            else if(!extend)
+            {
+                // (super) 'class A', '... implements A'
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CLASS, class_node->get_position());
+                msg << "class '" << super->get_string() << "' cannot implement class '" << class_node->get_string() << "'. Use 'extends' instead.";
+            }
+            else if(get_attribute(super, Node::attribute_t::NODE_ATTR_FINAL))
+            {
+                // (super) 'final class A', 'class B extends A'
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_FINAL, class_node->get_position());
+                msg << "class '" << super->get_string() << "' is marked final and it cannot be extended by '" << class_node->get_string() << "'.";
+            }
+            break;
+
+        case Node::node_t::NODE_INTERFACE:
+            if(class_node->get_type() == Node::node_t::NODE_INTERFACE && !extend)
+            {
+                // (super) 'interface A', 'interface B implements A'
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_CLASS, class_node->get_position());
+                msg << "interface '" << super->get_string() << "' cannot implement interface '" << class_node->get_string() << "'. Use 'extends' instead.";
+            }
+            else if(get_attribute(super, Node::attribute_t::NODE_ATTR_FINAL))
+            {
+                // TODO: prove that this error happens earlier and thus that
+                //       we do not need to generate it here
+                //
+                // (super) 'final interface A'
+                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_FINAL, class_node->get_position());
+                msg << "interface '" << super->get_string() << "' is marked final, which is not legal.";
+            }
+            break;
+
+        default:
+            // this should never happen
+            throw exception_internal_error("found a LINK_INSTANCE which is neither a class nor an interface.");
+
         }
     }
+    //else -- TBD: should already have gotten an error by now?
 }
 
 
 void Compiler::class_directive(Node::pointer_t& class_node)
 {
+    // TBD: Should we instead of looping check nodes in order to
+    //      enforce order? Or do we trust that the parser already
+    //      did that properly?
     size_t const max(class_node->get_children_size());
     for(size_t idx(0); idx < max; ++idx)
     {
@@ -1173,8 +1219,11 @@ void Compiler::class_directive(Node::pointer_t& class_node)
             break;
 
         case Node::node_t::NODE_EXTENDS:
+            extend_class(class_node, true, child->get_child(0));
+            break;
+
         case Node::node_t::NODE_IMPLEMENTS:
-            extend_class(class_node, child->get_child(0));
+            extend_class(class_node, false, child->get_child(0));
             break;
 
         case Node::node_t::NODE_EMPTY:

@@ -44,8 +44,8 @@ class As2JsCompilerUnitTests : public CPPUNIT_NS::TestFixture
     CPPUNIT_TEST_SUITE( As2JsCompilerUnitTests );
         CPPUNIT_TEST( test_compiler_invalid_nodes );
         CPPUNIT_TEST( test_compiler_class );
-        //CPPUNIT_TEST( test_compiler_assignments );
-        //CPPUNIT_TEST( test_compiler_bitwise );
+        CPPUNIT_TEST( test_compiler_enum );
+        CPPUNIT_TEST( test_compiler_expression );
         //CPPUNIT_TEST( test_compiler_compare );
         //CPPUNIT_TEST( test_compiler_conditional );
         //CPPUNIT_TEST( test_compiler_equality );
@@ -62,9 +62,10 @@ public:
 
 protected:
     void test_compiler_invalid_nodes();
+
     void test_compiler_class();
-    //void test_compiler_assignments();
-    //void test_compiler_bitwise();
+    void test_compiler_enum();
+    void test_compiler_expression();
     //void test_compiler_compare();
     //void test_compiler_conditional();
     //void test_compiler_equality();

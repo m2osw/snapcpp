@@ -95,10 +95,21 @@ function(json_to_cpp TARGET_NAME)
 endfunction(json_to_cpp)
 
 
+json_to_cpp(parser_array)
 json_to_cpp(parser_basics)
 json_to_cpp(parser_class)
+json_to_cpp(parser_enum)
+json_to_cpp(parser_for)
 json_to_cpp(parser_function)
+json_to_cpp(parser_if)
+json_to_cpp(parser_pragma)
+json_to_cpp(parser_switch)
+json_to_cpp(parser_synchronized)
+json_to_cpp(parser_trycatch)
+json_to_cpp(parser_type)
 json_to_cpp(parser_variable)
+json_to_cpp(parser_while)
+json_to_cpp(parser_yield)
 json_to_cpp(parser)
 
 
@@ -115,6 +126,8 @@ json_to_cpp(optimizer_relational)
 json_to_cpp(optimizer_statements)
 
 json_to_cpp(compiler_class)
+json_to_cpp(compiler_enum)
+json_to_cpp(compiler_expression)
 
 
 
@@ -200,6 +213,8 @@ add_executable(${PROJECT_NAME}
     test_as2js_options.cpp
     test_as2js_parser.cpp
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_compiler_class.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_compiler_enum.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_compiler_expression.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_additive.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_assignments.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_bitwise.ci
@@ -211,10 +226,22 @@ add_executable(${PROJECT_NAME}
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_multiplicative.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_relational.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_optimizer_statements.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_array.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_basics.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_class.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_enum.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_for.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_function.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_if.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_pragma.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_switch.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_synchronized.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_trycatch.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_type.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_yield.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_variable.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_while.ci
+    ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser_yield.ci
     ${as2js_compiler_BINARY_DIR}/tests/test_as2js_parser.ci
     test_as2js_position.cpp
     test_as2js_rc.cpp

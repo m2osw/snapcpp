@@ -42,6 +42,7 @@ SOFTWARE.
 class As2JsLexerUnitTests : public CPPUNIT_NS::TestFixture
 {
     CPPUNIT_TEST_SUITE( As2JsLexerUnitTests );
+        CPPUNIT_TEST( test_invalid_pointers );
         CPPUNIT_TEST( test_tokens );
         CPPUNIT_TEST( test_valid_strings );
         CPPUNIT_TEST( test_invalid_strings );
@@ -55,6 +56,7 @@ public:
     //void setUp();
 
 protected:
+    void test_invalid_pointers();
     void test_tokens();
     void test_valid_strings();
     void test_invalid_strings();

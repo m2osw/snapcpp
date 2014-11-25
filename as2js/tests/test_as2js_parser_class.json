@@ -1818,7 +1818,335 @@
         }
     },
 
-    // A class using "public" or "private" instead of "extends"
+    // A class defined from another class and 3 interfaces
+    {
+        //"verbose": true,
+        "name": "class derived from another and three interfaces",
+        "program": "package Global { interface A {}; interface B {}; native class Test extends Object, Math implements A, B { function add (rhs: Integer) { return this.data * A.getA() + rhs * Math.sqrt(B.getB()); } private var data; }; }",
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "PACKAGE",
+                            "label": "Global",
+                            "children": [
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "INTERFACE",
+                                            "label": "A",
+                                            "children": [
+                                                {
+                                                    "node type": "EMPTY"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "INTERFACE",
+                                            "label": "B",
+                                            "children": [
+                                                {
+                                                    "node type": "EMPTY"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "CLASS",
+                                            "label": "Test",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "NATIVE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "EXTENDS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "LIST",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "Object"
+                                                                },
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "Math"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "IMPLEMENTS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "LIST",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "A"
+                                                                },
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "B"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "FUNCTION",
+                                                            "label": "add",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "PARAMETERS",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "PARAM",
+                                                                            "label": "rhs",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "TYPE",
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "node type": "IDENTIFIER",
+                                                                                            "label": "Integer"
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "node type": "DIRECTIVE_LIST",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "RETURN",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "ADD",
+                                                                                    "children": [
+                                                                                        {
+                                                                                            "node type": "MULTIPLY",
+                                                                                            "children": [
+                                                                                                {
+                                                                                                    "node type": "MEMBER",
+                                                                                                    "children": [
+                                                                                                        {
+                                                                                                            "node type": "THIS"
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "node type": "IDENTIFIER",
+                                                                                                            "label": "data"
+                                                                                                        }
+                                                                                                    ]
+                                                                                                },
+                                                                                                {
+                                                                                                    "node type": "CALL",
+                                                                                                    "children": [
+                                                                                                        {
+                                                                                                            "node type": "MEMBER",
+                                                                                                            "children": [
+                                                                                                                {
+                                                                                                                    "node type": "IDENTIFIER",
+                                                                                                                    "label": "A"
+                                                                                                                },
+                                                                                                                {
+                                                                                                                    "node type": "IDENTIFIER",
+                                                                                                                    "label": "getA"
+                                                                                                                }
+                                                                                                            ]
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "node type": "LIST"
+                                                                                                        }
+                                                                                                    ]
+                                                                                                }
+                                                                                            ]
+                                                                                        },
+                                                                                        {
+                                                                                            "node type": "MULTIPLY",
+                                                                                            "children": [
+                                                                                                {
+                                                                                                    "node type": "IDENTIFIER",
+                                                                                                    "label": "rhs"
+                                                                                                },
+                                                                                                {
+                                                                                                    "node type": "CALL",
+                                                                                                    "children": [
+                                                                                                        {
+                                                                                                            "node type": "MEMBER",
+                                                                                                            "children": [
+                                                                                                                {
+                                                                                                                    "node type": "IDENTIFIER",
+                                                                                                                    "label": "Math"
+                                                                                                                },
+                                                                                                                {
+                                                                                                                    "node type": "IDENTIFIER",
+                                                                                                                    "label": "sqrt"
+                                                                                                                }
+                                                                                                            ]
+                                                                                                        },
+                                                                                                        {
+                                                                                                            "node type": "LIST",
+                                                                                                            "children": [
+                                                                                                                {
+                                                                                                                    "node type": "CALL",
+                                                                                                                    "children": [
+                                                                                                                        {
+                                                                                                                            "node type": "MEMBER",
+                                                                                                                            "children": [
+                                                                                                                                {
+                                                                                                                                    "node type": "IDENTIFIER",
+                                                                                                                                    "label": "B"
+                                                                                                                                },
+                                                                                                                                {
+                                                                                                                                    "node type": "IDENTIFIER",
+                                                                                                                                    "label": "getB"
+                                                                                                                                }
+                                                                                                                            ]
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "node type": "LIST"
+                                                                                                                        }
+                                                                                                                    ]
+                                                                                                                }
+                                                                                                            ]
+                                                                                                        }
+                                                                                                    ]
+                                                                                                }
+                                                                                            ]
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "node type": "VAR",
+                                                            "link attributes": [
+                                                                {
+                                                                    "node type": "PRIVATE"
+                                                                }
+                                                            ],
+                                                            "children": [
+                                                                {
+                                                                    "node type": "VARIABLE",
+                                                                    "label": "data"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using extends after implements
+    {
+        //"verbose": true,
+        "name": "class using extends after implements",
+        "program": "private class DoubleExtend extends Object, Math implements A, B extends More {};",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INCOMPATIBLE",
+                "line #": 1,
+                "message": "a class definition expects 'extends' first and then 'implements'."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "DoubleExtend",
+                            "link attributes": [
+                                {
+                                    "node type": "PRIVATE"
+                                }
+                            ],
+                            "children": [
+                                {
+                                    "node type": "EXTENDS",
+                                    "children": [
+                                        {
+                                            "node type": "LIST",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "Object"
+                                                },
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "Math"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IMPLEMENTS",
+                                    "children": [
+                                        {
+                                            "node type": "LIST",
+                                            "children": [
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "A"
+                                                },
+                                                {
+                                                    "node type": "IDENTIFIER",
+                                                    "label": "B"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "EXTENDS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "More"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "EMPTY"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using "public" instead of "extends"
     // (for silly C++ programmers)
     {
         //"verbose": true,
@@ -1935,7 +2263,7 @@
         }
     },
 
-    // A class using a colon and "public" or "private" instead of "extends"
+    // A class using a colon and "public" instead of "extends"
     // (for silly C++ programmers)
     {
         //"verbose": true,
@@ -2028,6 +2356,882 @@
                                                 }
                                             ]
                                         },
+                                        {
+                                            "node type": "VAR",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PRIVATE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "data"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using "private" instead of "extends"
+    // (for silly C++ programmers)
+    {
+        //"verbose": true,
+        "name": "class using private instead of extends",
+        "program": "class unexpected_extension private Object { function add (rhs: Integer) { return this.data + rhs; } private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INCOMPATIBLE",
+                "line #": 1,
+                "message": "please use 'extends' or 'implements' to define a list of base classes. 'public', 'private', and 'protected' are used in C++ only."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension",
+                            "children": [
+                                {
+                                    "node type": "EXTENDS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "Object"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                                    "label": "add",
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "rhs",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "TYPE",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "Integer"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "RETURN",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "ADD",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "MEMBER",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "THIS"
+                                                                                },
+                                                                                {
+                                                                                    "node type": "IDENTIFIER",
+                                                                                    "label": "data"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "rhs"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "VAR",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PRIVATE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "data"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using a colon and "private" instead of "extends"
+    // (for silly C++ programmers)
+    {
+        //"verbose": true,
+        "name": "class using ':' and private instead of extends",
+        "program": "class unexpected_extension : private Object { function add (rhs: Integer) { return this.data + rhs; } private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INCOMPATIBLE",
+                "line #": 1,
+                "message": "please use 'extends' or 'implements' to define a list of base classes. 'public', 'private', and 'protected' are used in C++ only."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension",
+                            "children": [
+                                {
+                                    "node type": "EXTENDS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "Object"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                                    "label": "add",
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "rhs",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "TYPE",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "Integer"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "RETURN",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "ADD",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "MEMBER",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "THIS"
+                                                                                },
+                                                                                {
+                                                                                    "node type": "IDENTIFIER",
+                                                                                    "label": "data"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "rhs"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "VAR",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PRIVATE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "data"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using "protected" instead of "extends"
+    // (for silly C++ programmers)
+    {
+        //"verbose": true,
+        "name": "class using protected instead of extends",
+        "program": "class unexpected_extension protected Object { function add (rhs: Integer) { return this.data + rhs; } private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INCOMPATIBLE",
+                "line #": 1,
+                "message": "please use 'extends' or 'implements' to define a list of base classes. 'public', 'private', and 'protected' are used in C++ only."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension",
+                            "children": [
+                                {
+                                    "node type": "EXTENDS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "Object"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                                    "label": "add",
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "rhs",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "TYPE",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "Integer"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "RETURN",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "ADD",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "MEMBER",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "THIS"
+                                                                                },
+                                                                                {
+                                                                                    "node type": "IDENTIFIER",
+                                                                                    "label": "data"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "rhs"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "VAR",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PRIVATE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "data"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using a colon and "protected" instead of "extends"
+    // (for silly C++ programmers)
+    {
+        //"verbose": true,
+        "name": "class using ':' and protected instead of extends",
+        "program": "class unexpected_extension : protected Object { function add (rhs: Integer) { return this.data + rhs; } private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INCOMPATIBLE",
+                "line #": 1,
+                "message": "please use 'extends' or 'implements' to define a list of base classes. 'public', 'private', and 'protected' are used in C++ only."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension",
+                            "children": [
+                                {
+                                    "node type": "EXTENDS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "Object"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                                    "label": "add",
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "rhs",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "TYPE",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "Integer"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "RETURN",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "ADD",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "MEMBER",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "THIS"
+                                                                                },
+                                                                                {
+                                                                                    "node type": "IDENTIFIER",
+                                                                                    "label": "data"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "rhs"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "VAR",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PRIVATE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "data"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using a colon (:) with extends
+    // (for silly C++ programmers)
+    {
+        //"verbose": true,
+        "name": "class using a colon (:) and extends",
+        "program": "class unexpected_extension : extends Object { function add (rhs: Integer) { return this.data + rhs; } private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INCOMPATIBLE",
+                "line #": 1,
+                "message": "the 'extends' and 'implements' instructions cannot be preceeded by a colon."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension",
+                            "children": [
+                                {
+                                    "node type": "EXTENDS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "Object"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                                    "label": "add",
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "rhs",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "TYPE",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "Integer"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "RETURN",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "ADD",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "MEMBER",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "THIS"
+                                                                                },
+                                                                                {
+                                                                                    "node type": "IDENTIFIER",
+                                                                                    "label": "data"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "rhs"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "VAR",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PRIVATE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "data"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using a colon (:) with implements
+    // (for silly C++ programmers)
+    {
+        //"verbose": true,
+        "name": "class using a colon (:) and implements",
+        "program": "class unexpected_extension : implements Object { function add (rhs: Integer) { return this.data + rhs; } private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INCOMPATIBLE",
+                "line #": 1,
+                "message": "the 'extends' and 'implements' instructions cannot be preceeded by a colon."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension",
+                            "children": [
+                                {
+                                    "node type": "IMPLEMENTS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "Object"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                                    "label": "add",
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "rhs",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "TYPE",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "Integer"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "RETURN",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "ADD",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "MEMBER",
+                                                                            "children": [
+                                                                                {
+                                                                                    "node type": "THIS"
+                                                                                },
+                                                                                {
+                                                                                    "node type": "IDENTIFIER",
+                                                                                    "label": "data"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "rhs"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "node type": "VAR",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PRIVATE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "data"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using a colon (:) an unknown keyword
+    // (for silly C++ programmers)
+    {
+        //"verbose": true,
+        "name": "class using a colon (:) and an unknown keyword",
+        "program": "class unexpected_extension : Object { private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "'{' expected to start the 'class' definition."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension"
+                        },
+                        {
+                            "node type": "DIRECTIVE_LIST",
+                            "link attributes": [
+                                {
+                                    "node type": "IDENTIFIER",
+                                    "label": "Object"
+                                }
+                            ],
+                            "children": [
+                                {
+                                    "node type": "VAR",
+                                    "link attributes": [
+                                        {
+                                            "node type": "PRIVATE"
+                                        }
+                                    ],
+                                    "children": [
+                                        {
+                                            "node type": "VARIABLE",
+                                            "label": "data"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using a spurious colon (:)
+    // (for silly C++ programmers)
+    {
+        //"verbose": true,
+        "name": "class using a spurious colon (:)",
+        "program": "class unexpected_extension : { private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "CURVLY_BRACKETS_EXPECTED",
+                "line #": 1,
+                "message": "the 'class' keyword cannot be followed by a colon."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension",
+                            "children": [
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "VAR",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PRIVATE"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "VARIABLE",
+                                                    "label": "data"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    // A class using two implements
+    {
+        //"verbose": true,
+        "name": "class using two implements",
+        "program": "class unexpected_extension implements A implements B { private var data; };",
+        "expected messages": [
+            {
+                "message level": 2,
+                "error code": "INCOMPATIBLE",
+                "line #": 1,
+                "message": "a class definition expects zero or one 'extends' and then zero or one 'implements'. Use commas to separate multiple inheritance names."
+            }
+        ],
+        "result": {
+            "node type": "PROGRAM",
+            "children": [
+                {
+                    "node type": "DIRECTIVE_LIST",
+                    "children": [
+                        {
+                            "node type": "CLASS",
+                            "label": "unexpected_extension",
+                            "children": [
+                                {
+                                    "node type": "IMPLEMENTS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "A"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "IMPLEMENTS",
+                                    "children": [
+                                        {
+                                            "node type": "IDENTIFIER",
+                                            "label": "B"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
                                         {
                                             "node type": "VAR",
                                             "link attributes": [
