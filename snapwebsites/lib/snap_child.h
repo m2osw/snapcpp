@@ -345,6 +345,8 @@ public:
     static language_name_t const *get_languages();
     static country_name_t const *get_countries();
     static bool                 tag_is_inline(char const *tag, int length);
+    void                        set_timezone(QString const& timezone);
+    void                        restore_timezone();
 
     QString                     snapenv(QString const& name) const;
     bool                        postenv_exists(QString const& name) const;
@@ -443,6 +445,8 @@ private:
     QString                                     f_language;
     QString                                     f_country;
     QString                                     f_language_key;
+    controlled_vars::flbool_t                   f_original_timezone_defined;
+    QString                                     f_original_timezone;
     controlled_vars::flbool_t                   f_plugins_locales_was_not_ready;
     locale_info_vector_t                        f_plugins_locales;
     locale_info_vector_t                        f_browser_locales;

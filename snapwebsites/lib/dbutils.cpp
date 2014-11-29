@@ -124,11 +124,11 @@ QByteArray dbutils::get_row_key() const
         else
         {
             // these rows make use of MD5 sums so we have to convert them
-            QByteArray str(f_rowName.toUtf8());
+            QByteArray const str(f_rowName.toUtf8());
             char const *s(str.data());
             while(s[0] != '\0' && s[1] != '\0')
             {
-                char c(static_cast<char>((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1])));
+                char const c(static_cast<char>((hex_to_dec(s[0]) << 4) | hex_to_dec(s[1])));
                 row_key.append(c);
                 s += 2;
             }

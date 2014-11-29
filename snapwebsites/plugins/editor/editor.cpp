@@ -94,6 +94,7 @@ char const *get_name(name_t name)
  */
 editor::editor()
     //: f_snap(NULL) -- auto-init
+    //, f_editor_form() -- auto-init
 {
 }
 
@@ -174,7 +175,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 11, 13, 18, 7, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 11, 29, 0, 38, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -236,7 +237,7 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
     QDomDocument doc(header.ownerDocument());
 
     // TODO: find a way to include the editor only if required
-    //       (it may already be done, search on add_javascript() for info.)
+    //       (it may already be done! search on add_javascript() for info.)
     content::content::instance()->add_javascript(doc, "editor");
 }
 
@@ -294,15 +295,7 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
 
 /** \brief Execute the specified path.
  *
- * This is a dynamic page which the users plugin knows how to handle.
- *
- * This function never returns if the "page" is just a verification
- * process which redirects the user (i.e. "verify/<id>", and
- * "new-password/<id>" at this time.)
- *
- * Other paths may also redirect the user in case the path is not
- * currently supported (mainly because the user does not have
- * permission.)
+ * This is a dynamic page which the editor plugin knows how to handle.
  *
  * \param[in,out] ipath  The canonicalized path.
  *
@@ -2902,17 +2895,9 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
     // now process the XML data with the plugin specialized data for
     // each field through the editor XSLT
-    QFile editor_xsl_file(":/xsl/editor/editor-form.xsl");
-    if(!editor_xsl_file.open(QIODevice::ReadOnly))
-    {
-        throw snap_logic_exception("Could not open resource file \":/xsl/editor/editor-form.xsl\".");
-    }
-    QByteArray const data(editor_xsl_file.readAll());
-    if(data.isEmpty())
-    {
-        throw snap_logic_exception("Could not read resource file \":/xsl/editor/editor-form.xsl\".");
-    }
-    QString const editor_xsl(QString::fromUtf8(data.data(), data.size()));
+    prepare_editor_form(this);
+    QString const editor_xsl(f_editor_form.toString());
+
     QString const editor_xml(editor_widgets.toString());
     if(editor_xml.isEmpty())
     {
@@ -2983,6 +2968,68 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // use of the tab index so we'll get some gaps, but that's a very
     // small price to pay for this cool feature
     form::form::used_tab_id(max_widgets);
+}
+
+
+void editor::add_editor_widget_templates(QDomDocument doc)
+{
+    QDomNode const node(doc.documentElement());
+    QDomNode child(f_editor_form.documentElement());
+    snap_dom::insert_node_to_xml_doc(child, node);
+}
+
+
+void editor::add_editor_widget_templates(QString const& xslt)
+{
+    if(f_editor_form.documentElement().isNull())
+    {
+        // this is easier because the copy would otherwise not
+        // copy the stylesheet attributes without specialized
+        // code... this means the other documents do not need
+        // valid XSLT attributes.
+        f_editor_form.setContent(xslt);
+    }
+    else
+    {
+        QDomDocument doc;
+        doc.setContent(xslt);
+        add_editor_widget_templates(doc);
+    }
+}
+
+
+void editor::add_editor_widget_templates_from_file(QString const& filename)
+{
+    QFile editor_xsl_file(filename);
+    if(!editor_xsl_file.open(QIODevice::ReadOnly))
+    {
+        throw snap_logic_exception(QString("Could not open resource file \"%1\".").arg(filename));
+    }
+    QByteArray const data(editor_xsl_file.readAll());
+    if(data.isEmpty())
+    {
+        throw snap_logic_exception(QString("Could not read resource file \"%1\".").arg(filename));
+    }
+    add_editor_widget_templates(QString::fromUtf8(data.data(), data.size()));
+}
+
+
+bool editor::prepare_editor_form_impl(editor *e)
+{
+    // no need to use 'e' in this implementation,
+    // it is useful in other plugins though
+    static_cast<void>(e);
+
+    // if we already computed that document, return false immediately
+    if(!f_editor_form.documentElement().isNull())
+    {
+        return false;
+    }
+
+    // add the core XSL document
+    add_editor_widget_templates_from_file(":/xsl/editor/editor-form.xsl");
+
+    return true;
 }
 
 

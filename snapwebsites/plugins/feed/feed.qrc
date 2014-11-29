@@ -18,8 +18,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/shorturl">
+  <qresource prefix="/plugins/feed">
     <file>content.xml</file>
+  </qresource>
+  <qresource prefix="/xsl/layout">
+    <file>feed-page-parser.xsl</file>
   </qresource>
 </RCC>
 <!--

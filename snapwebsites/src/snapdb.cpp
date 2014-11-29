@@ -471,40 +471,49 @@ void snapdb::display_rows_wildcard() const
 
 void snapdb::display_columns() const
 {
-    QCassandraContext::pointer_t context(f_cassandra->context(f_context));
+    try
+    {
+        QCassandraContext::pointer_t context(f_cassandra->context(f_context));
 
-    // display all the columns of a row
-    QCassandraTable::pointer_t table(context->findTable(f_table));
-    if(!table)
-    {
-        std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
-        exit(1);
-    }
-    snap::dbutils du( f_table, f_row );
-    const QByteArray row_key( du.get_row_key() );
-    if(!table->exists(row_key))
-    {
-        std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
-        exit(1);
-    }
+        // display all the columns of a row
+        QCassandraTable::pointer_t table(context->findTable(f_table));
+        if(!table)
+        {
+            std::cerr << "error: table \"" << f_table << "\" not found." << std::endl;
+            exit(1);
+        }
+        snap::dbutils du( f_table, f_row );
+        QByteArray const row_key( du.get_row_key() );
+        if(!table->exists(row_key))
+        {
+            std::cerr << "error: row \"" << f_row << "\" not found in table \"" << f_table << "\"." << std::endl;
+            exit(1);
+        }
 
-    QCassandraRow::pointer_t row(table->row(row_key));
-    QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(f_count);
-    column_predicate.setIndex();
-    for(;;)
+        QCassandraRow::pointer_t row(table->row(row_key));
+        QCassandraColumnRangePredicate column_predicate;
+        column_predicate.setCount(f_count);
+        column_predicate.setIndex();
+        for(;;)
+        {
+            row->clearCache();
+            row->readCells(column_predicate);
+            QCassandraCells const& cells(row->cells());
+            if(cells.isEmpty())
+            {
+                break;
+            }
+            for( auto c : cells )
+            {
+                std::cout << du.get_column_name(c) << " = " << du.get_column_value( c, true /*display_only*/ ) << std::endl;
+            }
+        }
+    }
+    catch(snap::snap_exception const& e)
     {
-        row->clearCache();
-        row->readCells(column_predicate);
-        const QCassandraCells& cells(row->cells());
-        if(cells.isEmpty())
-        {
-            break;
-        }
-        for( auto c : cells )
-        {
-            std::cout << du.get_column_name(c) << " = " << du.get_column_value( c, true /*display_only*/ ) << std::endl;
-        }
+        // in most cases we get here because of something invalid in
+        // the database
+        std::cerr << "error: could not properly read row \"" << f_row << "\" in table \"" << f_table << "\". It may not exist or its key is not defined as expected (i.e. not a valid md5sum)" << std::endl;
     }
 }
 

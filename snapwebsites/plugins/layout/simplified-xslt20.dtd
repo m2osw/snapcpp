@@ -225,6 +225,9 @@ DTD of the XSLT 2.0.
 <!ELEMENT script ANY>
 <!ATTLIST script type CDATA #REQUIRED>
 
+<!ELEMENT small ANY>
+<!ATTLIST small class CDATA #IMPLIED>
+
 <!ELEMENT span ANY>
 <!ATTLIST span class CDATA #IMPLIED>
 
@@ -273,8 +276,16 @@ DTD of the XSLT 2.0.
 <!ATTLIST ul class CDATA #IMPLIED>
 
 <!-- Editor tags, these are simplified -->
+<!ELEMENT editor-form ANY>
+
 <!ELEMENT widget ANY>
 <!ATTLIST widget path CDATA #REQUIRED>
+
+<!ELEMENT default ANY>
+
+<!ELEMENT preset ANY>
+
+<!ELEMENT item ANY>
 
 <!ELEMENT attachment ANY>
 <!ATTLIST attachment foo CDATA #REQUIRED>

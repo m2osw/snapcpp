@@ -73,6 +73,7 @@ enum name_t
     SNAP_NAME_CONTENT_FILES_TABLE,
     SNAP_NAME_CONTENT_FILES_UPDATED,
     SNAP_NAME_CONTENT_FINAL,
+    SNAP_NAME_CONTENT_FORCERESETSTATUS,
     SNAP_NAME_CONTENT_ISSUED,
     SNAP_NAME_CONTENT_LONG_TITLE,
     SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME,
@@ -768,7 +769,7 @@ private:
 
     void        initial_update(int64_t variables_timestamp);
     void        content_update(int64_t variables_timestamp);
-    void        backend_action_reset_status();
+    void        backend_action_reset_status(bool const force);
     void        backend_process_status();
     void        backend_process_files();
 

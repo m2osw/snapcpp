@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!--
+Snap Websites Server == locale timezone page widgets
+Copyright (C) 2014  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<editor-form owner="locale" content-modified="2014-11-21 16:42:08">
+  <auto-reset minutes="30"/> <!-- 30 minutes -->
+  <mode action="edit"/>
+  <immediate/>
+  <focus refid="continent"/>
+  <on-save allow-edit="yes"/>
+  <taborder>
+    <tabindex refid="continent"/>
+    <tabindex refid="city"/>
+  </taborder>
+  <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+  <widget id="locale_timezone" type="locale_timezone" field="locale::locale_timezone" path="locale/timezone/timezone">
+    <tooltip>Select a continent/country and city that corresponds to your timezone.</tooltip>
+    <help>Help</help>
+  </widget>
+</editor-form>
+<!-- vim: ts=2 sw=2 et
+-->

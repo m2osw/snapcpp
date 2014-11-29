@@ -320,12 +320,11 @@ bool snap_thread::snap_mutex::timed_wait(uint64_t usec)
     int err(0);
 
     // get time now
-    struct timezone ztime;
     struct timeval vtime;
-    if(gettimeofday(&vtime, &ztime) != 0)
+    if(gettimeofday(&vtime, nullptr) != 0)
     {
         err = errno;
-        SNAP_LOG_FATAL("gettimeofday() failed with ")(err);
+        SNAP_LOG_FATAL("gettimeofday() failed with errno: ")(err);
         throw snap_thread_exception_system_error("gettimeofday() failed");
     }
 

@@ -98,7 +98,7 @@ endif()
 # You can also play with -Weffc++ although we are definitively not compliant
 # (especially we do not define all the auto-initialized variables!)
 # -Wconversion -- would be nice, a few things are still not cooperating with that one
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wnoexcept -DUNISTR_FROM_STRING_EXPLICIT=explicit" )
 set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fwrapv" )
 
 include_directories(

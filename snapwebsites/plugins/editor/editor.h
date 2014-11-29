@@ -139,7 +139,7 @@ public:
     void                on_bootstrap(snap_child *snap);
     void                on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
     virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    bool                on_path_execute(content::path_info_t& ipath);
+    virtual bool        on_path_execute(content::path_info_t& ipath);
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     virtual void        on_process_form_post(content::path_info_t& cpath, sessions::sessions::session_info const& info);
     void                on_validate_post_for_widget(content::path_info_t& ipath, sessions::sessions::session_info& info,
@@ -155,7 +155,11 @@ public:
     static QString      clean_post_value(QString const& widget_type, QString const& value);
     void                parse_out_inline_img(content::path_info_t& ipath, QString& body, QString const& force_filename);
     QDomDocument        get_editor_widgets(content::path_info_t& ipath);
+    void                add_editor_widget_templates(QDomDocument doc);
+    void                add_editor_widget_templates(QString const& doc);
+    void                add_editor_widget_templates_from_file(QString const& filename);
 
+    SNAP_SIGNAL(prepare_editor_form, (editor *e), (e));
     SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t row), (ipath, row));
     SNAP_SIGNAL(validate_editor_post_for_widget, (content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, QString const& value, bool const is_secret), (ipath, info, widget, widget_name, widget_type, value, is_secret));
     SNAP_SIGNAL(replace_uri_token, (editor_uri_token& token_info), (token_info));
@@ -172,6 +176,7 @@ private:
     bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString const& force_filename);
 
     zpsnap_child_t      f_snap;
+    QDomDocument        f_editor_form;  // XSL from editor-form.xsl + other plugin extensions
 };
 
 } // namespace editor

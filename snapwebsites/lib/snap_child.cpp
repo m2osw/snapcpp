@@ -2442,9 +2442,72 @@ snap_child::~snap_child()
 void snap_child::init_start_date()
 {
     struct timeval tv;
-    gettimeofday(&tv, nullptr);
+    if(gettimeofday(&tv, nullptr) != 0)
+    {
+        int const err(errno);
+        SNAP_LOG_FATAL("gettimeofday() failed with errno: ")(err);
+        throw std::runtime_error("gettimeofday() failed");
+    }
     f_start_date = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
                  + static_cast<int64_t>(tv.tv_usec);
+}
+
+
+/** \brief Change the current timezone to the newly specified timezone.
+ *
+ * We expect the server to be running using your office timezone. This means
+ * a timezone which is not unlikely to have nothing to do with an end user
+ * timezone.
+ *
+ * The function first saves the current timezone so in case you want to do
+ * that, it is possible to restore the timezone later.
+ *
+ * Source:
+ * http://stackoverflow.com/questions/10378093/c-api-to-return-timestring-in-specified-time-zone/10378513#10378513
+ *
+ * \param[in] timezone  Name of the timezone as understood by tzset(3).
+ */
+void snap_child::set_timezone(QString const& timezone)
+{
+    // on first call save the timezone
+    if(!f_original_timezone_defined)
+    {
+        f_original_timezone_defined = true;
+        char const *tz(getenv("TZ"));
+        if(tz != nullptr)
+        {
+            f_original_timezone = QString::fromUtf8(tz);
+        }
+    }
+
+    // force new timezone
+    setenv("TZ", timezone.toUtf8().data(), 1);
+    tzset();
+}
+
+
+/** \brief Restore the timezone to the original.
+ *
+ * If the timezone was defined using the set_timezone() function, then
+ * this function can be called to restore the original timezone the process
+ * started with.
+ *
+ * If the set_timezone() was never called, then nothing happens.
+ */
+void snap_child::restore_timezone()
+{
+    if(f_original_timezone_defined)
+    {
+        if(f_original_timezone.isEmpty())
+        {
+            unsetenv("TZ");
+        }
+        else
+        {
+            setenv("TZ", f_original_timezone.toUtf8().data(), 1);
+        }
+        tzset();
+    }
 }
 
 

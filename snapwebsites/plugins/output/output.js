@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.23
+ * Version: 0.1.5.24
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -208,7 +208,7 @@ snapwebsites.charToHex = function(c) // static
 snapwebsites.htmlEscape = function(str) // static
 {
     return str.replace(/&/g, '&amp;')
-              .replace(/"/g, '&quot;')
+              .replace(/"/g, '&quot;')  // " vim does not see regex's properly
               .replace(/'/g, '&#39;')
               .replace(/</g, '&lt;')
               .replace(/>/g, '&gt;');
@@ -535,7 +535,7 @@ snapwebsites.Output.prototype.registeredBufferToMIME_; // = []; -- initialized i
  */
 snapwebsites.Output.prototype.initQsParams_ = function()
 {
-    this.queryString_ = snapwebsites.Output.parseQueryString(document.location.search.replace(/^\?/, ""));
+    this.queryString_ = snapwebsites.Output.parseQueryString(document.location.search.replace(/^\?/, ""), false);
 };
 
 
@@ -827,6 +827,7 @@ snapwebsites.Output.parseQueryString = function(query_string, include_domain) //
         value,
         variables,
         name_value,
+        pos,
         result = {};
 
     if(include_domain)
@@ -919,6 +920,8 @@ jQuery.fn.extend({
      *
      * This gives users the possibility to use Enter, Space, or Click
      * with the Mouse on that button.
+     *
+     * @this {jQuery}
      */
     makeButton: function()
     {

@@ -16,8 +16,9 @@ FILES="plugins/editor/editor.js
        plugins/form/form.js
        plugins/list/list/list.js
        plugins/listener/listener.js
-       plugins/output/popup.js
+       plugins/locale/locale-timezone.js
        plugins/output/output.js
+       plugins/output/popup.js
        plugins/output/rotate-animation.js
        plugins/server_access/server-access.js"
 

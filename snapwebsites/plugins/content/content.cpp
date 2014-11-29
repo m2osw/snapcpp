@@ -160,6 +160,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_FILES_FILENAME:
         return "content::files::filename";
 
+    case SNAP_NAME_CONTENT_FORCERESETSTATUS:
+        return "forceresetstatus";
+
     case SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT:
         return "content::files::image_height";
 
@@ -7612,6 +7615,7 @@ void content::on_save_content()
 void content::on_register_backend_action(server::backend_action_map_t& actions)
 {
     actions[get_name(SNAP_NAME_CONTENT_RESETSTATUS)] = this;
+    actions[get_name(SNAP_NAME_CONTENT_FORCERESETSTATUS)] = this;
 }
 
 
@@ -7628,12 +7632,16 @@ void content::on_backend_action(QString const& action)
 {
     if(action == get_name(SNAP_NAME_CONTENT_RESETSTATUS))
     {
-        backend_action_reset_status();
+        backend_action_reset_status(false);
+    }
+    else if(action == get_name(SNAP_NAME_CONTENT_FORCERESETSTATUS))
+    {
+        backend_action_reset_status(true);
     }
 }
 
 
-void content::backend_action_reset_status()
+void content::backend_action_reset_status(bool const force)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
@@ -7646,7 +7654,7 @@ void content::backend_action_reset_status()
         uint32_t const count(content_table->readRows(row_predicate));
         if(count == 0)
         {
-            // no more lists to process
+            // no more pages to process
             break;
         }
         QtCassandra::QCassandraRows const rows(content_table->rows());
@@ -7668,13 +7676,18 @@ void content::backend_action_reset_status()
                 else
                 {
                     int32_t s(status.int32Value());
-                    if((s & 0xFF) == static_cast<int>(path_info_t::status_t::state_t::NORMAL)
+                    if((s & 0xFF) != static_cast<int>(path_info_t::status_t::state_t::NORMAL)
                     && (s >> 8) != static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING))
                     {
-                        s = static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
-                          + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING)) * 256;
-                        status.setInt32Value(s);
-                        content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->setValue(status);
+                        if(force
+                        || ((s & 0xFF) == static_cast<int>(path_info_t::status_t::state_t::NORMAL)
+                           && (s >> 8) != static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING)))
+                        {
+                            s = static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
+                              + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING)) * 256;
+                            status.setInt32Value(s);
+                            content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->setValue(status);
+                        }
                     }
                 }
             }

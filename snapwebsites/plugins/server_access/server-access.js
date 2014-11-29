@@ -181,7 +181,7 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
  * {
  * public:
  *     function ServerAccess(callback: ServerAccessCallbacks);
- *     function setURI(uri: string, queryString_opt: Object);
+ *     function setURI(uri: string, opt_queryString: Object);
  *     function setData(data: Object);
  *     function send();
  *     static function appendQueryString(uri: string, query_string: Object): string;
@@ -331,12 +331,12 @@ snapwebsites.ServerAccess.prototype.data_ = null;
  * the destination object.
  *
  * @param {!string} uri  The URI where the data is to be sent.
- * @param {Object=} queryString_opt  An option set of key/value pairs.
+ * @param {Object=} opt_queryString  An option set of key/value pairs.
  */
-snapwebsites.ServerAccess.prototype.setURI = function(uri, queryString_opt)
+snapwebsites.ServerAccess.prototype.setURI = function(uri, opt_queryString)
 {
     this.uri_ = uri ? uri : "/";
-    this.queryString_ = queryString_opt;
+    this.queryString_ = opt_queryString;
 };
 
 

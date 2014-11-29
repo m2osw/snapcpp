@@ -49,7 +49,7 @@ install(
 		Ecma-262.pdf
 		footer.html
 		install-snap.sh
-		js-editor-540x492.png
+		js-editor-650x650.png
 		js-editor.odg
 		js-editor.png
 		layout-determination.odg

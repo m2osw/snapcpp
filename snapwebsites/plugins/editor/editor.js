@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.245
+ * Version: 0.0.3.257
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -234,7 +234,11 @@
  *  |                                  |    | FileWithPreview           |   |
  *  +----------------------------------+    +---------------------------+   |
  *                                                                          |
- *                                                                          |
+ *                                          +---------------------------+   |
+ *                                          |                           +---+
+ *                                          | EditorWidgetTypeSilent    |   |
+ *                                          |                           |   |
+ *                                          +---------------------------+   |
  *                                                                          |
  *                                          +---------------------------+   |
  *                                          |                           +---+
@@ -739,8 +743,10 @@ snapwebsites.EditorSelection =
  *      virtual function serverAccessError(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
  *      virtual function serverAccessComplete(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
  *      abstract function getType() : string;
+ *      abstract function preInitializeWidget(widget: Object) : void;
  *      abstract function initializeWidget(editor_widget: Object) : void;
  *      virtual function saving(editor_widget: Object, data: EditorWidgetTypeBase.SaveData) : void;
+ *      virtual function resetValue(editor_widget: Object) : void;
  *      virtual function setValue(editor_widget: Object, value: Object) : void;
  *  };
  * \endcode
@@ -864,6 +870,24 @@ snapwebsites.EditorWidgetTypeBase.prototype.getType = function() // virtual
 {
     throw new Error("snapwebsites.EditorWidgetTypeBase.getType() was not overloaded.");
 };
+
+
+/*jslint unparam: true */
+/** \brief Pre-initialize a widget of this type.
+ *
+ * The parameter is really a snapwebsites.EditorWidget object,
+ * but at this point we did not yet define that object.
+ *
+ * @throws {Error} The base type function throws an error as it should never
+ *                 get called (requires override.)
+ *
+ * @param {!Object} editor_widget  The widget being initialized.
+ */
+snapwebsites.EditorWidgetTypeBase.prototype.preInitializeWidget = function(editor_widget) // virtual
+{
+    throw new Error("snapwebsites.EditorWidgetTypeBase.preInitializeWidget() doesn't do anything (yet)");
+};
+/*jslint unparam: false */
 
 
 /*jslint unparam: true */
@@ -2012,12 +2036,12 @@ snapwebsites.EditorToolbar.prototype.toggleToolbar = function(force)
  * @param {string} cmd  The command that generated this call.
  * @param {?string} title  The command that generated this call.
  * @param {number} key_n_flags  The command that generated this call.
- * @param {string|number|null} param_opt  The command that generated this call.
- * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} func_opt  The command that generated this call.
+ * @param {string|number|null} opt_param  The command that generated this call.
+ * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} opt_func  The command that generated this call.
  *
  * @private
  */
-snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_ = function(cmd, title, key_n_flags, param_opt, func_opt)
+snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_ = function(cmd, title, key_n_flags, opt_param, opt_func)
 {
     this.toggleToolbar();
 };
@@ -2033,12 +2057,12 @@ snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_ = function(cmd, titl
  * @param {string} cmd  The command that generated this call.
  * @param {?string} title  The command that generated this call.
  * @param {number} key_n_flags  The command that generated this call.
- * @param {string|number|null} param_opt  The command that generated this call.
- * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} func_opt  The command that generated this call.
+ * @param {string|number|null} opt_param  The command that generated this call.
+ * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} opt_func  The command that generated this call.
  *
  * @private
  */
-snapwebsites.EditorToolbar.prototype.callbackLinkDialog_ = function(cmd, title, key_n_flags, param_opt, func_opt)
+snapwebsites.EditorToolbar.prototype.callbackLinkDialog_ = function(cmd, title, key_n_flags, opt_param, opt_func)
 {
     // for now we can ignore cmd
 
@@ -2097,7 +2121,7 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  * public:
  *      function EditorWidget(editor_base: EditorBase, editor_form: EditorForm, widget: jQuery);
  *      final function getName() : string;
- *      final function wasModified(recheck_opt: boolean) : boolean;
+ *      final function wasModified(opt_recheck: boolean) : boolean;
  *      final function saving() : SaveData;
  *      final function saved(data: SaveData) : boolean;
  *      final function discard();
@@ -2105,12 +2129,16 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      function getEditorBase() : EditorBase;
  *      function show() : Void;
  *      function hide() : Void;
+ *      function enable() : Void;
+ *      function disable() : Void;
  *      final function getWidget() : jQuery;
  *      final function getWidgetContent() : jQuery;
  *      final function checkForBackgroundValue();
  *      static final function isEmptyBlock(html: string|jQuery) : boolean;
  *      function getValue() : string;
- *      function setValue(value: Object, changed: boolean) : Void;
+ *      function resetValue(changed: boolean) : void;
+ *      function setValue(value: Object, changed: boolean) : void;
+ *      function getWidgetType() : EditorWidgetTypeBase;
  *
  * private:
  *      var editorBase_: EditorBase = null;
@@ -2141,6 +2169,11 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
     this.editorForm_ = editor_form;
     this.widget_ = widget; // this is the jQuery widget (.snap-editor)
     this.widgetContent_ = widget.children(".editor-content");
+    if(this.widgetContent_.length == 0)
+    {
+        alert("Widget must define a tag with class \"editor-content\"");
+        throw new Error("Widget must define a tag with class \"editor-content\"");
+    }
     this.name_ = snapwebsites.castToString(widget.attr("field_name"), "field_name attribute");
     this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
     this.widgetType_ = editor_base.getWidgetType(type);
@@ -2160,18 +2193,7 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
 //#endif
 
     // this should be last
-    this.widgetType_.initializeWidget(this);
-
-    // auto-focus the widget if so required
-    if(widget.is(".auto-focus"))
-    {
-        // Note: the DOM is fully initialized, it does not matter as much
-        //       whether we are on our end although by now we should be
-        //
-        // XXX: could setting the focus have side effects on other widgets
-        //      that were not yet created and thus not fully initialized yet?
-        this.widgetContent_.focus();
-    }
+    this.widgetType_.preInitializeWidget(this);
 
     return this;
 };
@@ -2331,7 +2353,7 @@ snapwebsites.EditorWidget.prototype.getName = function()
  * This function compares the widget old and current data to see
  * whether it changed.
  *
- * @param {?boolean} recheck_opt  Whether we want to force a check of
+ * @param {?boolean} opt_recheck  Whether we want to force a check of
  *                                the current HTML data with the original.
  *
  * @return {boolean}  Whether the widget was modified (true) or not
@@ -2339,9 +2361,9 @@ snapwebsites.EditorWidget.prototype.getName = function()
  *
  * @final
  */
-snapwebsites.EditorWidget.prototype.wasModified = function(recheck_opt)
+snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
 {
-    if(recheck_opt || !this.modified_)
+    if(opt_recheck || !this.modified_)
     {
         this.modified_ = this.originalData_ != this.widgetContent_.html();
     }
@@ -2519,6 +2541,52 @@ snapwebsites.EditorWidget.prototype.hide = function()
     {
         jQuery("label[for='" + id + "']").hide();
     }
+};
+
+
+/** \brief Enable the widget.
+ *
+ * This function is used to enable the widget.
+ *
+ * The function simply adds or removes the "disabled" class.
+ *
+ * By default, if the \p state parameter is not specified, the function
+ * enables the widget. If the state is specified and it is true, the
+ * widget is also enabled. When the state is specified and is false,
+ * then it adds the disabled class.
+ *
+ * \important
+ * If the state is not of type Boolean, then it is ignored and the
+ * widget is always enabled. You may convert any value to a Boolean
+ * value using the logical not (!) operator.
+ *
+ * @param {boolean=} opt_state  The new state, if true (default) enable,
+ *                              otherwise disable the widget.
+ */
+snapwebsites.EditorWidget.prototype.enable = function(opt_state)
+{
+    if(typeof opt_state === "boolean" && !opt_state)
+    {
+        this.widget_.addClass("disabled");
+    }
+    else
+    {
+        this.widget_.removeClass("disabled");
+    }
+};
+
+
+/** \brief Disable the widget.
+ *
+ * This function is used to disable the widget.
+ *
+ * The function calls enable() with the value false as the state.
+ *
+ * Note that the disable function does not accept a parameter.
+ */
+snapwebsites.EditorWidget.prototype.disable = function()
+{
+    this.enable(false);
 };
 
 
@@ -2705,6 +2773,18 @@ snapwebsites.EditorWidget.prototype.setValue = function(value, changed)
 
     // it was set, whether it was modified is not our concern when returning
     return true;
+};
+
+
+/** \brief Get the type of this widget.
+ *
+ * This function returns the reference to the editor widget type.
+ *
+ * @return {snapwebsites.EditorWidgetTypeBase}
+ */
+snapwebsites.EditorWidget.prototype.getWidgetType = function()
+{
+    return this.widgetType_;
 };
 
 
@@ -3122,11 +3202,11 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
         });
     jQuery("#snap_editor_save")
         .click(function(){
-            alert("Save!");
+            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_SAVE);
         });
     jQuery("#snap_editor_save_new_branch")
         .click(function(){
-            alert("Save New Branch!");
+            alert("Save New Branch! (to be implemented)");
         });
     jQuery("#snap_editor_save_draft")
         .click(function(){
@@ -3792,9 +3872,9 @@ snapwebsites.EditorForm.prototype.serverAccessComplete = function(result) // vir
  * data to the server using AJAX.
  *
  * @param {!string} mode  The mode used to save the data.
- * @param {Object=} options_opt  Additional options to be added to the query string.
+ * @param {Object=} opt_options  Additional options to be added to the query string.
  */
-snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
+snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
 {
     var key,                                    // loop index
         w,                                      // widget being managed
@@ -3846,7 +3926,7 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, options_opt)
             this.serverAccess_ = new snapwebsites.ServerAccess(this);
         }
         this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorForm.saveData()"),
-                                  options_opt);
+                                  opt_options);
         this.serverAccess_.setData(obj);
         this.serverAccess_.send();
     }
@@ -4026,7 +4106,8 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
  */
 snapwebsites.EditorForm.prototype.newTypeRegistered = function()
 {
-    var that = this, key;
+    var that = this,
+        key;
 
     if(this.widgetInitialized_)
     {
@@ -4055,32 +4136,27 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
     // properly initialize the form now
     this.widgets_.each(function(idx, w)
         {
-            var widget = jQuery(w),
-                name = widget.attr("field_name");
+            var widget_content = jQuery(w),
+                name = widget_content.attr("field_name");
 
-            that.editorWidgets_[name] = new snapwebsites.EditorWidget(that.editorBase_, that, widget);
+            that.editorWidgets_[name] = new snapwebsites.EditorWidget(that.editorBase_, that, widget_content);
         });
 
-    //
-    // TODO: at this time the constructor of the EditorWidget class
-    //       initializes the widget it is specifically working on
-    //       and then it eventually initiates secondary initializations
-    //       BEFORE all the widgets were properly initialized.
-    //
-    //       (At this point this really only includes the .auto-focus
-    //       feature, but the list could grow and I may have missed
-    //       other similar initializations.)
-    //
-    //       It seems to me that we need things that have side effects
-    //       and need to be caught by the messages we attach to the
-    //       different systems to be done now instead:
-    //
-    //this.widgets_.each(function(idx, w){
-    //        var widget = jQuery(w);
-    //        var name = widget.attr("field_name");
-    //        that.editorWidgets_[name].initMore();
-    //    });
-    //
+    this.widgets_.each(function(idx, w)
+        {
+            var widget_content = jQuery(w),
+                name = widget_content.attr("field_name"),
+                widget = that.editorWidgets_[name];
+
+            widget.getWidgetType().initializeWidget(widget);
+
+            // auto-focus the widget if so required
+            if(widget_content.is(".auto-focus"))
+            {
+                //this.widgetContent_.focus();
+                widget_content.focus();
+            }
+        });
 
     this.widgetInitialized_ = true;
 };
@@ -4650,6 +4726,7 @@ snapwebsites.Editor.prototype.registerWidgetType = function(widget_type) // virt
  *  {
  *  public:
  *      function EditorWidgetType();
+ *      virtual function preInitializeWidget(widget: Object) : void;
  *      virtual function initializeWidget(widget: Object) : void;
  *      virtual function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
  *      abstract function droppedImage(e: ProgressEvent, img: Image) : void;
@@ -4686,7 +4763,32 @@ snapwebsites.EditorWidgetType = function()
 snapwebsites.inherits(snapwebsites.EditorWidgetType, snapwebsites.EditorWidgetTypeBase);
 
 
+/*jslint unparam: true */
 /** \brief Initialize a widget of this type.
+ *
+ * This function is called from the EditorWidget constructor. The core
+ * variables will all be initialized when called, but there may be other
+ * parts that are not. This function should be used to further some
+ * initialization of variable members that does not happen in core.
+ *
+ * \warning
+ * This function is called right after a widget was created and all the
+ * widgets may not yet be created when called. In most cases, you want
+ * to overload the initializeWidget() function instead.
+ *
+ * @param {!Object} widget  The widget being initialized.
+ * @override
+ */
+snapwebsites.EditorWidgetType.prototype.preInitializeWidget = function(widget) // virtual
+{
+};
+/*jslint unparam: false */
+
+
+/** \brief Initialize a widget of this type.
+ *
+ * Setup various events to handle changes to the widget content and
+ * focus.
  *
  * @param {!Object} widget  The widget being initialized.
  * @override
@@ -4711,7 +4813,8 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
         {
             editor_widget.getEditorBase().setActiveElement(c);
 
-            if(!jQuery(this).is(".no-toolbar"))
+            if(!jQuery(this).is(".no-toolbar")
+            && !jQuery(this).parent().is(".read-only"))
             {
                 if(editor_widget.getEditorForm().getToolbarAutoVisible())
                 {
@@ -5339,7 +5442,9 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.getType = function() // virtual
 
 /** \brief Initialize the widget.
  *
- * This function initializes the text-edit widget.
+ * This function initializes the text-edit widget. It setups a keydown
+ * event to prevent editing if the widget is marked as read-only or
+ * disabled.
  *
  * @param {!Object} widget  The widget being initialized.
  * @override
@@ -5527,7 +5632,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown_ = null;
  * By default, this is false as it is assumed that your dropdown is
  * created in the top-most window.
  *
- * @type {jQuery}
+ * @type {boolean}
  * @private
  */
 snapwebsites.EditorWidgetTypeDropdown.prototype.clonedDropdown_ = false;
@@ -5608,7 +5713,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
                         .children(".dropdown-item")
                         .click(function(e)
                             {
-                                that.itemClicked(e, widget);
+                                that.itemClicked(e, editor_widget);
                             });
 
                     // setup z-index
@@ -5637,7 +5742,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
         .children(".dropdown-item")
         .click(function(e)
             {
-                that.itemClicked(e, widget);
+                that.itemClicked(e, editor_widget);
             });
 
     c.blur(function()
@@ -5687,12 +5792,11 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
  * item.
  *
  * @param {Event} e  The jQuery click event on this item.
- * @param {jQuery} widget  The widget representing the dropdown.
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget representing the dropdown.
  */
-snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(e, widget)
+snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(e, editor_widget)
 {
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        w = editor_widget.getWidget(),
+    var w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent(),
         d = w.children(".dropdown-items"),
         that_element = jQuery(e.target),
@@ -5765,12 +5869,14 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(e, widget
  *
  * \todo
  * We want to add support for the item marked as the default. At this
- * point we only support the default string used to as the user to
- * please select an entry...
+ * point we only support the default string used to ask the user to
+ * "Please select an entry..."
  *
  * @param {!Object} widget  The concerned widget.
  *
  * @return {boolean}  true if the value gets changed.
+ *
+ * \sa setValue()
  */
 snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
 {
@@ -5846,6 +5952,8 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
  * @param {!Object|string|number} value  The value to be saved.
  *
  * @return {boolean}  true if the value gets changed.
+ *
+ * \sa resetValue()
  */
 snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, value)
 {
@@ -5943,7 +6051,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, valu
         editor_widget.getEditorBase().setActiveElement(c);
 
         // send an event for each change because the user
-        // make want to know even if the value was not actually
+        // may want to know even if the value was not actually
         // modified
         widget_change = jQuery.Event("widgetchange",
             {
@@ -6141,7 +6249,7 @@ snapwebsites.EditorWidgetTypeRadio.prototype.initializeWidget = function(widget)
                     radio.parent().children("li").removeClass("selected");
                     // then select this radio button
                     radio.addClass("selected");
-                    c.attr("value", radio.attr("value"));
+                    c.attr("value", snapwebsites.castToString(radio.attr("value"), "casting radio value to a string"));
 
                     // tell the editor that something may have changed
                     // TODO: call the widget function which in turn tells the
@@ -6587,8 +6695,7 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessComple
 
 
 // auto-initialize
-jQuery(document).ready(
-    function()
+jQuery(document).ready(function()
     {
         snapwebsites.EditorInstance = new snapwebsites.Editor();
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeHidden());
@@ -6599,6 +6706,6 @@ jQuery(document).ready(
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeRadio());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeImageBox());
         snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDroppedFileWithPreview());
-    }
-);
+    });
+
 // vim: ts=4 sw=4 et
