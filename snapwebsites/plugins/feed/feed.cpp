@@ -17,9 +17,10 @@
 
 #include "feed.h"
 
-//#include "../content/content.h"
-//#include "../messages/messages.h"
+#include "../content/content.h"
+#include "../list/list.h"
 
+#include "log.h"
 #include "not_reached.h"
 
 //#include <QtCassandra/QCassandraLock.h>
@@ -44,6 +45,9 @@ char const *get_name(name_t name)
     switch(name) {
     case SNAP_NAME_FEED_AGE:
         return "feed::age";
+
+    case SNAP_NAME_FEED_PAGE_LAYOUT:
+        return "feed::page_layout";
 
     default:
         // invalid index
@@ -99,7 +103,7 @@ void feed::on_bootstrap(snap_child *snap)
  */
 feed *feed::instance()
 {
-    return g_plugin_feed.instance();
+    return g_plugin_feed_factory.instance();
 }
 
 
@@ -142,32 +146,6 @@ int64_t feed::do_update(int64_t last_updated)
 }
 
 
-/** \brief First update to run for the feed plugin.
- *
- * This function is the first update for the feed plugin. It installs
- * the initial index page.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void feed::initial_update(int64_t variables_timestamp)
-{
-    get_feed_table();
-}
-
-
-/** \brief Update the database with our feed references.
- *
- * Send our feed to the database so the system can find us when a
- * user references our pages.
- *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
- */
-void feed::content_update(int64_t variables_timestamp)
-{
-    content::content::instance()->add_xml(get_plugin_name());
-}
-
-
 /** \brief Implementation of the backend process signal.
  *
  * This function captures the backend processing signal which is sent
@@ -197,6 +175,7 @@ void feed::on_backend_process()
  */
 void feed::generate_feeds()
 {
+    content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
     // first loop through the list of feeds defined under /feed
@@ -212,7 +191,7 @@ void feed::generate_feeds()
         child_ipath.set_path(child_info.key());
 
         QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(child_ipath.get_revision_key()));
-        QString const feed_page_layout(revision_row->cell(get_name(SNAP_NAME_FEED_PAGE_LAYOUT))->value().stringValue());
+        QString feed_page_layout(revision_row->cell(get_name(SNAP_NAME_FEED_PAGE_LAYOUT))->value().stringValue());
         if(feed_page_layout.isEmpty())
         {
             feed_page_layout = ":/feed/xsl/feed-page-parser.xsl";

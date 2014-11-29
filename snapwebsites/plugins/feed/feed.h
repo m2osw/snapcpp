@@ -16,8 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../layout/layout.h"
-#include "../path/path.h"
+#include "snapwebsites.h"
 
 namespace snap
 {
@@ -27,7 +26,8 @@ namespace feed
 
 enum name_t
 {
-    SNAP_NAME_FEED_DATE
+    SNAP_NAME_FEED_AGE,
+    SNAP_NAME_FEED_PAGE_LAYOUT
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -35,37 +35,31 @@ char const *get_name(name_t name) __attribute__ ((const));
 class feed_exception : public snap_exception
 {
 public:
-    feed_exception(char const *what_msg) : snap_exception("Feed: " + std::string(what_msg)) {}
+    feed_exception(char const *       what_msg) : snap_exception("Feed: " + std::string(what_msg)) {}
     feed_exception(std::string const& what_msg) : snap_exception("Feed: " + what_msg) {}
-    feed_exception(QString const& what_msg) : snap_exception("Feed: " + what_msg.toStdString()) {}
+    feed_exception(QString const&     what_msg) : snap_exception("Feed: " + what_msg.toStdString()) {}
 };
 
 
 
-class feed : public plugins::plugin, public path::path_execute, public layout::layout_content
+class feed : public plugins::plugin
 {
 public:
-    static const sessions::sessions::session_info::session_id_t FEED_SESSION_ID_SETTINGS = 1;      // settings-form.xml
-
                         feed();
                         ~feed();
 
     static feed *       instance();
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
-    QSharedPointer<QtCassandra::QCassandraTable> get_feed_table();
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(QString const& url);
-    virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
-    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::plugin_info_t& plugin_info);
+    void                on_backend_process();
 
 private:
-    void initial_update(int64_t variables_timestamp);
-    void content_update(int64_t variables_timestamp);
+    void                content_update(int64_t variables_timestamp);
+    void                generate_feeds();
 
-    zpsnap_child_t                                  f_snap;
+    zpsnap_child_t      f_snap;
 };
 
 
