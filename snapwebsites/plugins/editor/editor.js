@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.257
+ * Version: 0.0.3.261
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -2175,7 +2175,8 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
         throw new Error("Widget must define a tag with class \"editor-content\"");
     }
     this.name_ = snapwebsites.castToString(widget.attr("field_name"), "field_name attribute");
-    this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
+    // Moved to AFTER the [pre]initialization
+    //this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
     this.widgetType_ = editor_base.getWidgetType(type);
     this.checkForBackgroundValue();
 
@@ -4140,9 +4141,8 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
                 name = widget_content.attr("field_name");
 
             that.editorWidgets_[name] = new snapwebsites.EditorWidget(that.editorBase_, that, widget_content);
-        });
-
-    this.widgets_.each(function(idx, w)
+        }
+    ).each(function(idx, w)
         {
             var widget_content = jQuery(w),
                 name = widget_content.attr("field_name"),
@@ -4156,9 +4156,24 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
                 //this.widgetContent_.focus();
                 widget_content.focus();
             }
+        }
+    ).each(function(idx, w)
+        {
+            var widget_content = jQuery(w),
+                name = widget_content.attr("field_name"),
+                widget = that.editorWidgets_[name];
+
+            // reset the originalData_ field
+            // TBD: we may want (need) to move this in another loop instead
+            widget.discard();
         });
 
     this.widgetInitialized_ = true;
+
+    // composite widgets may change their children widgets in a way that
+    // marks the editor as modified, clear the flag here so we do not get
+    // a spurious popup
+    this.modified_ = false;
 };
 
 
