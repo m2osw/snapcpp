@@ -1,3 +1,21 @@
+iplock (2.0.15.85~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 01 Dec 2014 03:01:37 -0800
+
+iplock (2.0.15.84~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 30 Nov 2014 03:01:12 -0800
+
+iplock (2.0.15.83~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 30 Nov 2014 00:02:29 -0800
+
 iplock (2.0.15.82~trusty) trusty; urgency=high
 
   * Nightly build.
