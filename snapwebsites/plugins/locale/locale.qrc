@@ -18,23 +18,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
+  <!-- the resources in link with the locale plugin are
+       defined in the locale_widgets and locale_settings -->
   <qresource prefix="/plugins/locale">
-    <file>content.xml</file>
-  </qresource>
-  <qresource prefix="/xml/editor">
-    <file>locale-timezone-page.xml</file>
-  </qresource>
-  <qresource prefix="/js/locale">
-    <file>locale-timezone.js</file>
-  </qresource>
-  <qresource prefix="/css/locale">
-    <file>locale-timezone.css</file>
-  </qresource>
-  <qresource prefix="/xsl/layout">
-    <file>locale-timezone-parser.xsl</file>
-  </qresource>
-  <qresource prefix="/xsl/locale">
-    <file>locale-form.xsl</file>
   </qresource>
 </RCC>
 <!--

@@ -60,7 +60,7 @@ char const *get_name(name_t name)
         return "admin/layouts";
 
     case SNAP_NAME_LAYOUT_BODY_XSL:
-        return "body";
+        return "body-parser";
 
     case SNAP_NAME_LAYOUT_BOX:
         return "layout::box";
@@ -87,7 +87,7 @@ char const *get_name(name_t name)
         return "layout::theme";
 
     case SNAP_NAME_LAYOUT_THEME_XSL:
-        return "theme";
+        return "theme-parser";
 
     default:
         // invalid index
@@ -427,7 +427,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
  * to be used to create a page. The apply_theme() will then layout the
  * result in a page.
  *
- * \param[in] ipath  The canonicalized path of content to be laid out.
+ * \param[in,out] ipath  The canonicalized path of content to be laid out.
  * \param[in] content_plugin  The plugin that will generate the content of the page.
  * \param[in] ctemplate  The path to the template is used to get default data.
  *
@@ -555,15 +555,26 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
             // the XSLT data may be in Qt, so we check there,
             // but we still return the layout name as "default"
             // (which is probably wrong but wrong for my current test)
-            QString const qt_name(QString(":/xsl/layout/%1-parser.xsl").arg(layout_name));
-            QFile rc_parser(qt_name);
+            QByteArray data;
+            QString const rc_name(QString(":/xsl/layout/%1-parser.xsl").arg(layout_name));
+            QFile rc_parser(rc_name);
             if(rc_parser.open(QIODevice::ReadOnly))
             {
-                QByteArray const data(rc_parser.readAll());
-                if(!data.isEmpty())
+                data = rc_parser.readAll();
+            }
+            else
+            {
+                // try again without adding the "-parser"
+                QString const qt_name(QString(":/xsl/layout/%1.xsl").arg(layout_name));
+                QFile rc_layout(qt_name);
+                if(rc_layout.open(QIODevice::ReadOnly))
                 {
-                    xsl = QString::fromUtf8(data.data(), data.size());
+                    data = rc_layout.readAll();
                 }
+            }
+            if(!data.isEmpty())
+            {
+                xsl = QString::fromUtf8(data.data(), data.size());
             }
             layout_name = "default";
         }

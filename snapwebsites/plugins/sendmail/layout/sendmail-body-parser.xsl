@@ -26,8 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   <!-- some special variables to define the theme -->
 	<xsl:param name="layout-name">sendmail</xsl:param>
-	<xsl:param name="layout-area">body</xsl:param>
-	<xsl:param name="layout-modified">2014-03-04 01:27:29</xsl:param>
+	<xsl:param name="layout-area">sendmail-body-parser</xsl:param>
+	<xsl:param name="layout-modified">2014-12-03 12:44:29</xsl:param>
 
 	<xsl:template match="snap">
 		<output lang="{$lang}">

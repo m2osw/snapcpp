@@ -28,8 +28,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   <!-- some special variables to define the theme -->
   <xsl:variable name="layout-name">bare</xsl:variable>
-  <xsl:variable name="layout-area">theme</xsl:variable>
-  <xsl:variable name="layout-modified">2014-01-28 14:13:27</xsl:variable>
+  <xsl:variable name="layout-area">theme-parser</xsl:variable>
+	<xsl:variable name="layout-modified">2014-12-03 09:44:54</xsl:variable>
 
   <xsl:template match="snap">
     <!--

@@ -59,6 +59,8 @@ add_library(feed SHARED
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
+    feed-parser.xsl
+    settings-form.xml
 )
 
 target_link_libraries( feed ${QT_LIBRARIES} )

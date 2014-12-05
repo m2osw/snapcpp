@@ -16,9 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../layout/layout.h"
-#include "../path/path.h"
-#include "../editor/editor.h"
+#include "snapwebsites.h"
 
 /** \file
  * \brief Header of the locale plugin.
@@ -36,30 +34,21 @@ namespace locale
 {
 
 
-enum name_t
-{
-    SNAP_NAME_LOCALE_TIMEZONE,
-    SNAP_NAME_LOCALE_TIMEZONE_CITY,
-    SNAP_NAME_LOCALE_TIMEZONE_CONTINENT
-};
-char const *get_name(name_t name) __attribute__ ((const));
+//enum name_t
+//{
+//    SNAP_NAME_LOCALE_NAME
+//};
+//char const *get_name(name_t name) __attribute__ ((const));
 
 
-class locale_exception : public snap_exception
-{
-public:
-    locale_exception(char const *       what_msg) : snap_exception("locale", what_msg) {}
-    locale_exception(std::string const& what_msg) : snap_exception("locale", what_msg) {}
-    locale_exception(QString const&     what_msg) : snap_exception("locale", what_msg) {}
-};
+//class locale_exception : public snap_exception
+//{
+//public:
+//    locale_exception(char const *       what_msg) : snap_exception("locale", what_msg) {}
+//    locale_exception(std::string const& what_msg) : snap_exception("locale", what_msg) {}
+//    locale_exception(QString const&     what_msg) : snap_exception("locale", what_msg) {}
+//};
 
-class locale_exception_invalid_content_xml : public locale_exception
-{
-public:
-    locale_exception_invalid_content_xml(char const *       what_msg) : locale_exception(what_msg) {}
-    locale_exception_invalid_content_xml(std::string const& what_msg) : locale_exception(what_msg) {}
-    locale_exception_invalid_content_xml(QString const&     what_msg) : locale_exception(what_msg) {}
-};
 
 
 
@@ -68,10 +57,28 @@ public:
 
 
 class locale : public plugins::plugin
-             //, public path::path_execute
-             //, public layout::layout_content
 {
 public:
+    struct locale_info_t
+    {
+        struct locale_parameters_t
+        {
+            // the following is in the order it is defined in the
+            // full name although all parts except the language are
+            // optional; the script is rare, the variant is used
+            // quite a bit
+            QString                 f_language;
+            QString                 f_variant;
+            QString                 f_country;
+            QString                 f_script;
+        };
+
+        QString                 f_locale;           // name to use to setup this locale
+        locale_parameters_t     f_abbreviations;
+        locale_parameters_t     f_display_names;    // all names in "current" locale
+    };
+    typedef QVector<locale_info_t>      locale_list_t;
+
     // the ICU library only gives us the timezone full name,
     // continent and city all the other parameters will be empty
     struct timezone_info_t
@@ -87,24 +94,36 @@ public:
     };
     typedef QVector<timezone_info_t>    timezone_list_t;
 
-                        locale();
-                        ~locale();
+                                locale();
+                                ~locale();
 
-    static locale *     instance();
-    virtual QString     description() const;
-    virtual int64_t     do_update(int64_t last_updated);
+    static locale *             instance();
+    virtual QString             description() const;
+    virtual int64_t             do_update(int64_t last_updated);
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_init_editor_widget(content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row);
-    void                on_prepare_editor_form(editor::editor *e);
+    void                        on_bootstrap(snap_child *snap);
 
+    locale_list_t const&        get_locale_list();
     timezone_list_t const&      get_timezone_list();
 
-private:
-    void                        content_update(int64_t variables_timestamp);
+    void                        reset_locale();
+    QString                     get_current_locale() const;
+    void                        set_current_locale(QString const& new_locale);
+    QString                     get_current_timezone() const;
+    void                        set_current_timezone(QString const& new_timezone);
 
-    timezone_list_t                 f_timezone_list;
-    zpsnap_child_t                  f_snap;
+    SNAP_SIGNAL_WITH_MODE(set_locale, (), (), START_AND_DONE);
+    SNAP_SIGNAL_WITH_MODE(set_timezone, (), (), START_AND_DONE);
+
+    QString                     format_date(time_t d);
+    QString                     format_time(time_t d);
+
+private:
+    locale_list_t               f_locale_list;
+    timezone_list_t             f_timezone_list;
+    QString                     f_current_locale;
+    QString                     f_current_timezone;
+    zpsnap_child_t              f_snap;
 };
 
 

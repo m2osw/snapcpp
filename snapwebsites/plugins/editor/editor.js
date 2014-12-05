@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.261
+ * Version: 0.0.3.262
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -4153,8 +4153,7 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
             // auto-focus the widget if so required
             if(widget_content.is(".auto-focus"))
             {
-                //this.widgetContent_.focus();
-                widget_content.focus();
+                widget.focus();
             }
         }
     ).each(function(idx, w)

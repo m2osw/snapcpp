@@ -1521,7 +1521,7 @@ QString const& permissions::get_user_path()
  * the xmlsitemap plugin checks whether pages are publicly accessible before
  * adding them to the sitemap.xml file because pages that are not accessible
  * in this way cannot appear in a search engine since the search engine
- * won't even be able to read the page.
+ * will not even be able to read the page.
  *
  * \param[in] user_path  The user trying to acccess the specified path.
  * \param[in,out] ipath  The path that the user is trying to access.

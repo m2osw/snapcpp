@@ -346,7 +346,7 @@ public:
     static country_name_t const *get_countries();
     static bool                 tag_is_inline(char const *tag, int length);
     void                        set_timezone(QString const& timezone);
-    void                        restore_timezone();
+    void                        set_locale(QString const& locale);
 
     QString                     snapenv(QString const& name) const;
     bool                        postenv_exists(QString const& name) const;

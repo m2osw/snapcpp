@@ -18,22 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/admin/locale" owner="output">
-    <param name="content::title" revision="revision">Locale Settings</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Various settings of the website wide locale information.</p>]]>
-    </param>
-  </content>
-  <content path="/admin/locale/timezone" owner="locale">
-    <param name="content::title" revision="revision">Locale Settings</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>Select a sitewide timezone. Note that each user can select their own timezone. Some plugins may also offer various timezone selection for things such as reports or time sensitive data entry.</p>]]>
-    </param>
-    <param name="layout::layout" revision="global">"locale-timezone";</param>
-    <param name="editor::layout" revision="global" overwrite="yes">"locale-timezone-page";</param>
-    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
-  </content>
-  <content path="/js/locale">
+  <content path="/js/locale-widgets">
     <!-- JavaScript code for the inline locale extension -->
     <param name="content::title" revision="revision">Locale Scripts</param>
     <param name="content::body" revision="revision">
@@ -41,19 +26,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="locale-timezone" type="attachment/public">
-      <path>qrc:/js/locale/locale-timezone.js</path>
+      <path>qrc:/js/locale_widgets/locale-timezone.js</path>
       <mime-type>text/javascript</mime-type>
       <dependency>editor (&gt;= 0.0.3.245)</dependency>
     </attachment>
   </content>
-  <content path="/css/locale">
+  <content path="/css/locale-widgets">
     <param name="content::title" revision="revision">Locale CSS</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>CSS for the locale extension.</p>]]>
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="locale-timezone" type="attachment/public">
-      <path>qrc:/css/locale/locale-timezone.css</path>
+      <path>qrc:/css/locale_widgets/locale-timezone.css</path>
       <mime-type>text/css</mime-type>
     </attachment>
   </content>

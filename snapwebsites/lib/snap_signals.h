@@ -69,8 +69,9 @@
         void name##_done parameters; \
     public: \
         void name parameters { \
-                f_signal_##name variables; \
-                name##_done variables;
+            f_signal_##name variables; \
+            name##_done variables; \
+        }
 
 #define     SNAP_SIGNAL_PROCESS_MODE_START_AND_DONE(name, parameters, variables)   \
         bool name##_impl parameters; \

@@ -209,7 +209,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:attribute name="spellcheck">false</xsl:attribute>
         </xsl:if>
 
-        <!-- WARNING: the order is VERY important -->
+        <!-- WARNING: the order of this xsl:choose is VERY important -->
         <xsl:choose>
           <!-- search for one @value that matches $value, this is the preferred method of selection -->
           <xsl:when test="$value != '' and preset/item[$value = @value]">
@@ -245,7 +245,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               <xsl:for-each select="preset/item">
                 <li>
                   <xsl:attribute name="class">dropdown-item<xsl:if
-                      test="@default = 'default' or $value = @value or $value = node()"> selected</xsl:if><xsl:if
+                      test="@default = 'default' or $value = @value or $value = node() or ../../default/node() = node()"> selected</xsl:if><xsl:if
                       test="@class"> dropdown-item-classes <xsl:value-of select="@class"/></xsl:if></xsl:attribute>
                   <xsl:if test="@value"><xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute></xsl:if>
                   <xsl:copy-of select="./node()"/>

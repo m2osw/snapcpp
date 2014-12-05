@@ -194,7 +194,7 @@ void feed::generate_feeds()
         QString feed_page_layout(revision_row->cell(get_name(SNAP_NAME_FEED_PAGE_LAYOUT))->value().stringValue());
         if(feed_page_layout.isEmpty())
         {
-            feed_page_layout = ":/feed/xsl/feed-page-parser.xsl";
+            feed_page_layout = ":/feed/xsl/feed-parser.xsl";
         }
 
         // TODO: fix the max. # of entries to make use of a user defined setting instead

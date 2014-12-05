@@ -2455,12 +2455,17 @@ void snap_child::init_start_date()
 
 /** \brief Change the current timezone to the newly specified timezone.
  *
- * We expect the server to be running using your office timezone. This means
- * a timezone which is not unlikely to have nothing to do with an end user
- * timezone.
+ * \warning
+ * This is a low level function to set a timezone. You are actually
+ * expected to call the locale::set_timezone() event instead. That way
+ * you will be setup with the right timezone as expected by the various
+ * plugins.
  *
- * The function first saves the current timezone so in case you want to do
- * that, it is possible to restore the timezone later.
+ * We force the server to run using the UTC timezone. This function can
+ * be used to change the timezone to a user timezone.
+ *
+ * To restore the timezone to the default server timezone, you may call this
+ * function with an empty string.
  *
  * Source:
  * http://stackoverflow.com/questions/10378093/c-api-to-return-timestring-in-specified-time-zone/10378513#10378513
@@ -2469,45 +2474,73 @@ void snap_child::init_start_date()
  */
 void snap_child::set_timezone(QString const& timezone)
 {
-    // on first call save the timezone
-    if(!f_original_timezone_defined)
-    {
-        f_original_timezone_defined = true;
-        char const *tz(getenv("TZ"));
-        if(tz != nullptr)
-        {
-            f_original_timezone = QString::fromUtf8(tz);
-        }
-    }
-
     // force new timezone
     setenv("TZ", timezone.toUtf8().data(), 1);
     tzset();
 }
 
 
-/** \brief Restore the timezone to the original.
+/** \brief Change the current locale to the newly specified locale.
  *
- * If the timezone was defined using the set_timezone() function, then
- * this function can be called to restore the original timezone the process
- * started with.
+ * \warning
+ * You want to look into the locale plugin instead. This function
+ * currently does nothing because it is very sensitive to the name
+ * of the locale. See the locale::set_locale() function instead.
  *
- * If the set_timezone() was never called, then nothing happens.
+ * We force the server to run using the C locale. This function can
+ * be used to change the locale to a user locale or the website locale.
+ *
+ * To restore the locale to the default server locale, you may call this
+ * function with an empty string.
+ *
+ * \note
+ * The locale is not set to the empty string. This would set the locale
+ * to the current $LANG parameter and since we have no control over that
+ * parameter, we do not use it. It could otherwise have side effects over
+ * our server which we do not want to have. Instead we use "C" as the
+ * default locale. It may not do what you expected, but we can be sure to
+ * control what happens in that situation.
+ *
+ * Source:
+ * http://stackoverflow.com/questions/10378093/c-api-to-return-timestring-in-specified-time-zone/10378513#10378513
+ *
+ * \todo
+ * It looks like we cannot use this one unless we compile all the locales
+ * when the ICU library does not require such (TBD). Also the basic locale
+ * requires the encoding which we could force to UTF-8, but we cannot
+ * assume that every server would have UTF-8... So at this point this
+ * function does nothing. You are expected to call locale functions
+ * instead in order to get the correct string formatting behavior.
+ *
+ * \param[in] locale  Name of the locale as understood by setlocale(3).
  */
-void snap_child::restore_timezone()
+void snap_child::set_locale(QString const& locale)
 {
-    if(f_original_timezone_defined)
-    {
-        if(f_original_timezone.isEmpty())
-        {
-            unsetenv("TZ");
-        }
-        else
-        {
-            setenv("TZ", f_original_timezone.toUtf8().data(), 1);
-        }
-        tzset();
-    }
+    static_cast<void>(locale);
+    // force new locale
+    // Note: empty ("") is like using $LANG to setup the locale
+//std::cerr << "***\n*** set_locale(" << locale << ")\n***\n";
+    //if(locale.isEmpty())
+    //{
+    //    // use "C" as the default (which is different from "" which
+    //    // uses $LANG as the locale and since that could be tainted
+    //    // or have unwanted side effects, we do not use it.)
+    //    if(std::setlocale(LC_ALL, "C.UTF-8"))
+    //    {
+    //        // it looks like C.UTF-8 is available, use that instead
+    //        // so we avoid downgrading to just an ANSII console
+    //        std::locale::global(std::locale("C.UTF-8"));
+    //    }
+    //    else
+    //    {
+    //        std::locale::global(std::locale("C"));
+    //    }
+    //}
+    //else
+    //{
+    //    // this function throws if the locale() is not available...
+    //    std::locale::global(std::locale(locale.toUtf8().data()));
+    //}
 }
 
 
@@ -7212,8 +7245,8 @@ snap_child::compression_vector_t snap_child::get_compression() const
 /** \brief Convert a time/date value to a string.
  *
  * This function transform a date such as the content::modified field
- * to a format that is useful to the XSL parser. It supports a short
- * and a long form:
+ * to a format that is useful to the XSL parser. It supports various
+ * formats:
  *
  * \li DATE_FORMAT_SHORT -- YYYY-MM-DD
  * \li DATE_FORMAT_LONG  -- YYYY-MM-DDTHH:MM:SSZ
@@ -7227,6 +7260,15 @@ snap_child::compression_vector_t snap_child::get_compression() const
  * the HTTP protocol only expects English.
  *
  * The date is always output as UTC (opposed to local time.)
+ *
+ * \note
+ * In order to display a date to the end user (in the HTML for the users)
+ * you may want to setup the timezone information first and then use
+ * the various functions supplied by the locale plugin to generate the
+ * date. The locale plugin also supports formatting numbers, time,
+ * messages, etc. going both ways (from the formatted data to internal
+ * data and vice versa.) There is also JavaScript support for editor
+ * widgets.
  *
  * \param[in] v  A 64 bit time / date value in microseconds, although we
  *               really only use precision to the second.

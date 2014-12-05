@@ -1,6 +1,6 @@
 <!--
-Snap Plugin - - snap shorturl plugin resources
-Copyright (C) 2013  Made to Order Software Corp.
+Snap Plugin - - locale plugin resources
+Copyright (C) 2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,11 +18,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/feed">
+  <qresource prefix="/plugins/locale_settings">
     <file>content.xml</file>
   </qresource>
+  <qresource prefix="/xml/editor">
+    <file>locale-settings-page.xml</file>
+  </qresource>
   <qresource prefix="/xsl/layout">
-    <file>feed-parser.xsl</file>
+    <file>locale-settings-parser.xsl</file>
   </qresource>
 </RCC>
 <!--

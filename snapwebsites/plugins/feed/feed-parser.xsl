@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<!-- some special variables to define the theme -->
 	<xsl:variable name="layout-name">feed</xsl:variable>
-	<xsl:variable name="layout-area">feed-page</xsl:variable>
+	<xsl:variable name="layout-area">feed-parser</xsl:variable>
 	<xsl:variable name="layout-modified">2014-11-29 02:35:36</xsl:variable>
 
 	<xsl:template match="snap">

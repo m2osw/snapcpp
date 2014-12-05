@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
-  <widget id="locale_timezone" type="locale_timezone" field="locale::locale_timezone" path="locale/timezone/timezone">
+  <widget id="locale_timezone" type="locale_timezone" field="locale_settings::timezone" path="locale/timezone">
     <tooltip>Select a continent/country and city that corresponds to your timezone.</tooltip>
     <help>Help</help>
   </widget>

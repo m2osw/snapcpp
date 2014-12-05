@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:fn="http://www.w3.org/2005/xpath-functions"
 															xmlns:snap="snap:snap">
 	<xsl:param name="layout-name">default-list</xsl:param>
-	<xsl:param name="layout-area">body</xsl:param>
+	<xsl:param name="layout-area">default-list-body</xsl:param>
 	<xsl:param name="layout-modified">2014-02-19 18:11:09</xsl:param>
 
 	<xsl:template match="snap">

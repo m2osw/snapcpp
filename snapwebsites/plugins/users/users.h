@@ -17,7 +17,8 @@
 #pragma once
 
 #include "../form/form.h"
-#include "../sitemapxml/sitemapxml.h"
+#include "../layout/layout.h"
+#include "../path/path.h"
 
 namespace snap
 {
@@ -40,6 +41,7 @@ enum name_t
     SNAP_NAME_USERS_IDENTIFIER,
     SNAP_NAME_USERS_ID_ROW,
     SNAP_NAME_USERS_INDEX_ROW,
+    SNAP_NAME_USERS_LOCALE,
     SNAP_NAME_USERS_LOCALES,
     SNAP_NAME_USERS_LOGIN_IP,
     SNAP_NAME_USERS_LOGIN_ON,
@@ -65,6 +67,7 @@ enum name_t
     //SNAP_NAME_USERS_SESSION_COOKIE, -- use a random name instead
     SNAP_NAME_USERS_STATUS,
     SNAP_NAME_USERS_TABLE,
+    SNAP_NAME_USERS_TIMEZONE,
     SNAP_NAME_USERS_USERNAME,
     SNAP_NAME_USERS_VERIFIED_IP,
     SNAP_NAME_USERS_VERIFIED_ON,
@@ -188,6 +191,8 @@ public:
     void                    on_improve_signature(QString const& path, QString& signature);
     void                    on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
     void                    on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure);
+    void                    on_set_locale();
+    void                    on_set_timezone();
 
     virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
     virtual void            repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning);
@@ -196,6 +201,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(user_registered, (content::path_info_t& ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_verified, (content::path_info_t& ipath, int64_t identifier), (ipath, identifier), NEITHER);
     SNAP_SIGNAL_WITH_MODE(user_logged_in, (user_logged_info_t& logged_info), (logged_info), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(logged_in_user_ready, (), (), NEITHER);
 
     QString                 get_user_cookie_name();
     QString                 get_user_key() const;

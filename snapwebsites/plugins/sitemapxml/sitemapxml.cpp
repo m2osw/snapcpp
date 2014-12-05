@@ -579,11 +579,18 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
 }
 
 
-/** \brief Implementation of the robotstxt signal.
+/** \brief Implementation of the generate_sitemapxml signal.
  *
- * This function readies the robotstxt signal.
+ * This function readies the generate_sitemapxml signal. This signal
+ * is expected to be sent only by the sitemapxml plugin backend process
+ * as it is considered to be extremely slow.
  *
- * This function generates the header of the robots.txt.
+ * This very function generates the XML sitemap from all the static pages
+ * linked to the types/taxonomy/system/sitemapxml/include tag.
+ *
+ * Other plugins that have dynamic pages should implement this signal in
+ * order to add their own public pages to the XML sitemap. (See the
+ * char_chart plugin as such an example.)
  *
  * \param[in] r  At this point this parameter is ignored
  *
@@ -594,12 +601,6 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
     static_cast<void>(r);
 
     QtCassandra::QCassandraTable::pointer_t branch_table(content::content::instance()->get_branch_table());
-    if(!branch_table)
-    {
-        // the table does not exist?!
-        // (since the content is a core plugin, that should not happen)
-        throw sitemapxml_exception_missing_table("could not get the data table");
-    }
 
     path::path *path_plugin(path::path::instance());
 
@@ -896,9 +897,6 @@ void sitemapxml::on_allow_shorturl(content::path_info_t& ipath, QString const& o
     {
         allow = false;
     }
-
-    // note: we are the primary owner for more pages than just those that
-    //       should not receive a short URL so we do not do more than that
 }
 
 

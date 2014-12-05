@@ -34,6 +34,7 @@
 #include "users.h"
 
 #include "../output/output.h"
+#include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 #include "../sendmail/sendmail.h"
 #include "../server_access/server_access.h"
@@ -126,7 +127,10 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_INDEX_ROW:
         return "*index_row*";
 
-    case SNAP_NAME_USERS_LOCALES:
+    case SNAP_NAME_USERS_LOCALE: // format locale for dates/numbers
+        return "users::locale";
+
+    case SNAP_NAME_USERS_LOCALES: // browser/page languages
         return "users::locales";
 
     case SNAP_NAME_USERS_LOGIN_IP:
@@ -203,6 +207,9 @@ const char *get_name(name_t name)
 
     case SNAP_NAME_USERS_TABLE:
         return "users";
+
+    case SNAP_NAME_USERS_TIMEZONE: // user timezone for dates/calendars
+        return "users::timezone";
 
     case SNAP_NAME_USERS_USERNAME:
         return "users::username";
@@ -406,6 +413,8 @@ void users::on_bootstrap(::snap::snap_child *snap)
     SNAP_LISTEN(users, "server", server, define_locales, _1);
     SNAP_LISTEN(users, "server", server, improve_signature, _1, _2);
     SNAP_LISTEN(users, "server", server, cell_is_secure, _1, _2, _3, _4);
+    SNAP_LISTEN0(users, "locale", locale::locale, set_locale);
+    SNAP_LISTEN0(users, "locale", locale::locale, set_timezone);
     SNAP_LISTEN(users, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(users, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(users, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
@@ -623,6 +632,17 @@ void users::on_process_cookies()
     cookie.set_http_only(); // make it a tad bit safer
     f_snap->set_cookie(cookie);
 //std::cerr << "user session id [" << f_info->get_session_key() << "] [" << f_user_key << "]\n";
+
+    if(!f_user_key.isEmpty())
+    {
+        // make sure user locale/timezone get used on next
+        // locale/timezone access
+        locale::locale::instance()->reset_locale();
+
+        // send a signal that the user is ready (this signal is also
+        // sent when we have a valid cookie)
+        logged_in_user_ready();
+    }
 }
 
 
@@ -1948,11 +1968,11 @@ void users::process_login_form(login_mode_t login_mode)
                     row->cell(get_name(SNAP_NAME_USERS_PREVIOUS_LOGIN_IP))->setValue(row->cell(get_name(SNAP_NAME_USERS_LOGIN_IP))->value());
                 }
 
-                // Save the date when the user logged out
+                // Save the date when the user logged in
                 value.setInt64Value(f_snap->get_start_date());
                 row->cell(get_name(SNAP_NAME_USERS_LOGIN_ON))->setValue(value);
 
-                // Save the user IP address when logged out
+                // Save the user IP address when logging in
                 value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
                 row->cell(get_name(SNAP_NAME_USERS_LOGIN_IP))->setValue(value);
 
@@ -1962,6 +1982,14 @@ void users::process_login_form(login_mode_t login_mode)
                 // to user/password whatever the path is specified here
                 logged_info.set_email(key);
                 user_logged_in(logged_info);
+
+                // make sure user locale/timezone get used on next
+                // locale/timezone access
+                locale::locale::instance()->reset_locale();
+
+                // send a signal that the user is ready (this signal is also
+                // sent when we have a valid cookie)
+                logged_in_user_ready();
 
                 if(force_redirect_password_change)
                 {
@@ -2673,12 +2701,12 @@ void users::process_verify_form()
  * use the user_is_logged_in() function.
  *
  * This function returns the key of the user that last logged
- * in. This key is the user's email address. Remember that a
+ * in. This key is the user's email address. Remember that by default a
  * user is not considered fully logged in if his sesion his more than
  * 3 hours old. You must make sure to check the user_is_logged_in()
  * too. Note that the permission system should already take care of
  * most of those problems for you anyway, but you need to know what
- * you're doing!
+ * you are doing!
  *
  * If the user is not recognized, then his key is the empty string. This
  * is a fast way to know whether the current user is logged in, registed,
@@ -3405,7 +3433,7 @@ void users::on_detach_from_session()
 /** \brief Get the user selected language if user did that.
  *
  * The user can select the language in which he will see most of the
- * website (assuming most was translated.)
+ * website (assuming most was translated in those languages.)
  *
  * \param[in,out] locales  Locales as defined by the user.
  */
@@ -3811,6 +3839,74 @@ void users::on_cell_is_secure(QString const& table, QString const& row, QString 
         {
             // password is considered secure
             secure.mark_as_secure();
+        }
+    }
+}
+
+
+/** \brief Signal called when a plugin requests the locale to be set.
+ *
+ * This signal is called whenever a plugin requests that the locale be
+ * set before using a function that is affected by locale parameters.
+ *
+ * This very function setups the locale to the user locale if the
+ * user is logged in.
+ *
+ * If the function is called before the user is logged in, then nothing
+ * happens. The users plugin makes sure to reset the locale information
+ * once the user gets logged in.
+ */
+void users::on_set_locale()
+{
+    // we may have a user defined locale
+    QString const user_path(get_user_path());
+    if(user_path != get_name(SNAP_NAME_USERS_ANONYMOUS_PATH))
+    {
+        content::content *content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+
+        content::path_info_t user_ipath;
+        user_ipath.set_path(user_path);
+
+        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
+        QString const user_locale(revision_row->cell(get_name(SNAP_NAME_USERS_LOCALE))->value().stringValue());
+        if(!user_locale.isEmpty())
+        {
+            locale::locale::instance()->set_current_locale(user_locale);
+        }
+    }
+}
+
+
+/** \brief Signal called when a plugin requests the timezone to be set.
+ *
+ * This signal is called whenever a plugin requests that the timezone be
+ * set before using a function that is affected by the timezone parameter.
+ *
+ * This very function setups the timezone to the user timezone if the
+ * user is logged in.
+ *
+ * If the function is called before the user is logged in, then nothing
+ * happens. The users plugin makes sure to reset the timezone information
+ * once the user gets logged in.
+ */
+void users::on_set_timezone()
+{
+    // we may have a user defined timezone
+    QString const user_path(get_user_path());
+    if(!user_path.isEmpty())
+    {
+        content::content *content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+
+        content::path_info_t user_ipath;
+        user_ipath.set_path(user_path);
+
+        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
+        QString const user_timezone(revision_row->cell(get_name(SNAP_NAME_USERS_TIMEZONE))->value().stringValue());
+        if(!user_timezone.isEmpty())
+        {
+            locale::locale::instance()->set_current_timezone(user_timezone);
         }
     }
 }

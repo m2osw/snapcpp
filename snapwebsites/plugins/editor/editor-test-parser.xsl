@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:snap="snap:snap">
 
 	<!-- some special variables to define the theme -->
-	<xsl:variable name="layout-area">editor-test</xsl:variable>
+	<xsl:variable name="layout-area">editor-test-parser</xsl:variable>
 	<xsl:variable name="layout-modified">2014-10-06 23:14:10</xsl:variable>
 
 	<xsl:template match="snap">

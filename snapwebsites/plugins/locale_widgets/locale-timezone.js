@@ -1,6 +1,6 @@
 /** @preserve
  * Name: locale-timezone
- * Version: 0.0.1.19
+ * Version: 0.0.1.20
  * Browsers: all
  * Depends: editor (>= 0.0.3.245)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -72,7 +72,7 @@
 /** \brief Editor widget type for locale timezone settings.
  *
  * This class handles the locale timezone settings form. Mainly it ensures
- * that the dropdown with the list of towns only shows towns for the
+ * that the dropdown with the list of cities only shows cities for the
  * currently selected continent.
  *
  * \code
@@ -85,7 +85,7 @@
  *      virtual function initializeWidget(widget: Object) : void;
  *
  *  private:
- *      function selectTowns_(widget: snapwebsites.EditorWidget) : void;
+ *      function selectCities_(widget: snapwebsites.EditorWidget) : void;
  *  };
  * \endcode
  *
@@ -141,39 +141,43 @@ snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.initializeWidget = functio
 
     snapwebsites.EditorWidgetTypeLocaleTimezone.superClass_.initializeWidget.call(this, widget);
 
-    // if continent changes, we need to update the towns
+    // if continent changes, we need to update the cities
     continent.bind("widgetchange", function(e)
         {
-            // fix the towns on each change
-            that.selectTowns_(editor_widget);
+            // fix the cities on each change
+            that.selectCities_(editor_widget);
             // define the full timezone
             that.retrieveNewValue_(editor_widget);
         });
+
     city.bind("widgetchange", function(e)
         {
             // define the full timezone
             that.retrieveNewValue_(editor_widget);
         });
 
-    // properly initialize the towns widget (which by default shows all the
-    // towns, which is "wrong")
-    this.selectTowns_(editor_widget);
+    // properly initialize the city widget (which by default shows all the
+    // cities, which is "wrong")
+    this.selectCities_(editor_widget);
 };
 
 
-/** \brief Select the towns corresponding to the current continent.
+/** \brief Select the cities corresponding to the current continent.
  *
- * This function hides all the towns, then shows the towns that correspond
- * to the currently selected continent.
+ * This function hides all the cities, then shows the cities that correspond
+ * to the currently selected continent. As a side effect, it auto-selects
+ * the first city of that continent in case the currently selected city
+ * is not otherwise valid for that continent.
  *
- * \note
- * We want to have a way to set that up automatically in the editor.
+ * \todo
+ * We want to have a way to remember the last city selected on a per
+ * continent basis.
  *
  * @param {snapwebsites.EditorWidget} editor_widget  The locale timezone widget.
  *
  * @private
  */
-snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.selectTowns_ = function(editor_widget)
+snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.selectCities_ = function(editor_widget)
 {
     var editor_form = editor_widget.getEditorForm(),
         name = editor_widget.getName(),
@@ -184,27 +188,22 @@ snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.selectTowns_ = function(ed
         city = city_widget.getWidget();
 
     // hide all, then show corresponding to the current continent selection
-console.log("--------------------------");
-console.log("Setup cities for " + continent_name);
     if(continent_name)
     {
         city_widget.enable();
         city.find("li").hide();
         city.find("li." + continent_name).show();
         selected = city.find("li.selected");
-console.log("  selected length = " + selected.length);
         if(!selected.exists() || !selected.hasClass(continent_name))
         {
-console.log("  +--> setting new value: [" + city.find("li." + continent_name).first().html() + "]");
-            city_widget.setValue(city.find("li." + continent_name).first().html());
+            city_widget.setValue(city.find("li." + continent_name).first().html(), false);
         }
         // else -- user did not change continent name
-else console.log("  +--> it is still visible!");
     }
     else
     {
         city_widget.disable();
-        city_widget.resetValue(true);
+        city_widget.resetValue(false);
     }
 };
 
@@ -235,7 +234,6 @@ snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.retrieveNewValue_ = functi
         result_value;
         //city = city_widget.getWidget();
 
-console.log("Save new value...");
     if(continent_name && city_name)
     {
         result_value = continent_name.replace(' ', '_') + "/" + city_name.replace(' ', '_');

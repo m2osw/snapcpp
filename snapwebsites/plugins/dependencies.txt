@@ -8,12 +8,12 @@ antivirus: content form output versions	; @echo $@
 attachment: path permissions	; @echo $@
 char_chart: sitemapxml	; @echo $@
 content: links	; @echo $@
-editor: attachment form sitemapxml mimetype sendmail server_access	; @echo $@
-favicon: path form messages permissions output	; @echo $@
-feed: layout path content messages	; @echo $@
+editor: attachment form mimetype sendmail server_access	; @echo $@
+favicon: messages form output path permissions	; @echo $@
+feed: content layout messages path	; @echo $@
 filter: content messages	; @echo $@
-form: sessions filter content messages	; @echo $@
-header: path layout output	; @echo $@
+form: content filter messages sessions	; @echo $@
+header: layout output path	; @echo $@
 images: listener versions	; @echo $@
 info: path form messages users output	; @echo $@
 javascript: content	; @echo $@
@@ -21,22 +21,25 @@ layout: content filter javascript taxonomy	; @echo $@
 links: core content	; @echo $@
 list: layout filter path output	; @echo $@
 listener: path	; @echo $@
+locale: core	; @echo $@
+locale_settings: locale_widgets	; @echo $@
+locale_widgets: editor	; @echo $@
 mailinglist: core content	; @echo $@
 menu: layout content output	; @echo $@
 messages: core	; @echo $@
 mimetype: output	; @echo $@
-output: layout path javascript messages	; @echo $@
+output: javascript layout messages path	; @echo $@
 path: content links messages server_access	; @echo $@
-permissions: layout output users messages	; @echo $@
-robotstxt: layout path content	; @echo $@
-search: layout content	; @echo $@
-sendmail: sessions filter output users	; @echo $@
+permissions: layout messages output users	; @echo $@
+robotstxt: content layout path	; @echo $@
+search: content layout	; @echo $@
+sendmail: filter output sessions users	; @echo $@
 server_access: content messages	; @echo $@
 sessions: layout output	; @echo $@
-shorturl: sessions path output messages	; @echo $@
-sitemapxml: robotstxt permissions	; @echo $@
+shorturl: messages output path sessions	; @echo $@
+sitemapxml: permissions robotstxt shorturl	; @echo $@
 taxonomy: layout path output	; @echo $@
-users: form sitemapxml output messages sendmail	; @echo $@
+users: form output locale messages sendmail	; @echo $@
 versions: filter users	; @echo $@
 
 

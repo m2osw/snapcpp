@@ -1,11 +1,9 @@
 #
 # File:
-#      plugins/locale/CMakeLists.txt
+#      plugins/locale_settings/CMakeLists.txt
 #
 # Description:
-#      Offer support for various locale function used to format strings
-#      depending on a locale selection. The locale also handles the
-#      timezone that a website owner and a user may select.
+#      Forms to setup the locale information of a website.
 #
 # Documentation:
 #      See the CMake documentation.
@@ -31,9 +29,8 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_locale)
+project(plugin_locale_settings)
 
-find_package( ICU REQUIRED )
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
@@ -41,7 +38,6 @@ add_definitions( ${QT_DEFINITIONS} )
 include_directories(
     SYSTEM
         ${QT_INCLUDES}
-        ${ICU_INCLUDE_DIRS}
 )
 
 include_directories(
@@ -50,37 +46,39 @@ include_directories(
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    locale.qrc
+    locale_settings.qrc
 )
 
+snap_validate_xml( content.xml content.dtd )
 
-# We use the name snap_locale.h for the header because there is a locale.h
-# file in the OS under Linux
 
-add_library(locale SHARED
-    locale.cpp
-    snap_locale.h
+
+
+add_library(locale_settings SHARED
+    locale_settings.cpp
+    locale_settings.h
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
+    content.xml
+    locale-settings-page.xml
+    locale-settings-parser.xsl
 )
 
-target_link_libraries( locale
+target_link_libraries( locale_settings
     ${QT_LIBRARIES}
-    ${ICU_LIBRARIES}
-    ${ICU_I18N_LIBRARIES}
 )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( locale make_controlled_vars_headers )
+    add_dependencies( locale_settings make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS locale LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS locale_settings LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/locale
+    DESTINATION include/snapwebsites/plugins/locale_settings
     FILES_MATCHING PATTERN "*.h"
 )
 

@@ -532,23 +532,23 @@ void snap_layout::load_xsl_info(QDomDocument& doc, QString const& filename, QStr
         n.save(data, 0);
 
         // verify the name
-        QString name(e.attribute("name"));
+        QString const name(e.attribute("name"));
 //#ifdef DEBUG
 //printf("param name [%s] = [%s]\n", name.toUtf8().data(), buffer.toUtf8().data());
 //#endif
         if(name == "layout-name")
         {
-            // that's the row key
+            // that is the row key
             layout_name = buffer;
         }
         else if(name == "layout-area")
         {
-            // that's the name of the column
+            // that is the name of the column
             layout_area = buffer;
         }
         else if(name == "layout-modified")
         {
-            // that's to make sure we don't overwrite a newer version
+            // that is to make sure we do not overwrite a newer version
             layout_modified_date = buffer;
         }
     }

@@ -23,8 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:snap="snap:snap">
 
 	<!-- some special variables to define the theme -->
-	<xsl:variable name="layout-area">locale-timezone</xsl:variable>
+	<xsl:variable name="layout-area">locale-settings-parser</xsl:variable>
 	<xsl:variable name="layout-modified">2014-11-21 16:47:10</xsl:variable>
+	<xsl:variable name="layout-editor">locale-settings-page</xsl:variable>
 
 	<xsl:template match="snap">
 		<output><!-- lang="{$lang}"-->
@@ -48,7 +49,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						<!-- timezone widget -->
 						<div class="editor-block">
 							<label for="continent_widget" class="editor-title">Timezone:</label>
-							<xsl:copy-of select="page/body/locale/timezone/timezone/node()"/>
+							<xsl:copy-of select="page/body/locale/timezone/node()"/>
 						</div>
 					</fieldset>
 

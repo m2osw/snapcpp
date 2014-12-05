@@ -17,6 +17,7 @@
 
 #include "filter.h"
 
+#include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 
 #include "log.h"
@@ -336,6 +337,7 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
     }
     else if(token.is_token("year"))
     {
+        // TODO: add support for local time and user defined unix time
         time_t now(f_snap->get_start_time());
         struct tm time_info;
         gmtime_r(&now, &time_info);
@@ -346,24 +348,39 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
         if(token.verify_args(0, 2))
         {
             time_t unix_time(f_snap->get_start_time());
-            QString date_format("%m/%d/%Y");
+            QString date_format;
             if(token.f_parameters.size() >= 1)
             {
                 parameter_t param(token.get_arg("format", 0, TOK_STRING));
                 date_format = param.f_value;
             }
+            // TODO: that >= 2 looks wrong because if the user only
+            //       defines "unixtime => 123" it will fail!
             if(token.f_parameters.size() >= 2)
             {
                 parameter_t param(token.get_arg("unixtime", 1, TOK_STRING));
                 bool ok(false);
                 unix_time = param.f_value.toLongLong(&ok);
             }
-            struct tm t;
-            gmtime_r(&unix_time, &t);
-            char buf[256];
-            strftime(buf, sizeof(buf), date_format.toUtf8().data(), &t);
-            buf[sizeof(buf) / sizeof(buf[0]) - 1] = '\0'; // make sure there is a NUL
-            token.f_replacement = QString::fromUtf8(buf);
+            locale::locale *locale_plugin(locale::locale::instance());
+            locale_plugin->set_timezone();
+            if(date_format.isEmpty())
+            {
+                locale_plugin->set_locale();
+                token.f_replacement = locale_plugin->format_date(unix_time);
+            }
+            else
+            {
+                // TODO: we may want to offer the user to make use of a
+                //       parameter to choose between localtime() and
+                //       gmtime()...
+                struct tm t;
+                localtime_r(&unix_time, &t);
+                char buf[256];
+                strftime(buf, sizeof(buf), date_format.toUtf8().data(), &t);
+                buf[sizeof(buf) / sizeof(buf[0]) - 1] = '\0'; // make sure there is a NUL
+                token.f_replacement = QString::fromUtf8(buf);
+            }
         }
     }
     else if(token.is_token("version"))

@@ -741,6 +741,38 @@ void server::config(int argc, char *argv[])
     signal( SIGTERM, sighandler );
     signal( SIGINT,  sighandler );
 
+    // Force timezone to UTC/GMT so it does not vary between installations
+    // (i.e. you could have Snap servers all over the world!)
+    //
+    setenv("TZ", "", 1);  // default is UTC
+    tzset();
+
+    // Force the locale to "C" so we do not get too many surprises.
+    // Users may change their locale settings so a child may change
+    // the locale for display formatting needs.
+    //
+    char const *default_locale(std::setlocale(LC_ALL, "C.UTF-8"));
+    if(default_locale == nullptr)
+    {
+        std::locale const& loc(std::locale("C"));
+        std::locale::global(loc);  // default depends on LC_... vars
+        std::cin.imbue(loc);
+        std::cout.imbue(loc);
+        std::cerr.imbue(loc);
+    }
+    else
+    {
+        // if we can use UTF-8, do so rather than just plain C
+        std::locale const& loc(std::locale("C.UTF-8"));
+        std::locale::global(loc);  // default depends on LC_... vars
+        std::cin.imbue(loc);
+        std::cout.imbue(loc);
+        std::cerr.imbue(loc);
+    }
+    // TBD: we initialize the Qt library later, I do not think it will
+    //      change the locale on us, but this is a TBD until otherwise
+    //      proven to be safe... (see QLocale)
+
     // Parse command-line options...
     //
     f_opt.reset(

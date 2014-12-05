@@ -68,7 +68,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </xsl:otherwise>
         </xsl:choose>
 
-        <p>Continent/Country:</p>
+        <label class="locale-timezone-continent">Continent/Country:</label>
         <xsl:variable name="continent">
           <editor-form>
             <xsl:copy-of select="/editor-form/@*"/>
@@ -79,7 +79,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               <xsl:attribute name="auto-save">no</xsl:attribute>
               <xsl:copy-of select="*[name() = 'background-value' or name() = 'tooltip' or name() = 'help']"/>
               <xsl:if test="default/node()">
-                <default><xsl:copy-of select="substring-before(string(default/node()), '/')"/></default>
+                <default><xsl:copy-of select="replace(substring-before(string(default/node()), '/'), '_', ' ')"/></default>
               </xsl:if>
               <preset><xsl:copy-of select="preset_continent/node()"/></preset>
             </widget>
@@ -90,12 +90,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <xsl:call-template name="snap:dropdown">
               <xsl:with-param name="path" select="$path"/>
               <xsl:with-param name="name" select="concat($name, '_continent')"/>
-              <xsl:with-param name="value" select="substring-before(string($value), '/')"/>
+              <xsl:with-param name="value" select="replace(substring-before(string($value), '/'), '_', ' ')"/>
             </xsl:call-template>
           </xsl:for-each>
         </xsl:for-each>
 
-        <p>City:</p>
+        <label class="locale-timezone-city">City:</label>
         <xsl:variable name="city">
           <editor-form>
             <xsl:copy-of select="/editor-form/@*"/>
@@ -106,7 +106,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               <xsl:attribute name="auto-save">no</xsl:attribute>
               <xsl:copy-of select="*[name() = 'background-value' or name() = 'tooltip' or name() = 'help']"/>
               <xsl:if test="default/node()">
-                <default><xsl:copy-of select="substring-after(string(default/node()), '/')"/></default>
+                <default><xsl:copy-of select="replace(substring-after(string(default/node()), '/'), '_', ' ')"/></default>
               </xsl:if>
               <preset><xsl:copy-of select="preset_city/node()"/></preset>
             </widget>
@@ -117,7 +117,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <xsl:call-template name="snap:dropdown">
               <xsl:with-param name="path" select="$path"/>
               <xsl:with-param name="name" select="concat($name, '_city')"/>
-              <xsl:with-param name="value" select="substring-after(string($value), '/')"/>
+              <xsl:with-param name="value" select="replace(substring-after(string($value), '/'), '_', ' ')"/>
             </xsl:call-template>
           </xsl:for-each>
         </xsl:for-each>
