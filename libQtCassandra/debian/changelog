@@ -1,3 +1,21 @@
+libqtcassandra (0.5.20.88~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 04 Dec 2014 03:02:34 -0800
+
+libqtcassandra (0.5.20.87~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 03 Dec 2014 03:02:40 -0800
+
+libqtcassandra (0.5.20.86~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 02 Dec 2014 03:02:41 -0800
+
 libqtcassandra (0.5.20.85~trusty) trusty; urgency=high
 
   * Nightly build.
