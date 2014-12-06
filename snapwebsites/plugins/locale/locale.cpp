@@ -671,6 +671,9 @@ QString locale::format_time(time_t d)
 // /usr/include/x86_64-linux-gnu/unicode/timezone.h
 // file:///usr/share/doc/icu-doc/html/index.html
 //
+// Many territory details by Unicode.org
+// http://unicode.org/repos/cldr/trunk/common/supplemental/supplementalData.xml
+//
 
 SNAP_PLUGIN_END()
 

@@ -150,14 +150,29 @@ DTD of the XSLT 2.0.
                method (get|post) "get">
 
 <!ELEMENT h1 ANY>
-<!ATTLIST h1 style CDATA #IMPLIED>
+<!ATTLIST h1 style CDATA #IMPLIED
+             id ID #IMPLIED>
 
 <!ELEMENT h2 ANY>
-<!ATTLIST h2 class CDATA #IMPLIED>
+<!ATTLIST h2 class CDATA #IMPLIED
+             id ID #IMPLIED>
 
 <!ELEMENT h3 ANY>
+<!ATTLIST h3 class CDATA #IMPLIED
+             id ID #IMPLIED>
+
 <!ELEMENT h4 ANY>
+<!ATTLIST h4 class CDATA #IMPLIED
+             id ID #IMPLIED>
+
 <!ELEMENT h5 ANY>
+<!ATTLIST h5 class CDATA #IMPLIED
+             id ID #IMPLIED>
+
+<!ELEMENT h6 ANY>
+<!ATTLIST h6 class CDATA #IMPLIED
+             id ID #IMPLIED>
+
 <!ELEMENT head ANY>
 <!ELEMENT html ANY>
 <!ATTLIST html lang CDATA #IMPLIED
@@ -229,7 +244,8 @@ DTD of the XSLT 2.0.
 <!ATTLIST small class CDATA #IMPLIED>
 
 <!ELEMENT span ANY>
-<!ATTLIST span class CDATA #IMPLIED>
+<!ATTLIST span class CDATA #IMPLIED
+               id CDATA #IMPLIED>
 
 <!ELEMENT strong ANY>
 <!ELEMENT style ANY>
