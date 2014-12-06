@@ -211,37 +211,8 @@ class process
 public:
     typedef std::shared_ptr<process> pointer_t;
 
-    enum type_t
-    {
-        Server,
-        Backend
-    };
-
     process( QString const& n )
-        : f_type(Backend)
-        //, f_path("") -- auto-init
-        //, f_config_filename("") -- auto-init
-        , f_name(n)
-        //, f_pid(0) -- auto-init
-        //, f_exit(0) -- auto-init
-        //, f_startcount(0) -- auto-init
-        //, f_timer() -- auto-init
-        //, f_disabled(false) -- auto-init
-        //, f_debug(false) -- auto-init
-    {
-    }
-
-    process()
-        : f_type(Server)
-        //, f_path("") -- auto-init
-        //, f_config_filename("") -- auto-init
-        , f_name("snapserver")
-        //, f_pid(0) -- auto-init
-        //, f_exit(0) -- auto-init
-        //, f_startcount(0) -- auto-init
-        //, f_timer() -- auto-init
-        //, f_disabled(false) -- auto-init
-        //, f_debug(false) -- auto-init
+        : f_name(n)
     {
     }
 
@@ -258,17 +229,17 @@ public:
     pid_t   pid()        const { return f_pid;             }
     QString name()       const { return f_name;            }
     int     startcount() const { return f_startcount;      }
-    type_t  type()       const { return f_type;            }
     int     elapsed()    const { return f_timer.elapsed(); }
     bool    disabled()   const { return f_disabled;        }
     //
     void    set_disabled( bool const val ) { f_disabled = val; }
 
 private:
-    type_t const                f_type; // mandatory because of 'const', no need for controlled_vars
     QString                     f_path;
+    QString                     f_full_path;
     QString                     f_config_filename;
     QString                     f_name;
+    QString                     f_action;
     controlled_vars::zint32_t   f_pid;
     controlled_vars::zint32_t   f_exit;
     controlled_vars::zint32_t   f_startcount;
@@ -276,8 +247,32 @@ private:
     controlled_vars::flbool_t   f_disabled;
     controlled_vars::flbool_t   f_debug;
 
+    void set_full_path();
     void handle_status( const int pid, const int status );
 };
+
+
+void process::set_full_path()
+{
+    QString basename;
+    if( f_name == "server" )
+    {
+        basename = "snapserver";
+        f_action = "";
+    }
+    else if( f_name == "backend" )
+    {
+        basename = "snapbackend";
+        f_action = "";
+    }
+    else
+    {
+        basename = "snapbackend";
+        f_action = f_name;
+    }
+    //
+    f_full_path = QString("%1/%2").arg(f_path).arg(basename);
+}
 
 
 /** \brief Verify that this executable exists.
@@ -295,13 +290,13 @@ private:
  */
 bool process::exists() const
 {
-    QString const cmd( QString("%1/%2").arg(f_path).arg( f_type == Server ? "snapserver" : "snapbackend") );
-    return access(cmd.toUtf8().data(), R_OK | X_OK) == 0;
+    return access(f_full_path.toUtf8().data(), R_OK | X_OK) == 0;
 }
 
 
 bool process::run()
 {
+    set_full_path();
     f_timer.start();
     f_startcount++;
     f_pid = fork();
@@ -309,16 +304,15 @@ bool process::run()
     {
         // child
         //
-        QString const cmd( QString("%1/%2").arg(f_path).arg( f_type == Server ? "snapserver" : "snapbackend") );
         QStringList qargs;
-        qargs << cmd;
+        qargs << f_full_path;
         if(f_debug)
         {
             qargs << "--debug";
         }
         qargs << "--config" << f_config_filename;
         //
-        if( f_type == Backend )
+        if( f_name != "server" && f_name != "backend" )
         {
             qargs << "--action" << f_name;
         }
@@ -349,7 +343,7 @@ bool process::run()
         // Execute the child processes
         //
         execv(
-            cmd.toUtf8().data(),
+            f_full_path.toUtf8().data(),
             const_cast<char * const *>(&args_p[0])
         );
 #pragma GCC diagnostic pop
@@ -509,9 +503,7 @@ private:
     void usage();
     void validate();
     void show_selected_servers() const;
-    //bool backend_ready();
-    void create_server_process();
-    void create_backend_process( QString const& name );
+    void create_process( QString const& name );
     bool verify_process( QString const& name );
     void start_processes();
     void monitor_processes();
@@ -715,14 +707,7 @@ bool snap_init::verify_process( QString const& name )
 {
     // initialize a server as usual
     process::pointer_t p;
-    if(name == "server")
-    {
-        p.reset( new process() );
-    }
-    else
-    {
-        p.reset( new process( name ) );
-    }
+    p.reset( new process( name ) );
     p->set_path( f_opt.get_string("binary_path").c_str() );
     p->set_config( f_opt.get_string("config").c_str() );
     // check whether the binary can be started
@@ -730,27 +715,8 @@ bool snap_init::verify_process( QString const& name )
 }
 
 
-void snap_init::create_server_process()
+void snap_init::create_process( QString const& name )
 {
-    process::pointer_t p( new process() );
-    p->set_path( f_opt.get_string("binary_path").c_str() );
-    p->set_config( f_opt.get_string("config").c_str() );
-    p->set_debug( f_opt.is_defined("debug") );
-    p->run();
-    f_process_list.push_back( p );
-}
-
-
-void snap_init::create_backend_process( QString const& name )
-{
-#if 0
-    if( !backend_ready() )
-    {
-        SNAP_LOG_ERROR() << "The 'sites' table does not yet exist. Disabling backend--restart snapinit when the database is ready.";
-        return;
-    }
-#endif
-
     process::pointer_t p( new process( name ) );
     p->set_path( f_opt.get_string("binary_path").c_str() );
     p->set_config( f_opt.get_string("config").c_str() );
@@ -886,15 +852,7 @@ void snap_init::start_processes()
     // the server.)
     for( auto service : f_services )
     {
-        //
-        if( service == "server" )
-        {
-            create_server_process();
-        }
-        else
-        {
-            create_backend_process( service.c_str() );
-        }
+        create_process( service.c_str() );
     }
 
     // sleep until stopped
