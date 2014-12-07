@@ -290,6 +290,7 @@ void process::set_full_path()
  */
 bool process::exists() const
 {
+    const_cast<process *>(this)->set_full_path();
     return access(f_full_path.toUtf8().data(), R_OK | X_OK) == 0;
 }
 
