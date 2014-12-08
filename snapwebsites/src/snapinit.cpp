@@ -235,11 +235,11 @@ public:
     void    set_disabled( bool const val ) { f_disabled = val; }
 
 private:
+    mutable QString             f_full_path;
+    mutable QString             f_action;
     QString                     f_path;
-    QString                     f_full_path;
     QString                     f_config_filename;
     QString                     f_name;
-    QString                     f_action;
     controlled_vars::zint32_t   f_pid;
     controlled_vars::zint32_t   f_exit;
     controlled_vars::zint32_t   f_startcount;
@@ -247,31 +247,51 @@ private:
     controlled_vars::flbool_t   f_disabled;
     controlled_vars::flbool_t   f_debug;
 
-    void set_full_path();
+    const QString& get_full_path() const;
     void handle_status( const int pid, const int status );
 };
 
 
-void process::set_full_path()
+/** \brief Get the full path of the target executable that snapinit will launch/monitor
+ *
+ * This function generates the full path to the executable to use to
+ * launch and monitor the binary in question. It calculates the name
+ * by looking at the f_name member, and translating it into the full path to launch.
+ * 
+ * The special names are "server" and "backend". If "server", then the "snapserver" basename
+ * is used. If "backend," then the "snapbackend" will be used. Any other name is considered to
+ * be the f_action, which will be a paramter passed to the "snapbackend."
+ *
+ * \note this method is marked const, but it does modify two mutable member variables: f_full_path and f_action
+ * I probably should move this support into its own class to take advantage of RAII.
+ *
+ * \return full path to the binary to launch
+ */
+const QString& process::get_full_path() const
 {
-    QString basename;
-    if( f_name == "server" )
+    if( f_full_path.isEmpty() )
     {
-        basename = "snapserver";
-        f_action = "";
+        QString basename;
+        if( f_name == "server" )
+        {
+            basename = "snapserver";
+            f_action = "";
+        }
+        else if( f_name == "backend" )
+        {
+            basename = "snapbackend";
+            f_action = "";
+        }
+        else
+        {
+            basename = "snapbackend";
+            f_action = f_name;
+        }
+        //
+        f_full_path = QString("%1/%2").arg(f_path).arg(basename);
     }
-    else if( f_name == "backend" )
-    {
-        basename = "snapbackend";
-        f_action = "";
-    }
-    else
-    {
-        basename = "snapbackend";
-        f_action = f_name;
-    }
-    //
-    f_full_path = QString("%1/%2").arg(f_path).arg(basename);
+    return f_full_path;
+
 }
 
 
@@ -290,14 +310,13 @@ void process::set_full_path()
  */
 bool process::exists() const
 {
-    const_cast<process *>(this)->set_full_path();
-    return access(f_full_path.toUtf8().data(), R_OK | X_OK) == 0;
+    const QString& full_path( get_full_path() );
+    return access(full_path.toUtf8().data(), R_OK | X_OK) == 0;
 }
 
 
 bool process::run()
 {
-    set_full_path();
     f_timer.start();
     f_startcount++;
     f_pid = fork();
@@ -305,8 +324,9 @@ bool process::run()
     {
         // child
         //
+        const QString& full_path( get_full_path() );
         QStringList qargs;
-        qargs << f_full_path;
+        qargs << full_path;
         if(f_debug)
         {
             qargs << "--debug";
@@ -344,7 +364,7 @@ bool process::run()
         // Execute the child processes
         //
         execv(
-            f_full_path.toUtf8().data(),
+            full_path.toUtf8().data(),
             const_cast<char * const *>(&args_p[0])
         );
 #pragma GCC diagnostic pop
