@@ -24,10 +24,12 @@
 #include <QVector>
 #pragma GCC diagnostic pop
 
+#include <controlled_vars/controlled_vars_limited_need_enum_init.h>
+
 class QHtmlSerializer : public QAbstractXmlReceiver
 {
 public:
-                    QHtmlSerializer(QXmlNamePool namepool, QBuffer *output);
+                    QHtmlSerializer(QXmlNamePool namepool, QBuffer *output, bool const is_html = true);
     virtual         ~QHtmlSerializer();
     virtual void    atomicValue(const QVariant& value);
     virtual void    attribute(const QXmlName& name, const QStringRef& value);
@@ -43,7 +45,8 @@ public:
     virtual void    startOfSequence();
 
 private:
-    enum html_serializer_status_t {
+    enum html_serializer_status_t
+    {
         HTML_SERIALIZER_STATUS_READY,
         HTML_SERIALIZER_STATUS_ELEMENT_OPEN
     };
@@ -54,6 +57,7 @@ private:
     QBuffer *                   f_output;
     html_serializer_status_t    f_status;
     QVector<QString>            f_element_stack;
+    controlled_vars::mlbool_t   f_is_html; // ignore HTML empty tags
 };
 
 #endif

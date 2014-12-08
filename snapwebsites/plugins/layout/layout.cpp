@@ -612,7 +612,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
     }
 
     // replace <xsl:include ...> with other XSTL files (should be done
-    // by the parser, but Qt's parser doesn't support it yet)
+    // by the parser, but Qt's parser does not support it yet)
     replace_includes(xsl);
 
     return xsl;
@@ -1232,7 +1232,7 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
 //            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
 //                "Layout Unavailable",
 //                "Somehow no website layout was accessible, not even the internal default.",
-//                "layout::define_theme() could not open default-theme-parser.xsl resource file.");
+//                "layout::define_theme() could not open the default-theme-parser.xsl resource file.");
 //            NOTREACHED();
 //        }
 //        QByteArray data(file.readAll());
@@ -1570,17 +1570,14 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
         (content::field_search::COMMAND_SAVE, "desc[type=template_uri]/data")
 
         // snap/head/metadata/desc[@type="name"]/data
-        (content::field_search::COMMAND_CHILD_ELEMENT, "desc")
-        (content::field_search::COMMAND_ELEMENT_ATTR, "type=name")
         (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_NAME)))
-        (content::field_search::COMMAND_SAVE, "data")
+        (content::field_search::COMMAND_SAVE, "desc[type=name]/data")
         // snap/head/metadata/desc[@type="name"]/short-data
         (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_SHORT_NAME)))
-        (content::field_search::COMMAND_SAVE, "short-data")
+        (content::field_search::COMMAND_SAVE, "desc[type=name]/short-data")
         // snap/head/metadata/desc[@type="name"]/long-data
         (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_LONG_NAME)))
-        (content::field_search::COMMAND_SAVE, "long-data")
-        (content::field_search::COMMAND_PARENT_ELEMENT)
+        (content::field_search::COMMAND_SAVE, "desc[type=name]/long-data")
 
         // snap/head/metadata/desc[@type="email"]/data
         (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)))
@@ -1655,43 +1652,41 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
  * a plugin returns a file, though, it is advised that any information
  * available to the plugin be set in the file object.
  *
- * The base load_file() function (i.e. this very function) supports the
- * file system protocol (file:) and the Qt resources protocol (qrc:).
- * Including the "file:" protocol is not required. Also, the Qt resources
- * can be indicated simply by adding a colon at the beginning of the
- * filename (":/such/as/this/name").
+ * This function loads files that have a name starting with the layout
+ * protocol (layout:).
  *
  * \param[in,out] file  The file name and content.
  * \param[in,out] found  Whether the file was found.
- *
- * \return true if the signal is to be propagated to all the plugins.
  */
 void layout::on_load_file(snap_child::post_file_t& file, bool& found)
 {
-    QString filename(file.get_filename());
-    if(filename.startsWith("layout:"))     // Read a layout file
+    if(!found)
     {
-        // remove the protocol
-        int i(7);
-        for(; i < filename.length() && filename[i] == '/'; ++i);
-        filename = filename.mid(i);
-        QStringList parts(filename.split('/'));
-        if(parts.size() != 2)
+        QString filename(file.get_filename());
+        if(filename.startsWith("layout:"))     // Read a layout file
         {
-            // wrong number of parts...
-            SNAP_LOG_ERROR("layout load_file() called with an invalid path: \"")(filename)("\"");
-            return;
-        }
-        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-        if(layout_table->exists(parts[0])
-        && layout_table->row(parts[0])->exists(QString(parts[1])))
-        {
-            QtCassandra::QCassandraValue layout_value(layout_table->row(parts[0])->cell(QString(parts[1]))->value());
+            // remove the protocol
+            int i(7);
+            for(; i < filename.length() && filename[i] == '/'; ++i);
+            filename = filename.mid(i);
+            QStringList const parts(filename.split('/'));
+            if(parts.size() != 2)
+            {
+                // wrong number of parts...
+                SNAP_LOG_ERROR("layout load_file() called with an invalid path: \"")(filename)("\"");
+                return;
+            }
+            QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
+            if(layout_table->exists(parts[0])
+            && layout_table->row(parts[0])->exists(QString(parts[1])))
+            {
+                QtCassandra::QCassandraValue layout_value(layout_table->row(parts[0])->cell(QString(parts[1]))->value());
 
-            file.set_filename(filename);
-            file.set_data(layout_value.binaryValue());
-            found = true;
-            // return false since we already "found" the file
+                file.set_filename(filename);
+                file.set_data(layout_value.binaryValue());
+                found = true;
+                // return false since we already "found" the file
+            }
         }
     }
 }

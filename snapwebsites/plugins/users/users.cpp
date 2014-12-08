@@ -866,7 +866,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
     {
         QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(f_user_key));
 
-        {   // snap/head/metadata/desc[type=users::email]/data
+        {   // snap/head/metadata/desc[@type='users::email']/data
             QDomElement desc(doc.createElement("desc"));
             desc.setAttribute("type", "users::email");
             metadata.appendChild(desc);
@@ -876,7 +876,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
             data.appendChild(text);
         }
 
-        {   // snap/head/metadata/desc[type=users::name]/data
+        {   // snap/head/metadata/desc[@type='users::name']/data
             QtCassandra::QCassandraValue value(user_row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
             if(!value.nullValue())
             {
@@ -890,7 +890,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
             }
         }
 
-        {   // snap/head/metadata/desc[type=users::created]/data
+        {   // snap/head/metadata/desc[@type='users::created']/data
             QtCassandra::QCassandraValue value(user_row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
             if(!value.nullValue())
             {

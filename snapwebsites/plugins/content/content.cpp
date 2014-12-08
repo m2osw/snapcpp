@@ -1594,7 +1594,7 @@ void field_search::run()
                 QDomElement child(f_element.firstChildElement(child_name));
                 if(child.isNull())
                 {
-                    // it doesn't exist yet, add it
+                    // it does not exist yet, add it
                     QDomDocument doc(f_element.ownerDocument());
                     child = doc.createElement(child_name);
                     f_element.appendChild(child);
@@ -3206,6 +3206,23 @@ path_info_t::raii_status_t::~raii_status_t()
 
 
 
+/** \brief Initialize the path_info_t object to an empty object.
+ *
+ * The consturctor sets all the values to an empty string or undefined
+ * version.
+ *
+ * You must call the set_path() function at least once to setup this
+ * object properly and then use it. Until then, errors will ensue if
+ * you attempt to use the object.
+ *
+ * If you have a path that is already canonicalized (you have to be
+ * 100% sure that it is indeed canonicalized to be secure) you may
+ * use the set_real_path() function. It is optimized and will skip
+ * on the canonicalization of the path.
+ *
+ * \sa set_path()
+ * \sa set_real_path()
+ */
 path_info_t::path_info_t()
     : f_content_plugin(content::content::instance())
     , f_snap(f_content_plugin->get_snap())
@@ -3225,10 +3242,31 @@ path_info_t::path_info_t()
 }
 
 
+/** \brief Set the path of this path_info_t structure.
+ *
+ * This function takes a full path or relative path to an existing page,
+ * a page to be created, or simply a page to be checked out.
+ *
+ * A relative path is expected to start with a root path name (i.e. no
+ * slash), although a slash is legal and will work as well.
+ *
+ * If you have a path which you know for sure is already canonicalized,
+ * you may instead call the set_real_path() function. That way you will
+ * skip on the canonicalization. However, it is a security risk because
+ * without proper canonicalization, you may end up with the wrong path
+ * (i.e. it could be a path to another website data!)
+ *
+ * \param[in] path  The new path for this path_infot_t structure.
+ *
+ * \sa set_real_path()
+ */
 void path_info_t::set_path(QString const& path)
 {
-    if(path != f_cpath && path != f_key)
+    if(!f_initialized
+    || (path != f_cpath && path != f_key))
     {
+        f_initialized = true;
+
         QString const& site_key(f_snap->get_site_key_with_slash());
         if(path.startsWith(site_key))
         {
@@ -3260,10 +3298,35 @@ void path_info_t::set_path(QString const& path)
 }
 
 
+/** \brief Set the path of this path_info_t structure.
+ *
+ * This function takes a canonicalized path, which may be a full path
+ * or a relative path to an existing page, a page to be created, or
+ * simply a page to be checked out.
+ *
+ * A relative path is expected to start with a root path name (i.e. no
+ * slash), although a slash is legal and will work as well.
+ *
+ * If you have a path which you know for sure is already canonicalized,
+ * you may this function. Otherwise, it is generally preferable to
+ * call the set_path() function as it verifies whether the path is valid
+ * for this website.
+ *
+ * \warning
+ * This function may introduce a security risk if the path you pass
+ * to it is not properly canonicalized.
+ *
+ * \param[in] path  The new path for this path_infot_t structure.
+ *
+ * \sa set_path()
+ */
 void path_info_t::set_real_path(QString const& path)
 {
-    if(path != f_real_cpath && path != f_real_key)
+    if(!f_initialized
+    || (path != f_real_cpath && path != f_real_key))
     {
+        f_initialized = true;
+
         QString const& site_key(f_snap->get_site_key_with_slash());
         if(path.startsWith(site_key))
         {
@@ -3280,12 +3343,24 @@ void path_info_t::set_real_path(QString const& path)
         }
 
         // the other info becomes invalid
-        // execpt for the parameters which we keep in place
+        // except for the parameters which we keep in place
         clear(true);
     }
 }
 
 
+/** \brief Set whether the path represents the main page or not.
+ *
+ * This function is used to mark a path as the one representing the
+ * main page being generated. This makes a huge difference, for
+ * example if the user does not have permissions to access the
+ * main page, then the system generates a 503. If the page is
+ * not the main page, it is simply dropped (i.e. its content cannot
+ * be shown to the current user so it does not get included in
+ * the final output.)
+ *
+ * \param[in] main_page  Whether this path represents the main page.
+ */
 void path_info_t::set_main_page(bool main_page)
 {
     // Note: we could check with f_snap->get_uri() except that in some
@@ -3299,12 +3374,34 @@ void path_info_t::set_main_page(bool main_page)
 }
 
 
+/** \brief Attach a parameter to this path_info_t object.
+ *
+ * This function is used to save a named parameter to this path_info_t
+ * object.
+ *
+ * This function is seldom used, yet at times you pass a path_info_t
+ * objects to many different functions, some of which need to know
+ * your status.
+ *
+ * \param[in] name  The name of the parameter.
+ * \param[in] value  The value of this parameter.
+ */
 void path_info_t::set_parameter(QString const& name, QString const& value)
 {
     f_parameters[name] = value;
 }
 
 
+/** \brief Force the branch number to the specified branch.
+ *
+ * By default, the system allocates a branch number as required. Either
+ * zero (0) for a system branch, or one (1) for a user branch, or it
+ * reads the branch number from the database.
+ *
+ * This function can be used to force the branch to a specific value.
+ *
+ * \param[in] branch  The branch you want to use with this page.
+ */
 void path_info_t::force_branch(snap_version::version_number_t branch)
 {
     f_branch = branch;
@@ -3900,6 +3997,7 @@ void content::on_bootstrap(snap_child *snap)
     SNAP_LISTEN0(content, "server", server, save_content);
     SNAP_LISTEN(content, "server", server, register_backend_action, _1);
     SNAP_LISTEN0(content, "server", server, backend_process);
+    SNAP_LISTEN(content, "server", server, load_file, _1, _2);
 }
 
 
@@ -6298,7 +6396,7 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
     }
 
     // TODO handle the compression of the file...
-    //file.set_file_compressor(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_COMPRESSOR))->value()->stringValue());
+    //file.set_file_compressor(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_COMPRESSOR))->value().stringValue());
 
     if(load_data)
     {
@@ -6308,7 +6406,7 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
     }
     else
     {
-        // since we're not loading the data, we want to get some additional
+        // since we are not loading the data, we want to get some additional
         // information on the side: the verified MIME type and the file size
         if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE)))
         {
@@ -9124,6 +9222,65 @@ bool content::trash_page(path_info_t& ipath)
     destination.f_done_state.set_state(path_info_t::status_t::state_t::HIDDEN);
 
     return clone_page(source, destination);
+}
+
+
+/** \brief Load an attachment.
+ *
+ * This function is used to load a file from an attachment. As additional
+ * plugins are added additional protocols can be supported.
+ *
+ * The file information defaults are kept as is as much as possible. If
+ * a plugin returns a file, though, it is advised that any information
+ * available to the plugin be set in the file object.
+ *
+ * This load_file() function supports the attachment protocol (attachment:)
+ * to load a file that was uploaded as an attachment. Note that this function
+ * does NOT check permissions. For this reason, it is considered insecure
+ * by default.
+ *
+ * The filename is expected to be the full URI to the attachment. If the
+ * URI points to a page without an attachment (or a page that does not
+ * even exist) then the function returns nothing.
+ *
+ * \note
+ * If the found parameter is already true, then this function does nothing.
+ *
+ * \param[in,out] file  The file name and content.
+ * \param[in,out] found  Whether the file was found.
+ */
+void content::on_load_file(snap_child::post_file_t& file, bool& found)
+{
+    if(!found)
+    {
+        QString filename(file.get_filename());
+        if(filename.startsWith("attachment:"))     // Read an attachment file
+        {
+            // remove the protocol
+            int i(11);
+            for(; i < filename.length() && filename[i] == '/'; ++i);
+            filename = filename.mid(i);
+            path_info_t ipath;
+            ipath.set_path(filename);
+            QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
+            if(content_table->exists(ipath.get_key())
+            && content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+            {
+                // set the default filename, the load_attachment() is likely
+                // going to set the filename as defined when uploading the
+                // file (among other parameters)
+                int const pos(filename.lastIndexOf('/'));
+                file.set_filename(filename.mid(pos + 1));
+
+                attachment_file f(f_snap);
+                if(load_attachment(ipath.get_key(), f, true))
+                {
+                    file = f.get_file();
+                    found = true;
+                }
+            }
+        }
+    }
 }
 
 

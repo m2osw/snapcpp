@@ -52,7 +52,12 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     feed.qrc
 )
 
+
 snap_validate_xml( content.xml content.dtd )
+
+snap_validate_xml( feed-parser.xsl  layout/simplified-xslt20.dtd )
+snap_validate_xml( rss.xsl          feed/feed-xslt20.dtd )
+
 
 add_library(feed SHARED
     feed.cpp
@@ -60,6 +65,7 @@ add_library(feed SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
     feed-parser.xsl
+    rss.xsl
     settings-form.xml
 )
 
