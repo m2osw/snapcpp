@@ -52,7 +52,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     form.qrc
 )
 
-snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( content.xml content/content.dtd )
 snap_validate_xml( core-form.xsl layout/simplified-xslt20.dtd )
 snap_validate_js ( form.js )
 
@@ -83,6 +83,16 @@ install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites/plugins/form
     FILES_MATCHING PATTERN "*.h"
+)
+
+################################################################################
+# Install DTD file.
+#
+install(
+	FILES
+		snap-form.dtd
+	DESTINATION
+		share/snapwebsites/dtd
 )
 
 # vim: ts=4 sw=4 et

@@ -50,7 +50,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     layout.qrc
 )
 
-snap_validate_xml( layout/content.xml content.dtd )
+snap_validate_xml( layout/content.xml content/content.dtd )
 
 snap_validate_xml( layout/html-header.xsl            layout/simplified-xslt20.dtd )
 snap_validate_xml( layout/default-theme-parser.xsl   layout/simplified-xslt20.dtd )
@@ -85,6 +85,16 @@ FILE(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 install(
     FILES ${HEADER_FILES}
     DESTINATION include/snapwebsites/plugins/layout
+)
+
+################################################################################
+# Install DTD file.
+#
+install(
+	FILES
+		simplified-xslt20.dtd
+	DESTINATION
+		share/snapwebsites/dtd
 )
 
 # vim: ts=4 sw=4 et

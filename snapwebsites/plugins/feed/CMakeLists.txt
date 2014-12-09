@@ -53,7 +53,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 )
 
 
-snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( content.xml content/content.dtd )
 
 snap_validate_xml( feed-parser.xsl  layout/simplified-xslt20.dtd )
 snap_validate_xml( rss.xsl          feed/feed-xslt20.dtd )
@@ -65,6 +65,7 @@ add_library(feed SHARED
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
     feed-parser.xsl
+    feed-xslt20.dtd
     rss.xsl
     settings-form.xml
 )
@@ -83,6 +84,16 @@ install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
     DESTINATION include/snapwebsites/plugins/feed
     FILES_MATCHING PATTERN "*.h"
+)
+
+################################################################################
+# Install DTD file.
+#
+install(
+	FILES
+		feed-xslt20.dtd
+	DESTINATION
+		share/snapwebsites/dtd
 )
 
 # vim: ts=4 sw=4 et

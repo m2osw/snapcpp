@@ -49,7 +49,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     header.qrc
 )
 
-snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( content.xml content/content.dtd )
 
 add_library(header SHARED
     header.cpp

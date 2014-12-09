@@ -87,15 +87,4 @@ add_subdirectory(users)
 add_subdirectory(versions)
 
 
-################################################################################
-# Install the default DTD files.
-#
-install( FILES
-	content.dtd
-	editor/editor-form.dtd
-	form/snap-form.dtd
-	layout/simplified-xslt20.dtd
-	DESTINATION share/snapwebsites/dtd
-)
-
 # vim: ts=4 sw=4 nocindent

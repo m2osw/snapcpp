@@ -73,4 +73,14 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+################################################################################
+# Install DTD files.
+#
+install(
+	FILES
+		content.dtd
+	DESTINATION
+		share/snapwebsites/dtd
+)
+
 # vim: ts=4 sw=4 et
