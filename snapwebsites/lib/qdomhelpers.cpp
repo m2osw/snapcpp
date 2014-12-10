@@ -241,6 +241,8 @@ QDomElement get_element(QDomDocument& doc, QString const& name, bool must_exist)
  *
  * \param[in,out] parent  The node from which children are added (i.e. body).
  * \param[in] path  The path representing the child to retrieve.
+ *
+ * \return The element found, may be a null node (isNull() is true).
  */
 QDomElement get_child_element(QDomNode parent, QString const& path)
 {
@@ -259,7 +261,7 @@ QDomElement get_child_element(QDomNode parent, QString const& path)
     //    return parent.toElement();
     //}
 
-    QStringList p(path.split('/'));
+    QStringList const p(path.split('/'));
 
     int const max_children(p.size());
     for(int i(0); i < max_children && !parent.isNull(); ++i)

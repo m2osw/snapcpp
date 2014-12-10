@@ -347,6 +347,7 @@ private:
     // auto-initialized
     content *                       f_content_plugin;
     zpsnap_child_t                  f_snap;
+    controlled_vars::fbool_t        f_initialized;
 
     // user specified
     QString                         f_key;
@@ -700,6 +701,7 @@ public:
     void                on_register_backend_action(server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const& action);
     void                on_backend_process();
+    void                on_load_file(snap_child::post_file_t& file, bool& found);
 
     SNAP_SIGNAL(new_content, (path_info_t& path), (path));
     SNAP_SIGNAL_WITH_MODE(create_content, (path_info_t& path, QString const& owner, QString const& type), (path, owner, type), START_AND_DONE);

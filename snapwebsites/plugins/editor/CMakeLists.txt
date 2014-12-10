@@ -54,7 +54,7 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     editor.qrc
 )
 
-snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( content.xml content/content.dtd )
 snap_validate_xml( new-draft.xml form/snap-form.dtd )
 snap_validate_xml( editor-form.xsl layout/simplified-xslt20.dtd )
 snap_validate_xml( editor-test-page.xml editor/editor-form.dtd )
@@ -98,6 +98,16 @@ file(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 install(
     FILES ${HEADER_FILES}
     DESTINATION include/snapwebsites/plugins/editor
+)
+
+################################################################################
+# Install DTD file.
+#
+install(
+	FILES
+		editor-form.dtd
+	DESTINATION
+		share/snapwebsites/dtd
 )
 
 # vim: ts=4 sw=4 et

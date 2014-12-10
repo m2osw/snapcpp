@@ -102,6 +102,7 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT xsl:text ANY>
 <!ATTLIST xsl:text xml:space (default|preserve) "default">
+<!-- QtXmlPattern does not support disable-output-escaping (yes|no) "no" -->
 
 <!-- This is a tag we often use to generate our output
      and to avoid problems with xsl:output, we should change it -->
@@ -220,7 +221,7 @@ DTD of the XSLT 2.0.
              value CDATA #IMPLIED
              for CDATA #IMPLIED>
 
-<!ELEMENT link EMPTY>
+<!ELEMENT link ANY> <!-- marked as ANY to support RSS feeds -->
 <!ATTLIST link href CDATA #REQUIRED
                hreflang CDATA #IMPLIED
                rel CDATA #REQUIRED
@@ -329,6 +330,13 @@ DTD of the XSLT 2.0.
 <!ELEMENT labor-total-amount ANY>
 <!ELEMENT labor-total-count ANY>
 <!ELEMENT computed ANY>
+
+<!-- for the feed... -->
+<!ELEMENT url ANY>
+<!ELEMENT author ANY>
+<!ELEMENT created ANY>
+<!ELEMENT copyright ANY>
+<!ELEMENT description ANY>
 
 <!-- vim: ts=4 sw=4 et
 -->

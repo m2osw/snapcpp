@@ -27,7 +27,9 @@ namespace feed
 enum name_t
 {
     SNAP_NAME_FEED_AGE,
-    SNAP_NAME_FEED_PAGE_LAYOUT
+    SNAP_NAME_FEED_DESCRIPTION,
+    SNAP_NAME_FEED_PAGE_LAYOUT,
+    SNAP_NAME_FEED_TTL
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -60,6 +62,7 @@ private:
     void                generate_feeds();
 
     zpsnap_child_t      f_snap;
+    QString             f_feed_parser_xsl;
 };
 
 

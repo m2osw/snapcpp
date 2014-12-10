@@ -30,11 +30,12 @@
 
 #include "poison.h"
 
-QHtmlSerializer::QHtmlSerializer(QXmlNamePool namepool, QBuffer *output)
+QHtmlSerializer::QHtmlSerializer(QXmlNamePool namepool, QBuffer *output, bool const is_html)
     : f_namepool(namepool)
     , f_output(output)
     , f_status(HTML_SERIALIZER_STATUS_READY)
     //, f_element_stack() -- auto-init
+    , f_is_html(is_html)
 {
 }
 
@@ -94,7 +95,7 @@ void QHtmlSerializer::comment(const QString& value)
 
 void QHtmlSerializer::endDocument()
 {
-    // we're done
+    // we are done
 }
 
 void QHtmlSerializer::endElement()
@@ -107,7 +108,7 @@ void QHtmlSerializer::endElement()
 
     QString e(element.toLower());
     bool is_empty(false);
-    switch(e[0].unicode()) {
+    if(f_is_html) switch(e[0].unicode()) {
     case 'a':
         is_empty = e == "area";
         break;
@@ -149,7 +150,7 @@ void QHtmlSerializer::endElement()
         break;
 
     }
-    if (is_empty)
+    if(is_empty)
     {
         if(f_status != HTML_SERIALIZER_STATUS_ELEMENT_OPEN)
         {

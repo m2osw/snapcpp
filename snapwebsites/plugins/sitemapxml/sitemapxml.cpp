@@ -629,11 +629,11 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
         // XXX should we use VISITOR or RETURNING VISITOR as the status?
         content::permission_flag result;
         path_plugin->access_allowed
-            ( ""        // anonymous user
-            , page_ipath     // this page
-            , "view"    // can the anonymous user view this page
+            ( ""            // anonymous user
+            , page_ipath    // this page
+            , "view"        // can the anonymous user view this page
             , permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR)    // anonymous users are Visitors
-            , result    // give me the result here
+            , result        // give me the result here
             );
 
 //std::cerr << "Found key [" << page_key << "] allowed? " << (result.allowed() ? "YES" : "Nope") << "\n";

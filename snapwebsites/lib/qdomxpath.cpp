@@ -81,7 +81,10 @@ const QDomXPath::instruction_t  QDomXPath::VERSION_MINOR;
  * The following represents one entry in an XPath:
  *
  * \code
- * [ '/' [ '/' ] ] [ <axis> '::' ] [ <prefix> ':' ] <tagname> ( '[' <predicate> ']' )*
+ * // Note that although everything is optional, you should probably have
+ * // at least one entry (i.e. "." or maybe "[@color='pink']") although
+ * // the empty xpath is accepted but it returns an empty set of nodes...
+ * [ '/' [ '/' ] ] [ <axis> '::' ] [ <prefix> ':' ] [ <tagname> ] ( '[' <predicate> ']' )*
  * \endcode
  *
  * Each entry is separated by a slash when there are several. If the XPath
@@ -5569,7 +5572,7 @@ char_t getc()
     // between 0xD800 and 0xDFFF. These are therefore included
     // although we could check that the characters are correct
     // we do not because we do not have to test for specific
-    // characters with codes that larger.)
+    // characters with codes that large.)
     if(c != 0x09
     && c != 0x0A
     && c != 0x0D
@@ -7494,20 +7497,16 @@ void union_expr()
 
     path_expr();
 
-    if(f_last_token.f_token == token_t::TOK_PIPE)
+    while(f_last_token.f_token == token_t::TOK_PIPE)
     {
-        do
-        {
-            // skip the pipe
-            get_token();
+        // skip the pipe
+        get_token();
 
-            //append_push_string(variable);
-            //append_instruction(INST_GET_VARIABLE);
+        //append_push_string(variable);
+        //append_instruction(INST_GET_VARIABLE);
 
-            path_expr();
-            append_instruction(INST_MERGE_SETS);
-        }
-        while(f_last_token.f_token == token_t::TOK_PIPE);
+        path_expr();
+        append_instruction(INST_MERGE_SETS);
     }
 }
 
@@ -7526,7 +7525,6 @@ void parse(bool show_commands)
     // save the input (we expect a node-set) in a variable
     ++f_label_counter;
     f_predicate_variable = QString("$%1").arg(f_label_counter);
-    QString save_predicate_variable(f_predicate_variable);
     append_push_string(f_predicate_variable);
     append_instruction(INST_SET_VARIABLE);
 

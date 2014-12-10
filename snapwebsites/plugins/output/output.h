@@ -57,7 +57,10 @@ public:
 
 
 
-class output : public plugins::plugin, public path::path_execute, public layout::layout_content, public javascript::javascript_dynamic_plugin
+class output : public plugins::plugin
+             , public path::path_execute
+             , public layout::layout_content
+             , public javascript::javascript_dynamic_plugin
 {
 public:
                         output();

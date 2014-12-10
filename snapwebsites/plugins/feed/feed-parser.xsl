@@ -31,14 +31,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output lang="{$lang}">
-			<url><xsl:copy-of select="$full_path"/></url>
-			<title><xsl:copy-of select="page/body/titles/title"/></title>
-			<author><xsl:copy-of select="page/body/author"/></title>
-			<created><xsl:copy-of select="page/body/created"/></created>
+			<url><xsl:copy-of select="$page_uri"/></url>
+			<xsl:copy-of select="page/body/titles"/>
+			<xsl:copy-of select="page/body/author"/>
+			<xsl:copy-of select="page/body/created"/>
 			<xsl:if test="page/body/owner != ''">
 				<copyright>Copyright &#xA9; <xsl:copy-of select="$year_range"/> by <xsl:copy-of select="page/body/owner"/></copyright>
 			</xsl:if>
-			<description><xsl:copy-of select="page/body/output/node()"/></copyright>
+			<description>
+				<xsl:choose>
+					<xsl:when test="page/body/feed">
+						<!-- special content for the feed, use that instead of the
+								 default body content -->
+						<xsl:copy-of select="page/body/feed/node()"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<div id="content">
+							<xsl:copy-of select="page/body/content/node()"/>
+						</div>
+					</xsl:otherwise>
+				</xsl:choose>
+			</description>
 			<!--
 				TODO:
 					category == we need a way to retrieve a tag clearly marked as a category

@@ -1100,7 +1100,7 @@ std::cerr << "from " << user_id << " -> ";
             parts.pop_back();
             if(parts.isEmpty())
             {
-                // let other modules take over, we're done here
+                // let other modules take over, we are done here
                 return true;
             }
             ++depth;
@@ -1489,7 +1489,7 @@ QString const& permissions::get_user_path()
         f_has_user_path = true;
         users::users *users_plugin(users::users::instance());
         f_user_path = users_plugin->get_user_path();
-        if(f_user_path == "user") // anonymous?
+        if(f_user_path == users::get_name(users::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
         {
             f_user_path.clear();
         }
@@ -2023,7 +2023,12 @@ void call_perms(snap_expr::variable_t& result, snap_expr::variable_t::variable_v
         throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call perms() expected 3 or 4 parameters");
     }
     QString const path(sub_results[0].get_string("perms(1)"));
-    QString const user_path(sub_results[1].get_string("perms(2)"));
+    QString user_path(sub_results[1].get_string("perms(2)"));
+    if(user_path == users::get_name(users::SNAP_NAME_USERS_ANONYMOUS_PATH))
+    {
+        // permissions for anonymous users is done with an empty user path
+        user_path.clear();
+    }
     QString const action(sub_results[2].get_string("perms(3)"));
     QString status;
     if(sub_results.size() == 4)

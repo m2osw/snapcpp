@@ -18,8 +18,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <!-- we prevent shorturl's on the home page -->
+  <!-- we mark the home page as a page that should appear in our main feed -->
   <content path="/" owner="output">
+    <param name="content::title" revision="revision">Home Page With Feed T16</param>
+    <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/feed/main</link>
+  </content>
+  <content path="/privacy-policy">
+    <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/feed/main</link>
+  </content>
+  <content path="/terms-and-conditions">
     <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/feed/main</link>
   </content>
   <content path="/admin/feed" owner="output">
@@ -30,6 +37,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="permissions::dynamic" type="int8" revision="global">1</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <attachment name="finball" type="attachment/private">
+      <path>:/xsl/feed/rss.xsl</path>
+      <mime-type>application/xslt+xml</mime-type>
+    </attachment>
   </content>
   <content path="/feed" owner="output">
     <param name="content::title" revision="revision">Website Feeds</param>
@@ -48,22 +59,29 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>The following is a list of pages composing the main website feed.</p>[list::theme(path = "/feed/main", count = 100)]]]>
     </param>
+    <!-- this is the defacto description of a feed, if not defined, use the
+         global website description instead; we should not have one for the
+         main feed; use for test purposes only -->
+    <param name="feed::description" revision="revision">
+      <![CDATA[<p>Main feed of this Snap! Website.</p>]]>
+    </param>
     <param name="list::original_item_key_script" overwrite="yes">
       <![CDATA[(branch := int32(cell("content", page, "content::revision_control::current_branch")),
                 key := string(cell("content", page, "content::revision_control::current_revision_key::" + branch + "::en")),
                 key ? string(cell("revision", key, "content::title")) : "no title")]]>
     </param>
+    <!-- avoid administrative pages, always
+         also the permissions should be enough to not include admin/...
+         pages to this feed, here we only add pages that anonomous users
+         can view (pretty much all RSS feeds are expected to only send
+         public data anyway) -->
     <param name="list::original_test_script" overwrite="yes">
-      <!-- avoid administrative pages, always
-           also the permissions should be enough to not include admin/...
-           pages to this feed, here we only add pages that anonomous users
-           can view (pretty much all RSS feeds are expected to only send
-           public data anyway) -->
       <![CDATA[!strmatch("^admin/", path)
-            && linked_to("feed::feed", page, "types/taxonomy/system/feed/main")
+            && linked_to("feed::feed", page, "types/taxonomy/system/feed/main", false)
             && perms(path, "user", "view", "visitor")]]>
     </param>
     <param name="list::selector" overwrite="yes"><![CDATA[type=types/taxonomy/system/feed/main]]></param>
+    <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
     <!--param name="permissions::dynamic" type="int8" revision="global">1</param-->
     <!-- although the feeds themselves are always changing this page not so much -->
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>

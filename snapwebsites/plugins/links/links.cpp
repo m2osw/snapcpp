@@ -1381,27 +1381,46 @@ namespace details
 //     (it would remove some additional dependencies on the content plugin!)
 void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variable_vector_t const& sub_results)
 {
-    if(sub_results.size() != 3)
+    if(sub_results.size() != 3
+    && sub_results.size() != 4)
     {
-        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call linked_to() expected exactly 3");
+        throw snap_expr::snap_expr_exception_invalid_number_of_parameters("invalid number of parameters to call linked_to() expected 3 or 4 parameters");
     }
-    QString link_name(sub_results[0].get_string("linked_to(1)"));
-    QString page(sub_results[1].get_string("linked_to(2)"));
-    QString type_name(sub_results[2].get_string("linked_to(3)"));
+    QString const link_name(sub_results[0].get_string("linked_to(1)"));
+    QString const page(sub_results[1].get_string("linked_to(2)"));
+    QString const type_name(sub_results[2].get_string("linked_to(3)"));
+    bool unique_link(true);
+    if(sub_results.size() >= 4)
+    {
+        unique_link = sub_results[3].get_bool("linked_to(4)");
+    }
 
     content::path_info_t ipath;
     ipath.set_path(page);
-    link_info link_context_info(link_name, true, ipath.get_key(), ipath.get_branch());
+    link_info link_context_info(link_name, unique_link, ipath.get_key(), ipath.get_branch());
     QSharedPointer<link_context> link_ctxt(links::instance()->new_link_context(link_context_info));
     link_info result_info;
     bool r(false);
     if(link_ctxt->next_link(result_info))
     {
-        QString const site_key(content::content::instance()->get_snap()->get_site_key_with_slash());
-        if(result_info.key() == site_key + type_name)
+        QString const expected_path(content::content::instance()->get_snap()->get_site_key_with_slash() + type_name);
+        if(result_info.key() == expected_path)
         {
             // is linked!
             r = true;
+        }
+        else if(!unique_link)
+        {
+            // not unique, check all the existing links
+            while(link_ctxt->next_link(result_info))
+            {
+                if(result_info.key() == expected_path)
+                {
+                    // is linked!
+                    r = true;
+                    break;
+                }
+            }
         }
     }
     result.set_value(r);

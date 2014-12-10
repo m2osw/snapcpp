@@ -55,10 +55,10 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
     mimetype.qrc
 )
 
-snap_validate_xml( content.xml content.dtd )
+snap_validate_xml( content.xml content/content.dtd )
 
 
-# Those are generated so we probably don't really need to validate
+# Those are generated so we probably do not really need to validate
 # them... also we have a dependency problem at this point
 #snap_validate_js( mimetype-basics.js    )
 #snap_validate_js( mimetype-standard.js  )
