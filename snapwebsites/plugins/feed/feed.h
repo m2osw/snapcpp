@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
+#include "../content/content.h"
 
 namespace snap
 {
@@ -26,10 +26,16 @@ namespace feed
 
 enum name_t
 {
+    SNAP_NAME_FEED_ADMIN_SETTINGS,
     SNAP_NAME_FEED_AGE,
+    SNAP_NAME_FEED_ATTACHMENT_TYPE,
     SNAP_NAME_FEED_DESCRIPTION,
+    SNAP_NAME_FEED_EXTENSION,
+    SNAP_NAME_FEED_MIMETYPE,
     SNAP_NAME_FEED_PAGE_LAYOUT,
-    SNAP_NAME_FEED_TTL
+    SNAP_NAME_FEED_TITLE,
+    SNAP_NAME_FEED_TTL,
+    SNAP_NAME_FEED_TYPE
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -56,6 +62,7 @@ public:
 
     void                on_bootstrap(snap_child *snap);
     void                on_backend_process();
+    void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
 private:
     void                content_update(int64_t variables_timestamp);

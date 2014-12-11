@@ -8,6 +8,7 @@ antivirus: content form output versions	; @echo $@
 attachment: path permissions	; @echo $@
 char_chart: sitemapxml	; @echo $@
 content: links	; @echo $@
+ecommerce: content	; @echo $@
 editor: attachment form mimetype sendmail server_access	; @echo $@
 favicon: messages form output path permissions	; @echo $@
 feed: content layout messages path	; @echo $@

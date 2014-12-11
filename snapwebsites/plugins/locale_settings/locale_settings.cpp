@@ -49,7 +49,7 @@ char const *get_name(name_t name)
         return "locale_settings::timezone";
 
     case SNAP_NAME_LOCALE_SETTINGS_PATH:
-        return "admin/locale";
+        return "admin/settings/locale";
 
     default:
         // invalid index
@@ -149,7 +149,7 @@ int64_t locale_settings::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 4, 16, 52, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 12, 10, 2, 14, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

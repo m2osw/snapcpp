@@ -1184,7 +1184,7 @@ void form::auto_save_form(QString const& owner, content::path_info_t& ipath, aut
 
                 // retrieve the attachment tag and get additional parameters
                 QDomXPath dom_xpath;
-                dom_xpath.setXPath(QString("/snap//widget[@id=\"%1\"]/attachment"));
+                dom_xpath.setXPath(QString("/snap-form//widget[@id=\"%1\"]/attachment").arg(id));
                 QDomXPath::node_vector_t result(dom_xpath.apply(xml_form));
                 if(result.size() > 0 && result[0].isElement())
                 {
@@ -1661,7 +1661,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
         {
             QString dup_label(duplicate_of);
             QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/snap-form//widget[@id=\"") + duplicate_of + "\"]/@id");
+            dom_xpath.setXPath(QString("/snap-form//widget[@id=\"%1\"]/@id").arg(duplicate_of));
             QDomXPath::node_vector_t result(dom_xpath.apply(widget));
             if(result.size() > 0 && result[0].isElement())
             {

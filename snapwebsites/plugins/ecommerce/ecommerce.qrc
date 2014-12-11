@@ -1,6 +1,6 @@
 <!--
-Snap Plugin - - snap shorturl plugin resources
-Copyright (C) 2013  Made to Order Software Corp.
+Snap Plugin - - ecommerce plugin resources
+Copyright (C) 2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,15 +18,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/plugins/feed">
+  <qresource prefix="/plugins/ecommerce">
     <file>content.xml</file>
   </qresource>
-  <qresource prefix="/xsl/layout">
-    <file>feed-parser.xsl</file>
+  <qresource prefix="/js/ecommerce">
+    <file>ecommerce.js</file>
   </qresource>
-  <qresource prefix="/xsl/feed">
-    <file>atom.xsl</file>
-    <file>rss.xsl</file>
+  <qresource prefix="/images/ecommerce">
+    <file>empty-shopping-cart.png</file>
+    <file>shopping-cart.png</file>
+  </qresource>
+  <qresource prefix="/css/ecommerce">
+    <file>ecommerce.css</file>
   </qresource>
 </RCC>
 <!--

@@ -1668,42 +1668,260 @@ void field_search::run()
 
         void cmd_save(QString const& child_name)
         {
+            struct parser
+            {
+                enum token_t
+                {
+                    TOKEN_EOF,
+                    TOKEN_OPEN_ATTR,
+                    TOKEN_CLOSE_ATTR,
+                    TOKEN_SLASH,
+                    TOKEN_EQUAL,
+                    TOKEN_IDENTIFIER
+                };
+
+                parser(QString const& child_name)
+                    : f_child_name(child_name)
+                    //, f_pos(0) -- auto-init
+                    , f_length(f_child_name.length())
+                {
+                }
+
+                int getc()
+                {
+                    if(f_pos >= f_length)
+                    {
+                        return EOF;
+                    }
+
+                    int c(f_child_name[f_pos].unicode());
+                    ++f_pos;
+                    return c;
+                }
+
+                token_t get_token(QString& value)
+                {
+                    value = "";
+                    int c(getc());
+                    if(c == EOF)
+                    {
+                        return TOKEN_EOF;
+                    }
+
+                    switch(c)
+                    {
+                    case '[':
+                        return TOKEN_OPEN_ATTR;
+
+                    case ']':
+                        return TOKEN_CLOSE_ATTR;
+
+                    case '/':
+                        return TOKEN_SLASH;
+
+                    case '=':
+                        return TOKEN_EQUAL;
+
+                    case '\'':
+                    case '"':
+                        // we got a string, read all up to the closing quote
+                        {
+                            int const quote(c);
+                            for(;;)
+                            {
+                                c = getc();
+                                if(c == EOF)
+                                {
+                                    throw content_exception_invalid_sequence(QString("invalid string definition, missing closing quote (%1).").arg(quote));
+                                }
+                                if(c == quote)
+                                {
+                                    return TOKEN_IDENTIFIER;
+                                }
+                                // that does not seem necessary
+                                // (i.e. use &quot; and &#27; for quotes in strings)
+                                //if(c == '\\')
+                                //{
+                                //    c = getc();
+                                //    if(c == EOF)
+                                //    {
+                                //        throw content_exception_invalid_sequence("invalid string definition, missing escaped character.");
+                                //    }
+                                //}
+                                value += c;
+                            }
+                        }
+                        break;
+
+                    default:
+                        for(;;)
+                        {
+                            value += c;
+                            c = getc();
+                            if(c == EOF)
+                            {
+                                return TOKEN_IDENTIFIER;
+                            }
+                            if(c == '\''
+                            || c == '"')
+                            {
+                                throw content_exception_invalid_sequence("invalid string definition appearing in the middle of nowhere.");
+                            }
+                            if(c == '['
+                            || c == ']'
+                            || c == '/'
+                            || c == '=')
+                            {
+                                //ungetc();
+                                --f_pos;
+                                return TOKEN_IDENTIFIER;
+                            }
+                            // that does not seem necessary
+                            //if(c == '\\')
+                            //{
+                            //    c = getc();
+                            //    if(c == EOF)
+                            //    {
+                            //        throw content_exception_invalid_sequence("invalid identifier definition, missing escaped character");
+                            //    }
+                            //}
+                        }
+                        break;
+
+                    }
+
+                    NOTREACHED();
+                }
+
+                QString const               f_child_name;
+                controlled_vars::zuint32_t  f_pos;
+                controlled_vars::muint32_t  f_length;
+            };
+
             if(!f_result.isEmpty() && !f_element.isNull())
             {
+                // supported syntax goes like this:
+                //
+                // path: segments
+                //     | segments '/'
+                //
+                // segments: child
+                //         | child attribute
+                //         | path '/' path
+                //
+                // child: IDENTIFIER
+                //
+                // attribute: '[' IDENFITIER = value ']'
+                //          | attribute attribute
+                //
+                // value: IDENTIFIER
+                //      | "'" ANY "'"
+                //      | '"' ANY '"'
+                //
+                // IDENTIFIER is any character except '[', ']', '=', '/',
+                // '"', and "'".
+                //
+                // ANY represents any character except the ending quote.
+                //
+                // Example:
+                //     desc[@type="filter"]/data
+                //
+                // Note that the '@' before the attribute name and the
+                // quotation of "filter" are optional. At times an
+                // attribute value includes slashes or square brackets.
+                // In that case you must use quotes:
+                //     formats[href="http://snapwebsites.org/"]/title
+                //
                 QDomDocument doc(f_element.ownerDocument());
-                QStringList children(child_name.split('/'));
+                parser p(child_name);
                 QDomElement parent(f_element);
-                while(children.size() != 1)
+                QDomElement child;
+                QString v;
+                parser::token_t t(p.get_token(v));
+                while(t != p.TOKEN_EOF)
                 {
-                    // TODO write a clean parser seeking in the string
-                    //      it would make it faster (i.e. no intermediate
-                    //      list of strings)
-                    QStringList child_attr(children[0].split('['));
-                    QDomElement child(doc.createElement(child_attr[0]));
-                    parent.appendChild(child);
-                    while(child_attr.size() > 1)
+                    // we must have an identifier before attributes or '/'
+                    //    <path>
+                    if(t != p.TOKEN_IDENTIFIER)
                     {
-                        // remove the ']' if present
-                        if(child_attr[1].right(1) != "]")
-                        {
-                            throw content_exception_invalid_sequence("invalid attribute definition, missing ']'");
-                        }
-                        child_attr[1].remove(child_attr[1].length() - 1, 1);
-                        QStringList attr_value(child_attr[1].split('='));
-                        if(attr_value.size() == 1)
-                        {
-                            attr_value += attr_value[0];
-                        }
-                        child.setAttribute(attr_value[0], attr_value[1]);
-                        child_attr.removeAt(1);
+                        throw content_exception_invalid_sequence(QString("syntax error in field name \"%1\", expected a path name got token %2 instead").arg(child_name).arg(static_cast<int>(t)));
                     }
-                    parent = child;
-                    children.removeAt(0);
+                    child = doc.createElement(v);
+                    parent.appendChild(child);
+
+                    // start an attribute?
+                    //    '['
+                    t = p.get_token(v);
+                    while(t == p.TOKEN_OPEN_ATTR)
+                    {
+                        // attribute name
+                        //    <name>
+                        QString attr_name;
+                        t = p.get_token(attr_name);
+                        if(t != p.TOKEN_IDENTIFIER)
+                        {
+                            throw content_exception_invalid_sequence("attribute name expected after a '['");
+                        }
+                        // allow the attribute name to start with @
+                        if(attr_name.length() > 0 && attr_name[0] == '@')
+                        {
+                            attr_name.remove(0, 1);
+                        }
+                        if(attr_name.isEmpty())
+                        {
+                            throw content_exception_invalid_sequence("the attribute must be given a valid name");
+                        }
+
+                        // got an attribute value?
+                        //    '='
+                        QString attr_value;
+                        t = p.get_token(v);
+                        if(t == p.TOKEN_EQUAL)
+                        {
+                            // we have a value, we are setting the attribute
+                            //     <value>
+                            t = p.get_token(attr_value);
+                            if(t != p.TOKEN_IDENTIFIER)
+                            {
+                                throw content_exception_invalid_sequence("attribute name expected after an '='");
+                            }
+                            // move forward for
+                            //     ']'
+                            t = p.get_token(v);
+                        }
+                        else
+                        {
+                            // this is an attribute such as:
+                            //    default="default"
+                            attr_value = attr_name;
+                        }
+                        child.setAttribute(attr_name, attr_value);
+
+                        // make sure we have a closing ']'
+                        //     ']'
+                        if(t != p.TOKEN_CLOSE_ATTR)
+                        {
+                            throw content_exception_invalid_sequence(QString("attribute must end with ']' in %1, got token %2").arg(child_name).arg(static_cast<int>(t)));
+                        }
+
+                        t = p.get_token(v);
+                    }
+
+                    if(t != p.TOKEN_EOF)
+                    {
+                        if(t != p.TOKEN_SLASH)
+                        {
+                            throw content_exception_invalid_sequence(QString("expect a slash '/' instead of %1 to seperate each child name in \"%2\".").arg(static_cast<int>(t)).arg(child_name));
+                        }
+                        t = p.get_token(v);
+                        parent = child;
+                    }
                 }
-                QDomElement last_child(doc.createElement(children[0]));
-                parent.appendChild(last_child);
-                QString const string(f_result[0].stringValue());
-                snap_dom::insert_html_string_to_xml_doc(last_child, string);
+                if(child.isNull())
+                {
+                    throw content_exception_invalid_sequence("no name defined in the field name string, at least one is required for the save command");
+                }
+                snap_dom::insert_html_string_to_xml_doc(child, f_result[0].stringValue());
                 cmd_reset(true);
             }
         }

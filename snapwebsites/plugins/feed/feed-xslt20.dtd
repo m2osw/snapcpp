@@ -118,7 +118,12 @@ DTD of the XSLT 2.0.
 <!-- for the feed... -->
 <!ELEMENT rss ANY>
 <!ATTLIST rss version CDATA #REQUIRED
+              ns CDATA #IMPLIED
               xmlns:atom CDATA #IMPLIED>
+
+<!ELEMENT snap-info ANY>
+<!ATTLIST snap-info extension CDATA #REQUIRED
+                    mimetype CDATA #REQUIRED>
 
 <!ELEMENT channel ANY>
 

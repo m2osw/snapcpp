@@ -12,11 +12,12 @@ OPTIONS="--warning_level VERBOSE"
        # expr is not defined in the jquery definitions
        #plugins/output/jquery-extensions.js
 
-FILES="plugins/editor/editor.js
+FILES="plugins/ecommerce/ecommerce.js
+       plugins/editor/editor.js
        plugins/form/form.js
        plugins/list/list/list.js
        plugins/listener/listener.js
-       plugins/locale/locale-timezone.js
+       plugins/locale_widgets/locale-timezone.js
        plugins/output/output.js
        plugins/output/popup.js
        plugins/output/rotate-animation.js

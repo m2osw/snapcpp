@@ -4197,7 +4197,14 @@ void inst_equal()
     case atomic_value_t::ATOMIC_TYPE_NODE_SET | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
     case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_NODE_SET << 16):
     case atomic_value_t::ATOMIC_TYPE_NODE_SET | (atomic_value_t::ATOMIC_TYPE_NODE_SET << 16):
-        result.atomic_value_t::setValue(lhs.getStringValue(true) == rhs.getStringValue(true));
+        try
+        {
+            result.atomic_value_t::setValue(lhs.getStringValue(true) == rhs.getStringValue(true));
+        }
+        catch(QDomXPathException_NotImplemented const&)
+        {
+            result.atomic_value_t::setValue(false);
+        }
         break;
 
     case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
@@ -4818,8 +4825,18 @@ void inst_predicate()
         result = predicate_result.getIntegerValue(true) == f_functions.back().f_contexts.back().f_position + 1;
         break;
 
+    case atomic_value_t::ATOMIC_TYPE_NODE_SET:
+        {
+            // for a node set, it is considered true only if not empty
+            QDomXPath::node_vector_t r(predicate_result.getNodeSetValue());
+            result = r.size() != 0;
+        }
+        break;
+
     default:
-        throw QDomXPathException_WrongType("the 'predicate' operator cannot be used with anything else than a node-set");
+        // anything else always returns false
+        //throw QDomXPathException_WrongType(QString("the 'predicate' operator cannot be used with anything else than a node-set (got node of type %1)").arg(static_cast<int>(predicate_result.getType())).toStdString());
+        break;
 
     }
 
@@ -4987,7 +5004,7 @@ void inst_axis()
 
     if(local_part_or_node_type.getType() == atomic_value_t::ATOMIC_TYPE_INTEGER)
     {
-        // we've got a node type, thus if not empty the
+        // we have a node type, thus if not empty the
         // prefix_or_processing_language variable is the
         // language name to match
         if(axis == AXIS_ATTRIBUTE || axis == AXIS_NAMESPACE)
@@ -5011,11 +5028,11 @@ void inst_axis()
 
         if(axis == AXIS_ATTRIBUTE)
         {
-            // This is like an XPath 2.0 feature
+            // This is an XPath 2.0 feature
             node_type = NODE_TYPE_ATTRIBUTE;
         }
     }
-    const auto any_prefix(prefix == "*");
+    const bool any_prefix(prefix == "*");
 
     // NODE_TYPE_COMMENT
     // NODE_TYPE_NODE
@@ -5143,7 +5160,8 @@ axis_attribute:
                 // no need to go through the whole list slowly if
                 // we can just query the map at once
                 QDomNode attr(context_node.attributes().namedItem(local_part));
-                if(any_prefix || prefix == attr.prefix())
+                if(!attr.isNull()
+                && (any_prefix || prefix == attr.prefix()))
                 {
                     result.push_back(attr);
                 }
@@ -6375,7 +6393,7 @@ void append_push_integer(const int64_t integer)
         add_to_program(INST_PUSH_NEGATIVE_BYTE);
         add_to_program(static_cast<QDomXPath::instruction_t>(integer));
     }
-    else if(integer >= 256 && integer < 65536)
+    else if(integer >= 0 && integer < 65536)
     {
         add_to_program(INST_PUSH_SHORT);
         add_to_program(static_cast<QDomXPath::instruction_t>(integer >> 8));
@@ -6387,7 +6405,7 @@ void append_push_integer(const int64_t integer)
         add_to_program(static_cast<QDomXPath::instruction_t>(integer >> 8));
         add_to_program(static_cast<QDomXPath::instruction_t>(integer));
     }
-    else if(integer >= 65536 && integer < 0x100000000LL)
+    else if(integer >= 0 && integer < 0x100000000LL)
     {
         add_to_program(INST_PUSH_LONG);
         add_to_program(static_cast<QDomXPath::instruction_t>(integer >> 24));
@@ -7210,8 +7228,8 @@ void location_path()
         first_round = false;
         token_t save_token(f_last_token);
         token_t axis_token;
-        axis_token.f_token = token_t::TOK_AXIS_NAME_CHILD;
-        axis_token.f_string = "child";
+        axis_token.f_token = double_slash ? token_t::TOK_AXIS_NAME_DESCENDANT : token_t::TOK_AXIS_NAME_CHILD;
+        axis_token.f_string = double_slash ? "descendant" : "child";
         token_t prefix_token;
         prefix_token.f_token = token_t::TOK_PREFIX;
         prefix_token.f_string = "*";
@@ -7238,6 +7256,7 @@ void location_path()
         case token_t::TOK_ASTERISK:
             // '*'  -- a name test by itself
             // this is actually the default!
+            get_token();
             goto axis_apply;
 
         case token_t::TOK_AT:

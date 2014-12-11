@@ -185,7 +185,8 @@ snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.selectCities_ = function(e
         //continent = continent_widget.getWidget(),
         continent_name = continent_widget.getValue(),
         city_widget = editor_form.getWidgetByName(name + "_city"),
-        city = city_widget.getWidget();
+        city = city_widget.getWidget(),
+        selected;
 
     // hide all, then show corresponding to the current continent selection
     if(continent_name)
@@ -196,7 +197,7 @@ snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.selectCities_ = function(e
         selected = city.find("li.selected");
         if(!selected.exists() || !selected.hasClass(continent_name))
         {
-            city_widget.setValue(city.find("li." + continent_name).first().html(), false);
+            city_widget.setValue( /** @type {!Object} */ (city.find("li." + continent_name).first().html()), false);
         }
         // else -- user did not change continent name
     }

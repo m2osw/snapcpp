@@ -17,12 +17,13 @@ cat >$TMP/test.xml <<EOF
       </robotstxt>
       <sendmail>
         <param name="from">no-reply@m2osw.com</param>
-	<param name="user-first-name">Alexis</param>
-	<param name="user-last-name">Wilke</param>
-	<param name="to">alexis@mail.example.com</param>
+        <param name="user-first-name">Alexis</param>
+        <param name="user-last-name">Wilke</param>
+        <param name="to">alexis@mail.example.com</param>
+        <hidden name="not-a-param">ignore</hidden>
       </sendmail>
     </metadata>
-    <statistics>
+    <statistics name="not-a-param">
       <value class="sonic">0.3</value>
       <value class="lumen">0.21</value>
       <value class="sonic">1.01</value>
@@ -37,10 +38,12 @@ cat >$TMP/test.xml <<EOF
       <value class="electromagnetic">2.01</value>
       <value class="sonic">0.62</value>
     </statistics>
+    <hidden name="not-a-param">ignore</hidden>
   </header>
   <page>
     <date>
       <created format="K&quot;7">2013-11-27</created>
+      <hidden name="not-a-date">ignore</hidden>
     </date>
   </page>
 </snap>
@@ -62,8 +65,12 @@ echo "*** Get descendants of sendmail"
 cxpath -c -p '/snap/header/metadata/sendmail/descendant::*' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
-echo "*** Get sendmail param named user-first-name"
+echo "*** Get sendmail param named user-first-name or user-last-name (two full paths)"
 cxpath -c -p '/snap/header/metadata/sendmail/param[@name = "user-first-name"]|/snap/header/metadata/sendmail/param[@name = "user-last-name"]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get sendmail param named user-first-name or user-last-name ('or' operator)"
+cxpath -c -p '/snap/header/metadata/sendmail/param[@name = "user-first-name" or @name = "user-last-name"]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
 echo "*** Get following siblings of the param named user-first-name"
@@ -134,23 +141,23 @@ echo "*** List the lumen entries"
 cxpath -c -p '/snap/header/statistics/value[@class="lumen"]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
-echo "*** Get third param using sum()"
+echo "*** Get third param using sum() of lumen class"
 cxpath -c -p '/snap/header/metadata/sendmail/param[sum(/snap/header/statistics/value[@class="lumen"]) * 4]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
-echo "*** Get third param using sum()"
+echo "*** Get third param using sum() and ceiling() of sonic class"
 cxpath -c -p '/snap/header/metadata/sendmail/param[ceiling(sum(/snap/header/statistics/value[@class="sonic"]))]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
-echo "*** Get third param using avg()"
+echo "*** Get third param using avg() of electromagnetic class"
 cxpath -c -p '/snap/header/metadata/sendmail/param[avg(/snap/header/statistics/value[@class="electromagnetic"])]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
-echo "*** Get first param using min()"
+echo "*** Get first param using min() and ceiling() of electromagnetic class"
 cxpath -c -p '/snap/header/metadata/sendmail/param[ceiling(min(/snap/header/statistics/value[@class="electromagnetic"]))]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
-echo "*** Get second param using max()"
+echo "*** Get second param using max() of electromagnetic class"
 cxpath -c -p '/snap/header/metadata/sendmail/param[max(/snap/header/statistics/value[@class="electromagnetic"]) idiv 3]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
@@ -166,3 +173,29 @@ echo "*** Get a node testing \" inside a string"
 cxpath -c -p '/snap/page/date/created[@format = "K""7"]' -o $TMP/test.xpath
 cxpath -r -x $TMP/test.xpath $TMP/test.xml
 
+echo "*** Get all the hidden nodes"
+cxpath -c -p '//hidden' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get the hidden nodes marked as not-a-param"
+cxpath -c -p '//hidden[@name = "not-a-param"]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get any node marked as not-a-param"
+cxpath -c -p '//*[@name = "not-a-param"]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Get any node with a non empty name"
+cxpath -c -p '//*[@name]' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+echo "*** Find a tag named sendmail and return its children named hidden"
+cxpath -c -p '//sendmail/hidden' -o $TMP/test.xpath
+cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+# This still doesn't work... it should though
+#echo "*** Get any node that include a noindex child"
+#cxpath -c -p '//robotstxt[./noindex]' -o $TMP/test.xpath
+#cxpath -r -x $TMP/test.xpath $TMP/test.xml
+
+# vim: ts=2 sw=2 et

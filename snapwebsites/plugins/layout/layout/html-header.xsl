@@ -89,10 +89,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<!-- handle one alternate format -->
   <xsl:template name="alternate-format">
-    <xsl:param name="format"/>
+    <xsl:param name="href"/>
     <xsl:param name="type"/>
     <xsl:param name="title"/>
-    <link rel="alternate" type="{$type}" title="{$title}" href="{concat($page_uri, '.', $format)}"/>
+    <link rel="alternate" type="{$type}" title="{$title}" href="{$href}"/>
   </xsl:template>
 
 
@@ -469,9 +469,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		</xsl:if>
 
 		<!-- formats -->
-		<xsl:for-each select="page/body/formats/f">
+		<xsl:for-each select="page/body/formats">
 			<xsl:call-template name="alternate-format">
-				<xsl:with-param name="format" select="@format"/>
+				<xsl:with-param name="href" select="@href"/>
 				<xsl:with-param name="type" select="@type"/>
 				<xsl:with-param name="title" select="."/>
 			</xsl:call-template>

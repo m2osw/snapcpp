@@ -17,6 +17,7 @@
 
 #include "feed.h"
 
+#include "../attachment/attachment.h"
 #include "../content/content.h"
 #include "../list/list.h"
 #include "../locale/snap_locale.h"
@@ -30,6 +31,7 @@
 #include "qxmlmessagehandler.h"
 
 #include <QFile>
+#include <QTextStream>
 #include <QXmlQuery>
 
 #include "poison.h"
@@ -50,17 +52,35 @@ SNAP_PLUGIN_START(feed, 1, 0)
 char const *get_name(name_t name)
 {
     switch(name) {
+    case SNAP_NAME_FEED_ADMIN_SETTINGS:
+        return "admin/settings/feed";
+
     case SNAP_NAME_FEED_AGE:
         return "feed::age";
+
+    case SNAP_NAME_FEED_ATTACHMENT_TYPE:
+        return "types/taxonomy/system/feed/attachment";
 
     case SNAP_NAME_FEED_DESCRIPTION:
         return "feed::description";
 
+    case SNAP_NAME_FEED_EXTENSION:
+        return "feed::extension";
+
+    case SNAP_NAME_FEED_MIMETYPE:
+        return "feed::mimetype";
+
     case SNAP_NAME_FEED_PAGE_LAYOUT:
         return "feed::page_layout";
 
+    case SNAP_NAME_FEED_TITLE:
+        return "feed::title";
+
     case SNAP_NAME_FEED_TTL:
         return "feed::ttl";
+
+    case SNAP_NAME_FEED_TYPE:
+        return "feed::type";
 
     default:
         // invalid index
@@ -102,6 +122,7 @@ void feed::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN0(feed, "server", server, backend_process);
+    SNAP_LISTEN(feed, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
 }
 
 
@@ -153,7 +174,7 @@ int64_t feed::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 7, 22, 19, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 12, 10, 22, 45, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -173,6 +194,57 @@ void feed::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Generate links in the header.
+ *
+ * This function generates one alternate link per feed made available.
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The path to a template if cpath does not exist.
+ */
+void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+{
+    static_cast<void>(page);
+    static_cast<void>(ctemplate);
+
+    // avoid those links on administrative pages, totally useless!
+    if(ipath.get_cpath().startsWith("admin/"))
+    {
+        return;
+    }
+
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+
+    content::path_info_t attachment_type_ipath;
+    attachment_type_ipath.set_path(get_name(SNAP_NAME_FEED_ATTACHMENT_TYPE));
+    links::link_info feed_info(get_name(SNAP_NAME_FEED_TYPE), false, attachment_type_ipath.get_key(), attachment_type_ipath.get_branch());
+    QSharedPointer<links::link_context> feed_ctxt(links::links::instance()->new_link_context(feed_info));
+    links::link_info feed_child_info;
+    while(feed_ctxt->next_link(feed_child_info))
+    {
+        content::path_info_t attachment_ipath;
+        attachment_ipath.set_path(feed_child_info.key());
+
+        QtCassandra::QCassandraRow::pointer_t row(revision_table->row(attachment_ipath.get_revision_key()));
+        QString const mimetype(row->cell(get_name(SNAP_NAME_FEED_MIMETYPE))->value().stringValue());
+
+        FIELD_SEARCH
+            (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+            (content::field_search::COMMAND_ELEMENT, body)
+            (content::field_search::COMMAND_PATH_INFO_REVISION, attachment_ipath)
+
+            (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FEED_TITLE))
+            (content::field_search::COMMAND_SELF)
+            (content::field_search::COMMAND_SAVE, QString("formats[href=\"%1\"][type=\"%2\"]").arg(attachment_ipath.get_key()).arg(mimetype))
+
+            // generate
+            ;
+    }
 }
 
 
@@ -214,8 +286,10 @@ void feed::generate_feeds()
     // the children of this location are the XSLT 2.0 files to convert the
     // data to an actual feed file
     content::path_info_t admin_feed_ipath;
-    admin_feed_ipath.set_path("admin/feed");
+    admin_feed_ipath.set_path(get_name(SNAP_NAME_FEED_ADMIN_SETTINGS));
     QVector<QString> feed_formats;
+
+    int64_t const start_date(f_snap->get_start_date());
 
     // first loop through the list of feeds defined under /feed
     content::path_info_t ipath;
@@ -344,6 +418,7 @@ void feed::generate_feeds()
                 snap_dom::insert_html_string_to_xml_doc(data, feed_description);
             }
 
+            // /snap/head/metadata/desc[@type="feed::uri"]/data
             {
                 QDomElement desc(result.createElement("desc"));
                 metadata_tag.appendChild(desc);
@@ -354,9 +429,9 @@ void feed::generate_feeds()
                 data.appendChild(date_text);
             }
 
+            // /snap/head/metadata/desc[@type="feed::name"]/data
+            QString name(child_ipath.get_key());
             {
-                //QString const feed_description(revision_row->cell(get_name(SNAP_NAME_FEED_))->value().stringValue());
-                QString name(child_ipath.get_key());
                 int pos(name.lastIndexOf('/'));
                 if(pos > 0)
                 {
@@ -455,6 +530,7 @@ void feed::generate_feeds()
 
             // now generate the actual output (RSS, Atom, etc.)
             // from the data we just gathered
+            bool success(true);
             int const max_feed(feed_formats.size());
             for(int i(0); i < max_feed; ++i)
             {
@@ -481,23 +557,152 @@ void feed::generate_feeds()
 
                 QDomDocument feed_result;
                 feed_result.setContent(feed_data);
+
                 QDomXPath feed_dom_xpath;
-                feed_dom_xpath.setXPath("/rss/channel/description");
-                QDomXPath::node_vector_t feed_cdata_tags(feed_dom_xpath.apply(feed_result));
-                int const max_feed_cdata(feed_cdata_tags.size());
-std::cout << "--- size: " << max_feed_cdata << "...\n";
-                for(int j(0); j < max_feed_cdata; ++j)
                 {
-                    // we found the widget, display its label instead
-std::cout << "--- Node type = " << static_cast<int>(feed_cdata_tags[j].nodeType()) << "\n";
-                    QDomElement e(feed_cdata_tags[j].toElement());
-                    e.removeAttribute("feed-cdata");
-                    e.setAttribute("handled", "true");
-std::cout << "--- TAG: " << e.tagName() << "...\n";
+                    feed_dom_xpath.setXPath("//*[@ns]");
+                    QDomXPath::node_vector_t ns_tags(feed_dom_xpath.apply(feed_result));
+                    int const max_ns(ns_tags.size());
+                    for(int j(0); j < max_ns; ++j)
+                    {
+                        // we found the widget, display its label instead
+                        QDomElement e(ns_tags[j].toElement());
+                        QString const ns(e.attribute("ns"));
+                        QStringList const ns_name_value(ns.split("="));
+                        e.removeAttribute("ns");
+                        if(ns_name_value.size() == 2)
+                        {
+                            e.setAttribute(ns_name_value[0], ns_name_value[1]);
+                        }
+                        else
+                        {
+                            SNAP_LOG_ERROR("invalid namespace (")(ns)(") specification in feed");
+                        }
+                    }
+                }
+
+                {
+                    feed_dom_xpath.setXPath("/feed/entry/content");
+                    QDomXPath::node_vector_t content_tags(feed_dom_xpath.apply(feed_result));
+                    int const max_content(content_tags.size());
+                    for(int j(0); j < max_content; ++j)
+                    {
+                        // we found the widget, display its label instead
+                        QDomElement e(content_tags[j].toElement());
+                        QString const base(e.attribute("base"));
+                        e.removeAttribute("base");
+                        if(!base.isEmpty())
+                        {
+                            // Somehow the NS does not want to work...
+                            //e.setAttributeNS("http://www.w3.org/2000/xml", "base", base);
+                            e.setAttribute("xml:base", base);
+                        }
+                    }
+                }
+
+                {
+                    feed_dom_xpath.setXPath("//*[@feed-cdata = 'yes']");
+                    QDomXPath::node_vector_t feed_cdata_tags(feed_dom_xpath.apply(feed_result));
+                    int const max_feed_cdata(feed_cdata_tags.size());
+                    for(int j(0); j < max_feed_cdata; ++j)
+                    {
+                        // we found the widget, display its label instead
+                        QDomElement e(feed_cdata_tags[j].toElement());
+                        e.removeAttribute("feed-cdata");
+                        // print the children as text to a buffer
+                        QString buffer;
+                        QTextStream stream(&buffer);
+                        // write the children to the buffer and then remove them
+                        while(e.hasChildNodes())
+                        {
+                            e.firstChild().save(stream, 0);
+                            e.removeChild(e.firstChild());
+                        }
+                        // reinject the children as a CDATA section if not empty
+                        if(!buffer.isEmpty())
+                        {
+                            QDomCDATASection cdata_section(e.ownerDocument().createCDATASection(buffer));
+                            e.appendChild(cdata_section);
+                        }
+                    }
+                }
+
+                // also get the snap complementary information
+                QString title("No Title"); // TODO: translation
+                QString extension;
+                QString mimetype;
+                {
+                    feed_dom_xpath.setXPath("//snap-info");
+                    QDomXPath::node_vector_t snap_info_tags(feed_dom_xpath.apply(feed_result));
+                    if(snap_info_tags.size() != 1)
+                    {
+                        SNAP_LOG_ERROR("any feed XSLT 2.0 file must include a snap-info tag with various details about the output file.");
+                        success = false;
+                    }
+                    else
+                    {
+                        // get the tag and remove it from the tree
+                        // (we do not want it in the output)
+                        QDomElement e(snap_info_tags[0].toElement());
+                        e.parentNode().removeChild(e);
+
+                        extension = e.attribute("extension");
+                        mimetype = e.attribute("mimetype");
+
+                        QDomElement title_tag(e.firstChildElement("title"));
+                        if(!title_tag.isNull())
+                        {
+                            title = title_tag.text();
+                        }
+                    }
                 }
 
 //std::cout << "***\n*** SRC = [" << doc_str << "]\n";
-std::cout << "*** DOC = [" << feed_result.toString() << "]\n***\n";
+//std::cout << "*** DOC = [" << feed_result.toString() << "]\n***\n";
+
+                if(success)
+                {
+                    snap::content::attachment_file attachment(f_snap);
+
+                    attachment.set_multiple(false);
+                    attachment.set_parent_cpath(child_ipath.get_cpath());
+                    attachment.set_field_name(QString("feed::%1").arg(extension));
+                    attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
+                    attachment.set_attachment_type("attachment/public");
+                    attachment.set_creation_time(start_date);
+                    attachment.set_update_time(start_date);
+                    //attachment.set_dependencies(...);
+                    attachment.set_file_name(QString("%1.%2").arg(name).arg(extension));
+                    attachment.set_file_filename(QString("%1.%2").arg(name).arg(extension));
+                    attachment.set_file_creation_time(start_date);
+                    attachment.set_file_modification_time(start_date);
+                    attachment.set_file_index(1);
+                    attachment.set_file_data(feed_result.toString().toUtf8());
+                    attachment.set_file_mime_type(mimetype);
+
+                    // TODO: we probably want to test the return value
+                    content_plugin->create_attachment(attachment, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, "");
+
+                    // mark the attachment (Feed data) as such
+                    {
+                        content::path_info_t attachment_ipath;
+                        attachment_ipath.set_path(attachment.get_attachment_cpath());
+
+                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(SNAP_NAME_FEED_TITLE))->setValue(title);
+                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(SNAP_NAME_FEED_EXTENSION))->setValue(extension);
+                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(SNAP_NAME_FEED_MIMETYPE))->setValue(mimetype);
+
+                        content::path_info_t type_ipath;
+                        type_ipath.set_path(get_name(SNAP_NAME_FEED_ATTACHMENT_TYPE));
+
+                        QString const link_name(get_name(SNAP_NAME_FEED_TYPE));
+                        bool const source_unique(true);
+                        bool const destination_unique(false);
+                        links::link_info source(link_name, source_unique, attachment_ipath.get_key(), attachment_ipath.get_branch());
+                        links::link_info destination(link_name, destination_unique, type_ipath.get_key(), type_ipath.get_branch());
+                        links::links::instance()->create_link(source, destination);
+                    }
+                }
             }
         }
     }
@@ -518,6 +723,12 @@ std::cout << "*** DOC = [" << feed_result.toString() << "]\n***\n";
 // http://web.resource.org/rss/1.0/
 // http://www.rssboard.org/rss-0-9-1-netscape
 // http://www.rssboard.org/rss-0-9-0
+//
+// Atom Documentation:
+// https://tools.ietf.org/html/rfc4287#section-4.2.13
+//
+// RSS/Atom Verification by W3C
+// http://validator.w3.org/feed/
 // 
 
 SNAP_PLUGIN_END()

@@ -1,8 +1,8 @@
 /** @preserve
- * Name: editor
- * Version: 0.0.3.262
+ * Name: ecommerce
+ * Version: 0.0.1
  * Browsers: all
- * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
+ * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
@@ -20,11 +20,8 @@
 // @js plugins/output/popup.js
 // @js plugins/server_access/server-access.js
 // @js plugins/listener/listener.js
+// @js plugins/editor/editor.js
 // ==/ClosureCompiler==
-//
-// This is not required and it may not exist at the time you run the
-// JS compiler against this file (it gets generated)
-// --js plugins/mimetype/mimetype-basics.js
 //
 
 /*
@@ -36,848 +33,159 @@
 
 
 
-// This editor is based on the execCommand() function available in the
-// JavaScript environment of browsers.
-//
-// This version makes use of jQuery 1.11+ to access objects. It probably is
-// compatible with a little bit older versions of jQuery.
-//
-// Source: https://developer.mozilla.org/en-US/docs/Rich-Text_Editing_in_Mozilla
-// Source: http://msdn.microsoft.com/en-us/library/ie/ms536419%28v=vs.85%29.aspx
-
-// Other sources for the different parts:
-// Source: http://stackoverflow.com/questions/10041433/how-to-detect-when-certain-div-is-out-of-view
-// Source: http://stackoverflow.com/questions/5605401/insert-link-in-contenteditable-element
-// Source: http://stackoverflow.com/questions/6867519/javascript-regex-to-count-whitespace-characters
-
-// FileReader replacement under IE9:
-// Source: https://github.com/MrSwitch/dropfile
-
-// Code verification with Google Closure Compiler:
-// documentation: http://code.google.com/closure/compiler/
-// Source: https://github.com/google/closure-compiler
-// Source: https://developers.google.com/closure/compiler/docs/error-ref
-// Source: http://www.jslint.com/
-//
-// Command line one can use to verify the editor (jquery-for-closure.js
-// may not yet be complete):
-//
-//   java -jar .../google-js-closure-compiler/compiler.jar \
-//        --warning_level VERBOSE \
-//        --js_output_file /dev/null \
-//        tests/jquery-for-closure.js \
-//        plugins/output/output.js \
-//        plugins/editor/editor.js
-//
-// WARNING: output of that command is garbage as far as we're concerned
-//          only the warnings are of interest.
-//
-// To test the compression of the script by the Google closure compiler
-// (i.e. generate the .min. version) use the following parameters:
-//
-//   java -jar .../google-js-closure-compiler/compiler.jar \
-//        --js_output_file editor.min.js
-//        plugins/editor/editor.js
-//
-// Remember that the bare output of the closure compiler is not compatible
-// with Snap!
-//
-
 /** \file
- * \brief The inline Editor of Snap!
+ * \brief The Snap! Instant Cart organization.
  *
- * This file defines a set of editor features using advance JavaScript
- * classes. The resulting environment looks like this:
+ * This file defines a set of e-Commerce features using advance JavaScript
+ * classes.
  *
- * \code
- * +-------------------+              +------------------+
- * |                   |              |                  |
- * |  EditorSelection  |              | EditorLinkDialog |
- * |  (all static)     |<----+        |                  |<---+
- * |                   |     |        |                  |    |
- * +-------------------+     |        +------------------+    |
- *                           |              ^                 |
- *                           | Reference    |                 |
- *                           +-----------+  | Reference       |
- *                                       |  |                 |
- * +-------------------+              +--+--+------------+    |
- * |                   |              |                  |    |
- * |   EditorBase      |  Reference   |   EditorToolbar  |    |
- * |                   |<----+--------+                  |<---+-------------------+
- * |                   |     |        |                  |                        |
- * +------------+----+-+     |        +------------------+                        |
- *   ^          |    |       |                                                    |
- *   |_Inherit  |    |       +-----------------+                                  |
- *   |          |    |                         |                                  |
- *   | Register_|    | Reference               |                                  |
- *   |    (1,n) |    |                         |                                  |
- *   |          |    v                         |                                  |
- *   |          |  +-----------------------+   |                                  |
- *   |          |  |                       |   |                                  |
- *   |          |  | EditorWidgetTypeBase  +-o | o----+                           |
- *   |          |  |                       |   |      |                           |
- *   |          |  |                       |   |      | Inherit                   |
- *   |          |  +-----------------------+   |      v                           |
- *   |          |         ^                    |   +-----------------------+      |
- *   |          |         | Inherit            |   |                       |      |
- *   |          v         |                    |   | ServerAccessCallbacks |      |
- *   |     +--------------------+              |   |                       |      |
- *   |     |                    |  Inherit     |   |                       |      |
- *   |     |  EditorWidgetType  |<--+          |   +-----------------------+      |
- *   |     |                    |   |          ^          ^                       |
- *   |     |                    |   |          |          | Inherit               |
- *   |     +--------------------+   |          |          |                       |
- *   |            ^                 |          |   +------+-----------+           |
- *   |            | Reference       |          |   |                  |           |
- *   |            |                 |          +---|  EditorFormBase  |           |
- *   |            |   +-------------+------+   |   |                  |           |
- *   |            |   |                    |   |   |                  |           ^
- *   |            |   | EditorWidgetType...|   |   +------------------+           |
- *   |            |   | (i.e. LineEdit,    |   |     ^            ^               |
- *   |            |   | Button, Checkmark) |   |     | Inherit    | Reference     |
- *   |            |   +--------------------+   |     |            |               |
- *   |            |                            |     |     +------+-----------+   |
- *   |     +------+-------------+              |     |     |                  |   |
- *   |     |                    +--------------+     |     | EditorSaveDialog |   |
- *   |     |    EditorWidget    |                    |     |                  |   |
- *   |     |                    | Create (1,n)       |     |                  |   |
- *   |     |                    |<----------+        |     +------------------+   |
- *   |     +--------------------+           |        |           ^                |
- *   |                                      |        |           |                |
- * +-+-----------------+              +-----+--------+---+       |                |
- * |                   |              |                  +-------+                |
- * |   Editor          |              |   EditorForm     | Create (1,1)           |
- * |                   | Create (1,n) |                  |                        |
- * |                   +------------->|                  |<---------------+       |
- * +-----------------+-+              +--------+------+--+     Reference  |       |
- *       ^           |                         |      |                   |       |
- *       |           |  Create (1,1)           |      | Create (1,1)      |       |
- *       |           |                         |      v                   |       |
- *       |           |                         |   +------------------+   |       |
- *       |           |                         |   |                  |   |       |
- *       |           |                         |   |   ServerAccess   +---+       |
- *       |           |                         |   |                  |           |
- *       |           |                         |   |                  |           |
- *       |           |                         |   +------------------+           |
- *       |           |                         |                                  |
- *       |           +-------------------------+----------------->----------------+
- *       |
- *       | Create (1,1)
- *  +----+-------------------+  Create (1,n)    +------------------------+
- *  |                        +----------------->|                        |
- *  |   jQuery()             |                  | EditorWidgetType...    |
- *  |   Initialization       |                  |                        |
- *  |                        |                  |                        |
- *  +------------------------+                  +------------------------+
- * \endcode
+ * This includes the Cart (the main object). You cannot create more than
+ * one Cart. The Cart receives signals to add products to itself. These
+ * products generally are referencing the ProductTypeBasic type. Other
+ * types can be added. For example we are planning in offering a
+ * ProductTypeKit which allows the e-Commerce administrator to create
+ * bundles of products to be sold as one unit. The details of these
+ * bundles should be shown in the cart and the specialized product type
+ * is used for that purpose. It will likely be derived from the basic
+ * product type.
  *
- * Note that the reference of the Toolbar from the EditorForm works
- * through the getToolbar() function of the EditorBase since the
- * toolbar object is not otherwise directly accessible. Most such
- * references work that way (i.e. by calling a function instead of
- * directly using a variable member which may still be null).
- *
- * The widget types are better defined in the following chart:
+ * The resulting environment looks like this:
  *
  * \code
- *  +-----------------------+
- *  |                       |
- *  | ServerAccessCallbacks |
- *  | (cannot instantiate)  |
- *  +-----------------------+
- *      ^
- *      | Inherit
- *      |
- *  +------------------------+
+ *  +-----------------------+       +--------------------------+
+ *  |                       |       |                          |
+ *  | ServerAccessCallbacks |       | eCommerceProductTypeBase |
+ *  | (cannot instantiate)  |  +--->| (cannot instantiate)     |
+ *  +-----------------------+  |    +--------------------------+
+ *       ^                     |          ^
+ *       | Inherit   Reference |          | Inherit
+ *       |                     |          |
+ *  +----+--------------+      |    +-----+-------------------+
+ *  |                   +------+    |                         |
+ *  | eCommerceCart     +---------->| eCommerceProductType... |<------------+
+ *  |                   | Register  |                         |             |
+ *  +-----+-----------+-+ (1,n)     +-------------------------+             |
+ *    ^   |           |                               ^                     |
+ *    |   |           | Create (1,n)                  | Reference (1,1)     |
+ *    |   |           V                               |                     |
+ *    |   |      +-------------------+                |                     |
+ *    |   |      |                   +----------------+                     |
+ *    |   |      | eCommerceProduct  |                                      |
+ *    |   |      |                   |                                      |
+ *    |   |      +-------------------+                                      |
+ *    |   |                                                                 |
+ *    |   | Create (1,1)                                                    |
+ *    |   |      +-------------------+                                      |
+ *    |   +----->|                   |--... (widgets, etc.)                 |
+ *    |          | EditorForm        |                                      |
+ *    |          |                   |                                      |
+ *    |          +-------------------+                                      |
+ *    |                                                                     |
+ *    | Create (1,1)                                                        |
+ *  +-+----------------------+  Create (1,n)                                |
+ *  |                        +----------------------------------------------+
+ *  |   jQuery()             |
+ *  |   Initialization       |
  *  |                        |
- *  |  EditorWidgetTypeBase  |
- *  |  (cannot instantiate)  |
  *  +------------------------+
- *      ^
- *      | Inherit
- *      |
- *  +---+--------------------+
- *  |                        |  Inherit
- *  |  EditorWidgetType      |<---------------------------------------------+
- *  |  (cannot instantiate)  |                                              |
- *  +------------------------+                                              |
- *      ^                                                                   |
- *      | Inherit                                                           |
- *      |                                                                   |
- *  +---+------------------------------+    +---------------------------+   |
- *  |                                  |    |                           +---+
- *  | EditorWidgetTypeContentEditable  |    | EditorWidgetTypeCheckmark |   |
- *  | (cannot instantiate)             |    |                           |   |
- *  +----------------------------------+    +---------------------------+   |
- *      ^                                                                   |
- *      | Inherit                                                           |
- *      |                                                                   |
- *  +---+------------------------------+    +---------------------------+   |
- *  |                                  |    |                           +---+
- *  | EditorWidgetTypeTextEdit         |    | EditorWidgetTypeRadio     |   |
- *  |                                  |    |                           |   |
- *  +----------------------------------+    +---------------------------+   |
- *      ^                                                                   |
- *      | Inherit                                                           |
- *      |                                                                   |
- *  +---+------------------------------+    +---------------------------+   |
- *  |                                  |    |                           +---+
- *  | EditorWidgetTypeLineEdit         |    | EditorWidgetTypeImageBox  |   |
- *  |                                  |    |                           |   |
- *  +----------------------------------+    +---------------------------+   |
- *      ^                                      ^                            |
- *      | Inherit                              | Inherit                    |
- *      |                                      |                            |
- *  +---+------------------------------+    +---------------------------+   |
- *  |                                  |    |                           |   |
- *  | EditorWidgetTypeDropdown         |    | EditorWidgetTypeDropped-  |   |
- *  |                                  |    | FileWithPreview           |   |
- *  +----------------------------------+    +---------------------------+   |
- *                                                                          |
- *                                          +---------------------------+   |
- *                                          |                           +---+
- *                                          | EditorWidgetTypeSilent    |   |
- *                                          |                           |   |
- *                                          +---------------------------+   |
- *                                                                          |
- *                                          +---------------------------+   |
- *                                          |                           +---+
- *                                          | EditorWidgetTypeHidden    |
- *                                          |                           |
- *                                          +---------------------------+
+ * \endcode
+ *
+ * Note that the cart is something that happens to always be around
+ * by default since an e-Commerce site is willing to sell, sell, sell
+ * and thus having the cart always at hand is the best way to make
+ * sure that your users know how to add items in there and how to
+ * checkout and send you tons of money.
+ *
+ * The cart uses the ServerAccess object capabilities to send cart
+ * updates to the server. This allows us to save the cart in
+ * Cassandra and avoid losing it. Not only that, this means the
+ * user can close everything, come back a week later, and still
+ * find all his information intact.
+ *
+ * The following shows the implemented product types:
+ *
+ * \code
+ *
  * \endcode
  */
 
 
-/** \brief Snap EditorSelection constructor.
+/** \brief Snap eCommerceProductTypeBase constructor.
  *
- * The EditorSelection is a set of functions used to deal with the selection
- * property of the different browsers (each browser has a different API at
- * the moment...)
+ * The cart works with products and each one of these products has a
+ * type. In most cases products are given the default type which is
+ * ProductTypeBasic.
  *
- * The functions are pretty much all considered static functions as they
- * do not need any data. Therefore this is not an object, just a set of
- * functions.
- *
- * @struct
- */
-snapwebsites.EditorSelection =
-{
-    /** \brief Trim the selection.
-     *
-     * This function checks whether the selection starts and ends with
-     * spaces. If so, those spaces are removed from the selection. This
-     * makes for much cleaner links.
-     *
-     * The function takes no parameter since there can be only one current
-     * selection and the system (document) knows about it.
-     */
-    trimSelectionText: function() // static
-    {
-        var range, sel, text, trimStart, trimEnd;
-
-        if(document.selection)
-        {
-            range = document.selection.createRange();
-            text = range.text;
-            trimStart = text.match(/^\s*/)[0].length;
-            if(trimStart)
-            {
-                range.moveStart("character", trimStart);
-            }
-            trimEnd = text.match(/\s*$/)[0].length;
-            if(trimEnd)
-            {
-                range.moveEnd("character", -trimEnd);
-            }
-            range.select();
-        }
-        else
-        {
-            sel = window.getSelection();
-            if(sel.getRangeAt)
-            {
-                range = sel.getRangeAt(0);
-                text = range.toString();
-                trimStart = text.match(/^\s*/)[0].length;
-                if(trimStart && range.startContainer)
-                {
-                    range.setStart(range.startContainer, range.startOffset + trimStart);
-                }
-                trimEnd = text.match(/\s*$/)[0].length;
-                if(trimEnd && range.endContainer)
-                {
-                    range.setEnd(range.endContainer, range.endOffset - trimEnd);
-                }
-            }
-        }
-    },
-
-    /** \brief Retrieve the selection boundary element.
-     *
-     * This function determines the tag that encompasses the current
-     * selection.
-     *
-     * This is particularly useful when editing a link and making sure that
-     * the entire link is selected before you edit anything.
-     *
-     * \note
-     * This function does not modify the selection.
-     *
-     * @param {boolean} isStart  Whether the start end end container should be used.
-     *
-     * @return {Element}  The object representing the selection boundaries.
-     */
-    getSelectionBoundaryElement: function(isStart) // static
-    {
-        var range, sel, container;
-
-        if(document.selection)
-        {
-            // Note that IE offers a RangeText here, not a Range
-            range = document.selection.createRange();
-            if(range)
-            {
-                range.collapse(isStart);
-                return range.parentElement();
-            }
-        }
-        else
-        {
-            sel = window.getSelection();
-            if(sel.getRangeAt)
-            {
-                if(sel.rangeCount > 0)
-                {
-                    range = sel.getRangeAt(0);
-                }
-            }
-            else
-            {
-                // Old WebKit
-                range = document.createRange();
-                range.setStart(sel.anchorNode, sel.anchorOffset);
-                range.setEnd(sel.focusNode, sel.focusOffset);
-
-                // Handle the case when the selection was selected backwards (from the end to the start in the document)
-                if(range.collapsed !== sel.isCollapsed)
-                {
-                    range.setStart(sel.focusNode, sel.focusOffset);
-                    range.setEnd(sel.anchorNode, sel.anchorOffset);
-                }
-            }
-
-            if(range)
-            {
-               container = range[isStart ? "startContainer" : "endContainer"];
-
-               // Check if the container is a text node and return its parent if so
-               return container.nodeType === 3 ? container.parentNode : container;
-            }
-        }
-
-        return null;
-    },
-
-    /** \brief Set the boundary to the element.
-     *
-     * This function changes the selection so it matches the start and end
-     * point of the specified element (tag).
-     *
-     * @param {Element} tag  The tag to which the selection is adjusted.
-     */
-    setSelectionBoundaryElement: function(tag) // static
-    {
-        // This works since IE9
-        var range = document.createRange(),
-            sel;
-
-        range.setStartBefore(tag);
-        range.setEndAfter(tag);
-        sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-    },
-
-    /** \brief Retrieve the current selection.
-     *
-     * This function retrieves the current selection and returns it. The
-     * caller is responsible to save the selection information and restore
-     * it later with a call to restoreSelection().
-     *
-     * In general this function is used to save the selection before doing
-     * an action that will mess with the current selection (i.e. open a
-     * dialog which has widgets and thus a new selection.)
-     *
-     * @return {Object}  An object representing the current selection.
-     */
-    saveSelection: function() // static
-    {
-        var sel;
-
-        if(document.selection)
-        {
-            return document.selection.createRange();
-        }
-        else
-        {
-            sel = window.getSelection();
-            if(sel.getRangeAt && sel.rangeCount > 0)
-            {
-                return sel.getRangeAt(0);
-            }
-            else
-            {
-                return null;
-            }
-        }
-        //NOTREACHED
-    },
-
-    /** \brief Restore a selection previously saved with the saveSelection().
-     *
-     * This function expects a selection as a parameter as returned by the
-     * saveSelection() function.
-     *
-     * The caller is responsible for only restoring selections that make
-     * sense. If the selection represents something that already disappeared,
-     * then it should not be applied.
-     *
-     * \todo
-     * Ameliorate the input type using the possible Range types.
-     *
-     * @param {Object} range  The range describing the selection to restore.
-     */
-    restoreSelection: function(range) // static
-    {
-        var sel;
-
-        if(document.selection)
-        {
-            range.select();
-        }
-        else
-        {
-            sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(/** @type {Range} */ (range));
-        }
-    },
-
-    /** \brief Search for links in the selection.
-     *
-     * This function searches the selection for links and returns an array
-     * of all the links. It may return an empty array.
-     *
-     * @return {Array.<string>}  The list of links found in the current selection.
-     */
-    getLinksInSelection: function() // static
-    {
-        var i, r, sel, selectedLinks = [],
-            range, containerEl, links, linkRange;
-
-        if(window.getSelection)
-        {
-            sel = window.getSelection();
-            if(sel.getRangeAt && sel.rangeCount)
-            {
-                linkRange = document.createRange();
-                for(r = 0; r < sel.rangeCount; ++r)
-                {
-                    range = sel.getRangeAt(r);
-                    containerEl = range.commonAncestorContainer;
-                    if(containerEl.nodeType != 1)
-                    {
-                        containerEl = containerEl.parentNode;
-                    }
-                    if(containerEl.nodeName.toLowerCase() === "a")
-                    {
-                        selectedLinks.push(containerEl);
-                    }
-                    else
-                    {
-                        links = containerEl.getElementsByTagName("a");
-                        for(i = 0; i < links.length; ++i)
-                        {
-                            linkRange.selectNodeContents(links[i]);
-                            if(linkRange.compareBoundaryPoints(range.END_TO_START, range) < 1
-                            && linkRange.compareBoundaryPoints(range.START_TO_END, range) > -1)
-                            {
-                                selectedLinks.push(links[i]);
-                            }
-                        }
-                    }
-                }
-                linkRange.detach();
-            }
-        }
-        else if(document.selection && document.selection.type !== "Control")
-        {
-            range = document.selection.createRange();
-            containerEl = range.parentElement();
-            if(containerEl.nodeName.toLowerCase() === "a")
-            {
-                selectedLinks.push(containerEl);
-            }
-            else
-            {
-                links = containerEl.getElementsByTagName("a");
-                linkRange = document.body.createTextRange();
-                for(i = 0; i < links.length; ++i)
-                {
-                    linkRange.moveToElementText(links[i]);
-                    if(linkRange.compareEndPoints("StartToEnd", range) > -1 && linkRange.compareEndPoints("EndToStart", range) < 1)
-                    {
-                        selectedLinks.push(links[i]);
-                    }
-                }
-            }
-        }
-        return selectedLinks;
-    },
-
-    /** \brief Get the text currently selected.
-     *
-     * This function gets the text currently selected.
-     *
-     * \note
-     * This function does not verify that the text that is currently
-     * selected corresponds to the element currently marked as the
-     * current widget in the editor. However, if everything goes
-     * according to plan, it will always be the case.
-     *
-     * \todo
-     * Ameliorate the return type using the proper Range definitions.
-     *
-     * @return {string}  The text currently selected.
-     */
-    getSelectionText: function() // static
-    {
-        var range, sel;
-
-        if(document.selection)
-        {
-            range = document.selection.createRange();
-            return range.text;
-        }
-
-        sel = window.getSelection();
-        if(sel.getRangeAt)
-        {
-            range = sel.getRangeAt(0);
-            return range.toString();
-        }
-
-        return '';
-    }
-
-//pasteHtmlAtCaret: function(html, selectPastedContent)
-//{
-//    var sel, range;
-//    if(window.getSelection)
-//    {
-//        // IE9 and non-IE
-//        sel = window.getSelection();
-//        if(sel.getRangeAt && sel.rangeCount)
-//        {
-//            range = sel.getRangeAt(0);
-//            range.deleteContents();
-//
-//            // Range.createContextualFragment() would be useful here but is
-//            // only relatively recently standardized and is not supported in
-//            // some browsers (IE9, for one)
-//            var el = document.createElement("div");
-//            el.innerHTML = html;
-//            var frag = document.createDocumentFragment(), node, lastNode;
-//            while((node = el.firstChild))
-//            {
-//                lastNode = frag.appendChild(node);
-//            }
-//            var firstNode = frag.firstChild;
-//            range.insertNode(frag);
-//
-//            // Preserve the selection
-//            if(lastNode)
-//            {
-//                range = range.cloneRange();
-//                range.setStartAfter(lastNode);
-//                if(selectPastedContent)
-//                {
-//                    range.setStartBefore(firstNode);
-//                }
-//                else
-//                {
-//                    range.collapse(true);
-//                }
-//                sel.removeAllRanges();
-//                sel.addRange(range);
-//            }
-//        }
-//    }
-//    else if((sel = document.selection) && sel.type != "Control")
-//    {
-//        // IE < 9
-//        var originalRange = sel.createRange();
-//        originalRange.collapse(true);
-//        sel.createRange().pasteHTML(html);
-//        if(selectPastedContent)
-//        {
-//            range = sel.createRange();
-//            range.setEndPoint("StartToStart", originalRange);
-//            range.select();
-//        }
-//    }
-//},
-
-//    findFirstVisibleTextNode_: function(p)
-//    {
-//        var textNodes, nonWhitespaceMatcher = /\S/;
-//
-//        function findFirstVisibleTextNode__(p)
-//        {
-//            var i, max, result, child;
-//
-//            // text node?
-//            if(p.nodeType == 3) // Node.TEXT_NODE == 3
-//            {
-//                return p;
-//            }
-//
-//            max = p.childNodes.length;
-//            for(i = 0; i < max; ++i)
-//            {
-//                child = p.childNodes[i];
-//
-//                // verify visibility first (avoid walking the tree of hidden nodes)
-////console.log("node " + child + " has display = [" + jQuery(child).css("display") + "]");
-////                if(jQuery(child).css("display") == "none")
-////                {
-////                    return result;
-////                }
-//
-//                result = findFirstVisibleTextNode__(child);
-//                if(result)
-//                {
-//                    return result;
-//                }
-//            }
-//        }
-//
-//        return findFirstVisibleTextNode__(p);
-//    },
-
-//    resetSelectionText: function()
-//    {
-//        var range, selection;
-//        if(document.selection)
-//        {
-//            range = document.selection.createRange();
-//            range.moveStart("character", 0);
-//            range.moveEnd("character", 0);
-//            range.select();
-//            return;
-//        }
-//
-//console.log("active is ["+this.activeElement_+"]");
-//        var elem=this.findFirstVisibleTextNode_(this.activeElement_);//jQuery(this.activeElement_).filter(":visible:text:first");
-//console.log("first elem = ["+this.activeElement_+"/"+jQuery(elem).length+"] asis:["+elem+"] text:["+elem.nodeValue+"] node:["+jQuery(elem).prop("nodeType")+"]");
-////jQuery(this.activeElement_).find("*").filter(":visible").each(function(i,e){
-////console.log(" + child = ["+this+"] ["+jQuery(this).prop("tagName")+"] node:["+jQuery(this).prop("nodeType")+"]");
-////});
-//
-//        range = document.createRange();//Create a range (a range is a like the selection but invisible)
-//        range.selectNodeContents(elem);//this.activeElement_);//Select the entire contents of the element with the range
-//        //range.collapse(true);//collapse the range to the end point. false means collapse to end rather than the start
-//        selection = window.getSelection();//get the selection object (allows you to change selection)
-//        selection.removeAllRanges();//remove any selections already made
-//        selection.addRange(range);//make the range you have just created the visible selection
-//        return;
-//
-//
-//        var sel = window.getSelection();
-//        if(sel.getRangeAt)
-//        {
-//            range = sel.getRangeAt(0);
-//console.log('Current position: ['+range.startOffset+'] inside ['+jQuery(range.startContainer).attr("class")+']');
-//            range.setStart(this.activeElement_, 0);
-//            range.setEnd(this.activeElement_, 0);
-//        }
-//    },
-
-};
-
-
-
-/** \brief Snap EditorWidgetTypeBase constructor.
- *
- * The editor works with widgets that are based on this class. Each widget
- * is given a type such as "line-edit".
- *
- * To make it fully dynamic, we define a base class here and let other
- * programmers add new widget types in their own .js files by extending
- * this class.
+ * To make product objects fully dynamic, we define a base class here
+ * and let other programmers add new product types in their own .js
+ * files by extending this class (or another core type.)
  *
  * Classes must be registered with the EditorBase class function:
  *
  * \code
- *    snapwebsites.EditorInstance.registerWidgetType(your_widget_type);
+ *    snapwebsites.CartInstance.registerProductType(new your_product_type);
  * \endcode
  *
  * This base class already implements a few things that are common to
- * all widgets.
+ * all products.
  *
  * \code
- *  class EditorWidgetTypeBase extends ServerAccessCallbacks
+ *  class eCommerceProductTypeBase
  *  {
  *  public:
- *      EditorWidgetTypeBase();
+ *      eCommerceProductTypeBase();
  *
- *      // structure of data getting saved
- *      class SaveData
- *      {
- *          html: string;
- *          result: string;
- *      };
- *
- *      virtual function serverAccessSuccess(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
- *      virtual function serverAccessError(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
- *      virtual function serverAccessComplete(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
  *      abstract function getType() : string;
- *      abstract function preInitializeWidget(widget: Object) : void;
- *      abstract function initializeWidget(editor_widget: Object) : void;
- *      virtual function saving(editor_widget: Object, data: EditorWidgetTypeBase.SaveData) : void;
- *      virtual function resetValue(editor_widget: Object) : void;
- *      virtual function setValue(editor_widget: Object, value: Object) : void;
+ *      abstract function initializeProduct(product: Object) : void;
  *  };
  * \endcode
  *
  * @constructor
- * @extends snapwebsites.ServerAccessCallbacks
  * @struct
  */
-snapwebsites.EditorWidgetTypeBase = function()
+snapwebsites.eCommerceProductTypeBase = function()
 {
     // TBD
     // Maybe at some point we'd want to create yet another layer
     // so we can have an auto-register, but I'm not totally sure
     // that would really work right in all cases...
-    //snapwebsites.EditorBase.registerWidgetType(this);
+    //snapwebsites.Cart.registerProductType(this);
 
     return this;
 };
 
 
-/** \brief EditorWidgetTypeBase inherits from the ServerAccessCallbacks class.
+/** \brief eCommerceProductTypeBase is a base class.
  *
- * This class inherits from the snapwebsites.ServerAccessCallbacks so that
- * way widgets can send AJAX data to the server and handle the response.
- *
- * Note that if you inherit from a widget and implements these functions,
- * make sure to call the super version too in case they do something that
- * is required. At this point the base class does nothing in those callbacks
- * although we may add error handling in the error callback.
+ * Note that if you inherit from a product type and implements these
+ * functions, make sure to call the super version too, unless declared as
+ * abstract, in case they do something that is required. At this point the
+ * base class does nothing in those callbacks although we may add error
+ * handling in the error callback.
  */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeBase, snapwebsites.ServerAccessCallbacks);
+snapwebsites.base(snapwebsites.eCommerceProductTypeBase);
 
 
-/** \brief The type of parameter one can pass to the save functions.
+/** \brief Retrieve the name of this product type.
  *
- * The result is saved in a data object which fields are:
- *
- * \li html -- the data being saved, used to change the originalData_
- *               field once successfully saved.
- * \li result -- the data to send to the server.
- *
- * @typedef {{html: string, result: string}}
- */
-snapwebsites.EditorWidgetTypeBase.SaveData;
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX success.
- *
- * This function is called if the remote access was successful. The
- * result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.EditorWidgetTypeBase.prototype.serverAccessSuccess = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function displays the errors to the client.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.EditorWidgetTypeBase.prototype.serverAccessError = function(result) // virtual
-{
-    // TODO: generate an error pop-up type of a thing
-    alert("Your browser failed sending the file to the server...");
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX completion.
- *
- * This function is called once the whole process is over. It is most
- * often used to do some cleanup.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.EditorWidgetTypeBase.prototype.serverAccessComplete = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/** \brief Retrieve the name of this widget type.
- *
- * This function returns the widget type. It is used when you
- * register the type in the snap editor object. It may be called at
- * any other time to be able to distinguish between types that are derived
- * from each others.
+ * This function returns the product type. It is used whenever you
+ * register the type in the Cart object.
  *
  * @throws {Error} The base type function throws an error as it should never
  *                 get called (required override.)
  *
- * @return {string}  The type of this editor widget type as a string.
+ * @return {string}  The type of this cart product type as a string.
  */
-snapwebsites.EditorWidgetTypeBase.prototype.getType = function() // virtual
+snapwebsites.eCommerceProductTypeBase.prototype.getType = function() // virtual
 {
-    throw new Error("snapwebsites.EditorWidgetTypeBase.getType() was not overloaded.");
+    throw new Error("snapwebsites.eCommerceProductTypeBase.getType() was not overloaded.");
 };
 
 
 /*jslint unparam: true */
-/** \brief Pre-initialize a widget of this type.
+/** \brief Initialize a product of this type.
  *
- * The parameter is really a snapwebsites.EditorWidget object,
+ * The parameter is really a snapwebsites.Product object,
  * but at this point we did not yet define that object type.
  *
  * @throws {Error} The base type function throws an error as it should never
@@ -885,134 +193,70 @@ snapwebsites.EditorWidgetTypeBase.prototype.getType = function() // virtual
  *
  * @param {!Object} editor_widget  The widget being initialized.
  */
-snapwebsites.EditorWidgetTypeBase.prototype.preInitializeWidget = function(editor_widget) // virtual
+snapwebsites.eCommerceProductTypeBase.prototype.initializeProduct = function(product) // virtual
 {
-    throw new Error("snapwebsites.EditorWidgetTypeBase.preInitializeWidget() does not do anything (yet)");
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Initialize a widget of this type.
- *
- * The parameter is really a snapwebsites.EditorWidget object,
- * but at this point we did not yet define that object type.
- *
- * @throws {Error} The base type function throws an error as it should never
- *                 get called (requires override.)
- *
- * @param {!Object} editor_widget  The widget being initialized.
- */
-snapwebsites.EditorWidgetTypeBase.prototype.initializeWidget = function(editor_widget) // virtual
-{
-    throw new Error("snapwebsites.EditorWidgetTypeBase.initializeWidget() doesn't do anything (yet)");
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Allow for special handling of the widget data when saving.
- *
- * This function is called whenever the data of a widget is to be
- * sent to the server.
- *
- * @param {!Object} editor_widget  The concerned widget
- * @param {!Object.<snapwebsites.EditorWidgetTypeBase.SaveData>} data  The data to be saved.
- */
-snapwebsites.EditorWidgetTypeBase.prototype.saving = function(editor_widget, data) // virtual
-{
-    // by default we do nothing (the defaults created by the
-    // snapwebsites.EditorWidget.saving() function are good enough.)
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Reset the value of a widget.
- *
- * This function offers a way for programmers to dynamically reset the
- * value of a widget.
- *
- * At this point it is specifically used to reset a Dropdown. A Dropdown
- * widget may have a "reset value" which is not one of the values one
- * can select in the list of items of the Dropdown.
- *
- * @param {!Object} editor_widget  The concerned widget
- *
- * @return {boolean}  true if the value got set.
- */
-snapwebsites.EditorWidgetTypeBase.prototype.resetValue = function(editor_widget) // virtual
-{
-    // by default we do nothing here, which means nothing gets reset by
-    // default... a type must overload this function so something
-    // happens
-
-    return false;
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Save a new value in the specified editor widget.
- *
- * This function offers a way for programmers to dynamically change the
- * value of a widget. You should never call the editor widget type
- * function, instead use the setValue() function of the widget you
- * want to change the value of (it will make sure that the modified
- * flag is properly set.)
- *
- * Depending on the type, the value may be a string, a number, of some
- * other type, this is why here it is marked as an object.
- *
- * @param {!Object} editor_widget  The concerned widget
- * @param {!Object} value  The value to be saved.
- *
- * @return {boolean}  true if the value got set.
- */
-snapwebsites.EditorWidgetTypeBase.prototype.setValue = function(editor_widget, value) // virtual
-{
-    // by default we do nothing here, which means nothing gets set by
-    // default... a type must overload this function so something
-    // happens
-
-    return false;
+    throw new Error("snapwebsites.eCommerceProductTypeBase.initializeProduct() does not do anything (yet)");
 };
 /*jslint unparam: false */
 
 
 
-/** \brief Snap EditorBase constructor.
+/** \brief Snap eCommerceCart constructor.
  *
- * The base editor includes everything that the toolbar and the form objects
- * need to reference in the editor although some of those parameters are
- * created by the main editor object (i.e. the toolbar and forms are created
- * by the main editor object.)
+ * The eCommerceCart includes everything required to handle the following:
+ *
+ * - Add a product to the cart
+ * - Edit the cart / wishlist
+ *   - Global functions
+ *     - Open (show)
+ *     - Close (hide)
+ *     - Clear cart
+ *     - Checkout (button to "move" to checkout)
+ *   - Actual editing
+ *     - Delete a product
+ *     - Change product quantity (if allowed by product type)
+ *     - Move product from cart to wishlist (and vice versa from wishlist)
+ *     - Links to products for details
+ * - Send changes to the server
+ *   - Handle server response
  *
  * \code
- * class EditorBase
+ * class eCommerceCart extends ServerAccessCallbacks
  * {
  * public:
- *      virtual function getToolbar() : EditorToolbar;
- *      function setActiveElement(element: jQuery);
- *      function getActiveElement() : jQuery;
- *      function refocus();
- *      virtual function checkModified();
- *      virtual function getLinkDialog() : EditorLinkDialog;
- *      virtual function registerWidgetType(widget_type: EditorWidgetType);
- *      function hasWidgetType(type_name: string) : boolean;
- *      function getWidgetType(type_name: string) : EditorWidgetType;
+ *      eCommerceCart();
+ *
+ *      function checkModified();
+ *      function registerProductType(widget_type: eCommerceProductTypeBase);
+ *      function hasProductType(type_name: string) : boolean;
+ *      function getProductType(type_name: string) : ProductType;
+ *      function showGlimpse() : Void;
+ *      function hideGlimpse() : Void;
+ *      function showCart() : Void;
+ *      function hideCart() : Void;
+ *
+ *      virtual function generate_cart_html() : string;
+ *      virtual function generate_cart_header() : Void;
+ *      virtual function generate_cart_footer() : Void;
+ *      function generate_product_table() : Void;
+ *      virtual function generate_product_table_header() : Void;
+ *      virtual function generate_product_table_footer() : Void;
+ *
+ *      virtual function serverAccessSuccess(result);
+ *      virtual function serverAccessError(result);
+ *      virtual function serverAccessComplete(result);
+ *
  * private:
- *      activeElement_: Element;
- *      widgetTypes_: EditorWidgetType;
+ *      productTypes_: ProductType;
  * };
  * \endcode
  *
- * @return {snapwebsites.EditorBase}  The newly created object.
+ * @return {snapwebsites.eCommerceCart}  The newly created object.
  *
  * @constructor
  * @struct
  */
-snapwebsites.EditorBase = function()
+snapwebsites.eCommerceCart = function()
 {
 //#ifdef DEBUG
     if(jQuery("body").hasClass("snap-editor-initialized"))
@@ -1022,179 +266,119 @@ snapwebsites.EditorBase = function()
     jQuery("body").addClass("snap-editor-initialized");
 //#endif
 
-    this.widgetTypes_ = [];
+    this.productTypes_ = [];
+    this.cartHtml_ = [];
+    this.products_ = [];
 
     return this;
 };
 
 
-/** \brief Mark EditorBase as a base class.
+/** \brief Mark the eCommerceCart as inheriting from the ServerAccessCallbacks.
  *
- * This class does not inherit from any other classes.
+ * This class inherits from the ServerAccessCallbacks, which it uses
+ * to send the server changes made by the client to the cart.
  */
-snapwebsites.base(snapwebsites.EditorBase);
+snapwebsites.inherits(snapwebsites.eCommerceCart, snapwebsites.ServerAccessCallbacks);
 
 
-/** \brief The currently active element.
+/** \brief The popup information for the instant cart functionality.
  *
- * The element considered active in the editor is the very element
- * that gets the focus.
+ * This static object represents the popup object used by the Cart to
+ * present to the user the currently selected products ready to be
+ * purchased by going to the checkout area.
  *
- * When no elements are focused, it is expected to be null. However,
- * our current code may not always properly reset it.
+ * @type {Object}
+ * @private
+ */
+snapwebsites.eCommerceCart.createPopup_ =
+{
+
+// WARNING: we have exactly ONE instance of this variable
+//          (i.e. if we were to create more than one Main object
+//          we'd still have ONE instance.)
+
+    id: "ecommerce-cart",
+    title: "Cart",
+    darken: 150,
+    width: 750
+    //beforeHide: -- defined as required
+};
+
+
+/** \brief The list of product types understood by the e-Commerce cart.
+ *
+ * This array is used to save the product types when you call the
+ * registerProductType() function.
+ *
+ * @type {Array.<snapwebsites.eCommerceProductTypeBase>}
+ * @private
+ */
+snapwebsites.eCommerceCart.prototype.productTypes_; // = []; -- initialized in constructor to avoid problems
+
+
+/** \brief A protected variable member holding the cart HTML code.
+ *
+ * This DOM document holds the cart HTML code. It is regenerated
+ * when we first open the cart popup. Once it exists, the cart
+ * keeps the code up to date as we go (i.e. you could keep the
+ * cart open and add items to it and see that it gets updated
+ * on the fly.)
+ *
+ * This jQuery object is the one returned by the open() function
+ * of the Popup class. In other words, it is not directly the
+ * part where we can add the cart. You must make sure to add
+ * code as children of the ".popup-body" div. Not doing so may
+ * interfere with the popup code and other parts of the cart.
  *
  * @type {jQuery}
+ * @protected
+ */
+snapwebsites.eCommerceCart.prototype.cartHtml_; // = []; -- initialized in constructor to avoid problems
+
+
+/** \brief The list of products that have been added to this cart.
+ *
+ * This array is the list of products that have been added to this cart.
+ *
+ * @type {snapwebsites.eCommerceProduct}
  * @private
  */
-snapwebsites.EditorBase.prototype.activeElement_ = null;
+snapwebsites.eCommerceCart.prototype.products_; // = []; -- initialized in constructor to avoid problems
 
 
-/** \brief The list of widget types understood by the editor.
+/** \brief Check whether a field in the cart editor form was modified.
  *
- * This array is used to save the widget types when you call the
- * registerWidgetType() function.
- *
- * @type {Array.<snapwebsites.EditorWidgetType>}
- * @private
+ * When a quantity or some other parameter was modified in the cart,
+ * this function is called to check whether it looks different. If so
+ * then the change is sent to the server for archiving.
  */
-snapwebsites.EditorBase.prototype.widgetTypes_; // = []; -- initialized in constructor to avoid problems
-
-
-/** \brief Retrieve the toolbar object.
- *
- * This function returns a reference to the toolbar object.
- *
- * \exception
- * This function raises an error exception if called directly (i.e. the
- * funtion is virtual).
- *
- * @return {snapwebsites.EditorToolbar}  The toolbar object.
- */
-snapwebsites.EditorBase.prototype.getToolbar = function() // virtual
+snapwebsites.eCommerceCart.prototype.checkModified = function()
 {
-    throw new Error("getToolbar() cannot directly be called on the EditorBase class.");
 };
 
 
-/** \brief Define the active element.
+/** \brief Register a product type.
  *
- * Whenever an editor object receives the focus, this function is called
- * with that widget. The element is expected to be a valid jQuery object.
+ * This function is used to register an e-Commerce product type in the
+ * cart.
  *
- * Note that the blur() event cannot directly set the active element to
- * \em null because at that point the toolbar may have been clicked and
- * in that case we don't want to really lose the focus...
- *
- * @param {jQuery} element  A jQuery element representing the focused object.
- *
- * @final
- */
-snapwebsites.EditorBase.prototype.setActiveElement = function(element)
-{
-//#ifdef DEBUG
-    if(element !== null)
-    {
-        if(!(element instanceof jQuery))
-        {
-            throw new Error("setActiveElement() must be called with a jQuery object.");
-        }
-        if(!element.is(".editor-content"))
-        {
-            throw new Error("setActiveElement() must be called with a jQuery object of a content-editor object. The class attribute of this object is \"" + element.attr("class") + "\".");
-        }
-    }
-//#endif
-    this.activeElement_ = element;
-};
-
-
-/** \brief Retrieve the currently active element.
- *
- * This function returns a reference to the currently focused element.
- *
- * @return {jQuery} The DOM element with the focus.
- *
- * @final
- */
-snapwebsites.EditorBase.prototype.getActiveElement = function()
-{
-    //jQuery(snapwebsites.EditorInstance.activeElement_)
-    return this.activeElement_;
-};
-
-
-/** \brief Refocus the active element.
- *
- * This function is used by the toolbar to refocus the currently
- * active element because when one clicks on the toolbar, the focus
- * is lost from the active element.
- *
- * @final
- */
-snapwebsites.EditorBase.prototype.refocus = function()
-{
-    if(this.activeElement_)
-    {
-        this.activeElement_.focus();
-    }
-};
-
-
-/** \brief Check whether a field was modified.
- *
- * When something may have changed (a character may have been inserted
- * or deleted, or a text replaced) then you are expected to call this
- * function in order to see whether something was indeed modified.
- *
- * When the process detects that something was modified, it calls the
- * necessary functions to open the Save Dialog.
- *
- * As a side effect it also lets the toolbar know so if it needs to be
- * moved, it happens.
- *
- * @throws {Error}  The base class throws.
- */
-snapwebsites.EditorBase.prototype.checkModified = function() // virtual
-{
-    throw new Error("checkModified() cannot directly be called on the EditorBase class.");
-};
-
-
-/** \brief Retrieve the link dialog.
- *
- * This function creates an instance of the link dialog and returns it.
- * If the function gets called more than once, then the same reference
- * is returned.
- *
- * @return {snapwebsites.EditorLinkDialog}  The link dialog reference.
- *
- * @throws {Error}  The base class implementation just throws.
- */
-snapwebsites.EditorBase.prototype.getLinkDialog = function() // virtual
-{
-    throw new Error("getLinkDialog() cannot directly be called on the EditorBase class.");
-};
-
-
-/** \brief Register a widget type.
- *
- * This function is used to register a widget type in the editor.
  * This allows for any number of extensions and thus any number of
  * cool advanced features that do not all need to be defined in the
- * core of the editor.
+ * core of the cart implementation.
  *
- * @param {snapwebsites.EditorWidgetType} widget_type  The widget type to register.
+ * @param {snapwebsites.ProductType} product_type  The product type to register.
  */
-snapwebsites.EditorBase.prototype.registerWidgetType = function(widget_type) // virtual
+snapwebsites.eCommerceCart.prototype.registerProductType = function(product_type)
 {
-    var name = widget_type.getType();
-    this.widgetTypes_[name] = widget_type;
+    var name = product_type.getType();
+    this.productTypes_[name] = product_type;
 };
 
 
 /** \brief Check whether a type exists.
  *
- * This function checks the list of widget types to see whether
+ * This function checks the list of product types to see whether
  * \p type_name exists.
  *
  * @param {!string} type_name  The name of the type to check.
@@ -1203,934 +387,300 @@ snapwebsites.EditorBase.prototype.registerWidgetType = function(widget_type) // 
  *
  * @final
  */
-snapwebsites.EditorBase.prototype.hasWidgetType = function(type_name)
+snapwebsites.eCommerceCart.prototype.hasProductType = function(type_name)
 {
-    return this.widgetTypes_[type_name] instanceof snapwebsites.EditorWidgetTypeBase;
+    return this.productTypes_[type_name] instanceof snapwebsites.eCommerceProductTypeBase;
 };
 
 
-/** \brief This function is used to get a widget type.
+/** \brief This function is used to get a product type.
  *
- * Widget types get registered with the registerWidgetType() function.
+ * Product types get registered with the registerProductType() function.
  * Later you may retrieve them using this function.
  *
  * @throws {Error} If the named \p type was not yet registered, then this
  *                 function throws.
  *
- * @param {string} type_name  The name of the widget type to retrieve.
+ * @param {string} type_name  The name of the product type to retrieve.
  *
- * @return {snapwebsites.EditorWidgetType} The widget type object.
+ * @return {snapwebsites.eCommerceProductType}  The product type object.
  *
  * @final
  */
-snapwebsites.EditorBase.prototype.getWidgetType = function(type_name)
+snapwebsites.eCommerceCart.prototype.getProductType = function(type_name)
 {
-    if(!(this.widgetTypes_[type_name] instanceof snapwebsites.EditorWidgetTypeBase))
+    if(!(this.productTypes_[type_name] instanceof snapwebsites.eCommerceProductTypeBase))
     {
-        throw new Error("getWidgetType() of type \"" + type_name + "\" is not yet defined, you cannot get it now.");
+        throw new Error("getProductType() of type \"" + type_name + "\" is not yet defined, you cannot get it now.");
     }
-    return this.widgetTypes_[type_name];
+    return this.productTypes_[type_name];
+};
+
+
+/** \brief Show a "glimpse" of the cart.
+ *
+ * This function shows the cart icon in your theme. The theme has
+ * a certain amount of control on how the cart appears as a glimpse.
+ *
+ * If the cart is empty, the empty cart icon is shown.
+ *
+ * If the cart is not empty, the standard cart icon is shown.
+ */
+snapwebsites.eCommerceCart.prototype.showGlimpse = function()
+{
+};
+
+
+/** \brief Hide the "glimpse" of the cart.
+ *
+ * This function hides the cart icon from the theme. This means the
+ * cart is not directly accessible by the end user which is certainly
+ * a good idea on certain pages (i.e. a form), not so good on others.
+ *
+ * For example, it is generally a good idea to hide the cart and
+ * glimpse when asking the user for his credit card information
+ * (card number, address, phone...)
+ */
+snapwebsites.eCommerceCart.prototype.hideGlimpse = function()
+{
+};
+
+
+/** \brief Show the cart.
+ *
+ * This function shows the cart in a popup. This is 100% done on the
+ * client side (no access to the server.) This is because the cart
+ * is 100% built using code.
+ *
+ * The cart makes use of a fully dynamic editor form.
+ *
+ * In most cases, clicking on the Glimpse will trigger a call this
+ * function. Other methods may be used to open the cart.
+ */
+snapwebsites.eCommerceCart.prototype.showCart = function()
+{
+    if(!this.cartHtml_)
+    {
+        this.cartHtml_ = snapwebsites.PopupInstance.open(snapwebsites.eCommerceCart.createPopup_);
+        generate_cart_html(this.cartHtml_.find(".popup-body"));
+    }
+    // probably need an update here?
+    // although even when hidden we probably want to keep this up to date
+
+    snapwebsites.PopupInstance.show(snapwebsites.eCommerceCart.createPopup_);
+};
+
+
+/** \brief Hide the cart.
+ *
+ * This function hides the cart, really it just closes the popup
+ * opened by the showCart() function. The close button of the popup
+ * will do the same thing.
+ */
+snapwebsites.eCommerceCart.prototype.hideCart = function()
+{
+    snapwebsites.PopupInstance.hide(snapwebsites.eCommerceCart.createPopup_);
 };
 
 
 
-/** \brief Snap EditorLinkDialog constructor.
+/** \brief Generate the cart HTML code.
  *
- * The editor link dialog is a popup window that is used to let the user
- * enter a link (URI, anchor, and some other parameters of the anchor.)
+ * This function generates the HTML code using jQuery() to append the
+ * code as required.
  *
- * @param {snapwebsites.EditorBase} editor_base  A reference to the editor
- *                                               base object.
+ * The function first calls the generate_cart_header() function which
+ * can be overridden since it is virtual.
  *
- * @return {snapwebsites.EditorLinkDialog} A reference to the object being
- *                                         initialized.
- * @constructor
- * @struct
+ * Next it calls the generate_product_table() which is expected to create
+ * the table with the items currently in the cart. If no item are defined,
+ * it still creates a table, only it will be marked as hidden and instead
+ * we show another div tag with the message "your cart is empty".
+ *
+ * We do not allow the generate_product_table() function to be overridden.
+ * Instead we expect the product types to generate the data accordingly
+ * so the dynamism is not available in the table itself. However, as you
+ * can see in the function definition, the table header and footer functions
+ * can be overridden.
+ *
+ * Finally the function calls the generate_cart_footer() function which
+ * can be overridden too since it is virtual.
+ *
+ * @param {!jQuery} e  The body element where the header, table, and footer
+ *                     can directly be added.
  */
-snapwebsites.EditorLinkDialog = function(editor_base)
+snapwebsites.eCommerceCart.prototype.generate_cart_html(e)
 {
-    this.editorBase_ = editor_base;
-
-    // TODO: add support for a close without saving the changes!
-    var html = "<div id='snap_editor_link_dialog'>"
-             + "<div class='title'>Link Administration</div>"
-             + "<div id='snap_editor_link_page'>"
-             + "<div class='line'><label class='limited' for='snap_editor_link_text'>Text:</label> <input id='snap_editor_link_text' name='text' title='Enter the text representing the link. If none, the link will appear as itself.'/></div>"
-             + "<div class='line'><label class='limited' for='snap_editor_link_url'>Link:</label> <input id='snap_editor_link_url' name='url' title='Enter a URL.'/></div>"
-             + "<div class='line'><label class='limited' for='snap_editor_link_title'>Tooltip:</label> <input id='snap_editor_link_title' name='title' title='The tooltip which appears when a user hovers the mouse cursor over the link.'/></div>"
-             + "<div class='line'><label class='limited'>&nbsp;</label><input id='snap_editor_link_new_window' type='checkbox' value='' title='Click to save your changes.'/> <label for='snap_editor_link_new_window'>New Window</label></div>"
-             + "<div class='line'><label class='limited'>&nbsp;</label><input id='snap_editor_link_ok' type='button' value='OK' title='Click to save your changes.'/></div>"
-             + "<div style='clear:both;padding:0;'></div></div></div>";
-
-    jQuery(html).appendTo("body");
-    this.linkDialogPopup_ = jQuery("#snap_editor_link_dialog");
-
-    jQuery("#snap_editor_link_ok").click(this.close);
-
-    return this;
+    this.generate_cart_header(e);
+    this.generate_product_table(e);
+    this.generate_cart_footer(e);
 };
 
 
-/** \brief Mark EditorLinkDialog as a base class.
+/** \brief Generate a cart header.
  *
- * This class does not inherit from any other classes.
+ * This function creates the header of the cart. This is generally
+ * information about the store and such. It should remains really
+ * brief (one line or two.)
+ *
+ * @param {!jQuery} e  The body element where the header, table, and footer
+ *                     can directly be added.
  */
-snapwebsites.base(snapwebsites.EditorLinkDialog);
-
-
-/** \brief The editor base to access the active widget.
- *
- * A reference to the EditorBase object. This allows us to access the
- * currently active widget and apply different functions that are
- * useful to get the editor to work (actually, all the commands... so
- * that's a great deal of the editor!)
- *
- * This parameter is always initialized as it is set when the
- * EditorLinkDialog is constructed.
- *
- * @type {snapwebsites.EditorBase}
- * @private
- */
-snapwebsites.EditorLinkDialog.prototype.editorBase_ = null;
-
-
-/** \brief The jQuery Link Dialog object.
- *
- * This variable holds the jQuery object representing the Link Dialog
- * DOM object. The object is created at the time the EditorLinkDialog
- * is created so as far as this object is concerned, it is pretty much
- * always available.
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorLinkDialog.prototype.linkDialogPopup_ = null;
-
-
-/** \brief The selection range when opening a dialog.
- *
- * The selection needs to be preserved whenever we open a popup dialog
- * in the editor. This selection is saved in this variable. The
- * selection itself is gathered using the saveSelection() and later
- * restored with the restoreSelection() functions.
- *
- * @type {Object}
- * @private
- */
-snapwebsites.EditorLinkDialog.prototype.selectionRange_ = null;
-
-
-/** \brief Open the link dialog.
- *
- * This function opens (i.e. shows and positions) the link dialog.
- *
- * A strong side effect of this function is to darken anything
- * else in the background.
- */
-snapwebsites.EditorLinkDialog.prototype.open = function()
+snapwebsites.eCommerceCart.prototype.generate_cart_header(e)
 {
-    this.selectionRange_ = snapwebsites.EditorSelection.saveSelection();
-
-    var jtag,
-        selectionText = snapwebsites.EditorSelection.getSelectionText(),
-        links = snapwebsites.EditorSelection.getLinksInSelection(),
-        new_window = true,
-        focusItem,
-        pos,
-        height,
-        left;
-
-    if(links.length > 0)
-    {
-        jtag = jQuery(links[0]);
-        // it is already the anchor, we can use the text here
-        // in this case we also have a URL and possibly a title
-        jQuery("#snap_editor_link_url").val(snapwebsites.castToString(jtag.attr("href"), "href in #snap_editor_link_url"));
-        jQuery("#snap_editor_link_title").val(snapwebsites.castToString(jtag.attr("title"), "title in #snap_editor_link_title"));
-        new_window = jtag.attr("target") === "_blank";
-    }
-    else
-    {
-        jtag = jQuery(snapwebsites.EditorSelection.getSelectionBoundaryElement(true));
-
-        // this is not yet the anchor, we need to retrieve the selection
-        //
-        // TODO detect email addresses
-        if(selectionText.substr(0, 7) === "http://"
-        || selectionText.substr(0, 8) === "https://"
-        || selectionText.substr(0, 6) === "ftp://")
-        {
-            // selection is a URL so make use of it
-            jQuery("#snap_editor_link_url").val(selectionText);
-        }
-        else
-        {
-            jQuery("#snap_editor_link_url").val("");
-        }
-        jQuery("#snap_editor_link_title").val("");
-    }
-    jQuery("#snap_editor_link_text").val(selectionText);
-    jQuery("#snap_editor_link_new_window").prop('checked', new_window);
-    if(selectionText.length)
-    {
-        focusItem = "#snap_editor_link_url";
-    }
-    else
-    {
-        focusItem = "#snap_editor_link_text";
-    }
-    pos = jtag.position();
-    height = jtag.outerHeight(true);
-    this.linkDialogPopup_.css("top", pos.top + height);
-    left = pos.left - 5;
-    if(left < 10)
-    {
-        left = 10;
-    }
-    this.linkDialogPopup_.css("left", left);
-    this.linkDialogPopup_.fadeIn(300,function(){jQuery(focusItem).focus();});
-    snapwebsites.PopupInstance.darkenPage(150, true);
+    e.append("<div class='cart-header'>Cart</div>");
 };
 
 
-/** \brief Close the editor link dialog.
+/** \brief Generate a cart footer.
  *
- * This function copies the link to the widget being edited and
- * closes the popup.
+ * The function creates the footer of the cart. This is generally
+ * detailed information about the store letigimacy (i.e. certificates)
+ * and eventually some reference to other products one can purchase.
+ *
+ * @param {!jQuery} e  The body element where the header, table, and footer
+ *                     can directly be added.
  */
-snapwebsites.EditorLinkDialog.prototype.close = function()
+snapwebsites.eCommerceCart.prototype.generate_cart_footer(e)
 {
-    var url, links, jtag, text, title, new_window;
+    e.append("<div class='cart-footer'>Thank you.</div>");
+};
 
-    snapwebsites.EditorInstance.linkDialogPopup_.fadeOut(150);
-    snapwebsites.PopupInstance.darkenPage(-150, false);
 
-    this.editorBase_.refocus();
-    snapwebsites.EditorSelection.restoreSelection(this.selectionRange_);
-    url = jQuery("#snap_editor_link_url");
-    document.execCommand("createLink", false, url.val());
-    links = snapwebsites.EditorSelection.getLinksInSelection();
-    if(links.length > 0)
+/** \brief Generate the product table of the cart.
+ *
+ * This function generates a list of products in a table. It makes use
+ * of the list of products available in the cart. In case all the products
+ * get removed, we also offer a fallback when no products are defined in
+ * the cart.
+ *
+ * @param {!jQuery} e  The body element where the header, table, and footer
+ *                     can directly be added.
+ */
+snapwebsites.eCommerceCart.prototype.generate_product_table(e)
+{
+    var t,      // table
+        h,      // header
+        b,      // body
+        f,      // footer
+        i,
+        max = this.products_.length;
+
+    // table
+    e.append("<table class='cart-product-table'>");
+    t = e.children("table");
+
+    // header
+    t.append("<thead>");
+    h = t.children("thead");
+    this.generate_product_table_header(h);
+
+    // footer (must appear before <tbody> to be HTML 4.1 compatible)
+    t.append("<tfoot>");
+    f = t.children("tfoot");
+    this.generate_product_table_footer(f);
+
+    // body
+    t.append("<tbody>");
+    b = t.children("tbody");
+
+    for(i = 0; i < max; ++i)
     {
-        jtag = jQuery(links[0]);
-        text = jQuery("#snap_editor_link_text");
-        if(text.length > 0)
-        {
-            jtag.text(snapwebsites.castToString(text.val(), "val() of #snap_editor_link_text"));
-        }
-        // do NOT erase the existing text if the user OKed
-        // without any text
-
-        title = jQuery("#snap_editor_link_title");
-        if(title.length > 0)
-        {
-            jtag.attr("title", snapwebsites.castToString(title.val(), "val() of #snap_editor_link_title"));
-        }
-        else
-        {
-            jtag.removeAttr("title");
-        }
-
-        new_window = jQuery("#snap_editor_link_new_window");
-        if(new_window.prop("checked"))
-        {
-            jtag.attr("target", "_blank");
-        }
-        else
-        {
-            jtag.removeAttr("target");
-        }
+        this.generate_product_table_row(b, this.products_[i]);
     }
 };
 
 
-
-/** \brief Snap EditorToolbar constructor.
+/** \brief Generate the product table header.
  *
- * Whenever creating the Snap! Editor a toolbar comes with it (although
- * it can be hidden, the Ctrl-T key can be used to show/hide the bar.)
+ * This function generates the table header for the product table.
  *
- * The toolbar is created as a separate object and a reference is saved
- * in each EditorForm. The bar can only be opened once for the widget
- * with the focus.
+ * It is unlikely that you'd want to override this function, unless you
+ * want to add a column or two (or remove some columns.)
  *
- * @param {snapwebsites.EditorBase} editor_base  A reference to the editor base object.
+ * If you do change the number of columns, remember that you will have
+ * to also override the generate_product_table_row() function to adjust
+ * the table accordingly.
  *
- * @return {snapwebsites.EditorToolbar} The newly created object.
- *
- * @constructor
- * @struct
+ * @param {!jQuery} e  The body element where the header, table, and footer
+ *                     can directly be added.
  */
-snapwebsites.EditorToolbar = function(editor_base)
+snapwebsites.eCommerceCart.prototype.generate_product_table_header(e)
 {
-    // save the reference to the editor base
-    this.editorBase_ = editor_base;
-    this.keys_ = [];
-
-    return this;
+    e.append("<tr>"
+             + "<th class='cart-line-number'>#</th>"
+             + "<th class='cart-description'>Description</th>"
+             + "<th class='cart-quantity'>Quantity</th>"
+             + "<th class='cart-unit-price'>Unit Price</th>"
+             + "<th class='cart-total'>Total</th>"
+           + "</tr>");
 };
 
 
-/** \brief Mark EditorToolbar as a base class.
+/** \brief Generate the product table footer.
  *
- * This class does not inherit from any other classes.
+ * This function generates the table footer for the product table.
+ *
+ * It is likely that you'd want to override this function if you want
+ * to add "special" rows to the table. For example the shipping extension
+ * adds a shipping line and the taxes extension adds a line with the
+ * total amount of taxes.
+ *
+ * If you do change the number of columns, remember that you will have
+ * to also override the generate_product_table_row() function to adjust
+ * the table accordingly.
+ *
+ * @param {!jQuery} e  The body element where the header, table, and footer
+ *                     can directly be added.
  */
-snapwebsites.base(snapwebsites.EditorToolbar);
-
-
-/** \brief the list of buttons in the Toolbar.
- *
- * This array defines the list of buttons available in the toolbar.
- * The JavaScript code makes use of this information to generate the
- * toolbar and later to handle key presses that the editor understands.
- *
- * \note
- * This array should be a constant but actually we want to fix a few
- * things here and there depending on the browser and whatever other
- * feature. Also at some point we should offer a way for other
- * plugins to add their own buttons.
- *
- * @type {Array.<Array.<(Object|string|number|function(Array))>>}
- * @const
- * @private
- */
-snapwebsites.EditorToolbar.toolbarButtons_ = // static const
-[
-    // TODO: support for translations, still need to determine how we
-    //       want to do that, at this point I think it should be
-    //       separate .js files and depending on the language, the user
-    //       includes the right file... (i.e. editor-1.2.3-en.js)
-    //
-    // TODO: support a way for other plugins to add (remove?) functions
-    //       in a clean way, at this point inserting in this array would
-    //       not be clean at all...
-
-    //
-    // WARNING: Some control keys cannot be used under different browsers
-    //          (especially Internet Explorer which does not care much
-    //          whether you try to capture those controls.)
-    //
-    //    . Ctrl-O -- open a new URL
-    //
-
-    // Structure:
-    //
-    //    command -- the exact command you use with
-    //               document.execDocument(), if "|" it is a group
-    //               separator; if "*" it is an internal command
-    //               (not compatible with document.execDocument().)
-    //
-    //    title -- the title of the command, this is displayed as
-    //             buttons are hovered with the mouse pointer; this
-    //             entry can be null if no title is available and in
-    //             that case the button is not added to the DOM toolbar
-    //
-    //    key & flags -- this field includes the key that activates
-    //                   the command; (i.e. "Bold (Ctrl-B)"); the key
-    //                   is expected to be 16 bits; the higher bits are
-    //                   used as flags:
-    //
-    //                   0x0001:0000 -- requires the shift key
-    //                   0x0002:0000 -- fix the selection so it better
-    //                                  matches a link selection
-    //                   0x0004:0000 -- run a dynamic callback such as
-    //                                  the '_linkDialog'
-    //
-    //    parameter -- a parameter for the command, it may be for the
-    //                 execDocument() or dynamic callback as defined
-    //                 by flag 0x0004:0000.
-    //
-    //    parameter -- another parameter for the command, for example
-    //                 the name of dynamic callback when flag
-    //                 0x0004:0000 is set
-    //
-
-    ["bold", "Bold (Ctrl-B)", 0x42],
-    ["italic", "Italic (Ctrl-I)", 0x49],
-    ["underline", "Underline (Ctrl-U)", 0x55],
-    ["strikeThrough", "Strike Through (Ctrl-Shift--)", 0x100AD],
-    ["removeFormat", "Remove Format (Ctlr-Shift-Delete)", 0x1002E],
-    ["|", "|"],
-    ["subscript", "Subscript (Ctrl-Shift-B)", 0x10042],
-    ["superscript", "Superscript (Ctrl-Shift-P)", 0x10050],
-    ["|", "|"],
-    ["createLink", "Manage Link (Ctrl-L)", 0x6004C, "http://snapwebsites.org/", snapwebsites.EditorToolbar.prototype.callbackLinkDialog_],
-    ["unlink", "Remove Link (Ctrl-K)", 0x2004B],
-    ["|", "-"],
-    ["insertUnorderedList", "Bulleted List (Ctrl-Q)", 0x51],
-    ["insertOrderedList", "Numbered List (Ctrl-Shift-O)", 0x1004F],
-    ["|", "|"],
-    ["outdent", "Decrease Indent (Ctrl-Up)", 0x26],
-    ["indent", "Increase Indent (Ctrl-Down)", 0x28],
-    ["formatBlock", "Block Quote (Ctrl-Shift-Q)", 0x10051, "<blockquote>"],
-    ["insertHorizontalRule", "Horizontal Line (Ctrl-H)", 0x48],
-    ["insertFieldset", "Fieldset (Ctrl-Shift-S)", 0x10053],
-    ["|", "|"],
-    ["justifyLeft", "Left Align (Ctrl-Shift-L)", 0x1004C],
-    ["justifyCenter", "Centered (Ctrl-E)", 0x45],
-    ["justifyRight", "Right Align (Ctrl-Shift-R)", 0x10052],
-    ["justifyFull", "Justified (Ctrl-J)", 0x4A],
-
-    // no buttons,  just the keyboard at this point
-    ["formatBlock", null, 0x31, "<h1>"],        // Ctrl-1
-    ["formatBlock", null, 0x32, "<h2>"],        // Ctrl-2
-    ["formatBlock", null, 0x33, "<h3>"],        // Ctrl-3
-    ["formatBlock", null, 0x34, "<h4>"],        // Ctrl-4
-    ["formatBlock", null, 0x35, "<h5>"],        // Ctrl-5
-    ["formatBlock", null, 0x36, "<h6>"],        // Ctrl-6
-    ["fontSize", null, 0x10031, "1"],           // Ctrl-Shift-1
-    ["fontSize", null, 0x10032, "2"],           // Ctrl-Shift-2
-    ["fontSize", null, 0x10033, "3"],           // Ctrl-Shift-3
-    ["fontSize", null, 0x10034, "4"],           // Ctrl-Shift-4
-    ["fontSize", null, 0x10035, "5"],           // Ctrl-Shift-5
-    ["fontSize", null, 0x10036, "6"],           // Ctrl-Shift-6
-    ["fontSize", null, 0x10037, "7"],           // Ctrl-Shift-7
-    ["fontName", null, 0x10046, "Arial"],       // Ctrl-Shift-F -- TODO add font selector
-    ["foreColor", null, 0x52, "red"],           // Ctrl-R -- TODO add color selector
-    ["hiliteColor", null, 0x10048, "#ffff00"],  // Ctrl-Shift-H -- TODO add color selector
-    ["*", null, 0x54, "", snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_]            // Ctrl-T
-];
-
-
-/** \brief The editor base to access the active widget.
- *
- * A reference to the EditorBase object. This allows us to access the
- * currently active widget and apply different functions that are
- * useful to get the editor to work (actually, all the commands... so
- * that's a great deal of the editor!)
- *
- * This parameter is always initialized as it is set when the
- * EditorToolbar is constructed.
- *
- * @type {snapwebsites.EditorBase}
- * @private
- */
-snapwebsites.EditorToolbar.prototype.editorBase_ = null;
-
-
-/** \brief The list of keys understood by the toolbar.
- *
- * Each toolbar button (and non-buttons) can have a key assigned to it.
- * The keys_ variable is a map of those keys to very quickly find the
- * command that corresponds to a key. This table is generated at the
- * time the toolbar is initialized.
- *
- * @type {Array.<number>}
- * @private
- */
-snapwebsites.EditorToolbar.prototype.keys_; // = []; -- initialized in the constructor to avoid problems
-
-
-/** \brief The jQuery toolbar
- *
- * This is the jQuery object representing the toolbar (a \<div\>
- * tag in the DOM.)
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorToolbar.prototype.toolbar_ = null;
-
-
-/** \brief Whether the toolbar is currently visible.
- *
- * The toolbar can be shown with:
- *
- * \code
- * toggleToolbar(true);
- * \endcode
- *
- * The toolbar can be hidden with:
- *
- * \code
- * toggleToolbar(false);
- * \endcode
- *
- * The toolbar can be toggled from visible to not visible with:
- *
- * \code
- * toggleToolbar();
- * \endcode
- *
- * This flag represents the current state.
- *
- * Note, however, that the toolbar may be fading in or out. In
- * that case this flag already reflects the final state.
- *
- * @type {boolean}
- * @private
- */
-snapwebsites.EditorToolbar.prototype.toolbarVisible_ = false;
-
-
-/** \brief Whether the toolbar is shown at the bottom of the widget.
- *
- * When there isn't enough room to put the toolbar at the top, this
- * flag is set to true. The default is rather meaningful.
- *
- * @type {boolean}
- * @private
- */
-snapwebsites.EditorToolbar.prototype.bottomToolbar_ = false;
-
-
-/** \brief Current height of the widget the toolbar is open for.
- *
- * This value represents the height of the widget currently having
- * the focus. The height is saved as it is a lot faster to access
- * it in this way than retrieving it each time. It also gives us
- * the ability to detect that the height changed and adjust the
- * position of the toolbar if necessary.
- *
- * @type {number}
- * @private
- */
-snapwebsites.EditorToolbar.prototype.height_ = -1;
-
-
-/** \brief The identifier of the last timer created.
- *
- * Whenever the current widget loses focus, a timer is used to
- * eventually hides the toolbar. The problem is that when someone
- * clicks on the toolbar, the focus gets lost, so just closing
- * the toolbar at that point is not a good idea.
- *
- * @type {number}
- *
- * @private
- */
-snapwebsites.EditorToolbar.prototype.toolbarTimeoutID_ = -1;
-
-
-/** \brief Call this function whenever the toolbar is about to be accessed.
- *
- * This function is called whenever the EditorToolbar object is about to
- * access the toolbar DOM. This allows the system to create the toolbar
- * only once required. This is whenever an editor key (i.e. Ctrl-B) is
- * hit or if the toolbar is to be shown.
- *
- * @private
- */
-snapwebsites.EditorToolbar.prototype.createToolbar_ = function()
+snapwebsites.eCommerceCart.prototype.generate_product_table_footer(e)
 {
-    var that = this, msie, html, originalName, isGroup, idx, max;
-
-    if(!this.toolbar_)
-    {
-        msie = /msie/.exec(navigator.userAgent.toLowerCase()); // IE?
-        html = "<div id=\"toolbar\">";
-        max = snapwebsites.EditorToolbar.toolbarButtons_.length;
-
-        for(idx = 0; idx < max; ++idx)
-        {
-            // the name of the image always uses the original name
-            originalName = snapwebsites.EditorToolbar.toolbarButtons_[idx][0];
-            if(msie)
-            {
-                if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "hiliteColor")
-                {
-                    snapwebsites.EditorToolbar.toolbarButtons_[idx][0] = "backColor";
-                }
-            }
-            else
-            {
-                if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "insertFieldset")
-                {
-                    snapwebsites.EditorToolbar.toolbarButtons_[idx][0] = "insertHTML";
-                    snapwebsites.EditorToolbar.toolbarButtons_[idx][3] = "<fieldset><legend>Fieldset</legend><p>&nbsp;</p></fieldset>";
-                }
-            }
-            isGroup = snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "|";
-            if(!isGroup)
-            {
-                this.keys_[snapwebsites.EditorToolbar.toolbarButtons_[idx][2] & 0x1FFFF] = idx;
-            }
-            if(snapwebsites.EditorToolbar.toolbarButtons_[idx][1] !== null)
-            {
-                if(isGroup)
-                {
-                    if(snapwebsites.EditorToolbar.toolbarButtons_[idx][1] === "-")
-                    {
-                        // horizontal separator, create a new line
-                        html += "<div class=\"horizontal-separator\"></div>";
-                    }
-                    else
-                    {
-                        // vertical separator, show a small vertical bar
-                        html += "<div class=\"group\"></div>";
-                    }
-                }
-                else
-                {
-                    // Buttons
-                    html += "<div unselectable=\"on\" class=\"button "
-                            + originalName
-                            + "\" button-id=\"" + idx + "\" title=\""
-                            + snapwebsites.EditorToolbar.toolbarButtons_[idx][1] + "\">"
-                            + "<span class=\"image\"></span></div>";
-                }
-            }
-        }
-        html += "</div>";
-        jQuery(html).appendTo("body");
-        this.toolbar_ = jQuery("#toolbar");
-
-        this.toolbar_
-            .click(function(e){
-                that.editorBase_.refocus();
-                e.preventDefault();
-            })
-            .mousedown(function(e){
-                // XXX: this needs to be handled through a form of callback
-                snapwebsites.EditorInstance.cancelToolbarHide();
-                e.preventDefault();
-            })
-            .find(":any(.horizontal-separator .group)")
-                .click(function(){
-                    that.editorBase_.refocus();
-                });
-        this.toolbar_
-            .find(".button")
-                .click(function(){
-                    var index = this.attr("button-id");
-                    that.editorBase_.refocus();
-                    that.command(index);
-                });
-    }
+    //if(shipping) // this needs to be added by the shipping plugin
+    //{
+    //    e.append("<tr>"
+    //             + "<td class='cart-line-number'></td>"
+    //             + "<td class='cart-description'></td>"
+    //             + "<td class='cart-quantity'></td>"
+    //             + "<td class='cart-unit-price'>Grand Total: </td>"
+    //             + "<td class='cart-total'>$###.##</td>"
+    //           + "</tr>");
+    //}
+    //if(taxes) // this needs to be added by the taxes plugin
+    //{
+    //    e.append("<tr>"
+    //             + "<td class='cart-line-number'></td>"
+    //             + "<td class='cart-description'></td>"
+    //             + "<td class='cart-quantity'></td>"
+    //             + "<td class='cart-unit-price'>Grand Total: </td>"
+    //             + "<td class='cart-total'>$###.##</td>"
+    //           + "</tr>");
+    //}
+    e.append("<tr>"
+             + "<td class='cart-line-number'></td>"
+             + "<td class='cart-description'></td>"
+             + "<td class='cart-quantity'></td>"
+             + "<td class='cart-unit-price'>Grand Total: </td>"
+             + "<td class='cart-total'>$###.##</td>"
+           + "</tr>");
 };
 
 
-/** \brief Execute a toolbar command.
+/** \brief Snap eCommerceProduct constructor.
  *
- * This function expects the index of the command to execute. The
- * command index is the index of the command in the toolbarButtons_
- * array.
- *
- * @throws {Error} In debug version, raise this error if something invalid
- *                 is detected at runtime.
- *
- * @param {number} idx  The index of the command to execute.
- *
- * @return {boolean}  Return true to indicate that the command was
- *                    processed.
- */
-snapwebsites.EditorToolbar.prototype.command = function(idx)
-{
-    var tag, callback;
-
-    // command is defined?
-    if(!snapwebsites.EditorToolbar.toolbarButtons_[idx])
-    {
-        return false;
-    }
-
-//console.log("run command "+idx+" "+snapwebsites.EditorToolbar.toolbarButtons_[idx][2]+"!!!");
-
-    // require better selection for a link? (i.e. full link)
-    if(snapwebsites.EditorToolbar.toolbarButtons_[idx][2] & 0x20000)
-    {
-        snapwebsites.EditorSelection.trimSelectionText();
-        tag = snapwebsites.EditorSelection.getSelectionBoundaryElement(true);
-        if(jQuery(tag).prop("tagName") === "A")
-        {
-            // if we get here the whole tag was not selected,
-            // select it now
-            snapwebsites.EditorSelection.setSelectionBoundaryElement(tag);
-        }
-    }
-
-    if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "*"
-    || snapwebsites.EditorToolbar.toolbarButtons_[idx][2] & 0x40000)
-    {
-        // "internal command" which does not return immediately
-        callback = snapwebsites.EditorToolbar.toolbarButtons_[idx][4];
-//#ifdef DEBUG
-        if(typeof callback !== "function")
-        {
-            throw new Error("snapwebsites.Editor.command() callback function \"" + callback + "\" is not a function.");
-        }
-//#endif
-        callback.apply(this, snapwebsites.EditorToolbar.toolbarButtons_[idx]);
-
-        if(snapwebsites.EditorToolbar.toolbarButtons_[idx][0] === "*")
-        {
-            // the dialog OK button will do the rest of the work as
-            // required by this specific command
-            return true;
-        }
-    }
-    else
-    {
-        // TODO: We probably want to transform all of those calls
-        //       as callbacks just so it is uniform and clean...
-        //       (even if the callbacks end up using execCommand()
-        //       pretty much as is.)
-        //
-        // if there is a toolbar parameter, make sure to pass it along
-        if(snapwebsites.EditorToolbar.toolbarButtons_[idx][3])
-        {
-            // TODO: need to define the toolbar parameter
-            //       (i.e. a color, font name, size, etc.)
-            document.execCommand(snapwebsites.castToString(snapwebsites.EditorToolbar.toolbarButtons_[idx][0], "toolbar command with parameter"),
-                                    false, snapwebsites.EditorToolbar.toolbarButtons_[idx][3]);
-        }
-        else
-        {
-            document.execCommand(snapwebsites.castToString(snapwebsites.EditorToolbar.toolbarButtons_[idx][0], "toolbar command, no parameters"),
-                                    false, null);
-        }
-    }
-    this.editorBase_.checkModified();
-
-    return true;
-};
-
-
-/** \brief Process a keydown event.
- *
- * This function checks whether the key that was just pressed represents
- * a command, if so execute it.
- *
- * The function returns true if the key was used by the toolbar, which
- * means it should not be used by anything else afterward.
- *
- * \note
- * The function only makes use of keys if the Control key was pushed
- * down.
- *
- * @param {Event} e  The jQuery event object.
- *
- * @return {boolean}  If true, the key was used up by the toolbar process.
- */
-snapwebsites.EditorToolbar.prototype.keydown = function(e)
-{
-    if(e.ctrlKey)
-    {
-        return this.command(this.keys_[e.which + (e.shiftKey ? 0x10000 : 0)]);
-    }
-    return false;
-};
-
-
-/** \brief Check whether the toolbar should be moved.
- *
- * As the user enters data in the focused widget, the toolbar may need to
- * be adjusted.
- *
- * There are several possibilities as defined here:
- *
- * 1. The toolbar fits above the widget and is visible, place it there;
- *
- * 2. The toolbar doesn't fit above, place it at the bottom;
- *
- * 3. If the widget grows, make sure that the toolbar remains at the
- *    bottom if it doesn't fit at the top;
- *
- * 4. As the page is scrolled up and down, make sure that the toolbar
- *    remains visible as required for proper editing.
- *
- * \todo
- * Currently our positioning is extremely limited and does not work in
- * all cases. We'll have to do updates once we have the time to fix
- * all the problems. Also, we want to look into creating one function
- * to calculate the position, and then this and the toggleToolbar()
- * functions can make sure to place th object at the right location.
- * Also we may want to offer the user ways to select the toolbar
- * location (and shape) so on long pages it could be at the top, the
- * bottom or a side.
- */
-snapwebsites.EditorToolbar.prototype.checkPosition = function()
-{
-    var newHeight, pos;
-
-    if(snapwebsites.EditorInstance.bottomToolbar_)
-    {
-        newHeight = snapwebsites.castToNumber(jQuery(this).outerHeight(), "casting outer height to a number");
-        if(newHeight != snapwebsites.EditorInstance.height_)
-        {
-            snapwebsites.EditorInstance.height_ = newHeight;
-            pos = jQuery(this).position();
-            snapwebsites.EditorInstance.toolbar_.animate({top: pos.top + jQuery(this).height() + 3}, 200);
-        }
-    }
-};
-
-
-/** \brief Show, hide, or toogle the toolbar visibility.
- *
- * This function is used to show (true), hide (false), or toggle
- * (undefined, do not specify a parameter) the visibility of the
- * toolbar.
- *
- * The function is responsible for placing the toolbar at the right
- * place so it is visible and does not obstruct the field being
- * edited.
- *
- * \todo
- * Ameliorate the positioning of the toolbar, and especially, make sure
- * it remains visible even when editing very tall or wide widgets (i.e.
- * the body of a page can span many \em visible pages.) See the
- * checkPosition() function and the fact that we want ONE common function
- * to calculate the position requirements.
- *
- * @param {boolean=} force  Whether to show (true), hide (false),
- *                         or toggle (undefined) the visibility.
- */
-snapwebsites.EditorToolbar.prototype.toggleToolbar = function(force)
-{
-    var toolbarHeight, snap_editor_element, pos, widget;
-
-    if(force === true || force === false)
-    {
-        this.toolbarVisible_ = force;
-    }
-    else
-    {
-        this.toolbarVisible_ = !this.toolbarVisible_;
-    }
-
-    if(this.toolbarVisible_)
-    {
-        // make sure to cancel the fade out in case it is active
-        this.cancelToolbarHide();
-
-        // in this case we definitvely need to have a toolbar, create it
-        this.createToolbar_();
-
-        // start showing the bar, then place it (when display is none,
-        // the size is incorrect, calling fadeIn() first fixes that
-        // problem.)
-        this.toolbar_.fadeIn(300);
-        widget = this.editorBase_.getActiveElement();
-        snap_editor_element = widget.parents('.snap-editor');
-        this.height_ = snapwebsites.castToNumber(snap_editor_element.height(), ".snap-editor height");
-        toolbarHeight = this.toolbar_.outerHeight();
-        pos = snap_editor_element.position();
-        this.bottomToolbar_ = pos.top < toolbarHeight + 5;
-        if(this.bottomToolbar_)
-        {
-            // too low, put the toolbar at the bottom
-            this.toolbar_.css("top", (pos.top + this.height_ + 3) + "px");
-        }
-        else
-        {
-            this.toolbar_.css("top", (pos.top - toolbarHeight - 3) + "px");
-        }
-        this.toolbar_.css("left", (pos.left + 5) + "px");
-    }
-    else if(this.toolbar_) // if no toolbar anyway, exit
-    {
-        // since we're hiding it now, cancel the toolbar timer
-        this.cancelToolbarHide();
-
-        // make sure it is gone
-        this.toolbar_.fadeOut(150);
-    }
-};
-
-
-/*jslint unparam: true */
-/** \brief ToggleToobar callback to support the Ctrl-T key.
- *
- * This function is called when the user hits the Ctrl-T key. It toggles
- * the visibility of the toolbar.
- *
- * @param {string} cmd  The command that generated this call.
- * @param {?string} title  The command that generated this call.
- * @param {number} key_n_flags  The command that generated this call.
- * @param {string|number|null} opt_param  The command that generated this call.
- * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} opt_func  The command that generated this call.
- *
- * @private
- */
-snapwebsites.EditorToolbar.prototype.callbackToggleToolbar_ = function(cmd, title, key_n_flags, opt_param, opt_func)
-{
-    this.toggleToolbar();
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Callback to define a link.
- *
- * This function is the callback that opens a popup to edit a link in
- * the editor. It makes use of the EditorLinkDialog.
- *
- * @param {string} cmd  The command that generated this call.
- * @param {?string} title  The command that generated this call.
- * @param {number} key_n_flags  The command that generated this call.
- * @param {string|number|null} opt_param  The command that generated this call.
- * @param {function(this: snapwebsites.EditorToolbar, string, ?string, number, (string|number|null), function())} opt_func  The command that generated this call.
- *
- * @private
- */
-snapwebsites.EditorToolbar.prototype.callbackLinkDialog_ = function(cmd, title, key_n_flags, opt_param, opt_func)
-{
-    // for now we can ignore cmd
-
-    this.editorBase_.getLinkDialog().open();
-};
-/*jslint unparam: false */
-
-
-/** \brief Cancel the toolbar hide timer.
- *
- * When a widget loses focus we start a timer to be used to hide
- * the toolbar. This widget may get the focus again before the
- * toolbar gets completely hidden. This function can be called
- * to cancel that timer.
- */
-snapwebsites.EditorToolbar.prototype.cancelToolbarHide = function()
-{
-    if(this.toolbarTimeoutID_ != -1)
-    {
-        // prevent hiding of the toolbar
-        clearTimeout(this.toolbarTimeoutID_);
-        this.toolbarTimeoutID_ = -1;
-    }
-};
-
-
-/** \brief Start the toolbar hide feature.
- *
- * This function starts a timer which, if not cancelled in time, will
- * close the toolbar.
- *
- * It is used whenever a widget loses focus.
- */
-snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
-{
-    var that = this;
-
-    this.toolbarTimeoutID_ = setTimeout(
-        function()
-        {
-            that.toggleToolbar(false);
-        },
-        200);
-};
-
-
-
-/** \brief Snap EditorWidget constructor.
- *
- * For each of the widget you add to your editor forms, one of these
+ * For each of the product you add to the Cart, one of these
  * is created on the client system.
  *
  * \code
- * class EditorWidget
+ * class eCommerceProduct
  * {
  * public:
- *      function EditorWidget(editor_base: EditorBase, editor_form: EditorForm, widget: jQuery);
+ *      function eCommerceProduct(cart: eCommerceCart, path: string);
  *      final function getName() : string;
  *      final function wasModified(opt_recheck: boolean) : boolean;
  *      final function saving() : SaveData;
  *      final function saved(data: SaveData) : boolean;
  *      final function discard();
- *      function getEditorForm() : EditorForm;
- *      function getEditorBase() : EditorBase;
- *      function show() : Void;
- *      function hide() : Void;
+ *      function getCart() : eCommerceCart;
  *      function enable() : Void;
  *      function disable() : Void;
  *      final function getWidget() : jQuery;
@@ -2140,7 +690,7 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      function getValue() : string;
  *      function resetValue(changed: boolean) : void;
  *      function setValue(value: Object, changed: boolean) : void;
- *      function getWidgetType() : EditorWidgetTypeBase;
+ *      function getProductType() : EditorWidgetTypeBase;
  *
  * private:
  *      var editorBase_: EditorBase = null;
@@ -2894,7 +1444,7 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  * The EditorForm inherits the EditorFormBase.
  *
  * \code
- * class EditorFormBase extends ServerAccessCallbacks
+ * class EditorFormBase : public ServerAccessCallbacks
  * {
  * public:
  *      function EditorFormBase(editor_base, session) : EditorFormBase;
@@ -4340,7 +2890,7 @@ snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
  *      virtual function getToolbar() : EditorToolbar;
  *      virtual function checkModified();
  *      function getActiveEditorForm() : EditorForm;
- *      virtual function getLinkDialog() : EditorLinkDialog;
+ *      virtual function getLinkDialog() : LinkDialog;
  *      virtual function registerWidgetType(widget_type: EditorWidgetType);
  *
  * private:
@@ -4356,7 +2906,7 @@ snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
  * };
  * \endcode
  *
- * @return {snapwebsites.Editor}  The newly created object.
+ * \return The newly created object.
  *
  * @constructor
  * @extends {snapwebsites.EditorBase}
@@ -6713,15 +5263,8 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessComple
 // auto-initialize
 jQuery(document).ready(function()
     {
-        snapwebsites.EditorInstance = new snapwebsites.Editor();
-        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeHidden());
-        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeTextEdit());
-        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeLineEdit());
-        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDropdown());
-        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeCheckmark());
-        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeRadio());
-        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeImageBox());
-        snapwebsites.EditorInstance.registerWidgetType(new snapwebsites.EditorWidgetTypeDroppedFileWithPreview());
+        snapwebsites.CartInstance = new snapwebsites.Cart();
+        snapwebsites.CartInstance.registerProductType(new snapwebsites.ProductTypeBasic());
     });
 
 // vim: ts=4 sw=4 et

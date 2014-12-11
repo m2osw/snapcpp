@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-Snap Websites Server == feed page data to XML
+Snap Websites Server == feed page data to RSS XML
 Copyright (C) 2011-2014  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 		<item>
 			<title><xsl:copy-of select="titles/title/node()"/></title>
 			<link><xsl:copy-of select="url/node()"/></link>
-			<description><xsl:value-of select="description/node()"/></description>
+			<description feed-cdata="yes"><xsl:copy-of select="description/node()"/></description>
 			<xsl:copy-of select="author"/>
 			<!--xsl:for-each select="category">
 				<category>
@@ -48,12 +48,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	</xsl:template>
 
 	<xsl:template match="snap">
-		<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+		<rss version="2.0" ns="xmlns:atom=http://www.w3.org/2005/Atom" xmlns:atom="http://www.w3.org/2005/Atom">
+			<snap-info extension="rss" mimetype="application/rss+xml">
+				<title><xsl:copy-of select="head/metadata/desc[@type='name']/data/node()"/></title>
+			</snap-info>
 			<channel>
 				<title><xsl:copy-of select="head/metadata/desc[@type='name']/data/node()"/></title>
 				<link><xsl:copy-of select="head/metadata/desc[@type='website_uri']/data/node()"/></link>
-				<atom:link href="{head/metadata/desc[@type='feed::uri']/data/node()}/{head/metadata/desc[@type='feed::name']/data/node()}.rss" rel="self" type="application/rss+xml" />
-				<description feed-cdata="yes"><xsl:copy-of select="head/metadata/desc[@type='description']/data/node()"/></description>
+				<atom:link href="{head/metadata/desc[@type='feed::uri']/data/node()}/{head/metadata/desc[@type='feed::name']/data/node()}.rss" rel="self" type="application/rss+xml"/>
+				<!-- the main description cannot include HTML -->
+				<description><xsl:value-of select="head/metadata/desc[@type='description']/data/node()"/></description>
 				<language><xsl:value-of select="page/body/output[1]/@lang"/></language>
 				<xsl:if test="page/body/owner != ''">
 					<copyright>Copyright &#xA9; <xsl:copy-of select="$year_range"/> by <xsl:copy-of select="page/body/owner"/></copyright>
@@ -67,8 +71,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 				<generator>Snap! Websites <xsl:value-of select="head/metadata/desc[@type='version']/data/node()"/></generator>
 				<docs>http://www.rssboard.org/rss-specification</docs>
 				<!--cloud>...</cloud-->
-				<ttl>
-					<xsl:choose>
+				<ttl><xsl:choose>
 						<xsl:when test="head/metadata/desc[@type='ttl']/data">
 							<!-- user defined -->
 							<xsl:value-of select="head/metadata/desc[@type='ttl']/data/node()"/>
@@ -77,13 +80,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<!-- default is 1 week -->
 							10080
 						</xsl:otherwise>
-					</xsl:choose>
-				</ttl>
+					</xsl:choose></ttl>
 				<!--image>
 					<title><xsl:copy-of select="head/metadata/desc[@type='name']/data/node()"/></title>
 					<link><xsl:copy-of select="head/metadata/desc[@type='website_uri']/data/node()"/></link>
 					<!== the description is the img title attribute ==>
-					<description><xsl:copy-of select="head/metadata/desc[@type='description']/data/node()"/></description>
+					<description feed-cdata="yes"><xsl:copy-of select="head/metadata/desc[@type='description']/data/node()"/></description>
 					<url>...</url>
 					<width>...</width>
 					<height>...</height>
