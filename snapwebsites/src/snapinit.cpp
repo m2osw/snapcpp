@@ -35,7 +35,6 @@
 
 #include <QFile>
 #include <QTime>
-#include <QDateTime>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -217,22 +216,23 @@ public:
     {
     }
 
-    void set_path   ( QString           const& path   ) { f_path            = path;   }
-    void set_config ( QString           const& config ) { f_config_filename = config; }
-    void set_debug  ( bool              const  debug  ) { f_debug           = debug;  }
-    void set_config ( snap::snap_config const& config ) { f_config          = config; }
+    void set_path( QString const& path )     { f_path = path; }
+    void set_config( QString const& config ) { f_config_filename = config; }
+    void set_debug( bool const debug )       { f_debug = debug; }
 
     bool    exists() const;
     bool    run();
     bool    is_running();
-    void    restart_backend();
-    void    check_elapsed();
     void    stop_service();
     void    kill_service();
     //
-    pid_t   pid()      const { return f_pid;      }
-    QString name()     const { return f_name;     }
-    bool    disabled() const { return f_disabled; }
+    pid_t   pid()        const { return f_pid;             }
+    QString name()       const { return f_name;            }
+    int     startcount() const { return f_startcount;      }
+    int     elapsed()    const { return f_timer.elapsed(); }
+    bool    disabled()   const { return f_disabled;        }
+    //
+    void    set_disabled( bool const val ) { f_disabled = val; }
 
 private:
     mutable QString             f_full_path;
@@ -244,14 +244,11 @@ private:
     controlled_vars::zint32_t   f_exit;
     controlled_vars::zint32_t   f_startcount;
     QTime                       f_timer;
-    QDateTime                   f_started;
     controlled_vars::flbool_t   f_disabled;
     controlled_vars::flbool_t   f_debug;
-    snap::snap_config           f_config;
 
     const QString& get_full_path() const;
     void handle_status( const int pid, const int status );
-    void exec_process();
 };
 
 
@@ -318,73 +315,62 @@ bool process::exists() const
 }
 
 
-/** \brief Run the child process once, then exit
- *
- * This method is executed in the child fork. It execs the process,
- * then terminates.
- */
-void process::exec_process()
-{
-    const QString& full_path( get_full_path() );
-    QStringList qargs;
-    qargs << full_path;
-    if(f_debug)
-    {
-        qargs << "--debug";
-    }
-    qargs << "--config" << f_config_filename;
-    //
-    if( f_name != "server" && f_name != "backend" )
-    {
-        qargs << "--action" << f_name;
-    }
-
-    std::vector<std::string> args;
-    std::vector<char const *> args_p;
-    //
-    for( auto arg : qargs )
-    {
-        args.push_back(arg.toUtf8().data());
-        args_p.push_back(args.rbegin()->c_str());
-    }
-    //
-    args_p.push_back(NULL);
-
-    // Quiet up the console by redirecting these from/to /dev/null
-    // except in debug mode
-    //
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-    if(!f_debug)
-    {
-        freopen( "/dev/null", "r", stdin  );
-        freopen( "/dev/null", "w", stdout );
-        freopen( "/dev/null", "w", stderr );
-    }
-
-    // Execute the child processes
-    //
-    execv(
-            full_path.toUtf8().data(),
-            const_cast<char * const *>(&args_p[0])
-         );
-#pragma GCC diagnostic pop
-
-    SNAP_LOG_FATAL("Child process \"")(qargs.join(" "))("\" failed to start!");
-    exit(1);
-}
-
-
 bool process::run()
 {
     f_timer.start();
-    f_started = QDateTime::currentDateTimeUtc();
     f_startcount++;
     f_pid = fork();
     if( f_pid == 0 )
     {
-        exec_process();
-        // We should never get here!
+        // child
+        //
+        const QString& full_path( get_full_path() );
+        QStringList qargs;
+        qargs << full_path;
+        if(f_debug)
+        {
+            qargs << "--debug";
+        }
+        qargs << "--config" << f_config_filename;
+        //
+        if( f_name != "server" && f_name != "backend" )
+        {
+            qargs << "--action" << f_name;
+        }
+
+        std::vector<std::string> args;
+        std::vector<char const *> args_p;
+        //
+        for( auto arg : qargs )
+        {
+            args.push_back(arg.toUtf8().data());
+            args_p.push_back(args.rbegin()->c_str());
+        }
+        //
+        args_p.push_back(NULL);
+
+        // Quiet up the console by redirecting these from/to /dev/null
+        // except in debug mode
+        //
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+        if(!f_debug)
+        {
+            freopen( "/dev/null", "r", stdin  );
+            freopen( "/dev/null", "w", stdout );
+            freopen( "/dev/null", "w", stderr );
+        }
+
+        // Execute the child processes
+        //
+        execv(
+            full_path.toUtf8().data(),
+            const_cast<char * const *>(&args_p[0])
+        );
+#pragma GCC diagnostic pop
+
+        SNAP_LOG_FATAL("Child process \"")(qargs.join(" "))("\" failed to start!");
+        exit(1);
     }
 
     sleep(1);
@@ -436,39 +422,6 @@ bool process::is_running()
     handle_status( the_pid, status );
 
     return false;
-}
-
-
-void process::restart_backend()
-{
-    const char* int_name( "snapinit_backend_interval" );
-    const qint64 interval
-        = f_config.contains(int_name)
-        ? f_config[int_name].toLongLong() * 60
-        : 5 * 60 // five minutes, in seconds (default value)
-        ;
-    if( f_started.secsTo( QDateTime::currentDateTimeUtc() ) >= interval )
-    {
-        // Restart the process if over the interval since the last start time.
-        run();
-    }
-}
-
-
-void process::check_elapsed()
-{
-    const char* count_name   ( "snapinit_timeout_count"   );
-    const char* elapsed_name ( "snapinit_timeout_seconds" );
-    const int count   = f_config.contains(count_name)  ? 5   : f_config[count_name]  .toInt();
-    const int elapsed = f_config.contains(elapsed_name)? 5000: f_config[elapsed_name].toInt();
-    //
-    if( (f_startcount > count) && (f_timer.elapsed() < elapsed) )
-    {
-        // Job has died too often and too soon between startups,
-        // so mark it disabled
-        //
-        f_disabled = true;
-    }
 }
 
 
@@ -561,6 +514,7 @@ private:
     QString              f_lock_filename;
     QFile                f_lock_file;
     snap::snap_config    f_config;
+    //snap::snap_cassandra f_cassandra;
 
     typedef std::vector<process::pointer_t> process_list_t;
     process_list_t f_process_list;
@@ -799,24 +753,17 @@ void snap_init::monitor_processes()
     {
         if( !p->is_running() )
         {
-            if( p->name() == "backend" )
+            if( (p->startcount() > 5) && (p->elapsed() < 5000) )
             {
-                p->restart_backend();
-            }
-            else
-            {
-                p->check_elapsed();
-                if( p->disabled() )
-                {
-                    // Job has died too often and too soon between startups
-                    //
-                    continue;
-                }
-
-                // Restart process
+                // Job has died too often and too soon between startups
                 //
-                p->run();
+                p->set_disabled( true );
+                continue;
             }
+
+            // Restart process
+            //
+            p->run();
         }
     }
 
