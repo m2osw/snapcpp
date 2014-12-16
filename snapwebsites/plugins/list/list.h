@@ -109,7 +109,10 @@ typedef QVector<list_item_t> list_item_vector_t;
 
 
 
-class list : public plugins::plugin, public server::backend_action, public layout::layout_content, public layout::layout_boxes
+class list : public plugins::plugin
+           , public server::backend_action
+           , public layout::layout_content
+           , public layout::layout_boxes
 {
 public:
     static int const LIST_PROCESSING_LATENCY = 10 * 1000000; // 10 seconds in micro-seconds

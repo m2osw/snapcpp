@@ -1735,7 +1735,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             {
                 return;
             }
-            // if user uses ".xsl" ignore it
+            // if user included the ".xsl" extension, ignore it
             if(theme_param.f_value.endsWith(".xsl"))
             {
                 theme_param.f_value = theme_param.f_value.left(theme_param.f_value.length() - 4);
@@ -1795,6 +1795,8 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                 return;
             }
         }
+        // IMPORTANT NOTE: We do not check the maximum with the count
+        //                 because our lists may expend with time
 
         content::path_info_t list_ipath;
         list_ipath.set_path(path_param.f_value);
@@ -1865,6 +1867,14 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             layout::layout *layout_plugin(layout::layout::instance());
             QDomDocument list_doc(layout_plugin->create_document(list_ipath, list_plugin));
             layout_plugin->create_body(list_doc, list_ipath, list_body_xsl, list_content);
+            // TODO: fix this problem (i.e. /products, /feed...)
+            // The following is a "working" fix so we can generate a list
+            // for the page that defines the list, but of course, in
+            // that case we have the "wrong" path... calling with the
+            // list_ipath generates a filter loop problem
+            //content::path_info_t random_ipath;
+            //random_ipath.set_path("");
+            //layout_plugin->create_body(list_doc, random_ipath, list_body_xsl, list_content);
 
             QDomElement body(snap_dom::get_element(list_doc, "body"));
             QDomElement list_element(list_doc.createElement("list"));

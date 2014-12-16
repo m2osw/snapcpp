@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "snapwebsites.h"
+#include "../content/content.h"
 
 /** \file
  * \brief Header of the ecommerce plugin.
@@ -30,11 +30,13 @@ namespace ecommerce
 {
 
 
-//enum name_t
-//{
-//    SNAP_NAME_ECOMMERCE_NAME
-//};
-//char const *get_name(name_t name) __attribute__ ((const));
+enum name_t
+{
+    SNAP_NAME_ECOMMERCE_PRICE,
+    SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION,
+    SNAP_NAME_ECOMMERCE_PRODUCT_TYPE_PATH
+};
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 //class ecommerce_exception : public snap_exception
@@ -63,11 +65,11 @@ public:
     virtual int64_t             do_update(int64_t last_updated);
 
     void                        on_bootstrap(snap_child *snap);
-
-    //SNAP_SIGNAL_WITH_MODE(set_locale, (), (), START_AND_DONE);
-    //SNAP_SIGNAL_WITH_MODE(set_timezone, (), (), START_AND_DONE);
+    void                        on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
 
 private:
+    void                        content_update(int64_t variables_timestamp);
+
     zpsnap_child_t              f_snap;
 };
 

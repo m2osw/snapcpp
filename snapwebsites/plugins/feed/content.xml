@@ -18,17 +18,18 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <!-- we mark the home page as a page that should appear in our main feed -->
+  <!-- mark the following 3 pages as pages that should appear in our main feed FOR TEST PURPOSES ONLY == TO BE REMOVED -->
   <content path="/" owner="output">
     <param name="content::title" revision="revision">Home Page With Feed T16</param>
-    <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/feed/main</link>
+    <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/content-types/feed/main</link>
   </content>
-  <content path="/privacy-policy">
-    <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/feed/main</link>
+  <content path="/privacy-policy" owner="output">
+    <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/content-types/feed/main</link>
   </content>
-  <content path="/terms-and-conditions">
-    <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/feed/main</link>
+  <content path="/terms-and-conditions" owner="output">
+    <link name="feed::feed" to="feed::feed" mode="*:*">/types/taxonomy/system/content-types/feed/main</link>
   </content>
+
   <content path="/admin/settings/feed" owner="output">
     <param name="content::title" revision="revision">Website Feeds Settings</param>
     <param name="content::body" revision="revision">
@@ -58,7 +59,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="shorturl::no_shorturl" to="shorturl::no_shorturl" mode="1:*">/types/taxonomy/system/shorturl/no_shorturl</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
-  <content path="/feed/main" owner="list">
+  <content path="/feed/main" owner="output">
     <param name="content::title" revision="revision">Main Website Feed</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The following is a list of pages composing the main website feed.</p>[list::theme(path = "/feed/main", count = 100)]]]>
@@ -70,9 +71,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Main feed of this Snap! Website.</p>]]>
     </param>
     <param name="list::original_item_key_script" overwrite="yes">
+      <!-- sort by creation date of the revision, inverted -->
       <![CDATA[(branch := int32(cell("content", page, "content::revision_control::current_branch")),
                 key := string(cell("content", page, "content::revision_control::current_revision_key::" + branch + "::en")),
-                key ? string(cell("revision", key, "content::title")) : "no title")]]>
+                format(\"%019d\", (9223372036854775807 - (key ? int64(cell(\"revision\", key, \"content::created\")) : 9223372036854775807))))]]>
     </param>
     <!-- avoid administrative pages, always
          also the permissions should be enough to not include admin/...
@@ -81,29 +83,29 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
          public data anyway) -->
     <param name="list::original_test_script" overwrite="yes">
       <![CDATA[!strmatch("^admin/", path)
-            && linked_to("feed::feed", page, "types/taxonomy/system/feed/main", false)
+            && linked_to("feed::feed", page, "types/taxonomy/system/content-types/feed/main", false)
             && perms(path, "user", "view", "visitor")]]>
     </param>
-    <param name="list::selector" overwrite="yes"><![CDATA[type=types/taxonomy/system/feed/main]]></param>
+    <param name="list::selector" overwrite="yes"><![CDATA[type=types/taxonomy/system/content-types/feed/main]]></param>
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
     <!--param name="permissions::dynamic" type="int8" revision="global">1</param-->
     <!-- although the feeds themselves are always changing this page not so much -->
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
-  <content path="/types/taxonomy/system/feed" owner="output">
+  <content path="/types/taxonomy/system/content-types/feed" owner="output">
     <param name="content::title" revision="revision">Feed Tags</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Tags defined under this one are used to mark pages that are to be added to a feed.</p>]]>
     </param>
   </content>
-  <content path="/types/taxonomy/system/feed/attachment" owner="output">
+  <content path="/types/taxonomy/system/content-types/feed/attachment" owner="output">
     <param name="content::title" revision="revision">Attachment Generated by the Feed Plugin</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>This special tag is used to mark feed attachment as such. This is particularly useful to give a complete list of feeds to create links in the HTML header of pages served.</p>]]>
     </param>
   </content>
-  <content path="/types/taxonomy/system/feed/main" owner="output">
+  <content path="/types/taxonomy/system/content-types/feed/main" owner="output">
     <param name="content::title" revision="revision">Main Feed</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Mark pages with this tag to add them to your website main feed.</p>]]>

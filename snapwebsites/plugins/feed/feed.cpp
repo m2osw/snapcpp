@@ -59,7 +59,7 @@ char const *get_name(name_t name)
         return "feed::age";
 
     case SNAP_NAME_FEED_ATTACHMENT_TYPE:
-        return "types/taxonomy/system/feed/attachment";
+        return "types/taxonomy/system/content-types/feed/attachment";
 
     case SNAP_NAME_FEED_DESCRIPTION:
         return "feed::description";
@@ -174,7 +174,7 @@ int64_t feed::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 10, 22, 45, 42, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 12, 13, 14, 15, 42, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -257,7 +257,7 @@ void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& pa
  * pages that are saved in various lists defined under /feed.
  * By default we offer the /feed/main list which presents all the
  * public pages marked as a feed using the feed::feed tag named
- * /types/taxonomy/system/feed/main
+ * /types/taxonomy/system/content-types/feed/main
  */
 void feed::on_backend_process()
 {

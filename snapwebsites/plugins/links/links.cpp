@@ -1388,11 +1388,26 @@ void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variab
     }
     QString const link_name(sub_results[0].get_string("linked_to(1)"));
     QString const page(sub_results[1].get_string("linked_to(2)"));
-    QString const type_name(sub_results[2].get_string("linked_to(3)"));
+    QString type_name(sub_results[2].get_string("linked_to(3)"));
+    if(link_name.isEmpty()
+    || page.isEmpty()
+    || type_name.isEmpty())
+    {
+        throw snap_expr::snap_expr_exception_invalid_parameter_value("invalid parameters to call linked_to(), the first 3 parameters cannot be empty strings");
+    }
     bool unique_link(true);
     if(sub_results.size() >= 4)
     {
         unique_link = sub_results[3].get_bool("linked_to(4)");
+    }
+
+    // if last char is '*' then the expected path is changed to
+    // expected to start with path (startWith() function instead of '==')
+    // (Note: we know that type_name is not an empty string)
+    bool const start_with(*(type_name.end() - 1) == '*');
+    if(start_with)
+    {
+        type_name.remove(type_name.length() - 1, 1);
     }
 
     content::path_info_t ipath;
@@ -1404,7 +1419,9 @@ void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variab
     if(link_ctxt->next_link(result_info))
     {
         QString const expected_path(content::content::instance()->get_snap()->get_site_key_with_slash() + type_name);
-        if(result_info.key() == expected_path)
+        if(start_with
+                ? result_info.key().startsWith(expected_path)
+                : result_info.key() == expected_path)
         {
             // is linked!
             r = true;
@@ -1414,7 +1431,9 @@ void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variab
             // not unique, check all the existing links
             while(link_ctxt->next_link(result_info))
             {
-                if(result_info.key() == expected_path)
+                if(start_with
+                        ? result_info.key().startsWith(expected_path)
+                        : result_info.key() == expected_path)
                 {
                     // is linked!
                     r = true;

@@ -551,10 +551,10 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
         QtCassandra::QCassandraValue const layout_value(layout_table->row(layout_name)->cell(cell_name)->value());
         if(layout_value.nullValue())
         {
-            // no data not found in the layout database
+            // no data found in the layout database
             // the XSLT data may be in Qt, so we check there,
             // but we still return the layout name as "default"
-            // (which is probably wrong but wrong for my current test)
+            // (which is possibly wrong but works with my current tests)
             QByteArray data;
             QString const rc_name(QString(":/xsl/layout/%1-parser.xsl").arg(layout_name));
             QFile rc_parser(rc_name);
@@ -750,7 +750,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     //       tagging capability)
     if(plugins::exists("filter"))
     {
-        // replace all tokens if filtering is available
+        // replace all tokens when filtering is available
         filter::filter::instance()->on_token_filter(ipath, doc);
     }
 

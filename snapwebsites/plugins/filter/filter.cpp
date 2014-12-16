@@ -594,7 +594,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                             {
                                 t = get_token(tok);
                                 f_token += tok;
-                                if(t == TOK_IDENTIFIER && tok == "=")
+                                if(t == TOK_SEPARATOR && tok == "=")
                                 {
                                     // named parameter; the identifier was the name
                                     // and not the value, swap those
@@ -604,6 +604,10 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                                     switch(param.f_type)
                                     {
                                     case TOK_STRING:
+                                        // remove the quotes from the parameters
+                                        param.f_value = param.f_value.mid(1, param.f_value.size() - 2);
+                                        break;
+
                                     case TOK_INTEGER:
                                     case TOK_REAL:
                                         break;
@@ -941,7 +945,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         }
         messages::messages::instance()->set_error(
             "Recursive Token(s)",
-            QString("One or more tokens is looping back to page \"%1\" (all paths are: \"%2\").").arg(ipath.get_key().arg(paths)),
+            QString("One or more tokens are looping back to page \"%1\" (all paths are: \"%2\").").arg(ipath.get_key()).arg(paths),
             QString("to fix, look at the tokens that loop"),
             false
         );
@@ -1001,6 +1005,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             // this works too, although the final result is still plain text!
             // (it must be xslt that converts the contents of CDATA sections)
             QDomCDATASection cdata_section(n.toCDATASection());
+//std::cerr << "*** CDATA section [" << cdata_section.data() << "]\n";
             text_t t(f_snap, this, state.ipath(), state.owner(), xml, cdata_section.data());
             if(t.parse())
             {
@@ -1013,6 +1018,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         {
             QDomText text(n.toText());
             text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
+//std::cerr << "*** text [" << text.data() << "]\n";
             if(t.parse())
             {
 //std::cerr << "replace text [" << text.data() << "] with [" << t.result() << "]\n";
@@ -1042,8 +1048,8 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             if(tag_name == "snap" || tag_name == "filter")
             {
                 // if the element has no children then we do
-                // not want to push anything because it won't
-                // get popped properly otherwise
+                // not want to push anything because it will
+                // not get popped properly otherwise
                 QDomNode child = n.firstChild();
                 if(!child.isNull())
                 {

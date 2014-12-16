@@ -1,6 +1,6 @@
 /** @preserve
  * Name: ecommerce
- * Version: 0.0.1
+ * Version: 0.0.1.49
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -9,6 +9,8 @@
 
 //
 // Inline "command line" parameters for the Google Closure Compiler
+// https://developers.google.com/closure/compiler/docs/js-for-compiler
+//
 // See output of:
 //    java -jar .../google-js-compiler/compiler.jar --help
 //
@@ -52,31 +54,62 @@
  * The resulting environment looks like this:
  *
  * \code
- *  +-----------------------+       +--------------------------+
- *  |                       |       |                          |
- *  | ServerAccessCallbacks |       | eCommerceProductTypeBase |
- *  | (cannot instantiate)  |  +--->| (cannot instantiate)     |
- *  +-----------------------+  |    +--------------------------+
- *       ^                     |          ^
- *       | Inherit   Reference |          | Inherit
- *       |                     |          |
- *  +----+--------------+      |    +-----+-------------------+
- *  |                   +------+    |                         |
- *  | eCommerceCart     +---------->| eCommerceProductType... |<------------+
- *  |                   | Register  |                         |             |
- *  +-----+-----------+-+ (1,n)     +-------------------------+             |
- *    ^   |           |                               ^                     |
- *    |   |           | Create (1,n)                  | Reference (1,1)     |
- *    |   |           V                               |                     |
- *    |   |      +-------------------+                |                     |
- *    |   |      |                   +----------------+                     |
- *    |   |      | eCommerceProduct  |                                      |
- *    |   |      |                   |                                      |
- *    |   |      +-------------------+                                      |
- *    |   |                                                                 |
+ *  +-----------------------+        +-----------------------+
+ *  |                       |        |                       |
+ *  | ServerAccessCallbacks |    +-->| eCommerceColumnHeader |
+ *  | (cannot instantiate)  |    |   | (header row)          |
+ *  +-----------------------+    |   +-----------------------+
+ *       ^                       |
+ *       |                       |   +-----------------------+
+ *       |          Create (1,n) |   |                       |
+ *       |                       |   | eCommerceColumnCell   |
+ *       | Inherit               |   | (rows of products)    |
+ *       |                       |   +-----------------------+
+ *       |                       |          ^
+ *       |                       |          | Create (1,n)
+ *       |                       |          |
+ *       |                       |          |
+ *       |               +-------+----------+----------+
+ *       |               |                             |    Access
+ *       |  Create (1,n) | eCommerceColumns            |<--------------+
+ *       |  +----------->|                             |               |
+ *       |  |            +-----------------------------+               |
+ *       |  |                                                          |
+ *       |  |                       +-----------------------------+    |
+ *       |  |                       |                             |    |
+ *       |  |                       | eCommerceProductFeatureBase |    |
+ *       |  |      +--------------->| (cannot instantiate)        |    |
+ *       |  |      |                +-----------------------------+    |
+ *       |  |      |                      ^                            |
+ *       |  |      | Reference            | Inherit                    |
+ *       |  |      |                      |                            |
+ *  +----+--+------+----+           +-----+-----------------------+    |
+ *  |                   |           |                             +----+
+ *  | eCommerceCart     |<----------+ eCommerceProductFeature...  |
+ *  | (final)           | Register  |                             |<--------+
+ *  +-----+------+------+ (1,n)     +---------------------------+-+         |
+ *    ^   |      |  ^                      ^                    |           |
+ *    |   |      |  | Register             | Reference (1,n)    |           |
+ *    |   |      |  | (1,n)                |                    |           |
+ *    |   |      |  |       +--------------+------------+       |           |
+ *    |   |      |  +-------+                           |       |           |
+ *    |   |      |          | eCommerceProductType      |       |           |
+ *    |   |      |          |                           |       |           |
+ *    |   |      |          +---------------------------+       |           |
+ *    |   |      |                         ^                    |           |
+ *    |   |      | Create (1,n)            | Reference          |           |
+ *    |   |      V                         |                    |           |
+ *    |   |  +-------------------+         |                    |           |
+ *    |   |  |                   +---------+             Access |           |
+ *    |   |  | eCommerceProduct  |                              v           |
+ *    |   |  |                   |             +----------------------+     |
+ *    |   |  |                   +------------>|                      |     |
+ *    |   |  +-------------------+     Inherit | eCommerceProductBase |     |
+ *    |   |                                    |                      |     |
+ *    |   |                                    +----------------------+     |
  *    |   | Create (1,1)                                                    |
  *    |   |      +-------------------+                                      |
- *    |   +----->|                   |--... (widgets, etc.)                 |
+ *    |   +----->|                   +--... (widgets, etc.)                 |
  *    |          | EditorForm        |                                      |
  *    |          |                   |                                      |
  *    |          +-------------------+                                      |
@@ -102,15 +135,789 @@
  * user can close everything, come back a week later, and still
  * find all his information intact.
  *
- * The following shows the implemented product types:
+ * The base ecommerce plugin supports a basic feature set with
+ * its eCommerceProductFeatureBasic object. This object supports
+ * the following in link with the cart table of products:
  *
- * \code
- *
- * \endcode
+ * \li Product designation (name, nomemclature)
+ * \li Product price (Sales price)
+ * \li Product quantity (no specific measurement support)
+ * \li Product total costs (price x quantity)
+ * \li Cart grand total (sum of all the total costs)
+ * \li Cart quantity (sum of all product quantities)
  */
 
 
-/** \brief Snap eCommerceProductTypeBase constructor.
+
+/** \brief Snap eCommerceColumnHeader constructor.
+ *
+ * The list of columns define a header and this class registers
+ * the column name and display name for the column.
+ *
+ * \code
+ *  final class eCommerceColumnHeader
+ *  {
+ *  public:
+ *      eCommerceColumnHeader(name, display_name);
+ *
+ *      function getName() : string;
+ *      function getDisplayName() : string;
+ *
+ *  private:
+ *      var name_: string;
+ *      var displayName_: string;
+ *  };
+ * \endcode
+ *
+ * @param {string} name  The technical name of the header.
+ * @param {string} display_name  The translated display name of the header.
+ *
+ * @return {snapwebsites.eCommerceColumnHeader}
+ * @constructor
+ * @struct
+ */
+snapwebsites.eCommerceColumnHeader = function(name, display_name)
+{
+    this.name_ = name;
+    this.displayName_ = display_name;
+
+    return this;
+};
+
+
+/** \brief eCommerceColumnHeader is a base class.
+ *
+ * It is expected to be an internal class only. Only the eCommerceProduct
+ * object is expected to create objects from this class.
+ */
+snapwebsites.base(snapwebsites.eCommerceColumnHeader);
+
+
+/** \brief The technical name of this column.
+ *
+ * The columns are given a technical name which does not change with the
+ * current language. This is that name.
+ *
+ * @type {string}
+ * @private
+ */
+snapwebsites.eCommerceColumnHeader.prototype.name_ = "";
+
+
+/** \brief The technical name of this column.
+ *
+ * The columns are given a technical name which does not change with the
+ * current language. This is that name.
+ *
+ * @type {string}
+ * @private
+ */
+snapwebsites.eCommerceColumnHeader.prototype.displayName_ = "";
+
+
+/** \brief Add a column to the list of columns.
+ *
+ * This function is generally called by the various
+ * eCommerceProductFeature implementations.
+ *
+ * @return {string}  The technical name.
+ *
+ * @final
+ */
+snapwebsites.eCommerceColumnHeader.prototype.getName = function()
+{
+    return this.name_;
+};
+
+
+/** \brief Add a column to the list of columns.
+ *
+ * This function is generally called by the various
+ * eCommerceProductFeature implementations.
+ *
+ * @return {string}  The translated display name.
+ *
+ * @final
+ */
+snapwebsites.eCommerceColumnHeader.prototype.getDisplayName = function()
+{
+    return this.displayName_;
+};
+
+
+
+/** \brief Snap eCommerceColumnCell constructor.
+ *
+ * The list of columns define a header and values for each column.
+ * The header is created first. That is used to create the content
+ * of the following rows.
+ *
+ * \code
+ *  final class eCommerceColumnCell
+ *  {
+ *  public:
+ *      eCommerceColumnCell(column_name: String, value: String|Number);
+ *
+ *      function getName() : String;
+ *      function getValue() : String|Number;
+ *
+ *  private:
+ *      var name_: string;
+ *      var value_: string;
+ *  };
+ * \endcode
+ *
+ * @param {!string} column_name  The name of the column where this cell belongs.
+ * @param {string|number} value  The value of this cell.
+ *
+ * @return {snapwebsites.eCommerceColumnCell}
+ * @constructor
+ * @struct
+ */
+snapwebsites.eCommerceColumnCell = function(column_name, value)
+{
+    this.name_ = column_name;
+
+    // we cannot use our case here because the value may not be a string
+    this.value_ = /** @type string */ (value);
+
+    return this;
+};
+
+
+/** \brief eCommerceColumnCell is a base class.
+ *
+ * It is expected to be an internal class only. Only the eCommerceColumns
+ * object is expected to create objects from this class.
+ */
+snapwebsites.base(snapwebsites.eCommerceColumnCell);
+
+
+/** \brief The technical name of this column.
+ *
+ * The columns are given a technical name which does not change with the
+ * current language. This is that name.
+ *
+ * @type {string}
+ * @private
+ */
+snapwebsites.eCommerceColumnCell.prototype.name_ = "";
+
+
+/** \brief The value of this cell.
+ *
+ * This parameter holds the value of this cell. It is defined as a
+ * string even though it probably should be an Object since any
+ * one feature is pretty much free to define whatever it wants as
+ * the value. However, ultimately we have to present the value to
+ * the end user and thus we better have a string for that purpose.
+ *
+ * \todo
+ * We may want to look into the possibility to use the .toString()
+ * function of the Object instead of expecting a string being
+ * returned. That would probably open more possibilities in the
+ * future.
+ *
+ * @type {string}
+ * @private
+ */
+snapwebsites.eCommerceColumnCell.prototype.value_ = "";
+
+
+/** \brief Add a column to the list of columns.
+ *
+ * This function is generally called by the various
+ * eCommerceProductFeature implementations.
+ *
+ * @return {string}  The technical name of the cell, which corresponds to
+ *                   the column name.
+ *
+ * @final
+ */
+snapwebsites.eCommerceColumnCell.prototype.getName = function()
+{
+    return this.name_;
+};
+
+
+/** \brief Add a column to the list of columns.
+ *
+ * This function is generally called by the various
+ * eCommerceProductFeature implementations.
+ *
+ * @return {string}  The value in this cell.
+ *
+ * @final
+ */
+snapwebsites.eCommerceColumnCell.prototype.getValue = function()
+{
+    return this.value_;
+};
+
+
+
+/** \brief Snap eCommerceColumns constructor.
+ *
+ * The cart is composed of products which compute columns to be displayed
+ * in the cart.
+ *
+ * \code
+ *  class eCommerceColumns
+ *  {
+ *  public:
+ *      eCommerceColumns();
+ *
+ *      function size() : number;
+ *      function addColumnHeader(column_name: String, display_name: String, before_column: String) : Void;
+ *      function getColumnHeader(index: Number) : eCommerceColumnHeader;
+ *      function generateColumnsMap() : Void;
+ *      function addColumnData(row_index: Number, column_name: String, value: String|Number) : Void;
+ *      function getColumnData(row_index: Number, column_index: Number) : eCommerceColumnCell;
+ *
+ *  private:
+ *      var columnHeaders_: Array;
+ *      var columnMap_: Object; // column headers mapped by name
+ *      var rows_: Array;
+ *  };
+ * \endcode
+ *
+ * @return {snapwebsites.eCommerceColumns}
+ * @constructor
+ * @struct
+ */
+snapwebsites.eCommerceColumns = function()
+{
+    this.columnHeaders_ = [];
+    this.columnMap_ = {};
+    this.rows_ = [];
+
+    return this;
+};
+
+
+/** \brief eCommerceColumns is a base class.
+ *
+ * It is expected to be an internal class only. Only the eCommerceProduct
+ * object is expected to create objects from this class.
+ */
+snapwebsites.base(snapwebsites.eCommerceColumns);
+
+
+/** \brief The list of columns.
+ *
+ * The columns are objects that define the name of the column, the display
+ * name of the column, and possibly other information (feature specific).
+ *
+ * @type {Array.<snapwebsites.eCommerceColumnHeader>}
+ * @private
+ */
+snapwebsites.eCommerceColumns.prototype.columnHeaders_; // = []; -- initialized in constructor to avoid problems
+
+
+/** \brief The list of column indices by name.
+ *
+ * The following is a map to quickly convert a column name to an index.
+ *
+ * @type {Object}
+ * @private
+ */
+snapwebsites.eCommerceColumns.prototype.columnMap_; // = {}; -- initialized in constructor to avoid problems
+
+
+/** \brief The array of rows.
+ *
+ * The columns are objects that define the name of the column, the display
+ * name of the column, and possibly other information (feature specific).
+ *
+ * @type {Array.<Array.<snapwebsites.eCommerceColumnCell>>}
+ * @private
+ */
+snapwebsites.eCommerceColumns.prototype.rows_; // = []; -- initialized in constructor to avoid problems
+
+
+/** \brief Get the total number of columns in this object.
+ *
+ * The columns object registers a given set of column headers
+ * and columns of data. That number is the same once the columns
+ * object is setup. This function can be used to retrieve that
+ * number.
+ *
+ * @throws {Error}  The count of the header and data arrays are not the
+ *                  same. You cannot call this function before you are
+ *                  done with adding all the headers and data.
+ *
+ * @return {number}  The number of columns in this columns object.
+ */
+snapwebsites.eCommerceColumns.prototype.size = function()
+{
+    var header_size = this.columnHeaders_.length;
+
+//#ifdef DEBUG
+    if(header_size != snapwebsites.mapSize(this.columnMap_))
+    {
+        throw new Error("The header and map length are not equal");
+    }
+    // The following is incorrect when we create rows with "missing" columns
+    // because features do not provide a value for certain rows...
+    //var max_rows = this.rows_.length, i;
+    //for(i = 0; i < max_rows; ++i)
+    //{
+    //    if(header_size != this.rows_[i].length)
+    //    {
+    //        throw new Error("row #" + i + " does not have the same length (" + this.rows_[i].length + ") as the header (" + header_size + ").");
+    //    }
+    //}
+//#endif
+
+    return header_size;
+};
+
+
+/** \brief Add a column to the list of columns.
+ *
+ * This function is generally called by the various
+ * eCommerceProductFeature implementations.
+ *
+ * @param {string} column_name  The name of the column.
+ * @param {string} display_name  The display name of the column.
+ * @param {string} before_column  The name of a column which should be
+ *                                after the new column.
+ */
+snapwebsites.eCommerceColumns.prototype.addColumnHeader = function(column_name, display_name, before_column)
+{
+    var max = this.columnHeaders_.length,
+        header = new snapwebsites.eCommerceColumnHeader(column_name, display_name),
+        i;
+
+    if(before_column)
+    {
+        for(i = 0; i < max; ++i)
+        {
+            if(before_column == this.columnHeaders_[i].getName())
+            {
+                this.columnHeaders_.splice(i, 0, header);
+                return;
+            }
+        }
+    }
+
+    this.columnHeaders_.push(header);
+};
+
+
+/** \brief Add a column to the list of columns.
+ *
+ * This function is generally called by the various
+ * eCommerceProductFeature implementations.
+ *
+ * @param {number} index  The index of the column to retrieve.
+ */
+snapwebsites.eCommerceColumns.prototype.getColumnHeader = function(index)
+{
+    if(index < 0 || index >= this.columnHeaders_.length)
+    {
+        throw new Error("index out of bounds in snapwebsites.eCommerceColumns.getColumnHeader()");
+    }
+
+    return this.columnHeaders_[index];
+};
+
+
+/** \brief Generate a map to find column indices from their name.
+ *
+ * When adding column headers, we give each column a technical name.
+ * Then when adding a row of cells, we are given that name again.
+ * This function generates a map to quickly find column indices and
+ * save their value quickly.
+ */
+snapwebsites.eCommerceColumns.prototype.generateColumnsMap = function()
+{
+    var max = this.columnHeaders_.length,
+        name,
+        i;
+
+    for(i = 0; i < max; ++i)
+    {
+        name = this.columnHeaders_[i].getName();
+        if(!isNaN(this.columnMap_[name]))
+        {
+            throw new Error("you defined two header columns with the same name \"" + name + "\"");
+        }
+        this.columnMap_[name] = i;
+    }
+};
+
+
+/** \brief Generate a map to find column indices from their name.
+ *
+ * When adding column headers, we give each column a technical name.
+ * Then when adding a row of cells, we are given that name again.
+ * This function generates a map to quickly find column indices and
+ * save their value quickly.
+ */
+snapwebsites.eCommerceColumns.prototype.getColumnIndex = function(name)
+{
+//#ifdef DEBUG
+    // mapSize() is slow, so we want this in DEBUG only
+    if(this.columnHeaders_.length != snapwebsites.mapSize(this.columnMap_))
+    {
+        throw new Error("It looks like generateColumnsMap() was not called yet.");
+    }
+//#endif
+    if(isNaN(this.columnMap_[name]))
+    {
+        throw new Error("header named \"" + name + "\" not found in snapwebsites.eCommerceColumns.getColumnIndex()");
+    }
+    return this.columnMap_[name];
+};
+
+
+/** \brief Add a column to the list of columns.
+ *
+ * This function is generally called by the various
+ * eCommerceProductFeature implementations.
+ *
+ * Note that to replace the value of a cell, simply call this function
+ * again with the same \p column_name parameter.
+ *
+ * @param {number} row_index  The name of the column.
+ * @param {string} column_name  The display name of the column.
+ * @param {string|number} value  The name of a column which should be
+ *                               after the new column.
+ */
+snapwebsites.eCommerceColumns.prototype.addColumnData = function(row_index, column_name, value)
+{
+    var cell = new snapwebsites.eCommerceColumnCell(column_name, value),
+        i = this.columnMap_[column_name];
+
+    // note: the columns may not be added in order, that should not cause
+    //       any problem; re-adding the same will overwrite the previous value
+    if(!this.rows_[row_index])
+    {
+        this.rows_[row_index] = [];
+    }
+    this.rows_[row_index][i] = cell;
+};
+
+
+/** \brief Add a column to the list of columns.
+ *
+ * This function is generally called by the various
+ * eCommerceProductFeature implementations.
+ *
+ * \warning
+ * A column may be undefined. In which case this function returns
+ * 'undefined' or 'null'.
+ *
+ * @param {number} row_index  The index of the row being read.
+ * @param {number} column_index  The index of the column being read.
+ *
+ * @return {snapwebsites.eCommerceColumnCell}  The cell representing this
+ *                                             data entry.
+ */
+snapwebsites.eCommerceColumns.prototype.getColumnData = function(row_index, column_index)
+{
+    var max = this.columnHeaders_.length;
+
+    if(row_index < 0 || row_index >= this.rows_.length)
+    {
+        throw new Error("row_index out of bounds in snapwebsites.eCommerceColumns.getColumnData()");
+    }
+
+    // the Total should always be last, but I think this is incorrect
+    // in the grand scheme of things (i.e. depending on the row setup
+    // some column may be undefined and thus this test can fail on
+    // an otherwise valid row)
+    if(column_index < 0 || column_index >= max)
+    {
+        throw new Error("column_index out of bounds in snapwebsites.eCommerceColumns.getColumnHeader()");
+    }
+
+    return this.rows_[row_index][column_index];
+};
+
+
+
+/** \brief Snap eCommerceProductType constructor.
+ *
+ * Whenever the ecommerce plugin generates a product page, it adds a
+ * little piece of code defining the type of that product. This includes
+ * various things such as a list of features, the price to purchase that
+ * item, if available, quantities, etc.
+ *
+ * This is created when the page loads, once per type of product offered
+ * on the page. It is expected to connect to all the anchors that allow
+ * the user to add the product to the cart.
+ *
+ * Note that if the user has a non-empty cart, you will also
+ * find the list of product types that correspond to the products
+ * in the cart.
+ *
+ * The product type does not really know how to handle its data except
+ * one which defines the list of features this product understands/makes
+ * use of. The features make use of the other data.
+ *
+ * Note that a product type does not get initialized (much) up until the
+ * point when the client clicks on one of the Buy Product buttons. At
+ * that point the 'eCommerceProductFeature...' objects will sure be ready.
+ *
+ * The product type objects are created internally whenever you call
+ * the registerProductType() function of the cart. There is no default
+ * product type.
+ *
+ * \code
+ * snapwebsites.eCommerceCartInstance.registerProductType({...});
+ * \endcode
+ *
+ * So that way we have a map of product types available under
+ * snapwebsites.eCommerceProductType.productTypes.
+ *
+ * \code
+ *  class eCommerceProductType
+ *  {
+ *  public:
+ *      function eCommerceProductType(data: Object);
+ *
+ *      function getProperty(name: string) : Object;
+ *
+ *  private:
+ *      data_: Object;  // map of product properties
+ *  };
+ * \endcode
+ *
+ * The data map is defined as follow for the Basic features:
+ *
+ * \li 'ecommerce::features' -- list of feature names, the name of each
+ * feature that is attached to this product type appears in this list;
+ * the names are comma separated, no spaces.
+ * \li 'ecommerce::guid' -- the GUID of this product.
+ * \li 'ecommerce::description' -- the name of the product, as it should appear
+ * in the cart.
+ * \li 'ecommerce::price' -- the purchase price of this product; later
+ * we will offer a quantity based price too.
+ * \li 'ecommerce::start_quantity' -- product quantity added to the cart
+ * on creation, if undefined or less or equal to zero, use 1 as a fallback.
+ * The Add function may also change that amount once the product was created.
+ * \li 'ecommerce::add_quantity' -- product quantity when re-adding the
+ * same item to the cart; this can be set to 0 to not re-add (let the user
+ * edit the quantity manually instead); it could be set to any other positive
+ * number; we can also use the string 'ask=\<count>' so we ask the user
+ * where \<count> should be added to that item quantity.
+ *
+ * Other plugins can add features and thus add to this map at will.
+ *
+ * @param {Object} data  The map representing the data of this product type.
+ *
+ * @return {snapwebsites.eCommerceProductType} The newly created object.
+ *
+ * @constructor
+ * @struct
+ */
+snapwebsites.eCommerceProductType = function(data)
+{
+    this.data_ = data;
+
+    return this;
+};
+
+
+/** \brief Mark eCommerceProductType as a base class.
+ *
+ * This class does not inherit from any other classes.
+ */
+snapwebsites.base(snapwebsites.eCommerceProductType);
+
+
+/** \brief The data describing this product type.
+ *
+ * This parameter receives an object describing the product details
+ * such as the product price, description, etc.
+ *
+ * See the constructor description for additional information.
+ *
+ * @type {Object}
+ * @private
+ */
+snapwebsites.eCommerceProductType.prototype.data_ = null;
+
+
+/** \brief Retrieve a property from this product type.
+ *
+ * This function is used to retrieve a property from the product type
+ * data object.
+ *
+ * \note
+ * The name of the property is expected to always include the
+ * namespace of the plugin defining that property. For example,
+ * the list of features definition is named: 'ecommerce::features'.
+ *
+ * @param {!string} name  The name of the property to retrieve.
+ *
+ * @return {Object}  The content of the named property.
+ *                   May be null or undefined.
+ */
+snapwebsites.eCommerceProductType.prototype.getProperty = function(name)
+{
+    return this.data_[name];
+};
+
+
+
+/** \brief Snap eCommerceProductBase constructor.
+ *
+ * The cart is composed of products. The base of the product is an
+ * interface defined to allow the product features to call functions
+ * on the product objects.
+ *
+ * \code
+ *  class eCommerceProductBase
+ *  {
+ *  public:
+ *      eCommerceProductBase();
+ *
+ *      abstract function getDescription() : String;
+ *      abstract function getQuantity() : Number;
+ *      abstract function getPrice() : Number;
+ *      abstract function getColumns(index: Number, features: Array of eCommerceFeaturesBase, columns: eCommerceColumns) : Void;
+ *      abstract function getFeatures(features: Array of eCommerceFeaturesBase, use_column_features: Boolean) : Void;
+ *      abstract function getProductType() : eCommerceProductType;
+ *  };
+ * \endcode
+ *
+ * @return {snapwebsites.eCommerceProductBase}
+ * @constructor
+ * @struct
+ */
+snapwebsites.eCommerceProductBase = function()
+{
+    return this;
+};
+
+
+/** \brief eCommerceProductBase is a base class.
+ *
+ * It is expected to be an internal class only. Only the eCommerceProduct
+ * object is expected to inherit from this class.
+ */
+snapwebsites.base(snapwebsites.eCommerceProductBase);
+
+
+/*jslint unparam: true */
+/** \brief Get the description of this product.
+ *
+ * This function is returns a string with the description of this product.
+ *
+ * @throws {Error} The base type function throws an error as it should never
+ *                 get called (requires override.)
+ *
+ * @return {string}  The description of the product.
+ */
+snapwebsites.eCommerceProductBase.prototype.getDescription = function() // abstract
+{
+    throw new Error("snapwebsites.eCommerceProductBase.getDescription() does not do anything (yet)");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Get the quantity of this product.
+ *
+ * This function is returns a number with the quantity of this product.
+ *
+ * @throws {Error} The base type function throws an error as it should never
+ *                 get called (requires override.)
+ *
+ * @return {number}  The quantity of the product.
+ */
+snapwebsites.eCommerceProductBase.prototype.getQuantity = function() // abstract
+{
+    throw new Error("snapwebsites.eCommerceProductBase.getQuantity() does not do anything (yet)");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Get the price of this product.
+ *
+ * This function is returns a number with the price of this product.
+ *
+ * @throws {Error} The base type function throws an error as it should never
+ *                 get called (requires override.)
+ *
+ * @return {number}  The price of the product.
+ */
+snapwebsites.eCommerceProductBase.prototype.getPrice = function() // abstract
+{
+    throw new Error("snapwebsites.eCommerceProductBase.getPrice() does not do anything (yet)");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Get the columns of this product.
+ *
+ * This function is used to add data to each column of a product row.
+ * The cart does that by going through the array.
+ *
+ * @throws {Error} The base type function throws an error as it should never
+ *                 get called (requires override.)
+ *
+ * @param {number} index  The index of the row being created.
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} features  A reference to an array of features.
+ * @param {!snapwebsites.eCommerceColumns} columns  The price of the product.
+ */
+snapwebsites.eCommerceProductBase.prototype.getColumns = function(index, features, columns)
+{
+    throw new Error("snapwebsites.eCommerceProductBase.getColumns() does not do anything (yet)");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Merge two arrays of column features.
+ *
+ * This function is used to merge the array of features passed in and
+ * the array of features of this product.
+ *
+ * This is used to generate the array of features necessary to generate
+ * the cart header. We may later want to find a better way to handle
+ * this special case. One way would be to force all features to always
+ * add all their column in all the products, but right now we do NOT
+ * force a product to make use of all the features (i.e. one product
+ * may have taxes, but no shipping, another may have neither, one
+ * may have both... thus you may get 1 or 2 columns differences.)
+ *
+ * @throws {Error} The base type function throws an error as it should never
+ *                 get called (requires override.)
+ *
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} features  A reference to an array of features.
+ * @param {boolean} use_column_features  If true, use the column features, if false, use the footer features.
+ */
+snapwebsites.eCommerceProductBase.prototype.getFeatures = function(features, use_column_features)
+{
+    throw new Error("snapwebsites.eCommerceProductBase.getFeatures() does not do anything (yet)");
+};
+/*jslint unparam: false */
+
+
+/** \brief Get a reference to the product type.
+ *
+ * Whenever a product is added to the cart, it is given a reference to
+ * a product type. This function returns a copy to that reference.
+ *
+ * \todo
+ * We probably should move the product type reference to the base object.
+ *
+ * @return {snapwebsites.eCommerceProductType}  The product type of this product.
+ */
+snapwebsites.eCommerceProductBase.prototype.getProductType = function()
+{
+    throw new Error("snapwebsites.eCommerceProductBase.getProductType() was not overriden");
+};
+
+
+
+/** \brief Snap eCommerceProductFeatureBase constructor.
  *
  * The cart works with products and each one of these products has a
  * type. In most cases products are given the default type which is
@@ -120,84 +927,734 @@
  * and let other programmers add new product types in their own .js
  * files by extending this class (or another core type.)
  *
- * Classes must be registered with the EditorBase class function:
+ * Features must be registered with the registerProductFeature() function
+ * as in:
  *
  * \code
- *    snapwebsites.CartInstance.registerProductType(new your_product_type);
+ *    snapwebsites.eCommerceCartInstance.registerProductFeature(new my_product_feature());
  * \endcode
  *
  * This base class already implements a few things that are common to
  * all products.
  *
  * \code
- *  class eCommerceProductTypeBase
+ *  class eCommerceProductFeatureBase
  *  {
  *  public:
- *      eCommerceProductTypeBase();
+ *      eCommerceProductFeatureBase();
  *
- *      abstract function getType() : string;
- *      abstract function initializeProduct(product: Object) : void;
+ *      // do NOT call the base class functions marked 'abstract'
+ *      abstract function getFeatureName() : String;
+ *      abstract function setupColumnHeaders(columns: eCommerceColumns) : Void;
+ *      abstract function setupColumnFooters(columns: eCommerceColumns, index: Number) : Void;
+ *      abstract function setupColumns(product: eCommerceProductBase, columns: eCommerceColumns, index: Number) : void;
+ *      abstract function generateFooter(columns: eCommerceColumns, result: Object, net_grand_total: Number) Void;
+ *
+ *      virtual function getColumnDependencies() : String;
+ *      virtual function getFooterDependencies() : String;
  *  };
  * \endcode
  *
  * @constructor
  * @struct
  */
-snapwebsites.eCommerceProductTypeBase = function()
+snapwebsites.eCommerceProductFeatureBase = function()
 {
     // TBD
-    // Maybe at some point we'd want to create yet another layer
-    // so we can have an auto-register, but I'm not totally sure
+    // Maybe at some point we want to create yet another layer
+    // so we can have an auto-register, but I am not totally sure
     // that would really work right in all cases...
-    //snapwebsites.Cart.registerProductType(this);
+    //snapwebsites.Cart.registerProductFeature(this);
 
     return this;
 };
 
 
-/** \brief eCommerceProductTypeBase is a base class.
+/** \brief eCommerceProductFeatureBase is a base class.
  *
- * Note that if you inherit from a product type and implements these
+ * Note that if you inherit from a product feature and implements these
  * functions, make sure to call the super version too, unless declared as
  * abstract, in case they do something that is required. At this point the
  * base class does nothing in those callbacks although we may add error
  * handling in the error callback.
  */
-snapwebsites.base(snapwebsites.eCommerceProductTypeBase);
+snapwebsites.base(snapwebsites.eCommerceProductFeatureBase);
 
 
-/** \brief Retrieve the name of this product type.
+/** \brief Retrieve the name of this product feature.
  *
- * This function returns the product type. It is used whenever you
- * register the type in the Cart object.
+ * This function returns the product feature name. It is used whenever
+ * you register the feature in the Cart object.
  *
- * @throws {Error} The base type function throws an error as it should never
- *                 get called (required override.)
+ * @throws {Error} The base feature function throws an error as it should
+ *                 never get called (abstract functions require override.)
  *
- * @return {string}  The type of this cart product type as a string.
+ * @return {string}  The name of this cart product feature as a string.
  */
-snapwebsites.eCommerceProductTypeBase.prototype.getType = function() // virtual
+snapwebsites.eCommerceProductFeatureBase.prototype.getFeatureName = function() // virtual
 {
-    throw new Error("snapwebsites.eCommerceProductTypeBase.getType() was not overloaded.");
+    throw new Error("snapwebsites.eCommerceProductFeatureBase.getFeatureName() was not overloaded.");
 };
 
 
 /*jslint unparam: true */
-/** \brief Initialize a product of this type.
+/** \brief Setup the columns of the cart header.
  *
- * The parameter is really a snapwebsites.Product object,
- * but at this point we did not yet define that object type.
+ * This function is called to setup the column names and other information.
+ * It has to be called first so the data can be added to the right columns
+ * (i.e. by referencing a technical name used when setting up the headers.)
+ *
+ * The basic feature takes care of a few default columns. Other features
+ * may add more colunms. It can also delete a column if it wants to although
+ * that is unusual, the cart is flexible enough for that purpose.
+ *
+ * @param {!snapwebsites.eCommerceColumns} columns  A set of cart columns.
+ */
+snapwebsites.eCommerceProductFeatureBase.prototype.setupColumnHeaders = function(columns)
+{
+    throw new Error("snapwebsites.eCommerceProductFeatureBase.setupColumnsHeaders() was not overloaded.");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Setup the columns of the cart footer.
+ *
+ * This function is called to setup the last row of the cart with \em footer
+ * information. In most cases, this includes the total number of items
+ * and the total costs of all the items x quantity.
+ *
+ * The basic feature takes care of those two values by default. Other
+ * features may want to also define values here. Although if a feature
+ * allows decimal quantities using various units, it may want to either
+ * remove (set to "") or fix the total quantity which otherwise does
+ * not make much sense.
+ *
+ * @param {!snapwebsites.eCommerceColumns} columns  A set of cart columns.
+ * @param {number} index  The row index for this product entry.
+ */
+snapwebsites.eCommerceProductFeatureBase.prototype.setupColumnFooters = function(columns, index) // abstract
+{
+    throw new Error("snapwebsites.eCommerceProductFeatureBase.setupColumnFooters() does not do anything (yet)");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Initialize this product feature.
+ *
+ * This function is called whenever a snapwebsites.Product is
+ * created. It is expected to initialize the product.
  *
  * @throws {Error} The base type function throws an error as it should never
  *                 get called (requires override.)
  *
- * @param {!Object} editor_widget  The widget being initialized.
+ * @param {!snapwebsites.eCommerceProductBase} product  The product which columns are being initialized.
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns being added.
+ * @param {number} index  The index of the row being created.
  */
-snapwebsites.eCommerceProductTypeBase.prototype.initializeProduct = function(product) // virtual
+snapwebsites.eCommerceProductFeatureBase.prototype.setupColumns = function(product, columns, index) // abstract
 {
-    throw new Error("snapwebsites.eCommerceProductTypeBase.initializeProduct() does not do anything (yet)");
+    throw new Error("snapwebsites.eCommerceProductFeatureBase.setupColumns() was not overridden.");
 };
 /*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Add the Grand Total row at the bottom of the cart.
+ *
+ * The basic feature adds the Grand Total row at the very bottom of the
+ * cart. The footer features order ensures that the basic feature be
+ * last.
+ *
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns were we want to save the product data.
+ * @param {Object} result  The result object.
+ * @param {number} net_grand_total  The net grand total to purchase all the products in the cart.
+ */
+snapwebsites.eCommerceProductFeatureBase.prototype.generateFooter = function(columns, result, net_grand_total) // abstract
+{
+    throw new Error("snapwebsites.eCommerceProductFeatureBase.generateFooter() does not do anything (yet)");
+};
+/*jslint unparam: false */
+
+
+/** \brief Get the column dependencies of this feature.
+ *
+ * Most of the features require other specific features to be defined
+ * before themselves. This list of dependencies is used for this purpose:
+ * to make sure that the list of features for a product is properly
+ * ordered.
+ *
+ * This dependency list is used to sort the features when generating
+ * the columns of data. The order may be different when generating
+ * the cart footer so there is another set of dependencies for that
+ * purpose.
+ *
+ * By default the list is composed exclusively of the "ecommerce::basic"
+ * feature because all features (outside of the "ecommerce::basic" feature
+ * itself) must at least depend on the basic feature.
+ *
+ * For example, the Tax feature will depend on the basic and the shipping
+ * feature. That way the tax can appear after the shipping (because in some
+ * countries, shipping is taxed and thus it makes more sense to make tax
+ * appear afterward.)
+ *
+ * Please make sure to include the name of the plugin as a namespace
+ * in the dependencies so we can make 100% to avoid any clashes.
+ *
+ * \note
+ * This list of dependencies is only to order the list of features. It does
+ * NOT mean that a feature will work only if all is dependencies are
+ * satisfied. Quite the contrary. The tax feature does not require the
+ * shipping feature at all.
+ *
+ * \todo
+ * There is a limit to what one can do with this list. At this point, we
+ * will try to make it all work this way. However, if you create a plugin
+ * which should be before plugin X, Y, or Z, then those plugins would
+ * need to depend on your plugin... and that's not going to happen with
+ * this feature.
+ *
+ * @return {!string}  A comma separated list of feature names.
+ */
+snapwebsites.eCommerceProductFeatureBase.prototype.getColumnDependencies = function() // virtual
+{
+    return "ecommerce::basic";
+};
+
+
+/** \brief Get the footer dependencies of this feature.
+ *
+ * Most of the features require other specific features to be defined
+ * before themselves. This list of dependencies is used for this purpose:
+ * to make sure that the list of features for a product is properly
+ * ordered.
+ *
+ * This dependency list is used to sort the features when generating
+ * the footer lines. The order may be different when generating
+ * the columns of the cart so there is another set of dependencies for
+ * that purpose.
+ *
+ * By default this list is empty. Note however that the "ecommerce::basic"
+ * must never be a dependency of any of the other features to make sure that
+ * the basic features footer line appears last (this is enforced internally.)
+ *
+ * For example, the Tax feature will depend on the shipping feature so it
+ * will be possible to mark shipping as taxable (although we may already
+ * have added the shipping in the main rows of data so the tax would anyway
+ * apply.)
+ *
+ * Please make sure to include the name of the plugin as a namespace
+ * in the dependencies so we can make 100% to avoid any clashes.
+ *
+ * \note
+ * This list of dependencies is only to order the list of features. It does
+ * NOT mean that a feature will work only if all is dependencies are
+ * satisfied. Quite the contrary. The tax feature does not require the
+ * shipping feature at all.
+ *
+ * \todo
+ * There is a limit to what one can do with this list. At this point, we
+ * will try to make it all work this way. However, if you create a plugin
+ * which should be before plugin X, Y, or Z, then those plugins would
+ * need to depend on your plugin... and that's not going to happen with
+ * this feature.
+ *
+ * @return {!string}  A comma separated list of feature names.
+ */
+snapwebsites.eCommerceProductFeatureBase.prototype.getFooterDependencies = function() // virtual
+{
+    return "ecommerce::basic";
+};
+
+
+
+/** \brief Snap eCommerceProduct constructor.
+ *
+ * For each of the product you add to the Cart, one of these
+ * is created on the client system.
+ *
+ * The class is marked as final because the cart is in charge
+ * to create such objects and thus you cannot create a derived
+ * that would then be used by the cart.
+ *
+ * \code
+ * final class eCommerceProduct extends eCommerceProductBase
+ * {
+ * public:
+ *      function eCommerceProduct(product_type: eCommerceProductType);
+ *
+ *      virtual function getDescription() : String;
+ *      virtual function getQuantity() : Number;
+ *      virtual function getPrice() : Number;
+ *      virtual function getColumns(index: Number, features: Array of eCommerceFeaturesBase, in out columns: eCommerceColumns) : Void;
+ *      virtual function getFeatures(in out features: eCommerceProductFeatureBase, use_column_features: Boolean) : Void;
+ *      virtual function getProductType() : eCommerceProductType;
+ *
+ *      function setQuantity(quantity: Number) : Void;
+ *
+ * private:
+ *      function readyFeatures_() : Void;
+ *      function compareColumn_(a: eCommerceProductFeatureBase, b: eCommerceProductFeatureBase) : Number;
+ *      function compareFooter_(a: eCommerceProductFeatureBase, b: eCommerceProductFeatureBase) : Number;
+ *
+ *      var productType_: eCommerceProductType = null;
+ *      var productColumnFeatures_: eCommerceProductFeatureBase = []; // sorted for columns
+ *      var productFooterFeatures_: eCommerceProductFeatureBase = []; // sorted for footers
+ *      var quantity_: number;
+ * };
+ * \endcode
+ *
+ * @param {snapwebsites.eCommerceProductType} product_type  A reference to the type to use for this product.
+ *
+ * @return {snapwebsites.eCommerceProduct} The newly created object.
+ *
+ * @constructor
+ * @extends snapwebsites.eCommerceProductBase
+ * @struct
+ */
+snapwebsites.eCommerceProduct = function(product_type)
+{
+    var quantity = product_type.getProperty("ecommerce::start_quantity");
+
+    snapwebsites.eCommerceProduct.superClass_.constructor.call(this);
+
+    this.productType_ = product_type;
+    this.productColumnFeatures_ = [];
+    this.productFooterFeatures_ = [];
+
+    // force a default quantity; it cannot be zero because when that is
+    // used the item is removed from the cart
+    if(!quantity || snapwebsites.castToNumber(quantity, "somehow ecommerce::start_quantity is not a number") <= 0)
+    {
+        this.quantity_ = 1;
+    }
+    else
+    {
+        this.quantity_ = snapwebsites.castToNumber(quantity, "somehow ecommerce::start_quantity is not a number");
+    }
+
+    return this;
+};
+
+
+/** \brief Mark eCommerceProduct as inheriting from eCommerceProductBase.
+ *
+ * This class inherit from the eCommerceProductBase so it can be referenced
+ * in lower level objects.
+ */
+snapwebsites.inherits(snapwebsites.eCommerceProduct, snapwebsites.eCommerceProductBase);
+
+
+/** \brief A reference to the product type.
+ *
+ * This reference points to the product type which gives the
+ * eCommerceProduct object access to the list of features used
+ * by that product.
+ *
+ * \note
+ * Initialized by the constructor.
+ *
+ * @type {snapwebsites.eCommerceProductType}
+ * @private
+ */
+snapwebsites.eCommerceProduct.prototype.productType_ = null;
+
+
+/** \brief An array of product features sorted for columns.
+ *
+ * This parameter holds the list of features attached to this
+ * product. The minimum is the basic feature that all products have.
+ *
+ * @type {Array.<snapwebsites.eCommerceProductFeatureBase>}
+ * @private
+ */
+snapwebsites.eCommerceProduct.prototype.productColumnFeatures_; // = []; initialized in constructor to avoid problems
+
+
+/** \brief An array of product features sorted for footers.
+ *
+ * This parameter holds the list of features attached to this
+ * product. The minimum is the basic feature that all products have.
+ *
+ * @type {Array.<snapwebsites.eCommerceProductFeatureBase>}
+ * @private
+ */
+snapwebsites.eCommerceProduct.prototype.productFooterFeatures_; // = []; initialized in constructor to avoid problems
+
+
+/** \brief The quantity entered by the customer.
+ *
+ * This parameter represents the numeric quantity the customer is
+ * purchasing. Depending on the product and features, the quantity
+ * may have some constrained (i.e. multiple of 100, not less than
+ * 10, integer, allow 3 decimals, etc.)
+ *
+ * The default is taken from the product type which in most cases
+ * is one (1).
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.eCommerceProduct.prototype.quantity_ = 0;
+
+
+/** \brief Get the name of this widget.
+ *
+ * On creation the widget retrieves the attribute named "field_name"
+ * which contains the name of the widget (used to communicate
+ * with the server.) This function returns that name.
+ *
+ * @return {snapwebsites.eCommerceProductType}  A reference to the product type.
+ *
+ * @final
+ */
+snapwebsites.eCommerceProduct.prototype.getProductType = function()
+{
+    return this.productType_;
+};
+
+
+/** \brief Setup the features of this product.
+ *
+ * This function is called whenever the features of this products
+ * are required. By default the features are not setup to avoid
+ * wasting time (especially on a page with 100's of products in
+ * a list.)
+ *
+ * @private
+ */
+snapwebsites.eCommerceProduct.prototype.readyFeatures_ = function()
+{
+    var cart,
+        i,
+        j,
+        basic_feature,
+        feature,
+        feature_names,
+        max_names,
+        max_features,
+        names,
+        order;
+
+    // if array is not empty, then the features were already readied
+    // (no need to test whether Footer is empty, it is)
+    if(this.productColumnFeatures_.length == 0)
+    {
+        cart = snapwebsites.eCommerceCartInstance;
+        basic_feature = cart.getProductFeature("ecommerce::basic");
+        this.productColumnFeatures_.push(basic_feature);
+
+        // we want to sort the features here
+        // we sort them by column dependencies and footer dependencies
+        feature_names = this.productType_.getProperty("ecommerce::features");
+        names = feature_names.split(",");
+        max_names = names.length;
+        for(i = 0; i < max_names; ++i)
+        {
+            // skip empty names (two commas in a row)
+            // also skip the basic feature, we already added it!
+            if(!names[i] || names[i] == "ecommerce::basic")
+            {
+                continue;
+            }
+
+            // if the feature does not exist, then the call will throw
+            // so we do not have to do such a test here
+            feature = cart.getProductFeature(names[i]);
+            max_features = this.productColumnFeatures_.length;
+
+            // first sort by column
+            order = -1;
+            for(j = 0; j < max_features; ++j)
+            {
+                order = this.compareColumn_(feature, this.productColumnFeatures_[j]);
+                if(order < 0)
+                {
+                    this.productColumnFeatures_.splice(j, 0, feature);
+                    break;
+                }
+            }
+            if(order >= 0)
+            {
+                // it was not picked up yet, put at the end
+                this.productColumnFeatures_.push(feature);
+            }
+
+            // second sort by footer
+            order = -1;
+            for(j = 0; j < max_features; ++j)
+            {
+                order = this.compareFooter_(feature, this.productFooterFeatures_[j]);
+                if(order < 0)
+                {
+                    this.productFooterFeatures_.splice(j, 0, feature);
+                    break;
+                }
+            }
+            if(order >= 0)
+            {
+                // it was not picked up yet, put at the end
+                this.productFooterFeatures_.push(feature);
+            }
+        }
+
+        this.productFooterFeatures_.push(basic_feature);
+    }
+};
+
+
+/** \brief Compare two features between each others.
+ *
+ * This function compares feature 'a' against 'b'. If 'b' depends
+ * on 'a', then the function returns -1 meaning that 'a' must be handled
+ * before 'b'. Otherwise the function returns 0.
+ *
+ * Features can be given a list of dependencies which is used to generate
+ * a graph and order the features properly.
+ *
+ * @param {snapwebsites.eCommerceProductFeatureBase} a  The left hand side feature.
+ * @param {snapwebsites.eCommerceProductFeatureBase} b  The right hand side feature.
+ *
+ * @private
+ * @return {number} -1 if a has to be handled before b, 0 otherwise
+ */
+snapwebsites.eCommerceProduct.prototype.compareColumn_ = function(a, b)
+{
+    var an = "," + a.getFeatureName() + ",",
+        bn = "," + b.getFeatureName() + ",",
+        ad,
+        bd,
+        ap,
+        bp;
+
+    ad = "," + a.getColumnDependencies() + ",";
+    bd = "," + b.getColumnDependencies() + ",";
+
+    ap = bd.indexOf(an) == -1;
+    bp = ad.indexOf(bn) == -1;
+
+    if(!ap && !bp)
+    {
+        throw new Error("Two features depend on each other and thus cannot be sorted.");
+    }
+
+    return ap ? -1 : 0;
+};
+
+
+/** \brief Compare two features between each others.
+ *
+ * This function compares feature 'a' against 'b'. If 'b' depends
+ * on 'a', then the function returns -1 meaning that 'a' must be handled
+ * before 'b'. Otherwise the function returns 0.
+ *
+ * Features can be given a list of dependencies which is used to generate
+ * a graph and order the features properly.
+ *
+ * This function checks the Footer dependencies.
+ *
+ * @param {snapwebsites.eCommerceProductFeatureBase} a  The left hand side feature.
+ * @param {snapwebsites.eCommerceProductFeatureBase} b  The right hand side feature.
+ *
+ * @private
+ * @return {number} -1 if a has to be handled before b, 0 otherwise
+ */
+snapwebsites.eCommerceProduct.prototype.compareFooter_ = function(a, b)
+{
+    var an = "," + a.getFeatureName() + ",",
+        bn = "," + b.getFeatureName() + ",",
+        ad,
+        bd,
+        ap,
+        bp;
+
+    ad = "," + a.getFooterDependencies() + ",";
+    bd = "," + b.getFooterDependencies() + ",";
+
+    ap = bd.indexOf(an) == -1;
+    bp = ad.indexOf(bn) == -1;
+
+    if(!ap && !bp)
+    {
+        throw new Error("Two features depend on each other and thus cannot be sorted.");
+    }
+
+    return ap ? -1 : 0;
+};
+
+
+/** \brief Merge two arrays of column features.
+ *
+ * This function is used to merge the array of features passed in and
+ * the array of features of this product.
+ *
+ * This is used to generate the array of features necessary to generate
+ * the cart header. We may later want to find a better way to handle
+ * this special case. One way would be to force all features to always
+ * add all their column in all the products, but right now we do NOT
+ * force a product to make use of all the features (i.e. one product
+ * may have taxes, but no shipping, another may have neither, one
+ * may have both... thus you may get 1 or 2 columns differences.)
+ *
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} features  A reference to an array of features.
+ * @param {boolean} use_column_features  If true, use the column features, if false, use the footer features.
+ *
+ * @final
+ */
+snapwebsites.eCommerceProduct.prototype.getFeatures = function(features, use_column_features)
+{
+    var max_features,   // WARNING: productColumnFeatures may not be ready here so we cannot get the length now
+        max,
+        i,
+        j,
+        pos = 0,
+        done,
+        name,
+        product_features = use_column_features ? this.productColumnFeatures_ : this.productFooterFeatures_,
+        f;
+
+    // First we have to make sure that the features are ready
+    this.readyFeatures_();
+
+    // The order may not be the same so this loop is really complicated...
+    max_features = product_features.length;
+    for(i = 0; i < max_features; ++i)
+    {
+        f = product_features[i];
+        name = f.getFeatureName();
+
+        // is it the next feature in the existing list?
+        done = false;
+        if(pos < features.length)
+        {
+            if(features[pos].getFeatureName() == name)
+            {
+                // it already exists, we are good
+                ++pos;
+                done = true;
+            }
+        }
+        if(!done)
+        {
+            // make sure we do not have it somewhere else
+            // (possibly before so we start with 0 and not 'pos')
+            max = features.length;
+            for(j = 0; j < max; ++j)
+            {
+                if(features[j].getFeatureName() == name)
+                {
+                    // make sure 'pos' does not go backward
+                    if(pos < j + 1)
+                    {
+                        pos = j + 1;
+                    }
+                    done = true;
+                    break;
+                }
+            }
+
+            if(!done)
+            {
+                // put at the end
+                features.push(f);
+                pos = features.length;
+            }
+        }
+    }
+};
+
+
+/** \brief Generates the columns for the cart.
+ *
+ * This function allocates a columns object and then adds the columns
+ * as required by calling the necessary function on all the features of
+ * this product.
+ *
+ * Note that it always calls the Basic feature first. Other features
+ * can be ordered as required.
+ *
+ * \note
+ * At this point we do not really need this function to be a product
+ * function, but I guess it makes more sense.
+ *
+ * @param {number} index  The line counter.
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} features  A reference to an array of features.
+ * @param {!snapwebsites.eCommerceColumns} columns  A reference to the product type.
+ *
+ * @final
+ */
+snapwebsites.eCommerceProduct.prototype.getColumns = function(index, features, columns)
+{
+    var max_features = features.length,
+        i;
+
+    for(i = 0; i < max_features; ++i)
+    {
+        features[i].setupColumns(this, columns, index);
+    }
+};
+
+
+/** \brief Return the product description.
+ *
+ * This function returns the product description.
+ *
+ * @return {string}  The brief description to use in the cart for this product.
+ * @final
+ */
+snapwebsites.eCommerceProduct.prototype.getDescription = function()
+{
+    return snapwebsites.castToString(this.productType_.getProperty("ecommerce::description"), "product ecommerce::description is not a valid string");
+};
+
+
+/** \brief Return the product quantity.
+ *
+ * This function sets the new product quantity.
+ *
+ * The function accepts a quantity of zero because in some very rare
+ * but non the less existing cases... However, negative quantities
+ * are refused.
+ *
+ * @param {number} quantity  The new quantity of this product in the cart.
+ *
+ * @final
+ */
+snapwebsites.eCommerceProduct.prototype.setQuantity = function(quantity)
+{
+    if(quantity < 0)
+    {
+        throw new Error("snapwebsites.eCommerceProduct.setQuantity() does not accept negative quantities (" + quantity + ").");
+    }
+    this.quantity_ = quantity;
+};
+
+
+/** \brief Return the product quantity.
+ *
+ * This function returns the product quantity.
+ *
+ * @return {number}  The quantity of this product in the cart.
+ * @final
+ */
+snapwebsites.eCommerceProduct.prototype.getQuantity = function()
+{
+    return this.quantity_;
+};
+
+
+/** \brief Return the product price.
+ *
+ * This function returns the product price.
+ *
+ * @return {number}  The sale price of this product.
+ * @final
+ */
+snapwebsites.eCommerceProduct.prototype.getPrice = function()
+{
+    return snapwebsites.castToNumber(this.productType_.getProperty("ecommerce::price"), "product ecommerce::price is not a valid number");
+};
 
 
 
@@ -220,55 +1677,90 @@ snapwebsites.eCommerceProductTypeBase.prototype.initializeProduct = function(pro
  * - Send changes to the server
  *   - Handle server response
  *
+ * Note that this class is marked as final because it is used as a
+ * singleton. To extend the cart you have to create product features.
+ * Those features can be sued in various different ways to extend
+ * pretty much all the parts of the cart.
+ *
  * \code
- * class eCommerceCart extends ServerAccessCallbacks
+ * final class eCommerceCart extends ServerAccessCallbacks
  * {
  * public:
  *      eCommerceCart();
  *
+ *      function registerProductFeature(product_feature: eCommerceProductFeatureBase) : Void;
+ *      function hasProductFeature(feature_name: string) : boolean;
+ *      function getProductFeature(feature_name: string) : eCommerceProductFeatureBase;
+ *
+ *      function registerProductType(data: Object) : Void;
+ *      function addProduct(guid: String) : Void;
+ *
  *      function checkModified();
- *      function registerProductType(widget_type: eCommerceProductTypeBase);
- *      function hasProductType(type_name: string) : boolean;
- *      function getProductType(type_name: string) : ProductType;
+ *
  *      function showGlimpse() : Void;
  *      function hideGlimpse() : Void;
  *      function showCart() : Void;
  *      function hideCart() : Void;
  *
- *      virtual function generate_cart_html() : string;
- *      virtual function generate_cart_header() : Void;
- *      virtual function generate_cart_footer() : Void;
- *      function generate_product_table() : Void;
- *      virtual function generate_product_table_header() : Void;
- *      virtual function generate_product_table_footer() : Void;
+ *      function getTotalQuantity() : Number;
+ *      function getTotalCosts() : Number;
  *
- *      virtual function serverAccessSuccess(result);
- *      virtual function serverAccessError(result);
- *      virtual function serverAccessComplete(result);
+ *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
+ *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
+ *      virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData);
  *
  * private:
- *      productTypes_: ProductType;
+ *      function generateCartHtml_(e: jQuery) : String;
+ *      function generateCartHeader_(e: jQuery, in out columns: eCommerceColumns) : Void;
+ *      function generateCartFooter_(e: jQuery, in out columns: eCommerceColumns) : Void;
+ *      function generateProductTable_(e: jQuery, in out columns: eCommerceColumns, columns_features: Array of eCommerceProductFeatureBase, footer_features: Array of eCommerceProductFeatureBase) : Void;
+ *      function generateProductTableHeader_(e: jQuery, in out columns: eCommerceColumns) : Void;
+ *      function generateProductTableFooter_(e: jQuery, in out columns: eCommerceColumns, footer_features: Array of eCommerceProductFeatureBase) : Void;
+ *      function generateProductTableRow_(e: jQuery, row_index: Number, in out columns: eCommerceColumns) : Void;
+ *      function getColumnHeaders_(features: Array of eCommerceProductFeatureBase, in out columns: eCommerceColumns) : Void;
+ *      function getColumnFooters_(features: Array of eCommerceProductFeatureBase, in out columns: eCommerceColumns, index: Number) : Void;
+ *
+ *      static var createPopup_: Object;
+ *      var productFeatures_: eCommerceProductFeatureBase;
+ *      var productTypes_: Object; // indexed by product type GUID
+ *      var cartHtml_: jQuery;
+ *      var products_: Array of eCommerceProductBase;
  * };
  * \endcode
  *
  * @return {snapwebsites.eCommerceCart}  The newly created object.
  *
  * @constructor
+ * @extends {snapwebsites.ServerAccessCallbacks}
  * @struct
  */
 snapwebsites.eCommerceCart = function()
 {
-//#ifdef DEBUG
-    if(jQuery("body").hasClass("snap-editor-initialized"))
-    {
-        throw new Error("Only one editor singleton can be created.");
-    }
-    jQuery("body").addClass("snap-editor-initialized");
-//#endif
+    var that = this;
 
-    this.productTypes_ = [];
-    this.cartHtml_ = [];
+//#ifdef DEBUG
+    if(jQuery("body").hasClass("snap-cart-initialized"))
+    {
+        throw new Error("Only one cart singleton can be created.");
+    }
+    jQuery("body").addClass("snap-cart-initialized");
+//#endif
+    snapwebsites.eCommerceCart.superClass_.constructor.call(this);
+
+    this.productFeatures_ = {};
+    this.productTypes_ = {};  // types do not have a name, there is a product name though
     this.products_ = [];
+
+    // now connect to Buy Now buttons and maybe more too...
+    jQuery("a.buy-now-button").click(function(e)
+        {
+            var guid = jQuery(this).attr("product-guid");
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            that.addProduct(snapwebsites.castToString(guid, "somehow ecommerce::start_quantity is not a number"));
+        });
 
     return this;
 };
@@ -278,6 +1770,7 @@ snapwebsites.eCommerceCart = function()
  *
  * This class inherits from the ServerAccessCallbacks, which it uses
  * to send the server changes made by the client to the cart.
+ * In the cart, that feature is pretty much always asynchroneous.
  */
 snapwebsites.inherits(snapwebsites.eCommerceCart, snapwebsites.ServerAccessCallbacks);
 
@@ -291,7 +1784,7 @@ snapwebsites.inherits(snapwebsites.eCommerceCart, snapwebsites.ServerAccessCallb
  * @type {Object}
  * @private
  */
-snapwebsites.eCommerceCart.createPopup_ =
+snapwebsites.eCommerceCart.createPopup_ = // static
 {
 
 // WARNING: we have exactly ONE instance of this variable
@@ -301,29 +1794,55 @@ snapwebsites.eCommerceCart.createPopup_ =
     id: "ecommerce-cart",
     title: "Cart",
     darken: 150,
-    width: 750
+    width: 750,
+    height: 350
     //beforeHide: -- defined as required
 };
 
 
-/** \brief The list of product types understood by the e-Commerce cart.
+/** \brief The list of product features understood by the e-Commerce cart.
  *
- * This array is used to save the product types when you call the
- * registerProductType() function.
+ * This array is used to save the product features when you call the
+ * registerProductFeature() function.
  *
- * @type {Array.<snapwebsites.eCommerceProductTypeBase>}
+ * \note
+ * The registered product features cannot be unregistered.
+ *
+ * @type {Object}
  * @private
  */
-snapwebsites.eCommerceCart.prototype.productTypes_; // = []; -- initialized in constructor to avoid problems
+snapwebsites.eCommerceCart.prototype.productFeatures_; // = {}; -- initialized in constructor to avoid problems
 
 
-/** \brief A protected variable member holding the cart HTML code.
+/** \brief The list of product types one can add to the e-Commerce cart.
  *
- * This DOM document holds the cart HTML code. It is regenerated
- * when we first open the cart popup. Once it exists, the cart
- * keeps the code up to date as we go (i.e. you could keep the
- * cart open and add items to it and see that it gets updated
- * on the fly.)
+ * This map is used to save the various product definitions. Product
+ * definitions are used to allow the user to handle the products:
+ *
+ * \li Add products to the cart.
+ * \li Display the products in the cart.
+ * \li Compute the total costs.
+ * \li Define various types of quantities.
+ * \li Computer the grand total.
+ * \li etc.
+ *
+ * The add of product types is done using the registerProductType()
+ * function.
+ *
+ * The object saves each product type object using the GUID as the
+ * index. The GUI is a mandatory parameter of the product type which
+ * in most cases is the URL of the product.
+ *
+ * \note
+ * The registered product types cannot be unregistered.
+ *
+ * @type {Object}
+ * @private
+ */
+snapwebsites.eCommerceCart.prototype.productTypes_; // = {}; -- initialized in constructor to avoid problems
+
+
+/** \brief A protected variable member referencing the cart HTML.
  *
  * This jQuery object is the one returned by the open() function
  * of the Popup class. In other words, it is not directly the
@@ -334,17 +1853,226 @@ snapwebsites.eCommerceCart.prototype.productTypes_; // = []; -- initialized in c
  * @type {jQuery}
  * @protected
  */
-snapwebsites.eCommerceCart.prototype.cartHtml_; // = []; -- initialized in constructor to avoid problems
+snapwebsites.eCommerceCart.prototype.cartHtml_ = null;
 
 
-/** \brief The list of products that have been added to this cart.
+/** \brief The list of products that have been added to the cart.
  *
- * This array is the list of products that have been added to this cart.
+ * This array is the list of products that have been added to the cart.
  *
- * @type {snapwebsites.eCommerceProduct}
+ * @type {Array.<snapwebsites.eCommerceProductBase>}
  * @private
  */
 snapwebsites.eCommerceCart.prototype.products_; // = []; -- initialized in constructor to avoid problems
+
+
+/** \brief Register a product feature.
+ *
+ * This function is used to register an e-Commerce product feature in the
+ * cart.
+ *
+ * This allows for any number of extensions and thus any number of
+ * cool advanced features that do not all need to be defined in the
+ * core of the cart implementation.
+ *
+ * @param {snapwebsites.eCommerceProductFeatureBase} product_feature  The product feature to register.
+ *
+ * @final
+ */
+snapwebsites.eCommerceCart.prototype.registerProductFeature = function(product_feature)
+{
+    var name = product_feature.getFeatureName();
+    this.productFeatures_[name] = product_feature;
+};
+
+
+/** \brief Check whether a feature exists.
+ *
+ * This function checks the list of product features to see whether
+ * \p feature_name exists.
+ *
+ * @param {!string} feature_name  The name of the feature to check.
+ *
+ * @return {!boolean}  true if the feature is defined.
+ *
+ * @final
+ */
+snapwebsites.eCommerceCart.prototype.hasProductFeature = function(feature_name)
+{
+    return this.productFeatures_[feature_name] instanceof snapwebsites.eCommerceProductFeatureBase;
+};
+
+
+/** \brief This function is used to get a product feature.
+ *
+ * Product features get registered with the registerProductFeature() function.
+ * Later you may retrieve them using this function.
+ *
+ * @throws {Error} If the named \p feature was not yet registered, then this
+ *                 function throws.
+ *
+ * @param {string} feature_name  The name of the product feature to retrieve.
+ *
+ * @return {snapwebsites.eCommerceProductFeatureBase}  The product feature object.
+ *
+ * @final
+ */
+snapwebsites.eCommerceCart.prototype.getProductFeature = function(feature_name)
+{
+    if(this.productFeatures_[feature_name] instanceof snapwebsites.eCommerceProductFeatureBase)
+    {
+        return this.productFeatures_[feature_name];
+    }
+    throw new Error("getProductFeature(\"" + feature_name + "\") called when that feature is not yet defined.");
+};
+
+
+/** \brief Register a product type.
+ *
+ * This function is used to register an e-Commerce product type in the
+ * cart. Product types are used to add products to the cart.
+ *
+ * This allows for any number of products to be added to the cart,
+ * however, generally only the following types of product type
+ * definitions are loaded on a page:
+ *
+ * 1. The product represented by the page, or in case of a list, all the
+ *    different products shown in that list (later we will have auto-loading
+ *    lists that will dynamically grow the list of possible product types.)
+ *    We may also have products defined in boxes.
+ *
+ * 2. The products that are promoted.
+ *
+ * 3. The products already defined in the cart.
+ *
+ * @throws {Error}  The data MUST have a GUID defined.
+ *
+ * @param {Object} data  The product type data.
+ *
+ * @final
+ */
+snapwebsites.eCommerceCart.prototype.registerProductType = function(data)
+{
+    // in this case we create the object
+    //
+    // the 'data' parameter defines the product type data, however,
+    // for most that 'data' is handled by product features
+    var product_type = new snapwebsites.eCommerceProductType(data),
+        guid = product_type.getProperty("ecommerce::guid");
+
+    this.productTypes_[guid] = product_type;
+};
+
+
+/** \brief This function adds a product to the cart.
+ *
+ * In most cases this is called when people click on a "buy-now-button"
+ * (a link marked with that class).
+ *
+ * If the product is not defined, then we generate an error (it should
+ * always be available when this function gets called.)
+ *
+ * The cart is automatically updated if required.
+ *
+ * @param {string} guid  The GUID of the product type to be added.
+ */
+snapwebsites.eCommerceCart.prototype.addProduct = function(guid)
+{
+    var max = this.products_.length,
+        product_type = this.productTypes_[guid],
+        product,
+        other_product_type,
+        found = false,
+        i;
+
+    if(!(product_type instanceof snapwebsites.eCommerceProductType))
+    {
+        // that product type does not exist?!
+        snapwebsites.OutputInstance.displayOneMessage("Somehow we could not find product at " + guid);
+        return;
+    }
+
+    // first we want to see whether that object was already
+    // added to the cart; if so the only reason to add another
+    // is in case you have a different attribute to the product
+    // which right now we do not yet support (a serial number
+    // is also an attribute)
+
+    for(i = 0; i < max; ++i)
+    {
+        other_product_type = this.products_[i].getProductType();
+        if(other_product_type.getProperty("ecommerce::guid") == guid)
+        {
+            // hmmm... the user already has this product in his cart,
+            // ask whether we should add one item or just forget the
+            // add altogether
+            found = true;
+            add = other_product_type.getProperty("ecommerce::add_quantity");
+            this.products_[i].setQuantity(this.products_[i].getQuantity() + 1);
+            break;
+        }
+    }
+
+    if(!found)
+    {
+        product = new snapwebsites.eCommerceProduct(product_type);
+        this.products_.push(product);
+    }
+
+    if(this.cartHtml_)
+    {
+        // re-generate (this is because we do not yet have all the
+        // necessary callbacks)
+        this.generateCartHtml_();
+    }
+    this.showCart();
+};
+
+
+/** \brief This function removes a product from the cart.
+ *
+ * In most cases this is called when people click on a "cart-delete-product"
+ * (a link marked with that class). It removes all the products with the
+ * specified \p guid from the cart.
+ *
+ * The cart is automatically updated if required.
+ *
+ * @param {string} guid  The GUID of the product type to be added.
+ */
+snapwebsites.eCommerceCart.prototype.removeProduct = function(guid)
+{
+    var i = this.products_.length,
+        product_type = this.productTypes_[guid],
+        product,
+        other_product_type,
+        modified = false;
+
+    if(!(product_type instanceof snapwebsites.eCommerceProductType))
+    {
+        // that product type does not exist?!
+        // ignore the error (no throw) so you can have a hard coded
+        // URI and it just gets ignored if the product is not loaded
+        return;
+    }
+
+    // search for the product in the cart and delete all instances
+    while(i > 0)
+    {
+        --i;
+        other_product_type = this.products_[i].getProductType();
+        if(other_product_type.getProperty("ecommerce::guid") == guid)
+        {
+            // found a copy, get rid of it
+            this.products_.splice(i, 1);
+            modified = true;
+        }
+    }
+
+    if(modified)
+    {
+        this.generateCartHtml_();
+    }
+};
 
 
 /** \brief Check whether a field in the cart editor form was modified.
@@ -352,68 +2080,12 @@ snapwebsites.eCommerceCart.prototype.products_; // = []; -- initialized in const
  * When a quantity or some other parameter was modified in the cart,
  * this function is called to check whether it looks different. If so
  * then the change is sent to the server for archiving.
+ *
+ * @final
  */
 snapwebsites.eCommerceCart.prototype.checkModified = function()
 {
-};
-
-
-/** \brief Register a product type.
- *
- * This function is used to register an e-Commerce product type in the
- * cart.
- *
- * This allows for any number of extensions and thus any number of
- * cool advanced features that do not all need to be defined in the
- * core of the cart implementation.
- *
- * @param {snapwebsites.ProductType} product_type  The product type to register.
- */
-snapwebsites.eCommerceCart.prototype.registerProductType = function(product_type)
-{
-    var name = product_type.getType();
-    this.productTypes_[name] = product_type;
-};
-
-
-/** \brief Check whether a type exists.
- *
- * This function checks the list of product types to see whether
- * \p type_name exists.
- *
- * @param {!string} type_name  The name of the type to check.
- *
- * @return {!boolean}  true if the type is defined.
- *
- * @final
- */
-snapwebsites.eCommerceCart.prototype.hasProductType = function(type_name)
-{
-    return this.productTypes_[type_name] instanceof snapwebsites.eCommerceProductTypeBase;
-};
-
-
-/** \brief This function is used to get a product type.
- *
- * Product types get registered with the registerProductType() function.
- * Later you may retrieve them using this function.
- *
- * @throws {Error} If the named \p type was not yet registered, then this
- *                 function throws.
- *
- * @param {string} type_name  The name of the product type to retrieve.
- *
- * @return {snapwebsites.eCommerceProductType}  The product type object.
- *
- * @final
- */
-snapwebsites.eCommerceCart.prototype.getProductType = function(type_name)
-{
-    if(!(this.productTypes_[type_name] instanceof snapwebsites.eCommerceProductTypeBase))
-    {
-        throw new Error("getProductType() of type \"" + type_name + "\" is not yet defined, you cannot get it now.");
-    }
-    return this.productTypes_[type_name];
+    this.showCart();
 };
 
 
@@ -425,6 +2097,8 @@ snapwebsites.eCommerceCart.prototype.getProductType = function(type_name)
  * If the cart is empty, the empty cart icon is shown.
  *
  * If the cart is not empty, the standard cart icon is shown.
+ *
+ * @final
  */
 snapwebsites.eCommerceCart.prototype.showGlimpse = function()
 {
@@ -440,6 +2114,8 @@ snapwebsites.eCommerceCart.prototype.showGlimpse = function()
  * For example, it is generally a good idea to hide the cart and
  * glimpse when asking the user for his credit card information
  * (card number, address, phone...)
+ *
+ * @final
  */
 snapwebsites.eCommerceCart.prototype.hideGlimpse = function()
 {
@@ -454,18 +2130,27 @@ snapwebsites.eCommerceCart.prototype.hideGlimpse = function()
  *
  * The cart makes use of a fully dynamic editor form.
  *
- * In most cases, clicking on the Glimpse will trigger a call this
+ * In most cases, clicking on the Glimpse will trigger a call to this
  * function. Other methods may be used to open the cart.
+ *
+ * @final
  */
 snapwebsites.eCommerceCart.prototype.showCart = function()
 {
     if(!this.cartHtml_)
     {
         this.cartHtml_ = snapwebsites.PopupInstance.open(snapwebsites.eCommerceCart.createPopup_);
-        generate_cart_html(this.cartHtml_.find(".popup-body"));
+        e = this.cartHtml_.find(".popup-body");
+        e.append(
+                "<div class='cart-summary'></div>"
+              + "<div class='cart-payment'></div>"
+            );
+        this.generateCartHtml_();
+        this.generatePaymentHtml_();
     }
     // probably need an update here?
     // although even when hidden we probably want to keep this up to date
+    // through the checkModified() function
 
     snapwebsites.PopupInstance.show(snapwebsites.eCommerceCart.createPopup_);
 };
@@ -476,12 +2161,83 @@ snapwebsites.eCommerceCart.prototype.showCart = function()
  * This function hides the cart, really it just closes the popup
  * opened by the showCart() function. The close button of the popup
  * will do the same thing.
+ *
+ * @final
  */
 snapwebsites.eCommerceCart.prototype.hideCart = function()
 {
     snapwebsites.PopupInstance.hide(snapwebsites.eCommerceCart.createPopup_);
 };
 
+
+/** \brief Retrieve the current total quantity.
+ *
+ * This function goes through the list of products and computes the
+ * total quantity of products being purchased.
+ *
+ * The number of products represents the total number of different
+ * items. So if some products have a quantity larger than 1, the
+ * total is smaller than the total number of items which this
+ * function calculates.
+ *
+ * \note
+ * It probably does not make sense to show a total quantity if
+ * the various items you can add to your cart use varied measurement
+ * systems (i.e. 3 grammes of gold and 3 kg of apples..., what would
+ * 6 mean here?)
+ *
+ * \todo
+ * We may have to properly count the quantity in the main cart
+ * list or in the wishlist.
+ *
+ * @return {number}  The total number of items.
+ */
+snapwebsites.eCommerceCart.prototype.getTotalQuantity = function()
+{
+    var i,
+        max = this.products_.length,
+        total = 0;
+
+    for(i = 0; i < max; ++i)
+    {
+        total += this.products_[i].getQuantity();
+    }
+
+    return total;
+};
+
+
+/** \brief Retrieve the current total costs.
+ *
+ * This function goes through the list of products and computes the
+ * total costs of products being purchased.
+ *
+ * If the tax and shipping methods used include these as products,
+ * then those numbers will be included in this total. Otherwise,
+ * it should be the net costs.
+ *
+ * \todo
+ * Define the number of digits to keep behind the decimal point.
+ * Right now that is hard coded as 2 in several places.
+ *
+ * @return {number}  The total number of items.
+ */
+snapwebsites.eCommerceCart.prototype.getTotalCosts = function()
+{
+    var i,
+        max = this.products_.length,
+        total = 0;
+
+    // compute the total in cents
+    for(i = 0; i < max; ++i)
+    {
+        // we MUST round on a per computation because that is
+        // what we present the end user on each line of the cart!
+        total += Math.round(this.products_[i].getPrice() * this.products_[i].getQuantity() * 100);
+    }
+
+    return total / 100;
+};
 
 
 /** \brief Generate the cart HTML code.
@@ -505,15 +2261,143 @@ snapwebsites.eCommerceCart.prototype.hideCart = function()
  *
  * Finally the function calls the generate_cart_footer() function which
  * can be overridden too since it is virtual.
- *
- * @param {!jQuery} e  The body element where the header, table, and footer
- *                     can directly be added.
  */
-snapwebsites.eCommerceCart.prototype.generate_cart_html(e)
+snapwebsites.eCommerceCart.prototype.generateCartHtml_ = function()
 {
-    this.generate_cart_header(e);
-    this.generate_product_table(e);
-    this.generate_cart_footer(e);
+    // first we generate an array of product columns that we want to
+    // include in the resulting table displayed in the cart.
+    var that = this,
+        i,
+        max = this.products_.length,
+        columns = new snapwebsites.eCommerceColumns(),
+        column_features = [],
+        footer_features = [],
+        e = this.cartHtml_.find(".popup-body .cart-summary");
+
+    // make sure we start with an empty cart, everything below
+    // uses append() to add components to the cart
+    e.empty();
+
+    // First take the complete list of features necessary
+    // to build the headers; then generate the headers
+    if(max == 0)
+    {
+        // no products... get the default feature
+        column_features.push(this.getProductFeature("ecommerce::basic"));
+    }
+    else
+    {
+        for(i = 0; i < max; ++i)
+        {
+            this.products_[i].getFeatures(column_features, true);
+        }
+    }
+    this.getColumnHeaders_(column_features, columns);
+
+    // now that we have a complete list of all the features
+    columns.generateColumnsMap();
+
+    for(i = 0; i < max; ++i)
+    {
+        this.products_[i].getColumns(i, column_features, columns);
+    }
+
+    this.getColumnFooters_(column_features, columns, i);
+
+    // the footer features are not sorted in the same order so we
+    // have to get these too, like we did with the headers
+    for(i = 0; i < max; ++i)
+    {
+        this.products_[i].getFeatures(footer_features, false);
+    }
+
+    this.generateCartHeader_(e, columns);
+    this.generateProductTable_(e, columns, column_features, footer_features);
+    this.generateCartFooter_(e, columns);
+
+    // now connect to various buttons
+    e.find(".update-cart").click(function(e)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+
+            alert("Update");
+        });
+    e.find(".continue-shopping").click(function(e)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+
+            that.hideCart();
+        });
+    e.find(".checkout").click(function(e)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // is it disabled?
+            if(max == 0)
+            {
+                return;
+            }
+
+            alert("Checkout");
+        }).toggleClass("disabled", max == 0);
+    e.find(".cart-delete-product").click(function(e)
+        {
+            var guid = jQuery(this).attr("guid");
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            that.removeProduct(guid);
+        });
+};
+
+
+/** \brief Generates the column headers for the cart.
+ *
+ * This function adds the column headers to the columns.
+ *
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} features  A reference to an array of features.
+ * @param {!snapwebsites.eCommerceColumns} columns  A reference to the columns.
+ *
+ * @private
+ * @final
+ */
+snapwebsites.eCommerceCart.prototype.getColumnHeaders_ = function(features, columns)
+{
+    var max_features = features.length,
+        i;
+
+    for(i = 0; i < max_features; ++i)
+    {
+        features[i].setupColumnHeaders(columns);
+    }
+};
+
+
+/** \brief Generates the column footers for the cart.
+ *
+ * This function adds the column footers to the columns object.
+ *
+ * This includes lines such as the shipping, taxes, grand total.
+ *
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} features  A reference to an array of features.
+ * @param {!snapwebsites.eCommerceColumns} columns  A reference to the columns.
+ * @param {number} index  The row index for this product entry.
+ *
+ * @final
+ */
+snapwebsites.eCommerceCart.prototype.getColumnFooters_ = function(features, columns, index)
+{
+    var max_features = features.length,
+        i;
+
+    for(i = 0; i < max_features; ++i)
+    {
+        features[i].setupColumnFooters(columns, index);
+    }
 };
 
 
@@ -523,12 +2407,38 @@ snapwebsites.eCommerceCart.prototype.generate_cart_html(e)
  * information about the store and such. It should remains really
  * brief (one line or two.)
  *
- * @param {!jQuery} e  The body element where the header, table, and footer
- *                     can directly be added.
+ * \todo
+ * Implement a way for the store administrator to enter what should
+ * appear in the header and make the count a parameter (i.e. using
+ * the filter something like [ecommerce::total_quantity]) We want
+ * to allow for filtering with some JS from the filter plugin to do
+ * the work too!
+ *
+ * @param {!jQuery} e  The element where the header can directly be added.
+ * @param {!snapwebsites.eCommerceColumns} columns  The price of the product.
  */
-snapwebsites.eCommerceCart.prototype.generate_cart_header(e)
+snapwebsites.eCommerceCart.prototype.generateCartHeader_ = function(e, columns)
 {
-    e.append("<div class='cart-header'>Cart</div>");
+    var count,
+        total;
+
+    if(this.products_.length != 0)
+    {
+        total = this.getTotalQuantity();
+        if(total == 1)
+        {
+            count = "One item";
+        }
+        else
+        {
+            count = total + " items";
+        }
+    }
+    else
+    {
+        count = "No items";
+    }
+    e.append("<div class='cart-header'>" + count + "</div>");
 };
 
 
@@ -538,12 +2448,26 @@ snapwebsites.eCommerceCart.prototype.generate_cart_header(e)
  * detailed information about the store letigimacy (i.e. certificates)
  * and eventually some reference to other products one can purchase.
  *
- * @param {!jQuery} e  The body element where the header, table, and footer
- *                     can directly be added.
+ * \todo
+ * Make use of a "Thank you" note from the store administrator. Like
+ * in the header, we want to allow for filtering (we want some JS from
+ * the filter plugin to do the work too!)
+ *
+ * @param {!jQuery} e  The element where the footer can directly be added.
+ * @param {!snapwebsites.eCommerceColumns} columns  The price of the product.
  */
-snapwebsites.eCommerceCart.prototype.generate_cart_footer(e)
+snapwebsites.eCommerceCart.prototype.generateCartFooter_ = function(e, columns)
 {
-    e.append("<div class='cart-footer'>Thank you.</div>");
+    e.append(
+            "<div class='cart-footer'>Thank you.</div>"
+          + "<div class='cart-buttons'>"
+            + "<a class='update-cart' href='/update-cart'>Update Cart</a>"
+            // checkout and continue-shopping are inverted by the CSS
+            + "<a class='checkout' href='/checkout'>Check Out</a>"
+            + "<a class='continue-shopping' href='/continue-shopping'>Continue Shopping</a>"
+            + "<div style='clear: both;'></div>"
+          + "</div>"
+        );
 };
 
 
@@ -554,40 +2478,57 @@ snapwebsites.eCommerceCart.prototype.generate_cart_footer(e)
  * get removed, we also offer a fallback when no products are defined in
  * the cart.
  *
- * @param {!jQuery} e  The body element where the header, table, and footer
- *                     can directly be added.
+ * @param {!jQuery} e  The element where the table can directly be added.
+ * @param {!snapwebsites.eCommerceColumns} columns  The price of the product.
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} column_features  A reference to an array of features.
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} footer_features  A reference to an array of features.
  */
-snapwebsites.eCommerceCart.prototype.generate_product_table(e)
+snapwebsites.eCommerceCart.prototype.generateProductTable_ = function(e, columns, column_features, footer_features)
 {
-    var t,      // table
+    var s,      // scrollarea
+        t,      // table
         h,      // header
         b,      // body
         f,      // footer
         i,
         max = this.products_.length;
 
+    // div around table for vertical sliderbar...
+    e.append("<div class='cart-table-scrollarea'>");
+    s = e.children("div.cart-table-scrollarea");
+
     // table
-    e.append("<table class='cart-product-table'>");
-    t = e.children("table");
+    s.append("<table class='cart-product-table'>");
+    t = s.children("table");
 
     // header
     t.append("<thead>");
     h = t.children("thead");
-    this.generate_product_table_header(h);
+    this.generateProductTableHeader_(h, columns);
 
-    // footer (must appear before <tbody> to be HTML 4.1 compatible)
+    // footer (must appear before <tbody> to be HTML 4.1 compatible, fix in HTML 5)
     t.append("<tfoot>");
     f = t.children("tfoot");
-    this.generate_product_table_footer(f);
+    this.generateProductTableFooter_(f, columns, footer_features);
 
     // body
     t.append("<tbody>");
     b = t.children("tbody");
 
-    for(i = 0; i < max; ++i)
+    if(max == 0)
     {
-        this.generate_product_table_row(b, this.products_[i]);
+        this.generateProductTableEmpty_(b, columns);
     }
+    else
+    {
+        for(i = 0; i < max; ++i)
+        {
+            this.generateProductTableRow_(b, i, columns);
+        }
+    }
+
+    // TODO: optionally add one more line with totals of the cart entries;
+    //       right now we do not offer that option at all
 };
 
 
@@ -595,25 +2536,38 @@ snapwebsites.eCommerceCart.prototype.generate_product_table(e)
  *
  * This function generates the table header for the product table.
  *
- * It is unlikely that you'd want to override this function, unless you
- * want to add a column or two (or remove some columns.)
- *
- * If you do change the number of columns, remember that you will have
- * to also override the generate_product_table_row() function to adjust
- * the table accordingly.
+ * \todo
+ * TBD: should we have a signal so other plugins have a chance to tweak
+ *      the header (one signal at the end would probably be enough.)
  *
  * @param {!jQuery} e  The body element where the header, table, and footer
  *                     can directly be added.
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns with all the necessary data.
  */
-snapwebsites.eCommerceCart.prototype.generate_product_table_header(e)
+snapwebsites.eCommerceCart.prototype.generateProductTableHeader_ = function(e, columns)
 {
-    e.append("<tr>"
-             + "<th class='cart-line-number'>#</th>"
-             + "<th class='cart-description'>Description</th>"
-             + "<th class='cart-quantity'>Quantity</th>"
-             + "<th class='cart-unit-price'>Unit Price</th>"
-             + "<th class='cart-total'>Total</th>"
-           + "</tr>");
+    var row = "<tr class='header'>",
+        max = columns.size(),
+        col,
+        name,
+        first = " first-column",
+        display_name,
+        i;
+
+    for(i = 0; i < max; ++i)
+    {
+        col = columns.getColumnHeader(i);
+        name = col.getName().replace(/:/g, '-');
+        display_name = col.getDisplayName();
+
+        row += "<th class='" + name + first + " first-row'>" + display_name + "</th>";
+
+        first = "";
+    }
+
+    row += "</tr>";
+
+    e.append(row);
 };
 
 
@@ -630,1682 +2584,154 @@ snapwebsites.eCommerceCart.prototype.generate_product_table_header(e)
  * to also override the generate_product_table_row() function to adjust
  * the table accordingly.
  *
+ * \todo
+ * Implement the signal to get other plugin features to add footer
+ * entries as required, although we probably want that to happen
+ * even ealier.
+ *
  * @param {!jQuery} e  The body element where the header, table, and footer
  *                     can directly be added.
+ * @param {!snapwebsites.eCommerceColumns} columns  The price of the product.
+ * @param {Array.<snapwebsites.eCommerceProductFeatureBase>} footer_features  A reference to an array of features.
  */
-snapwebsites.eCommerceCart.prototype.generate_product_table_footer(e)
+snapwebsites.eCommerceCart.prototype.generateProductTableFooter_ = function(e, columns, footer_features)
 {
-    //if(shipping) // this needs to be added by the shipping plugin
-    //{
-    //    e.append("<tr>"
-    //             + "<td class='cart-line-number'></td>"
-    //             + "<td class='cart-description'></td>"
-    //             + "<td class='cart-quantity'></td>"
-    //             + "<td class='cart-unit-price'>Grand Total: </td>"
-    //             + "<td class='cart-total'>$###.##</td>"
-    //           + "</tr>");
-    //}
-    //if(taxes) // this needs to be added by the taxes plugin
-    //{
-    //    e.append("<tr>"
-    //             + "<td class='cart-line-number'></td>"
-    //             + "<td class='cart-description'></td>"
-    //             + "<td class='cart-quantity'></td>"
-    //             + "<td class='cart-unit-price'>Grand Total: </td>"
-    //             + "<td class='cart-total'>$###.##</td>"
-    //           + "</tr>");
-    //}
-    e.append("<tr>"
-             + "<td class='cart-line-number'></td>"
-             + "<td class='cart-description'></td>"
-             + "<td class='cart-quantity'></td>"
-             + "<td class='cart-unit-price'>Grand Total: </td>"
-             + "<td class='cart-total'>$###.##</td>"
-           + "</tr>");
-};
+    var row = "",
+        number_of_columns = columns.size(),
+        columns_to_total = columns.getColumnIndex("ecommerce::total"), // already includes a '... - 1' since it is a position (index), not a count
+        more_columns = number_of_columns - columns_to_total,
+        net_grand_total = this.getTotalCosts(),
+        max = footer_features.length,
+        i,
+        old_length,
+        name,
+        result = [];
 
-
-/** \brief Snap eCommerceProduct constructor.
- *
- * For each of the product you add to the Cart, one of these
- * is created on the client system.
- *
- * \code
- * class eCommerceProduct
- * {
- * public:
- *      function eCommerceProduct(cart: eCommerceCart, path: string);
- *      final function getName() : string;
- *      final function wasModified(opt_recheck: boolean) : boolean;
- *      final function saving() : SaveData;
- *      final function saved(data: SaveData) : boolean;
- *      final function discard();
- *      function getCart() : eCommerceCart;
- *      function enable() : Void;
- *      function disable() : Void;
- *      final function getWidget() : jQuery;
- *      final function getWidgetContent() : jQuery;
- *      final function checkForBackgroundValue();
- *      static final function isEmptyBlock(html: string|jQuery) : boolean;
- *      function getValue() : string;
- *      function resetValue(changed: boolean) : void;
- *      function setValue(value: Object, changed: boolean) : void;
- *      function getProductType() : EditorWidgetTypeBase;
- *
- * private:
- *      var editorBase_: EditorBase = null;
- *      var editorForm_: EditorForm = null;
- *      var widget_: jQuery = null;
- *      var widgetContent_ : jQuery = null;
- *      var name_: string;
- *      var originalData_: string = "";
- *      var modified_: boolean = false;
- *      var widgetType_: EditorWidgetTypeBase = null;
- * };
- * \endcode
- *
- * @param {snapwebsites.EditorBase} editor_base  A reference to the editor base object.
- * @param {snapwebsites.EditorForm} editor_form  A reference to the editor form object that owns this widget.
- * @param {jQuery} widget  The jQuery object representing this editor toolbar.
- *
- * @return {snapwebsites.EditorWidget} The newly created object.
- *
- * @constructor
- * @struct
- */
-snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
-{
-    var type = snapwebsites.castToString(widget.attr("field_type"), "field_type attribute");
-
-    this.editorBase_ = editor_base;
-    this.editorForm_ = editor_form;
-    this.widget_ = widget; // this is the jQuery widget (.snap-editor)
-    this.widgetContent_ = widget.children(".editor-content");
-    if(this.widgetContent_.length == 0)
+    for(i = 0; i < max; ++i)
     {
-        alert("Widget must define a tag with class \"editor-content\"");
-        throw new Error("Widget must define a tag with class \"editor-content\"");
-    }
-    this.name_ = snapwebsites.castToString(widget.attr("field_name"), "field_name attribute");
-    // Moved to AFTER the [pre]initialization
-    //this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
-    this.widgetType_ = editor_base.getWidgetType(type);
-    this.checkForBackgroundValue();
-
-//#ifdef DEBUG
-    // these should be caught on the server side too but this test
-    // ensures that we catch invalid names of dynamically created widgets
-    // (i.e. in most cases the widget names are "hard coded" in your XSLT
-    // files and as such can be checked even before we add the file to the
-    // layout table)
-    if(this.name_.length > 0
-    && this.name_[0] === "_")
-    {
-        throw new Error("The widget name \"" + this.name_ + "\" cannot start with an underscore as such names are reserved by the system.");
-    }
-//#endif
-
-    // this should be last
-    this.widgetType_.preInitializeWidget(this);
-
-    return this;
-};
-
-
-/** \brief Mark EditorWidget as a base class.
- *
- * This class does not inherit from any other classes.
- */
-snapwebsites.base(snapwebsites.EditorWidget);
-
-
-/** \brief The editor base object.
- *
- * The a reference back to the editor base object. This is pretty much
- * the same as the snapwebsites.EditorInstance reference.
- *
- * @type {snapwebsites.EditorBase}
- * @private
- */
-snapwebsites.EditorWidget.prototype.editorBase_ = null;
-
-
-/** \brief The form that owns this widget.
- *
- * This a reference back to the editor form object.
- *
- * @type {snapwebsites.EditorForm}
- * @private
- */
-snapwebsites.EditorWidget.prototype.editorForm_ = null;
-
-
-/** \brief The jQuery widget.
- *
- * This parameter represents the jQuery widget. The actual visible
- * editor widget.
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorWidget.prototype.widget_ = null;
-
-
-/** \brief A jQuery wait widget.
- *
- * This parameter represents a jQuery widget created when the
- * showWaitImage() is called.
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorWidget.prototype.waitWidget_ = null;
-
-
-/** \brief The timer identifier.
- *
- * This parameter is the identifier returned by the setInterval() function.
- *
- * @type {number}
- * @private
- */
-snapwebsites.EditorWidget.prototype.waitWidgetTimerID_ = -1;
-
-
-/** \brief A jQuery wait widget current rotation position.
- *
- * This parameter represents the position of the image in the wait
- * widget. The wait widget has a background which position is moved
- * from 0 to -704 so it looks as it was rotating.
- *
- * @type {number}
- * @private
- */
-snapwebsites.EditorWidget.prototype.waitWidgetPosition_ = 0;
-
-
-/** \brief The jQuery widget representing the content of the widget.
- *
- * This parameter is the DIV under the widget which is marked as the
- * "editor-content" (i.e. with the class named "editor-content").
- * This is the part that we manage in the different widget
- * implementations.
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorWidget.prototype.widgetContent_ = null;
-
-
-/** \brief The name of the widget.
- *
- * Whenever the widget is created this field is set to the name
- * of the widget (the "field_name" attribute.)
- *
- * @const
- * @type {!string}
- * @private
- */
-snapwebsites.EditorWidget.prototype.name_;
-
-
-/** \brief The original data of the widget.
- *
- * Until saved, this data is taken from the existing widget at
- * initialization time.
- *
- * @type {string}
- * @private
- */
-snapwebsites.EditorWidget.prototype.originalData_ = "";
-
-
-/** \brief Whether the system detected that the widget was modified.
- *
- * To avoid comparing possibly very large buffers (originalData_ and
- * the widget html() data) we save the last result in this variable.
- * Once it is true, we just return true when calling the wasModified()
- * function.
- *
- * @type {boolean}
- * @private
- */
-snapwebsites.EditorWidget.prototype.modified_ = false;
-
-
-/** \brief The type of this widget.
- *
- * The object representing the type of this widget. It is used to
- * finish the initialization of the widget (i.e. connect to the
- * signals, etc.)
- *
- * @type {snapwebsites.EditorWidgetTypeBase}
- * @private
- */
-snapwebsites.EditorWidget.prototype.widgetType_ = null;
-
-
-/** \brief Get the name of this widget.
- *
- * On creation the widget retrieves the attribute named "field_name"
- * which contains the name of the widget (used to communicate
- * with the server.) This function returns that name.
- *
- * @return {string}  The name of the widget.
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.getName = function()
-{
-    return this.name_;
-};
-
-
-/** \brief Check whether the widget was modified.
- *
- * This function compares the widget old and current data to see
- * whether it changed.
- *
- * @param {?boolean} opt_recheck  Whether we want to force a check of
- *                                the current HTML data with the original.
- *
- * @return {boolean}  Whether the widget was modified (true) or not
- *                    (false).
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
-{
-    if(opt_recheck || !this.modified_)
-    {
-        this.modified_ = this.originalData_ != this.widgetContent_.html();
-    }
-    return this.modified_;
-};
-
-
-/** \brief Get the data to be saved.
- *
- * This function is called whenever the widget is marked as modified
- * or the form as "always save all". It retrieves the data being
- * saved and the result to be sent to the server. The result may
- * be quite optimized, for example, in case of radio buttons, just
- * one (small) value is sent to the server.
- *
- * By default the data.result gets cleaned up so no starting or
- * ending blanks are kept. It also removes \<br\> tags that have
- * no attributes.
- *
- * This function cannot be overridden. There is no need because the
- * editor creates the EditorWidget objects anyway. Instead you want
- * to derive the saving() function of the widget type.
- *
- * @return {snapwebsites.EditorWidgetTypeBase.SaveData}  The data to be saved.
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.saving = function()
-{
-    var value,          // in case the widget defines a value attribute
-        data = {};      // the data to be returned
-
-    data.html = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in saving()");
-
-    value = this.widgetContent_.attr("value");
-    if(typeof value !== "undefined")
-    {
-        // some widget save their current state as the "value" attribute
-        // so we can quickly retrieve that and return it as the result
-        // (note that in this case we even skip calling the widget type
-        // saving() function since the value is already the final result.)
-        data.result = snapwebsites.castToString(value, "widgetContent value attribute");
-    }
-    else
-    {
-        // by default the result (what is sent to the server) is the
-        // same as the HTML data, but widgets are free to chnage that
-        // value (i.e. checkmark widgets set it to 0 or 1).
-        //
-        // TBD: should we also remove <br> tags with attributes?
-        // TBD: should we remove <hr> tags at the start/end too?
-        data.result = snapwebsites.castToString(
-                            data.html.replace(/^(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+/, "")
-                                     .replace(/(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$/, ""),
-                            "data html trimmed"
-                      );
-
-        this.widgetType_.saving(this, data);
-    }
-
-    return data;
-};
-
-
-/** \brief Call after a widget was saved.
- *
- * This function reset the original data and modified flags when called.
- * It is expected to be called on a successful save.
- *
- * @param {snapwebsites.EditorWidgetTypeBase.SaveData} data  The data that was
- *        saved (what saving() returned.)
- *
- * @return {boolean}  Whether the widget was modified (true) or not
- *                    (false).
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.saved = function(data)
-{
-    this.originalData_ = data.html;
-    return this.wasModified(true);
-};
-
-
-/** \brief Generally called when you want to ignore changes in a widget.
- *
- * This function resets the original data from the current data. This is
- * useful to pretend that the widget was saved or you want to ignore the
- * changes.
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.discard = function()
-{
-    this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
-    this.wasModified(true);
-};
-
-
-/** \brief Retrieve the editor form object.
- *
- * This function returns the editor form object.
- *
- * @return {snapwebsites.EditorForm} The editor form object.
- */
-snapwebsites.EditorWidget.prototype.getEditorForm = function()
-{
-    return this.editorForm_;
-};
-
-
-/** \brief Retrieve the editor base object.
- *
- * This function returns the editor base object as passed to
- * the constructor.
- *
- * @return {snapwebsites.EditorBase} The editor base object.
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.getEditorBase = function()
-{
-    return this.editorBase_;
-};
-
-
-/** \brief Set the focus to this widget if possible.
- *
- * This function is used to set the focus to this widget.
- */
-snapwebsites.EditorWidget.prototype.focus = function()
-{
-    var id = this.widgetContent_.focus();
-};
-
-
-/** \brief Show the widget.
- *
- * This function is used to show the widget. If there is a label defined
- * for that widget (i.e. with the for="..." attribute properly defined)
- * then the label gets hidden too.
- *
- * \todo
- * Add signatures as supported by jQuery (duration, complete), (options).
- */
-snapwebsites.EditorWidget.prototype.show = function()
-{
-    var id = this.widget_.attr("field_name");
-
-    this.widget_.show();
-
-    if(id)
-    {
-        jQuery("label[for='" + id + "']").show();
-    }
-};
-
-
-/** \brief Hide the widget.
- *
- * This function is used to hide the widget. If there is a label defined
- * for that widget (i.e. with the for="..." attribute properly defined)
- * then the label gets hidden too.
- *
- * \todo
- * Add signatures as supported by jQuery (duration, complete), (options).
- */
-snapwebsites.EditorWidget.prototype.hide = function()
-{
-    var id = this.widget_.attr("field_name");
-
-    this.widget_.hide();
-
-    if(id)
-    {
-        jQuery("label[for='" + id + "']").hide();
-    }
-};
-
-
-/** \brief Enable the widget.
- *
- * This function is used to enable the widget.
- *
- * The function simply adds or removes the "disabled" class.
- *
- * By default, if the \p state parameter is not specified, the function
- * enables the widget. If the state is specified and it is true, the
- * widget is also enabled. When the state is specified and is false,
- * then it adds the disabled class.
- *
- * \important
- * If the state is not of type Boolean, then it is ignored and the
- * widget is always enabled. You may convert any value to a Boolean
- * value using the logical not (!) operator.
- *
- * @param {boolean=} opt_state  The new state, if true (default) enable,
- *                              otherwise disable the widget.
- */
-snapwebsites.EditorWidget.prototype.enable = function(opt_state)
-{
-    if(typeof opt_state === "boolean" && !opt_state)
-    {
-        this.widget_.addClass("disabled");
-    }
-    else
-    {
-        this.widget_.removeClass("disabled");
-    }
-};
-
-
-/** \brief Disable the widget.
- *
- * This function is used to disable the widget.
- *
- * The function calls enable() with the value false as the state.
- *
- * Note that the disable function does not accept a parameter.
- */
-snapwebsites.EditorWidget.prototype.disable = function()
-{
-    this.enable(false);
-};
-
-
-/** \brief Retrieve the jQuery widget.
- *
- * This function returns the jQuery widget attached to this
- * editor widget.
- *
- * @return {jQuery} The jQuery widget as passed to the constructor.
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.getWidget = function()
-{
-    return this.widget_;
-};
-
-
-/** \brief Retrieve the jQuery widget content.
- *
- * This function returns the jQuery widget attached to this
- * editor widget which holds the content of the field represented
- * by this widget.
- *
- * This is the child of the widget with class "editor-content".
- *
- * @return {jQuery} The jQuery widget content.
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.getWidgetContent = function()
-{
-    return this.widgetContent_;
-};
-
-
-/** \brief Check whether the background value should be shown.
- *
- * This function checks whether the background value of this widget
- * should be shown which happens when the widget is empty.
- *
- * @final
- */
-snapwebsites.EditorWidget.prototype.checkForBackgroundValue = function()
-{
-    this.widget_.children(".snap-editor-background").toggle(snapwebsites.EditorWidget.isEmptyBlock(this.widgetContent_.html()));
-};
-
-
-/** \brief Check whether a block of HTML is empty or not.
- *
- * This function checks the HTML in the specified \p html parameter
- * and after cleaning up the string, returns true if it ends up
- * being empty.
- *
- * @param {string|jQuery} html
- *
- * @return {boolean}  true if the string can be considered empty.
- *
- * @final
- */
-snapwebsites.EditorWidget.isEmptyBlock = function(html) // static
-{
-//#ifdef DEBUG
-    if(typeof html !== "string")
-    {
-        throw new Error("snapwebsites.EditorBase.isEmptyBlock() called with a parameter which is not a string (" + (typeof html) + ")");
-    }
-//#endif
-
-    //
-    // replace all the nothingness by ""
-    // and see whether the result is the empty string
-    //
-    // WARNING: in the following, if html is empty on entry then
-    //          the result is still true but just a match against
-    //          the regex would return false on the empty string
-    //
-    return html.replace(/^(<br *\/?>| |\t|\n|\r|&nbsp;)+$/, "").length === 0;
-};
-
-
-/** \brief Retrieve the current value of this widget.
- *
- * This function returns the current value of the widget.
- * Note that some widget do not really have a string as a value, you may
- * want to check out the widget type you are handling to know what it
- * returns.
- *
- * This is a helper function that is a replacement to the following:
- *
- * \code
- *      // get the value at once
- *      var value = widget.getValue();
- *
- *      // get the value and raw data
- *      var data = widget.saving();
- *      var value = data.result;
- * \endcode
- *
- * @return {string}  The value of this widget.
- */
-snapwebsites.EditorWidget.prototype.getValue = function()
-{
-    var data = this.saving();
-    return data.result;
-};
-
-
-/** \brief Reset the value of the widget.
- *
- * This function resets the value of this widget. This generally only
- * works with widgets that have a form of default value.
- *
- * If the parameters 'changed' is set to true then the widget is marked
- * as modified, otherwise the modified flag is not changed.
- *
- * @param {!boolean} changed  Whether to mark the widget as modified.
- *
- * @return {boolean}  true if the value got set.
- */
-snapwebsites.EditorWidget.prototype.resetValue = function(changed)
-{
-    var data;
-
-    if(!this.widgetType_.resetValue(this))
-    {
-        // could not even change the value
-        return false;
-    }
-    if(changed)
-    {
-        this.wasModified(true);
-    }
-    else
-    {
-        // programmer views this change as a 'current status' so we
-        // prevent the wasModified() from being true in this case
-        data = this.saving();
-        this.saved(data);
-    }
-    this.checkForBackgroundValue();
-
-    // it was set, whether it was modified is not our concern when returning
-    return true;
-};
-
-
-/** \brief Set the value of the widget.
- *
- * This function sets the specified value as the new value of the widget.
- *
- * If the parameters 'changed' is set to true and the new value is
- * different from the existing value, then the widget is marked as
- * modified, otherwise the modified flag is not changed (it may
- * actually get reset if you restore the value in this way.)
- *
- * @param {!Object} value  The new widget value.
- * @param {!boolean} changed  Whether to mark the widget as modified.
- *
- * @return {boolean}  true if the value got set.
- */
-snapwebsites.EditorWidget.prototype.setValue = function(value, changed)
-{
-    var data;
-
-    if(!this.widgetType_.setValue(this, value))
-    {
-        // could not even change the value
-        return false;
-    }
-    if(changed)
-    {
-        this.wasModified(true);
-    }
-    else
-    {
-        // programmer views this change as a 'current status' so we
-        // prevent the wasModified() from being true in this case
-        data = this.saving();
-        this.saved(data);
-    }
-    this.checkForBackgroundValue();
-
-    // it was set, whether it was modified is not our concern when returning
-    return true;
-};
-
-
-/** \brief Get the type of this widget.
- *
- * This function returns the reference to the editor widget type.
- *
- * @return {snapwebsites.EditorWidgetTypeBase}
- */
-snapwebsites.EditorWidget.prototype.getWidgetType = function()
-{
-    return this.widgetType_;
-};
-
-
-/** \brief Show a wait image inside this widget.
- *
- * This function creates a wait image inside the widget and then shows
- * it rotating.
- *
- * Any widget that needs to do a computation that will take time or
- * communicate with the server should probably use this function.
- *
- * \note
- * If the wait image is already visible, then nothing happens.
- */
-snapwebsites.EditorWidget.prototype.showWaitImage = function()
-{
-    var that = this,
-        w = this.getWidget();
-
-    if(!this.waitWidget_)
-    {
-        //wait_image = w.children(".widget-wait-image");
-        w.prepend("<div class=\"widget-wait-image\"/>");
-        this.waitWidget_ = w.children(".widget-wait-image");
-    }
-
-    if(this.waitWidgetTimerID_ === -1)
-    {
-        this.waitWidget_.fadeIn(1000);
-        this.waitWidgetTimerID_ = setInterval(
-            function()
+        old_length = result.length;
+        footer_features[i].generateFooter(columns, result, net_grand_total);
+        if(old_length < result.length)
+        {
+            name = footer_features[i].getFeatureName().replace(/:/g, '-');
+            do
             {
-                that.rotateWaitImage_();
-            },
-            200);
+                // keep the name so the following features can determine
+                // what each total is from
+                result[old_length].name = name;
+
+                // TBD: right now we are fine but it could be that
+                //      some features would want to tweak previous
+                //      results... (i.e. total is larger than X so
+                //      reduce costs Y...)
+                //
+                // here we always create 2 columns, the first which spans
+                // all the columns except the last on the right
+                row += "<tr class='" + name + "-footer cart-row-footer'><td class='cart-row-footer-label first-column' colspan='"
+                     + columns_to_total
+                     + "'>"
+                     + result[i].label
+                     + "</td><td class='cart-row-footer-costs'>"
+                     + result[i].costs
+                     + "</td>"
+                     + (more_columns > 0 ? "<td class='cart-row-footer-extras' colspan='" + more_columns + "'></td>" : "")
+                     + "</tr>";
+
+                ++old_length;
+            }
+            while(old_length < result.length);
+        }
     }
 
-    //
-    // The rotateWait_ works but uses 100% of the CPU, so no good.
-    // (especially for a wait!) At this time make use of a GIF instead.
-    // The rotate is still very cool for a one time animation of 1
-    // second or less.
-    //
-    // /** \brief A RotateAnimation object.
-    //  *
-    //  * This object is used to rotate the wait image by 30 degrees every 200ms.
-    //  *
-    //  * It gets created whenever a file is dropped and a preview is being
-    //  * generated.
-    //  *
-    //  * @type {snapwebsites.RotateAnimation}
-    //  * @private
-    //  */
-    // snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.rotateWait_ = null;
-    //
-    //if(!this.rotateWait_)
-    //{
-    //    this.rotateWait_ = new snapwebsites.RotateAnimation(wait_image, 30);
-    //}
-    //this.rotateWait_.start();
-};
-
-
-/** \brief Once the wait is over, hide it.
- *
- * This function is used to hide the wait image in this widget. It also
- * makes sure to stop the animation.
- */
-snapwebsites.EditorWidget.prototype.hideWaitImage = function()
-{
-    if(this.waitWidgetTimerID_ !== -1)
+    // row should never be empty here
+    if(row)
     {
-        clearTimeout(this.waitWidgetTimerID_);
-        this.waitWidgetTimerID_ = -1;
-        this.waitWidget_.fadeOut(200);
+        e.append(row);
     }
 };
 
 
-/** \brief Rotate the wait image by 30 degrees.
+/** \brief Generate the product table row.
  *
- * Each time we rotate the wait image we turn it by 30 degrees. This
- * function increments a counter that wraps back to zero when it
- * reaches 12.
+ * This function generates the table rows, one row per product.
  *
- * The function changes the background position to give the effect that
- * the image rotates.
+ * \todo
+ * TBD: should we have a signal so other plugins have a chance to tweak
+ *      the rows (one signal at the end would probably be enough.)
  *
- * On my computer this animation takes less than 7% of the CPU. So I think
- * it is still acceptable.
- *
- * @private
+ * @param {!jQuery} e  The body element where the rows can directly be added.
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns with all the necessary data.
  */
-snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
+snapwebsites.eCommerceCart.prototype.generateProductTableEmpty_ = function(e, columns)
 {
-    this.waitWidgetPosition_ = (this.waitWidgetPosition_ + 1) % 12;
-    this.waitWidget_.css('background-position', (this.waitWidgetPosition_ * -64) + 'px 0');
+    var number_of_columns = columns.size(),
+        columns_to_total = columns.getColumnIndex("ecommerce::total"), // already includes a '... - 1' since it is a position (index), not a count
+        more_columns = number_of_columns - columns_to_total,
+        row = "<tr class='empty-cart-row'><td class='empty-cart-cell first-column' colspan='"
+                + (columns_to_total + 1)
+                + "'>&mdash; Your cart is currently empty &mdash;</td>"
+            + (more_columns > 0 ? "<td class='cart-row-footer-extras' colspan='" + more_columns + "'></td>" : "")
+                + "</tr>";
+                ;
+
+    e.append(row);
 };
 
 
-
-/** \brief Snap EditorFormBase constructor.
+/** \brief Generate the product table row.
  *
- * The EditorForm inherits the EditorFormBase.
+ * This function generates the table rows, one row per product.
  *
- * \code
- * class EditorFormBase : public ServerAccessCallbacks
- * {
- * public:
- *      function EditorFormBase(editor_base, session) : EditorFormBase;
- *      function getEditorBase() : EditorBase;
- *      function getFormWidget() : jQuery;
- *      virtual function saveData();
- *      virtual function serverAccessSuccess(result);
- *      virtual function serverAccessError(result);
- *      virtual function serverAccessComplete(result);
+ * \todo
+ * TBD: should we have a signal so other plugins have a chance to tweak
+ *      the rows (one signal at the end would probably be enough.)
  *
- *      static SAVE_MODE_PUBLISH: string;
- *      static SAVE_MODE_SAVE: string;
- *      static SAVE_MODE_SAVE_NEW_BRANCH: string;
- *      static SAVE_MODE_SAVE_DRAFT: string;
- *
- * private:
- *      editorBase_: EditorBase;
- *      formWidget_: jQuery;
- * };
- * \endcode
- *
- * @param {snapwebsites.EditorBase} editor_base  The base editor object.
- * @param {jQuery} form_widget  The editor form DOM in a jQuery object.
- *
- * @return {!snapwebsites.EditorFormBase}  The newly created object.
- *
- * @extends {snapwebsites.ServerAccessCallbacks}
- * @constructor
- * @struct
+ * @param {!jQuery} e  The body element where the rows can directly be added.
+ * @param {!number} row_index  The index of the product being added.
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns with all the necessary data.
  */
-snapwebsites.EditorFormBase = function(editor_base, form_widget)
+snapwebsites.eCommerceCart.prototype.generateProductTableRow_ = function(e, row_index, columns)
 {
-    snapwebsites.EditorFormBase.superClass_.constructor.call(this);
+    // note: the odd and even look inverted, that is because the
+    //       first line is considered to be 1 but row_index is 0
+    var row = "<tr class='cart-row "
+            + (row_index & 1 ? "even" : "odd")
+            + "'>",
+        max = columns.size(),
+        cell,
+        name,
+        value,
+        first = " first-column",
+        i;
 
-    this.editorBase_ = editor_base;
-    this.formWidget_ = form_widget;
+    for(i = 0; i < max; ++i)
+    {
+        cell = columns.getColumnData(row_index, i);
+        name = cell.getName().replace(/:/g, '-');
+        value = cell.getValue();
 
-    return this;
+        row += "<td class='" + name + first + "'>" + value + "</td>";
+
+        first = "";
+    }
+
+    row += "</tr>";
+
+    e.append(row);
 };
 
 
-/** \brief The EditorFormBase derives from ServerAccessCallbacks.
+/** \brief This function generates the list of payments.
  *
- * This class inherits from the ServerAccessCallbacks so it can receive
- * callback events after a AJAX object was sent to the server.
+ * This function goes through the list of payments available to
+ * the cart and adds them for display on the screen.
  */
-snapwebsites.inherits(snapwebsites.EditorFormBase, snapwebsites.ServerAccessCallbacks);
-
-
-/** \brief Save the data and then publish it.
- *
- * When saving data to the database, it creates a new revision nearly
- * every single time (there is one case where it does not, but that's
- * probably a bug...)
- *
- * When the user publishes, that new revision becomes the current
- * revision. Otherwise the current revision does not change. This
- * allows for revisions to be checked and eventually corrected
- * before publication of the content.
- *
- * @type {string}
- * @const
- */
-snapwebsites.EditorFormBase.SAVE_MODE_PUBLISH = "publish";
-
-
-/** \brief Save the data in a new revision.
- *
- * Save the data entered in the page to a new revision entry. The
- * new entry is available for review, but it does not get shown
- * to people who could not edit the page in some way.
- *
- * Once everyone approaved of a page, the page can get published by
- * asking the system to show that specific revision.
- *
- * @type {string}
- * @const
- */
-snapwebsites.EditorFormBase.SAVE_MODE_SAVE = "save";
-
-
-/** \brief Create a new branch.
- *
- * This function saves the current data in a new branch. One can
- * create a new branch to make changes to the page such as adding
- * or removing tags and yet leave the current branch as the publicly
- * visible data.
- *
- * This gives the user time to work on his new content until he's
- * ready to publish it.
- *
- * @type {string}
- * @const
- */
-snapwebsites.EditorFormBase.SAVE_MODE_SAVE_NEW_BRANCH = "save-new-branch";
-
-
-/** \brief Save the data as a draft.
- *
- * Snap supports drafts to save the data being typed (in case the
- * browser or even the whole client computer crashes, the electricity
- * goes out, etc.)
- *
- * Drafts are special in that they get saved in a special location
- * instead of the normal revision.
- *
- * @type {string}
- * @const
- */
-snapwebsites.EditorFormBase.SAVE_MODE_SAVE_DRAFT = "save-draft";
-
-
-/** \brief A reference to the base editor object.
- *
- * This value is a reference to the base editor object so the
- * EditorForm objects can access it.
- *
- * @type {snapwebsites.EditorBase}
- * @private
- */
-snapwebsites.EditorFormBase.prototype.editorBase_ = null;
-
-
-/** \brief The jQuery object representing this form.
- *
- * This variable represents the DOM form as a jQuery object. It is
- * given to the EditorForm on creation.
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorFormBase.prototype.formWidget_ = null;
-
-
-/** \brief Retrieve the editor base object.
- *
- * This function returns the editor base object as passed to
- * the constructor.
- *
- * @return {snapwebsites.EditorBase} The editor base object.
- * @final
- */
-snapwebsites.EditorFormBase.prototype.getEditorBase = function()
+snapwebsites.eCommerceCart.prototype.generatePaymentHtml_ = function()
 {
-    return this.editorBase_;
-};
-
-
-/** \brief Retrieve the jQuery form widget.
- *
- * This function returns the form widget.
- *
- * @return {jQuery}
- * @final
- */
-snapwebsites.EditorFormBase.prototype.getFormWidget = function()
-{
-    return this.formWidget_;
 };
 
 
 /*jslint unparam: true */
-/** \brief Save the form data.
- *
- * This function is called to save the data. It generally happens in
- * two cases:
- *
- * \li When the user clicks on of the submit button (Publish, Save,
- *     Save New Branch, and Save Draft);
- * \li When a timer times out and the auto-save to draft feature is
- *     allowed.
- *
- * The supported modes are defined as constants:
- *
- * \li SAVE_MODE_PUBLISH
- * \li SAVE_MODE_SAVE
- * \li SAVE_MODE_SAVE_NEW_BRANCH
- * \li SAVE_MODE_SAVE_DRAFT
- *
- * @throws {Error} The function throws an error if the base class
- *                 version is called (i.e. not implemented.)
- *
- * @param {string} mode  The mode used to save the data.
- */
-snapwebsites.EditorFormBase.prototype.saveData = function(mode) // virtual
-{
-    throw new Error("snapwebsites.EditorFormBase.saveData() was called which means it was not properly overridden");
-};
-/*jslint unparam: false */
-
-
-
-/** \brief Dialog used to show different Save options.
- *
- * By default the editor offers a simple save dialog which includes
- * several buttons used to save the changes to a page. The offered
- * buttons are:
- *
- * \li Publish -- save the current data and make it an official revision
- * \li Save -- save the changes, but do not make it the official revision
- * \li Save New Branch -- save the changes in a new branch
- * \li Save Draft -- save the data as a draft (no revision in this case)
- *
- * Editor forms used as standard form most often override the default
- * DOM buttons with just a Save button which pretty much acts like
- * the Publish button.
- *
- * \code
- * class SaveEditorDialog
- * {
- * public:
- *      function setPopup(widget: Element|jQuery);
- *      function open();
- *      function close();
- *      function setStatus(new_status: boolean);
- *
- * private:
- *      var editorForm_: EditorFormBase;
- *      var saveDialogPopup_: jQuery;
- *      function create_();
- * };
- * \endcode
- *
- * \todo
- * The branch the user decided to edit (i.e. with the query string
- * ...?a=edit&revision=1.2) needs to be taken in account as well.
- *
- * @param {snapwebsites.EditorFormBase}  editor_form The editor form that
- *                                       created this editor save dialog.
- *
- * @constructor
- */
-snapwebsites.EditorSaveDialog = function(editor_form)
-{
-    this.editorForm_ = editor_form;
-
-    return this;
-};
-
-
-/** \brief Mark EditorBase as a base class.
- *
- * This class does not inherit from any other classes.
- */
-snapwebsites.base(snapwebsites.EditorSaveDialog);
-
-
-/** \brief An editor form reference.
- *
- * This parameter holds the editor form that created this save dialog.
- * It is used to call the saveData() function on the correct editor
- * form.
- *
- * @type {snapwebsites.EditorFormBase}
- *
- * @private
- */
-snapwebsites.EditorSaveDialog.prototype.editorForm_ = null;
-
-
-/** \brief The jQuery of the DOM representing the save dialog.
- *
- * This parameter holds the jQuery object referencing the DOM representing
- * the save dialog.
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorSaveDialog.prototype.saveDialogPopup_ = null;
-
-
-/** \brief Create the default save dialog DOM.
- *
- * This function creates the default dialog DOM parameters. If you
- * call the setDialogDOM() function before the dialog needs to
- * be opened, then the default DOM will never get used.
- *
- * @private
- */
-snapwebsites.EditorSaveDialog.prototype.create_ = function()
-{
-    var that = this,
-        html = "<div id='snap_editor_save_dialog'>"
-            + "<h3 class='title'>Editor</h3>"
-            + "<div id='snap_editor_save_dialog_page'>"
-            + "<p class='description'>You made changes to your page. Make sure to save your modifications.</p>"
-            // this is wrong at this point because the current branch
-            // management is more complicated...
-            // (i.e. if you are editing a new branch that is not
-            //       public then Publish would make that branch
-            //       public and the Save would make that too?!)
-            + "<p class='snap_editor_publish_p'><a class='button' id='snap_editor_publish' href='#'>Publish</a></p>"
-            + "<p class='snap_editor_save_p'><a class='button' id='snap_editor_save' href='#'>Save</a></p>"
-            + "<p class='snap_editor_save_new_branch_p'><a class='button' id='snap_editor_save_new_branch' href='#'>Save New Branch</a></p>"
-            + "<p class='snap_editor_save_draft_p'><a class='button' id='snap_editor_save_draft' href='#'>Save Draft</a></p>"
-            + "</div></div>";
-
-    jQuery(html).appendTo("body");
-
-    this.saveDialogPopup_ = jQuery("#snap_editor_save_dialog");
-
-    // very simple positioning at this point
-    this.saveDialogPopup_.css("left", jQuery(window).outerWidth(true) - 190);
-
-    jQuery("#snap_editor_publish")
-        .click(function(){
-            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_PUBLISH);
-        });
-    jQuery("#snap_editor_save")
-        .click(function(){
-            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_SAVE);
-        });
-    jQuery("#snap_editor_save_new_branch")
-        .click(function(){
-            alert("Save New Branch! (to be implemented)");
-        });
-    jQuery("#snap_editor_save_draft")
-        .click(function(){
-            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_SAVE_DRAFT);
-        });
-
-    // while creating a new page, the page is kept under "admin/drafts"
-    // and in that case "save" and "save new branch" do not make sense
-    if(jQuery("meta[name='path']").attr("content") === "admin/drafts")
-    {
-        jQuery(".snap_editor_save_p").hide();
-        jQuery(".snap_editor_save_new_branch_p").hide();
-    }
-};
-
-
-/** \brief Define the save dialog popup to use for this dialog.
- *
- * In many cases you will define your own buttons for a dialog.
- * This function let you do that. Note that the editor expects those
- * to be hidden by default. It will show them whenever necessary
- * (i.e. when something changed.)
- *
- * \note
- * This function forces an immediate hide on the save popup dialog.
- *
- * \todo
- * Offer ways to just disable buttons (instead of hiding them)
- * and to keep the buttons "active" but generate errors if clicked
- * while currently saving.
- *
- * @param {Element|jQuery} widget  A DOM or jQuery widget.
- */
-snapwebsites.EditorSaveDialog.prototype.setPopup = function(widget)
-{
-    this.saveDialogPopup_ = jQuery(widget);
-    this.saveDialogPopup_.hide();
-};
-
-
-/** \brief Open the save dialog.
- *
- * This function is generally called whenever the user makes a change
- * that needs to be sent to the server.
- *
- * First the function makes sure that a dialog is defined, if not it
- * initializes the default dialog.
- *
- * Then it shows the dialog.
- *
- * \note
- * This function does not change the dialog buttons status. The
- * save function is expected to call the saveDialogStatus() function
- * for that purpose.
- *
- * \todo
- * The positioning of the dialog is done at creation time so it can be
- * a problem if it is expected (for example) to not overlay the area
- * being edited.
- */
-snapwebsites.EditorSaveDialog.prototype.open = function()
-{
-    if(!this.saveDialogPopup_)
-    {
-        this.create_();
-    }
-    this.saveDialogPopup_.fadeIn(300).css("display", "block");
-};
-
-
-/** \brief Close the save dialog popup.
- *
- * Once a save completed, the editor form checks whether other
- * modifications were performed while saving, if not, then the
- * save dialog gets closed.
- *
- * \note
- * This function does not change the status of the dialog buttons.
- * The save function is expected to call the setStatus() function
- * for that purpose.
- */
-snapwebsites.EditorSaveDialog.prototype.close = function()
-{
-    if(this.saveDialogPopup_)
-    {
-        this.saveDialogPopup_.fadeOut(300);
-    }
-    // else throw?
-};
-
-
-/** \brief Setup the save dialog status.
- *
- * When a user clicks on a save dialog button, you should call this
- * function to disable the dialog.
- *
- * \warning
- * The function throws if the popup is not yet defined. You should not
- * be able to save without the dialog having been created so that
- * should not happen. That being said, it means we cannot call this
- * function before we called the open() function.
- *
- * @param {boolean} new_status  Whether the widget is enabled (true)
- *                              or disabled (false).
- */
-snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
-{
-//#ifdef DEBUG
-    // dialog even exists?
-    if(!this.saveDialogPopup_)
-    {
-        throw new Error("EditorSaveDialog.setStatus() called without a save dialog popup defined.");
-    }
-//#endif
-
-    if(new_status)
-    {
-        this.saveDialogPopup_.parent().children("a").removeClass("disabled");
-    }
-    else
-    {
-        this.saveDialogPopup_.parent().children("a").addClass("disabled");
-    }
-};
-
-
-
-/** \brief Snap EditorForm constructor.
- *
- * \code
- * class EditorForm extends EditorFormBase
- * {
- * public:
- *      function EditorForm() : EditorForm;
- *      function getName() : string;
- *      function getWidgetByName(name: string) : EditorWidget;
- *      function getSession() : string;
- *      function setInPopup(in_popup: boolean);
- *      function getToolbarAutoVisible() : boolean;
- *      function setToolbarAutoVisible(toolbar_auto_visible: boolean);
- *      virtual function saveData(mode: string);
- *      virtual function serverAccessSuccess(result: ResultData);
- *      virtual function serverAccessError(result: ResultData);
- *      virtual function serverAccessComplete(result: ResultData);
- *      function isSaving() : boolean;
- *      function setSaving(new_status: boolean, will_redirect: boolean);
- *      function changed();
- *      function getSaveDialog() : EditorSaveDialog;
- *      function newTypeRegistered();
- *      function wasModified(recheck: boolean) : boolean;
- *      function earlyClose() : boolean;
- *      static function titleToURI(title: string) : string;
- *
- * private:
- *      function readyWidgets_();
- *
- *      var usedTypes_: Object;                 // map of types necessary to open that form
- *      var session_: string;                   // session identifier
- *      var name_: string;                      // the name of the form
- *      var widgets_: jQuery;                   // the widgets of this form
- *      var editorWidgets_: Object;             // map of editor objects
- *      var widgetInitialized_: boolean;        // whether the form was initialized
- *      var saveDialog_: EditorSaveDialog;      // a reference to the save dialog
- *      var mode_: string;                      // general mode the form is used as
- *      var toolbarAutoVisible: boolean;        // whether to show the toolbar automatically
- *      var modified_: boolean;                 // one or more fields changed
- *      var saveFunctionOnSuccess_: function(editor_form: EditorForm, result: snapwebsites.ServerAccessCallbacks.ResultData);
- *                                              // function called in case the save succeeded
- *      var saveFunctionOnError_: function(editor_form: EditorForm, result: snapwebsites.ServerAccessCallbacks.ResultData);
- *                                              // function called in case the save failed
- *      var savedData_: Object;                 // a set of objects to know whether things changed while saving
- *      var serverAccess_: ServerAccess;        // a ServerAccess object to send the AJAX
- * };
- * \endcode
- *
- * \note
- * The Snap! EditorForm objects are created as required based on the DOM.
- * If the DOM is dynamically updated to add more forms, then it may require
- * special handling (TBD at this point) to make sure that the new forms
- * are handled by the editor.
- *
- * @param {snapwebsites.EditorBase} editor_base  The base editor object.
- * @param {jQuery} form_widget  The editor form DOM in a jQuery object.
- * @param {!string} name  The name of the editor form.
- * @param {!string} session  The form session identification.
- *
- * @return {!snapwebsites.EditorForm}  The newly created object.
- *
- * @extends {snapwebsites.EditorFormBase}
- * @constructor
- * @struct
- */
-snapwebsites.EditorForm = function(editor_base, form_widget, name, session)
-{
-    var mode;
-
-    snapwebsites.EditorForm.superClass_.constructor.call(this, editor_base, form_widget);
-
-    this.editorWidgets_ = {};
-    this.usedTypes_ = {};
-    this.session_ = session;
-    this.name_ = name;
-    mode = form_widget.attr("mode");
-    if(mode) // user specified?
-    {
-        this.mode_ = snapwebsites.castToString(mode, "casting the editor form mode");
-    }
-    else
-    {
-        this.mode_ = "default";
-    }
-
-    this.readyWidgets_();
-
-    return this;
-};
-
-
-/** \brief EditorForm inherits from EditorFormBase.
- *
- * This call ensures proper inheritance between the two classes.
- */
-snapwebsites.inherits(snapwebsites.EditorForm, snapwebsites.EditorFormBase);
-
-
-/** \brief A map of widget types used by this form.
- *
- * This object represents a list of types that this form uses to handle
- * its widgets. Each type defines functions to handle that widget
- * as it needs to be handled and allows for easy extensions, etc.
- *
- * The map uses the name of the type as the index and true or false
- * as the value. true is used when the type is not known to be
- * provided by the system, false once it is known to be defined.
- *
- * @type {!Object}
- * @private
- */
-snapwebsites.EditorForm.prototype.usedTypes_; // = {}; -- initialized in the constructor to avoid problems
-
-
-/** \brief The session identification of this form.
- *
- * This is the session identification and random number for this editor
- * form.
- *
- * @type {!string}
- * @private
- */
-snapwebsites.EditorForm.prototype.session_ = "";
-
-
-/** \brief The name of this form.
- *
- * This is the name of this editor form object. The name is taken from the
- * "form_name" attribute which must exist on the "editor-form" DOM element.
- *
- * @type {!string}
- * @private
- */
-snapwebsites.EditorForm.prototype.name_ = "";
-
-
-/** \brief A jQuery array of widgets found in this form.
- *
- * This parameter is the jQuery array of widgets defined in this
- * form.
- *
- * \bug
- * At this time, dynamically adding or removing widgets is not supported.
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorForm.prototype.widgets_ = null;
-
-
-/** \brief A jQuery array of widgets found in this form.
- *
- * This parameter is the map of EditorWidget objects defined in this
- * form. The key used to define these widget is the name of the widget
- * (the parameter used as the name.) This is quite practical to retrieve
- * widgets which name is known.
- *
- * \bug
- * At this time, dynamically adding or removing widgets is not supported.
- *
- * @type {Object.<snapwebsites.EditorWidget>}
- * @private
- */
-snapwebsites.EditorForm.prototype.editorWidgets_ = null;
-
-
-/** \brief Flag to know whether the widgets got initialized.
- *
- * We initialize the widgets as soon as we know that all the widget
- * types were loaded. At that point we know that the entire form
- * can be properly initialized.
- *
- * Once the flag is true, the form is fully initialized and
- * functional.
- *
- * @type {!boolean}
- * @private
- */
-snapwebsites.EditorForm.prototype.widgetInitialized_ = false;
-
-
-/** \brief The popup dialog object.
- *
- * This member is the save dialog widget. It is an object
- * handling a few DOM widgets representing buttons used to
- * let the user send his work to the server.
- *
- * @type {snapwebsites.EditorSaveDialog}
- * @private
- */
-snapwebsites.EditorForm.prototype.saveDialog_ = null;
-
-
-/** \brief The mode used for this editor form.
- *
- * This parameter is taken from the attribute named "mode" of the
- * div representing the editor form. The mode can be set to one of
- * the following values:
- *
- * \li default -- process the form "as normal", you do not need to define
- *                this value as it is the default.
- * \li save-all -- save all the fields whether or not they were modified.
- *
- * @type {!string}
- * @private
- */
-snapwebsites.EditorForm.prototype.mode_ = "";
-
-
-/** \brief Whether the toolbar is shown immediately on focus.
- *
- * This flag is used to know whether the toolbar should be shown on
- * focus. If so, the value is true (the default). You may turn this
- * value off using the setToolbarAutoVisible() function.
- *
- * @type {!boolean}
- * @private
- */
-snapwebsites.EditorForm.prototype.toolbarAutoVisible_ = true;
-
-
-/** \brief Whether this form was modified.
- *
- * Whenever a form is first loaded and after a successful save,
- * this flag is set to false, meaning that the form was not
- * modified. Each time an event that may have modified the
- * form happens, the wasModified() function is called to check
- * all the fields. If one or more were modified, then the form
- * is marked as modified.
- *
- * @type {boolean}
- * @private
- */
-snapwebsites.EditorForm.prototype.modified_ = false;
-
-
-/** \brief A function to call on a successful save.
- *
- * This reference points to a function that gets called in the event
- * of a successful save. You may define one such function.
- *
- * @type {?function(snapwebsites.EditorForm, snapwebsites.ServerAccessCallbacks.ResultData)}
- * @private
- */
-snapwebsites.EditorForm.prototype.saveFunctionOnSuccess_ = null;
-
-
-/** \brief A function to call on a successful save.
- *
- * This reference points to a function that gets called in the event
- * of a failed save. You may define one such function.
- *
- * @type {?function(snapwebsites.EditorForm, snapwebsites.ServerAccessCallbacks.ResultData)}
- * @private
- */
-snapwebsites.EditorForm.prototype.saveFunctionOnError_ = null;
-
-
-/** \brief An object of the data as sent to the server.
- *
- * The user clicks Save, that may take a little time since the entier
- * block of data is sent to the server (maybe at some point we'll have
- * a JavaScript "diff" function...). While that happens, some pages do
- * not block the user who can continue to edit his work. When that
- * happens the behavior of the editor changes slightly. To know whether
- * such a change happens, the data is saved in this object for the time
- * it takes to process the save command.
- *
- * @type {Object}
- * @private
- */
-snapwebsites.EditorForm.prototype.savedData_ = null;
-
-
-/** \brief A server access object.
- *
- * Whenever the user wants to save his data, a ServerAccess object
- * is required so we create one and keep its reference here. It
- * will be reused on each subsequent save (instead of a new one
- * created each time.)
- *
- * @type {snapwebsites.ServerAccess}
- * @private
- */
-snapwebsites.EditorForm.prototype.serverAccess_ = null;
-
-
-/** \brief Retrieve the editor form name.
- *
- * This function returns the name of the editor form.
- *
- * @return {string} The editor form name.
- */
-snapwebsites.EditorForm.prototype.getName = function()
-{
-    return this.name_;
-};
-
-
-/** \brief Retrieve a widget reference.
- *
- * This function returns the EditorWidget using the widget's name.
- *
- * @param {string} name  The name of the widget to retrieve.
- *
- * @return {snapwebsites.EditorWidget} A reference to the editor widget.
- */
-snapwebsites.EditorForm.prototype.getWidgetByName = function(name)
-{
-    return this.editorWidgets_[name];
-};
-
-
-/** \brief Retrieve the session of this EditorForm object.
- *
- * This function returns the session one can use to communicate with the
- * server about this form.
- *
- * @return {string} A session string of the editor widget.
- */
-snapwebsites.EditorForm.prototype.getSession = function()
-{
-    return this.session_;
-};
-
-
-/** \brief Return whether the toolbar should automatically be shown.
- *
- * When clicking in a widget, a form can automatically show the
- * toolbar corresponding to that widget. This is true by default.
- * The toolbar can be shown / hidden using the Ctlr-T key as well.
- *
- * \todo
- * We'll also want to add a close button at some point
- *
- * @return {boolean} true if the toolbar should be shown on focus.
- */
-snapwebsites.EditorForm.prototype.getToolbarAutoVisible = function()
-{
-    return this.toolbarAutoVisible_;
-};
-
-
-/** \brief Change whether the toolbar should automatically be shown.
- *
- * Whenever a widget gets the focus we can automatically have the
- * toolbar popup. By default, this is true. It can be changed to
- * false using this function.
- *
- * @param {boolean} toolbar_auto_visible  Whether the toolbar should be
- *                                        shown on widget focus.
- */
-snapwebsites.EditorForm.prototype.setToolbarAutoVisible = function(toolbar_auto_visible)
-{
-    this.toolbarAutoVisible_ = toolbar_auto_visible;
-};
-
-
-/** \brief Massage the title to make it a URI.
- *
- * This function transforms the characters in \p title so it can be
- * used as a segment of the URI of this page. This is quite important
- * since we use the URI to save the page.
- *
- * @param {string} title  The title to tweak.
- *
- * @return {string}  The tweaked title. It may be an empty string.
- */
-snapwebsites.EditorForm.titleToURI = function(title) // static
-{
-    // force all lower case
-    title = title.toLowerCase();
-    // replace spaces with dashes
-    title = title.replace(/ +/g, "-");
-    // remove all characters other than letters and digits
-    title = title.replace(/[^-a-z0-9_]+/g, "");
-    // remove duplicate dashes
-    title = title.replace(/--+/g, "-");
-    // remove dashes at the start & end
-    title = title.replace(/^-+/, "");
-    title = title.replace(/-+$/, "");
-
-    return title;
-};
-
-
-/** \brief A function to call on a successful save.
- *
- * If defined, this function is called when the Save function
- * returned a successful result and is not asked to redirect the
- * user.
- *
- * This is particularly useful if you used a form in a popup that
- * should be closed on success.
- *
- * @param {function(snapwebsites.EditorForm, snapwebsites.ServerAccessCallbacks.ResultData)} f  A function to call on success.
- */
-snapwebsites.EditorForm.prototype.setSaveFunctionOnSuccess = function(f)
-{
-    this.saveFunctionOnSuccess_ = f;
-};
-
-
-/** \brief A function to call on an error while saving.
- *
- * If defined, this function is called when the Save function
- * returned with a failed result.
- *
- * This is particularly useful if your C++ function generated some data
- * in the result structure and you want to make use of it.
- *
- * @param {function(snapwebsites.EditorForm, snapwebsites.ServerAccessCallbacks.ResultData)} f  A function to call on failure.
- */
-snapwebsites.EditorForm.prototype.setSaveFunctionOnError = function(f)
-{
-    this.saveFunctionOnError_ = f;
-};
-
-
 /** \brief Function called on success.
  *
  * This function is called if the remote access was successful. The
@@ -2317,42 +2743,13 @@ snapwebsites.EditorForm.prototype.setSaveFunctionOnError = function(f)
  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
  *          resulting data.
  */
-snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virtual
+snapwebsites.eCommerceCart.prototype.serverAccessSuccess = function(result) // virtual
 {
-    var key,                    // loop index
-        modified = false;       // whether some data was modified while saving
-
-    // success! so it was saved and now that's the new original value
-    // and next "Save" doesn't do anything
-    for(key in this.editorWidgets_)
-    {
-        if(this.editorWidgets_.hasOwnProperty(key))
-        {
-            if(this.savedData_[key])
-            {
-                if(this.editorWidgets_[key].saved(this.savedData_[key]))
-                {
-                    modified = true;
-                }
-            }
-        }
-    }
-
-    // if not modified while processing the POST, hide the save buttons
-    if(!modified)
-    {
-        this.getSaveDialog().close();
-    }
-
-    // in case the manager of the form wants to know that a save was
-    // successful (but only if we're not going to redirect the user)
-    if(!result.will_redirect && this.saveFunctionOnSuccess_)
-    {
-        this.saveFunctionOnSuccess_(this, result);
-    }
 };
+/*jslint unparam: false */
 
 
+/*jslint unparam: true */
 /** \brief Function called on error.
  *
  * This function is called if the remote access generated an error.
@@ -2374,22 +2771,13 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
  *          resulting data with information about the error(s).
  */
-snapwebsites.EditorForm.prototype.serverAccessError = function(result) // virtual
+snapwebsites.eCommerceCart.prototype.serverAccessError = function(result) // virtual
 {
-    // TODO: do we have to anything with this error message? We
-    //       should always have messages in the AJAX, but we may reach
-    //       this function for other reasons... messages are displayed
-    //       by the serverAccess directly
-
-    // in case the manager of the form wants to know that an error
-    // occured and get the corresponding result information
-    if(this.saveFunctionOnError_)
-    {
-        this.saveFunctionOnError_(this, result);
-    }
 };
+/*jslint unparam: false */
 
 
+/*jslint unparam: true */
 /** \brief Function called on completion.
  *
  * This function is called once the whole process is over. It is most
@@ -2400,2871 +2788,246 @@ snapwebsites.EditorForm.prototype.serverAccessError = function(result) // virtua
  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
  *          resulting data with information about the error(s).
  */
-snapwebsites.EditorForm.prototype.serverAccessComplete = function(result) // virtual
+snapwebsites.eCommerceCart.prototype.serverAccessComplete = function(result) // virtual
 {
-    // we do not need that data anymore, release it
-    this.savedData_ = null;
-
-    if(!result.will_redirect && result.messages && result.messages.length > 0)
-    {
-        this.setSaving(false, false);
-        snapwebsites.OutputInstance.displayMessages(result.messages);
-    }
-    else
-    {
-        this.setSaving(false, result.will_redirect);
-    }
 };
+/*jslint unparam: false */
 
 
-/** \brief Save the data.
+
+/** \brief Snap eCommerceProductFeatureBasic constructor.
  *
- * This function checks whether the data changed or not. If it was
- * modified, or the form was setup to save all the widgets content
- * each time, then the function builds an object and sends the
- * data to the server using AJAX.
+ * Initialize the basic product feature which is implemented internally.
  *
- * @param {!string} mode  The mode used to save the data.
- * @param {Object=} opt_options  Additional options to be added to the query string.
- */
-snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
-{
-    var key,                                    // loop index
-        w,                                      // widget being managed
-        obj = {},                               // object to send via AJAX
-        save_all = this.mode_ === "save-all";   // whether all fields are sent to the server
-
-    // are we already saving? if so, generate an error
-    if(this.isSaving())
-    {
-        // TODO: translation support
-        alert("You already clicked one of these buttons. Please wait until the save is over.");
-        return;
-    }
-
-    // mark the form as saving, it may use CSS to show the new status
-    this.setSaving(true, false);
-
-    this.savedData_ = {};
-    for(key in this.editorWidgets_)
-    {
-        if(this.editorWidgets_.hasOwnProperty(key))
-        {
-            // note that widgets marked as "immediate-save" are ignored
-            // here because those were saved as soon as they were modified
-            // so there is no need for us to save them again here (plus
-            // in some cases it would be impossible like for file upload)
-            w = this.editorWidgets_[key];
-            if((save_all || w.wasModified(true))
-            && !w.getWidget().hasClass("immediate-save"))
-            {
-                this.savedData_[key] = w.saving();
-                obj[key] = this.savedData_[key].result;
-            }
-        }
-    }
-
-    // this test is not 100% correct for the Publish or Create Branch
-    // buttons...
-    if(!jQuery.isEmptyObject(obj))
-    {
-        obj._editor_save_mode = mode;
-        obj._editor_session = this.session_;
-        if(this.editorWidgets_.hasOwnProperty("title"))
-        {
-            obj._editor_uri = snapwebsites.EditorForm.titleToURI(this.editorWidgets_.title.saving().result);
-        }
-        if(!this.serverAccess_)
-        {
-            this.serverAccess_ = new snapwebsites.ServerAccess(this);
-        }
-        this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorForm.saveData()"),
-                                  opt_options);
-        this.serverAccess_.setData(obj);
-        this.serverAccess_.send();
-    }
-    else
-    {
-        this.setSaving(false, false);
-
-        // the serverAccess callback would otherwise call the close
-        this.getSaveDialog().close();
-    }
-};
-
-
-/** \brief Check whether this form is currently saving data.
- *
- * To avoid problems we prevent the editor from saving more than once
- * simultaneously.
- *
- * @return {boolean}  true if the form is currently saving data.
- * @final
- */
-snapwebsites.EditorForm.prototype.isSaving = function() // virtual
-{
-    return this.getFormWidget().is(".editor-saving");
-};
-
-
-/** \brief Set the current saving state of the form.
- *
- * This function set the saving state to "true" or "false". This is
- * marked using the "editor-saving" class in the editor form widget.
- * That can be used to show that the form is being saved by changing
- * a color or a border.
- *
- * @param {boolean} new_status  The saving status of this editor form.
- * @param {boolean} will_redirect  Whether we're going to be redirected just
- *                                 after this call (keep the darken page if
- *                                 true!)
- */
-snapwebsites.EditorForm.prototype.setSaving = function(new_status, will_redirect)
-{
-    // TBD: use the will_redirect flag to know what else to do?
-    //      (i.e. if will_redirect is true, we probably should not
-    //      do anything here, what do you think?)
-    //
-    this.getFormWidget().toggleClass("editor-saving", new_status);
-    this.saveDialog_.setStatus(!new_status);
-
-    // TODO: add a condition coming from the DOM (i.e. we don't want
-    //       to gray out the screen if the user is expected to be
-    //       able to continue editing while saving)
-    //       the class is nearly there (see header trying to assign body
-    //       attributes), we will then need to test it here
-    //       WARNING: this needs to be moved to the editor-form object
-    //                instead of the body!
-    if(!will_redirect)
-    {
-        snapwebsites.PopupInstance.darkenPage(new_status ? 150 : -150, new_status);
-    }
-};
-
-
-/** \brief Let the form know that one of its widgets changed.
- *
- * This signal implementation is called whenever the form detects
- * that one of its widgets changed.
- *
- * In most cases it will show the "Save Dialog" although it may just
- * want to ignore the fact. (i.e. some forms do not care about changes
- * as their "save" button is always shown, for example, or it may
- * reacted on this event directly and not give the user a choice to
- * save the changes.)
- *
- * \todo
- * Support a way to tell others to react to this change.
- */
-snapwebsites.EditorForm.prototype.changed = function()
-{
-    // tell others that something changed in the editor form
-    var e = jQuery.Event("formchange",
-        {
-            form: this
-        });
-    this.getFormWidget().trigger(e);
-
-    if(!this.getFormWidget().is(".no-save"))
-    {
-        this.getSaveDialog().open();
-    }
-};
-
-
-/** \brief Retrieve the save dialog.
- *
- * This functio retrieves a reference to the save dialog. It is a
- * function because the save dialog doesn't get created until
- * requested.
- *
- * \note
- * Unfortunately, if you want to define your own save buttons,
- * then you'll be creating the save dialog up front.
- *
- * @return {snapwebsites.EditorSaveDialog}  The save dialog reference.
- */
-snapwebsites.EditorForm.prototype.getSaveDialog = function()
-{
-    if(!this.saveDialog_)
-    {
-        this.saveDialog_ = new snapwebsites.EditorSaveDialog(this);
-    }
-    return this.saveDialog_;
-};
-
-
-/** \brief Ready the widget for attachment.
- *
- * This function goes through the widgets and prepare them to be
- * attached to their respective handlers. Because we want to have
- * an extensible editor, this means we need to allow for "callbacks"
- * to be defined on the extension and not on some internal object.
- * This works by getting the list of widgets, retrieving their types,
- * and looking for a class of that name. If the class does not exist
- * (yet) then the form is not yet complete and the loader goes on.
- * Once all the types are properly defined, the form is ready and
- * the user can start editing.
- *
- * \note
- * The widgets themselves are marked with ".editor-content". The
- * editor always encapsulate those inside a div marked with
- * ".snap-editor". So there is a one to one correlation between
- * both of those.
- *
- * @private
- */
-snapwebsites.EditorForm.prototype.readyWidgets_ = function()
-{
-    var that = this;
-
-    // retrieve the widgets defined in that form
-    this.widgets_ = this.getFormWidget().find(".snap-editor");
-
-    // retrieve the field types for all the widgets
-    this.widgets_.each(function(idx, w)
-        {
-            var type = jQuery(w).attr("field_type");
-            that.usedTypes_[type] = true;
-        });
-
-    // check whether all the types are available
-    // if so then the function finishes the initialization of the form
-    this.newTypeRegistered();
-
-    // make labels focus the corresponding editable box
-    this.getFormWidget().find("label[for!='']").click(function(e)
-        {
-            if(!(jQuery(e.target).is("a")))
-            {
-                // the default may recapture the focus, so avoid it!
-                e.preventDefault();
-                e.stopPropagation();
-
-                jQuery("div[name='" + jQuery(this).attr("for") + "']").focus();
-            }
-        });
-};
-
-
-/** \brief Check whether all types were registered and if so initialize everything.
- *
- * The function checks whether all the types necessary to initialize
- * the widgets are available. If so, then all the form widgets get
- * initialized.
- *
- * \todo
- * Find a way to detect that a form initialization was never completed
- * because the system is missing a widget type.
- */
-snapwebsites.EditorForm.prototype.newTypeRegistered = function()
-{
-    var that = this,
-        key;
-
-    if(this.widgetInitialized_)
-    {
-        return;
-    }
-
-    // check whether all the types are available
-    for(key in this.usedTypes_)
-    {
-        if(this.usedTypes_.hasOwnProperty(key)
-        && this.usedTypes_[key])
-        {
-            if(!this.editorBase_.hasWidgetType(key))
-            {
-                // some types are missing, we're not ready
-                // (this happens to forms using external widgets)
-                return;
-            }
-
-            // this one was defined
-            this.usedTypes_[key] = false;
-        }
-    }
-
-    // if we reach here, all the types are available so we can
-    // properly initialize the form now
-    this.widgets_.each(function(idx, w)
-        {
-            var widget_content = jQuery(w),
-                name = widget_content.attr("field_name");
-
-            that.editorWidgets_[name] = new snapwebsites.EditorWidget(that.editorBase_, that, widget_content);
-        }
-    ).each(function(idx, w)
-        {
-            var widget_content = jQuery(w),
-                name = widget_content.attr("field_name"),
-                widget = that.editorWidgets_[name];
-
-            widget.getWidgetType().initializeWidget(widget);
-
-            // auto-focus the widget if so required
-            if(widget_content.is(".auto-focus"))
-            {
-                widget.focus();
-            }
-        }
-    ).each(function(idx, w)
-        {
-            var widget_content = jQuery(w),
-                name = widget_content.attr("field_name"),
-                widget = that.editorWidgets_[name];
-
-            // reset the originalData_ field
-            // TBD: we may want (need) to move this in another loop instead
-            widget.discard();
-        });
-
-    this.widgetInitialized_ = true;
-
-    // composite widgets may change their children widgets in a way that
-    // marks the editor as modified, clear the flag here so we do not get
-    // a spurious popup
-    this.modified_ = false;
-};
-
-
-/** \brief This function checks whether the form is to be saved.
- *
- * You may mark a form as a "no-save" form. In that case, the main form
- * \<div\> tag gets a class named "no-save". This function checks for
- * that class.
- *
- * If the class "no-save" is defined on the main form \<div\> tag then
- * this function returns false, otherwise it returns true.
- *
- * This indicates whether the form is expected to be saved. In most cases,
- * a search form or a locator form would be marked as a "no-save" form
- * because entering data and click on a button or another should not
- * generate a save request.
- *
- * \note
- * This function is called on the unload event. If it returns false,
- * then that form is ignored in the test on whether it was modified.
- *
- * @return {boolean} true if the form is to be saved.
- */
-snapwebsites.EditorForm.prototype.toBeSaved = function()
-{
-    return !this.getFormWidget().hasClass("no-save");
-};
-
-
-/** \brief This function checks whether the form was modified.
- *
- * This function checks whether the form was modified. First it
- * checks whether the form is to be saved. If not then the function
- * just returns false.
- *
- * @param {boolean} recheck  Whether to check each widget for modification
- *                           instead of just the modified flags.
- *
- * @return {boolean} true if the form was modified.
- */
-snapwebsites.EditorForm.prototype.wasModified = function(recheck)
-{
-    var key;                            // loop index
-
-    if(!recheck && this.modified_)
-    {
-        return true;
-    }
-
-    for(key in this.editorWidgets_)
-    {
-        if(this.editorWidgets_.hasOwnProperty(key)
-        && this.editorWidgets_[key].wasModified(recheck))
-        {
-            this.modified_ = true;
-            return true;
-        }
-    }
-
-    return false;
-};
-
-
-/** \brief Close this form early.
- *
- * This function handles the case when a form is to be closed before the
- * window as a whole is to be closed. You can choose whether the form
- * is to react with a confirmation dialog or not.
- *
- * This is particularly useful in the beforeClose() callback of a popup
- * when that popup is used with a form.
- *
- * The 'message' parameter defines a message to show to the client in case
- * there were modifications. If the message is undefined, then the system
- * just saves the changes and returns.
- *
- * If earlyClose() is to automatically call saveData() ('auto_save' or one
- * of the buttons named 'save' gets clicked,) then the save_mode is used
- * to call saveData(). In most cases it should be set to SAVE_MODE_PUBLISH
- * or SAVE_MODE_SAVE.
- *
- * @param {{save_mode: string,
- *          title: string,
- *          message: string,
- *          buttons: Object.<{name: string, label: string}>,
- *          callback: function(string)}} early_close  The message object with
- *    the message itself, buttons, and a callback function.
- */
-snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
-{
-    var org_callback = early_close.callback,
-        that = this;
-
-    if(this.toBeSaved()
-    && this.wasModified(true))
-    {
-        if(!early_close.message)
-        {
-            this.saveData(early_close.save_mode);
-        }
-        else
-        {
-            // our specialized callback for the message box
-            early_close.callback = function(name)
-                {
-                    var key;
-
-                    if(name == "save")
-                    {
-                        if(early_close.save)
-                        {
-                            early_close.save(that);
-                        }
-                        else
-                        {
-                            that.saveData(early_close.save_mode);
-                        }
-                    }
-                    else if(name == "discard")
-                    {
-                        // copy the data to make it look like it was saved
-                        for(key in that.editorWidgets_)
-                        {
-                            if(that.editorWidgets_.hasOwnProperty(key))
-                            {
-                                that.editorWidgets_[key].discard();
-                            }
-                        }
-                        that.getSaveDialog().close();
-                    }
-                    if(org_callback)
-                    {
-                        // call the user callback too
-                        org_callback(name);
-                    }
-                };
-            snapwebsites.PopupInstance.messageBox(early_close);
-        }
-    }
-    else
-    {
-        // nothing needs to be saved
-        if(early_close.callback)
-        {
-            early_close.callback("no-save");
-        }
-    }
-};
-
-
-
-/** \brief Snap Editor constructor.
- *
- * \note
- * The Snap! Editor is a singleton and should never be created by you. It
- * gets initialized automatically when this editor.js file gets included.
+ * Other features can be added by adding new plugins and registering
+ * the feature with the cart registerProductFeature() function.
  *
  * \code
- * class Editor extends EditorBase
- * {
- * public:
- *      function Editor() : Editor;
- *      virtual function getToolbar() : EditorToolbar;
- *      virtual function checkModified();
- *      function getActiveEditorForm() : EditorForm;
- *      virtual function getLinkDialog() : LinkDialog;
- *      virtual function registerWidgetType(widget_type: EditorWidgetType);
- *
- * private:
- *      function attachToForms_();
- *      function initUnload_();
- *      function unload_() : string;
- *
- *      toolbar_: EditorToolbar;
- *      editorSession_: Array; // of strings
- *      editorForm_: Object; // map of editor forms
- *      unloadCalled_: boolean;
- *      linkDialog_: EditorLinkDialog;
- * };
- * \endcode
- *
- * \return The newly created object.
- *
- * @constructor
- * @extends {snapwebsites.EditorBase}
- * @struct
- */
-snapwebsites.Editor = function()
-{
-    snapwebsites.Editor.superClass_.constructor.call(this);
-    this.editorForms_ = {};
-    this.editorFormsByName_ = {};
-    this.initUnload_();
-    this.attachToForms_();
-
-    return this;
-};
-
-
-/** \brief Editor inherits from EditorBase.
- *
- * This call ensures proper inheritance between the two classes.
- */
-snapwebsites.inherits(snapwebsites.Editor, snapwebsites.EditorBase);
-
-
-/** \brief The Editor instance.
- *
- * This class is a singleton and as such it makes use of a static
- * reference to itself. It gets created on load.
- *
- * \@type {snapwebsites.Editor}
- */
-snapwebsites.EditorInstance = null; // static
-
-
-/** \brief The toolbar object.
- *
- * This variable represents the toolbar used by the editor.
- *
- * Note that this is the toolbar object, not the DOM. The DOM is
- * defined within the toolbar object and is considered private.
- *
- * @type {snapwebsites.EditorToolbar}
- * @private
- */
-snapwebsites.Editor.prototype.toolbar_ = null;
-
-
-/** \brief List of EditorForm objects.
- *
- * This variable member holds the map of EditorForm objects indexed by
- * their name.
- *
- * @type {Object.<snapwebsites.EditorForm>}
- * @private
- */
-snapwebsites.Editor.prototype.editorFormsByName_; // = {} -- initialized in the constructor to avoid problems
-
-
-/** \brief List of EditorForm objects.
- *
- * This variable member holds the map of EditorForm objects indexed by
- * their sessions number (although those numbers are managed as strings).
- *
- * @type {Object.<snapwebsites.EditorForm>}
- * @private
- */
-snapwebsites.Editor.prototype.editorForms_; // = {}; -- initialized in the constructor to avoid problems
-
-
-/** \brief Whether unload is being processed.
- *
- * There is a "bug" in Firefox and derivative browsers (a.k.a. SeaMonkey)
- * where the browser calls the unload function twice. According to the
- * developers, "it is normal". To avoid that "bug" we use this flag and
- * a timer. If this flag is true, we avoid showing a second prompt to the
- * users.
- *
- * @type {!boolean}
- * @private
- */
-snapwebsites.Editor.prototype.unloadCalled_ = false;
-
-
-/** \brief The link dialog.
- *
- * The get_link_dialog() function creates this link dialog the first
- * time it is called.
- *
- * @type {snapwebsites.EditorLinkDialog}
- * @private
- */
-snapwebsites.Editor.prototype.linkDialog_ = null;
-
-
-/** \brief Attach to the EditorForms defined in the DOM.
- *
- * This function attaches the editor to the existing editor forms
- * as defined in the DOM. Editor forms are detected by the fact
- * that a \<div\> tag has class ".editor-form".
- *
- * The function is expected to be called only once.
- *
- * @private
- */
-snapwebsites.Editor.prototype.attachToForms_ = function()
-{
-    var that = this;
-
-    // retrieve the list of forms using their sessions
-    jQuery(".editor-form")
-        .each(function(){
-            // TBD: We may be able to drop the session map.
-            var that_element = jQuery(this),
-                session = snapwebsites.castToString(that_element.attr("session"), "editor form session attribute"),
-                name = snapwebsites.castToString(that_element.attr("form_name"), "editor form name attribute");
-
-            that.editorForms_[session] = new snapwebsites.EditorForm(that, that_element, name, session);
-            that.editorFormsByName_[name] = that.editorForms_[session];
-        });
-};
-
-
-/** \brief Retrieve a reference to one of the forms by name.
- *
- * This function takes the name of a form and returns a corresponding
- * reference to the EditorForm object.
- *
- * If the form does not exist, null is returned.
- *
- * @param {string} form_name  The name of the form.
- *
- * @return {snapwebsites.EditorForm}  The corresponding EditorForm object.
- */
-snapwebsites.Editor.prototype.getFormByName = function(form_name)
-{
-    return this.editorFormsByName_[form_name];
-};
-
-
-/** \brief Capture the unload event.
- *
- * This function adds the necessary code to handle the unload event.
- * This is used to make sure that users will save their data before
- * they actually close their browser window or tab.
- *
- * @private
- */
-snapwebsites.Editor.prototype.initUnload_ = function()
-{
-    var that = this;
-    jQuery(window).bind("beforeunload", function()
-        {
-            return that.unload_();
-        });
-};
-
-
-/** \brief Handle the unload event.
- *
- * This function is called whenever the user is about to close their
- * browser window or tab. The function checks whether anything needs
- * to be saved. If so, then make sure to ask the user whether he
- * wants to save his changes before closing the window.
- *
- * @return {null|string|undefined}  A message saying that something
- *          was not saved if it applies, null otherwise.
- *
- * @private
- */
-snapwebsites.Editor.prototype.unload_ = function()
-{
-    var key,                // loop index
-        that = this;        // this pointer in the closure function
-
-    if(!this.unloadCalled_)
-    {
-        for(key in this.editorForms_)
-        {
-            if(this.editorForms_.hasOwnProperty(key))
-            {
-                if(this.editorForms_[key].toBeSaved()
-                && this.editorForms_[key].wasModified(true))
-                {
-                    // add this flag and timeout to avoid a double
-                    // "are you sure?" under Firefox browsers
-                    this.unloadCalled_ = true;
-
-                    // we create a function in a for() loop because
-                    // right after that statement we return
-                    setTimeout(function(){
-                            that.unloadCalled_ = false;
-                        }, 20);
-
-                    // TODO: translation
-                    //       (although it doesn't show up in FireFox based
-                    //       browsers many others do show this message)
-                    return "You made changes to this page! Click Cancel to avoid closing the window and Save your changes first.";
-                }
-            }
-        }
-    }
-
-    return;
-};
-
-
-/** \brief Retrieve the toolbar object.
- *
- * This function returns a reference to the toolbar object.
- *
- * @return {snapwebsites.EditorToolbar} The toolbar object.
- * @override
- */
-snapwebsites.Editor.prototype.getToolbar = function() // virtual
-{
-    if(!this.toolbar_)
-    {
-        this.toolbar_ = new snapwebsites.EditorToolbar(this);
-    }
-    return this.toolbar_;
-};
-
-
-/** \brief Check whether a field was modified.
- *
- * When something may have changed (a character may have been inserted
- * or deleted, or a text replaced) then you are expected to call this
- * function in order to see whether something was indeed modified.
- *
- * When the process detects that something was modified, it calls the
- * necessary functions to open the Save Dialog.
- *
- * As a side effect it also lets the toolbar know so if it needs to be
- * moved, it happens.
- *
- * @override
- */
-snapwebsites.Editor.prototype.checkModified = function() // virtual
-{
-    var active_element,
-        active_form = this.getActiveEditorForm(),
-        widget_name,
-        widget;
-
-    // checkModified only applies to the active element so make sure
-    // there is one when called
-    if(active_form)
-    {
-        // allow the toolbar to adjust itself (move to a new location)
-        if(this.toolbar_)
-        {
-            this.toolbar_.checkPosition();
-        }
-
-        // got the form in which this element is defined,
-        // now call the wasModified() function on it
-        if(active_form.wasModified(false))
-        {
-            active_form.changed();
-        }
-
-        // replace nothingness by "background" value
-        active_element = this.getActiveElement();
-        widget_name = snapwebsites.castToString(active_element.parent().attr("field_name"), "Editor active element \"field_name\" attribute");
-        widget = active_form.getWidgetByName(widget_name);
-        widget.checkForBackgroundValue();
-    }
-};
-
-
-/** \brief Retrieve the active editor form.
- *
- * This function gets the editor form that includes the currently
- * active element.
- *
- * @return {snapwebsites.EditorForm}  The active editor form or null.
- */
-snapwebsites.Editor.prototype.getActiveEditorForm = function()
-{
-    var active_element = this.getActiveElement(),
-        editor_element,
-        editor_form = null,
-        session;
-
-    if(active_element)
-    {
-        editor_element = active_element.parents(".editor-form");
-        if(editor_element)
-        {
-            session = editor_element.attr("session");
-            editor_form = this.editorForms_[session];
-        }
-//#ifdef DEBUG
-        if(!editor_form)
-        {
-            // should not happen or it means we whacked the session element
-            throw new Error("There is an active element but no corresponding editor form.");
-        }
-//#endif
-    }
-
-    return editor_form;
-};
-
-
-/** \brief Retrieve the link dialog.
- *
- * This function creates an instance of the link dialog and returns it.
- * If the function gets called more than once, then the same reference
- * is returned.
- *
- * The function takes settings defined in an object, the following are
- * the supported names:
- *
- * \li close -- The function called whenever the user clicks the OK button.
- *
- * \param[in] settings  An object defining settings.
- *
- * @return {snapwebsites.EditorLinkDialog} The link dialog reference.
- * @override
- */
-snapwebsites.Editor.prototype.getLinkDialog = function()
-{
-    if(!this.linkDialog_)
-    {
-        this.linkDialog_ = new snapwebsites.EditorLinkDialog(this);
-    }
-    return this.linkDialog_;
-};
-
-
-/** \brief Capture the registration of widget types.
- *
- * THis function captures the registration of widget types so it
- * can produce an event on the editor forms which may need additional
- * types whenever they get created to be able to initialize all their
- * widgets.
- *
- * @param {snapwebsites.EditorWidgetType} widget_type  The widget type to register.
- */
-snapwebsites.Editor.prototype.registerWidgetType = function(widget_type) // virtual
-{
-    // first make sure to call the super class function
-    snapwebsites.Editor.superClass_.registerWidgetType.call(this, widget_type);
-
-    var key;
-
-    // let all the forms know we have a new type
-    //
-    // XXX -- this is not really the most efficient, but at this point it
-    //        will do
-    for(key in this.editorForms_)
-    {
-        if(this.editorForms_.hasOwnProperty(key))
-        {
-            this.editorForms_[key].newTypeRegistered();
-        }
-    }
-};
-
-
-
-/** \brief Snap EditorWidgetType constructor.
- *
- * The editor works with widgets that are based on this class. Each widget
- * is given a type such as "line-edit".
- *
- * To make it fully dynamic, we define a base class here and let other
- * programmers add new widget types in their own .js files by extending
- * this class.
- *
- * Classes must be registered with the EditorBase class function:
- *
- * \code
- *    snapwebsites.EditorInstance.registerWidgetType(your_widget_type);
- * \endcode
- *
- * This base class already implements a few things that are common to
- * all widgets.
- *
- * \code
- *  class EditorWidgetType extends EditorWidgetTypeBase
+ *  class eCommerceProductFeatureBasic extends eCommerceProductFeatureBase
  *  {
- *  public:
- *      function EditorWidgetType();
- *      virtual function preInitializeWidget(widget: Object) : void;
- *      virtual function initializeWidget(widget: Object) : void;
- *      virtual function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
- *      abstract function droppedImage(e: ProgressEvent, img: Image) : void;
- *      abstract function droppedAttachment(e: ProgressEvent) : void;
+ *      eCommerceProductFeatureBasic();
  *
- *  private:
- *      function droppedImageConvert_(e: ProgressEvent) : void;
- *      function droppedFile_(e: ProgressEvent) : void;
+ *      virtual function getFeatureName() : String;
+ *      virtual function setupColumnHeaders(columns: eCommerceColumns) : Void;
+ *      virtual function setupColumnFooters(columns: eCommerceColumns, index: Number) : Void;
+ *      virtual function setupColumns(product: eCommerceProductBase, in out columns: eCommerceColumns, index: Number) : Void;
+ *      virtual function generateFooter(columns: eCommerceColumns, in out result: Object, net_grand_total: Number) : Void;
+ *      virtual function getColumnDependencies() : String;
  *  };
  * \endcode
  *
+ * @return {snapwebsites.eCommerceProductFeatureBasic} The newly created object.
+ *
  * @constructor
- * @extends {snapwebsites.EditorWidgetTypeBase}
+ * @extends {snapwebsites.eCommerceProductFeatureBase}
  * @struct
  */
-snapwebsites.EditorWidgetType = function()
+snapwebsites.eCommerceProductFeatureBasic = function()
 {
-    snapwebsites.EditorWidgetType.superClass_.constructor.call(this);
-
-    // TBD
-    // Maybe at some point we'd want to create yet another layer
-    // so we can have an auto-register, but I'm not totally sure
-    // that would work...
-    //snapwebsites.EditorBase.registerWidgetType(this);
+    snapwebsites.eCommerceProductFeatureBasic.superClass_.constructor.call(this);
 
     return this;
 };
 
 
-/** \brief EditorWidgetType inherits from EditorWidgetTypeBase.
+/** \brief eCommerceProductFeatureBasic inherits the eCommerceProductFeatureBase interface.
  *
- * This call ensures proper inheritance between the two classes.
+ * The basic feature is an implementation of the eCommerceProductFeatureBase
+ * which offers the basics of the cart feature for a product.
+ *
+ * This includes the simple entries in a cart: designation, quantity, price,
+ * total, total number of items, and grand total. Other features are defined
+ * in various other ecommerce related plugins.
  */
-snapwebsites.inherits(snapwebsites.EditorWidgetType, snapwebsites.EditorWidgetTypeBase);
+snapwebsites.inherits(snapwebsites.eCommerceProductFeatureBasic, snapwebsites.eCommerceProductFeatureBase);
 
 
-/*jslint unparam: true */
-/** \brief Initialize a widget of this type.
+/** \brief Retrieve the name of this product feature.
  *
- * This function is called from the EditorWidget constructor. The core
- * variables will all be initialized when called, but there may be other
- * parts that are not. This function should be used to further some
- * initialization of variable members that does not happen in core.
+ * This function returns the product feature name. It is used whenever
+ * you register the feature in the Cart object.
+ *
+ * @throws {Error} The base feature function throws an error as it should
+ *                 never get called (abstract functions require override.)
+ *
+ * @return {string}  The name of this cart product feature as a string.
+ */
+snapwebsites.eCommerceProductFeatureBasic.prototype.getFeatureName = function() // virtual
+{
+    return "ecommerce::basic";
+};
+
+
+/** \brief Setup the basic feature column headers.
+ *
+ * The basic feature adds the default column headers. This includes:
+ *
+ * \li Line #
+ * \li Description
+ * \li Quantity
+ * \li Price
+ * \li Total
+ *
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns to setup with
+ * header information.
+ */
+snapwebsites.eCommerceProductFeatureBasic.prototype.setupColumnHeaders = function(columns) // virtual
+{
+    // TODO: Translations
+    columns.addColumnHeader("ecommerce::no", "#", "");
+    columns.addColumnHeader("ecommerce::description", "Description", "");
+    columns.addColumnHeader("ecommerce::quantity", "Quantity", "");
+    columns.addColumnHeader("ecommerce::price", "Price", "");
+    columns.addColumnHeader("ecommerce::total", "Total", "");
+    columns.addColumnHeader("ecommerce::delete", "", ""); // no name for that column, we actually remove borders too!
+};
+
+
+/** \brief Setup various counters in the last row of data.
+ *
+ * This row is generally used to define a set of entries such as the
+ * total number of items being purchased and the grand total before
+ * adding taxes and shipping.
+ *
+ * The basic feature adds the total number of items in the
+ * ecommerce::quantity column and the total costs in the
+ * ecommerce::total column.
+ *
+ * Other features have the ability to remove those totals. This is
+ * particularly useful if you have a cart with item quantities that
+ * do not all match the same unit (i.e. you should not add meters
+ * and millimeters as such, you'd have to convert the meters in
+ * millimeters first--or vice versa--so the total makes some
+ * sense.)
  *
  * \warning
- * This function is called right after a widget was created and all the
- * widgets may not yet be created when called. In most cases, you want
- * to overload the initializeWidget() function instead.
+ * This function is expected to be called after all the products were
+ * added to the cart. It appends a row to the existing cart.
  *
- * @param {!Object} widget  The widget being initialized.
- * @override
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns where
+ * footer information is to be added.
+ * @param {number} index  The row index for this product entry.
  */
-snapwebsites.EditorWidgetType.prototype.preInitializeWidget = function(widget) // virtual
+snapwebsites.eCommerceProductFeatureBasic.prototype.setupColumnFooters = function(columns, index) // virtual
 {
-};
-/*jslint unparam: false */
+    var total_quantity = snapwebsites.eCommerceCartInstance.getTotalQuantity(),
+        total_costs = snapwebsites.eCommerceCartInstance.getTotalCosts();
 
-
-/** \brief Initialize a widget of this type.
- *
- * Setup various events to handle changes to the widget content and
- * focus.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // virtual
-{
-    var that = this,
-        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        //w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent();
-
-    this.setupEditButton(editor_widget); // allow overrides to an empty function
-
-    // widget was possibly modified, so make sure we stay on top
-    c.on("keyup bind cut copy paste", function()
-        {
-            editor_widget.getEditorBase().checkModified();
-        });
-
-    // widget gets the focus, make it the active widget
-    c.focus(function()
-        {
-            editor_widget.getEditorBase().setActiveElement(c);
-
-            if(!jQuery(this).is(".no-toolbar")
-            && !jQuery(this).parent().is(".read-only"))
-            {
-                if(editor_widget.getEditorForm().getToolbarAutoVisible())
-                {
-                    editor_widget.getEditorBase().getToolbar().toggleToolbar(true);
-                }
-            }
-        });
-
-    // widget loses the focus, lose the toolbar in a few ms...
-    //
-    // (note: the activeElement_ parameter is NOT reset and this is important
-    //        because the toolbar may use it to restore it once the command
-    //        is processed.)
-    //
-    c.blur(function()
-        {
-            // don't blur the toolbar immediately because if the user just
-            // clicked on it, it would break it
-            editor_widget.getEditorBase().getToolbar().startToolbarHide();
-        });
-
-    // a key was pressed in the focused widget
-    c.keydown(function(e)
-        {
-//console.log("ctrl "+(e.shiftKey?"+ shift ":"")+"= "+e.which+", idx = "+(snapwebsites.EditorInstance.keys_[e.which + (e.shiftKey ? 0x10000 : 0)]));
-            if(editor_widget.getEditorBase().getToolbar().keydown(e))
-            {
-                // toolbar used that key stroke
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        });
-
-    // the user just moved over a widget while dragging something
-    c.on("dragenter",function(e)
-        {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // allows your CSS to change some things when areas are
-            // being dragged over
-            jQuery(this).parent().addClass("dragging-over");
-        });
-
-    // the user is dragging something over a widget
-    c.on("dragover",function(e)
-        {
-            // TBD this is said to make things work better in some browsers...
-            e.preventDefault();
-            e.stopPropagation();
-        });
-
-    // the user just moved out a widget while dragging something
-    c.on("dragleave",function(e)
-        {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // remove the class when the mouse leaves
-            jQuery(this).parent().removeClass("dragging-over");
-        });
-
-    // the user actually dropped a file on this widget
-    //
-    // Note: we handle the drop at this level, other widget types
-    //       should only override the the droppedImage()
-    //       and droppedAttachment() functions instead
-    //
-    c.on("drop",function(e)
-        {
-            var i,                      // loop index
-                r,                      // file reader object
-                accept_images,          // boolean, true if element accepts images
-                accept_files,           // boolean, true if element accepts attachments
-                that_element = c,       // this element as a jQuery object
-                file_loaded;            // finalizing function
-
-            //
-            // TODO:
-            // At this point this code breaks the normal behavior that
-            // properly places the image where the user wants it; I'm
-            // not too sure how we can follow up on the "go ahead and
-            // do a normal instead" without propagating the event, but
-            // I'll just ask on StackOverflow for now...
-            //
-            // http://stackoverflow.com/questions/22318243/how-to-apply-the-default-image-drop-behavior-after-testing-that-image-is-valid
-            //
-            // That said, I did not get any answer but thinking about
-            // it, it seems pretty easy to me: the answer is to use
-            // the jQuery().trigger() command which processes the event
-            // as if nothing had happened. Then we just need to ignore
-            // that event if it calls this "drop" event handler again.
-            //
-
-            // remove the dragging-over class on a drop because we
-            // do not always get the dragleave event in that case
-            that_element.parent().removeClass("dragging-over");
-
-            // always prevent the default dropping mechanism
-            // we handle the file manually all the way
-            e.preventDefault();
-            e.stopPropagation();
-
-            // anything transferred on widget that accepts files?
-            if(e.originalEvent.dataTransfer
-            && e.originalEvent.dataTransfer.files.length)
-            {
-                accept_images = that_element.hasClass("image");
-                accept_files = that_element.hasClass("attachment");
-                if(accept_images || accept_files)
-                {
-                    // TODO: add a test, in case length > 1 and the destination
-                    //       widget expects exactly 1 file, then generate an
-                    //       error because we cannot know which file the user
-                    //       really intended to drop (maybe we could offer a
-                    //       selection, assuming we do not lose the necessary
-                    //       info...) We could also just have a max. # of
-                    //       possible drops and if `length > max` then err.
-                    //
-                    file_loaded = function(e)
-                        {
-                            that.droppedFile_(e);
-                        };
-                    for(i = 0; i < e.originalEvent.dataTransfer.files.length; ++i)
-                    {
-                        // For images we do not really care about that info, for uploads we will
-                        // use it so I keep that here for now to not have to re-research it...
-                        //console.log("  filename = [" + e.originalEvent.dataTransfer.files[i].name
-                        //          + "] + size = " + e.originalEvent.dataTransfer.files[i].size
-                        //          + " + type = " + e.originalEvent.dataTransfer.files[i].type
-                        //          + "\n");
-
-                        // read the image so we can make sure it is indeed an
-                        // image and ignore any other type of files
-                        r = new FileReader();
-                        r.snapEditorWidget = editor_widget;
-                        r.snapEditorFile = e.originalEvent.dataTransfer.files[i];
-                        r.snapEditorIndex = i;
-                        r.snapEditorAcceptImages = accept_images;
-                        r.snapEditorAcceptFiles = accept_files;
-                        r.onload = file_loaded;
-
-                        //
-                        // TBD: right now we only check the first few bytes
-                        //      but we may want to increase that size later
-                        //      to allow for JPEG that have the width and
-                        //      height defined (much) further in the stream
-                        //      (at times at the end!?)
-                        //
-                        r.readAsArrayBuffer(r.snapEditorFile.slice(0, 64));
-                    }
-                }
-            }
-
-            return false;
-        });
+    columns.addColumnData(index, "ecommerce::quantity", total_quantity);
+    columns.addColumnData(index, "ecommerce::total", total_costs);
 };
 
 
-// noempty: false -- not support in current version of jslint
-/*jslint unparam: true */
-/** \brief Add an "Edit" button to this widget.
+/** \brief Setup the basic feature columns.
  *
- * In general, forms will make use of the "immediate" class which
- * means that no "Edit" button is required. However, a standard page
- * will look pretty much normal except for that little popup that
- * appears when you hover an editable area. Clicking on that "Edit"
- * button in the popup enables the editing of the area.
+ * The basic feature adds the content of the default columns.
  *
- * The main reason for doing this is because other functionalities
- * break when editing an area.
+ * This includes:
  *
- * Widgets that don't offer a "contenteditable" area (i.e.
- * checkmarks, radios, etc.) override this functions with a do
- * nothing function.
+ * \li Line #
+ * \li Description
+ * \li Quantity
+ * \li Price
+ * \li Total
  *
- * \note
- * Although we generally expect the getEditButton() to be overriden, this
- * function can also be overridden. This gives you the ability to, for
- * example, generate multiple edit field (i.e. short, normal, and long
- * titles when editing the title of a page.)
- *
- * @param {snapwebsites.EditorWidget} editor_widget  The widget being
- *                                                   initialized.
+ * @param {snapwebsites.eCommerceProductBase} product  The product for which the columns are being setup.
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns were we want to save the product data.
+ * @param {number} index  The row index for this product entry.
  */
-snapwebsites.EditorWidgetType.prototype.setupEditButton = function(editor_widget) // virtual
+snapwebsites.eCommerceProductFeatureBasic.prototype.setupColumns = function(product, columns, index) // virtual
 {
+    var quantity = product.getQuantity(),
+        price = product.getPrice(),
+        total = Math.round(quantity * price * 100.0) / 100.0;
+
+    columns.addColumnData(index, "ecommerce::no", index + 1);
+
+    columns.addColumnData(index, "ecommerce::description",
+            "<a class='cart-product-description' href='"
+            + product.getProductType().getProperty("ecommerce::guid")
+            + "'>" + product.getDescription() + "</a>");
+
+    columns.addColumnData(index, "ecommerce::quantity",
+            // add an editor widget and make it immediately active
+            "<div field_type='line-edit' field_name='"
+                        + name
+                        + "' class='snap-editor editable line-edit immediate"
+                        + (index == 0 ? " auto-focus" : "")
+                        + " " + name
+                        + "' spellcheck='false'>"
+                 + "<div class='span-editor-background zordered'>"
+                   + "<div class='snap-editor-background-content'>"
+                     + "quantity"
+                   + "</div>"
+                 + "</div>"
+                 // TODO: look into getting tabindex in there
+                 + "<div name='"
+                        + name
+                        + "' class='editor-content no-toolbar'"
+                        + " title='Enter the number of items you want. Put zero to remove this item from your cart.'"
+                        + " minlength='1' maxlength='10'>"
+                   + quantity
+                 + "</div>"
+                 // we could also add the help <div> ?
+               + "</div>");
+    // TODO: we need to get the editor widget functional too...
+
+    columns.addColumnData(index, "ecommerce::price", price);
+    columns.addColumnData(index, "ecommerce::total", total);
+    columns.addColumnData(index, "ecommerce::delete", "<a class='cart-delete-product' href='/delete' guid='"
+                + product.getProductType().getProperty("ecommerce::guid")
+                + "'><img src='/images/ecommerce/button-delete-red-48x48.png' title='Delete' width='16' height='16'/></a>");
 };
-/*jslint unparam: false */ // noempty: true -- not support in current version
 
 
-/** \brief Got the content of a dropped file.
+/** \brief Add the Grand Total row at the bottom of the cart.
  *
- * This function analyze the dropped file content. If recognized then we
- * proceed with the onimagedrop or onattachmentdrop as required.
+ * The basic feature adds the Grand Total row at the very bottom of the
+ * cart. The footer features order ensures that the basic feature be
+ * last.
  *
- * @param {ProgressEvent} e  The event.
- *
- * @private
- * @final
+ * @param {!snapwebsites.eCommerceColumns} columns  The columns were we want to save the product data.
+ * @param {Object} result  The result object.
+ * @param {number} net_grand_total  The net grand total to purchase all the products in the cart.
  */
-snapwebsites.EditorWidgetType.prototype.droppedFile_ = function(e)
+snapwebsites.eCommerceProductFeatureBasic.prototype.generateFooter = function(columns, result, net_grand_total) // virtual
 {
-    var that = this,
-        r,
-        a,
-        blob;
+    var max = result.length,
+        i,
+        grand_total = net_grand_total;
 
-    e.target.snapEditorMIME = snapwebsites.OutputInstance.bufferToMIME(e.target.result);
-    if(e.target.snapEditorAcceptImages && e.target.snapEditorMIME.substr(0, 6) === "image/")
+    for(i = 0; i < max; ++i)
     {
-        // Dropped an Image managed as such
-
-        // It is an image, now convert the data to URI encoding
-        // (i.e. base64 encoding) before saving the result in the
-        // target element
-        r = new FileReader();
-        r.snapEditorWidget = e.target.snapEditorWidget;
-        r.snapEditorFile = e.target.snapEditorFile;
-        r.snapEditorIndex = e.target.snapEditorIndex;
-        r.snapEditorAcceptImages = e.target.snapEditorAcceptImages;
-        r.snapEditorAcceptFiles = e.target.snapEditorAcceptFiles;
-        r.snapEditorMIME = e.target.snapEditorMIME;
-        r.onload = function(e)
-            {
-                that.droppedImageConvert_(e);
-            };
-
-        a = [];
-        a.push(e.target.snapEditorFile);
-        blob = new Blob(a, { type: e.target.snapEditorMIME });
-        r.readAsDataURL(blob);
-    }
-    else if(e.target.snapEditorAcceptFiles && e.target.snapEditorMIME)
-    {
-        // Dropped a file managed as an attachment
-        this.droppedAttachment(e);
-    }
-    else
-    {
-        // generate an error
-        //
-        // TODO: we do not yet have code to dynamically generate errors
-        //       (we can show messages when created by the server, and
-        //       want the same thing with errors, but that's not yet
-        //       available...)
-        //       -- This is not correct anymore, we now do have a way to
-        //          dynamically generate errors!
-        //
-    }
-};
-
-
-/*jslint eqeq: true */
-/** \brief Save the resulting image in the target.
- *
- * This function receives the image as data that can readily be stick
- * in the 'src' attribute of an 'img' tag (i.e. data:image/fmt;base64=...).
- * It gets loaded in an Image object so we can verify the image width
- * and height before it gets presented to the end user.
- *
- * @param {ProgressEvent} e  The file information.
- * @private
- * @final
- */
-snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
-{
-    var that = this,
-        img = new Image();
-
-    // The image parameters (width/height) are only available after the
-    // onload() event kicks in
-    img.onload = function()
-        {
-            // keep this function here because it is a full closure (it
-            // uses 'img' 'that', and even 'e')
-
-            var sizes,
-                limit_width = 0,
-                limit_height = 0,
-                w,
-                h,
-                nw,
-                nh,
-                max_sizes;
-
-            // make sure we do it just once
-            img.onload = null;
-
-            w = img.width;
-            h = img.height;
-
-            if(e.target.snapEditorWidget.getWidgetContent().attr("min-sizes"))
-            {
-                sizes = e.target.snapEditorWidget.getWidgetContent().attr("min-sizes").split("x");
-                if(w < sizes[0] || h < sizes[1])
-                {
-                    // image too small...
-                    // TODO: fix alert with clean error popup
-                    alert("This image is too small. Minimum required is "
-                            + e.target.snapEditorWidget.getWidgetContent().attr("min-sizes")
-                            + ". Please try with a larger image.");
-                    return;
-                }
-            }
-            if(e.target.snapEditorWidget.getWidgetContent().attr("max-sizes"))
-            {
-                sizes = e.target.snapEditorWidget.getWidgetContent().attr("max-sizes").split("x");
-                if(w > sizes[0] || h > sizes[1])
-                {
-                    // image too large...
-                    // TODO: fix alert with clean error popup
-                    alert("This image is too large. Maximum allowed is "
-                            + e.target.snapEditorWidget.getWidgetContent().attr("max-sizes")
-                            + ". Please try with a smaller image.");
-                    return;
-                }
-            }
-
-            if(e.target.snapEditorWidget.getWidgetContent().attr("resize-sizes"))
-            {
-                max_sizes = e.target.snapEditorWidget.getWidgetContent().attr("resize-sizes").split("x");
-                limit_width = max_sizes[0];
-                limit_height = max_sizes[1];
-            }
-
-            if(limit_width > 0 && limit_height > 0)
-            {
-                if(w > limit_width || h > limit_height)
-                {
-                    // source image is too large
-                    nw = Math.round(limit_height / h * w);
-                    nh = Math.round(limit_width / w * h);
-                    if(nw > limit_width && nh > limit_height)
-                    {
-                        // TBD can this happen?
-                        alert("somehow we could not adjust the dimentions of the image properly!?");
-                    }
-                    if(nw > limit_width)
-                    {
-                        h = nh;
-                        w = limit_width;
-                    }
-                    else
-                    {
-                        w = nw;
-                        h = limit_height;
-                    }
-                }
-            }
-            jQuery(img)
-                .attr("width", w)
-                .attr("height", h)
-                .attr("filename", e.target.snapEditorFile.name)
-                .css({top: (limit_height - h) / 2, left: (limit_width - w) / 2, position: "relative"});
-
-            that.droppedImage(e, img);
-        };
-    img.src = e.target.result;
-
-    // TBD: still a valid test? img.readyState is expected to be a string!
-    //
-    // a fix for browsers that don't call onload() if the image is
-    // already considered loaded by now
-    if(img.complete || img.readyState == 4)
-    {
-        img.onload();
-    }
-};
-/*jslint eqeq: false */
-
-
-/*jslint unparam: true */
-/** \brief Handle an image that was just dropped.
- *
- * This function handles an image as it was just dropped.
- *
- * The default function is abstract (to simulate the abstractness, we throw
- * here.) Only widgets with a type that overloads this function understand
- * images.
- *
- * @param {ProgressEvent} e  The reader data.
- * @param {Image} img  The image te user dropped.
- */
-snapwebsites.EditorWidgetType.prototype.droppedImage = function(e, img) // abstract
-{
-    throw new Error("snapwebsites.EditorWidgetType.prototype.droppedImage() not overridden and thus it cannot handle the dropped image.");
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Handle an image that was just dropped.
- *
- * This function handles an image as it was just dropped.
- *
- * @param {ProgressEvent} e  The event.
- */
-snapwebsites.EditorWidgetType.prototype.droppedAttachment = function(e) // abstract
-{
-    throw new Error("snapwebsites.EditorWidgetType.prototype.droppedAttachment() not overridden and thus it cannot handle the dropped attachment.");
-};
-/*jslint unparam: false */
-
-
-
-/** \brief The constructor of the widget type Content Editable.
- *
- * This intermediate type offers an "Edit" button for the user to enter
- * editing mode on an area which by default won't be editable.
- *
- * Note that widgets can be marked as immediate in order to force the
- * editing capability of the widget and bypass this "Edit" button.
- *
- * \code
- *  class EditorWidgetTypeContentEditable extends EditorWidgetType
- *  {
- *  public:
- *      function EditorWidgetTypeContentEditable();
- *      function setupEditButton(editor_widget: snapwebsites.EditorWidget) : void;
- *      function getEditButton() : string;
- *  };
- * \endcode
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetType}
- * @struct
- */
-snapwebsites.EditorWidgetTypeContentEditable = function()
-{
-    snapwebsites.EditorWidgetTypeContentEditable.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief EditorWidgetTypeContentEditable inherits from EditorWidgetType.
- *
- * This call ensures proper inheritance between the two classes.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeContentEditable, snapwebsites.EditorWidgetType);
-
-
-/** \brief Initialize an "Edit" button.
- *
- * This function adds an "Edit" button to the specified \p editor_widget.
- * By default most widgets don't get an edit button because they are
- * automatically editable (if not disabled or marked as read-only.)
- *
- * This is especially necessary on editable text areas where links would
- * otherwise not react to clicks since editable areas accept focus instead.
- *
- * @param {snapwebsites.EditorWidget} editor_widget  The widget being
- *                                                   initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = function(editor_widget)
-{
-    var w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
-        html,
-        edit_button_popup;
-
-    if(w.is(".immediate"))
-    {
-        // editor is immediately made available
-        // (most usual in editor forms)
-        c.attr("contenteditable", "true");
-        return;
+        grand_total += result[i].costs;
     }
 
-    // get the HTML of the "Edit" button
-    html = this.getEditButton();
-    if(!html)
-    {
-        return;
-    }
-
-    jQuery(/** @type {string} */ (html)).prependTo(w);
-
-    edit_button_popup = w.children(".editor-edit-button");
-
-    // user has to click Edit to activate the editor
-    edit_button_popup.children(".activate-editor").click(function()
-        {
-            // simulate a mouseleave so the edit button form gets hidden
-            // then remove the hover events
-            w.mouseleave().off("mouseenter mouseleave");
-
-            // make the child editable and give it the focus
-            // TODO: either select all or at least place the cursor at the
-            //       end in some cases...
-            c.attr("contenteditable", "true").focus();
-        });
-
-    // this adds the mouseenter and mouseleave events
-    w.hover(
-        function()  // mouseenter
-        {
-            edit_button_popup.fadeIn(150);
-        },
-        function()  // mouseleave
-        {
-            edit_button_popup.fadeOut(150);
+    result.push({
+            label: "Grand Total: ",
+            costs: grand_total
         });
 };
 
 
-/** \brief The HTML representing the "Edit" button.
+/** \brief List of dependencies of the basic feature.
  *
- * This function returns the default "Edit" button HTML. It can be
- * overridden in order to change the button.
+ * This function is overridden because the default dependency list is
+ * "ecommerce::basic", which is this feature and we just do not want
+ * to have this feature to depend on itself.
  *
- * \note
- * If the function returns an empty string or false then it is assumed
- * that the object does not want an edit button (i.e. a checkmark object.)
- *
- * @return {!string|!boolean}  A string representing the HTML of the "Edit"
- *                             button or false.
+ * @return {!string}  The list of dependencies, here an empty string.
  */
-snapwebsites.EditorWidgetTypeContentEditable.prototype.getEditButton = function() // virtual
+snapwebsites.eCommerceProductFeatureBasic.prototype.getColumnDependencies = function() // virtual
 {
-    return "<div class='editor-edit-button'><a class='activate-editor' href='#'>Edit</a></div>";
+    return "";
 };
 
-
-
-/** \brief Editor widget type for Hidden widgets.
- *
- * This widget defines hidden elements in the editor forms. This is
- * an equivalent to the hidden input element of a standard form, although
- * our hidden widgets can include any type of text.
- *
- * \code
- *  class EditorWidgetTypeHidden extends EditorWidgetType
- *  {
- *  public:
- *      virtual function getType() : string;
- *      virtual function initializeWidget(widget: Object) : void;
- *  };
- * \endcode
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetType}
- * @struct
- */
-snapwebsites.EditorWidgetTypeHidden = function()
-{
-    snapwebsites.EditorWidgetTypeHidden.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief Chain up the extension.
- *
- * This is the chain between this class and its super.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeHidden, snapwebsites.EditorWidgetType);
-
-
-/** \brief Return "hidden".
- *
- * Return the name of the hidden type.
- *
- * @return {string} The name of the hidden type.
- * @override
- */
-snapwebsites.EditorWidgetTypeHidden.prototype.getType = function() // virtual
-{
-    return "hidden";
-};
-
-
-/** \brief Initialize the widget.
- *
- * This function initializes the hidden widget.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeHidden.prototype.initializeWidget = function(widget) // virtual
-{
-    snapwebsites.EditorWidgetTypeHidden.superClass_.initializeWidget.call(this, widget);
-};
-
-
-
-/** \brief Editor widget type for Text Edit widgets.
- *
- * This widget defines the full text edit in the editor forms. This is
- * an equivalent to the text area of a standard form.
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetTypeContentEditable}
- * @struct
- */
-snapwebsites.EditorWidgetTypeTextEdit = function()
-{
-    snapwebsites.EditorWidgetTypeTextEdit.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief Chain up the extension.
- *
- * This is the chain between this class and its super.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeTextEdit, snapwebsites.EditorWidgetTypeContentEditable);
-
-
-/** \brief Return "text-edit".
- *
- * Return the name of the text edit type.
- *
- * @return {string} The name of the text edit type.
- * @override
- */
-snapwebsites.EditorWidgetTypeTextEdit.prototype.getType = function() // virtual
-{
-    return "text-edit";
-};
-
-
-/** \brief Initialize the widget.
- *
- * This function initializes the text-edit widget. It setups a keydown
- * event to prevent editing if the widget is marked as read-only or
- * disabled.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widget) // virtual
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        c = editor_widget.getWidgetContent();
-
-    snapwebsites.EditorWidgetTypeTextEdit.superClass_.initializeWidget.call(this, widget);
-
-    c.keydown(function(e)
-        {
-            var widget = c.parent();
-
-            // do not prevent the Tab and Enter
-            if(e.which == 9 || e.which == 13)
-            {
-                return;
-            }
-
-            // TBD: we may need to allow various keys when the widget is
-            //      marked as 'read-only' (i.e. Ctrl-C, arrows, etc.)
-            if(widget.is(".read-only")
-            || widget.is(".disabled"))
-            {
-                // no typing allowed
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        });
-};
-
-
-/** \brief Save a new value in the specified editor widget.
- *
- * This function offers a way for programmers to dynamically change the
- * value of a widget. You should never call the editor widget type
- * function, instead use the setValue() function of the widget you
- * want to change the value of (it will make sure that the modified
- * flag is properly set.)
- *
- * Depending on the type, the value may be a string, a number, of some
- * other type, this is why here it is marked as an object.
- *
- * @param {!Object} widget  The concerned widget.
- * @param {!Object|string|number} value  The value to be saved.
- *
- * @return {boolean}  true if the value gets changed.
- */
-snapwebsites.EditorWidgetTypeTextEdit.prototype.setValue = function(widget, value)
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        c = editor_widget.getWidgetContent();
-
-    if(c.html() !== value)
-    {
-        c.empty();
-        c.append(/** @type {string} */ (value));
-        return true;
-    }
-
-    return false;
-};
-
-
-
-/** \brief Editor widget type for Text Edit widgets.
- *
- * This widget defines the full text edit in the editor forms. This is
- * an equivalent to the text area of a standard form.
- *
- * @return {!snapwebsites.EditorWidgetTypeLineEdit}
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetTypeTextEdit}
- * @struct
- */
-snapwebsites.EditorWidgetTypeLineEdit = function()
-{
-    snapwebsites.EditorWidgetTypeLineEdit.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief Chain up the extension.
- *
- * This is the chain between this class and its super.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeLineEdit, snapwebsites.EditorWidgetTypeTextEdit);
-
-
-/** \brief Return "line-edit".
- *
- * Return the name of the line edit type.
- *
- * @return {string} The name of the line edit type.
- * @override
- */
-snapwebsites.EditorWidgetTypeLineEdit.prototype.getType = function()
-{
-    return "line-edit";
-};
-
-
-/** \brief Initialize the widget.
- *
- * This function initializes the line-edit widget.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widget) // virtual
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        //w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent();
-
-    snapwebsites.EditorWidgetTypeLineEdit.superClass_.initializeWidget.call(this, widget);
-
-    c.keydown(function(e)
-        {
-            if(e.which === 13)
-            {
-                // prevent enter from doing anything here
-                //
-                // TODO: actually we want return to apply the submit if
-                //       there is one
-                //
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        });
-};
-
-
-
-/** \brief Editor widget type for Dropdown widgets.
- *
- * This widget defines a dropdown in the editor forms.
- *
- * \note
- * The EditorWidgetTypeDropdown holds a reference to the last dropdown
- * items that was opened so it can close it in the event any other
- * dropdown happened to get opened.
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetTypeLineEdit}
- * @struct
- */
-snapwebsites.EditorWidgetTypeDropdown = function()
-{
-    snapwebsites.EditorWidgetTypeDropdown.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief EditorWidgetTypeDropdown inherits from EditorWidgetTypeLineEdit.
- *
- * This call ensures proper inheritance between the two classes.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeDropdown, snapwebsites.EditorWidgetTypeLineEdit);
-
-
-/** \brief The currently opened dropdown.
- *
- * This variable member holds the jQuery widget of the currently opened
- * dropdown. It is used to be able to close that widget whenever another
- * one gets opened or the widget loses focus.
- *
- * @type {jQuery}
- * @private
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown_ = null;
-
-
-/** \brief Whether the currently opened dropdown is a clone.
- *
- * This variable member is true when the openDropdown_ variable is
- * a clone of the dropdown elements. This means it will be deleted
- * after it gets closed.
- *
- * By default, this is false as it is assumed that your dropdown is
- * created in the top-most window.
- *
- * @type {boolean}
- * @private
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.clonedDropdown_ = false;
-
-
-/** \brief Return "dropdown".
- *
- * Return the name of the dropdown type.
- *
- * @return {string} The name of the dropdown type.
- * @override
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.getType = function() // virtual
-{
-    return "dropdown";
-};
-
-
-/** \brief Initialize the widget.
- *
- * This function initializes the dropdown widget.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widget) // virtual
-{
-    var that = this,
-        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
-        d = w.children(".dropdown-items");
-
-    snapwebsites.EditorWidgetTypeDropdown.superClass_.initializeWidget.call(this, widget);
-
-    //
-    // WARNING: we dynamically assign the "absolute" flag because otherwise
-    //          the item doesn't get positioned right at the start (i.e. in
-    //          this way we don't have to compute the position.)
-    //
-    d.css("position", "absolute");
-
-    // Click hides currently opened dropdown if there is one.
-    // Then shows the dropdown of the clicked widget (unless that's the one
-    // we just closed.)
-    w.click(function(e)
-        {
-            var that_element = jQuery(this),
-                visible,
-                z,
-                pos,
-                iframe_pos;
-
-            // avoid default browser behavior
-            e.preventDefault();
-            e.stopPropagation();
-
-            visible = that_element.is(".disabled") || d.is(":visible");
-
-            // hide the dropdown AFTER we checked its visibility
-            that.hideDropdown();
-
-            if(!visible)
-            {
-                // test with 'window.' so it works in IE
-                if(window.self != window.top)
-                {
-                    that.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered' style='position: absolute;'>" + d.html() + "</div>").appendTo("body");
-                    pos = c.offset();
-                    iframe_pos = window.top.jQuery("#create-finball.snap-popup .popup-body iframe").offset();
-                    pos.left += iframe_pos.left;
-                    pos.top += iframe_pos.top + w.height();
-                    that.openDropdown_.offset(pos);
-                    that.clonedDropdown_ = true;
-
-                    that.openDropdown_
-                        .children(".dropdown-selection")
-                        .children(".dropdown-item")
-                        .click(function(e)
-                            {
-                                that.itemClicked(e, editor_widget);
-                            });
-
-                    // setup z-index
-                    // (reset itself first so we do not just +1 each time)
-                    that.openDropdown_.css("z-index", 0);
-                    z = window.top.jQuery("div.zordered").maxZIndex() + 1;
-                    that.openDropdown_.css("z-index", z);
-                }
-                else
-                {
-                    // the newly visible dropdown
-                    that.openDropdown_ = d;
-
-                    // setup z-index
-                    // (reset itself first so we do not just +1 each time)
-                    that.openDropdown_.css("z-index", 0);
-                    z = jQuery("div.zordered").maxZIndex() + 1;
-                    that.openDropdown_.css("z-index", z);
-                }
-
-                that.openDropdown_.fadeIn(150);
-            }
-        });
-
-    d.children(".dropdown-selection")
-        .children(".dropdown-item")
-        .click(function(e)
-            {
-                that.itemClicked(e, editor_widget);
-            });
-
-    c.blur(function()
-        {
-            that.hideDropdown();
-        });
-
-    // TODO: we need to add support for the up/down arrow keys to change
-    //       the selection
-    //w.keydown(function(e)
-    //    {
-    //        // ...
-    //    });
-};
-
-
-/** \brief Request that the current dropdown be closed.
- *
- * This function ensures that the current dropdown gets closed.
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
-{
-    var clone = null;
-
-    if(this.openDropdown_)
-    {
-        // if we are in the top window, otherwise it is already hidden
-        if(this.clonedDropdown_)
-        {
-            clone = this.openDropdown_;
-        }
-        this.openDropdown_.fadeOut(150, function()
-            {
-                if(clone)
-                {
-                    clone.remove();
-                }
-            });
-        this.openDropdown_ = null;
-    }
-};
-
-
-/** \brief Handle a click on a dropdown item.
- *
- * This function is called whenever the user clicks on a dropdown
- * item.
- *
- * @param {Event} e  The jQuery click event on this item.
- * @param {snapwebsites.EditorWidget} editor_widget  The widget representing the dropdown.
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(e, editor_widget)
-{
-    var w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
-        d = w.children(".dropdown-items"),
-        that_element = jQuery(e.target),
-        value,
-        widget_change;
-
-    // avoid default browser behavior
-    e.preventDefault();
-    e.stopPropagation();
-
-    // hide the dropdown (we could use d.toggle() but that
-    // would not update the openDropdon_ variable member)
-    this.hideDropdown();
-
-    // first select the new item
-    d.find(".dropdown-item").removeClass("selected");
-    that_element.addClass("selected");
-
-    // then copy the item label to the "content" (line edit)
-    c.empty();
-    c.append(that_element.html());
-
-    // finally, get the resulting value if there is one
-    value = that_element.attr("value");
-    if(value)
-    {
-        c.attr("value", snapwebsites.castToString(value, "dropdown item value attribute"));
-    }
-    else
-    {
-        // canonicalize the undefined value
-        value = null; // TBD should it be value = c.text(); ?
-        c.removeAttr("value");
-    }
-
-    // make that dropdown the currently active object
-    c.focus();
-    editor_widget.getEditorBase().setActiveElement(c);
-
-    // send an event for each change because the user
-    // make want to know even if the value was not actually
-    // modified
-    widget_change = jQuery.Event("widgetchange", {
-            widget: editor_widget,
-            value: value
-        });
-    w.trigger(widget_change);
-
-    editor_widget.getEditorBase().checkModified();
-};
-
-
-/** \brief Reset the value of the specified editor widget.
- *
- * This function offers a way for programmers to dynamically reset the
- * value of a dropdown widget. You should never call the editor widget
- * type function, instead use the resetValue() function of the widget you
- * want to reset the value of (it will make sure that the modified
- * flag is properly set.)
- *
- * For a dropdown, it may reset the value back to the original as if the
- * user had never selected anything. This may be a value found in the list
- * of items, or it may be a string such as "Please select an option ...".
- * If the default value is not equal to any one of the items, then the
- * function makes sure to remove the "value" attribute of the widget.
- *
- * If the default value is an empty string, then that is used. If you do
- * not want that resolution, you may want to use the setValue()
- * function instead.
- *
- * \todo
- * We want to add support for the item marked as the default. At this
- * point we only support the default string used to ask the user to
- * "Please select an entry..."
- *
- * @param {!Object} widget  The concerned widget.
- *
- * @return {boolean}  true if the value gets changed.
- *
- * \sa setValue()
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
-        d = w.children(".dropdown-items"),
-        item = d.children(".dropdown-selection").children(".dropdown-item"),
-        reset_value = w.children(".snap-editor-dropdown-reset-value"),
-        widget_change,
-        result;
-
-    // at this point the reset value cannot be a value defined in
-    // the widget;
-    //
-    // TODO: later add support for default values (pre-selected item)
-    //       when the widget itself does not otherwise offer a full
-    //       reset value...
-
-    item.removeClass("selected");
-
-    // check whether the value was defined
-    result = !!c.attr("value");
-
-    // reset the actual line edit
-    c.empty();
-    c.append(reset_value.html());
-
-    if(result)
-    {
-        // if "value" is defined, reset all of that and emit an event
-        c.removeAttr("value");
-        c.focus();
-        editor_widget.getEditorBase().setActiveElement(c);
-
-        // send an event for each change because the user
-        // make want to know even if the value was not actually
-        // modified
-        widget_change = jQuery.Event("widgetchange",
-            {
-                widget: editor_widget,
-                value: null
-            });
-        w.trigger(widget_change);
-
-        editor_widget.getEditorBase().checkModified();
-    }
-
-    // if the item had a value attribute, this returns true
-    // (i.e. it was modified)
-    return result;
-};
-
-
-/** \brief Save a new value in the specified editor widget.
- *
- * This function offers a way for programmers to dynamically change the
- * value of a dropdown widget. You should never call the editor widget
- * type function, instead use the setValue() function of the widget you
- * want to change the value of (it will make sure that the modified
- * flag is properly set.)
- *
- * For a dropdown, the value parameter is expected to be one of the strings
- * found in the list of items or a number. If it is a number, then that
- * item gets selected (we use floor() to round any number down). If it
- * is a string it searches the list of items for it and selects that item.
- * If two or more items have the same label, then the first one is selected.
- *
- * If the index number is too large or the specified string is not found
- * in the existing items, then nothing happens.
- *
- * @param {!Object} widget  The concerned widget.
- * @param {!Object|string|number} value  The value to be saved.
- *
- * @return {boolean}  true if the value gets changed.
- *
- * \sa resetValue()
- */
-snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, value)
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
-        d = w.children(".dropdown-items"),
-        item = d.children(".dropdown-selection").children(".dropdown-item"),
-        that_item,
-        item_value,
-        widget_change;
-
-    if(typeof value === "number")
-    {
-        that_item = item.eq(value);
-    }
-    else
-    {
-        //
-        // if not a number, search the list of items:
-        //
-        //   . first we check with the "value" attribute; the value
-        //     attribute is authoritative so we do want to test that
-        //     first; this is viewed as a strong selection since two
-        //     items cannot (should not at time of writing, really)
-        //     share the same value
-        //
-        //   . second we give the user a chance to select using the
-        //     HTML of one of the items (this is a requirement since
-        //     some entries may not use the "value" attribute); this
-        //     is somewhat flaky since two items could have the exact
-        //     same HTML and only the first one will be selected
-        //
-
-        // Note: the filter may return more than one item, in that case
-        //       we simply ignore the extra items
-        that_item = item.filter(function()
-            {
-                var e = jQuery(this),
-                    attr = e.attr("value");
-
-                // note: if the value attribute is "" (an empty string)
-                //       then we algorithm fails here and anywhere else
-                //       we use that technique.
-                if(attr)
-                {
-                    // if we have an attribute, match that
-                    return attr === value;
-                }
-
-                // not a match...
-                return false;
-            }).eq(0);
-
-        if(!that_item.exists())
-        {
-            // Note: the filter may return more than one item, in that case
-            //       we simply ignore the extra items
-            that_item = item.filter(function()
-                {
-                    // no 'value' attribute, attempt to match the HTML data
-                    return jQuery(this).html() === value;
-                }).eq(0);
-        }
-    }
-
-    // TODO: if this Dropdown supports editing (i.e. not just read-only)
-    //       then this value has to become the new value anyway.
-
-    // if already selected, in effect we are not changing anything
-    if(that_item.exists() && !that_item.hasClass("selected"))
-    {
-        item.removeClass("selected");
-        that_item.addClass("selected");
-
-        // then copy the item label to the "content" (line edit)
-        c.empty();
-        c.append(that_item.html());
-
-        // finally, get the resulting value if there is one
-        item_value = that_item.attr("value");
-        if(item_value)
-        {
-            c.attr("value", snapwebsites.castToString(value, "dropdown item value attribute"));
-        }
-        else
-        {
-            // canonicalize the undefined value
-            item_value = null; // TBD should it be item_value = value; ?
-            c.removeAttr("value");
-        }
-
-        // make that dropdown the currently active object
-        c.focus();
-        editor_widget.getEditorBase().setActiveElement(c);
-
-        // send an event for each change because the user
-        // may want to know even if the value was not actually
-        // modified
-        widget_change = jQuery.Event("widgetchange",
-            {
-                widget: editor_widget,
-                value: item_value
-            });
-        w.trigger(widget_change);
-
-        editor_widget.getEditorBase().checkModified();
-
-        return true;
-    }
-
-    return false;
-};
-
-
-
-/** \brief Editor widget type for Checkmark widgets.
- *
- * This widget defines a checkmark in the editor forms.
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetType}
- * @struct
- */
-snapwebsites.EditorWidgetTypeCheckmark = function()
-{
-    snapwebsites.EditorWidgetTypeCheckmark.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief Chain up the extension.
- *
- * This is the chain between this class and its super.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeCheckmark, snapwebsites.EditorWidgetType);
-
-
-/** \brief Return "checkmark".
- *
- * Return the name of the checkmark type.
- *
- * @return {string} The name of the checkmark type.
- * @override
- */
-snapwebsites.EditorWidgetTypeCheckmark.prototype.getType = function() // virtual
-{
-    return "checkmark";
-};
-
-
-/** \brief Initialize the widget.
- *
- * This function initializes the checkmark widget.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(widget) // virtual
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
-        toggle = function()
-            {
-                // toggle the current value
-                var checkmark = c.find(".checkmark-area");
-                checkmark.toggleClass("checked");
-                c.attr("value", checkmark.hasClass("checked") ? 1 : 0);
-
-                // TBD: necessary to avoid setting the focus anew?
-                //      if not then we should remove the if() statement
-                //
-                // Note: from what I can tell, c is a jQuery and so we
-                //       should do a get on it too; at this point, it seems
-                //       that calling focus() everytime is just fine.
-                //
-                //if(editor_widget.getEditorBase().getActiveElement().get() != c)
-                //{
-                    c.focus();
-                //}
-
-                // tell the editor that something may have changed
-                // TODO: call the widget function which in turn tells the
-                //       editor instead of re-testing all the widgets?!
-                editor_widget.getEditorBase().checkModified();
-            };
-
-    snapwebsites.EditorWidgetTypeCheckmark.superClass_.initializeWidget.call(this, widget);
-
-    c.keydown(function(e)
-        {
-            if(e.which === 0x20) // spacebar
-            {
-                e.preventDefault();
-                e.stopPropagation();
-
-                toggle();
-            }
-        });
-
-    w.click(function(e)
-        {
-            if(!(jQuery(e.target).is("a")))
-            {
-                // the default may do weird stuff, so avoid it!
-                e.preventDefault();
-                e.stopPropagation();
-
-                toggle();
-            }
-        });
-};
-
-
-// This is not necessary anymore, but I want to keep it for documentation
-// purposes.
-//
-// * brief Change the result to just 0 or 1.
-// *
-// * This function changes the result of a checkmark as the value 0 or 1
-// * instead of the HTML of the sub-objects. This value represents the
-// * current selection (0 -- not checked, or 1 -- checked.)
-// *
-// * param {!Object} editor_widget  The concerned widget
-// * param {snapwebsites.EditorWidgetTypeBase.SaveData} data  The data object with the HTML and result parameters.
-// *
-//snapwebsites.EditorWidgetTypeCheckmark.prototype.saving = function(editor_widget, data) // virtual
-//{
-//    snapwebsites.EditorWidgetType.prototype.initializeWidget.apply(this, data);
-//
-//    data.result = edit_area.find(".checkmark-area").hasClass("checked") ? 1 : 0;
-//}
-
-
-
-/** \brief Editor widget type for Radio widgets.
- *
- * This widget defines a set of radio buttons in editor forms.
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetType}
- * @struct
- */
-snapwebsites.EditorWidgetTypeRadio = function()
-{
-    snapwebsites.EditorWidgetTypeRadio.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief Chain up the extension.
- *
- * This is the chain between this class and its super.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeRadio, snapwebsites.EditorWidgetType);
-
-
-/** \brief Return "radio".
- *
- * Return the name of the radio type.
- *
- * @return {string} The name of the radio type.
- * @override
- */
-snapwebsites.EditorWidgetTypeRadio.prototype.getType = function() // virtual
-{
-    return "radio";
-};
-
-
-/** \brief Initialize the widget.
- *
- * This function initializes the checkmark widget.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeRadio.prototype.initializeWidget = function(widget) // virtual
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
-        select_radio = function(radio_button)
-            {
-                // select the current radio button
-                var radio = jQuery(radio_button);
-                if(!radio.hasClass("selected"))
-                {
-                    // remove all selected
-                    radio.parent().children("li").removeClass("selected");
-                    // then select this radio button
-                    radio.addClass("selected");
-                    c.attr("value", snapwebsites.castToString(radio.attr("value"), "casting radio value to a string"));
-
-                    // tell the editor that something may have changed
-                    // TODO: call the widget function which in turn tells the
-                    //       editor instead of re-testing all the widgets?!
-                    editor_widget.getEditorBase().checkModified();
-                }
-            };
-
-    snapwebsites.EditorWidgetTypeRadio.superClass_.initializeWidget.call(this, widget);
-
-    c.keydown(function(e)
-        {
-            if(e.which === 0x20) // spacebar
-            {
-                e.preventDefault();
-                e.stopPropagation();
-
-                select_radio(c.find(":focus"));
-            }
-        });
-
-    w.find("li").click(function(e)
-        {
-            if(!(jQuery(e.target).is("a")))
-            {
-                // the default may do weird stuff, so avoid it!
-                e.preventDefault();
-                e.stopPropagation();
-
-                select_radio(this);
-            }
-        });
-};
-
-
-
-/** \brief Editor widget type for Image Box widgets.
- *
- * This widget defines an image box in the editor forms. The whole widget
- * is just and only an image. You cannot type in data and when an image is
- * dragged and dropped over that widget, it replaces the previous version
- * of the image.
- *
- * If required, the widget is smart enough to use a proportional resize
- * so the image fits the widget area.
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetType}
- * @struct
- */
-snapwebsites.EditorWidgetTypeImageBox = function()
-{
-    snapwebsites.EditorWidgetTypeImageBox.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief EditorWidgetTypeImageBox inherits from EditorWidgetType.
- *
- * This call ensures proper inheritance between the two classes.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeImageBox, snapwebsites.EditorWidgetType);
-
-
-/** \brief Return "image-box".
- *
- * Return the name of the image box type.
- *
- * @return {string} The name of the image box type.
- * @override
- */
-snapwebsites.EditorWidgetTypeImageBox.prototype.getType = function() // virtual
-{
-    return "image-box";
-};
-
-
-/** \brief Initialize the widget.
- *
- * This function initializes the image box widget.
- *
- * \note
- * At this point the Image Box widget do not attach to any events since all
- * the drag and drop work is done at the EditorWidgetType level. However,
- * we have a droppedImage() function (see below) which finishes the work
- * of the drag and drop implementation.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeImageBox.prototype.initializeWidget = function(widget) // virtual
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        w = editor_widget.getWidget(),
-        background = w.children(".snap-editor-background");
-
-    snapwebsites.EditorWidgetTypeImageBox.superClass_.initializeWidget.call(this, widget);
-
-    // backgrounds are positioned as "absolute" so their width
-    // is "broken" and we cannot center them in their parent
-    // which is something we want to do for image-box objects
-    background.css("width", snapwebsites.castToNumber(w.width(), "ImageBox widget width"))
-              .css("margin-top", (snapwebsites.castToNumber(w.height(), "ImageBox widget height")
-                                      - snapwebsites.castToNumber(background.height(), "ImageBox background height")) / 2);
-};
-
-
-/** \brief Handle the dropped image.
- *
- * This function handles the dropped image by saving it in the target
- * element.
- *
- * @param {ProgressEvent} e  The element.
- * @param {Image} img  The image to insert in the destination widget.
- *
- * @override
- */
-snapwebsites.EditorWidgetTypeImageBox.prototype.droppedImage = function(e, img)
-{
-    var saved_active_element, editor;
-
-    e.target.snapEditorWidget.getWidgetContent().empty();
-    jQuery(img).appendTo(e.target.snapEditorWidget.getWidgetContent());
-
-    // now make sure the editor detects the change
-    editor = snapwebsites.EditorInstance;
-    saved_active_element = editor.getActiveElement();
-    editor.setActiveElement(e.target.snapEditorWidget.getWidgetContent());
-    editor.checkModified();
-    editor.setActiveElement(saved_active_element);
-};
-
-
-
-/** \brief Editor widget type for Dropped Image with a Preview.
- *
- * This widget defines an image box in the editor forms. The image form
- * is used to display a preview of the file that gets dropped in it. This
- * is an extension of the EditorWidgetTypeImageBox which itself only
- * accepts recognized image files.
- *
- * Just like the image box widget, this widget does not allow for typing,
- * only to drag and drop a file in it. A new file dropped on this widget
- * replaces the previously attached file (it is not additive.)
- *
- * As required, the widget is smart enough to use a proportional resize
- * so the preview is made to fit the widget area.
- *
- * The widget accepts images just like the EditorWidgetTypeImageBox widget
- * does. It also can accept file formats that we can transform to a preview
- * (i.e. a PDF of which the first page will be transform in a preview.)
- *
- * @constructor
- * @extends {snapwebsites.EditorWidgetTypeImageBox}
- * @struct
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview = function()
-{
-    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.constructor.call(this);
-
-    return this;
-};
-
-
-/** \brief EditorWidgetTypeDroppedFileWithPreview inherits from EditorWidgetTypeImageBox.
- *
- * This call ensures proper inheritance between the two classes.
- */
-snapwebsites.inherits(snapwebsites.EditorWidgetTypeDroppedFileWithPreview, snapwebsites.EditorWidgetTypeImageBox);
-
-
-/** \brief A server access object.
- *
- * Whenever the user drops a file, we use this object to send it to
- * the server. In turn the server sends us a reply to know whether
- * the file was accepted or not. Later we will be able to check on
- * the server to know whether it has a preview for us to display.
- *
- * \note
- * This serverAccess_ object is shared between all the drop widget
- * of this type of attachments.
- *
- * @type {snapwebsites.ServerAccess}
- * @private
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccess_ = null;
-
-
-/** \brief Return "dropped-file-with-preview".
- *
- * Return the name of the image box type.
- *
- * Note that this widget type has 2 sub-types named
- * "dropped-image-with-preview" and "dropped-any-with-preview". However,
- * these sub-types cannot be distinguished here. Instead you have to
- * check whether it has classes "attachment" and/or "image".
- *
- * @return {string} The name of the image box type.
- * @override
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.getType = function() // virtual
-{
-    return "dropped-file-with-preview";
-};
-
-
-/** \brief Initialize the widget.
- *
- * This function initializes the image box widget.
- *
- * \note
- * At this point the Image Box widget do not attach to any events since all
- * the drag and drop work is done at the EditorWidgetType level. However,
- * we have a droppedImage() function (see below) which finishes the work
- * of the drag and drop implementation.
- *
- * @param {!Object} widget  The widget being initialized.
- * @override
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.initializeWidget = function(widget) // virtual
-{
-    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.initializeWidget.call(this, widget);
-};
-
-
-/** \brief Handle the dropped file.
- *
- * This function handles the dropped image by saving it in the target
- * element.
- *
- * \todo
- * We may want to look into generating an MD5 checksum and check that first
- * because the file may already be available on the server. Calculating an
- * MD5 in JavaScript is not that hard...
- *
- * @param {ProgressEvent} e  The event.
- *
- * @override
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment = function(e)
-{
-    var form_data,
-        editor_widget = /** @type {snapwebsites.EditorWidget} */ (e.target.snapEditorWidget),
-        editor_form = editor_widget.getEditorForm(),
-        w = editor_widget.getWidget(),
-        session = editor_form.getSession(),
-        title_widget = editor_form.getWidgetByName("title"),
-        name = editor_widget.getName(),
-        wait_image,
-        broken_icon = jQuery(".broken-attachment-icon"),
-        icon_widget = w.children(".attachment-icon");
-
-    // hide previous icons if the user is doing this a second time
-    broken_icon.hide();
-    icon_widget.hide();
-
-    //
-    // In case of an attachment, we send them to the server because the
-    // browser cannot just magically generate a preview; so we create
-    // a POST with the data and send that.
-    //
-    // (Note: the client "could" create a preview, it would just take
-    // a day or two and loads of memory...)
-    //
-    // The data is attached to the session of this editor form. We do that
-    // because we do not want to involve the main plugin responsible for
-    // the form until a full POST of all the changes. We can still have a
-    // hook on a callback if necessary.
-    //
-    // Note that in the end this means the data of an editor form come from
-    // the client and the editor session system.
-    //
-
-    form_data = new FormData();
-    form_data.append("_editor_session", session);
-    form_data.append("_editor_save_mode", "attachment");
-    if(title_widget)
-    {
-        form_data.append("_editor_uri", snapwebsites.EditorForm.titleToURI(title_widget.saving().result));
-        //form_data.append("_editor_uri", snapwebsites.EditorForm.titleToURI(snapwebsites.castToString(jQuery("[field_name='title'] .editor-content").text(), "casting the field name title to a string")));
-    }
-    form_data.append("_editor_widget_names", name); // this field supports multiple names separated by commas
-    form_data.append(name, e.target.snapEditorFile);
-
-    // mark widget as processing (allows for CSS effects)
-    w.addClass("processing-attachment");
-
-    // show a waiting rotating image
-    editor_widget.showWaitImage();
-
-    if(!this.serverAccess_)
-    {
-        this.serverAccess_ = new snapwebsites.ServerAccess(this);
-    }
-    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorWidgetTypeDroppedFileWithPreview.droppedAttachment()"));
-    this.serverAccess_.setData(form_data);
-    this.serverAccess_.send(e);
-};
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX success.
- *
- * This function is called if the remote access was successful. The
- * result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSuccess = function(result) // virtual
-{
-    // the response was successful so responseXML is valid,
-    // get the canonicalized path to the file we just sent
-    // to the server (this is a full URI)
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (result.userdata.target.snapEditorWidget),
-        w = editor_widget.getWidget(),
-        xml_data = jQuery(result.jqxhr.responseXML),
-        attachment_path = xml_data.find("data[name='attachment-path']").text(),
-        attachment_icon = xml_data.find("data[name='attachment-icon']").text(),
-        icon_widget,
-        request,
-        preview_uri = attachment_path + "/preview.jpg";
-
-    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessSuccess.call(this, result);
-
-    // show the attachment icon
-    icon_widget = w.children(".attachment-icon");
-    if(icon_widget.length == 0)
-    {
-        w.prepend("<div class=\"attachment-icon\"><img src=\"" + attachment_icon + "\"/></div>");
-        icon_widget = w.children(".attachment-icon");
-    }
-    else
-    {
-        icon_widget.show();
-    }
-
-    request = new snapwebsites.ListenerRequest(
-        {
-            uri: preview_uri,
-            success: function(request)
-                {
-                    var preview_widget = editor_widget.getWidgetContent(),
-                        editor = snapwebsites.EditorInstance,
-                        saved_active_element = editor.getActiveElement();
-
-                    preview_widget.empty();
-                    jQuery("<img src=\"" + preview_uri + "\"/>").appendTo(preview_widget);
-
-                    // now make sure the editor detects the change
-                    // (even though we do not expect to re-save this widget)
-                    editor.setActiveElement(preview_widget);
-                    editor.checkModified();
-                    editor.setActiveElement(saved_active_element);
-                },
-            error: function(request)
-                {
-                    var broken_icon;
-
-                    // show a broken image in this case
-//console.log("Editor Listener Request: FAILURE!");
-                    broken_icon = jQuery(".broken-attachment-icon");
-                    if(broken_icon.length == 0)
-                    {
-                        // TODO: fix the path with our sitekey
-                        w.prepend("<div class=\"broken-attachment-icon\"><img src=\"/images/mimetype/file-broken-document.png\" width=\"48\" height=\"48\"/></div>");
-                    }
-                    else
-                    {
-                        broken_icon.show();
-                    }
-                },
-            complete: function(request)
-                {
-//console.log("Editor Listener Request: COMPLETE!");
-                    // not waiting anymore
-                    editor_widget.hideWaitImage();
-                    icon_widget.hide();
-                }
-        });
-    request.setSpeeds([10, 3]);
-    snapwebsites.ListenerInstance.addRequest(request);
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessError = function(result) // virtual
-{
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (result.userdata.target.snapEditorWidget);
-
-    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessError.call(this, result);
-
-    editor_widget.hideWaitImage();
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX completion.
- *
- * This function is called once the whole process is over. It is most
- * often used to do some cleanup.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessComplete = function(result) // virtual
-{
-    snapwebsites.EditorWidgetTypeDroppedFileWithPreview.superClass_.serverAccessComplete.call(this, result);
-
-    // done processing
-    result.userdata.target.snapEditorWidget.getWidget().removeClass("processing-attachment");
-};
-/*jslint unparam: false */
 
 
 // auto-initialize
 jQuery(document).ready(function()
     {
-        snapwebsites.CartInstance = new snapwebsites.Cart();
-        snapwebsites.CartInstance.registerProductType(new snapwebsites.ProductTypeBasic());
+        snapwebsites.eCommerceCartInstance = new snapwebsites.eCommerceCart();
+        snapwebsites.eCommerceCartInstance.registerProductFeature(new snapwebsites.eCommerceProductFeatureBasic());
     });
 
 // vim: ts=4 sw=4 et

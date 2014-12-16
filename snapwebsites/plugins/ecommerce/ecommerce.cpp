@@ -17,7 +17,7 @@
 
 #include "ecommerce.h"
 
-//#include "../editor/editor.h"
+#include "../editor/editor.h"
 //#include "../output/output.h"
 
 #include "not_reached.h"
@@ -30,29 +30,35 @@
 SNAP_PLUGIN_START(ecommerce, 1, 0)
 
 
-///* \brief Get a fixed ecommerce name.
-// *
-// * The ecommerce plugin makes use of different names in the database. This
-// * function ensures that you get the right spelling for a given name.
-// *
-// * \param[in] name  The name to retrieve.
-// *
-// * \return A pointer to the name.
-// */
-//char const *get_name(name_t name)
-//{
-//    switch(name)
-//    {
-//    case SNAP_NAME_LOCALE_NAME:
-//        return "ecommerce::name";
-//
-//    default:
-//        // invalid index
-//        throw snap_logic_exception("invalid SNAP_NAME_LOCALE_...");
-//
-//    }
-//    NOTREACHED();
-//}
+/* \brief Get a fixed ecommerce name.
+ *
+ * The ecommerce plugin makes use of different names in the database. This
+ * function ensures that you get the right spelling for a given name.
+ *
+ * \param[in] name  The name to retrieve.
+ *
+ * \return A pointer to the name.
+ */
+char const *get_name(name_t name)
+{
+    switch(name)
+    {
+    case SNAP_NAME_ECOMMERCE_PRICE:
+        return "ecommerce::price";
+
+    case SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION:
+        return "ecommerce::product_name";
+
+    case SNAP_NAME_ECOMMERCE_PRODUCT_TYPE_PATH:
+        return "types/taxonomy/system/content-types/ecommerce/product";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_ECOMMERCE_...");
+
+    }
+    NOTREACHED();
+}
 
 
 
@@ -91,6 +97,8 @@ ecommerce::~ecommerce()
 void ecommerce::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
+
+    SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
 }
 
 
@@ -146,7 +154,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 3, 13, 56, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 12, 16, 0, 37, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -165,6 +173,77 @@ void ecommerce::content_update(int64_t variables_timestamp)
     static_cast<void>(variables_timestamp);
 
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Setup page for the editor.
+ *
+ * The editor has a set of dynamic parameters that the users are offered
+ * to setup. These parameters need to be sent to the user and we use this
+ * function for that purpose.
+ *
+ * \todo
+ * Look for a way to generate the editor data only if necessary (too
+ * complex for now.)
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] header  The header being generated.
+ * \param[in,out] metadata  The metadata being generated.
+ * \param[in] ctemplate  The template in case path does not exist.
+ */
+void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(metadata);
+    static_cast<void>(ctemplate);
+
+    QDomDocument doc(header.ownerDocument());
+
+    // make sure this is a product, if so, add product fields
+    links::link_info product_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(product_info));
+    links::link_info product_child_info;
+    if(link_ctxt->next_link(product_child_info))
+    {
+        // the link_info returns a full key with domain name
+        // use a path_info_t to retrieve the cpath instead
+        content::path_info_t type_ipath;
+        type_ipath.set_path(product_child_info.key());
+        if(type_ipath.get_cpath().startsWith(get_name(SNAP_NAME_ECOMMERCE_PRODUCT_TYPE_PATH)))
+        {
+            // if the content is the main page then define the titles and body here
+            FIELD_SEARCH
+                (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+                (content::field_search::COMMAND_ELEMENT, metadata)
+                (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
+
+                // /snap/head/metadata/ecommerce
+                (content::field_search::COMMAND_CHILD_ELEMENT, "ecommerce")
+
+                // /snap/head/metadata/ecommerce/product-name
+                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION))
+                (content::field_search::COMMAND_SELF)
+                (content::field_search::COMMAND_IF_FOUND, 1)
+                    // use page title as a fallback
+                    (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
+                    (content::field_search::COMMAND_SELF)
+                (content::field_search::COMMAND_LABEL, 1)
+                (content::field_search::COMMAND_SAVE, "product-description")
+
+                // /snap/head/metadata/ecommerce/product-price
+                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_ECOMMERCE_PRICE))
+                (content::field_search::COMMAND_SELF)
+                (content::field_search::COMMAND_SAVE, "product-price")
+
+                // generate!
+                ;
+        }
+    }
+
+    // TODO: find a way to include e-Commerce data only if required
+    //       (it may already be done! search on add_javascript() for info.)
+    content::content::instance()->add_javascript(doc, "ecommerce");
+    content::content::instance()->add_css(doc, "ecommerce");
 }
 
 

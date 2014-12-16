@@ -1,2 +1,6 @@
 #!/bin/sh
+if ! test -d /var/lock/snapwebsites
+then
+	mkdir /var/lock/snapwebsites
+fi
 ../BUILD/snapwebsites/src/snapinit --debug --binary_path ../BUILD/snapwebsites/src start

@@ -9,6 +9,8 @@
 
 //
 // Inline "command line" parameters for the Google Closure Compiler
+// https://developers.google.com/closure/compiler/docs/js-for-compiler
+//
 // See output of:
 //    java -jar .../google-js-compiler/compiler.jar --help
 //

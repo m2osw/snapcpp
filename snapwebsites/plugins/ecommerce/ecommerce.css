@@ -1,6 +1,6 @@
 /*
  * Name: ecommerce
- * Version: 0.0.1
+ * Version: 0.0.1.7
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -19,5 +19,201 @@
 	position: absolute;
 	z-index: 1;
 	background: white;
+}
+
+div.ecommerce-product
+{
+	float: right;
+	border: 1px solid black;
+	border-radius: 3px;
+	padding: 20px 10px;
+	background-color: rgba(200, 200, 200, 200);
+	width: 250px;
+}
+
+div.ecommerce-product .ecommerce-button-area
+{
+	text-align: center;
+	padding: 10px;
+}
+
+div.ecommerce-product .ecommerce-button-area a.buy-now-button
+{
+	border: 1px solid #ffee33;
+	border-top-color: #eecc00;
+	border-radius: 7px;
+	padding: 10px 30px;;
+	text-align: center;
+	box-shadow: 2px 2px 3px 0px #888888;
+	background-color: #ffee33;
+	background: linear-gradient(to bottom, #fff79f, #ffee33 25%, #ffee33 85%, #c4b727);
+	/*color: #386621; -- greenish */
+	color: black;
+	text-shadow: 0 0 6px #ffffff, 2px 2px 2px #886619;
+	text-decoration: none;
+}
+
+div.ecommerce-product .ecommerce-button-area a.buy-now-button:hover
+{
+	background-color: #fbea2f;
+	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+	box-shadow: 2px 2px 3px 0px #888888, 0 0 7px 7px #96BEC8;
+}
+
+div#ecommerce-cart div.popup-title
+{
+	font-size: 150%;
+	font-weight: bold;
+}
+
+div#ecommerce-cart div.cart-table-scrollarea
+{
+	height: 220px;
+	overflow-y: auto;
+}
+
+div#ecommerce-cart table.cart-product-table
+{
+	width: 100%;
+	border-spacing: 0;
+	border-collapse: collapse;
+}
+
+div#ecommerce-cart table.cart-product-table th.first-row,
+div#ecommerce-cart table.cart-product-table th.first-column,
+div#ecommerce-cart table.cart-product-table td.first-column
+{
+	border-left: 1px solid black;
+	border-top: 1px solid black;
+}
+
+div#ecommerce-cart table.cart-product-table th
+{
+	background-color: #f0f0f0;
+}
+
+div#ecommerce-cart table.cart-product-table th,
+div#ecommerce-cart table.cart-product-table td
+{
+	border-right: 1px solid black;
+	border-bottom: 1px solid black;
+	padding: 5px;
+}
+
+
+div#ecommerce-cart table.cart-product-table td.empty-cart-cell
+{
+	text-align: center;
+	font-style: italic;
+	color: #666666;
+}
+
+div#ecommerce-cart table.cart-product-table th.ecommerce--delete.first-row
+{
+	padding: 0 0 0 10px;
+	width: 22px;
+	border-top: none;
+	border-right: none;
+	border-bottom: none;
+	background-color: transparent;
+}
+
+div#ecommerce-cart table.cart-product-table td.ecommerce--delete
+{
+	padding: 0 0 0 10px;
+	width: 22px;
+	border-right: none;
+	border-bottom: none;
+	background-color: transparent;
+}
+
+div#ecommerce-cart table.cart-product-table td.ecommerce--no,
+div#ecommerce-cart table.cart-product-table td.ecommerce--quantity,
+div#ecommerce-cart table.cart-product-table td.ecommerce--price,
+div#ecommerce-cart table.cart-product-table td.ecommerce--total
+{
+	text-align: right;
+}
+
+div#ecommerce-cart table.cart-product-table td.cart-row-footer-label
+{
+	text-align: right;
+	font-weight: bold;
+	border-left: none;
+	border-bottom: none;
+}
+
+div#ecommerce-cart table.cart-product-table td.cart-row-footer-costs
+{
+	text-align: right;
+	font-weight: bold;
+}
+
+div#ecommerce-cart table.cart-product-table td.cart-row-footer-extras
+{
+	padding: 0;
+	border-right: none;
+	border-bottom: none;
+}
+
+div#ecommerce-cart table.cart-product-table td.ecommerce--description a
+{
+	text-decoration: none;
+}
+
+div#ecommerce-cart div.cart-footer
+{
+	font-size: 90%;
+	font-style: italic;
+}
+
+div#ecommerce-cart div.cart-buttons
+{
+	margin-top: 20px;
+}
+
+div#ecommerce-cart div.cart-buttons a.update-cart,
+div#ecommerce-cart div.cart-buttons a.continue-shopping,
+div#ecommerce-cart div.cart-buttons a.checkout
+{
+	display: block;
+	border: 1px solid #000000;
+	border-radius: 7px;
+	padding: 10px 30px;;
+	color: black;
+	text-shadow: 0 0 6px #ffffff, 2px 2px 2px #886619;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+div#ecommerce-cart div.cart-buttons a.update-cart
+{
+	float: left;
+	background-color: #fbea2f;
+	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+}
+
+div#ecommerce-cart div.cart-buttons a.continue-shopping
+{
+	float: right;
+	background-color: #fbea2f;
+	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+}
+
+div#ecommerce-cart div.cart-buttons a.checkout
+{
+	float: right;
+	margin-left: 20px;
+	margin-right: 20px;
+	background-color: #fbea2f;
+	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+}
+
+div#ecommerce-cart div.cart-buttons a.checkout.disabled
+{
+	color: #666666;
+	background-color: #b1b1b1;
+	background: linear-gradient(to bottom, #dcdcdc, #b1b1b1 25%, #b1b1b1 85%, #8b8b8b);
+	cursor: default;
 }
 

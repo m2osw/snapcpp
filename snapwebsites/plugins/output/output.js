@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.24
+ * Version: 0.1.5.26
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -160,6 +160,54 @@ snapwebsites.inherits = function(child_class, super_class) // static
     child_class.prototype.constructor = child_class;
     child_class.superClass_ = super_class.prototype;
     child_class.snapwebsitesInherited_ = true;
+};
+
+
+/** \brief This function returns the size of a map.
+ *
+ * This function computes the size of a map. This is considered a
+ * very slow function so you should hold on the result.
+ *
+ * Since there is not much you can do with the result, other than
+ * having a count, it is expected that the function will only be
+ * used for debug purposes.
+ *
+ * \todo
+ * Should this be only between '#ifdef DEBUG / #endif' preprocessor
+ * entries?
+ *
+ * @param {Object} o  An object to size.
+ *
+ * @return {number}  The number of items in this map.
+ */
+snapwebsites.mapSize = function(o) // static
+{
+    var c,
+        p;
+
+    // Old FF
+    if(o["__count__"] !== undefined)
+    {
+        return o["__count__"];
+    }
+
+    // ES5
+    if(Object.keys)
+    {
+        return Object.keys(o).length;
+    }
+
+    // Otherwise
+    c = 0;
+    for(p in o)
+    {
+        if(o.hasOwnProperty(p))
+        {
+            ++c;
+        }
+    }
+
+    return c;
 };
 
 

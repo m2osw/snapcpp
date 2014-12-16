@@ -130,17 +130,19 @@ public:
         QVector<parameter_t>        f_parameters;
         controlled_vars::fbool_t    f_found;
         controlled_vars::fbool_t    f_error;
+        controlled_vars::fbool_t    f_name_used;
         QString                     f_replacement;
 
         bool is_namespace(char const *name)
         {
+            // we expect 'name' to end with '::'
             return f_name.startsWith(name);
         }
 
         bool is_token(char const *name)
         {
             // in a way, once marked as found a token is viewed as used up
-            // and thus it doesn't match anymore; same with errors
+            // and thus it does not match anymore; same with errors
             bool const result(!f_found && !f_error && f_name == name);
             if(result)
             {
@@ -219,7 +221,6 @@ public:
 
         bool has_arg(QString const& name, int position = -1)
         {
-            parameter_t null;
             QVector<parameter_t>::const_iterator it(f_parameters.end());
             if(!name.isEmpty())
             {
@@ -231,11 +232,18 @@ public:
                     return false;
                 }
             }
-            if(it == f_parameters.end() && position != -1)
+            if(it == f_parameters.end() && position != -1 && !f_name_used)
             {
                 if(position >= 0 && position < f_parameters.size())
                 {
                     it = f_parameters.begin() + position;
+                    if(!it->f_name.isEmpty())
+                    {
+                        // if that parameter has a name, it cannot be
+                        // valid (it should have matched the name
+                        // in the previous if() block)
+                        return false;
+                    }
                 }
             }
             return it != f_parameters.end();
@@ -243,7 +251,7 @@ public:
 
         parameter_t get_arg(QString const& name, int position = -1, token_t type = TOK_UNDEFINED)
         {
-            parameter_t null;
+            parameter_t const null;
             QVector<parameter_t>::const_iterator it(f_parameters.end());
             if(!name.isEmpty())
             {
@@ -256,8 +264,11 @@ public:
                     f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> " + name + " is missing from the list of parameters, you may need to name your parameters.</span>";
                     return null;
                 }
+                f_name_used = true;
             }
-            if(it == f_parameters.end() && position != -1)
+            // we cannot switch between name and positioned
+            // arguments; it fails in many ways...
+            if(it == f_parameters.end() && position != -1 && !f_name_used)
             {
                 if(position >= 0 && position < f_parameters.size())
                 {

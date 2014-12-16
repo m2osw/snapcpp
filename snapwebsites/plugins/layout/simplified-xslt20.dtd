@@ -123,7 +123,10 @@ DTD of the XSLT 2.0.
             href CDATA #IMPLIED
             rel (nofollow) #IMPLIED
             target CDATA #IMPLIED
-            title CDATA "">
+            title CDATA ""
+            product-guid CDATA #IMPLIED>
+
+<!-- product-guid is from ecommerce -->
 
 <!ELEMENT b ANY>
 <!ELEMENT br EMPTY>

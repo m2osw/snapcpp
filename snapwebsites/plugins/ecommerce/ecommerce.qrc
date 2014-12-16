@@ -27,9 +27,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/images/ecommerce">
     <file>empty-shopping-cart.png</file>
     <file>shopping-cart.png</file>
+    <file>button-delete-red-48x48.png</file>
+    <file>button-minus-green-48x48.png</file>
+    <file>button-plus-blue-48x48.png</file>
   </qresource>
   <qresource prefix="/css/ecommerce">
     <file>ecommerce.css</file>
+  </qresource>
+  <qresource prefix="/xsl/layout">
+    <file>ecommerce-product-parser.xsl</file>
   </qresource>
 </RCC>
 <!--
