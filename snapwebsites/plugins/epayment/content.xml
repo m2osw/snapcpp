@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<!--
+Snap Websites Server == epayment plugin database setup
+Copyright (C) 2011-2014  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<snap-tree>
+  <content path="/admin/settings/epayment" owner="output">
+    <param name="content::title" revision="revision">e-Payment Global Settings</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Settings of the payments offered by your website.</p>]]>
+    </param>
+    <param name="editor::layout" revision="global" overwrite="yes">"epayment-settings-page";</param>
+    <param name="layout::layout" revision="global" overwrite="yes">"epayment-settings-parser";</param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+  </content>
+  <content path="/css/epayment" owner="output">
+    <param name="content::title" revision="revision">e-Payment CSS</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>CSS files used by e-Payment.</p>]]>
+    </param>
+    <attachment name="epayment" type="attachment/public">
+      <path>qrc:/css/epayment/epayment.css</path>
+      <mime-type>text/css</mime-type>
+    </attachment>
+  </content>
+  <content path="/js/epayment" owner="output">
+    <param name="content::title" revision="revision">e-Payment JavaScripts</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>e-Payment JavaScripts to support the Snap! Website payment features.</p>]]>
+    </param>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+    <attachment name="epayment" type="attachment/public">
+      <path>:/js/epayment/epayment.js</path>
+      <mime-type>text/javascript</mime-type>
+      <dependency>editor (&gt;= 0.0.3.262)</dependency>
+    </attachment>
+  </content>
+</snap-tree>
+<!-- vim: ts=2 sw=2 et syntax=xml
+-->

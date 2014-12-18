@@ -1,6 +1,6 @@
 /** @preserve
  * Name: ecommerce
- * Version: 0.0.1.49
+ * Version: 0.0.1.52
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -36,7 +36,7 @@
 
 
 /** \file
- * \brief The Snap! Instant Cart organization.
+ * \brief The Snap! Website cart organization.
  *
  * This file defines a set of e-Commerce features using advance JavaScript
  * classes.
@@ -54,22 +54,22 @@
  * The resulting environment looks like this:
  *
  * \code
- *  +-----------------------+        +-----------------------+
- *  |                       |        |                       |
- *  | ServerAccessCallbacks |    +-->| eCommerceColumnHeader |
- *  | (cannot instantiate)  |    |   | (header row)          |
- *  +-----------------------+    |   +-----------------------+
- *       ^                       |
- *       |                       |   +-----------------------+
- *       |          Create (1,n) |   |                       |
- *       |                       |   | eCommerceColumnCell   |
- *       | Inherit               |   | (rows of products)    |
- *       |                       |   +-----------------------+
- *       |                       |          ^
- *       |                       |          | Create (1,n)
- *       |                       |          |
- *       |                       |          |
- *       |               +-------+----------+----------+
+ *  +----------------------------+        +-----------------------+
+ *  |                            |        |                       |
+ *  | ServerAccessTimerCallbacks |    +-->| eCommerceColumnHeader |
+ *  | (cannot instantiate)       |    |   | (header row)          |
+ *  +----------------------------+    |   +-----------------------+
+ *       ^                            |
+ *       |                            |   +-----------------------+
+ *       |               Create (1,n) |   |                       |
+ *       |                            |   | eCommerceColumnCell   |
+ *       | Inherit                    |   | (rows of products)    |
+ *       |                            |   +-----------------------+
+ *       |                            |          ^
+ *       |                            |          | Create (1,n)
+ *       |                            |          |
+ *       |                            |          |
+ *       |               +------------+----------+-----+
  *       |               |                             |    Access
  *       |  Create (1,n) | eCommerceColumns            |<--------------+
  *       |  +----------->|                             |               |
@@ -703,6 +703,11 @@ snapwebsites.eCommerceColumns.prototype.getColumnData = function(row_index, colu
  * edit the quantity manually instead); it could be set to any other positive
  * number; we can also use the string 'ask=\<count>' so we ask the user
  * where \<count> should be added to that item quantity.
+ * \li 'ecommerce::maximum_count' -- the maximum number of items one can
+ * add in the cart of this type of product; the product type defines this
+ * maximum because in some cases we have counts that are per 1,000 or even
+ * more so just using a number such as 100 would not work well for any type
+ * of information. If undefined, then Snap uses 100.
  *
  * Other plugins can add features and thus add to this map at will.
  *
@@ -777,6 +782,7 @@ snapwebsites.eCommerceProductType.prototype.getProperty = function(name)
  *
  *      abstract function getDescription() : String;
  *      abstract function getQuantity() : Number;
+ *      abstract function setQuantity(quantity: Number) : Void;
  *      abstract function getPrice() : Number;
  *      abstract function getColumns(index: Number, features: Array of eCommerceFeaturesBase, columns: eCommerceColumns) : Void;
  *      abstract function getFeatures(features: Array of eCommerceFeaturesBase, use_column_features: Boolean) : Void;
@@ -819,7 +825,6 @@ snapwebsites.eCommerceProductBase.prototype.getDescription = function() // abstr
 /*jslint unparam: false */
 
 
-/*jslint unparam: true */
 /** \brief Get the quantity of this product.
  *
  * This function is returns a number with the quantity of this product.
@@ -831,7 +836,23 @@ snapwebsites.eCommerceProductBase.prototype.getDescription = function() // abstr
  */
 snapwebsites.eCommerceProductBase.prototype.getQuantity = function() // abstract
 {
-    throw new Error("snapwebsites.eCommerceProductBase.getQuantity() does not do anything (yet)");
+    throw new Error("snapwebsites.eCommerceProductBase.getQuantity() is not implemented");
+};
+
+
+/*jslint unparam: true */
+/** \brief Set a new quantity for this product.
+ *
+ * This function changes the quantity to the newly specified value.
+ *
+ * @throws {Error} The base type function throws an error as it should never
+ *                 get called (requires override.)
+ *
+ * @param {number} quantity  The new quantity of the product.
+ */
+snapwebsites.eCommerceProductBase.prototype.setQuantity = function(quantity) // abstract
+{
+    throw new Error("snapwebsites.eCommerceProductBase.setQuantity() is not implemented");
 };
 /*jslint unparam: false */
 
@@ -848,7 +869,7 @@ snapwebsites.eCommerceProductBase.prototype.getQuantity = function() // abstract
  */
 snapwebsites.eCommerceProductBase.prototype.getPrice = function() // abstract
 {
-    throw new Error("snapwebsites.eCommerceProductBase.getPrice() does not do anything (yet)");
+    throw new Error("snapwebsites.eCommerceProductBase.getPrice() is not implemented");
 };
 /*jslint unparam: false */
 
@@ -868,7 +889,7 @@ snapwebsites.eCommerceProductBase.prototype.getPrice = function() // abstract
  */
 snapwebsites.eCommerceProductBase.prototype.getColumns = function(index, features, columns)
 {
-    throw new Error("snapwebsites.eCommerceProductBase.getColumns() does not do anything (yet)");
+    throw new Error("snapwebsites.eCommerceProductBase.getColumns() is not implemented");
 };
 /*jslint unparam: false */
 
@@ -895,7 +916,7 @@ snapwebsites.eCommerceProductBase.prototype.getColumns = function(index, feature
  */
 snapwebsites.eCommerceProductBase.prototype.getFeatures = function(features, use_column_features)
 {
-    throw new Error("snapwebsites.eCommerceProductBase.getFeatures() does not do anything (yet)");
+    throw new Error("snapwebsites.eCommerceProductBase.getFeatures() is not implemented");
 };
 /*jslint unparam: false */
 
@@ -1186,12 +1207,11 @@ snapwebsites.eCommerceProductFeatureBase.prototype.getFooterDependencies = funct
  *
  *      virtual function getDescription() : String;
  *      virtual function getQuantity() : Number;
+ *      virtual function setQuantity(quantity: Number) : Void;
  *      virtual function getPrice() : Number;
  *      virtual function getColumns(index: Number, features: Array of eCommerceFeaturesBase, in out columns: eCommerceColumns) : Void;
  *      virtual function getFeatures(in out features: eCommerceProductFeatureBase, use_column_features: Boolean) : Void;
  *      virtual function getProductType() : eCommerceProductType;
- *
- *      function setQuantity(quantity: Number) : Void;
  *
  * private:
  *      function readyFeatures_() : Void;
@@ -1621,8 +1641,10 @@ snapwebsites.eCommerceProduct.prototype.getDescription = function()
  *
  * @final
  */
-snapwebsites.eCommerceProduct.prototype.setQuantity = function(quantity)
+snapwebsites.eCommerceProduct.prototype.setQuantity = function(quantity) // virtual
 {
+    // TBD: should this test be done in the base class and here we would
+    //      call the base class?
     if(quantity < 0)
     {
         throw new Error("snapwebsites.eCommerceProduct.setQuantity() does not accept negative quantities (" + quantity + ").");
@@ -1674,16 +1696,32 @@ snapwebsites.eCommerceProduct.prototype.getPrice = function()
  *     - Change product quantity (if allowed by product type)
  *     - Move product from cart to wishlist (and vice versa from wishlist)
  *     - Links to products for details
+ *   - Sharing of wishlist (so others buy the items on it for you!)
  * - Send changes to the server
  *   - Handle server response
  *
+ * This class automatically connects against all the links marked with
+ * the ".buy-now-button" class (i.e. it has to be an anchor.) You can
+ * implemented your own way to add products to the cart using this
+ * function:
+ *
+ * \code
+ *  guid = "...url of product...";
+ *  eCommerceCartInstance.addProduct(guid);
+ * \endcode
+ *
+ * The product GUID must be a product that was loaded when the current
+ * page was loaded. You cannot yet add a product that was not yet loaded.
+ * (Certainly a capability we want to offer at some point, using AJAX to
+ * get the product details...)
+ *
  * Note that this class is marked as final because it is used as a
  * singleton. To extend the cart you have to create product features.
- * Those features can be sued in various different ways to extend
+ * Those features can be used in various different ways to extend
  * pretty much all the parts of the cart.
  *
  * \code
- * final class eCommerceCart extends ServerAccessCallbacks
+ * final class eCommerceCart extends ServerAccessTimerCallbacks
  * {
  * public:
  *      eCommerceCart();
@@ -1705,9 +1743,10 @@ snapwebsites.eCommerceProduct.prototype.getPrice = function()
  *      function getTotalQuantity() : Number;
  *      function getTotalCosts() : Number;
  *
- *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
- *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
- *      virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData);
+ *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData) : Void;
+ *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData) : Void;
+ *      virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData) : Void;
+ *      virtual function serverAccessTimerReady(request_name: string, server_access: ServerAccess) : Void;
  *
  * private:
  *      function generateCartHtml_(e: jQuery) : String;
@@ -1728,10 +1767,17 @@ snapwebsites.eCommerceProduct.prototype.getPrice = function()
  * };
  * \endcode
  *
+ * \todo
+ * Add functionality to add products by URL only, i.e. without having to
+ * load the product at the time the page is hit. This means we need to
+ * use AJAX to retrieve the product details at the time the product gets
+ * added to the cart. We could then have a "wait" image in the cart to
+ * show that it is currently working.
+ *
  * @return {snapwebsites.eCommerceCart}  The newly created object.
  *
  * @constructor
- * @extends {snapwebsites.ServerAccessCallbacks}
+ * @extends {snapwebsites.ServerAccessTimerCallbacks}
  * @struct
  */
 snapwebsites.eCommerceCart = function()
@@ -1772,10 +1818,10 @@ snapwebsites.eCommerceCart = function()
  * to send the server changes made by the client to the cart.
  * In the cart, that feature is pretty much always asynchroneous.
  */
-snapwebsites.inherits(snapwebsites.eCommerceCart, snapwebsites.ServerAccessCallbacks);
+snapwebsites.inherits(snapwebsites.eCommerceCart, snapwebsites.ServerAccessTimerCallbacks);
 
 
-/** \brief The popup information for the instant cart functionality.
+/** \brief The popup information for the Snap! Website cart functionality.
  *
  * This static object represents the popup object used by the Cart to
  * present to the user the currently selected products ready to be
@@ -1802,7 +1848,7 @@ snapwebsites.eCommerceCart.createPopup_ = // static
 
 /** \brief The list of product features understood by the e-Commerce cart.
  *
- * This array is used to save the product features when you call the
+ * This map is used to save the product features when you call the
  * registerProductFeature() function.
  *
  * \note
@@ -1866,6 +1912,35 @@ snapwebsites.eCommerceCart.prototype.cartHtml_ = null;
 snapwebsites.eCommerceCart.prototype.products_; // = []; -- initialized in constructor to avoid problems
 
 
+/** \brief Keep the time when we last sent a request to the server.
+ *
+ * In order to avoid swamping the server with cart requests, we keep a
+ * time. The timing can be changed by the administrator. By default we
+ * use 2 seconds which in general is enough because those requests are
+ * relatively small.
+ *
+ * Do not forget that when a user wants to leave a page, the cart has
+ * to have been sent. So too large an interval could cause a real
+ * problem.
+ *
+ * @type {snapwebsites.ServerAccessTimer}
+ * @private
+ */
+snapwebsites.eCommerceCart.prototype.serverAccessTimer_ = null;
+
+
+/** \brief Interval between two POSTs to the server.
+ *
+ * The minimum amount of time between two requests to be sent to the
+ * sever. Note that whatever this amount, if a request was not yet
+ * completed, then nothing happens.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.eCommerceCart.prototype.requestsInterval_ = 2000;
+
+
 /** \brief Register a product feature.
  *
  * This function is used to register an e-Commerce product feature in the
@@ -1908,8 +1983,8 @@ snapwebsites.eCommerceCart.prototype.hasProductFeature = function(feature_name)
  * Product features get registered with the registerProductFeature() function.
  * Later you may retrieve them using this function.
  *
- * @throws {Error} If the named \p feature was not yet registered, then this
- *                 function throws.
+ * @throws {Error} If the named \p feature_name was not yet registered,
+ *                 then this function throws.
  *
  * @param {string} feature_name  The name of the product feature to retrieve.
  *
@@ -1964,6 +2039,25 @@ snapwebsites.eCommerceCart.prototype.registerProductType = function(data)
 };
 
 
+/** \brief Send a copy of the cart to the server.
+ *
+ * This function creates a POST and sends it to the server with the current
+ * content of the cart.
+ *
+ * \todo
+ * Implement an incremental process. Although this would be useful only for
+ * really large carts, but we do not really have to support such right now.
+ */
+snapwebsites.eCommerceCart.prototype.sendCart_ = function()
+{
+    if(!this.serverAccessTimer_)
+    {
+        this.serverAccessTimer_ = new snapwebsites.ServerAccessTimer("cart", this, this.requestsInterval_);
+    }
+    this.serverAccessTimer_.send();
+};
+
+
 /** \brief This function adds a product to the cart.
  *
  * In most cases this is called when people click on a "buy-now-button"
@@ -1983,12 +2077,16 @@ snapwebsites.eCommerceCart.prototype.addProduct = function(guid)
         product,
         other_product_type,
         found = false,
+        maximum_count,
+        add,
+        new_quantity,
         i;
 
     if(!(product_type instanceof snapwebsites.eCommerceProductType))
     {
         // that product type does not exist?!
-        snapwebsites.OutputInstance.displayOneMessage("Somehow we could not find product at " + guid);
+        snapwebsites.OutputInstance.displayOneMessage("Missing Product",
+                    "Somehow we could not find product at " + guid);
         return;
     }
 
@@ -2008,17 +2106,49 @@ snapwebsites.eCommerceCart.prototype.addProduct = function(guid)
             // add altogether
             found = true;
             add = other_product_type.getProperty("ecommerce::add_quantity");
-            this.products_[i].setQuantity(this.products_[i].getQuantity() + 1);
+            if(!add || snapwebsites.castToNumber(add, "somehow ecommerce::add_quantity is not a number") < 0)
+            {
+                add = 1;
+            }
+            new_quantity = this.products_[i].getQuantity() + snapwebsites.castToNumber(add, "somehow ecommerce::add_quantity is not a number");
+            maximum_count = other_product_type.getProperty("ecommerce::maximum_count");
+            if(!maximum_count || snapwebsites.castToNumber(maximum_count, "somehow ecommerce::maximum_count is not a number") < 0)
+            {
+                maximum_count = 100;
+            }
+            if(new_quantity > snapwebsites.castToNumber(maximum_count, "somehow ecommerce::maximum_count is not a number"))
+            {
+                // TODO: translation -- should come from settings too
+                snapwebsites.OutputInstance.displayOneMessage("Maximum Reached",
+                            "You already reached the maximum number of items of this type in your cart. "
+                          + "If you need more, please checkout with your current cart. Then pass another order.",
+                            "warning");
+                return;
+            }
+            this.products_[i].setQuantity(new_quantity);
             break;
         }
     }
 
     if(!found)
     {
+        // TODO: define this maximum count in the cart settings; this is
+        //       not specific to a product type so we cannot just retrieve
+        //       a property from a product type...
+        maximum_count = 100;
+        if(this.products_.length >= maximum_count)
+        {
+            // TODO: translation -- should come from settings too
+            snapwebsites.OutputInstance.displayOneMessage("Maximum Reached",
+                        "You already reached the maxmimum number of items you can add to your cart. "
+                      + "Please checkout now and order further goods in a second order.");
+            return;
+        }
         product = new snapwebsites.eCommerceProduct(product_type);
         this.products_.push(product);
     }
 
+    this.sendCart_();
     if(this.cartHtml_)
     {
         // re-generate (this is because we do not yet have all the
@@ -2056,6 +2186,11 @@ snapwebsites.eCommerceCart.prototype.removeProduct = function(guid)
     }
 
     // search for the product in the cart and delete all instances
+    //
+    // TODO: we will need to fix that because right now it ignores the
+    //       attributes (which is a very important aspect of the cart)
+    //       we should be able to use the row id which would be 'i' in
+    //       the following loop
     while(i > 0)
     {
         --i;
@@ -2070,6 +2205,7 @@ snapwebsites.eCommerceCart.prototype.removeProduct = function(guid)
 
     if(modified)
     {
+        this.sendCart_();
         this.generateCartHtml_();
     }
 };
@@ -2137,6 +2273,8 @@ snapwebsites.eCommerceCart.prototype.hideGlimpse = function()
  */
 snapwebsites.eCommerceCart.prototype.showCart = function()
 {
+    var e;
+
     if(!this.cartHtml_)
     {
         this.cartHtml_ = snapwebsites.PopupInstance.open(snapwebsites.eCommerceCart.createPopup_);
@@ -2345,7 +2483,7 @@ snapwebsites.eCommerceCart.prototype.generateCartHtml_ = function()
         }).toggleClass("disabled", max == 0);
     e.find(".cart-delete-product").click(function(e)
         {
-            var guid = jQuery(this).attr("guid");
+            var guid = snapwebsites.castToString(jQuery(this).attr("guid"), "product ecommerce::description is not a valid string");
 
             e.preventDefault();
             e.stopPropagation();
@@ -2735,7 +2873,7 @@ snapwebsites.eCommerceCart.prototype.generatePaymentHtml_ = function()
 /** \brief Function called on success.
  *
  * This function is called if the remote access was successful. The
- * result object includes a reference to the XML document found in the
+ * \p result object includes a reference to the XML document found in the
  * data sent back from the server.
  *
  * By default this function does nothing.
@@ -2794,6 +2932,36 @@ snapwebsites.eCommerceCart.prototype.serverAccessComplete = function(result) // 
 /*jslint unparam: false */
 
 
+/** \brief The server access timer needs the POST data.
+ *
+ * This function generates the POST data to be sent to the server.
+ * This includes all the cart products.
+ */
+snapwebsites.eCommerceCart.prototype.serverAccessTimerReady = function(request_name, server_access)
+{
+    var max = this.products_.length,
+        guid,
+        quantity,
+        product_type,
+        xml = "<?xml version='1.0'?><cart>",
+        i;
+
+    for(i = 0; i < max; ++i)
+    {
+        product_type = this.products_[i].getProductType();
+        guid = product_type.getProperty("ecommerce::guid");
+        quantity = this.products_[i].getQuantity();
+        xml += "<product guid='" + guid + "' q='" + quantity + "'>";
+        // TODO: we need to also handle the the attributes
+        xml += "</product>"
+    }
+
+    xml += "</cart>";
+
+    server_access.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.eCommerceCart.serverAccessTimerReady()"));
+    server_access.setData({ cart_products: xml });
+};
+
 
 /** \brief Snap eCommerceProductFeatureBasic constructor.
  *
@@ -2846,9 +3014,6 @@ snapwebsites.inherits(snapwebsites.eCommerceProductFeatureBasic, snapwebsites.eC
  *
  * This function returns the product feature name. It is used whenever
  * you register the feature in the Cart object.
- *
- * @throws {Error} The base feature function throws an error as it should
- *                 never get called (abstract functions require override.)
  *
  * @return {string}  The name of this cart product feature as a string.
  */
@@ -2938,7 +3103,8 @@ snapwebsites.eCommerceProductFeatureBasic.prototype.setupColumns = function(prod
 {
     var quantity = product.getQuantity(),
         price = product.getPrice(),
-        total = Math.round(quantity * price * 100.0) / 100.0;
+        total = Math.round(quantity * price * 100.0) / 100.0,
+        name;
 
     columns.addColumnData(index, "ecommerce::no", index + 1);
 
@@ -2946,6 +3112,9 @@ snapwebsites.eCommerceProductFeatureBasic.prototype.setupColumns = function(prod
             "<a class='cart-product-description' href='"
             + product.getProductType().getProperty("ecommerce::guid")
             + "'>" + product.getDescription() + "</a>");
+
+    // TODO: generate a unique name!
+    name = "quantity";
 
     columns.addColumnData(index, "ecommerce::quantity",
             // add an editor widget and make it immediately active

@@ -1,4 +1,4 @@
-// Snap Websites Server -- handle a cart, checkout, wishlist, affiliates...
+// Snap Websites Server -- handle an array of electronic payment facilities...
 // Copyright (C) 2011-2014  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ecommerce.h"
+#include "epayment.h"
 
 #include "../editor/editor.h"
 //#include "../output/output.h"
@@ -27,12 +27,12 @@
 #include "poison.h"
 
 
-SNAP_PLUGIN_START(ecommerce, 1, 0)
+SNAP_PLUGIN_START(epayment, 1, 0)
 
 
-/* \brief Get a fixed ecommerce name.
+/* \brief Get a fixed epayment name.
  *
- * The ecommerce plugin makes use of different names in the database. This
+ * The epayment plugin makes use of different names in the database. This
  * function ensures that you get the right spelling for a given name.
  *
  * \param[in] name  The name to retrieve.
@@ -43,18 +43,18 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_ECOMMERCE_PRICE:
-        return "ecommerce::price";
+    case SNAP_NAME_EPAYMENT_PRICE:
+        return "epayment::price";
 
-    case SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION:
-        return "ecommerce::product_name";
+    case SNAP_NAME_EPAYMENT_PRODUCT_DESCRIPTION:
+        return "epayment::product_name";
 
-    case SNAP_NAME_ECOMMERCE_PRODUCT_TYPE_PATH:
-        return "types/taxonomy/system/content-types/ecommerce/product";
+    case SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH:
+        return "types/taxonomy/system/content-types/epayment/product";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_ECOMMERCE_...");
+        throw snap_logic_exception("invalid SNAP_NAME_EPAYMENT_...");
 
     }
     NOTREACHED();
@@ -68,52 +68,52 @@ char const *get_name(name_t name)
 
 
 
-/** \brief Initialize the ecommerce plugin.
+/** \brief Initialize the epayment plugin.
  *
- * This function is used to initialize the ecommerce plugin object.
+ * This function is used to initialize the epayment plugin object.
  */
-ecommerce::ecommerce()
+epayment::epayment()
     //: f_snap(nullptr) -- auto-init
 {
 }
 
 
-/** \brief Clean up the ecommerce plugin.
+/** \brief Clean up the epayment plugin.
  *
- * Ensure the ecommerce object is clean before it is gone.
+ * Ensure the epayment object is clean before it is gone.
  */
-ecommerce::~ecommerce()
+epayment::~epayment()
 {
 }
 
 
-/** \brief Initialize the ecommerce.
+/** \brief Initialize the epayment.
  *
- * This function terminates the initialization of the ecommerce plugin
+ * This function terminates the initialization of the epayment plugin
  * by registering for different events.
  *
  * \param[in] snap  The child handling this request.
  */
-void ecommerce::on_bootstrap(snap_child *snap)
+void epayment::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
-    SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
+    SNAP_LISTEN(epayment, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
 }
 
 
-/** \brief Get a pointer to the ecommerce plugin.
+/** \brief Get a pointer to the epayment plugin.
  *
- * This function returns an instance pointer to the ecommerce plugin.
+ * This function returns an instance pointer to the epayment plugin.
  *
  * Note that you cannot assume that the pointer will be valid until the
  * bootstrap event is called.
  *
- * \return A pointer to the ecommerce plugin.
+ * \return A pointer to the epayment plugin.
  */
-ecommerce *ecommerce::instance()
+epayment *epayment::instance()
 {
-    return g_plugin_ecommerce_factory.instance();
+    return g_plugin_epayment_factory.instance();
 }
 
 
@@ -126,15 +126,11 @@ ecommerce *ecommerce::instance()
  *
  * \return The description in a QString.
  */
-QString ecommerce::description() const
+QString epayment::description() const
 {
-    return "The e-Commerce plugin offers all the necessary features a"
-        " website needs to offer a full e-Commerce environment so your"
-        " users can purchase your goods and services. The base plugin"
-        " includes many features directly available to you without the"
-        " need for other plugins. However, you want to install the"
-        " ecommerce-payment plugin and at least one of the payments"
-        " gateway in order to allow for the actual payments.";
+    return "The e-Payment plugin offers one common way to process an"
+          " electronic or not so electronic payment online (i.e. you"
+          " may accept checks, for example...)";
 }
 
 
@@ -150,11 +146,11 @@ QString ecommerce::description() const
  *
  * \return The UTC Unix date of the last update of this plugin.
  */
-int64_t ecommerce::do_update(int64_t last_updated)
+int64_t epayment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 17, 21, 34, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 12, 16, 0, 37, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -168,7 +164,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
  * \param[in] variables_timestamp  The timestamp for all the variables added
  *                        to the database by this update (in micro-seconds).
  */
-void ecommerce::content_update(int64_t variables_timestamp)
+void epayment::content_update(int64_t variables_timestamp)
 {
     static_cast<void>(variables_timestamp);
 
@@ -191,7 +187,7 @@ void ecommerce::content_update(int64_t variables_timestamp)
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
-void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void epayment::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     static_cast<void>(ipath);
     static_cast<void>(metadata);
@@ -209,7 +205,7 @@ void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElem
         // use a path_info_t to retrieve the cpath instead
         content::path_info_t type_ipath;
         type_ipath.set_path(product_child_info.key());
-        if(type_ipath.get_cpath().startsWith(get_name(SNAP_NAME_ECOMMERCE_PRODUCT_TYPE_PATH)))
+        if(type_ipath.get_cpath().startsWith(get_name(SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)))
         {
             // if the content is the main page then define the titles and body here
             FIELD_SEARCH
@@ -217,11 +213,11 @@ void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElem
                 (content::field_search::COMMAND_ELEMENT, metadata)
                 (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
 
-                // /snap/head/metadata/ecommerce
-                (content::field_search::COMMAND_CHILD_ELEMENT, "ecommerce")
+                // /snap/head/metadata/epayment
+                (content::field_search::COMMAND_CHILD_ELEMENT, "epayment")
 
-                // /snap/head/metadata/ecommerce/product-name
-                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION))
+                // /snap/head/metadata/epayment/product-name
+                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_PRODUCT_DESCRIPTION))
                 (content::field_search::COMMAND_SELF)
                 (content::field_search::COMMAND_IF_FOUND, 1)
                     // use page title as a fallback
@@ -230,8 +226,8 @@ void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElem
                 (content::field_search::COMMAND_LABEL, 1)
                 (content::field_search::COMMAND_SAVE, "product-description")
 
-                // /snap/head/metadata/ecommerce/product-price
-                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_ECOMMERCE_PRICE))
+                // /snap/head/metadata/epayment/product-price
+                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_PRICE))
                 (content::field_search::COMMAND_SELF)
                 (content::field_search::COMMAND_SAVE, "product-price")
 
@@ -240,15 +236,16 @@ void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElem
         }
     }
 
-    // TODO: find a way to include e-Commerce data only if required
+    // TODO: find a way to include e-Payment data only if required
     //       (it may already be done! search on add_javascript() for info.)
-    content::content::instance()->add_javascript(doc, "ecommerce");
-    content::content::instance()->add_css(doc, "ecommerce");
+    content::content::instance()->add_javascript(doc, "epayment");
+    content::content::instance()->add_css(doc, "epayment");
 }
 
 
 
-
+// List of bitcoin libraries and software
+//   https://en.bitcoin.it/wiki/Software
 
 SNAP_PLUGIN_END()
 

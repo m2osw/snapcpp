@@ -149,7 +149,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/js/ecommerce" owner="output">
     <param name="content::title" revision="revision">e-Commerce JavaScripts</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>e-Commerce JavaScripts to support the Snap! instant cart feature among other things.</p>]]>
+      <![CDATA[<p>e-Commerce JavaScripts to support the Snap! Websites cart feature among other things.</p>]]>
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <attachment name="ecommerce" type="attachment/public">

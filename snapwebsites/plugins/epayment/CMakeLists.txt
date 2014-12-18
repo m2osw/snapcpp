@@ -1,11 +1,10 @@
 #
 # File:
-#      plugins/ecommerce/CMakeLists.txt
+#      plugins/epayment/CMakeLists.txt
 #
 # Description:
-#      Offer support for various types of carts (i.e. direct purchase,
-#      AJAX cart, multi-payments, multi-currencies, subscriptions,
-#      affiliates, etc.)
+#      Offer support for various types of electronic and not so electronic
+#      payments (credit cards, systems such as paypal, bit coins, etc.)
 #
 # Documentation:
 #      See the CMake documentation.
@@ -31,7 +30,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_ecommerce)
+project(plugin_epayment)
 
 find_package( ICU REQUIRED )
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
@@ -50,26 +49,20 @@ include_directories(
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    ecommerce.qrc
+    epayment.qrc
 )
 
 
 snap_validate_xml( content.xml content/content.dtd )
 
-snap_validate_xml( ecommerce-product-parser.xsl    layout/simplified-xslt20.dtd )
 
-add_library(ecommerce SHARED
-    ecommerce.cpp
+add_library(epayment SHARED
+    epayment.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
-    button-delete-red-48x48.png
-    button-minus-green-48x48.png
-    button-plus-blue-48x48.png
-    empty-shopping-cart.png
-    shopping-cart.png
 )
 
-target_link_libraries( ecommerce
+target_link_libraries( epayment
     ${QT_LIBRARIES}
     ${ICU_LIBRARIES}
     ${ICU_I18N_LIBRARIES}
@@ -77,15 +70,15 @@ target_link_libraries( ecommerce
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( ecommerce make_controlled_vars_headers )
+    add_dependencies( epayment make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS ecommerce LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS epayment LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/ecommerce
+    DESTINATION include/snapwebsites/plugins/epayment
     FILES_MATCHING PATTERN "*.h"
 )
 

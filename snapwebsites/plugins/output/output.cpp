@@ -142,7 +142,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 15, 1, 6, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 12, 17, 21, 34, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -446,7 +446,7 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                     msg_tag.appendChild(message_title);
                 }
 
-                // don't create the body if empty
+                // do not create the body if empty
                 if(!msg.get_body().isEmpty())
                 {
                     QDomDocument message_doc("snap");

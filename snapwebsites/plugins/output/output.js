@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.26
+ * Version: 0.1.5.33
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -662,8 +662,12 @@ snapwebsites.Output.prototype.handleMessages_ = function()
  * See snapwebsites.ServerAccess.onSuccess_() for the origin of the
  * \p xml object.
  *
- * @param {Element|string} xml  The XML object or text that encompasses all
- *                              the messages.
+ * \warning
+ * If you have an XML string to call this function, make sure to parse
+ * it first because otherwise it may be parsed as HTML and that has
+ * side effects against the title and body tags of the message.
+ *
+ * @param {NodeList} xml  The XML object with the error messages.
  */
 snapwebsites.Output.prototype.displayMessages = function(xml)
 {
@@ -676,7 +680,7 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
     if(msg.length == 0)
     {
         // that <div class="user-messages"> does not exist yet so create it
-        jQuery("body").append("<div class='user-messages zordered'><div class='close-button'><img src='/images/snap/close-button.png'/></div></div>");
+        jQuery("body").append("<div class='user-messages zordered'><div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div></div>");
         msg = jQuery("div.user-messages");
         call_handle = true;
     }
@@ -691,12 +695,14 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
 
             // TODO: we probably want to not delete the close button instead
             //       of re-adding it each time...
-            msg.append("<div class='close-button'><img src='/images/snap/close-button.png'/></div>");
+            msg.append("<div class='close-button'><img src='/images/snap/close-button.png' width='21' height='21'/></div>");
         }
     }
 
     jQuery(xml).children("message").each(function()
         {
+            // TODO: add debug to test that 'id' and 'type' are valid
+            //       for how they get used (i.e. XML TOKEN).
             var m = jQuery(this),
                 title = m.children("title").html(),
                 body = m.children("body").html(),
@@ -750,28 +756,39 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
 
 /** \brief Display a message.
  *
- * This helper function can be used to display a message in the user
+ * This helper function can be used to display one message in the user
  * message popup.
  *
  * The message XML is created here from the few parametrs passed to
- * this function.
+ * this function. Only the title is mandatory.
+ *
+ * \note
+ * The type of message is not enforced so you can use any string
+ * although if set to 'error' then the error counter is automatically
+ * increased and if set to 'warning' then the warning counter is
+ * automatically increased, and as a bonus those are displayed in
+ * corresponding colors in the default version of the message box.
  *
  * @param {!string} title  The title for this error message.
  * @param {string} message  The error message (optional, you may use null).
  * @param {string} type  Whether this is an 'info', 'warning' or 'error' message
- *                  (optional, defaults to 'error').
+ *                  (optional, defaults to 'error')
  */
 snapwebsites.Output.prototype.displayOneMessage = function(title, message, type)
 {
     // TODO: get a valid identifier from caller?
-    var xml = "<?xml version='1.0'?><messages><message msg-id='no-id' type='" + (type ? type : "error") + "'><title>" + title + "</title>";
+    var xml = "<?xml version='1.0'?><messages><message msg-id='no-id' type='"
+                + (type ? snapwebsites.htmlEscape(type) : "error")
+                + "'><title><span class='message-title'>" + snapwebsites.htmlEscape(title) + "</span></title>";
     if(message)
     {
-        xml += "<body>" + message + "</body>";
+        xml += "<body><span class='message-body'>" + snapwebsites.htmlEscape(message) + "</span></body>";
     }
-    xml += "</messages>";
+    xml += "</message></messages>";
 
-    this.displayMessages(xml);
+    // Note that jQuery(xml) parses the string as HTML and thus
+    // "mistreats" the <title> and <body> tags, hence the parseXML() call
+    this.displayMessages(jQuery.parseXML(xml).getElementsByTagName("messages"));
 };
 
 

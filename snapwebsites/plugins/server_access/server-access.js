@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.17
+ * Version: 0.0.1.18
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -38,9 +38,9 @@
  *
  *      function ServerAccessCallbacks();
  *
- *      abstract function serverAccessSuccess(result : ResultData) : void;
- *      abstract function serverAccessError(result : ResultData) : void;
- *      abstract function serverAccessComplete(result : ResultData) : void;
+ *      abstract function serverAccessSuccess(result : ResultData) : Void;
+ *      abstract function serverAccessError(result : ResultData) : Void;
+ *      abstract function serverAccessComplete(result : ResultData) : Void;
  *  };
  * \endcode
  *
@@ -67,8 +67,8 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  * The result is saved in a data object which fields are:
  *
  * \li [ESC] result_status -- the AJAX result_status parameter.
- * \li [ES] messages -- XML DOM object with the error/success messages
- *                      returned in the AJAX response.
+ * \li [ES] messages -- XML NodeList object with the error/success messages
+ *                      returned in the AJAX response or null.
  * \li [E] error_message -- our own error message, may happen even if the
  *                          AJAX data returned and worked.
  * \li [E] ajax_error_message -- The raw AJAX system error message.
@@ -91,7 +91,7 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  * result_data and messages are likely defined.
  *
  * @typedef {{result_status: string,
- *            messages: (Object|null),
+ *            messages: (NodeList|null),
  *            error_message: string,
  *            ajax_error_message: string,
  *            jqxhr: (Object|null),
@@ -181,9 +181,9 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
  * {
  * public:
  *     function ServerAccess(callback: ServerAccessCallbacks);
- *     function setURI(uri: string, opt_queryString: Object);
- *     function setData(data: Object);
- *     function send();
+ *     function setURI(uri: string, opt_queryString: Object) : Void;
+ *     function setData(data: Object) : Void;
+ *     function send() : Void;
  *     static function appendQueryString(uri: string, query_string: Object): string;
  *
  * private:
@@ -766,6 +766,462 @@ snapwebsites.ServerAccess.appendQueryString = function(uri, query_string) // sta
 
     return uri;
 };
+
+
+
+/** \brief Interface used to call the function used to send the data.
+ *
+ * Whenever you call the send() function of the ServerAccessTimer, the
+ * request to be sent is not yet available. This is important to be able
+ * to minimize the number of connections: i.e. you may get 10 changes to
+ * the data to be sent between the first call to send() and the call to
+ * this callback function.
+ *
+ * \code
+ *  class ServerAccessTimerCallbacks
+ *  {
+ *  public:
+ *      function ServerAccessTimerCallbacks();
+ *
+ *      abstract function serverAccessSuccess(result: ResultData) : Void;
+ *      abstract function serverAccessError(result: ResultData) : Void;
+ *      abstract function serverAccessComplete(result: ResultData) : Void;
+ *
+ *      abstract function serverAccessTimerReady(request_name: string, server_access: ServerAccess) : Void;
+ *  };
+ * \endcode
+ *
+ * @return {snapwebsites.ServerAccessTimerCallbacks}
+ *
+ * @constructor
+ * @struct
+ * @extends {snapwebsites.ServerAccessCallbacks}
+ */
+snapwebsites.ServerAccessTimerCallbacks = function()
+{
+    return this;
+};
+
+
+/** \brief The ServerAccessTimerCallbacks inherits from the ServerAccessCallbacks.
+ *
+ * In order to transmit the server access callbacks from the timer to
+ * the user, we also inherits from those callbacks.
+ */
+snapwebsites.inherits(snapwebsites.ServerAccessTimerCallbacks, snapwebsites.ServerAccessCallbacks);
+
+
+/*jslint unparam: true */
+/** \brief Function called whenever the server access timer is ready.
+ *
+ * This function is called whenever the server access timer times out
+ * and thus it is ready for the used to send a new POST to the server.
+ *
+ * Note that on the first call to the ServerAccessTimer.send() function
+ *
+ * @param {string} request_name  The request name passed to the send() function.
+ * @param {snapwebsites.ServerAccess} server_access  The server access object
+ *                          that the callback is expected to setup.
+ */
+snapwebsites.ServerAccessTimerCallbacks.prototype.serverAccessTimerReady = function(request_name, server_access)
+{
+    throw new Error("snapwebsites.ServerAccessTimerCallbacks.serverAccessTimerReady() must be overridden, it is abstract");
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Function called on success.
+ *
+ * This function is called if the remote access was successful. The
+ * result object includes a reference to the XML document found in the
+ * data sent back from the server.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data.
+ */
+snapwebsites.ServerAccessTimerCallbacks.prototype.serverAccessSuccess = function(result) // virtual
+{
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Function called on error.
+ *
+ * This function is called if the remote access generated an error.
+ * In this case errors include I/O errors, server errors, and application
+ * errors. All call this function so you do not have to repeat the same
+ * code for each type of error.
+ *
+ * \li I/O errors -- somehow the AJAX command did not work, maybe the
+ *                   domain name is wrong or the URI has a syntax error.
+ * \li server errors -- the server received the POST but somehow refused
+ *                      it (maybe the request generated a crash.)
+ * \li application errors -- the server received the POST and returned an
+ *                           HTTP 200 result code, but the result includes
+ *                           a set of errors (not enough permissions,
+ *                           invalid data, etc.)
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.ServerAccessTimerCallbacks.prototype.serverAccessError = function(result) // virtual
+{
+};
+/*jslint unparam: false */
+
+
+/*jslint unparam: true */
+/** \brief Function called on completion.
+ *
+ * This function is called once the whole process is over. It is most
+ * often used to do some cleanup.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.ServerAccessTimerCallbacks.prototype.serverAccessComplete = function(result) // virtual
+{
+};
+/*jslint unparam: false */
+
+
+
+/** \brief Timed AJAX requests.
+ *
+ * This class can be used to avoid sending too many AJAX requests at
+ * the server.
+ *
+ * \code
+ *  class ServerAccessTimer extends ServerAccessCallbacks
+ *  {
+ *      function ServerAccessTimer(request_name: String, timer_callback: ServerAccessTimerCallbacks, interval: Number);
+ *
+ *      function send();
+ *
+ *      virtual function serverAccessSuccess(result : ResultData) : Void;
+ *      virtual function serverAccessError(result : ResultData) : Void;
+ *      virtual function serverAccessComplete(result : ResultData) : Void;
+ *
+ *  private:
+ *      var requestName_: String;
+ *      var timerCallback_: ServerAccessTimerCallbacks;
+ *      var interval_: Number;
+ *      var processing_: Boolean;
+ *      var timer_: Number;
+ *      var lastRequest_: Number;
+ *  };
+ * \endcode
+ *
+ * When a request is sent, it uses the \p request_name to call the
+ * ServerAccessTimerCallbacks.serverAccessTimerReady() callback
+ * function.
+ *
+ * The \p opt_interval is defined in milliseconds. So to have at least one
+ * second between requests, use 1,000. Note that the minimum interval is
+ * 1,000 and the default is 2,000.
+ *
+ * @param {string} request_name  The name of the this timer.
+ * @param {snapwebsites.ServerAccessTimerCallbacks}  timer_callback  The object
+ *         that implements the ServerAccessTimerCallbacks interface and gets
+ *         called when a request should be sent to the server.
+ * @param {number=} opt_interval  The minimum amount of time between requests.
+ *
+ * @constructor
+ * @struct
+ * @extends {snapwebsites.ServerAccessCallbacks}
+ */
+snapwebsites.ServerAccessTimer = function(request_name, timer_callback, opt_interval)
+{
+    this.requestName_ = request_name;
+    this.timerCallback_ = timer_callback;
+    if(opt_interval && opt_interval > 0)
+    {
+        if(opt_interval < 1000)
+        {
+            opt_interval = 1000;
+        }
+        this.interval_ = opt_interval;
+    }
+
+    return this;
+};
+
+
+/** \brief The ServerAccessTimer is a base class.
+ *
+ * The ServerAccessTimer is a base class.
+ */
+snapwebsites.inherits(snapwebsites.ServerAccessTimer, snapwebsites.ServerAccessCallbacks);
+
+
+/** \brief The name of the request being handled by this timer.
+ *
+ * This variable represents the name of the request being handled
+ * by this timer. If you have multiple ServerAccessTimer objects
+ * attached to a single object, you can use that name to distinguish
+ * between each request.
+ *
+ * The request name must be defined when creating the ServerAccessTimer.
+ *
+ * @type {!string}
+ */
+snapwebsites.ServerAccessTimer.prototype.requestName_ = "";
+
+
+/** \brief The reference to the object with the timer callback.
+ *
+ * This variable is a reference to an object that implements the
+ * ServerAccessTimerCallbacks interface.
+ *
+ * The callback object must be defined when creating the ServerAccessTimer.
+ *
+ * @type {snapwebsites.ServerAccessTimerCallbacks}
+ */
+snapwebsites.ServerAccessTimer.prototype.timerCallback_ = null;
+
+
+/** \brief The reference to the object with the timer callback.
+ *
+ * This variable is a reference to an object that implements the
+ * ServerAccessTimerCallbacks interface.
+ *
+ * The callback object must be defined when creating the ServerAccessTimer.
+ *
+ * @type {number}
+ */
+snapwebsites.ServerAccessTimer.prototype.interval_ = 2000;
+
+
+/** \brief Whether we are waiting on a POST.
+ *
+ * This variable is false by default. It gets set to true whenever the
+ * ServerAccessTimerCallbacks.serverAccessTimerReady() function is
+ * called and back to false when the request returns, whether it was
+ * successful or not.
+ *
+ * @type {boolean}
+ */
+snapwebsites.ServerAccessTimer.prototype.processing_ = false;
+
+
+/** \brief Whether we received another call to the send() function.
+ *
+ * This variable gets set to true if the processing_ flag is true
+ * and the send() function gets called. In that situation, we prevent
+ * the send() from sending anything until the processing of the
+ * current request ends.
+ *
+ * @type {boolean}
+ */
+snapwebsites.ServerAccessTimer.prototype.sendAgain_ = false;
+
+
+/** \brief Timer identifier.
+ *
+ * The server access timer uses a timer when a new request should be sent
+ * to the server, but the server is currently busy. The timer is setup
+ * only if it is not already set and if there is a request running now
+ * or the last request was sent less than \p interval_ milliseconds ago.
+ *
+ * @type {number}
+ */
+snapwebsites.ServerAccessTimer.prototype.timer_ = NaN;
+
+
+/** \brief The last time a request was sent.
+ *
+ * The server access timer is required to not send too many requests to
+ * the server. This is done by using this lastRequest_ parameter which
+ * is the last time a request was sent.
+ *
+ * @type {number}
+ */
+snapwebsites.ServerAccessTimer.prototype.lastRequest_ = 0;
+
+
+/** \brief The server access object.
+ *
+ * When using the timer, this object has to be the one holding the
+ * server access object because it needs to properly handle all the
+ * flags. This is the object. The object is also passed down to
+ * the object that created the ServerAccessTimer so it can add the
+ * data in the POST request (i.e. URL and data).
+ *
+ * @type {snapwebsites.ServerAccess}
+ */
+snapwebsites.ServerAccessTimer.prototype.serverAccess_ = null;
+
+
+/** \brief Request that a POST request be sent.
+ *
+ * This function registers that the caller wants a request to be sent
+ * to the server.
+ *
+ * If the ServerAccessTimer was not currently handling a request
+ * with the specified name and the last time a request with that
+ * name was set more than the specified interval, then the post
+ * gets sent immediately.
+ *
+ * Otherwise the request gets registered and a timer started
+ * one is not already running.
+ */
+snapwebsites.ServerAccessTimer.prototype.send = function()
+{
+    var that = this,
+        interval;
+
+    if(this.processing_)
+    {
+        // as the completion function to send another request
+        // (it may require a timer, but we do not know at this point)
+        this.sendAgain_ = true;
+        // if(isNaN(this.timer_))
+        // {
+        //     if(this.lastRequest_ != 0)
+        //     {
+        //         interval = Date.now() - this.lastRequest_;
+        //         if(interval > this.interval_)
+        //         {
+        //             interval = this.interval_;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         interval = this.interval_;
+        //     }
+        //     this.timer_ = setTimeout(function(){that.sendRequest_();}, interval);
+        //     this.lastRequest_ = Date.now();
+        // }
+        // // else -- the timer is already set, no need to set it again!
+    }
+    else
+    {
+        // if we arrive here, this flag should always be false, but just
+        // in case, we reset it here
+        this.sendAgain_ = false;
+        if(this.lastRequest_ != 0)
+        {
+            interval = Date.now() - this.lastRequest_;
+            if(interval > this.interval_)
+            {
+                // enough time spent in between, we can run immediately
+                this.sendRequest_();
+            }
+            else
+            {
+                this.timer_ = setTimeout(function(){that.sendRequest_();}, interval);
+                this.lastRequest_ = Date.now();
+            }
+        }
+        else
+        {
+            this.sendRequest_();
+        }
+    }
+};
+
+
+/** \brief The timer timed out, so send a request as promised.
+ *
+ * This function sends a request as the user asked us to do. It sets
+ * the processing_ flag to true and reset the timer so if another
+ * request to the send() function is made, it will be processed
+ * quickly.
+ */
+snapwebsites.ServerAccessTimer.prototype.sendRequest_ = function() // static
+{
+    // timer kicked in, clear the ID
+    this.timer_ = NaN;
+
+    this.processing_ = true;
+
+    if(!this.serverAccess_)
+    {
+        this.serverAccess_ = new snapwebsites.ServerAccess(this);
+    }
+
+    // we expect the callback to setup these two parameters
+    //this.serverAccess_.setURI(...);
+    //this.serverAccess_.setData(...);
+    this.timerCallback_.serverAccessTimerReady(this.requestName_, this.serverAccess_);
+
+    this.serverAccess_.send();
+};
+
+
+/** \brief Function called on success.
+ *
+ * This function is called if the remote access was successful. The
+ * result object includes a reference to the XML document found in the
+ * data sent back from the server.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data.
+ */
+snapwebsites.ServerAccessTimer.prototype.serverAccessSuccess = function(result) // virtual
+{
+    this.timerCallback_.serverAccessSuccess(result);
+};
+
+
+/** \brief Function called on error.
+ *
+ * This function is called if the remote access generated an error.
+ * In this case errors include I/O errors, server errors, and application
+ * errors. All call this function so you do not have to repeat the same
+ * code for each type of error.
+ *
+ * \li I/O errors -- somehow the AJAX command did not work, maybe the
+ *                   domain name is wrong or the URI has a syntax error.
+ * \li server errors -- the server received the POST but somehow refused
+ *                      it (maybe the request generated a crash.)
+ * \li application errors -- the server received the POST and returned an
+ *                           HTTP 200 result code, but the result includes
+ *                           a set of errors (not enough permissions,
+ *                           invalid data, etc.)
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.ServerAccessTimer.prototype.serverAccessError = function(result) // virtual
+{
+    this.timerCallback_.serverAccessError(result);
+};
+
+
+/** \brief Function called on completion.
+ *
+ * This function is called once the whole process is over. It is most
+ * often used to do some cleanup.
+ *
+ * By default this function does nothing.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
+ *          resulting data with information about the error(s).
+ */
+snapwebsites.ServerAccessTimer.prototype.serverAccessComplete = function(result) // virtual
+{
+    this.processing_ = false;
+    this.timerCallback_.serverAccessComplete(result);
+    if(this.sendAgain_)
+    {
+        this.sendAgain_ = false;
+        this.send();
+    }
+};
+
 
 
 // vim: ts=4 sw=4 et
