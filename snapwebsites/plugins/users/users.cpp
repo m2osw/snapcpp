@@ -536,7 +536,7 @@ void users::on_process_cookies()
             // this session qualifies as a log in session
             // so now verify the user
             QString const key(path.mid(6));
-            // not authenticated user?
+            // authenticated user?
             if(!key.isEmpty())
             {
                 QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
@@ -592,6 +592,19 @@ void users::on_process_cookies()
         }
     }
 
+    // There is a login limit so we do not need to "randomly" limit
+    // a visitor user session to a ridiculously small amount unless
+    // we think that could increase the database size too much...
+    // two reasons to have a very long time to live are:
+    //   1) user created a cart and we want the items he put in his
+    //      cart to stay there "forever" (at least a year)
+    //   2) user was sent to the site through an affiliate link, we
+    //      want to reward the affiliate whether the user was sent
+    //      there 1 day or 1 year ago
+    // To satisfy any user, we need this to be an administrator setup
+    // value. By default we use one whole year...
+    f_info->set_time_to_live(86400 * 365);  // 365 days
+
     // create or refresh the session
     if(create_new_session)
     {
@@ -602,7 +615,6 @@ void users::on_process_cookies()
         //f_info->set_page_path(); -- default is fine, we do not use the path
         f_info->set_object_path("/user/"); // no user id for the anonymous user
         f_info->set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
-        f_info->set_time_to_live(86400 * 5);  // 5 days
         sessions::sessions::instance()->create_session(*f_info);
     }
     else
@@ -3243,12 +3255,16 @@ void users::forgot_password_email(QString const& email)
  * a large structure, or set of structures, make sure to use serialization
  * first.
  *
+ * \note
+ * The data string cannot be an empty string. Cassandra does not like that
+ * and on read, an empty string is viewed as "that data is undefined."
+ *
  * \param[in] name  The name of the cell that is to be used to save the data.
  * \param[in] data  The data to save in the session.
  *
  * \sa detach_from_session()
  */
-void users::attach_to_session(const QString& name, const QString& data)
+void users::attach_to_session(QString const& name, QString const& data)
 {
     sessions::sessions::instance()->attach_to_session(*f_info, name, data);
 }
@@ -3264,15 +3280,40 @@ void users::attach_to_session(const QString& name, const QString& data)
  * some cases it may be necessary to do so, then the attach_to_session()
  * should be called again.)
  *
+ * \note
+ * The function is NOT a constant since it modifies the database by
+ * deleting the data being detached.
+ *
  * \param[in] name  The name of the cell that is to be used to save the data.
  *
  * \return The data read from the session if any, otherwise an empty string.
  *
  * \sa attach_to_session()
  */
-QString users::detach_from_session(const QString& name) const
+QString users::detach_from_session(QString const& name)
 {
     return sessions::sessions::instance()->detach_from_session(*f_info, name);
+}
+
+
+/** \brief Retrieve data that was attached to the user session.
+ *
+ * This function can be used to read a session entry from the user session
+ * without having to detach that information from the session. This is
+ * useful in cases where data is expected to stay in the session for
+ * long period of time (i.e. the cart of a user).
+ *
+ * If no data was attached to that named session field, then the function
+ * returns an empty string. Remember that saving an empty string as session
+ * data is not possible.
+ *
+ * \param[in] name  The name of the parameter to retrieve.
+ *
+ * \return The data attached to the named session field.
+ */
+QString users::get_from_session(QString const& name) const
+{
+    return sessions::sessions::instance()->get_from_session(*f_info, name);
 }
 
 
@@ -3415,13 +3456,17 @@ void users::on_attach_to_session()
  */
 void users::on_detach_from_session()
 {
-    // here we do a get_from_session() because we may need the variable
-    // between several different forms before it gets deleted; the concerned
-    // functions will clear() the variable when done with it
+    // TODO:
+    // here we probably should do a get_from_session() because we may need
+    // the variable between several different forms before it really gets
+    // deleted permanently; (i.e. we are reattaching now, but if a crash
+    // occurs between the detach and attach, we lose the information!)
+    // the concerned function(s) should clear() the variable when
+    // officially done with it
     f_user_changing_password_key = detach_from_session(get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
 
-    // the messages handling is here because the messages plugin cannot have
-    // a dependency on the users plugin
+    // the message handling is here because the messages plugin cannot have
+    // a dependency on the users plugin which is the one handling the session
     QString const data(detach_from_session(messages::get_name(messages::SNAP_NAME_MESSAGES_MESSAGES)));
     if(!data.isEmpty())
     {

@@ -372,7 +372,7 @@ void editor::on_process_form_post(content::path_info_t& ipath, sessions::session
     {
         // this should not happen because invalid paths will not pass the
         // session validation process
-        throw editor_exception_invalid_path("users::on_process_form_post() was called with an unsupported path: \"" + ipath.get_key() + "\"");
+        throw editor_exception_invalid_path("editor::on_process_form_post() was called with an unsupported path: \"" + ipath.get_key() + "\"");
     }
 }
 

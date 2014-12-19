@@ -211,7 +211,8 @@ public:
     static QString          create_password();
     bool                    register_user(QString const& email, QString const& password);
     void                    attach_to_session(QString const& name, QString const& data);
-    QString                 detach_from_session(QString const& name) const;
+    QString                 detach_from_session(QString const& name);
+    QString                 get_from_session(QString const& name) const;
     void                    set_referrer( QString path );
     void                    send_to_replace_password_page(QString const& email, bool const set_status);
 

@@ -8341,7 +8341,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
     //      of the "local" SNAP_NAME_JAVASCRIPT_...
     if(f_added_javascripts.contains(name))
     {
-        // already added, we're done
+        // already added, we are done
         return;
     }
     f_added_javascripts[name] = true;
@@ -8358,7 +8358,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
     QtCassandra::QCassandraRow::pointer_t javascript_row(files_table->row("javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/));
 
     // TODO: at this point I read all the entries with "name_..."
-    //       we'll want to first check with the user's browser and
+    //       we will want to first check with the user's browser and
     //       then check with "any" as the browser name if no specific
     //       script is found
     //

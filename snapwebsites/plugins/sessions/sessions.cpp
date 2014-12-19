@@ -153,7 +153,7 @@ sessions::session_info::session_info()
     //, f_page_path("") -- auto-init
     //, f_object_path("") -- auto-init
     //, f_user_agent("") -- auto-init
-    //, f_time_to_live(300) -- auto-init
+    //, f_time_to_live(300) -- auto-init (5 min.)
     //, f_time_limit(0) -- auto-init
     //, f_login_limit(0) -- auto-init
     //, f_date(0) -- auto-init
@@ -1530,7 +1530,7 @@ QString sessions::detach_from_session(const session_info& info, const QString& n
         return "";
     }
 
-    // if not defined, we'll get an empty string which is what's expected
+    // if not defined, we will get an empty string which is what we expect
     QtCassandra::QCassandraValue value(row->cell(name)->value());
 
     // used once, so delete

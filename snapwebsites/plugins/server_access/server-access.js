@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.18
+ * Version: 0.0.1.19
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -972,6 +972,7 @@ snapwebsites.inherits(snapwebsites.ServerAccessTimer, snapwebsites.ServerAccessC
  * The request name must be defined when creating the ServerAccessTimer.
  *
  * @type {!string}
+ * @private
  */
 snapwebsites.ServerAccessTimer.prototype.requestName_ = "";
 
@@ -984,6 +985,7 @@ snapwebsites.ServerAccessTimer.prototype.requestName_ = "";
  * The callback object must be defined when creating the ServerAccessTimer.
  *
  * @type {snapwebsites.ServerAccessTimerCallbacks}
+ * @private
  */
 snapwebsites.ServerAccessTimer.prototype.timerCallback_ = null;
 
@@ -996,6 +998,7 @@ snapwebsites.ServerAccessTimer.prototype.timerCallback_ = null;
  * The callback object must be defined when creating the ServerAccessTimer.
  *
  * @type {number}
+ * @private
  */
 snapwebsites.ServerAccessTimer.prototype.interval_ = 2000;
 
@@ -1008,6 +1011,7 @@ snapwebsites.ServerAccessTimer.prototype.interval_ = 2000;
  * successful or not.
  *
  * @type {boolean}
+ * @private
  */
 snapwebsites.ServerAccessTimer.prototype.processing_ = false;
 
@@ -1020,20 +1024,9 @@ snapwebsites.ServerAccessTimer.prototype.processing_ = false;
  * current request ends.
  *
  * @type {boolean}
+ * @private
  */
 snapwebsites.ServerAccessTimer.prototype.sendAgain_ = false;
-
-
-/** \brief Timer identifier.
- *
- * The server access timer uses a timer when a new request should be sent
- * to the server, but the server is currently busy. The timer is setup
- * only if it is not already set and if there is a request running now
- * or the last request was sent less than \p interval_ milliseconds ago.
- *
- * @type {number}
- */
-snapwebsites.ServerAccessTimer.prototype.timer_ = NaN;
 
 
 /** \brief The last time a request was sent.
@@ -1043,6 +1036,7 @@ snapwebsites.ServerAccessTimer.prototype.timer_ = NaN;
  * is the last time a request was sent.
  *
  * @type {number}
+ * @private
  */
 snapwebsites.ServerAccessTimer.prototype.lastRequest_ = 0;
 
@@ -1056,6 +1050,7 @@ snapwebsites.ServerAccessTimer.prototype.lastRequest_ = 0;
  * data in the POST request (i.e. URL and data).
  *
  * @type {snapwebsites.ServerAccess}
+ * @private
  */
 snapwebsites.ServerAccessTimer.prototype.serverAccess_ = null;
 
@@ -1117,7 +1112,7 @@ snapwebsites.ServerAccessTimer.prototype.send = function()
             }
             else
             {
-                this.timer_ = setTimeout(function(){that.sendRequest_();}, interval);
+                setTimeout(function(){that.sendRequest_();}, interval);
                 this.lastRequest_ = Date.now();
             }
         }
@@ -1135,12 +1130,11 @@ snapwebsites.ServerAccessTimer.prototype.send = function()
  * the processing_ flag to true and reset the timer so if another
  * request to the send() function is made, it will be processed
  * quickly.
+ *
+ * @private
  */
 snapwebsites.ServerAccessTimer.prototype.sendRequest_ = function() // static
 {
-    // timer kicked in, clear the ID
-    this.timer_ = NaN;
-
     this.processing_ = true;
 
     if(!this.serverAccess_)

@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../content/content.h"
+#include "../path/path.h"
 
 /** \file
  * \brief Header of the ecommerce plugin.
@@ -32,6 +32,9 @@ namespace ecommerce
 
 enum name_t
 {
+    SNAP_NAME_ECOMMERCE_CART_PRODUCTS,
+    SNAP_NAME_ECOMMERCE_CART_PRODUCTS_POST_FIELD,
+    SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART,
     SNAP_NAME_ECOMMERCE_PRICE,
     SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION,
     SNAP_NAME_ECOMMERCE_PRODUCT_TYPE_PATH
@@ -55,10 +58,11 @@ char const *get_name(name_t name) __attribute__ ((const));
 
 
 class ecommerce : public plugins::plugin
+                , public path::path_execute
 {
 public:
                                 ecommerce();
-                                ~ecommerce();
+    virtual                     ~ecommerce();
 
     static ecommerce *          instance();
     virtual QString             description() const;
@@ -66,6 +70,9 @@ public:
 
     void                        on_bootstrap(snap_child *snap);
     void                        on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
+    void                        on_process_post(QString const& uri_path);
+    void                        on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+    virtual bool                on_path_execute(content::path_info_t& ipath);
 
 private:
     void                        content_update(int64_t variables_timestamp);

@@ -532,8 +532,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
             <script type="text/javascript">jQuery("#<xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>").focus();jQuery("#<xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>").select();</script>
           </xsl:if>
           <xsl:if test="auto-reset">
-            <!-- TODO: reset timer each time the user makes a modification so it
-                       doesn't trigger too soon! -->
+            <!-- TODO: reset timer each time the user makes a modification
+                       so it does not trigger too soon!
+                       use setTimer() instead too, to avoid infinite loops -->
             <script type="text/javascript">function auto_reset_<xsl:value-of select="$unique_id"/>(){form_<xsl:value-of select="$unique_id"/>.reset();}window.setInterval(auto_reset_<xsl:value-of select="$unique_id"/>,<xsl:value-of select="auto-reset/@minutes * 60000"/>);</script>
           </xsl:if>
           <xsl:if test="default-button/@refid">

@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </qresource>
   <qresource prefix="/js/ecommerce">
     <file>ecommerce.js</file>
+    <file>ecommerce-cart.js</file>
   </qresource>
   <qresource prefix="/images/ecommerce">
     <file>empty-shopping-cart.png</file>
