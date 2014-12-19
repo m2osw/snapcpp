@@ -1945,7 +1945,7 @@ snapwebsites.eCommerceCart.prototype.serverAccessTimer_ = null;
  * the server with a POST. When this flag is set to true, the sendCart_()
  * function does nothing.
  *
- * @type {snapwebsites.ServerAccessTimer}
+ * @type {boolean}
  * @private
  */
 snapwebsites.eCommerceCart.prototype.initializing_ = false;
