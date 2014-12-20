@@ -110,7 +110,8 @@
  *
  *      abstract function getFacilityName() : String;
  *      abstract function getDisplayName() : String;
- *      abstract function getIcon() : String;
+ *      virtual function getIcon() : String;
+ *      final function getPriority() : Number;
  *
  *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
  *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
@@ -119,6 +120,8 @@
  * \endcode
  *
  * @return {snapwebsites.ePaymentFacilityBase}
+ *
+ * @extends snapwebsites.ServerAccessCallbacks
  * @constructor
  * @struct
  */
@@ -187,21 +190,42 @@ snapwebsites.ePaymentFacilityBase.prototype.getDisplayName = function() // abstr
 };
 
 
-/** \brief Get the technical name of this facility.
+/** \brief Get the icon used to represent that facility.
  *
- * This function returns a string with the URL to an icon representing
- * this facility. The string may be empty or null if the facility does
- * not (yet) offer an icon. In this case, the system is likely to
- * fallback to the display name.
+ * This function returns a URI to an image representing the facilty.
+ * In most cases, that image is the logo of the payment facility.
  *
- * @throws {Error} The base type function throws an error as it should never
- *                 get called (requires override of abstract function.)
+ * By default the function returns an empty string. If you do not
+ * override this default, then the facility has no icon.
  *
- * @return {string}  The technical name of the product.
+ * @return {string}  The URI to an image representing the facility.
  */
 snapwebsites.ePaymentFacilityBase.prototype.getIcon = function() // abstract
 {
-    return null;
+    return "";
+};
+
+
+/** \brief Get the priority assigned to this facility.
+ *
+ * By default facilities are given a priority of zero (0). Increasing the
+ * priority moves the facility in the front of the list (i.e. a priority
+ * of 100 gives you priority over a priority of 5 and thus with 100 you
+ * are more likely to appear in the front of the list.)
+ *
+ * At this point the priority is not limited. It can also be negative to
+ * move facilities are the very end of the list.
+ *
+ * \todo
+ * Actually implement the priority. Note that the facility itself cannot
+ * override this function since it is marked final.
+ *
+ * @return {number}  The priority assigned to this facility, zero by default.
+ * @final
+ */
+snapwebsites.ePaymentFacilityBase.prototype.getPriority = function()
+{
+    return 0;
 };
 
 
@@ -295,14 +319,19 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
  *      ePayment();
  *
  *      function registerPaymentFacility(payment_facility: ePaymentFacilityBase) : Void;
- *      function hasPaymentFacility(feature_name: string) : boolean;
- *      function getPaymentFacility(feature_name: string) : ePaymentFacilityBase;
+ *      function hasPaymentFacility(feature_name: String) : Boolean;
+ *      function getPaymentFacility(feature_name: String) : ePaymentFacilityBase;
+ *
+ *      function mainFacilitiesHTML(width: Number, back_button: Boolean) : String;
+ *      function sortFacilitiesByPriority() : Void;
  *
  *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
  *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
  *      virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData);
  *
  *  private:
+ *      static function compareFacilities_(a, b) : Number;
+ *
  *      var paymentFacilities_: ePaymentFacilitiesBase;
  *  };
  * \endcode
@@ -432,8 +461,6 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
  */
 snapwebsites.ePayment = function()
 {
-    var that = this;
-
 //#ifdef DEBUG
     if(jQuery("body").hasClass("snap-epayment-initialized"))
     {
@@ -455,7 +482,7 @@ snapwebsites.ePayment = function()
  * to send the server changes made by the client to the cart.
  * In the cart, that feature is pretty much always asynchroneous.
  */
-snapwebsites.inherits(snapwebsites.eCommerceCart, snapwebsites.ServerAccessCallbacks);
+snapwebsites.inherits(snapwebsites.ePayment, snapwebsites.ServerAccessCallbacks);
 
 
 /** \brief The list of payment facilities understood by the e-Payment plugin.
@@ -470,6 +497,38 @@ snapwebsites.inherits(snapwebsites.eCommerceCart, snapwebsites.ServerAccessCallb
  * @private
  */
 snapwebsites.ePayment.prototype.paymentFacilities_; // = {}; -- initialized in constructor to avoid problems
+
+
+/** \brief The list of payments sorted by priority.
+ *
+ * When displaying the payments to the end user, we use a priority to sort
+ * the facilities. This way the administrator can choose to sort his payment
+ * facilities in a way that makes more sense for his business.
+ *
+ * \warning
+ * This array is initialized by a call to the sortFacilitiesByPriority()
+ * function, which should always be performed before using this variable.
+ *
+ * @type {Array}
+ * @private
+ */
+snapwebsites.ePayment.prototype.sortedPaymentFacility_; // = []; -- initialized each time the number of facilities changes
+
+
+/** \brief Whether the sortedPaymentFacility_ is current.
+ *
+ * This flag is used to keep track of the sortedPaymentFacility_ and know
+ * whether it is up to date. Whenever the map of payments is updated,
+ * this flag is reset back to false. Once sorted, it gets set to true.
+ *
+ * Functions should not rely on this flag, instead, they should call the
+ * sortFacilitiesByPriority() function which ensures the proper validity
+ * of the sortedPaymentFacility_ array.
+ *
+ * @type {!boolean}
+ * @private
+ */
+snapwebsites.ePayment.prototype.sorted_ = false;
 
 
 /** \brief Register a payment facility.
@@ -487,7 +546,7 @@ snapwebsites.ePayment.prototype.paymentFacilities_; // = {}; -- initialized in c
 snapwebsites.ePayment.prototype.registerPaymentFacility = function(payment_facility)
 {
     var name = payment_facility.getFacilityName();
-    this.paymentFacility_[name] = payment_facility;
+    this.paymentFacilities_[name] = payment_facility;
 };
 
 
@@ -504,7 +563,7 @@ snapwebsites.ePayment.prototype.registerPaymentFacility = function(payment_facil
  */
 snapwebsites.ePayment.prototype.hasPaymentFacility = function(facility_name)
 {
-    return this.paymentFacility_[facility_name] instanceof snapwebsites.ePaymentFacilityBase;
+    return this.paymentFacilities_[facility_name] instanceof snapwebsites.ePaymentFacilityBase;
 };
 
 
@@ -516,19 +575,174 @@ snapwebsites.ePayment.prototype.hasPaymentFacility = function(facility_name)
  * @throws {Error} If the named \p facility_name was not yet registered, then this
  *                 function throws.
  *
- * @param {string} feature_name  The name of the product feature to retrieve.
+ * @param {string} facility_name  The name of the product feature to retrieve.
  *
- * @return {snapwebsites.eCommerceProductFeatureBase}  The product feature object.
+ * @return {snapwebsites.ePaymentFacilityBase}  The product feature object.
  *
  * @final
  */
 snapwebsites.ePayment.prototype.getPaymentFacility = function(facility_name)
 {
-    if(this.paymentFacility_[facility_name] instanceof snapwebsites.ePaymentFacilityBase)
+    if(this.paymentFacilities_[facility_name] instanceof snapwebsites.ePaymentFacilityBase)
     {
-        return this.paymentFacility_[facility_name];
+        return this.paymentFacilities_[facility_name];
     }
     throw new Error("getPaymentFacility(\"" + facility_name + "\") called when that facility is not yet defined.");
+};
+
+
+/** \brief Compare two payment facilities to determine which should be first.
+ *
+ * This function compares two payment facilities. If their priority is not
+ * enough to know which is first and which is last, then the function compares
+ * their display name (i.e. alphabetical order,) and since two facilities
+ * should not have the same display name, this function should always return 
+ * -1 or +1 and never zero.
+ *
+ * \note
+ * We use the localeCompare() function without forcing the result to +1
+ * or -1 so you are likely to get varying results depending on the browser.
+ * The result is always what the Array.sort() functon expects though.
+ *
+ * @param {snapwebsites.ePaymentFacilityBase} a  The left handside.
+ * @param {snapwebsites.ePaymentFacilityBase} b  The right handside.
+ *
+ * @return {!number} -1 if 'a' is before 'b', +1 if 'a' is after 'b',
+ *                   and 0 if 'a' and 'b' are equal.
+ *
+ * @private
+ * @final
+ */
+snapwebsites.ePayment.compareFacilities_ = function(a, b) // static
+{
+    var pa = a.getPriority(),
+        pb = b.getPriority(),
+        na,
+        nb;
+
+    // WARNING: a larger priority comes first, so the compare "looks" inverted
+    //          but it is correct
+    if(pa > pb)
+    {
+        return -1;
+    }
+    if(pa < pb)
+    {
+        return 1;
+    }
+
+    // names are sorted as expected, following the client's locale
+    na = a.getDisplayName();
+    nb = b.getDisplayName();
+    return na.localeCompare(nb);
+};
+
+
+/** \brief Sort the facilities.
+ *
+ * This function is used to sort the facilities using their priority
+ * property. By default, facilities are saved in this object using
+ * their technical name instead.
+ *
+ * The function marks the facilities as sorted to avoid sorting over
+ * and over again. The flag is cleared each time the user adds a new
+ * facility.
+ */
+snapwebsites.ePayment.prototype.sortFacilitiesByPriority = function()
+{
+    var key;
+
+    if(this.sorted_)
+    {
+        return;
+    }
+    this.sorted_ = true;
+
+    // reset the array
+    this.sortedPaymentFacility_ = [];
+
+    // add the facilities
+    for(key in this.paymentFacilities_)
+    {
+        if(this.paymentFacilities_.hasOwnProperty(key))
+        {
+            this.sortedPaymentFacility_.push(this.paymentFacilities_[key]);
+        }
+    }
+
+    // now do the sort
+    this.sortedPaymentFacility_.sort(snapwebsites.ePayment.compareFacilities_);
+};
+
+
+/** \brief List the main facilities for this website.
+ *
+ * Whenever an administrator sets up his e-Commerce system, he can choose
+ * a set of payment facilities as being the main facilities (i.e. maybe
+ * Paypal, Credit Cards, and Bitcoins.) If there are other facilities
+ * they remain hidden and the function adds a 'More...' button.
+ *
+ * Facilities can be assigned a priority which is used to sort them.
+ *
+ * The \p width parameter is used to determine when to stop adding
+ * facilities to the list. The 'More...' button gets added only if
+ * all the facilities cannot fit within that width.
+ *
+ * \note
+ * The widthc computation probably requires us to know the display width
+ * which is not really known here. However, you can have the same number
+ * of facilities display in a smaller or larger space depending on how
+ * your output space is sized.
+ *
+ * @param {number} width  The maximum width of the resulting HTML.
+ * @param {boolean} back_button  Whether a back button should be added.
+ *
+ * @return {string} An HTML string representing the main facilities.
+ */
+snapwebsites.ePayment.prototype.mainFacilitiesHTML = function(width, back_button)
+{
+    var html = "",
+        icon_width = 100,
+        idx,
+        max,
+        facility,
+        name,
+        icon;
+
+    this.sortFacilitiesByPriority();
+
+    // TODO: we need the width of one facility icon/button so we can properly
+    //       calculate the number of facilities to show
+    max = Math.floor(width / icon_width);
+    if(max < 1)
+    {
+        // should the minimum be more than 1?
+        max = 1;
+    }
+
+    html += "<div class='epayment'><div class='epayment-facilities>";
+    for(idx = 0; idx < max; ++idx)
+    {
+        facility = this.sortedPaymentFacility_[idx];
+        name = facility.getFacilityName();
+        icon = facility.getIcon();
+
+        html += "<div class='item-" + name + "'>"
+              + "<span class='name-" + name + "'>" + facility.getDisplayName() + "</span>";
+
+        // TBD: should there be a way to place the image first?
+        //      (at this point we can float those items)
+        if(icon)
+        {
+            // add the image tag only if there is an icon
+            html += "<img class='icon-" + name + "' src='" + icon + "'/>";
+        }
+
+        html += "</div>";
+    }
+    html += "</div></div>";
+
+    return html;
 };
 
 

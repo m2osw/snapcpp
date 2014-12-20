@@ -14,6 +14,7 @@ OPTIONS="--warning_level VERBOSE"
 
 FILES="plugins/ecommerce/ecommerce.js
        plugins/editor/editor.js
+       plugins/epayment/epayment.js
        plugins/form/form.js
        plugins/list/list/list.js
        plugins/listener/listener.js
