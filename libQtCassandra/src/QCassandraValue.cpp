@@ -9,7 +9,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2014 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -1060,9 +1060,9 @@ bool QCassandraValue::nullValue() const
 
 /** \brief Retrieve a Boolean from the value.
  *
- * This function is used to retrieve the value in the form of a byte.
+ * This function is used to retrieve the value in the form of a bool.
  *
- * It is assumed that you know what you're doing (i.e. that you created
+ * It is assumed that you know what you are doing (i.e. that you created
  * this cell with one byte value at the specified index.)
  *
  * \exception std::runtime_error
@@ -1070,11 +1070,58 @@ bool QCassandraValue::nullValue() const
  *
  * \param[in] index  The index where the Boolean byte is read.
  *
- * \return One character from the buffer.
+ * \return One bool from the buffer.
  */
 bool QCassandraValue::boolValue(int index) const
 {
     return QtCassandra::boolValue(f_value, index);
+}
+
+/** \brief Retrieve a Boolean from the value.
+ *
+ * This function is used to retrieve the value in the form of a bool.
+ *
+ * The function returns the default value (which is 'false' by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the boolValue() function, this function does not throw if
+ * no data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One bool from the buffer.
+ */
+bool QCassandraValue::boolValueOrNull(int index, const bool default_value) const
+{
+    return QtCassandra::boolValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve a Boolean from the value.
+ *
+ * This function is used to retrieve the value in the form of a bool.
+ *
+ * The function returns the default value (which is 'false' by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the boolValue() function, this function does not throw if
+ * no data is available.
+ *
+ * \note
+ * For a Boolean value, since it is just 1 byte, this function has the
+ * same effect as the boolValueOrNull(). It is available for
+ * completeness of this class.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One bool from the buffer.
+ */
+bool QCassandraValue::safeBoolValue(int index, const bool default_value) const
+{
+    return QtCassandra::boolValueOrNull(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified byte of the value.
@@ -1097,11 +1144,58 @@ char QCassandraValue::charValue(int index) const
     return QtCassandra::charValue(f_value, index);
 }
 
+/** \brief Retrieve the specified byte from the value.
+ *
+ * This function is used to retrieve the value in the form of a byte.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the charValue() function, this function does not throw if
+ * no data is available.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One character from the buffer.
+ */
+char QCassandraValue::charValueOrNull(int index, const char default_value) const
+{
+    return QtCassandra::charValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve a Boolean from the value.
+ *
+ * This function is used to retrieve the value in the form of a byte.
+ *
+ * The function returns the default value (which is 'false' by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the charValue() function, this function does not throw if
+ * no data is available.
+ *
+ * \note
+ * For a char value, since it is just 1 byte, this function has the
+ * same effect as the charValueOrNull(). It is available for
+ * completeness of this class.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One character from the buffer.
+ */
+char QCassandraValue::safeCharValue(int index, const char default_value) const
+{
+    return QtCassandra::charValueOrNull(f_value, index, default_value);
+}
+
 /** \brief Retrieve the specified byte of the value.
  *
  * This function is used to retrieve the value in the form of a signed byte.
  *
- * It is assumed that you know what you're doing (i.e. that you created
+ * It is assumed that you know what you are doing (i.e. that you created
  * this cell with a one byte value.)
  *
  * \exception std::runtime_error
@@ -1116,12 +1210,59 @@ signed char QCassandraValue::signedCharValue(int index) const
     return QtCassandra::signedCharValue(f_value, index);
 }
 
+/** \brief Retrieve the specified byte from the value.
+ *
+ * This function is used to retrieve the value in the form of a byte.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the charValue() function, this function does not throw if
+ * no data is available.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One character from the buffer.
+ */
+signed char QCassandraValue::signedCharValueOrNull(int index, const signed char default_value) const
+{
+    return QtCassandra::signedCharValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve a Boolean from the value.
+ *
+ * This function is used to retrieve the value in the form of a byte.
+ *
+ * The function returns the default value (which is 'false' by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the charValue() function, this function does not throw if
+ * no data is available.
+ *
+ * \note
+ * For a char value, since it is just 1 byte, this function has the
+ * same effect as the signedCharValueOrNull(). It is available for
+ * completeness of this class.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One character from the buffer.
+ */
+signed char QCassandraValue::safeSignedCharValue(int index, const signed char default_value) const
+{
+    return QtCassandra::signedCharValueOrNull(f_value, index, default_value);
+}
+
 /** \brief Retrieve the specified byte of the value.
  *
  * This function is used to retrieve the value in the form of an
  * unsigned byte.
  *
- * It is assumed that you know what you're doing (i.e. that you created
+ * It is assumed that you know what you are doing (i.e. that you created
  * this cell with a one byte value.)
  *
  * \exception std::runtime_error
@@ -1136,12 +1277,59 @@ unsigned char QCassandraValue::unsignedCharValue(int index) const
     return QtCassandra::unsignedCharValue(f_value, index);
 }
 
-/** \brief Retrieve the specified two bytes of the value.
+/** \brief Retrieve the specified byte from the value.
+ *
+ * This function is used to retrieve the value in the form of a byte.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the unsignedCharValue() function, this function does not
+ * throw if no data is available.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One character from the buffer.
+ */
+unsigned char QCassandraValue::unsignedCharValueOrNull(int index, const unsigned char default_value) const
+{
+    return QtCassandra::unsignedCharValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve a Boolean from the value.
+ *
+ * This function is used to retrieve the value in the form of a byte.
+ *
+ * The function returns the default value (which is 'false' by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the unsignedCharValue() function, this function does not
+ * throw if no data is available.
+ *
+ * \note
+ * For an unsigned char value, since it is just 1 byte, this function has
+ * the same effect as the unsignedCharValueOrNull(). It is available for
+ * completeness of this class.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One character from the buffer.
+ */
+unsigned char QCassandraValue::safeUnsignedCharValue(int index, const unsigned char default_value) const
+{
+    return QtCassandra::unsignedCharValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified two bytes from the value.
  *
  * This function is used to retrieve the first two bytes of the value
  * in the form of an integer.
  *
- * It is assumed that you know what you're doing (i.e. that you created
+ * It is assumed that you know what you are doing (i.e. that you created
  * this cell with a two byte value.)
  *
  * \exception std::runtime_error
@@ -1149,11 +1337,59 @@ unsigned char QCassandraValue::unsignedCharValue(int index) const
  *
  * \param[in] index  The index where the signed short is read.
  *
- * \return One character from the buffer.
+ * \return Two bytes from the buffer (big endian).
  */
 int16_t QCassandraValue::int16Value(int index) const
 {
     return QtCassandra::int16Value(f_value, index);
+}
+
+/** \brief Retrieve the specified two bytes from the value.
+ *
+ * This function is used to retrieve the first two bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the int16Value() function, this function does not
+ * throw if no data is available. However, it still throws if there
+ * is only 1 byte of data since 2 bytes are required.
+ *
+ * \exception std::runtime_error
+ * If the buffer is only 1 byte, this function raises this exception.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Two bytes from the buffer (big endian).
+ */
+int16_t QCassandraValue::int16ValueOrNull(int index, const int16_t default_value) const
+{
+    return QtCassandra::int16ValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified two bytes from the value.
+ *
+ * This function is used to retrieve the first two bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index + 1 >= size).
+ *
+ * Contrary to the int16Value() and the int16ValueOrNull() functions,
+ * this function does not throw if not enough data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Two bytes from the buffer (big endian).
+ */
+int16_t QCassandraValue::safeInt16Value(int index, const int16_t default_value) const
+{
+    return QtCassandra::safeInt16Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified two bytes of the value.
@@ -1176,6 +1412,54 @@ uint16_t QCassandraValue::uint16Value(int index) const
     return QtCassandra::uint16Value(f_value, index);
 }
 
+/** \brief Retrieve the specified two bytes from the value.
+ *
+ * This function is used to retrieve the first two bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the uint16Value() function, this function does not
+ * throw if no data is available. However, it still throws if there
+ * is only 1 byte of data since 2 bytes are required.
+ *
+ * \exception std::runtime_error
+ * If the buffer is only 1 byte, this function raises this exception.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Two bytes from the buffer (big endian).
+ */
+uint16_t QCassandraValue::uint16ValueOrNull(int index, const uint16_t default_value) const
+{
+    return QtCassandra::uint16ValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified two bytes from the value.
+ *
+ * This function is used to retrieve the first two bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index + 1 >= size).
+ *
+ * Contrary to the uint16Value() and the uint16ValueOrNull() functions,
+ * this function does not throw if not enough data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Two bytes from the buffer (big endian).
+ */
+uint16_t QCassandraValue::safeUInt16Value(int index, const uint16_t default_value) const
+{
+    return QtCassandra::safeUInt16Value(f_value, index, default_value);
+}
+
 /** \brief Retrieve the specified four bytes of the value.
  *
  * This function is used to retrieve the first four bytes of the value
@@ -1194,6 +1478,55 @@ uint16_t QCassandraValue::uint16Value(int index) const
 int32_t QCassandraValue::int32Value(int index) const
 {
     return QtCassandra::int32Value(f_value, index);
+}
+
+/** \brief Retrieve the specified four bytes from the value.
+ *
+ * This function is used to retrieve the first four bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the int32Value() function, this function does not
+ * throw if no data is available. However, it still throws if there
+ * is only 1, 2, or 3 bytes of data since 4 bytes are required.
+ *
+ * \exception std::runtime_error
+ * If the buffer is only 1, 2, or 3 bytes, this function raises this
+ * exception.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Four bytes from the buffer (big endian).
+ */
+int32_t QCassandraValue::int32ValueOrNull(int index, const int32_t default_value) const
+{
+    return QtCassandra::int32ValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified four bytes from the value.
+ *
+ * This function is used to retrieve the first four bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index + 3 >= size).
+ *
+ * Contrary to the int32Value() and the int32ValueOrNull() functions,
+ * this function does not throw if not enough data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Four bytes from the buffer (big endian).
+ */
+int32_t QCassandraValue::safeInt32Value(int index, const int32_t default_value) const
+{
+    return QtCassandra::safeInt32Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified four bytes of the value.
@@ -1216,6 +1549,55 @@ uint32_t QCassandraValue::uint32Value(int index) const
     return QtCassandra::uint32Value(f_value, index);
 }
 
+/** \brief Retrieve the specified four bytes from the value.
+ *
+ * This function is used to retrieve the first four bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the uint32Value() function, this function does not
+ * throw if no data is available. However, it still throws if there
+ * is only 1, 2, or 3 bytes of data since 4 bytes are required.
+ *
+ * \exception std::runtime_error
+ * If the buffer is only 1, 2, or 3 bytes, this function raises this
+ * exception.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Four bytes from the buffer (big endian).
+ */
+uint32_t QCassandraValue::uint32ValueOrNull(int index, const uint32_t default_value) const
+{
+    return QtCassandra::uint32ValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified four bytes from the value.
+ *
+ * This function is used to retrieve the first four bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index + 3 >= size).
+ *
+ * Contrary to the uint32Value() and the uint32ValueOrNull() functions,
+ * this function does not throw if not enough data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Four bytes from the buffer (big endian).
+ */
+uint32_t QCassandraValue::safeUInt32Value(int index, const uint32_t default_value) const
+{
+    return QtCassandra::safeUInt32Value(f_value, index, default_value);
+}
+
 /** \brief Retrieve the specified eight bytes of the value.
  *
  * This function is used to retrieve the first eight bytes of the value
@@ -1234,6 +1616,55 @@ uint32_t QCassandraValue::uint32Value(int index) const
 int64_t QCassandraValue::int64Value(int index) const
 {
     return QtCassandra::int64Value(f_value, index);
+}
+
+/** \brief Retrieve the specified eight bytes from the value.
+ *
+ * This function is used to retrieve the first eight bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the int64Value() function, this function does not
+ * throw if no data is available. However, it still throws if there
+ * is only 1 to 7 bytes of data since 8 bytes are required.
+ *
+ * \exception std::runtime_error
+ * If the buffer is only 1 to 7 bytes, this function raises this
+ * exception.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Eight bytes from the buffer (big endian).
+ */
+int64_t QCassandraValue::int64ValueOrNull(int index, const int64_t default_value) const
+{
+    return QtCassandra::int64ValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified eight bytes from the value.
+ *
+ * This function is used to retrieve the first eight bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index + 7 >= size).
+ *
+ * Contrary to the int64Value() and the int64ValueOrNull() functions,
+ * this function does not throw if not enough data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Eight bytes from the buffer (big endian).
+ */
+int64_t QCassandraValue::safeInt64Value(int index, const int64_t default_value) const
+{
+    return QtCassandra::safeInt64Value(f_value, index, default_value);
 }
 
 /** \brief Retrieve the specified eight bytes of the value.
@@ -1256,6 +1687,55 @@ uint64_t QCassandraValue::uint64Value(int index) const
     return QtCassandra::uint64Value(f_value, index);
 }
 
+/** \brief Retrieve the specified eight bytes from the value.
+ *
+ * This function is used to retrieve the first eight bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the uint64Value() function, this function does not
+ * throw if no data is available. However, it still throws if there
+ * is only 1 to 7 bytes of data since 8 bytes are required.
+ *
+ * \exception std::runtime_error
+ * If the buffer is only 1 to 7 bytes, this function raises this
+ * exception.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Eight bytes from the buffer (big endian).
+ */
+uint64_t QCassandraValue::uint64ValueOrNull(int index, const uint64_t default_value) const
+{
+    return QtCassandra::uint64ValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified eight bytes from the value.
+ *
+ * This function is used to retrieve the first eight bytes of the value
+ * in the form of an integer.
+ *
+ * The function returns the default value (which is 0 by default)
+ * if this value is not defined (i.e. index + 7 >= size).
+ *
+ * Contrary to the uint64Value() and the uint64ValueOrNull() functions,
+ * this function does not throw if not enough data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return Eight bytes from the buffer (big endian).
+ */
+uint64_t QCassandraValue::safeUInt64Value(int index, const uint64_t default_value) const
+{
+    return QtCassandra::safeUInt64Value(f_value, index, default_value);
+}
+
 /** \brief Retrieve the specified four bytes of the value.
  *
  * This function is used to retrieve the first four bytes of the value
@@ -1276,6 +1756,55 @@ float QCassandraValue::floatValue(int index) const
     return QtCassandra::floatValue(f_value, index);
 }
 
+/** \brief Retrieve the specified four bytes from the value.
+ *
+ * This function is used to retrieve the first four bytes of the value
+ * in the form of a float.
+ *
+ * The function returns the default value (which is 0.0f by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the floatValue() function, this function does not
+ * throw if no data is available. However, it still throws if there
+ * is only 1 to 3 bytes of data since 4 bytes are required.
+ *
+ * \exception std::runtime_error
+ * If the buffer is only 1 to 3 bytes, this function raises this
+ * exception.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One float from the buffer (big endian).
+ */
+float QCassandraValue::floatValueOrNull(int index, const float default_value) const
+{
+    return QtCassandra::floatValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified four bytes from the value.
+ *
+ * This function is used to retrieve the first four bytes of the value
+ * in the form of a float.
+ *
+ * The function returns the default value (which is 0.0f by default)
+ * if this value is not defined (i.e. index + 3 >= size).
+ *
+ * Contrary to the floatValue() and the floatValueOrNull() functions,
+ * this function does not throw if not enough data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One float from the buffer (big endian).
+ */
+float QCassandraValue::safeFloatValue(int index, const float default_value) const
+{
+    return QtCassandra::safeFloatValue(f_value, index, default_value);
+}
+
 /** \brief Retrieve the first eight bytes of the value.
  *
  * This function is used to retrieve the first eight bytes of the value
@@ -1294,6 +1823,55 @@ float QCassandraValue::floatValue(int index) const
 double QCassandraValue::doubleValue(int index) const
 {
     return QtCassandra::doubleValue(f_value, index);
+}
+
+/** \brief Retrieve the specified eight bytes from the value.
+ *
+ * This function is used to retrieve the first eight bytes of the value
+ * in the form of a double.
+ *
+ * The function returns the default value (which is 0.0 by default)
+ * if this value is not defined (i.e. index >= size).
+ *
+ * Contrary to the doubleValue() function, this function does not
+ * throw if no data is available. However, it still throws if there
+ * is only 1 to 7 bytes of data since 8 bytes are required.
+ *
+ * \exception std::runtime_error
+ * If the buffer is only 1 to 7 bytes, this function raises this
+ * exception.
+ *
+ * \param[in] index  The index where the byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One double from the buffer (big endian).
+ */
+double QCassandraValue::doubleValueOrNull(int index, const double default_value) const
+{
+    return QtCassandra::doubleValueOrNull(f_value, index, default_value);
+}
+
+/** \brief Retrieve the specified eight bytes from the value.
+ *
+ * This function is used to retrieve the first eight bytes of the value
+ * in the form of a double.
+ *
+ * The function returns the default value (which is 0.0 by default)
+ * if this value is not defined (i.e. index + 7 >= size).
+ *
+ * Contrary to the doubleValue() and the doubleValueOrNull() functions,
+ * this function does not throw if not enough data is available.
+ *
+ * \param[in] index  The index where the Boolean byte is read.
+ * \param[in] default_value  The default value if no data is defined at
+ *                           that index.
+ *
+ * \return One double from the buffer (big endian).
+ */
+double QCassandraValue::safeDoubleValue(int index, const double default_value) const
+{
+    return QtCassandra::safeDoubleValue(f_value, index, default_value);
 }
 
 /** \brief Get a string from the value.
