@@ -145,6 +145,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>View content.</p><p>This view permission is the main view permission for the root user giving the root user access to all the data. Note that other users will be assigned children of right to limit what they can view: public pages, reports, users, etc.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/view/administration">
+    <param name="content::title" revision="revision">View Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>View content.</p><p>This view permission is the main view permission for the root user giving the root user access to all the data. Note that other users will be assigned children of right to limit what they can view: public pages, reports, users, etc.</p>]]>
+    </param>
+  </content>
   <!--
     ACTIONS
 
@@ -235,6 +241,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Group used by managers. Managers are linked to one specific website and they can do pretty much anything they want in that website except editing some top level system pages. In most cases, site owners are assigned the administrator group.</p>]]>
     </param>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/administrator</link>
     <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor">
@@ -254,6 +261,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Group used by authors. Authors are people who can create and edit their own content on your website. Authors cannot modify someone else content.</p>]]>
     </param>
+    <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/edit/page</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter">
     <param name="content::title" revision="revision">Commenter Group</param>

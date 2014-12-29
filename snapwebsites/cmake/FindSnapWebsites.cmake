@@ -7,15 +7,21 @@
 # SNAPWEBSITES_LIBRARY      - The libraries needed to use SnapWebsites (none)
 # SNAPWEBSITES_DEFINITIONS  - Compiler switches required for using SnapWebsites (none)
 
+# Search include directory
 find_path( SNAPWEBSITES_INCLUDE_DIR snapwebsites/snap_version.h
-		   PATHS $ENV{SNAPWEBSITES_INCLUDE_DIR}
-		   PATH_SUFFIXES snapwebsites
-		 )
+    PATHS $ENV{SNAPWEBSITES_INCLUDE_DIR}
+    PATH_SUFFIXES snapwebsites
+)
+
+# Search library
 find_library( SNAPWEBSITES_LIBRARY snapwebsites
-			PATHS $ENV{SNAPWEBSITES_LIBRARY}
-		 )
+    PATHS $ENV{SNAPWEBSITES_LIBRARY}
+)
+
+# Mark as important
 mark_as_advanced( SNAPWEBSITES_INCLUDE_DIR SNAPWEBSITES_LIBRARY )
 
+# Define the plurial versions
 set( SNAPWEBSITES_INCLUDE_DIRS ${SNAPWEBSITES_INCLUDE_DIR} ${SNAPWEBSITES_INCLUDE_DIR}/snapwebsites )
 set( SNAPWEBSITES_LIBRARIES    ${SNAPWEBSITES_LIBRARY}     )
 
@@ -31,3 +37,5 @@ set( DTD_SOURCE_PATH /usr/share/snapwebsites/dtd CACHE PATH "Default DTD source 
 include( SnapJsLint    )
 include( SnapXmlLint   )
 include( SnapZipLayout )
+
+# vim: ts=4 sw=4 et

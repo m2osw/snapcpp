@@ -1,6 +1,6 @@
 /*
  * Name: ecommerce
- * Version: 0.0.1.7
+ * Version: 0.0.1.9
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -42,7 +42,7 @@ div.ecommerce-product .ecommerce-button-area a.buy-now-button
 	border: 1px solid #ffee33;
 	border-top-color: #eecc00;
 	border-radius: 7px;
-	padding: 10px 30px;;
+	padding: 10px 30px;
 	text-align: center;
 	box-shadow: 2px 2px 3px 0px #888888;
 	background-color: #ffee33;
@@ -172,21 +172,21 @@ div#ecommerce-cart div.cart-buttons
 	margin-top: 20px;
 }
 
-div#ecommerce-cart div.cart-buttons a.update-cart,
+div#ecommerce-cart div.cart-buttons a.clear-cart,
 div#ecommerce-cart div.cart-buttons a.continue-shopping,
 div#ecommerce-cart div.cart-buttons a.checkout
 {
 	display: block;
 	border: 1px solid #000000;
 	border-radius: 7px;
-	padding: 10px 30px;;
+	padding: 10px 30px;
 	color: black;
 	text-shadow: 0 0 6px #ffffff, 2px 2px 2px #886619;
 	text-decoration: none;
 	font-weight: bold;
 }
 
-div#ecommerce-cart div.cart-buttons a.update-cart
+div#ecommerce-cart div.cart-buttons a.clear-cart
 {
 	float: left;
 	background-color: #fbea2f;
@@ -209,6 +209,7 @@ div#ecommerce-cart div.cart-buttons a.checkout
 	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
 }
 
+div#ecommerce-cart div.cart-buttons a.clear-cart.disabled,
 div#ecommerce-cart div.cart-buttons a.checkout.disabled
 {
 	color: #666666;

@@ -118,7 +118,7 @@ int64_t server_access::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 18, 18, 25, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 12, 29, 15, 25, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -412,7 +412,7 @@ void server_access::ajax_failure()
  * This function can be called before the create_ajax_result() function.
  *
  * \param[in] uri  The URI of the page to send the user to.
- * \param[in] target  The target for the redirect.
+ * \param[in] target  The target for the redirect (see above).
  */
 void server_access::ajax_redirect(QString const& uri, QString const& target)
 {

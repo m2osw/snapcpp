@@ -434,6 +434,7 @@ int snap_cgi::process()
     return 0;
 }
 
+
 int main(int argc, char *argv[])
 {
     snap_cgi cgi( argc, argv );

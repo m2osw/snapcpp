@@ -212,34 +212,34 @@ bool variable_t::is_true() const
         return false;
 
     case EXPR_VARIABLE_TYPE_BOOL:
-        return f_value.boolValue();
+        return f_value.safeBoolValue();
 
     case EXPR_VARIABLE_TYPE_INT8:
     case EXPR_VARIABLE_TYPE_UINT8:
-        return f_value.signedCharValue() != 0;
+        return f_value.safeSignedCharValue() != 0;
 
     case EXPR_VARIABLE_TYPE_INT16:
     case EXPR_VARIABLE_TYPE_UINT16:
-        return f_value.int16Value() != 0;
+        return f_value.safeInt16Value() != 0;
 
     case EXPR_VARIABLE_TYPE_INT32:
     case EXPR_VARIABLE_TYPE_UINT32:
-        return f_value.int32Value() != 0;
+        return f_value.safeInt32Value() != 0;
 
     case EXPR_VARIABLE_TYPE_INT64:
     case EXPR_VARIABLE_TYPE_UINT64:
-        return f_value.int32Value() != 0;
+        return f_value.safeInt32Value() != 0;
 
     case EXPR_VARIABLE_TYPE_FLOAT:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        return f_value.floatValue() != 0.0f;
+        return f_value.safeFloatValue() != 0.0f;
 #pragma GCC diagnostic pop
 
     case EXPR_VARIABLE_TYPE_DOUBLE:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        return f_value.doubleValue() != 0.0;
+        return f_value.safeDoubleValue() != 0.0;
 #pragma GCC diagnostic pop
 
     case EXPR_VARIABLE_TYPE_STRING:
@@ -256,7 +256,7 @@ bool variable_t::get_bool(QString const& name) const
     switch(get_type())
     {
     case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-        return get_value().boolValue();
+        return get_value().safeBoolValue();
 
     default:
         throw snap_expr_exception_invalid_parameter_type(QString("parameter for %1 must be a Boolean").arg(name));
@@ -271,34 +271,34 @@ int64_t variable_t::get_integer(QString const& name) const
     switch(get_type())
     {
     case variable_t::EXPR_VARIABLE_TYPE_INT8:
-        return get_value().signedCharValue();
+        return get_value().safeSignedCharValue();
 
     case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-        return get_value().unsignedCharValue();
+        return get_value().safeUnsignedCharValue();
 
     case variable_t::EXPR_VARIABLE_TYPE_INT16:
-        return get_value().int16Value();
+        return get_value().safeInt16Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-        return get_value().uint16Value();
+        return get_value().safeUInt16Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_INT32:
-        return get_value().int32Value();
+        return get_value().safeInt32Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-        return get_value().uint32Value();
+        return get_value().safeUInt32Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_INT64:
-        return get_value().int64Value();
+        return get_value().safeInt64Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-        return get_value().uint64Value();
+        return get_value().safeUInt64Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-        return static_cast<int64_t>(get_value().floatValue());
+        return static_cast<int64_t>(get_value().safeFloatValue());
 
     case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-        return static_cast<int64_t>(get_value().doubleValue());
+        return static_cast<int64_t>(get_value().safeDoubleValue());
 
     default:
         // although we allow floating point too...
@@ -314,34 +314,34 @@ double variable_t::get_floating_point(QString const& name) const
     switch(get_type())
     {
     case variable_t::EXPR_VARIABLE_TYPE_INT8:
-        return get_value().signedCharValue();
+        return get_value().safeSignedCharValue();
 
     case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-        return get_value().unsignedCharValue();
+        return get_value().safeUnsignedCharValue();
 
     case variable_t::EXPR_VARIABLE_TYPE_INT16:
-        return get_value().int16Value();
+        return get_value().safeInt16Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-        return get_value().uint16Value();
+        return get_value().safeUInt16Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_INT32:
-        return get_value().int32Value();
+        return get_value().safeInt32Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-        return get_value().uint32Value();
+        return get_value().safeUInt32Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_INT64:
-        return get_value().int64Value();
+        return get_value().safeInt64Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-        return get_value().uint64Value();
+        return get_value().safeUInt64Value();
 
     case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-        return static_cast<int64_t>(get_value().floatValue());
+        return static_cast<int64_t>(get_value().safeFloatValue());
 
     case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-        return static_cast<int64_t>(get_value().doubleValue());
+        return static_cast<int64_t>(get_value().safeDoubleValue());
 
     default:
         // although we auto-convert integers too
@@ -588,15 +588,15 @@ public:
         switch(f_type)
         {
         case NODE_TYPE_LITERAL_BOOLEAN:
-            QtSerialization::writeTag(w, "int", static_cast<qint64>(f_variable.get_value().boolValue()));
+            QtSerialization::writeTag(w, "int", static_cast<qint64>(f_variable.get_value().safeBoolValue()));
             break;
 
         case NODE_TYPE_LITERAL_INTEGER:
-            QtSerialization::writeTag(w, "int", static_cast<qint64>(f_variable.get_value().int64Value()));
+            QtSerialization::writeTag(w, "int", static_cast<qint64>(f_variable.get_value().safeInt64Value()));
             break;
 
         case NODE_TYPE_LITERAL_FLOATING_POINT:
-            QtSerialization::writeTag(w, "flt", f_variable.get_value().doubleValue());
+            QtSerialization::writeTag(w, "flt", f_variable.get_value().safeDoubleValue());
             break;
 
         case NODE_TYPE_LITERAL_STRING:
@@ -1109,7 +1109,7 @@ public:
             break;
 
         case NODE_TYPE_LITERAL_FLOATING_POINT:
-            std::cerr << "execute: NODE_TYPE_LITERAL_FLOATING_POINT (" << f_variable.get_value().doubleValue() << ")\n";
+            std::cerr << "execute: NODE_TYPE_LITERAL_FLOATING_POINT (" << f_variable.get_value().safeDoubleValue() << ")\n";
             break;
 
         case NODE_TYPE_LITERAL_STRING:
@@ -1289,52 +1289,52 @@ public:
         switch(sub_results[0].get_type())
         {
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            value.setBoolValue(!sub_results[0].get_value().boolValue());
+            value.setBoolValue(!sub_results[0].get_value().safeBoolValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            value.setBoolValue(sub_results[0].get_value().signedCharValue() == 0);
+            value.setBoolValue(sub_results[0].get_value().safeSignedCharValue() == 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            value.setBoolValue(sub_results[0].get_value().unsignedCharValue() == 0);
+            value.setBoolValue(sub_results[0].get_value().safeUnsignedCharValue() == 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            value.setBoolValue(sub_results[0].get_value().int16Value() == 0);
+            value.setBoolValue(sub_results[0].get_value().safeInt16Value() == 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            value.setBoolValue(sub_results[0].get_value().uint16Value() == 0);
+            value.setBoolValue(sub_results[0].get_value().safeUInt16Value() == 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            value.setBoolValue(sub_results[0].get_value().int32Value() == 0);
+            value.setBoolValue(sub_results[0].get_value().safeInt32Value() == 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            value.setBoolValue(sub_results[0].get_value().uint32Value() == 0);
+            value.setBoolValue(sub_results[0].get_value().safeUInt32Value() == 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            value.setBoolValue(sub_results[0].get_value().int64Value() == 0);
+            value.setBoolValue(sub_results[0].get_value().safeInt64Value() == 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            value.setBoolValue(sub_results[0].get_value().uint64Value() == 0);
+            value.setBoolValue(sub_results[0].get_value().safeUInt64Value() == 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            value.setBoolValue(sub_results[0].get_value().floatValue() == 0.0f);
+            value.setBoolValue(sub_results[0].get_value().safeFloatValue() == 0.0f);
 #pragma GCC diagnostic pop
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            value.setBoolValue(sub_results[0].get_value().doubleValue() == 0.0);
+            value.setBoolValue(sub_results[0].get_value().safeDoubleValue() == 0.0);
 #pragma GCC diagnostic pop
             break;
 
@@ -1360,39 +1360,39 @@ public:
         switch(sub_results[0].get_type())
         {
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            value.setBoolValue(~sub_results[0].get_value().boolValue());
+            value.setBoolValue(~sub_results[0].get_value().safeBoolValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            value.setSignedCharValue(static_cast<signed char>(~sub_results[0].get_value().signedCharValue()));
+            value.setSignedCharValue(static_cast<signed char>(~sub_results[0].get_value().safeSignedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            value.setUnsignedCharValue(static_cast<unsigned char>(~sub_results[0].get_value().unsignedCharValue()));
+            value.setUnsignedCharValue(static_cast<unsigned char>(~sub_results[0].get_value().safeUnsignedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            value.setInt16Value(static_cast<int16_t>(~sub_results[0].get_value().int16Value()));
+            value.setInt16Value(static_cast<int16_t>(~sub_results[0].get_value().safeInt16Value()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            value.setUInt16Value(static_cast<uint16_t>(~sub_results[0].get_value().uint16Value()));
+            value.setUInt16Value(static_cast<uint16_t>(~sub_results[0].get_value().safeUInt16Value()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            value.setInt32Value(~sub_results[0].get_value().int32Value());
+            value.setInt32Value(~sub_results[0].get_value().safeInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            value.setUInt32Value(~sub_results[0].get_value().uint32Value());
+            value.setUInt32Value(~sub_results[0].get_value().safeUInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            value.setInt64Value(~sub_results[0].get_value().int64Value());
+            value.setInt64Value(~sub_results[0].get_value().safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            value.setUInt64Value(~sub_results[0].get_value().uint64Value());
+            value.setUInt64Value(~sub_results[0].get_value().safeUInt64Value());
             break;
 
         //case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -1412,43 +1412,43 @@ public:
         switch(sub_results[0].get_type())
         {
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            value.setSignedCharValue(static_cast<signed char>(-sub_results[0].get_value().signedCharValue()));
+            value.setSignedCharValue(static_cast<signed char>(-sub_results[0].get_value().safeSignedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            value.setUnsignedCharValue(static_cast<unsigned char>(-sub_results[0].get_value().unsignedCharValue()));
+            value.setUnsignedCharValue(static_cast<unsigned char>(-sub_results[0].get_value().safeUnsignedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            value.setInt16Value(static_cast<int16_t>(-sub_results[0].get_value().int16Value()));
+            value.setInt16Value(static_cast<int16_t>(-sub_results[0].get_value().safeInt16Value()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            value.setUInt16Value(static_cast<uint16_t>(-sub_results[0].get_value().uint16Value()));
+            value.setUInt16Value(static_cast<uint16_t>(-sub_results[0].get_value().safeUInt16Value()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            value.setInt32Value(-sub_results[0].get_value().int32Value());
+            value.setInt32Value(-sub_results[0].get_value().safeInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            value.setUInt32Value(-sub_results[0].get_value().uint32Value());
+            value.setUInt32Value(-sub_results[0].get_value().safeUInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            value.setInt64Value(-sub_results[0].get_value().int64Value());
+            value.setInt64Value(-sub_results[0].get_value().safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            value.setUInt64Value(-sub_results[0].get_value().uint64Value());
+            value.setUInt64Value(-sub_results[0].get_value().safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            value.setFloatValue(-sub_results[0].get_value().floatValue());
+            value.setFloatValue(-sub_results[0].get_value().safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            value.setDoubleValue(-sub_results[0].get_value().doubleValue());
+            value.setDoubleValue(-sub_results[0].get_value().safeDoubleValue());
             break;
 
         default:
@@ -1873,47 +1873,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = v.boolValue() ? 1 : 0;
+            r = v.safeBoolValue() ? 1 : 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = v.unsignedCharValue();
+            r = v.safeUnsignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = v.int16Value();
+            r = v.safeInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = v.uint16Value();
+            r = v.safeUInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = static_cast<int16_t>(v.int32Value());
+            r = static_cast<int16_t>(v.safeInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = static_cast<int16_t>(v.uint32Value());
+            r = static_cast<int16_t>(v.safeUInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = static_cast<int16_t>(v.int64Value());
+            r = static_cast<int16_t>(v.safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = static_cast<int16_t>(v.uint64Value());
+            r = static_cast<int16_t>(v.safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = static_cast<int16_t>(v.floatValue());
+            r = static_cast<int16_t>(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = static_cast<int16_t>(v.doubleValue());
+            r = static_cast<int16_t>(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -1921,7 +1921,7 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = v.int16Value();
+            r = v.safeInt16Value();
             break;
 
         }
@@ -1945,47 +1945,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = v.boolValue() ? 1 : 0;
+            r = v.safeBoolValue() ? 1 : 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = v.unsignedCharValue();
+            r = v.safeUnsignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = v.int16Value();
+            r = v.safeInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = v.uint16Value();
+            r = v.safeUInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = v.int32Value();
+            r = v.safeInt32Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = v.uint32Value();
+            r = v.safeUInt32Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = static_cast<int32_t>(v.int64Value());
+            r = static_cast<int32_t>(v.safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = static_cast<int32_t>(v.uint64Value());
+            r = static_cast<int32_t>(v.safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = static_cast<int32_t>(v.floatValue());
+            r = static_cast<int32_t>(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = static_cast<int32_t>(v.doubleValue());
+            r = static_cast<int32_t>(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -1993,7 +1993,7 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = v.int32Value();
+            r = v.safeInt32Value();
             break;
 
         }
@@ -2017,47 +2017,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = v.boolValue() ? 1 : 0;
+            r = v.safeBoolValue() ? 1 : 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = v.unsignedCharValue();
+            r = v.safeUnsignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = v.int16Value();
+            r = v.safeInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = v.uint16Value();
+            r = v.safeUInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = v.int32Value();
+            r = v.safeInt32Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = v.uint32Value();
+            r = v.safeUInt32Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = v.int64Value();
+            r = v.safeInt64Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = v.uint64Value();
+            r = v.safeUInt64Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = static_cast<int64_t>(v.floatValue());
+            r = static_cast<int64_t>(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = static_cast<int64_t>(v.doubleValue());
+            r = static_cast<int64_t>(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -2065,7 +2065,7 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = v.int64Value();
+            r = v.safeInt64Value();
             break;
 
         }
@@ -2089,47 +2089,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = v.boolValue() ? 1 : 0;
+            r = v.safeBoolValue() ? 1 : 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = static_cast<int8_t>(v.unsignedCharValue());
+            r = static_cast<int8_t>(v.safeUnsignedCharValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = static_cast<int8_t>(v.int16Value());
+            r = static_cast<int8_t>(v.safeInt16Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = static_cast<int8_t>(v.uint16Value());
+            r = static_cast<int8_t>(v.safeUInt16Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = static_cast<int8_t>(v.int32Value());
+            r = static_cast<int8_t>(v.safeInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = static_cast<int8_t>(v.uint32Value());
+            r = static_cast<int8_t>(v.safeUInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = static_cast<int8_t>(v.int64Value());
+            r = static_cast<int8_t>(v.safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = static_cast<int8_t>(v.uint64Value());
+            r = static_cast<int8_t>(v.safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = static_cast<int8_t>(v.floatValue());
+            r = static_cast<int8_t>(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = static_cast<int8_t>(v.doubleValue());
+            r = static_cast<int8_t>(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -2137,7 +2137,7 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         }
@@ -2223,47 +2223,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            str = v.boolValue() ? "true" : "false";
+            str = v.safeBoolValue() ? "true" : "false";
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            str = QString("%1").arg(static_cast<int>(v.signedCharValue()));
+            str = QString("%1").arg(static_cast<int>(v.safeSignedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            str = QString("%1").arg(static_cast<int>(v.unsignedCharValue()));
+            str = QString("%1").arg(static_cast<int>(v.safeUnsignedCharValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            str = QString("%1").arg(v.int16Value());
+            str = QString("%1").arg(v.safeInt16Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            str = QString("%1").arg(v.uint16Value());
+            str = QString("%1").arg(v.safeUInt16Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            str = QString("%1").arg(v.int32Value());
+            str = QString("%1").arg(v.safeInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            str = QString("%1").arg(v.uint32Value());
+            str = QString("%1").arg(v.safeUInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            str = QString("%1").arg(v.int64Value());
+            str = QString("%1").arg(v.safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            str = QString("%1").arg(v.uint64Value());
+            str = QString("%1").arg(v.safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            str = QString("%1").arg(v.floatValue());
+            str = QString("%1").arg(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            str = QString("%1").arg(v.doubleValue());
+            str = QString("%1").arg(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -2370,47 +2370,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = v.boolValue() ? 1 : 0;
+            r = v.safeBoolValue() ? 1 : 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = v.unsignedCharValue();
+            r = v.safeUnsignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = v.int16Value();
+            r = v.safeInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = v.uint16Value();
+            r = v.safeUInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = static_cast<uint16_t>(v.int32Value());
+            r = static_cast<uint16_t>(v.safeInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = static_cast<uint16_t>(v.uint32Value());
+            r = static_cast<uint16_t>(v.safeUInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = static_cast<uint16_t>(v.int64Value());
+            r = static_cast<uint16_t>(v.safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = static_cast<uint16_t>(v.uint64Value());
+            r = static_cast<uint16_t>(v.safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = static_cast<uint16_t>(v.floatValue());
+            r = static_cast<uint16_t>(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = static_cast<uint16_t>(v.doubleValue());
+            r = static_cast<uint16_t>(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -2418,7 +2418,7 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = v.uint16Value();
+            r = v.safeUInt16Value();
             break;
 
         }
@@ -2442,47 +2442,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = v.boolValue() ? 1 : 0;
+            r = v.safeBoolValue() ? 1 : 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = v.unsignedCharValue();
+            r = v.safeUnsignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = v.int16Value();
+            r = v.safeInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = v.uint16Value();
+            r = v.safeUInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = v.int32Value();
+            r = v.safeInt32Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = v.uint32Value();
+            r = v.safeUInt32Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = static_cast<uint32_t>(v.int64Value());
+            r = static_cast<uint32_t>(v.safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = static_cast<uint32_t>(v.uint64Value());
+            r = static_cast<uint32_t>(v.safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = static_cast<uint32_t>(v.floatValue());
+            r = static_cast<uint32_t>(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = static_cast<uint32_t>(v.doubleValue());
+            r = static_cast<uint32_t>(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -2490,7 +2490,7 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = v.uint32Value();
+            r = v.safeUInt32Value();
             break;
 
         }
@@ -2514,47 +2514,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = v.boolValue() ? 1 : 0;
+            r = v.safeBoolValue() ? 1 : 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = v.unsignedCharValue();
+            r = v.safeUnsignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = v.int16Value();
+            r = v.safeInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = v.uint16Value();
+            r = v.safeUInt16Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = v.int32Value();
+            r = v.safeInt32Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = v.uint32Value();
+            r = v.safeUInt32Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = v.int64Value();
+            r = v.safeInt64Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = v.uint64Value();
+            r = v.safeUInt64Value();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = static_cast<int64_t>(v.floatValue());
+            r = static_cast<int64_t>(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = static_cast<int64_t>(v.doubleValue());
+            r = static_cast<int64_t>(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -2562,7 +2562,7 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = v.int64Value();
+            r = v.safeInt64Value();
             break;
 
         }
@@ -2586,47 +2586,47 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = v.boolValue() ? 1 : 0;
+            r = v.safeBoolValue() ? 1 : 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = v.signedCharValue();
+            r = v.safeSignedCharValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = static_cast<uint8_t>(v.unsignedCharValue());
+            r = static_cast<uint8_t>(v.safeUnsignedCharValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = static_cast<uint8_t>(v.int16Value());
+            r = static_cast<uint8_t>(v.safeInt16Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = static_cast<uint8_t>(v.uint16Value());
+            r = static_cast<uint8_t>(v.safeUInt16Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = static_cast<uint8_t>(v.int32Value());
+            r = static_cast<uint8_t>(v.safeInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = static_cast<uint8_t>(v.uint32Value());
+            r = static_cast<uint8_t>(v.safeUInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = static_cast<uint8_t>(v.int64Value());
+            r = static_cast<uint8_t>(v.safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = static_cast<uint8_t>(v.uint64Value());
+            r = static_cast<uint8_t>(v.safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
-            r = static_cast<uint8_t>(v.floatValue());
+            r = static_cast<uint8_t>(v.safeFloatValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
-            r = static_cast<uint8_t>(v.doubleValue());
+            r = static_cast<uint8_t>(v.safeDoubleValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -2634,7 +2634,7 @@ public:
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_BINARY:
-            r = v.unsignedCharValue();
+            r = v.safeUnsignedCharValue();
             break;
 
         }
@@ -2673,48 +2673,48 @@ public:
         switch(var.get_type())
         {
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            integer = static_cast<int64_t>(var.get_value().boolValue() != 0);
+            integer = static_cast<int64_t>(var.get_value().safeBoolValue() != 0);
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            integer = static_cast<int64_t>(var.get_value().signedCharValue());
+            integer = static_cast<int64_t>(var.get_value().safeSignedCharValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
             signed_integer = false;
-            integer = static_cast<int64_t>(var.get_value().unsignedCharValue());
+            integer = static_cast<int64_t>(var.get_value().safeUnsignedCharValue());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            integer = static_cast<int64_t>(var.get_value().int16Value());
+            integer = static_cast<int64_t>(var.get_value().safeInt16Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
             signed_integer = false;
-            integer = static_cast<int64_t>(var.get_value().uint16Value());
+            integer = static_cast<int64_t>(var.get_value().safeUInt16Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            integer = static_cast<int64_t>(var.get_value().int32Value());
+            integer = static_cast<int64_t>(var.get_value().safeInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
             signed_integer = false;
-            integer = static_cast<int64_t>(var.get_value().uint32Value());
+            integer = static_cast<int64_t>(var.get_value().safeUInt32Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            integer = static_cast<int64_t>(var.get_value().int64Value());
+            integer = static_cast<int64_t>(var.get_value().safeInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
             signed_integer = false;
-            integer = static_cast<int64_t>(var.get_value().uint64Value());
+            integer = static_cast<int64_t>(var.get_value().safeUInt64Value());
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
             is_floating_point = true;
-            floating_point = var.get_value().doubleValue();
+            floating_point = var.get_value().safeDoubleValue();
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_STRING:
@@ -3024,52 +3024,53 @@ public:
         switch(result.get_type())
         {
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            r = result.get_value().signedCharValue() != 0;
+            // using the following to force the value ot 0 or 1
+            r = result.get_value().safeSignedCharValue() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:
-            r = result.get_value().signedCharValue() != 0;
+            r = result.get_value().safeSignedCharValue() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT8:
-            r = result.get_value().unsignedCharValue() != 0;
+            r = result.get_value().safeUnsignedCharValue() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT16:
-            r = result.get_value().int16Value() != 0;
+            r = result.get_value().safeInt16Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT16:
-            r = result.get_value().uint16Value() != 0;
+            r = result.get_value().safeUInt16Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT32:
-            r = result.get_value().int32Value() != 0;
+            r = result.get_value().safeInt32Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT32:
-            r = result.get_value().uint32Value() != 0;
+            r = result.get_value().safeUInt32Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT64:
-            r = result.get_value().int64Value() != 0;
+            r = result.get_value().safeInt64Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_UINT64:
-            r = result.get_value().uint64Value() != 0;
+            r = result.get_value().safeUInt64Value() != 0;
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            r = result.get_value().floatValue() != 0.0f;
+            r = result.get_value().safeFloatValue() != 0.0f;
 #pragma GCC diagnostic pop
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            r = result.get_value().doubleValue() != 0.0;
+            r = result.get_value().safeDoubleValue() != 0.0;
 #pragma GCC diagnostic pop
             break;
 
@@ -3173,15 +3174,15 @@ private:
             break;
 
         case NODE_TYPE_LITERAL_BOOLEAN:
-            result += QString(" (%1)").arg(f_variable.get_value().boolValue() ? "true" : "false");
+            result += QString(" (%1)").arg(f_variable.get_value().safeBoolValue() ? "true" : "false");
             break;
 
         case NODE_TYPE_LITERAL_INTEGER:
-            result += QString(" (%1)").arg(f_variable.get_value().int64Value());
+            result += QString(" (%1)").arg(f_variable.get_value().safeInt64Value());
             break;
 
         case NODE_TYPE_LITERAL_FLOATING_POINT:
-            result += QString(" (%1)").arg(f_variable.get_value().doubleValue());
+            result += QString(" (%1)").arg(f_variable.get_value().safeDoubleValue());
             break;
 
         case NODE_TYPE_LITERAL_STRING:

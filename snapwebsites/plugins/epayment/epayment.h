@@ -67,6 +67,8 @@ public:
     void                        on_bootstrap(snap_child *snap);
     void                        on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
 
+    SNAP_SIGNAL_WITH_MODE(generate_invoice, (content::path_info_t& invoice_ipath, uint64_t& invoice_number), (invoice_ipath, invoice_number), NEITHER);
+
 private:
     void                        content_update(int64_t variables_timestamp);
 

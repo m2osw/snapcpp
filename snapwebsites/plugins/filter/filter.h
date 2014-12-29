@@ -258,13 +258,19 @@ public:
                 parameter_t p;
                 p.f_name = name;
                 it = std::find(f_parameters.begin(), f_parameters.end(), p);
-                if(it == f_parameters.end() && position == -1)
+                if(it == f_parameters.end())
                 {
-                    f_error = true;
-                    f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> " + name + " is missing from the list of parameters, you may need to name your parameters.</span>";
-                    return null;
+                    if(position == -1)
+                    {
+                        f_error = true;
+                        f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> %1 is missing from the list of parameters, you may need to name your parameters.</span>").arg(name);
+                        return null;
+                    }
                 }
-                f_name_used = true;
+                else
+                {
+                    f_name_used = true;
+                }
             }
             // we cannot switch between name and positioned
             // arguments; it fails in many ways...
@@ -278,13 +284,14 @@ public:
             if(it == f_parameters.end())
             {
                 f_error = true;
-                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"" + name + "\" (position: " + QString("%1").arg(position) + ") was not found in the list.</span>";
+                f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"%1\" (position: %2) was not found in the list.</span>").arg(name).arg(position);
                 return null;
             }
             if(type != TOK_UNDEFINED && it->f_type != type)
             {
                 f_error = true;
-                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"" + name + "\" (position: " + QString("%1").arg(position) + ") is a " + parameter_t::type_name(it->f_type) + " not of the expected type: " + parameter_t::type_name(type) + ".</span>";
+                f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"%1\" (position: %2) is a %3 not of the expected type: %4.</span>")
+                                        .arg(name).arg(position).arg(parameter_t::type_name(it->f_type)).arg(parameter_t::type_name(type));
                 return null;
             }
             return *it;

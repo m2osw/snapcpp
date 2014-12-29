@@ -1,10 +1,13 @@
 #
 # File:
-#      plugins/epayment/CMakeLists.txt
+#      plugins/epayment_paypal/CMakeLists.txt
 #
 # Description:
-#      Offer support for various types of electronic and not so electronic
-#      payments (credit cards, systems such as paypal, bit coins, etc.)
+#      Offer support for Paypal payments. This version is the one where
+#      the user has an account on Paypal and we send them there for
+#      payment processing.
+#
+#      (i.e. check the 'paypalpro' for the direct gateway)
 #
 # Documentation:
 #      See the CMake documentation.
@@ -30,8 +33,10 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_epayment)
+project(plugin_epayment_paypal)
 
+# Get as2js for the JSON parser
+find_package( As2Js 0.0.1 REQUIRED )
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
@@ -44,39 +49,49 @@ include_directories(
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CONTROLLEDVARS_INCLUDE_DIRS}
+    ${AS2JS_INCLUDE_DIRS}
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    epayment.qrc
+    epayment_paypal.qrc
 )
 
 
 snap_validate_xml( content.xml content/content.dtd )
 
-snap_validate_js( epayment.js )
+snap_validate_xml( epayment-paypal-settings-page.xml editor/editor-form.dtd )
+snap_validate_xml( epayment-paypal-settings-parser.xsl layout/simplified-xslt20.dtd )
+
+snap_validate_js( epayment-paypal.js )
 
 
-add_library(epayment SHARED
-    epayment.cpp
+add_library(epayment_paypal SHARED
+    epayment_paypal.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
+    epayment-paypal.css
+    epayment-paypal.js
+    paypal.png
+    epayment-paypal-settings-page.xml
+    epayment-paypal-settings-parser.xsl
 )
 
-target_link_libraries( epayment
+target_link_libraries( epayment_paypal
     ${QT_LIBRARIES}
+    ${AS2JS_LIBRARIES}
 )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( epayment make_controlled_vars_headers )
+    add_dependencies( epayment_paypal make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS epayment LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS epayment_paypal LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/epayment
+    DESTINATION include/snapwebsites/plugins/epayment_paypal
     FILES_MATCHING PATTERN "*.h"
 )
 

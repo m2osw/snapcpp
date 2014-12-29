@@ -1279,6 +1279,10 @@ int list::generate_all_lists(QString const& site_key)
         // the key starts with the "start date" and it is followed by a
         // string representing the row key in the content table
         QByteArray const& key(cell->columnKey());
+        if(key.size() < 8)
+        {
+            continue;
+        }
 
         int64_t const page_start_date(QtCassandra::int64Value(key, 0));
         if(page_start_date + LIST_PROCESSING_LATENCY > start_date)
@@ -1292,13 +1296,13 @@ int list::generate_all_lists(QString const& site_key)
         // (if it crashes it is really good to know where)
         {
             QString name;
-            uint64_t time(QtCassandra::uint64Value(key, 0));
+            int64_t time(QtCassandra::uint64Value(key, 0));
             char buf[64];
             struct tm t;
             time_t const seconds(time / 1000000);
             gmtime_r(&seconds, &t);
             strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-            name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
+            name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(int64_t)));
             SNAP_LOG_TRACE("list plugin working on column \"")(name)("\"");
         }
 
@@ -1308,6 +1312,8 @@ int list::generate_all_lists(QString const& site_key)
         // we handled that page for all the lists that we have on
         // this website, so drop it now
         list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+
+        SNAP_LOG_TRACE("list is done working on this column.");
     }
 
     // clear our cache

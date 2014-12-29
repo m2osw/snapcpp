@@ -1,6 +1,6 @@
 /** @preserve
- * Name: epayement
- * Version: 0.0.1
+ * Name: epayment
+ * Version: 0.0.1.24
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -47,9 +47,9 @@
  * The current e-Payment environment looks like this:
  *
  * \code
- *  +-----------------------+
- *  |                       |
- *  | ServerAccessCallbacks |
+ *  +-----------------------+  Inherit
+ *  |                       |<-------------+
+ *  | ServerAccessCallbacks |              |
  *  | (cannot instantiate)  |       +-----------------------------+
  *  +-----------------------+       |                             |
  *       ^                          | ePaymentFacilityBase        |
@@ -108,14 +108,21 @@
  *  public:
  *      ePaymentFacilityBase();
  *
+ *      final function setCartModifiedCallback(callback: Function()) : Void;
  *      abstract function getFacilityName() : String;
  *      abstract function getDisplayName() : String;
  *      virtual function getIcon() : String;
+ *      virtual function getButtonHTML() : String;
  *      final function getPriority() : Number;
+ *
+ *      abstract function buttonClicked() : String;
  *
  *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
  *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
  *      virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData);
+ *
+ *  private:
+ *      var cartModifiedCallback_: Function();
  *  };
  * \endcode
  *
@@ -149,6 +156,38 @@ snapwebsites.ePaymentFacilityBase = function()
  * choose which gate way to use for his payment?)
  */
 snapwebsites.inherits(snapwebsites.ePaymentFacilityBase, snapwebsites.ServerAccessCallbacks);
+
+
+/** \brief Function called if cart was modified by server.
+ *
+ * Whenever sending messages to the backend, the server may end up changing
+ * the cart under the client's feet. When that happens the facility should
+ * be warned by the server.
+ *
+ * The function is set to a function in the ePayment object whenever a
+ * facility is registered. The eCommerceCart object sets a function in
+ * the ePayment object, function which gets called whenever the ePayment
+ * object function gets called.
+ *
+ * @type {?function()}
+ * @private
+ */
+snapwebsites.ePaymentFacilityBase.prototype.cartModifiedCallback_ = null;
+
+
+/** \brief Set cart modified callback
+ *
+ * This function is used to setup a callback in case a message
+ * says that the cart was modified by the server and thus needs
+ * to be reloaded from the server.
+ *
+ * @param {function()} callback  The callback function which will be
+ *                               called on a change of the cart.
+ */
+snapwebsites.ePaymentFacilityBase.prototype.setCartModifiedCallback = function(callback)
+{
+    this.cartModifiedCallback_ = callback;
+};
 
 
 /** \brief Get the technical name of this facility.
@@ -206,6 +245,38 @@ snapwebsites.ePaymentFacilityBase.prototype.getIcon = function() // abstract
 };
 
 
+/** \brief Generate HTML for a button to show this payment facility.
+ *
+ * This function is used to generate HTML that is most satisfactory
+ * for that payment facility. This button is used to display a list of
+ * facilities one can choose from to make a payment.
+ *
+ * The Base implementation generates a default entry which is likely
+ * enough for most facilities.
+ *
+ * @return {string}  Facility button to display in the client's window.
+ */
+snapwebsites.ePaymentFacilityBase.prototype.getButtonHTML = function()
+{
+    var name = this.getFacilityName(),
+        icon = this.getIcon(),
+        html = "<span class='facility-name name-"
+             + name + "'>"
+             + this.getDisplayName() + "</span>";
+
+    // TBD: should there be a way to place the image first?
+    //      (at this point we can float those items, but we cannot
+    //      get them up/down the other way, I'm afraid...)
+    if(icon)
+    {
+        // add the image tag only if there is an icon
+        html += "<img class='facility-icon icon-" + name + "' src='" + icon + "'/>";
+    }
+
+    return html;
+};
+
+
 /** \brief Get the priority assigned to this facility.
  *
  * By default facilities are given a priority of zero (0). Increasing the
@@ -226,6 +297,21 @@ snapwebsites.ePaymentFacilityBase.prototype.getIcon = function() // abstract
 snapwebsites.ePaymentFacilityBase.prototype.getPriority = function()
 {
     return 0;
+};
+
+
+/** \brief This facility button was clicked.
+ *
+ * This callback function is called whenever the facility button gets
+ * clicked. This allows the facility to either open another dialog or
+ * send a message to the server as required by that facility.
+ *
+ * The base class does not implement this function. It must be
+ * re-implemented.
+ */
+snapwebsites.ePaymentFacilityBase.prototype.buttonClicked = function() // abstract
+{
+    throw new Error("snapwebsites.ePaymentFacilityBase.buttonClicked() is not implemented");
 };
 
 
@@ -275,7 +361,6 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessError = function(result)
 /*jslint unparam: false */
 
 
-/*jslint unparam: true */
 /** \brief Function called on completion.
  *
  * This function is called once the whole process is over. It is most
@@ -288,8 +373,34 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessError = function(result)
  */
 snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(result) // virtual
 {
+    var that = this,
+        result_xml = result.jqxhr.responseXML;
+
+    // if error messages were returned, display them
+    if(!result.will_redirect && result.messages && result.messages.length > 0)
+    {
+        snapwebsites.OutputInstance.displayMessages(result.messages);
+    }
+
+    // in case the facility decided to darken the page
+    // and we did not get a redirect
+    if(!result.will_redirect)
+    {
+        snapwebsites.PopupInstance.darkenPage(-150, false);
+    }
+
+    // on errors, it is not unlikely that we get a new cart which
+    // we need to replicate in the HTML cart
+    jQuery("snap", result_xml)
+        .children("data[name='ecommerce__cart_modified']")
+        .each(function() // "each"... there will be only one
+            {
+                if(that.cartModifiedCallback_)
+                {
+                    that.cartModifiedCallback_();
+                }
+            });
 };
-/*jslint unparam: false */
 
 
 
@@ -324,6 +435,7 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
  *
  *      function mainFacilitiesHTML(width: Number, back_button: Boolean) : String;
  *      function sortFacilitiesByPriority() : Void;
+ *      function setCartModifiedCallback(callback: Function()) : Void;
  *
  *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
  *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
@@ -333,6 +445,9 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
  *      static function compareFacilities_(a, b) : Number;
  *
  *      var paymentFacilities_: ePaymentFacilitiesBase;
+ *      var sortedPaymentFacility_: Array of Number;
+ *      var sorted_: Boolean := false;
+ *      var cartModifiedCallback_: Function();
  *  };
  * \endcode
  *
@@ -531,6 +646,22 @@ snapwebsites.ePayment.prototype.sortedPaymentFacility_; // = []; -- initialized 
 snapwebsites.ePayment.prototype.sorted_ = false;
 
 
+/** \brief Function called when cart gets modified by server.
+ *
+ * Whenever sending messages to the backend, the server may end up changing
+ * the cart under the client's feet. When that happens the facility should
+ * be warned by the server.
+ *
+ * This function is set to a function from the outside of the ePayment
+ * realm. Any implementation of a cart. The function is not required
+ * and can be left to be set to null.
+ *
+ * @type {?function()}
+ * @private
+ */
+snapwebsites.ePayment.prototype.cartModifiedCallback_ = null;
+
+
 /** \brief Register a payment facility.
  *
  * This function is used to register a payment facility in the ePayment
@@ -545,8 +676,19 @@ snapwebsites.ePayment.prototype.sorted_ = false;
  */
 snapwebsites.ePayment.prototype.registerPaymentFacility = function(payment_facility)
 {
-    var name = payment_facility.getFacilityName();
+    var that = this,
+        name = payment_facility.getFacilityName();
+
     this.paymentFacilities_[name] = payment_facility;
+
+    // in case the cart is modified, we want to call the Cart Modified Callback
+    payment_facility.setCartModifiedCallback(function()
+        {
+            if(that.cartModifiedCallback_)
+            {
+                that.cartModifiedCallback_();
+            }
+        });
 };
 
 
@@ -596,7 +738,7 @@ snapwebsites.ePayment.prototype.getPaymentFacility = function(facility_name)
  * This function compares two payment facilities. If their priority is not
  * enough to know which is first and which is last, then the function compares
  * their display name (i.e. alphabetical order,) and since two facilities
- * should not have the same display name, this function should always return 
+ * should not have the same display name, this function should always return
  * -1 or +1 and never zero.
  *
  * \note
@@ -675,6 +817,21 @@ snapwebsites.ePayment.prototype.sortFacilitiesByPriority = function()
 };
 
 
+/** \brief Set cart modified callback
+ *
+ * This function is used to setup a callback in case a message
+ * says that the cart was modified by the server and thus needs
+ * to be reloaded from the server.
+ *
+ * @param {function()} callback  The callback function which will be
+ *                               called on a change of the cart.
+ */
+snapwebsites.ePayment.prototype.setCartModifiedCallback = function(callback)
+{
+    this.cartModifiedCallback_ = callback;
+};
+
+
 /** \brief List the main facilities for this website.
  *
  * Whenever an administrator sets up his e-Commerce system, he can choose
@@ -689,20 +846,20 @@ snapwebsites.ePayment.prototype.sortFacilitiesByPriority = function()
  * all the facilities cannot fit within that width.
  *
  * \note
- * The widthc computation probably requires us to know the display width
+ * The width computation probably requires us to know the display width
  * which is not really known here. However, you can have the same number
- * of facilities display in a smaller or larger space depending on how
+ * of facilities displayed in a smaller or larger space depending on how
  * your output space is sized.
  *
+ * @param {jQuery} cart_payment  The element where the HTML gets appended.
  * @param {number} width  The maximum width of the resulting HTML.
  * @param {boolean} back_button  Whether a back button should be added.
- *
- * @return {string} An HTML string representing the main facilities.
  */
-snapwebsites.ePayment.prototype.mainFacilitiesHTML = function(width, back_button)
+snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, width, back_button)
 {
-    var html = "",
-        icon_width = 100,
+    var that = this,
+        html = "",
+        icon_width = 150,
         idx,
         max,
         facility,
@@ -713,36 +870,73 @@ snapwebsites.ePayment.prototype.mainFacilitiesHTML = function(width, back_button
 
     // TODO: we need the width of one facility icon/button so we can properly
     //       calculate the number of facilities to show
-    max = Math.floor(width / icon_width);
+    max = Math.floor(width / (icon_width + 30));
     if(max < 1)
     {
         // should the minimum be more than 1?
         max = 1;
     }
-
-    html += "<div class='epayment'><div class='epayment-facilities>";
-    for(idx = 0; idx < max; ++idx)
+    if(max > this.sortedPaymentFacility_.length)
     {
-        facility = this.sortedPaymentFacility_[idx];
-        name = facility.getFacilityName();
-        icon = facility.getIcon();
+        max = this.sortedPaymentFacility_.length;
+    }
 
-        html += "<div class='item-" + name + "'>"
-              + "<span class='name-" + name + "'>" + facility.getDisplayName() + "</span>";
-
-        // TBD: should there be a way to place the image first?
-        //      (at this point we can float those items)
-        if(icon)
+    html += "<div class='epayment'><div class='epayment-header'>Please choose a mode of payment:</div><div class='epayment-facilities'>";
+    if(max == 0)
+    {
+        html += "<div class='no-epayment-facilities'>No payment facilities have been installed on this website.</div>";
+    }
+    else
+    {
+        for(idx = 0; idx < max; ++idx)
         {
-            // add the image tag only if there is an icon
-            html += "<img class='icon-" + name + "' src='" + icon + "'/>";
-        }
+            facility = this.sortedPaymentFacility_[idx];
+            name = facility.getFacilityName();
 
-        html += "</div>";
+            html += "<div class='epayment-facility item-"
+                  + name + "' style='width: "
+                  + icon_width + "px; height: "
+                  + icon_width + "px;' name='" + name + "'>"
+                  + facility.getButtonHTML()
+                  + "</div>";
+        }
+    }
+    html += "</div><div class='epayment-buttons'>";
+    if(back_button)
+    {
+        html += "<a class='epayment-back' href='#back'>« Back</a>";
+    }
+    if(max < this.sortedPaymentFacility_.length)
+    {
+        html += "<a class='epayment-more' href='#more'>More</a>";
     }
     html += "</div></div>";
 
-    return html;
+    cart_payment.append(html);
+
+    // now connect to those buttons
+    cart_payment.find(".epayment-facility").click(function(e)
+        {
+            var name = jQuery(this).attr("name"),
+                facility = that.getPaymentFacility(snapwebsites.castToString(name, "epayment-facility tag had no 'name' attribute?"));
+
+            facility.buttonClicked();
+        });
+    cart_payment.find(".epayment-back").click(function(e)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+
+            cart_payment.hide();
+            cart_payment.parent().find(".cart-summary").show(); // TODO: fix totally broken dependency
+        });
+    cart_payment.find(".epayment-more").click(function(e)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+
+            alert("more");
+        });
 };
 
 
@@ -815,7 +1009,7 @@ jQuery(document).ready(function()
     {
         snapwebsites.ePaymentInstance = new snapwebsites.ePayment();
         // to add facilities, do something like this:
-        //snapwebsites.ePaymentInstance.registerProductFeature(new snapwebsites.ePaymentFacility...());
+        //snapwebsites.ePaymentInstance.registerPaymentFacility(new snapwebsites.ePaymentFacility...());
     });
 
 // vim: ts=4 sw=4 et

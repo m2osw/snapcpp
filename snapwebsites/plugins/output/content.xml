@@ -175,10 +175,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>View a page of content.</p><p>This right is used to mark editable pages (i.e. HTML body).</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/view/page/administrator">
+    <param name="content::title" revision="revision">Administrator Page Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Right given to administrative pages so administrators can see them.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/rights/view/page/secure">
     <param name="content::title" revision="revision">Secure Page Right</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Right given to secure pages so administrators can see them.</p>]]>
+      <![CDATA[<p>Right given to secure pages so registered users can see them.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view/page/private">
@@ -216,9 +222,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Right give to pages that can be edited.</p>]]>
     </param>
-  </content>
-  <content path="/types/permissions/groups/root/administrator/editor/moderator/author" owner="permissions">
-    <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/edit/page</link>
   </content>
   <!-- system defined images; user's images will generally appear as attachment of the page where they are added -->
   <content path="/images">

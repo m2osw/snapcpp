@@ -160,7 +160,7 @@ public:
     void                add_editor_widget_templates_from_file(QString const& filename);
 
     SNAP_SIGNAL(prepare_editor_form, (editor *e), (e));
-    SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t row), (ipath, row));
+    SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row), (ipath, revision_row, secret_row));
     SNAP_SIGNAL(validate_editor_post_for_widget, (content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, QString const& value, bool const is_secret), (ipath, info, widget, widget_name, widget_type, value, is_secret));
     SNAP_SIGNAL(replace_uri_token, (editor_uri_token& token_info), (token_info));
     SNAP_SIGNAL_WITH_MODE(dynamic_editor_widget, (content::path_info_t& cpath, QString const& name, QDomDocument& editor_widgets), (cpath, name, editor_widgets), NEITHER);

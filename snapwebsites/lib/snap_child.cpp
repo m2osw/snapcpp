@@ -2427,6 +2427,35 @@ snap_child::~snap_child()
     //}
 }
 
+/** \brief Get the current date.
+ *
+ * PLEASE consider use get_start_date() instead of the current date.
+ * 99.999% of the time, you do NOT want to use the current date or
+ * all the dates you will manipulate will be different.
+ *
+ * In some really rare circumstance, you may want to make use of the
+ * "exact" current date instead of the start date. This function
+ * can be used in those rare cases.
+ *
+ * This function does not modified the start date of the current process.
+ *
+ * \sa reset_start_date()
+ * \sa get_start_date()
+ */
+int64_t snap_child::get_current_date()
+{
+    struct timeval tv;
+    if(gettimeofday(&tv, nullptr) != 0)
+    {
+        int const err(errno);
+        SNAP_LOG_FATAL("gettimeofday() failed with errno: ")(err);
+        throw std::runtime_error("gettimeofday() failed");
+    }
+    return static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
+         + static_cast<int64_t>(tv.tv_usec);
+}
+
+
 /** \brief Reset the start date to now.
  *
  * This function is called by the processing functions to reset the
@@ -2441,15 +2470,7 @@ snap_child::~snap_child()
  */
 void snap_child::init_start_date()
 {
-    struct timeval tv;
-    if(gettimeofday(&tv, nullptr) != 0)
-    {
-        int const err(errno);
-        SNAP_LOG_FATAL("gettimeofday() failed with errno: ")(err);
-        throw std::runtime_error("gettimeofday() failed");
-    }
-    f_start_date = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
-                 + static_cast<int64_t>(tv.tv_usec);
+    f_start_date = get_current_date();
 }
 
 

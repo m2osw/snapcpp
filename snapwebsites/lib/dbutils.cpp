@@ -313,8 +313,9 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 {
     QString const n( get_column_name( c ) );
 
-    if(n == "users::identifier"
+    if(n == "ecommerce::invoice_number"
     || n == "shorturl::identifier"
+    || n == "users::identifier"
     || n == "finball::invoice_number" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
     )
     {
@@ -333,6 +334,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n.left(18) == "core::last_updated"
          || n == "core::plugin_threshold"
          || n == "core::site_ready"
+         || n == "epayment_paypal::oauth2_expires"
          || n == "images::modified"
          || n == "list::last_updated"
          || n == "sessions::date"
@@ -436,6 +438,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return CT_time_microseconds_and_string;
     }
     else if(n == "content::prevent_delete"
+         || n == "epayment_paypal::debug"
          || n == "permissions::dynamic"
          || n == "users::multiuser"
          || n == "users::long_sessions"

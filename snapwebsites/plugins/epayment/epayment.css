@@ -1,9 +1,71 @@
 /*
  * Name: epayment
- * Version: 0.0.1
+ * Version: 0.0.1.8
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 
+.epayment .epayment-header
+{
+	padding-top: 10px;
+	font-size: 120%;
+	font-style: italic;
+}
+
+.epayment-facilities
+{
+	margin-top: 10px;
+	border-top: 1px solid #444444;
+	border-left: 1px solid #444444;
+	border-bottom: 1px solid #cccccc;
+	border-right: 1px solid #cccccc;
+	border-radius: 7px;
+	padding: 10px;
+}
+
+.epayment-facilities .epayment-facility
+{
+	border-top: 1px solid #cccccc;
+	border-left: 1px solid #cccccc;
+	border-bottom: 1px solid #444444;
+	border-right: 1px solid #444444;
+	border-radius: 20px;
+	padding: 5px;
+	background-color: #ffee33;
+	background: linear-gradient(to bottom, #fff79f, #ffee33 25%, #ffee33 85%, #c4b727);
+	cursor: pointer;
+}
+
+.epayment-buttons
+{
+	padding: 20px;
+}
+
+.epayment-buttons .epayment-back,
+.epayment-buttons .epayment-more
+{
+	display: block;
+	padding: 10px 30px;
+	border: 1px solid #000000;
+	border-radius: 7px;
+	color: black;
+	text-shadow: 0 0 6px #ffffff, 2px 2px 2px #886619;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+.epayment-buttons .epayment-back
+{
+	float: left;
+	background-color: #fbea2f;
+	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+}
+
+.epayment-buttons .epayment-more
+{
+	float: right;
+	background-color: #fbea2f;
+	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+}
 

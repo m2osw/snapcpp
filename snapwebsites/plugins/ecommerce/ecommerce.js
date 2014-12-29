@@ -1,6 +1,6 @@
 /** @preserve
  * Name: ecommerce
- * Version: 0.0.1.55
+ * Version: 0.0.1.63
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -23,6 +23,7 @@
 // @js plugins/server_access/server-access.js
 // @js plugins/listener/listener.js
 // @js plugins/editor/editor.js
+// @js plugins/epayment/epayment.js
 // ==/ClosureCompiler==
 //
 
@@ -371,6 +372,7 @@ snapwebsites.eCommerceColumnCell.prototype.getValue = function()
  *      function addColumnHeader(column_name: String, display_name: String, before_column: String) : Void;
  *      function getColumnHeader(index: Number) : eCommerceColumnHeader;
  *      function generateColumnsMap() : Void;
+ *      function getColumnIndex(name: String) : Number;
  *      function addColumnData(row_index: Number, column_name: String, value: String|Number) : Void;
  *      function getColumnData(row_index: Number, column_index: Number) : eCommerceColumnCell;
  *
@@ -1771,6 +1773,7 @@ snapwebsites.eCommerceProduct.prototype.getPrice = function()
  *      static var createPopup_: Object;
  *      var productFeatures_: eCommerceProductFeatureBase;
  *      var productTypes_: Object; // indexed by product type GUID
+ *      var cartPaymentDefined_: Boolean;
  *      var cartHtml_: jQuery;
  *      var products_: Array of eCommerceProductBase;
  * };
@@ -1895,6 +1898,17 @@ snapwebsites.eCommerceCart.prototype.productFeatures_; // = {}; -- initialized i
  * @private
  */
 snapwebsites.eCommerceCart.prototype.productTypes_; // = {}; -- initialized in constructor to avoid problems
+
+
+/** \brief Whether the cart payment facilities were generated.
+ *
+ * By default, the HTML for the checkout pages is not generated.
+ * This flag is used to know whether it got generated since then.
+ *
+ * @type {boolean}
+ * @private
+ */
+snapwebsites.eCommerceCart.prototype.cartPaymentDefined_ = false;
 
 
 /** \brief A variable member referencing the cart HTML.
@@ -2189,7 +2203,7 @@ snapwebsites.eCommerceCart.prototype.addProduct = function(guid, opt_quantity)
         // TODO: define this maximum count in the cart settings; this is
         //       not specific to a product type so we cannot just retrieve
         //       a property from a product type...
-        maximum_count = 2;
+        maximum_count = 100;
         if(this.products_.length >= maximum_count)
         {
             // TODO: translation -- should come from settings too
@@ -2259,6 +2273,33 @@ snapwebsites.eCommerceCart.prototype.removeProduct = function(guid)
             this.products_.splice(i, 1);
             modified = true;
         }
+    }
+
+    if(modified)
+    {
+        this.sendCart_();
+        this.generateCartHtml_();
+    }
+};
+
+
+/** \brief This function removes all the products from the cart.
+ *
+ * This function loops through all the products currently in the cart
+ * and removes them all.
+ *
+ * The cart is automatically updated if required.
+ */
+snapwebsites.eCommerceCart.prototype.clearCart = function()
+{
+    var i = this.products_.length,
+        modified = i > 0;
+
+    // got through the list of all the products in the cart and delete them
+    while(i > 0)
+    {
+        --i;
+        this.products_.splice(i, 1);
     }
 
     if(modified)
@@ -2342,7 +2383,8 @@ snapwebsites.eCommerceCart.prototype.showCart = function()
               + "<div class='cart-payment'></div>"
             );
         this.generateCartHtml_();
-        this.generatePaymentHtml_();
+        // the cart-payment HTML is created later and only if the user
+        // goes to the checkout area
     }
     // probably need an update here?
     // although even when hidden we probably want to keep this up to date
@@ -2429,6 +2471,8 @@ snapwebsites.eCommerceCart.prototype.getTotalCosts = function()
     {
         // we MUST round on a per computation because that is
         // what we present the end user on each line of the cart!
+        //
+        // TODO: add the per line taxes/shipping/etc.
         total += Math.round(this.products_[i].getPrice() * this.products_[i].getQuantity() * 100);
     }
 
@@ -2515,13 +2559,13 @@ snapwebsites.eCommerceCart.prototype.generateCartHtml_ = function()
     this.generateCartFooter_(e, columns);
 
     // now connect to various buttons
-    e.find(".update-cart").click(function(e)
+    e.find(".clear-cart").click(function(e)
         {
             e.preventDefault();
             e.stopPropagation();
 
-            alert("Update");
-        });
+            that.clearCart();
+        }).toggleClass("disabled", max == 0);
     e.find(".continue-shopping").click(function(e)
         {
             e.preventDefault();
@@ -2540,7 +2584,20 @@ snapwebsites.eCommerceCart.prototype.generateCartHtml_ = function()
                 return;
             }
 
-            alert("Checkout");
+            if(!that.cartPaymentDefined_)
+            {
+                that.cartPaymentDefined_ = true;
+                snapwebsites.ePaymentInstance.appendMainFacilities(that.cartHtml_.find(".popup-body .cart-payment"), 750, true);
+                snapwebsites.ePaymentInstance.setCartModifiedCallback(function()
+                    {
+                        that.clearCart();
+                        that.generateCartHtml_();
+                        that.cartHtml_.find(".popup-body .cart-payment").hide();
+                        that.cartHtml_.find(".popup-body .cart-summary").show();
+                    });
+            }
+            that.cartHtml_.find(".popup-body .cart-summary").hide();
+            that.cartHtml_.find(".popup-body .cart-payment").show();
         }).toggleClass("disabled", max == 0);
     e.find(".cart-delete-product").click(function(e)
         {
@@ -2667,7 +2724,7 @@ snapwebsites.eCommerceCart.prototype.generateCartFooter_ = function(e, columns)
     e.append(
             "<div class='cart-footer'>Thank you.</div>"
           + "<div class='cart-buttons'>"
-            + "<a class='update-cart' href='/update-cart'>Update Cart</a>"
+            + "<a class='clear-cart' href='/clear-cart'>Clear Cart</a>"
             // checkout and continue-shopping are inverted by the CSS
             + "<a class='checkout' href='/checkout'>Check Out</a>"
             + "<a class='continue-shopping' href='/continue-shopping'>Continue Shopping</a>"
@@ -2938,19 +2995,6 @@ snapwebsites.eCommerceCart.prototype.generateProductTableRow_ = function(e, row_
     row += "</tr>";
 
     e.append(row);
-};
-
-
-/** \brief This function generates the list of payments.
- *
- * This function goes through the list of payments available to
- * the cart and adds them for display on the screen.
- *
- * @private
- * @final
- */
-snapwebsites.eCommerceCart.prototype.generatePaymentHtml_ = function()
-{
 };
 
 

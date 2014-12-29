@@ -38,6 +38,7 @@ set( CMAKE_AUTOMOC TRUE )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h )
 
 find_package( log4cplus REQUIRED )
+find_package( OpenSSL REQUIRED )
 find_package( Qt4 4.8.1 REQUIRED QtCore QtXml QtXmlPatterns )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
@@ -65,6 +66,7 @@ include_directories(
         ${LOG4CPLUS_INCLUDE_DIR}
         ${QT_INCLUDES}
         ${LIBPROCPS_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
 )
 
 QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
@@ -78,6 +80,7 @@ add_library( ${PROJECT_NAME} SHARED
     dom_util.cpp                                # DOM utilities
     floats.cpp                                  # Floats helper functions
     fuzzy_string_compare.cpp                    # Compare strings in a fuzzy manner
+    http_client_server.cpp                      # implementation of the HTTP protocol
     http_cookie.cpp                             # HTTP cookie, server side
     http_strings.cpp                            # parse HTTP strings (Accept strings in particular)
     log.cpp                                     # log4cplus support
@@ -127,6 +130,7 @@ target_link_libraries( ${PROJECT_NAME}
     ${QTSERIALIZATION_LIBRARIES}
     ${MAGIC_LIBRARY}
     ${LIBPROCPS_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
     ${THRIFT_LIBRARIES}
     pthread
     dl

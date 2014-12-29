@@ -1844,7 +1844,7 @@ void permissions::on_backend_action(QString const& action)
             exit(1);
         }
         QtCassandra::QCassandraValue identifier_value(user_row->cell(users::get_name(users::SNAP_NAME_USERS_IDENTIFIER))->value());
-        if(identifier_value.nullValue() || identifier_value.size() != 8)
+        if(identifier_value.nullValue() || identifier_value.size() != sizeof(int64_t))
         {
             SNAP_LOG_FATAL() << "error: user \"" << email.toStdString() << "\" identifier could not be read.";
             exit(1);

@@ -21,11 +21,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <auto-reset minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="continent"/>
+  <focus refid="locale_timezone"/>
   <on-save allow-edit="yes"/>
   <taborder>
-    <tabindex refid="continent"/>
-    <tabindex refid="city"/>
+    <tabindex refid="locale_timezone"/>
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>

@@ -283,6 +283,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_REVISION_TABLE:
         return "revision";
 
+    case SNAP_NAME_CONTENT_SECRET_TABLE:
+        return "secret";
+
     case SNAP_NAME_CONTENT_SHORT_TITLE:
         return "content::short_title";
 
@@ -3494,10 +3497,15 @@ void path_info_t::set_path(QString const& path)
         }
         else
         {
+            // TODO: check whether the path starts with http[s] or some
+            //       other protocol; if so, forget it because we do not
+            //       allow such in the path anyway! This could catch some
+            //       security problems along the way too.
+            //
             // may require canonicalization
             f_cpath = path;
             f_snap->canonicalize_path(f_cpath);
-            f_key = f_snap->get_site_key_with_slash() + f_cpath;
+            f_key = site_key + f_cpath;
         }
 
         // retrieve the action from this path
@@ -4216,6 +4224,7 @@ void content::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(content, "server", server, register_backend_action, _1);
     SNAP_LISTEN0(content, "server", server, backend_process);
     SNAP_LISTEN(content, "server", server, load_file, _1, _2);
+    SNAP_LISTEN(content, "server", server, cell_is_secure, _1, _2, _3, _4);
 }
 
 
@@ -4294,6 +4303,9 @@ void content::initial_update(int64_t variables_timestamp)
     get_content_table();
     f_content_table.reset();
 
+    get_secret_table();
+    f_secret_table.reset();
+
     get_branch_table();
     f_branch_table.reset();
 
@@ -4367,6 +4379,49 @@ QtCassandra::QCassandraTable::pointer_t content::get_content_table()
         f_content_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
     }
     return f_content_table;
+}
+
+
+/** \brief Initialize the secret table.
+ *
+ * This function creates the secret table if it does not already exist.
+ * Otherwise it simply initializes the f_secret_table variable member.
+ *
+ * If the function is not able to create the table an exception is raised.
+ *
+ * The secret table is used in parallel to the content table, only it is
+ * used to save fields that should never appear to the end user. We use
+ * this mechanism to save data such as tokens sent by a gateway offering
+ * an OAuth2 login capability.
+ *
+ * The most important part here is that the secret table is NOT accessible
+ * from the filter and any similar plugin. In other words, an end user
+ * cannot write an expression which will peek in this table. The data is
+ * viewed as being internal data only.
+ *
+ * Since this table is viewed as the content table, you should really
+ * only have global data (i.e. one instance of the data per page, and
+ * not one instance per branch, and not one instance per revision.)
+ * This reduces the amount of secret data saved in your datbase since
+ * editing such a page would otherwise duplicate the data once per
+ * branch and/or once per revision. Secrete data does not get
+ * duplicated.
+ *
+ * \note
+ * This table should really only be used for data that should never be
+ * visible in a page or a list. Plugins must use necessary precautions
+ * to prevent end users from reading from this table, and to make use
+ * of this table when they handle sensitive data.
+ *
+ * \return The pointer to the secret table.
+ */
+QtCassandra::QCassandraTable::pointer_t content::get_secret_table()
+{
+    if(!f_secret_table)
+    {
+        f_secret_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_SECRET_TABLE), "Website secret table.");
+    }
+    return f_secret_table;
 }
 
 
@@ -9498,6 +9553,39 @@ void content::on_load_file(snap_child::post_file_t& file, bool& found)
                 }
             }
         }
+    }
+}
+
+
+/** \brief Check whether the cell can securily be used in a script.
+ *
+ * This signal is sent by the cell() function of snap_expr objects.
+ * The plugin receiving the signal can check the table, row, and cell
+ * names and mark that specific cell as secure. This will prevent the
+ * script writer from accessing that specific cell.
+ *
+ * In case of the content plugin, this is used to protect all contents
+ * in the secret table.
+ *
+ * The \p secure flag is used to mark the cell as secure. Simply call
+ * the mark_as_secure() function to do so.
+ *
+ * \param[in] table  The table being accessed.
+ * \param[in] row  The row being accessed.
+ * \param[in] cell  The cell being accessed.
+ * \param[in] secure  Whether the cell is secure.
+ *
+ * \return This function returns true in case the signal needs to proceed.
+ */
+void content::on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure)
+{
+    static_cast<void>(row);
+    static_cast<void>(cell);
+
+    if(table == get_name(SNAP_NAME_CONTENT_SECRET_TABLE))
+    {
+        // all data in the secret table are considered secure
+        secure.mark_as_secure();
     }
 }
 

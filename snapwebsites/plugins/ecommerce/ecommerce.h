@@ -32,8 +32,12 @@ namespace ecommerce
 
 enum name_t
 {
+    SNAP_NAME_ECOMMERCE_CART_MODIFIED_POST_FIELD,
     SNAP_NAME_ECOMMERCE_CART_PRODUCTS,
     SNAP_NAME_ECOMMERCE_CART_PRODUCTS_POST_FIELD,
+    SNAP_NAME_ECOMMERCE_INVOICE_NUMBER,
+    SNAP_NAME_ECOMMERCE_INVOICES_PATH,
+    SNAP_NAME_ECOMMERCE_INVOICE_TABLE,
     SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART,
     SNAP_NAME_ECOMMERCE_PRICE,
     SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION,
@@ -73,6 +77,9 @@ public:
     void                        on_process_post(QString const& uri_path);
     void                        on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     virtual bool                on_path_execute(content::path_info_t& ipath);
+    void                        on_generate_invoice(content::path_info_t& invoice_ipath, uint64_t& invoice_number);
+
+    SNAP_SIGNAL(product_allowed, (QDomElement product, content::path_info_t product_ipath), (product, product_ipath));
 
 private:
     void                        content_update(int64_t variables_timestamp);

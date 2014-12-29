@@ -33,7 +33,6 @@
 
 project(plugin_ecommerce)
 
-find_package( ICU REQUIRED )
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
@@ -41,7 +40,6 @@ add_definitions( ${QT_DEFINITIONS} )
 include_directories(
     SYSTEM
         ${QT_INCLUDES}
-        ${ICU_INCLUDE_DIRS}
 )
 
 include_directories(
@@ -76,8 +74,6 @@ add_library(ecommerce SHARED
 
 target_link_libraries( ecommerce
     ${QT_LIBRARIES}
-    ${ICU_LIBRARIES}
-    ${ICU_I18N_LIBRARIES}
 )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )

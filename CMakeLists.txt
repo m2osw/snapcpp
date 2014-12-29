@@ -135,7 +135,7 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS thrift snapCMakeModules zipios advgetopt libQtCassandra libQtSerialization libtld controlled_vars
+    DEPENDS thrift snapCMakeModules zipios advgetopt libQtCassandra libQtSerialization libtld controlled_vars as2js
 )
 
 ConfigureMakeProject( PROJECT_NAME snapwatchdog

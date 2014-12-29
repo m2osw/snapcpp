@@ -18,10 +18,14 @@
 #include "ecommerce.h"
 
 #include "../editor/editor.h"
-//#include "../output/output.h"
+#include "../epayment/epayment.h"
+#include "../messages/messages.h"
+#include "../permissions/permissions.h"
 
 #include "qdomxpath.h"
 #include "not_reached.h"
+
+#include <QtCassandra/QCassandraLock.h>
 
 #include <iostream>
 
@@ -46,11 +50,23 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case SNAP_NAME_ECOMMERCE_CART_MODIFIED_POST_FIELD:
+        return "ecommerce__cart_modified";
+
     case SNAP_NAME_ECOMMERCE_CART_PRODUCTS:
         return "ecommerce::cart_products";
 
     case SNAP_NAME_ECOMMERCE_CART_PRODUCTS_POST_FIELD:
         return "ecommerce__cart_products";
+
+    case SNAP_NAME_ECOMMERCE_INVOICE_NUMBER: // int64_t
+        return "ecommerce::invoice_number";
+
+    case SNAP_NAME_ECOMMERCE_INVOICES_PATH:
+        return "invoices";
+
+    case SNAP_NAME_ECOMMERCE_INVOICE_TABLE:
+        return "invoice";
 
     case SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART:
         return "js/ecommerce/ecommerce-cart.js";
@@ -74,6 +90,192 @@ char const *get_name(name_t name)
 
 
 
+
+// At first I was thinking I could replicate the JavaScript code, but
+// realistically, I think it is better to use XSLT 2.0 files to replicate
+// the cart as an invoice on the server side. Not only that, the invoice
+// could that way look (completely) different. Finally, the ecommerce
+// system needs to generate an on-screen invoice and a PDF invoice
+// (and eventually other formats like RTF and Text.)
+//
+// namespace
+// {
+// 
+// 
+// class ecommerce_column_header_t
+// {
+// public:
+// 
+// ecommerce_column_header_t(QString const& name, QString const& display_name)
+//     : f_name(name)
+//     , f_display_name(display_name)
+// {
+// }
+// 
+// 
+// QString get_name() const
+// {
+//     return f_name;
+// }
+// 
+// 
+// QString get_display_name() const
+// {
+//     return f_display_name;
+// }
+// 
+// private:
+// QString         f_name;
+// QString         f_display_name;
+// };
+// 
+// 
+// class ecommerce_column_cell_t
+// {
+// public:
+// 
+// ecommerce_column_cell_t()
+// {
+// }
+// 
+// 
+// ecommerce_column_cell_t(QString const& column_name, QString const& value)
+//     : f_name(column_name)
+//     , f_value(value)
+// {
+// }
+// 
+// 
+// QString const get_name() const
+// {
+//     return f_name;
+// }
+// 
+// 
+// QString const& get_value() const
+// {
+//     return f_value;
+// }
+// 
+// 
+// private:
+// QString             f_name;
+// QString             f_value;
+// };
+// 
+// 
+// class ecommerce_columns_t
+// {
+// typedef std::vector<ecommerce_column_header_t>          column_headers_t;
+// typedef std::map<QString, size_t>                       column_map_t;       // column headers mapped by name
+// typedef std::vector<ecommerce_column_cell_t>            row_t;
+// typedef std::vector<row_t>                              rows_t;
+// 
+// public:
+// 
+// size_t size()
+// {
+//     return f_column_headers.size();
+// }
+// 
+// 
+// void add_column_header(QString const& column_name, QString const& display_name, QString const& before_column)
+// {
+//     //ecommerce_column_header_t *header(new ecommerce_column_header_t(column_name, display_name));
+// 
+//     if(!before_column.isEmpty())
+//     {
+//         size_t const max(f_column_headers.size());
+//         for(size_t i(0); i < max; ++i)
+//         {
+//             if(before_column == f_column_headers[i].get_name())
+//             {
+//                 f_column_headers.insert(f_column_headers.begin() + i, ecommerce_column_header_t(column_name, display_name));
+//                 return;
+//             }
+//         }
+//     }
+// 
+//     f_column_headers.push_back(ecommerce_column_header_t(column_name, display_name));
+// }
+// 
+// 
+// ecommerce_column_header_t get_column_header(size_t index)
+// {
+//     if(index >= f_column_headers.size())
+//     {
+//         throw snap_logic_exception(QString("index %1 is out of bounds in ecommerce_column::get_column_header() (max is %1)").arg(index).arg(f_column_headers.size()));
+//     }
+//     return f_column_headers[index];
+// }
+// 
+// 
+// void generate_columns_map()
+// {
+//     size_t const max(f_column_headers.size());
+//     for(size_t i(0); i < max; ++i)
+//     {
+//         QString const name(f_column_headers[i].get_name());
+//         if(f_column_map.find(name) != f_column_map.end())
+//         {
+//             throw snap_logic_exception(QString("you defined two header columns with the same name \"%1\"").arg(name));
+//         }
+//         f_column_map[name] = i;
+//     }
+// }
+// 
+// 
+// size_t get_column_index(QString const& name)
+// {
+//     if(f_column_map.find(name) != f_column_map.end())
+//     {
+//         throw snap_logic_exception(QString("header named \"%1\" not found in snapwebsites.eCommerceColumns.getColumnIndex()").arg(name));
+//     }
+//     return f_column_map[name];
+// }
+// 
+// 
+// void add_column_data(size_t row_index, QString const& column_name, QString const& value)
+// {
+//     if(f_rows.size() <= row_index)
+//     {
+//         f_rows.resize(row_index + 1);
+//     }
+// 
+//     if(f_rows[row_index].empty())
+//     {
+//         f_rows[row_index].resize(f_column_headers.size());
+//     }
+// 
+//     size_t i(get_column_index(column_name));
+//     f_rows[row_index][i] = ecommerce_column_cell_t(column_name, value);
+// }
+// 
+// 
+// ecommerce_column_cell_t get_column_data(size_t row_index, size_t column_index)
+// {
+//     if(row_index >= f_rows.size())
+//     {
+//         throw snap_logic_exception(QString("row_index %1 larger than the number of rows: %2").arg(row_index).arg(f_rows.size()));
+//     }
+//     if(column_index >= f_rows[row_index].size())
+//     {
+//         throw snap_logic_exception(QString("column_index %1 larger than the number of cells: %2").arg(column_index).arg(f_rows[row_index].size()));
+//     }
+//     return f_rows[row_index][column_index];
+// }
+// 
+// 
+// private:
+// column_headers_t        f_column_headers;
+// column_map_t            f_column_map;
+// rows_t                  f_rows;             // arrays of cells
+// };
+// 
+// 
+// 
+// }
+// // no name namespace
 
 
 
@@ -113,6 +315,7 @@ void ecommerce::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(ecommerce, "server", server, process_post, _1);
     SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(ecommerce, "path", path::path, can_handle_dynamic_path, _1, _2);
+    SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2);
 }
 
 
@@ -168,7 +371,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 19, 2, 27, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2014, 12, 24, 0, 40, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -310,8 +513,8 @@ void ecommerce::on_process_post(QString const& uri_path)
     content::path_info_t ipath;
     ipath.set_path(uri_path);
 
-    QString const cart_contents(f_snap->postenv(cart_products));
-    users::users::instance()->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), cart_contents);
+    QString const cart_xml(f_snap->postenv(cart_products));
+    users::users::instance()->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), cart_xml);
 
     // create the AJAX response
     server_access::server_access *server_access_plugin(server_access::server_access::instance());
@@ -372,22 +575,31 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
         QDomXPath::node_vector_t product_tags(products_xpath.apply(doc));
         int const max_products(product_tags.size());
 
+        snap_uri const main_uri(f_snap->get_uri());
+        bool const no_types(main_uri.has_query_option("no-types"));
+
         // first add all the product types
         bool first(true);
-        for(int i(0); i < max_products; ++i)
+        if(!no_types) for(int i(0); i < max_products; ++i)
         {
-            // we found the widget, display its label instead
+            // we found the product, retrieve its description and price
             QDomElement product(product_tags[i].toElement());
             QString const guid(product.attribute("guid"));
-            if(ipath.get_key() != guid)
+            if(ipath.get_key() != guid) // this page is the product?
             {
+                // TODO: We must verify that the GUID points to a product
+                //       AND that the user has enough permissions to see
+                //       that product; if not then the user should not be
+                //       able to add that product to the cart in the first
+                //       place so we can err and stop the processing
+                //
                 // get the data in local variables
-                content::path_info_t ipath_product;
-                ipath_product.set_path(guid);
+                content::path_info_t product_ipath;
+                product_ipath.set_path(guid);
                 content::field_search::search_result_t product_result;
                 FIELD_SEARCH
                     (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                    (content::field_search::COMMAND_PATH_INFO_REVISION, ipath_product)
+                    (content::field_search::COMMAND_PATH_INFO_REVISION, product_ipath)
 
                     // DESCRIPTION
                     (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION))
@@ -397,7 +609,6 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
                         (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
                         (content::field_search::COMMAND_SELF)
                     (content::field_search::COMMAND_LABEL, 1)
-                    //(content::field_search::COMMAND_RESULT, result_description)
 
                     // PRICE
                     (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_ECOMMERCE_PRICE))
@@ -419,9 +630,9 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
                             "snapwebsites.eCommerceCartInstance.setInitializing(true)\n";
                     }
                     QString guid_safe_quotes(guid);
-                    guid_safe_quotes.replace("\'", "\\'");
+                    guid_safe_quotes.replace("'", "\\'");
                     QString product_description(product_result[0].stringValue());
-                    product_description.replace("\'", "\\'");
+                    product_description.replace("'", "\\'");
                     js += ".registerProductType({"
                             "'ecommerce::features':    'ecommerce::basic',"
                             "'ecommerce::guid':        '" + guid_safe_quotes + "',"
@@ -446,12 +657,14 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
                 js += "jQuery(document).ready(function(){\n";
             }
 
-            // we found the widget, display its label instead
+            // retrieve the product GUID and quantity
+            // TBD: check that the product is valid? Here it is less of a
+            //      problem since that's the cart itself
             QDomElement product(product_tags[i].toElement());
             QString const guid(product.attribute("guid"));
             QString const quantity(product.attribute("q"));
             QString guid_safe_quotes(guid);
-            guid_safe_quotes.replace("\'", "\\'");
+            guid_safe_quotes.replace("'", "\\'");
             js += "snapwebsites.eCommerceCartInstance.addProduct('" + guid_safe_quotes + "', " + quantity + ");\n";
             // TODO: we need to add support for attributes
         }
@@ -473,6 +686,395 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
     return false;
 }
 
+
+/** \brief This function is called whenever the e-Payment requires an invoice.
+ *
+ * Whenever the e-Payment is ready to process an invoice, it sends this
+ * signal. This allows any other plugin to replace the e-Commerce plugin
+ * and still be able to generate invoices as required.
+ *
+ * The generation of invoices is expected to happen once a payment was
+ * selected and the user cannot cancel anymore. This way we avoid
+ * creating invoices that do not get furfilled (although they may be
+ * cancelled later and in some cases, like when dealing with a payment
+ * facility such as PayPal we may end up without payment anyway.)
+ *
+ * The function does not return anything, since it is a signal, but it
+ * is possible to know whether it worked by testing the \p invoice_number
+ * variable. If still zero, then no valid invoice was created and an
+ * error was most certainly already generated (i.e. a message was posted.)
+ *
+ * \param[in,out] invoice_ipath  Will be set to the invoice ipath if
+ *                               invoice_number is not zero on return.
+ * \param[in,out] invoice_number  The new invoice number, if zero,
+ *                                still undefined.
+ */
+void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_t& invoice_number)
+{
+    // invoice was already defined?
+    if(invoice_number != 0)
+    {
+        return;
+    }
+
+    // get the session information
+    users::users *users_plugin(users::users::instance());
+    QString cart_xml(users_plugin->get_from_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+    if(cart_xml.isEmpty())
+    {
+        // we should not be able to get here if the cart is empty
+        // (although a hacker could send such a request.)
+        messages::messages::instance()->set_error(
+            "Cart is Empty",
+            "Before you can check out, you must include items in your cart.",
+            "Someone reached the cart check out when his cart is empty (no XML).",
+            false
+        );
+        return;
+    }
+
+    QDomDocument doc;
+    doc.setContent(cart_xml);
+    QDomXPath products_xpath;
+    products_xpath.setXPath("/cart/product");
+    QDomXPath::node_vector_t product_tags(products_xpath.apply(doc));
+    int const max_products(product_tags.size());
+
+    // the number of products in the cart should always be 1 or more
+    if(max_products == 0)
+    {
+        // we should not be able to get here if no products were in the cart
+        // (although a hacker could send such a request.)
+        messages::messages::instance()->set_error(
+            "Cart is Empty",
+            "Before you can check out, you must include items in your cart.",
+            "Someone reached the cart check out when his cart is empty (no products).",
+            false
+        );
+        return;
+    }
+
+    // TODO: loop through all the products to allow for other plugins to
+    //       "interfere" (verify) that everything in the cart is fine;
+    //       for instance, the stock manager plugin could return an error
+    //       saying that a certain product is just not available and the
+    //       reseller does not know whether it would be possible to get
+    //       more for sale.
+
+    // loop through all the products to make sure they are valid:
+    for(int i(0); i < max_products; ++i)
+    {
+        // got a product
+        QDomElement product(product_tags[i].toElement());
+        QString const guid(product.attribute("guid"));
+        content::path_info_t product_ipath;
+        product_ipath.set_path(guid);
+
+        // now give other plugins a chance to verify that the product is
+        // allowed to be in this user's cart
+        product_allowed(product, product_ipath);
+    }
+
+    // search the product tags again, since some could have been removed
+    product_tags = products_xpath.apply(doc);
+    int const new_max_products = product_tags.size();
+    if(new_max_products != max_products)
+    {
+        // save the new DOM as a string back in the database
+        cart_xml = doc.toString();
+        users_plugin->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), cart_xml);
+
+        // since the cart changed we need to send it back to the client
+        // otherwise the client will show the wrong cart (unless we force
+        // a reload of the page, but then we'd lose the error messages)
+        server_access::server_access::instance()->ajax_append_data(get_name(SNAP_NAME_ECOMMERCE_CART_MODIFIED_POST_FIELD), cart_xml.toUtf8());
+    }
+
+    // the number of products could have dropped to zero now...
+    if(new_max_products == 0)
+    {
+        messages::messages::instance()->set_error(
+            "Cart is Empty",
+            "All the products in your cart were automatically removed rendering your cart empty.",
+            "Plugins decided to remove one or more products from the cart and now it is empty!",
+            false
+        );
+        return;
+    }
+
+    // if the number of products changed, we MUST show the new version
+    // of the cart to the client before proceeding; this should be
+    // pretty rare, but like anything else, it is required
+    if(new_max_products != max_products)
+    {
+        // Note: this error is to make sure that there is a user message
+        //       in the end, however, the plugin removing a product should
+        //       always itself generate a detailed message.
+        messages::messages::instance()->set_error(
+            "Cart Auto-Modified",
+            "We had to update your cart as some products could not be kept in it. Please check the newer version and feel free to attempt a checkout once ready.",
+            "Plugins decided to remove one or more products from the cart so it changed!",
+            false
+        );
+        return;
+    }
+
+    // create a lock to generate the next unique invoice number
+    content::path_info_t invoices_ipath;
+    invoices_ipath.set_path(get_name(SNAP_NAME_ECOMMERCE_INVOICES_PATH));
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(invoices_ipath.get_key()));
+    {
+        QtCassandra::QCassandraLock lock(f_snap->get_context(), invoices_ipath.get_key());
+
+        // retrieve the current invoice number and increment by one
+        QtCassandra::QCassandraValue invoice_number_value(content_row->cell(get_name(SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->value());
+        if(invoice_number_value.size() == sizeof(uint64_t))
+        {
+            invoice_number = invoice_number_value.uint64Value();
+        }
+        ++invoice_number;
+        invoice_number_value.setUInt64Value(invoice_number);
+        content_row->cell(get_name(SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->setValue(invoice_number_value);
+    }
+    invoices_ipath.get_child(invoice_ipath, QString("%1").arg(invoice_number));
+    invoice_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
+    invoice_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    invoice_ipath.force_locale("xx"); // TODO: what locale should we use here?!
+std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create invoice at: " << invoice_ipath.get_key() << "...\n***\n";
+
+    // create the invoice page
+    content_plugin->create_content(invoice_ipath, "ecommerce", "ecommerce/invoice");
+
+    // TODO: as expected in a future version, we will create an object to send
+    //       along the create_content() instead of having this separate.
+    int64_t const start_date(f_snap->get_start_date());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
+    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    QString const title(QString("Invoice #%1").arg(invoice_number));
+    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(title);
+    QString const body; // empty for now... will be generated later
+                       // by a backend or on the fly as we decide then
+    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
+    revision_row->cell(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS))->setValue(cart_xml);
+
+    // now it is safe to remove the cart in the session since a copy
+    // was just saved in the invoice
+    static_cast<void>(users_plugin->detach_from_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+
+    // The "actual" generation of the invoice should be using an XSLT
+    // file and not C++ code; that way we can easily extend the display.
+    // We also want to implement a backend to generate a PDF file of the
+    // invoice. Tha should be the exact same XML data used with the
+    // on-screen XSLT file, only we simplify the output so it works with
+    // the HTML to PDF tool we use. The backend can also send an email to
+    // the client if they asked for a copy in their email, and fax a copy
+    // to the client if so they asked too.
+    //
+    //double grand_total(0.0);
+    //for(int i(0); i < max_products; ++i)
+    //{
+    //    // we found the product, get its details
+    //    QDomElement product(product_tags[i].toElement());
+
+    //    // TODO: verify that the GUID points to a product
+    //    QString const guid(product.attribute("guid"));
+
+    //    // get the data in local variables
+    //    content::path_info_t product_ipath;
+    //    product_ipath.set_path(guid);
+    //    content::field_search::search_result_t product_result;
+    //    // TODO: create a "load_product()" function so we do not repeat this
+    //    //       all over theplace!
+    //    FIELD_SEARCH
+    //        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+    //        (content::field_search::COMMAND_PATH_INFO_REVISION, product_ipath)
+
+    //        // DESCRIPTION
+    //        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION))
+    //        (content::field_search::COMMAND_SELF)
+    //        (content::field_search::COMMAND_IF_FOUND, 1)
+    //            // use page title as a fallback
+    //            (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
+    //            (content::field_search::COMMAND_SELF)
+    //        (content::field_search::COMMAND_LABEL, 1)
+
+    //        // PRICE
+    //        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_ECOMMERCE_PRICE))
+    //        (content::field_search::COMMAND_SELF)
+
+    //        // get the 2 results
+    //        (content::field_search::COMMAND_RESULT, product_result)
+
+    //        // retrieve!
+    //        ;
+
+    //    if(product_result.size() == 2)
+    //    {
+    //        bool ok;
+
+    //        // add a product type
+    //        QString const quantity_string(product.attribute("q"));
+    //        double quantity(quantity_string.toDouble(&ok));
+    //        if(!ok)
+    //        {
+    //            messages::messages::instance()->set_error(
+    //                "Invalid Quantity",
+    //                QString("Could not parse quantity \"%1\" as a valid decimal number.").arg(quantity_string),
+    //                "We got a cart with an invalid quantity",
+    //                false
+    //            );
+    //            // TBD: should we stop here? At this point we go on
+    //            //      also the quantity should also be okay...
+    //            quantity = 1.0;
+    //        }
+
+    //        QString const product_description(product_result[0].stringValue());
+    //        QString const price_string(product_result[1].stringValue());
+    //        double price(price_string.toDouble(&ok));
+    //        if(!ok)
+    //        {
+    //            messages::messages::instance()->set_error(
+    //                "Invalid Price",
+    //                QString("Could not parse price \"%1\" as a valid decimal number.").arg(price_string),
+    //                "We got a cart with an invalid price",
+    //                false
+    //            );
+    //            // TBD: should we stop here? At this point we go on
+    //            //      also the quantity should also be okay...
+    //            price = 10.00;  // what kind of a default is that?!
+    //        }
+
+    //        // TODO: we need to add support for attributes
+
+    //        // TODO: we need to include other factors (per line taxes, shipping, etc.)
+    //        //       in many cases such fees are calculated on a per line basis
+    //        //       but only the totals are shown below
+    //        double total(floor(price * quantity * 100.0));
+
+    //        grand_total += total;
+    //    }
+    //}
+
+    //// TODO: add footer costs
+
+    //grand_total /= 100.0;
+}
+
+
+/** \brief Check whether a product is allowed in this cart.
+ *
+ * Before creating an invoice for a user, we verify that each product is
+ * indeed a product that the user is allowed to checkout. The default
+ * function runs the following checks:
+ *
+ * \li Page has a type (this is very much like a low level system check.)
+ * \li Page type is "ecommerce/product", i.e. a product.
+ * \li Price is defined, even if negative or zero.
+ * \li Current user has enough rights to access the product.
+ *
+ * Note that the test on whether the user has enough rights should always
+ * return true, even if the cart was created when the user was logged in
+ * and now he is not. This is because such shops will force the user to
+ * log back in whenever they go to the cart checkout.
+ *
+ * \param[in] product  The product being checked as defined in the cart XML.
+ * \param[in] product_ipath  The path in the database of the product.
+ *
+ * \return true if the signal should be processed, false otherwise.
+ */
+bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t product_ipath)
+{
+    // Is this GUID pointing to a page which represents a product at least?
+    links::link_info product_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, product_ipath.get_key(), product_ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(product_info));
+    links::link_info product_child_info;
+    if(!link_ctxt->next_link(product_child_info))
+    {
+        messages::messages::instance()->set_error(
+            "Invalid Cart",
+            "Your cart includes an invalid product identifier.",
+            QString("Page \"%1\" does not have a 'content::page_type' field.").arg(product_ipath.get_key()),
+            false
+        );
+        // This should rather rarely happen.
+        // (it could happen if the product was deleted and the
+        // user comes back a "few days" later... after the product
+        // got completely removed from the main website area
+        // i.e. no more redirect or clear error that it was deleted.)
+        product.parentNode().removeChild(product);
+        return false;
+    }
+
+    // the link_info returns a full key with domain name
+    // use a path_info_t to retrieve the cpath instead
+    content::path_info_t type_ipath;
+    type_ipath.set_path(product_child_info.key());
+    if(!type_ipath.get_cpath().startsWith(get_name(SNAP_NAME_ECOMMERCE_PRODUCT_TYPE_PATH)))
+    {
+        messages::messages::instance()->set_error(
+            "Invalid Cart",
+            "Your cart includes an invalid product identifier.",
+            QString("GUID \"%1\" does not point to a page representing a product. It has an invalid type.").arg(product_ipath.get_key()),
+            false
+        );
+        // This can happen in the real world since an administrator could
+        // transform a page that was a product in a page that is not a
+        // product anymore while someone has that product in his/her cart.
+        // So we cannot return here...
+        product.parentNode().removeChild(product);
+        return false;
+    }
+
+    // verify that there is a price, without a price it is not a valid
+    // product either...
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    if(revision_table->row(product_ipath.get_revision_key())->cell(get_name(SNAP_NAME_ECOMMERCE_PRICE))->value().nullValue())
+    {
+        // no price?!
+        messages::messages::instance()->set_error(
+            "Invalid Cart",
+            "Your cart includes an invalid product identifier.",
+            QString("Product GUID \"%1\" does not point to a page representing a product. Price is not defined.").arg(product_ipath.get_key()),
+            false
+        );
+        // Again, the product may have changed between the time the user
+        // added it to his cart and now, so we should just remove it from
+        // the cart and go on.
+        product.parentNode().removeChild(product);
+        return false;
+    }
+
+    // verify that the user can access the product
+    users::users *users_plugin(users::users::instance());
+    QString const& login_status(permissions::permissions::instance()->get_login_status());
+    QString const& user_path(users_plugin->get_user_path());
+    content::permission_flag allowed;
+    path::path::instance()->access_allowed(user_path, product_ipath, "view", login_status, allowed);
+    if(!allowed.allowed())
+    {
+        // not allowed?!
+        messages::messages::instance()->set_error(
+            "Invalid Cart",
+            "Your cart includes a product you do not have the right to access.",
+            QString("Product GUID \"%1\" is not accessible by this user. It should not have been added to the cart.").arg(product_ipath.get_key()),
+            false
+        );
+        // Again, the product may have been given more stringent
+        // permissions since the user added it to his cart and now
+        // it is not allowed to have it there...
+        product.parentNode().removeChild(product);
+        return false;
+    }
+
+    // TODO: we probably want to go through the product attributes here
+    //       and send another message such as attribute_allowed()...
+
+    return true;
+}
 
 
 SNAP_PLUGIN_END()

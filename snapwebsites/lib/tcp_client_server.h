@@ -21,6 +21,11 @@
 
 #include <arpa/inet.h>
 
+// BIO versions of the TCP client/server
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+
 namespace tcp_client_server
 {
 
@@ -42,8 +47,16 @@ public:
     tcp_client_server_parameter_error(std::string const& errmsg) : tcp_client_server_logic_error(errmsg) {}
 };
 
+class tcp_client_server_initialization_error : public tcp_client_server_runtime_error
+{
+public:
+    tcp_client_server_initialization_error(std::string const& errmsg) : tcp_client_server_runtime_error(errmsg) {}
+};
 
 
+
+// TODO: assuming that bio_client with MODE_PLAIN works the same way
+//       as a basic tcp_client, we should remove this class
 class tcp_client
 {
 public:
@@ -69,6 +82,8 @@ private:
 };
 
 
+// TODO: implement a bio_server then like with the client remove
+//       this basic tcp_server if it was like the bio version
 class tcp_server
 {
 public:
@@ -98,6 +113,37 @@ private:
     struct sockaddr_in  f_accepted_addr;
     bool                f_keepalive;
     bool                f_auto_close;
+};
+
+
+class bio_client
+{
+public:
+    typedef std::shared_ptr<bio_client>     pointer_t;
+
+    enum class mode_t
+    {
+        MODE_PLAIN,             // avoid SSL/TLS
+        MODE_SECURE,            // WARNING: may return a non-secure connection
+        MODE_ALWAYS_SECURE      // fails if cannot be secure
+    };
+
+                        bio_client(std::string const& addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+                        ~bio_client();
+
+    int                 get_socket() const;
+    int                 get_port() const;
+    int                 get_client_port() const;
+    std::string         get_addr() const;
+    std::string         get_client_addr() const;
+
+    int                 read(char *buf, size_t size);
+    int                 read_line(std::string& line);
+    int                 write(char const *buf, size_t size);
+
+private:
+    std::shared_ptr<BIO>        f_bio;
+    std::shared_ptr<SSL_CTX>    f_ssl_ctx;
 };
 
 

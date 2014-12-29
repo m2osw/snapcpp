@@ -326,6 +326,7 @@ bool snap_uri::set_uri(QString const& uri)
 
                 // query strings are saved as options (name/value pairs)
                 // although the value may not be defined at all (...&name&...)
+                // query string names are case sensitive (as per 6.2.2.1 of RFC 3986)
                 QString value;
                 if(e != u)
                 {

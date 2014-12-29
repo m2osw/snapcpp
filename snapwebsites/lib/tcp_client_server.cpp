@@ -16,9 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tcp_client_server.h"
+#include "not_reached.h"
 
-#include <sstream>
 #include <iostream>
+#include <sstream>
 
 #include <string.h>
 #include <unistd.h>
@@ -27,6 +28,10 @@
 #include "poison.h"
 
 namespace tcp_client_server
+{
+
+
+namespace
 {
 
 /** \brief Address info class to auto-free the structures.
@@ -71,6 +76,66 @@ public:
 };
 
 
+/** \brief Whether the bio_initialize() function was already called.
+ *
+ * This flag is used to know whether the bio_initialize() function was
+ * already called. Only the bio_initialize() function is expected to
+ * make use of this flag. Other functions should simply call the
+ * bio_initialize() function (future versions may include addition
+ * flags or use various bits in an integer instead.)
+ */
+bool g_bio_initialized = false;
+
+
+/** \brief Initialize the BIO library.
+ *
+ * This function is called by the BIO implementations to initialize the
+ * BIO library as required. It can be called any number of times. The
+ * initialization will happen only once.
+ */
+void bio_initialize()
+{
+    // already initialized?
+    if(g_bio_initialized)
+    {
+        return;
+    }
+    g_bio_initialized = true;
+
+    // Make sure the SSL library gets initialized
+    SSL_library_init();
+
+    // TBD: should we call the load string functions only when we
+    //      are about to generate an error?
+    ERR_load_crypto_strings();
+    ERR_load_SSL_strings();
+
+    // TODO: define a way to only define safe algorithm
+    //       (it looks like we can force TLSv1 below at least)
+    OpenSSL_add_all_algorithms();
+
+    // TBD: need a PRNG seeding before creating a new SSL context?
+}
+
+
+
+void bio_deleter(BIO *bio)
+{
+    BIO_free_all(bio);
+}
+
+
+void ssl_ctx_deleter(SSL_CTX *ssl_ctx)
+{
+    SSL_CTX_free(ssl_ctx);
+}
+
+
+}
+// no name namespace
+
+
+
 // ========================= CLIENT =========================
 
 
@@ -88,21 +153,21 @@ public:
 /** \brief Contruct a tcp_client object.
  *
  * The tcp_client constructor initializes a TCP client object by connecting
- * to the specified server. The server is defined with the address and port
- * specified as parameters.
+ * to the specified server. The server is defined with the \p addr and
+ * \p port specified as parameters.
  *
  * \exception tcp_client_server_parameter_error
- * This exception is raised if the port parameter is out of range or the
+ * This exception is raised if the \p port parameter is out of range or the
  * IP address is an empty string or otherwise an invalid address.
  *
  * \exception tcp_client_server_runtime_error
- * This exception is raised if the client connect create the socket or it
+ * This exception is raised if the client cannot create the socket or it
  * cannot connect to the server.
  *
  * \param[in] addr  The address of the server to connect to. It must be valid.
  * \param[in] port  The port the server is listening on.
  */
-tcp_client::tcp_client(const std::string& addr, int port)
+tcp_client::tcp_client(std::string const& addr, int port)
     : f_socket(-1)
     , f_port(port)
     , f_addr(addr)
@@ -116,11 +181,8 @@ tcp_client::tcp_client(const std::string& addr, int port)
         throw tcp_client_server_parameter_error("an empty address is not valid for a client socket");
     }
 
-    //char decimal_port[16];
     std::stringstream decimal_port;
     decimal_port << f_port;
-    //snprintf(decimal_port, sizeof(decimal_port), "%d", f_port);
-    //decimal_port[sizeof(decimal_port) / sizeof(decimal_port[0]) - 1] = '\0';
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -303,7 +365,7 @@ int tcp_client::read_line(std::string& line)
         int r(read(&c, sizeof(c)));
         if(r <= 0)
         {
-            return 0;
+            return len == 0 && r < 0 ? -1 : len;
         }
         if(c == '\n')
         {
@@ -605,10 +667,10 @@ int tcp_server::accept( const int max_wait_ms )
         fd_set s;
         //
         FD_ZERO(&s);
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
         FD_SET(f_socket, &s);
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
         //
         struct timeval timeout;
         timeout.tv_sec = max_wait_ms / 1000;
@@ -659,6 +721,461 @@ int tcp_server::get_last_accepted_socket() const
 }
 
 
+
+
+// ========================= BIO CLIENT =========================
+
+
+/** \class bio_client
+ * \brief Create a BIO client and connect to a server, eventually with TLS.
+ *
+ * This class is a client socket implementation used to connect to a server.
+ * The server is expected to be running at the time the client is created
+ * otherwise it fails connecting.
+ *
+ * This class is not appropriate to connect to a server that may come and go
+ * over time.
+ *
+ * The BIO extension is from the OpenSSL library and it allows the client
+ * to connect using SSL. At this time connections are either secure or
+ * not secure. If a secure connection fails, you may attempt again without
+ * TLS or other encryption mechanism.
+ */
+
+/** \brief Contruct a bio_client object.
+ *
+ * The bio_client constructor initializes a BIO connector and connects
+ * to the specified server. The server is defined with the \p addr and
+ * \p port specified as parameters. The connection tries to use TLS if
+ * the \p mode parameter is set to MODE_SECURE. Note that you may force
+ * a secure connection using MODE_SECURE_REQUIRED. With MODE_SECURE,
+ * the connection to the server can be obtained even if a secure
+ * connection could not be made to work.
+ *
+ * \exception tcp_client_server_parameter_error
+ * This exception is raised if the \p port parameter is out of range or the
+ * IP address is an empty string or otherwise an invalid address.
+ *
+ * \exception tcp_client_server_initialization_error
+ * This exception is raised if the client cannot create the socket or it
+ * cannot connect to the server.
+ *
+ * \param[in] addr  The address of the server to connect to. It must be valid.
+ * \param[in] port  The port the server is listening on.
+ * \param[in] mode  Whether to use SSL when connecting.
+ */
+bio_client::bio_client(std::string const& addr, int port, mode_t mode)
+    //: f_bio(nullptr) -- auto-init
+    //, f_ssl_ctx(nullptr) -- auto-init
+    //, f_port(port)
+    //, f_addr(addr)
+{
+    if(port < 0 || port >= 65536)
+    {
+        throw tcp_client_server_parameter_error("invalid port for a client socket");
+    }
+    if(addr.empty())
+    {
+        throw tcp_client_server_parameter_error("an empty address is not valid for a client socket");
+    }
+
+    bio_initialize();
+
+    switch(mode)
+    {
+    case mode_t::MODE_SECURE:
+    case mode_t::MODE_ALWAYS_SECURE:
+        {
+            // Use TLS v1 only as all versions of SSL are flawed...
+            f_ssl_ctx = std::shared_ptr<SSL_CTX>(SSL_CTX_new(TLSv1_client_method()));
+            //f_ssl_ctx = std::shared_ptr<SSL_CTX>(SSL_CTX_new(SSLv23_client_method()));
+            if(f_ssl_ctx == nullptr)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing an SSL_CTX object");
+            }
+
+            // load root certificates (correct path for Ubuntu?)
+            if(SSL_CTX_load_verify_locations(f_ssl_ctx.get(), NULL, "/etc/ssl/certs") != 1)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed loading verification certificates in an SSL_CTX object");
+            }
+
+            // create a BIO connected to SSL ciphers
+            f_bio = std::shared_ptr<BIO>(BIO_new_ssl_connect(f_ssl_ctx.get()), bio_deleter);
+            if(!f_bio)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing a BIO object");
+            }
+
+            // verify that the connection worked
+            SSL *ssl(nullptr);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            BIO_get_ssl(f_bio.get(), &ssl);
+#pragma GCC diagnostic pop
+            if(ssl == nullptr)
+            {
+                // TBD: does this mean we would have a plain connection?
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed connecting BIO object with SSL_CTX object");
+            }
+
+            // allow automatic retries in case the connection somehow needs
+            // an SSL renegotiation (maybe we should turn that off for cases
+            // where we connect to a secure payment gateway?)
+            SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+
+            // TODO: other SSL initialization?
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            BIO_set_conn_hostname(f_bio.get(), const_cast<char *>(addr.c_str()));
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+            BIO_set_conn_int_port(f_bio.get(), &port);
+#pragma GCC diagnostic pop
+
+            // connect to the server (open the socket)
+            if(BIO_do_connect(f_bio.get()) <= 0)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed connecting BIO object to server");
+            }
+
+            // encryption handshake
+            if(BIO_do_handshake(f_bio.get()) != 1)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed establishing a secure BIO connection with server");
+            }
+
+            // verify that the peer certificate was signed by a
+            // recognized root authority
+            if(SSL_get_peer_certificate(ssl) == nullptr)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("peer failed presenting a certificate for security verification");
+            }
+
+            if(SSL_get_verify_result(ssl) != X509_V_OK)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("peer certificate could not be verified");
+            }
+
+            // secure connection ready
+        }
+        break;
+
+    case mode_t::MODE_PLAIN:
+        {
+            // create a plain BIO connection
+            f_bio = std::shared_ptr<BIO>(BIO_new(BIO_s_connect()), bio_deleter);
+            if(!f_bio)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed initializing a BIO object");
+            }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            BIO_set_conn_hostname(f_bio.get(), const_cast<char *>(addr.c_str()));
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+            BIO_set_conn_int_port(f_bio.get(), &port);
+#pragma GCC diagnostic pop
+
+            // connect to the server (open the socket)
+            if(BIO_do_connect(f_bio.get()) <= 0)
+            {
+                ERR_print_errors_fp(stderr);
+                throw tcp_client_server_initialization_error("failed connecting BIO object to server");
+            }
+
+            // plain connection ready
+        }
+        break;
+
+    }
+}
+
+/** \brief Clean up the BIO client object.
+ *
+ * This function cleans up the BIO client object by freeing the SSL_CTX
+ * and the BIO objects.
+ */
+bio_client::~bio_client()
+{
+    // f_bio and f_ssl_ctx are allocated using shared pointers with
+    // a deleter so we have nothing to do here.
+}
+
+/** \brief Get the socket descriptor.
+ *
+ * This function returns the TCP client socket descriptor. This can be
+ * used to change the descriptor behavior (i.e. make it non-blocking for
+ * example.)
+ *
+ * \warning
+ * This socket is generally managed by the BIO library and thus it may
+ * create unwanted side effects to change the socket under the feet of
+ * the BIO library...
+ *
+ * \return The socket descriptor.
+ */
+int bio_client::get_socket() const
+{
+    int c;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+    BIO_get_fd(f_bio.get(), &c);
+#pragma GCC diagnostic pop
+    return c;
+}
+
+/** \brief Get the TCP client port.
+ *
+ * This function returns the port used when creating the TCP client.
+ * Note that this is the port the server is listening to and not the port
+ * the TCP client is currently connected to.
+ *
+ * \return The TCP client port.
+ */
+int bio_client::get_port() const
+{
+    return BIO_get_conn_int_port(f_bio.get());
+}
+
+/** \brief Get the TCP server address.
+ *
+ * This function returns the address used when creating the TCP address as is.
+ * Note that this is the address of the server where the client is connected
+ * and not the address where the client is running (although it may be the
+ * same.)
+ *
+ * Use the get_socket_name() function to retrieve the client's TCP address.
+ *
+ * \return The TCP client address.
+ */
+std::string bio_client::get_addr() const
+{
+    return BIO_get_conn_hostname(f_bio.get());
+}
+
+/** \brief Get the TCP client port.
+ *
+ * This function retrieve the port of the client (used on your computer).
+ * This is retrieved from the socket using the getsockname() function.
+ *
+ * \return The port or -1 if it cannot be determined.
+ */
+int bio_client::get_client_port() const
+{
+    struct sockaddr addr;
+    socklen_t len(sizeof(addr));
+    getsockname(get_socket(), &addr, &len);
+    // Note: I know the port is at the exact same location in both
+    //       structures in Linux but it could change on other Unices
+    switch(addr.sa_family)
+    {
+    case AF_INET:
+        // IPv4
+        return reinterpret_cast<sockaddr_in *>(&addr)->sin_port;
+
+    case AF_INET6:
+        // IPv6
+        return reinterpret_cast<sockaddr_in6 *>(&addr)->sin6_port;
+
+    default:
+        return -1;
+
+    }
+    snap::NOTREACHED();
+}
+
+/** \brief Get the TCP client address.
+ *
+ * This function retrieve the IP address of the client (your computer).
+ * This is retrieved from the socket using the getsockname() function.
+ *
+ * \return The IP address as a string.
+ */
+std::string bio_client::get_client_addr() const
+{
+    struct sockaddr addr;
+    socklen_t len(sizeof(addr));
+    getsockname(get_socket(), &addr, &len);
+    char buf[BUFSIZ];
+    switch(addr.sa_family)
+    {
+    case AF_INET:
+        inet_ntop(AF_INET, &reinterpret_cast<struct sockaddr_in *>(&addr)->sin_addr, buf, sizeof(buf));
+        break;
+
+    case AF_INET6:
+        inet_ntop(AF_INET6, &reinterpret_cast<struct sockaddr_in6 *>(&addr)->sin6_addr, buf, sizeof(buf));
+        break;
+
+    default:
+        return "unknown.address.family";
+
+    }
+    return buf;
+}
+
+/** \brief Read data from the socket.
+ *
+ * A TCP socket is a stream type of socket and one can read data from it
+ * as if it were a regular file. This function reads \p size bytes and
+ * returns. The function returns early if the server closes the connection.
+ *
+ * If your socket is blocking, \p size should be exactly what you are
+ * expecting or this function will block forever or until the server
+ * closes the connection.
+ *
+ * The function returns -1 if an error occurs. The error is available in
+ * errno as expected in the POSIX interface.
+ *
+ * \warning
+ * When the function returns zero, it is likely that the server closed
+ * the connection. It may also be that the buffer was empty and that
+ * the BIO decided to return early. Since we use a blocking mechanism
+ * by default, that should not happen.
+ *
+ * \todo
+ * At this point, I do not know for sure whether errno is properly set
+ * or not. It is not unlikely that the BIO library does not keep a clean
+ * errno error since they have their own error management.
+ *
+ * \param[in,out] buf  The buffer where the data is read.
+ * \param[in] size  The size of the buffer.
+ *
+ * \return The number of bytes read from the socket, or -1 on errors.
+ *
+ * \sa read_line()
+ * \sa write()
+ */
+int bio_client::read(char *buf, size_t size)
+{
+    int r(static_cast<int>(BIO_read(f_bio.get(), buf, size)));
+    if(r <= -2)
+    {
+        // the BIO is not implemented
+        // XXX: do we have to set errno?
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+    if(r == -1 || r == 0)
+    {
+        if(BIO_should_retry(f_bio.get()))
+        {
+            return 0;
+        }
+        // the BIO generated an error (TBD should we check BIO_eof() too?)
+        // XXX: do we have to set errno?
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+    return r;
+}
+
+
+/** \brief Read one line.
+ *
+ * This function reads one line from the current location up to the next
+ * '\\n' character. We do not have any special handling of the '\\r'
+ * character.
+ *
+ * The function may return 0 (an empty string) when the server closes
+ * the connection.
+ *
+ * \warning
+ * A return value of zero can mean "empty line" and not end of file. It
+ * is up to you to know whether your protocol allows for empty lines or
+ * not. If so, you may not be able to make use of this function.
+ *
+ * \param[out] line  The resulting line read from the server. The function
+ *                   first clears the contents.
+ *
+ * \return The number of bytes read from the socket, or -1 on errors.
+ *         If the function returns 0 or more, then the \p line parameter
+ *         represents the characters read on the network.
+ *
+ * \sa read()
+ */
+int bio_client::read_line(std::string& line)
+{
+    line.clear();
+    int len(0);
+    for(;;)
+    {
+        char c;
+        int r(read(&c, sizeof(c)));
+        if(r <= 0)
+        {
+            return len == 0 && r < 0 ? -1 : len;
+        }
+        if(c == '\n')
+        {
+            return len;
+        }
+        ++len;
+        line += c;
+    }
+}
+
+
+/** \brief Write data to the socket.
+ *
+ * A BIO socket is a stream type of socket and one can write data to it
+ * as if it were a regular file. This function writes \p size bytes to
+ * the socket and then returns. This function returns early if the server
+ * closes the connection.
+ *
+ * If your socket is not blocking, less than \p size bytes may be written
+ * to the socket. In that case you are responsible for calling the function
+ * again to write the remainder of the buffer until the function returns
+ * a number of bytes written equal to \p size.
+ *
+ * The function returns -1 if an error occurs. The error is available in
+ * errno as expected in the POSIX interface.
+ *
+ * \todo
+ * At this point, I do not know for sure whether errno is properly set
+ * or not. It is not unlikely that the BIO library does not keep a clean
+ * errno error since they have their own error management.
+ *
+ * \param[in] buf  The buffer with the data to send over the socket.
+ * \param[in] size  The number of bytes in buffer to send over the socket.
+ *
+ * \return The number of bytes that were actually accepted by the socket
+ * or -1 if an error occurs.
+ *
+ * \sa read()
+ */
+int bio_client::write(const char *buf, size_t size)
+{
+    int r(static_cast<int>(BIO_write(f_bio.get(), buf, size)));
+    if(r <= -2)
+    {
+        // the BIO is not implemented
+        // XXX: do we have to set errno?
+        return -1;
+    }
+    if(r == -1 || r == 0)
+    {
+        if(BIO_should_retry(f_bio.get()))
+        {
+            return 0;
+        }
+        // the BIO generated an error (TBD should we check BIO_eof() too?)
+        // XXX: do we have to set errno?
+        return -1;
+    }
+    BIO_flush(f_bio.get());
+    return r;
+}
 
 
 } // namespace tcp_client_server

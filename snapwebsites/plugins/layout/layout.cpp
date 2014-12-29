@@ -444,7 +444,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
     int64_t const last_update(install_layout(layout_name, 0));
 
     QtCassandra::QCassandraValue specific_last_updated(f_snap->get_site_parameter("core::last_updated::layout"));
-    if(last_update > specific_last_updated.int64Value())
+    if(last_update > specific_last_updated.safeInt64Value())
     {
         specific_last_updated.setInt64Value(last_update);
         // TODO:
@@ -1404,7 +1404,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
         // caller wants us to check for updates
 
         // the value should never be null in a properly installed layout
-        if(!last_updated_value.nullValue())
+        if(last_updated_value.size() == sizeof(int64_t))
         {
             int64_t const last_install(last_updated_value.int64Value());
             if(last_install <= last_updated)
@@ -1500,7 +1500,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
 
     // the last updated value should never be empty, but that happens when
     // we deal with the default theme
-    if(last_updated_value.nullValue())
+    if(last_updated_value.size() != sizeof(int64_t))
     {
         last_updated_value.setInt64Value(last_updated);
         layout_table->row(layout_name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated_value);

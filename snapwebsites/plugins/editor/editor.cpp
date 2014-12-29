@@ -807,6 +807,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     bool const auto_save(on_save.isNull() ? true : on_save.attribute("auto-save", "yes") == "yes");
 
     QtCassandra::QCassandraRow::pointer_t revision_row;
+    QtCassandra::QCassandraRow::pointer_t secret_row;
+    QtCassandra::QCassandraRow::pointer_t data_row;
 
     if(auto_save)
     {
@@ -852,10 +854,13 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         // now save the new data
         ipath.force_branch(branch_number);
         ipath.force_revision(revision_number);
-
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        revision_row = revision_table->row(ipath.get_revision_key());
     }
+
+    // these pointers are used in the signal below (save_editor_fields)
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    revision_row = revision_table->row(ipath.get_revision_key());
+    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    secret_row = secret_table->row(ipath.get_key()); // same key as the content table
 
     // this will get initialized if the row is required
 
@@ -880,6 +885,17 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             QString const widget_type(widget.attribute("type"));
             QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
             bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
+
+            // note: the auto-save may not be turned on, we can still copy
+            //       empty pointers around, it is fast enough
+            if(is_secret)
+            {
+                data_row = secret_row;
+            }
+            else
+            {
+                data_row = revision_row;
+            }
 
             if(widget_name.isEmpty())
             {
@@ -954,7 +970,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         // do NOT save the result if it was not considered valid
                         if(ok)
                         {
-                            revision_row->cell(field_name)->setValue(c);
+                            data_row->cell(field_name)->setValue(c);
                             current_value = QString("%1").arg(c);
                         }
                     }
@@ -976,7 +992,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         }
                         else
                         {
-                            revision_row->cell(field_name)->setValue(dbl);
+                            data_row->cell(field_name)->setValue(dbl);
                             current_value = QString("%1").arg(dbl);
                         }
                     }
@@ -998,13 +1014,13 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         time_t t(mkgmtime(&time_info));
                         QtCassandra::QCassandraValue v;
                         v.setInt64Value(t * 1000000); // seconds to microseconds
-                        revision_row->cell(field_name)->setValue(v);
+                        data_row->cell(field_name)->setValue(v);
                         current_value = post_value;
                     }
                     else if(widget_auto_save == "string")
                     {
                         // no special handling for empty strings here
-                        revision_row->cell(field_name)->setValue(post_value);
+                        data_row->cell(field_name)->setValue(post_value);
                         current_value = post_value;
                     }
                     else if(widget_auto_save == "html")
@@ -1029,7 +1045,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                             }
                         }
                         parse_out_inline_img(ipath, value, widget_force_filename);
-                        revision_row->cell(field_name)->setValue(value);
+                        data_row->cell(field_name)->setValue(value);
                         current_value = value;
                     }
                 }
@@ -1037,7 +1053,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                 {
                     // get the current value from the database to verify the
                     // current value (because it may [still] be wrong)
-                    QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
+                    QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
                     if(!value.nullValue())
                     {
                         if(widget_auto_save == "int8")
@@ -1139,7 +1155,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     }
 
     // allow each plugin to save special fields (i.e. no auto-save)
-    save_editor_fields(ipath, revision_row);
+    save_editor_fields(ipath, revision_row, secret_row);
 
     // save the modification date in the branch
     content_plugin->modified_content(ipath);
@@ -1149,7 +1165,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 /** \brief This function cleans the tainted data from a POST.
  *
  * This function attempts to clean a value that was just posted to us from
- * a client. The checks depend on the type of widget we're dealing with.
+ * a client. The checks depend on the type of widget we are dealing with.
  *
  * \todo
  * Complete the function.
@@ -1295,6 +1311,11 @@ void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessi
         //blah();
 
         // TODO: define the locale in some ways... for now we use "", i.e. neutral
+        //
+        // TBD: we may want to follow the "secret" attribute, although
+        //      attachments are saved in another table altogether anyway...
+        //      and we do not (currently) offer scripts that can access
+        //      attachment directly.
         content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
         QString const attachment_cpath(the_attachment.get_attachment_cpath());
         if(!attachment_cpath.isEmpty())
@@ -2448,28 +2469,31 @@ bool editor::replace_uri_token_impl(editor_uri_token& token_info)
  * revision number that was allocated to save this data.
  *
  * \param[in,out] ipath  The ipath to the page being modified.
- * \param[in,out] row  The row where all the fields are to be saved.
+ * \param[in,out] revision_row  The row where all the fields are to be saved.
+ * \param[in,out] secret_row  The row where all the fields are to be saved.
  */
-bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t row)
+bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row)
 {
     static_cast<void>(ipath);
+    static_cast<void>(secret_row);
 
     if(f_snap->postenv_exists("title"))
     {
         QString const title(f_snap->postenv("title"));
         // TODO: XSS filter title
-        row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(title);
+        revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     }
     if(f_snap->postenv_exists("body"))
     {
         QString body(f_snap->postenv("body"));
         // TODO: find a way to detect whether images are allowed in this
         //       field and if not make sure that if we find some err
+        //
         // body may include images, transform the <img src="inline-data"/>
         // to an <img src="/images/..."/> link instead
         parse_out_inline_img(ipath, body, "");
         // TODO: XSS filter body
-        row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
+        revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
     }
 
     return true;
@@ -2717,9 +2741,9 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
  * be a setting in the database (per page, type, global...).
  *
  * \param[in] ipath  The path being managed.
- * \param[in,out] doc  The XML document that was generated for this body.
- * \param[in] xsl  The XSLT document that is about to be used to transform
- *                 the body (still as a string).
+ * \param[in,out] page  The XML element named "page".
+ * \param[in,out] page  The XML element named "body".
+ * \param[in] ctemplate  The template in case the default does not work.
  */
 void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
@@ -2784,6 +2808,9 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // path exists in doc then copy the data somewhere in the doc
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
+    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(ipath.get_key()));
+    QtCassandra::QCassandraRow::pointer_t data_row;
     for(int i(0); i < max_widgets; ++i)
     {
         QDomElement w(widgets.at(i).toElement());
@@ -2791,13 +2818,25 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         QString const field_id(w.attribute("id"));
         QString const field_type(w.attribute("type"));
         QString const widget_auto_save(w.attribute("auto-save", "string")); // this one is #IMPLIED
+        bool const is_secret(w.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
+
+        // note: the auto-save may not be turned on, we can still copy
+        //       empty pointers around, it is fast enough
+        if(is_secret)
+        {
+            data_row = secret_row;
+        }
+        else
+        {
+            data_row = revision_row;
+        }
 
         // get the current value from the database if it exists
         bool const is_editor_session_field(field_name == "editor::session");
         if(!field_name.isEmpty()
-        && (is_editor_session_field || revision_row->exists(field_name)))
+        && (is_editor_session_field || data_row->exists(field_name)))
         {
-            QtCassandra::QCassandraValue const value(revision_row->cell(field_name)->value());
+            QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
             QString current_value;
             bool set_value(true);
             if(is_editor_session_field)
@@ -2851,7 +2890,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                  || widget_auto_save == "html")
             {
                 // no special handling for strings / html
-                current_value = revision_row->cell(field_name)->value().stringValue();
+                current_value = value.stringValue();
             }
             else
             {
@@ -2877,7 +2916,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                 snap_dom::insert_html_string_to_xml_doc(value_tag, current_value);
             }
         }
-        init_editor_widget(ipath, field_id, field_type, w, revision_row);
+        init_editor_widget(ipath, field_id, field_type, w, data_row);
     }
 
     QString action;

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.19
+ * Version: 0.0.1.20
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2014 (c) Made to Order Software Corporation  All rights reverved.
@@ -199,12 +199,16 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
  * @param {snapwebsites.ServerAccessCallbacks} callback  An object reference,
  *          object that derives from the ServerAccessCallbacks interface.
  *
+ * @return {snapwebsites.ServerAccess}  This ServerAccess object.
+ *
  * @constructor
  * @struct
  */
 snapwebsites.ServerAccess = function(callback)
 {
     this.callback_ = callback;
+
+    return this;
 };
 
 
@@ -219,7 +223,7 @@ snapwebsites.base(snapwebsites.ServerAccess);
  *
  * This object represents a simple object of key/value pairs.
  *
- * Adding parameters is as simple as setting assigning a value to
+ * Adding parameters is as simple as assigning a value to
  * a new member:
  *
  * \code

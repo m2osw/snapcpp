@@ -98,7 +98,8 @@ enum name_t
     SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY,
     SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH,
     SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION,
-    SNAP_NAME_CONTENT_REVISION_TABLE,         // Name of Cassandra table used for revision information
+    SNAP_NAME_CONTENT_REVISION_TABLE,       // Name of Cassandra table used for revision information
+    SNAP_NAME_CONTENT_SECRET_TABLE,         // Name of Cassandra table used for secret content
     SNAP_NAME_CONTENT_SHORT_TITLE,
     SNAP_NAME_CONTENT_SINCE,
     SNAP_NAME_CONTENT_STATUS,
@@ -657,6 +658,7 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
     QtCassandra::QCassandraTable::pointer_t get_content_table();
+    QtCassandra::QCassandraTable::pointer_t get_secret_table();
     QtCassandra::QCassandraTable::pointer_t get_files_table();
     QtCassandra::QCassandraTable::pointer_t get_branch_table();
     QtCassandra::QCassandraTable::pointer_t get_revision_table();
@@ -702,6 +704,7 @@ public:
     virtual void        on_backend_action(QString const& action);
     void                on_backend_process();
     void                on_load_file(snap_child::post_file_t& file, bool& found);
+    void                on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure);
 
     SNAP_SIGNAL(new_content, (path_info_t& path), (path));
     SNAP_SIGNAL_WITH_MODE(create_content, (path_info_t& path, QString const& owner, QString const& type), (path, owner, type), START_AND_DONE);
@@ -777,6 +780,7 @@ private:
 
     zpsnap_child_t                                  f_snap;
     QtCassandra::QCassandraTable::pointer_t         f_content_table;
+    QtCassandra::QCassandraTable::pointer_t         f_secret_table;
     QtCassandra::QCassandraTable::pointer_t         f_processing_table;
     QtCassandra::QCassandraTable::pointer_t         f_branch_table;
     QtCassandra::QCassandraTable::pointer_t         f_revision_table;
