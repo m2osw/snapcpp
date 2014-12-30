@@ -318,7 +318,7 @@ public:
         NODE_SWITCH_FLAG_DEFAULT,           // we found a 'default:' label in that switch
 
         // NODE_TYPE
-        NODE_TYPE_FLAG_MODULO,              // modulo numeric type
+        NODE_TYPE_FLAG_MODULO,              // modulo numeric type declaration
 
         // NODE_VARIABLE, NODE_VAR_ATTRIBUTES
         NODE_VARIABLE_FLAG_CONST,
@@ -330,7 +330,7 @@ public:
         NODE_VARIABLE_FLAG_INUSE,           // this variable was referenced
         NODE_VARIABLE_FLAG_ATTRS,           // currently being read for attributes (to avoid loops)
         NODE_VARIABLE_FLAG_DEFINED,         // was already parsed
-        NODE_VARIABLE_FLAG_DEFINING,        // currently defining, can't read
+        NODE_VARIABLE_FLAG_DEFINING,        // currently defining, cannot read
         NODE_VARIABLE_FLAG_TOADD,           // to be added in the directive list
 
         NODE_FLAG_max
@@ -370,7 +370,7 @@ public:
         NODE_ATTR_NATIVE,
 
         // function/variable is still defined, but should not be used
-        // (using generates a "foo deprecated" warning)
+        // (using generates a "foo deprecated" warning or equivalent)
         NODE_ATTR_DEPRECATED,
         NODE_ATTR_UNSAFE, // i.e. eval()
 
@@ -400,6 +400,9 @@ public:
         NODE_ATTR_FOREACH,
         NODE_ATTR_NOBREAK,
         NODE_ATTR_AUTOBREAK,
+
+        // type attribute, to mark all the nodes within a type expression
+        NODE_ATTR_TYPE,
 
         // The following is to make sure we never define the attributes more
         // than once. In itself it is not an attribute.
@@ -498,8 +501,9 @@ public:
     bool                        compare_all_flags(flag_set_t const& s) const;
 
     // check attributes
-    bool                        get_attribute(attribute_t f) const;
-    void                        set_attribute(attribute_t f, bool v);
+    bool                        get_attribute(attribute_t const a) const;
+    void                        set_attribute(attribute_t const a, bool const v);
+    void                        set_attribute_tree(attribute_t const a, bool const v);
     bool                        compare_all_attributes(attribute_set_t const& s) const;
     static char const *         attribute_to_string(attribute_t const attr);
 
@@ -561,7 +565,7 @@ private:
 
     // verify different parameters
     void                        verify_flag(flag_t f) const;
-    void                        verify_attribute(attribute_t f) const;
+    void                        verify_attribute(attribute_t const f) const;
     bool                        verify_exclusive_attributes(attribute_t f) const;
     void                        modifying() const;
 

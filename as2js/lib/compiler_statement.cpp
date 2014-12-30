@@ -675,11 +675,12 @@ Node::pointer_t Compiler::return_directive(Node::pointer_t return_node)
             msg << "'return' was used inside '" << function_node->get_string() << "', a function Never returning.";
         }
 
+        Node::pointer_t the_class;
         size_t const max_children(return_node->get_children_size());
         if(max_children == 1)
         {
             if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID)
-            || is_constructor(function_node))
+            || is_constructor(function_node, the_class))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_IMPROPER_STATEMENT, return_node->get_position());
                 msg << "'return' was used with an expression inside '" << function_node->get_string() << "', a function returning Void.";
@@ -694,7 +695,7 @@ Node::pointer_t Compiler::return_directive(Node::pointer_t return_node)
             // environment... maybe we will add this
             // here at some point.
             if(!function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID)
-            && !is_constructor(function_node))
+            && !is_constructor(function_node, the_class))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_IMPROPER_STATEMENT, return_node->get_position());
                 msg << "'return' was used without an expression inside '" << function_node->get_string() << "', a function which expected a value to be returned.";

@@ -97,7 +97,7 @@ char const *g_attribute_names[static_cast<int>(Node::attribute_t::NODE_ATTR_max)
     "DEPRECATED",
     "UNSAFE",
     "CONSTRUCTOR",
-    //  "CONST"         ); -- this is a flag, not needed here
+    //"CONST",         -- this is a flag, not needed here
     "FINAL",
     "ENUMERABLE",
     "TRUE",
@@ -107,6 +107,7 @@ char const *g_attribute_names[static_cast<int>(Node::attribute_t::NODE_ATTR_max)
     "FOREACH",
     "NOBREAK",
     "AUTOBREAK",
+    "TYPE",
     "DEFINED"
 };
 
@@ -223,7 +224,7 @@ char const *g_attribute_groups[] =
  * \sa set_attribute()
  * \sa verify_attribute()
  */
-bool Node::get_attribute(attribute_t a) const
+bool Node::get_attribute(attribute_t const a) const
 {
     verify_attribute(a);
     return f_attributes[static_cast<size_t>(a)];
@@ -241,11 +242,12 @@ bool Node::get_attribute(attribute_t a) const
  * \param[in] a  The flag to set.
  * \param[in] v  The new value for the flag.
  *
+ * \sa set_attribute_tree()
  * \sa get_attribute()
  * \sa verify_attribute()
  * \sa verify_exclusive_attributes()
  */
-void Node::set_attribute(attribute_t a, bool v)
+void Node::set_attribute(attribute_t const a, bool const v)
 {
     verify_attribute(a);
     if(v)
@@ -260,6 +262,49 @@ void Node::set_attribute(attribute_t a, bool v)
         }
     }
     f_attributes[static_cast<size_t>(a)] = v;
+}
+
+
+/** \brief Set an attribute in a whole tree.
+ *
+ * This function sets the specified attribute \p a to the specified value
+ * \p v in this Node object and all of its children.
+ *
+ * The function verifies that the specified attribute (\p a) corresponds to
+ * the type of data you are dealing with.
+ *
+ * \param[in] a  The flag to set.
+ * \param[in] v  The new value for the flag.
+ *
+ * \sa set_attribute_tree()
+ * \sa get_attribute()
+ * \sa verify_attribute()
+ * \sa verify_exclusive_attributes()
+ */
+void Node::set_attribute_tree(attribute_t const a, bool const v)
+{
+    verify_attribute(a);
+    if(v)
+    {
+        // exclusive attributes do not generate an exception, instead
+        // we test the return value and if two exclusive attribute flags
+        // were to be set simultaneously, we prevent the second one from
+        // being set
+        if(verify_exclusive_attributes(a))
+        {
+            f_attributes[static_cast<size_t const>(a)] = v;
+        }
+    }
+    else
+    {
+        f_attributes[static_cast<size_t const>(a)] = v;
+    }
+
+    // repeat on the children
+    for(size_t idx(0); idx < f_children.size(); ++idx)
+    {
+        f_children[idx]->set_attribute_tree(a, v);
+    }
 }
 
 
@@ -331,7 +376,7 @@ void Node::verify_attribute(attribute_t a) const
     case attribute_t::NODE_ATTR_FOREACH:
     case attribute_t::NODE_ATTR_NOBREAK:
     case attribute_t::NODE_ATTR_AUTOBREAK:
-        // TBD -- we'll need to see whether we want to limit the attributes
+        // TBD -- we will need to see whether we want to limit the attributes
         //        on a per node type basis and how we can do that properly
         if(f_type != node_t::NODE_PROGRAM)
         {
@@ -343,6 +388,106 @@ void Node::verify_attribute(attribute_t a) const
     case attribute_t::NODE_ATTR_DEFINED:
         // all nodes can receive this flag
         return;
+
+    case attribute_t::NODE_ATTR_TYPE:
+        // the type attribute is limited to nodes that can appear in
+        // an expression so we limit to such nodes for now
+        switch(f_type)
+        {
+        case node_t::NODE_ADD:
+        case node_t::NODE_ARRAY:
+        case node_t::NODE_ARRAY_LITERAL:
+        case node_t::NODE_AS:
+        case node_t::NODE_ASSIGNMENT:
+        case node_t::NODE_ASSIGNMENT_ADD:
+        case node_t::NODE_ASSIGNMENT_BITWISE_AND:
+        case node_t::NODE_ASSIGNMENT_BITWISE_OR:
+        case node_t::NODE_ASSIGNMENT_BITWISE_XOR:
+        case node_t::NODE_ASSIGNMENT_DIVIDE:
+        case node_t::NODE_ASSIGNMENT_LOGICAL_AND:
+        case node_t::NODE_ASSIGNMENT_LOGICAL_OR:
+        case node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
+        case node_t::NODE_ASSIGNMENT_MAXIMUM:
+        case node_t::NODE_ASSIGNMENT_MINIMUM:
+        case node_t::NODE_ASSIGNMENT_MODULO:
+        case node_t::NODE_ASSIGNMENT_MULTIPLY:
+        case node_t::NODE_ASSIGNMENT_POWER:
+        case node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+        case node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+        case node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
+        case node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
+        case node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+        case node_t::NODE_ASSIGNMENT_SUBTRACT:
+        case node_t::NODE_BITWISE_AND:
+        case node_t::NODE_BITWISE_NOT:
+        case node_t::NODE_BITWISE_OR:
+        case node_t::NODE_BITWISE_XOR:
+        case node_t::NODE_CALL:
+        case node_t::NODE_CONDITIONAL:
+        case node_t::NODE_DECREMENT:
+        case node_t::NODE_DELETE:
+        case node_t::NODE_DIVIDE:
+        case node_t::NODE_EQUAL:
+        case node_t::NODE_FALSE:
+        case node_t::NODE_FLOAT64:
+        case node_t::NODE_FUNCTION:
+        case node_t::NODE_GREATER:
+        case node_t::NODE_GREATER_EQUAL:
+        case node_t::NODE_IDENTIFIER:
+        case node_t::NODE_IN:
+        case node_t::NODE_INCREMENT:
+        case node_t::NODE_INSTANCEOF:
+        case node_t::NODE_INT64:
+        case node_t::NODE_IS:
+        case node_t::NODE_LESS:
+        case node_t::NODE_LESS_EQUAL:
+        case node_t::NODE_LIST:
+        case node_t::NODE_LOGICAL_AND:
+        case node_t::NODE_LOGICAL_NOT:
+        case node_t::NODE_LOGICAL_OR:
+        case node_t::NODE_LOGICAL_XOR:
+        case node_t::NODE_MATCH:
+        case node_t::NODE_MAXIMUM:
+        case node_t::NODE_MEMBER:
+        case node_t::NODE_MINIMUM:
+        case node_t::NODE_MODULO:
+        case node_t::NODE_MULTIPLY:
+        case node_t::NODE_NAME:
+        case node_t::NODE_NEW:
+        case node_t::NODE_NOT_EQUAL:
+        case node_t::NODE_NULL:
+        case node_t::NODE_OBJECT_LITERAL:
+        case node_t::NODE_POST_DECREMENT:
+        case node_t::NODE_POST_INCREMENT:
+        case node_t::NODE_POWER:
+        case node_t::NODE_PRIVATE:
+        case node_t::NODE_PUBLIC:
+        case node_t::NODE_RANGE:
+        case node_t::NODE_ROTATE_LEFT:
+        case node_t::NODE_ROTATE_RIGHT:
+        case node_t::NODE_SCOPE:
+        case node_t::NODE_SHIFT_LEFT:
+        case node_t::NODE_SHIFT_RIGHT:
+        case node_t::NODE_SHIFT_RIGHT_UNSIGNED:
+        case node_t::NODE_STRICTLY_EQUAL:
+        case node_t::NODE_STRICTLY_NOT_EQUAL:
+        case node_t::NODE_STRING:
+        case node_t::NODE_SUBTRACT:
+        case node_t::NODE_SUPER:
+        case node_t::NODE_THIS:
+        case node_t::NODE_TRUE:
+        case node_t::NODE_TYPEOF:
+        case node_t::NODE_UNDEFINED:
+        case node_t::NODE_VIDENTIFIER:
+        case node_t::NODE_VOID:
+            return;
+
+        default:
+            // anything else is an error
+            break;
+
+        }
+        break;
 
     case attribute_t::NODE_ATTR_max:
         break;
@@ -379,7 +524,7 @@ void Node::verify_attribute(attribute_t a) const
  *
  * \sa set_attribute()
  */
-bool Node::verify_exclusive_attributes(attribute_t a) const
+bool Node::verify_exclusive_attributes(attribute_t const a) const
 {
     bool conflict(false);
     char const *names;
@@ -393,6 +538,7 @@ bool Node::verify_exclusive_attributes(attribute_t a) const
     case attribute_t::NODE_ATTR_FINAL:
     case attribute_t::NODE_ATTR_INTERNAL:
     case attribute_t::NODE_ATTR_TRANSIENT:
+    case attribute_t::NODE_ATTR_TYPE:
     case attribute_t::NODE_ATTR_UNSAFE:
     case attribute_t::NODE_ATTR_UNUSED:
     case attribute_t::NODE_ATTR_VOLATILE:

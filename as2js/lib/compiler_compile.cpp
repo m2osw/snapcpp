@@ -271,57 +271,6 @@ void Compiler::print_search_errors(Node::pointer_t name)
 }
 
 
-
-
-
-
-
-void Compiler::resolve_internal_type(Node::pointer_t parent, char const *type, Node::pointer_t& resolution)
-{
-    Node::pointer_t id(parent->create_replacement(Node::node_t::NODE_IDENTIFIER));
-    id->set_string(type);
-
-    // create a temporary identifier
-    int idx(parent->get_children_size());
-    parent->append_child(id);
-
-    // search for the identifier which is an internal type name
-    bool r;
-    {
-        NodeLock ln(parent);
-        r = resolve_name(id, id, resolution, Node::pointer_t(), 0);
-    }
-
-    // get rid of the temporary identifier
-    parent->delete_child(idx);
-
-    if(!r)
-    {
-        // if the compiler can't find an internal type, that's really bad!
-        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, parent->get_position());
-        msg << "cannot find internal type \"" << type << "\".";
-        throw exception_exit(1, "cannot find internal type");
-    }
-
-    return;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 // namespace as2js
 

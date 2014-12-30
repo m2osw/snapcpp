@@ -94,6 +94,9 @@ void Node::modifying() const
 {
     if(is_locked())
     {
+        // print the node in stderr so one can see what node generated a problem
+        std::cerr << "The following node is locked:" << std::endl
+                  << *this << std::endl;
         throw exception_locked_node("trying to modify a locked node.");
     }
 }

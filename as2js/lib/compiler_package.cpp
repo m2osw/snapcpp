@@ -722,6 +722,11 @@ void Compiler::internal_imports()
 
 bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolution, Node::pointer_t id, Node::pointer_t params, int const search_flags)
 {
+    if(static_cast<size_t>(idx) >= list->get_children_size())
+    {
+        throw exception_internal_error(std::string("Compiler::check_name() index too large for this list."));
+    }
+
     Node::pointer_t child(list->get_child(idx));
 
     // turned off?
@@ -731,6 +736,16 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
     //}
 
     bool result = false;
+std::cerr << "\"function\" child node = " << child.get() << " -> " << child->get_type_name();
+if(child->get_type() == Node::node_t::NODE_CLASS
+|| child->get_type() == Node::node_t::NODE_PACKAGE
+|| child->get_type() == Node::node_t::NODE_IMPORT
+|| child->get_type() == Node::node_t::NODE_ENUM
+|| child->get_type() == Node::node_t::NODE_FUNCTION)
+{
+    std::cerr << " \"" << child->get_string() << "\"";
+}
+std::cerr << "\n";
     switch(child->get_type())
     {
     case Node::node_t::NODE_VAR:    // a VAR is composed of VARIABLEs
@@ -763,6 +778,7 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         break;
 
     case Node::node_t::NODE_PARAM:
+std::cerr << "  +-> param = " << child->get_string() << " against " << id->get_string() << "\n";
         if(child->get_string() == id->get_string())
         {
             resolution = child;
@@ -772,7 +788,31 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         break;
 
     case Node::node_t::NODE_FUNCTION:
-        result = check_function(child, resolution, id->get_string(), params, search_flags);
+std::cerr << "  +-> name = " << child->get_string() << "\n";
+        {
+            Node::pointer_t the_class;
+            if(is_constructor(child, the_class))
+            {
+                // this is a special case as the function name is the same
+                // as the class name and the type resolution is thus the
+                // class and not the function and we have to catch this
+                // special case otherwise we get a never ending loop
+                if(the_class->get_string() == id->get_string())
+                {
+                    // just in case we replace the child pointer so we
+                    // avoid potential side effects of having a function
+                    // declaration in the child pointer
+                    child = the_class;
+                    resolution = the_class;
+                    result = true;
+std::cerr << "  +-> this was a class! = " << child->get_string() << "\n";
+                }
+            }
+            else
+            {
+                result = check_function(child, resolution, id->get_string(), params, search_flags);
+            }
+        }
         break;
 
     case Node::node_t::NODE_CLASS:
@@ -946,7 +986,52 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
 }
 
 
-bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::pointer_t& resolution, Node::pointer_t params, int const search_flags)
+void Compiler::resolve_internal_type(Node::pointer_t parent, char const *type, Node::pointer_t& resolution)
+{
+    // create a temporary identifier
+    Node::pointer_t id(parent->create_replacement(Node::node_t::NODE_IDENTIFIER));
+    id->set_string(type);
+
+    // TBD: identifier ever needs a parent?!
+    //int const idx(parent->get_children_size());
+//std::cerr << "Do some invalid append now?\n";
+    //parent->append_child(id);
+//std::cerr << "Done the invalid append?!\n";
+
+    // search for the identifier which is an internal type name
+    bool r;
+    {
+        // TODO: we should be able to start the search from the native
+        //       definitions since this is only used for native types
+        //       (i.e. Object, Boolean, etc.)
+        NodeLock ln(parent);
+std::cerr << "Resolve internal name [" << type << "]\n";
+        r = resolve_name(parent, id, resolution, Node::pointer_t(), 0);
+    }
+
+    // get rid of the temporary identifier
+    //parent->delete_child(idx);
+
+std::cerr << "  +--> internal name resolution [" << r << "]\n";
+    if(!r)
+    {
+        // if the compiler cannot find an internal type, that is really bad!
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, parent->get_position());
+        msg << "cannot find internal type \"" << type << "\".";
+        throw exception_exit(1, "cannot find internal type");
+    }
+
+    return;
+}
+
+
+bool Compiler::resolve_name(
+            Node::pointer_t list,
+            Node::pointer_t id,
+            Node::pointer_t& resolution,
+            Node::pointer_t params,
+            int const search_flags
+        )
 {
     RestoreFlags restore_flags(this);
 
@@ -959,7 +1044,7 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
     && id->get_type() != Node::node_t::NODE_VIDENTIFIER
     && id->get_type() != Node::node_t::NODE_STRING)
     {
-        throw exception_internal_error("Compiler::resolve_name() was called with an 'identifier node' which is not a NODE_[V]IDENTIFIER or NODE_STRING");
+        throw exception_internal_error(std::string("Compiler::resolve_name() was called with an 'identifier node' which is not a NODE_[V]IDENTIFIER or NODE_STRING, it is ") + id->get_type_name());
     }
 
     //
@@ -1000,13 +1085,13 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
         if(module == 0)
         {
             // when we were inside the function parameter
-            // list we don't want to check out the function
+            // list we do not want to check out the function
             // otherwise we could have a forward search of
             // the parameters which we disallow (only backward
             // search is allowed in that list)
             if(list->get_type() == Node::node_t::NODE_PARAMETERS)
             {
-//fprintf(stderr, "Skipping parameters?!\n");
+//std::cerr << "Skipping parameters?!\n";
                 list = list->get_parent();
             }
 
@@ -1095,7 +1180,7 @@ bool Compiler::resolve_name(Node::pointer_t list, Node::pointer_t id, Node::poin
         }
         if(module == 4)
         {
-            // didn't find a variable and such, but
+            // did not find a variable and such, but
             // we may have found a function (see below
             // after the forever loop breaking here)
             break;
@@ -1227,30 +1312,37 @@ fprintf(stderr, " [Type = %d]\n", d.f_type);
 
         case Node::node_t::NODE_FUNCTION:
         {
-            // search the list of parameters for a corresponding name
-            for(size_t idx(0); idx < max_children; ++idx)
+            // if identifier is marked as a type, then skip testing
+            // the function parameters since those cannot be type
+            // declarations
+            if(!id->get_attribute(Node::attribute_t::NODE_ATTR_TYPE))
             {
-                Node::pointer_t parameters_node(list->get_child(idx));
-                if(parameters_node->get_type() == Node::node_t::NODE_PARAMETERS)
+std::cerr << " ---->>> Search list of function children (" << max_children << ") when resolving return type?!\n";
+                // search the list of parameters for a corresponding name
+                for(size_t idx(0); idx < max_children; ++idx)
                 {
-                    NodeLock parameters_ln(parameters_node);
-                    size_t const cnt(parameters_node->get_children_size());
-                    for(size_t j(0); j < cnt; ++j)
+                    Node::pointer_t parameters_node(list->get_child(idx));
+                    if(parameters_node->get_type() == Node::node_t::NODE_PARAMETERS)
                     {
-                        if(check_name(parameters_node, j, resolution, id, params, search_flags))
+                        NodeLock parameters_ln(parameters_node);
+                        size_t const cnt(parameters_node->get_children_size());
+                        for(size_t j(0); j < cnt; ++j)
                         {
-                            if(funcs_name(funcs, resolution))
+                            if(check_name(parameters_node, j, resolution, id, params, search_flags))
                             {
+                                if(funcs_name(funcs, resolution))
+                                {
 #if 0
 fprintf(stderr, "DEBUG: in a FUNCTION resolution is = ");
 resolution.DisplayPtr(stderr);
 fprintf(stderr, "\n");
 #endif
-                                return true;
+                                    return true;
+                                }
                             }
                         }
+                        break;
                     }
-                    break;
                 }
             }
         }
@@ -1335,7 +1427,16 @@ fprintf(stderr, "\n");
 
         case Node::node_t::NODE_CLASS:
         case Node::node_t::NODE_INTERFACE:
-            // We need to search the extends and implements
+std::cerr << "What about returning a class as the type?! " << list->get_string() << "\n";
+            // // if the ID is a type and the name is the same as the
+            // // class name, then we are found what we were looking for
+            // if(id->get_attribute(Node::attribute_t::NODE_ATTR_TYPE)
+            // && id->get_string() == list->get_string())
+            // {
+            //     resolution = list;
+            //     return true;
+            // }
+            // We want to search the extends and implements declarations as well
             if(find_in_extends(list, id, funcs, resolution, params, search_flags))
             {
                 if(funcs_name(funcs, resolution))

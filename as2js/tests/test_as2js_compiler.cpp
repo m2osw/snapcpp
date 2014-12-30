@@ -1449,6 +1449,7 @@ found_option:
                 }
             }
 
+std::cerr << "Now compile...\n";
             // run the compiler
             as2js::Compiler compiler(options);
             compiler.compile(root);

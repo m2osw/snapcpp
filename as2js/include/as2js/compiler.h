@@ -188,7 +188,7 @@ private:
     void                identifier_to_attrs(Node::pointer_t node, Node::pointer_t a);
     void                if_directive(Node::pointer_t& if_node);
     void                import(Node::pointer_t& import);
-    bool                is_constructor(Node::pointer_t func);
+    bool                is_constructor(Node::pointer_t func, Node::pointer_t& the_class);
     bool                is_derived_from(Node::pointer_t derived_class, Node::pointer_t super_class);
     bool                is_dynamic_class(Node::pointer_t class_node);
     bool                is_function_abstract(Node::pointer_t function);

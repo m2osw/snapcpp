@@ -363,6 +363,7 @@ void As2JsNodeUnitTests::test_type()
             case as2js::Node::attribute_t::NODE_ATTR_FOREACH:      CPPUNIT_ASSERT(strcmp(attr_name1, "FOREACH")        == 0); break;
             case as2js::Node::attribute_t::NODE_ATTR_NOBREAK:      CPPUNIT_ASSERT(strcmp(attr_name1, "NOBREAK")        == 0); break;
             case as2js::Node::attribute_t::NODE_ATTR_AUTOBREAK:    CPPUNIT_ASSERT(strcmp(attr_name1, "AUTOBREAK")      == 0); break;
+            case as2js::Node::attribute_t::NODE_ATTR_TYPE:         CPPUNIT_ASSERT(strcmp(attr_name1, "TYPE")           == 0); break;
             case as2js::Node::attribute_t::NODE_ATTR_DEFINED:      CPPUNIT_ASSERT(strcmp(attr_name1, "DEFINED")        == 0); break;
             case as2js::Node::attribute_t::NODE_ATTR_max:          CPPUNIT_ASSERT(!"attribute max should not be checked in this test"); break;
             }

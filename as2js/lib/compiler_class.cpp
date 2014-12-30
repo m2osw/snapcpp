@@ -159,15 +159,34 @@ void Compiler::check_member(Node::pointer_t ref, Node::pointer_t field, Node::po
 }
 
 
-bool Compiler::is_constructor(Node::pointer_t function_node)
+/** \brief Check whether a function is a constructor.
+ *
+ * This function checks a node representing a function to determine whether
+ * it represents a constructor or not.
+ *
+ * By default, if a function is marked as a constructor by the programmer,
+ * then this function considers the function as a constructor no matter
+ * what (outside of the fact that it has to be a function defined in a
+ * class, obviously.)
+ *
+ * \param[in] function_node  A node representing a function definition.
+ * \param[out] the_class  If the function is a constructor, this is the
+ *                        class it was defined in.
+ *
+ * \return true if the function is a constructor and in that case the_class
+ *         is set to the class node pointer; otherwise the_class is set to
+ *         nullptr.
+ */
+bool Compiler::is_constructor(Node::pointer_t function_node, Node::pointer_t& the_class)
 {
-    // user defined constructor?
-    if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_CONSTRUCTOR))
+    the_class.reset();
+
+    if(function_node->get_type() != Node::node_t::NODE_FUNCTION)
     {
-        return true;
+        throw exception_internal_error(std::string("Compiler::is_constructor() was called with a node which is not a NODE_FUNCTION, it is ") + function_node->get_type_name());
     }
 
-    // search the first a NODE_CLASS with the same name
+    // search the first NODE_CLASS with the same name
     for(Node::pointer_t parent(function_node->get_parent()); parent; parent = parent->get_parent())
     {
         // Note: here I made a note that sub-functions cannot be
@@ -191,13 +210,27 @@ bool Compiler::is_constructor(Node::pointer_t function_node)
 
         case Node::node_t::NODE_CLASS:
             // we found the class in question
-            return parent->get_string() == function_node->get_string();
+
+            // user defined constructor?
+            if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_CONSTRUCTOR)
+            || parent->get_string() == function_node->get_string())
+            {
+                the_class = parent;
+                return true;
+            }
+            return false;
 
         default:
             // ignore all the other nodes
             break;
 
         }
+    }
+
+    if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_CONSTRUCTOR))
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, function_node->get_position());
+        msg << "'constructor " << function_node->get_string() << "()' cannot be used outside of a class declaration.";
     }
 
     return false;
@@ -233,9 +266,10 @@ void Compiler::check_super_validity(Node::pointer_t expr)
                 // of type call (see at start of function!)
                 // case 2 is all other cases
                 // in both cases we need to be defined in a class
+                Node::pointer_t the_class;
                 if(needs_constructor)
                 {
-                    if(!is_constructor(parent))
+                    if(!is_constructor(parent, the_class))
                     {
                         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, expr->get_position());
                         msg << "'super()' cannot be used outside of a constructor function.";
@@ -247,7 +281,7 @@ void Compiler::check_super_validity(Node::pointer_t expr)
                     if(parent->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR)
                     || get_attribute(parent, Node::attribute_t::NODE_ATTR_STATIC)
                     || get_attribute(parent, Node::attribute_t::NODE_ATTR_CONSTRUCTOR)
-                    || is_constructor(parent))
+                    || is_constructor(parent, the_class))
                     {
                         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, expr->get_position());
                         msg << "'super.member()' cannot be used in a static function nor a constructor.";
@@ -371,7 +405,7 @@ bool Compiler::find_in_extends(Node::pointer_t link, Node::pointer_t field, int&
                     ++count;
                 }
             }
-//fprintf(stderr, "Extends existing! (%d)\n", extends.GetChildCount());
+//std::cerr << "Extends existing! (" << extends.GetChildCount() << ")\n";
         }
         else if(extends->get_type() == Node::node_t::NODE_IMPLEMENTS)
         {
@@ -430,7 +464,7 @@ bool Compiler::find_in_extends(Node::pointer_t link, Node::pointer_t field, int&
         //     the left hand side expression is a static
         //     class (opposed to a dynamic class which can
         //     have members added at runtime)
-//fprintf(stderr, "     field not found...\n");
+//std::cerr << "     field not found...\n";
     }
     else
     {
@@ -1125,6 +1159,7 @@ void Compiler::declare_class(Node::pointer_t class_node)
             break;
 
         case Node::node_t::NODE_FUNCTION:
+std::cerr << "Got a function member in that class...\n";
             function(child);
             break;
 

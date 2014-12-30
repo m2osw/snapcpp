@@ -1,12 +1,134 @@
 // class
 [
 
-    // simple empty class
+//    // empty class
+//    {
+//        //"verbose": true,
+//        "slow": true,
+//        "name": "empty class",
+//        "program": "class empty {};",
+//        "parser result": {
+//            "node type": "PROGRAM",
+//            "children": [
+//                {
+//                    "node type": "DIRECTIVE_LIST",
+//                    "children": [
+//                        {
+//                            "node type": "CLASS",
+//                            "label": "empty",
+//                            "children": [
+//                                {
+//                                    "node type": "EMPTY"
+//                                }
+//                            ]
+//                        }
+//                    ]
+//                }
+//            ]
+//        },
+//        "compiler result": {
+//            "node type": "PROGRAM",
+//            "children": [
+//                {
+//                    "node type": "DIRECTIVE_LIST",
+//                    "attributes": "DEFINED",
+//                    "children": [
+//                        {
+//                            "node type": "CLASS",
+//                            "attributes": "DEFINED",
+//                            "label": "empty",
+//                            "children": [
+//                                {
+//                                    "node type": "EMPTY"
+//                                }
+//                            ]
+//                        }
+//                    ]
+//                }
+//            ]
+//        }
+//    },
+//
+//    // simple class with one variable member
+//    {
+//        //"verbose": true,
+//        "slow": true,
+//        "name": "simple class with variable",
+//        "program": "class simple { var data; };",
+//        "parser result": {
+//            "node type": "PROGRAM",
+//            "children": [
+//                {
+//                    "node type": "DIRECTIVE_LIST",
+//                    "children": [
+//                        {
+//                            "node type": "CLASS",
+//                            "label": "simple",
+//                            "children": [
+//                                {
+//                                    "node type": "DIRECTIVE_LIST",
+//                                    "children": [
+//                                        {
+//                                            "node type": "VAR",
+//                                            "children": [
+//                                                {
+//                                                    "node type": "VARIABLE",
+//                                                    "label": "data"
+//                                                }
+//                                            ]
+//                                        }
+//                                    ]
+//                                }
+//                            ]
+//                        }
+//                    ]
+//                }
+//            ]
+//        },
+//        "compiler result": {
+//            "node type": "PROGRAM",
+//            "children": [
+//                {
+//                    "node type": "DIRECTIVE_LIST",
+//                    "attributes": "DEFINED",
+//                    "children": [
+//                        {
+//                            "node type": "CLASS",
+//                            "label": "simple",
+//                            "attributes": "DEFINED",
+//                            "children": [
+//                                {
+//                                    "node type": "DIRECTIVE_LIST",
+//                                    "attributes": "DEFINED",
+//                                    "children": [
+//                                        {
+//                                            "node type": "VAR",
+//                                            "attributes": "DEFINED",
+//                                            "children": [
+//                                                {
+//                                                    "node type": "VARIABLE",
+//                                                    "label": "data",
+//                                                    "flags": "VARIABLE_FLAG_MEMBER,VARIABLE_FLAG_DEFINED",
+//                                                    "attributes": "DEFINED"
+//                                                }
+//                                            ]
+//                                        }
+//                                    ]
+//                                }
+//                            ]
+//                        }
+//                    ]
+//                }
+//            ]
+//        }
+//    },
+
+    // simple class with one function member
     {
-        //"verbose": true,
+        "verbose": true,
         "slow": true,
-        "name": "empty class",
-        "program": "class empty {};",
+        "name": "simple class with function",
+        "program": "class simple { public function test(var in out name : String, ...) : Boolean { name = data.name_; return data.ready_; } };",
         "parser result": {
             "node type": "PROGRAM",
             "children": [
@@ -15,10 +137,104 @@
                     "children": [
                         {
                             "node type": "CLASS",
-                            "label": "empty",
+                            "label": "simple",
                             "children": [
                                 {
-                                    "node type": "EMPTY"
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                            "label": "test",
+                                            "flags": "FUNCTION_FLAG_OUT",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PUBLIC"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "name",
+                                                            "flags": "PARAM_FLAG_IN,PARAM_FLAG_OUT",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "TYPE",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "String"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "",
+                                                            "flags": "PARAM_FLAG_REST"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "TYPE",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "Boolean"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "ASSIGNMENT",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "name"
+                                                                },
+                                                                {
+                                                                    "node type": "MEMBER",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "data"
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "name_"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "node type": "RETURN",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "MEMBER",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "data"
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "ready_"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
                                 }
                             ]
                         }
@@ -31,15 +247,107 @@
             "children": [
                 {
                     "node type": "DIRECTIVE_LIST",
-                    "attributes": "DEFINED",
                     "children": [
                         {
                             "node type": "CLASS",
-                            "attributes": "DEFINED",
-                            "label": "empty",
+                            "label": "simple",
                             "children": [
                                 {
-                                    "node type": "EMPTY"
+                                    "node type": "DIRECTIVE_LIST",
+                                    "children": [
+                                        {
+                                            "node type": "FUNCTION",
+                                            "label": "test",
+                                            "flags": "FUNCTION_FLAG_OUT",
+                                            "link attributes": [
+                                                {
+                                                    "node type": "PUBLIC"
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "node type": "PARAMETERS",
+                                                    "children": [
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "name",
+                                                            "flags": "PARAM_FLAG_IN,PARAM_FLAG_OUT",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "TYPE",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "String"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "node type": "PARAM",
+                                                            "label": "",
+                                                            "flags": "PARAM_FLAG_REST"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "TYPE",
+                                                    "children": [
+                                                        {
+                                                            "node type": "IDENTIFIER",
+                                                            "label": "Boolean"
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "node type": "DIRECTIVE_LIST",
+                                                    "children": [
+                                                        {
+                                                            "node type": "ASSIGNMENT",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "IDENTIFIER",
+                                                                    "label": "name"
+                                                                },
+                                                                {
+                                                                    "node type": "MEMBER",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "data"
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "name_"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "node type": "RETURN",
+                                                            "children": [
+                                                                {
+                                                                    "node type": "MEMBER",
+                                                                    "children": [
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "data"
+                                                                        },
+                                                                        {
+                                                                            "node type": "IDENTIFIER",
+                                                                            "label": "ready_"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
                                 }
                             ]
                         }

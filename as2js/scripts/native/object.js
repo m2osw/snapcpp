@@ -33,7 +33,7 @@ SOFTWARE.
 
 */
 
-native package Global
+native package Native
 {
 
 // TBD: what would be the best place to define such things?

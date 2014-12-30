@@ -251,6 +251,16 @@ optimization_table_t const g_optimizer_relational_table[] =
     {
         /* f_entry[_count] */       POINTER_AND_COUNT(g_optimizer_relational_entry_a_greater_equal_b)
     }
+    // TODO:
+    // A user may write something such as:
+    //    if(a <= 10 && a <= 0)    <=>   if(a <= 0)
+    //    if(a <= 10 || a <= 0)    <=>   if(a <= 10)
+    //    ...
+    // which requires comparing whether 'a' is the same in both relations
+    //
+    // Also we want to generate a warning for things such as:
+    //    if(a < 0 && a > 1) ...
+    // since the test is always false and it probably is a programmer mistake
 };
 
 

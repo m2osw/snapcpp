@@ -33,7 +33,7 @@ SOFTWARE.
 
 */
 
-native package Global
+native package Native
 {
 
 

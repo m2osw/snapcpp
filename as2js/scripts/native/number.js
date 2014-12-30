@@ -33,7 +33,7 @@ SOFTWARE.
 
 */
 
-native package Global
+native package Native
 {
 
 
@@ -145,6 +145,21 @@ class Number extends Object
     //const var NaN; -- this is 100% internal in as2js
     const var NEGATIVE_INFINITY;
     const var POSITIVE_INFINITY;
+};
+
+
+// snap extension
+class Integer extends Number
+{
+    // constants
+    const var MIN_VALUE;
+    const var MAX_VALUE;
+};
+
+
+// snap extension
+class Double extends Number
+{
 };
 
 

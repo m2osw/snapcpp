@@ -363,7 +363,13 @@ void Node::set_parent(pointer_t parent, int index)
     case node_t::NODE_other:        // for completeness
     case node_t::NODE_max:          // for completeness
         // ERROR: some values are not valid as a type
-        throw exception_incompatible_node_type("invalid type used as a parent node");
+        if(parent->get_parent())
+        {
+            std::cerr << *parent->get_parent() << std::endl;
+        }
+        throw exception_incompatible_node_type(std::string("invalid type: \"")
+                    + parent->get_type_name() + "\" used as a parent node of child with type: \""
+                    + get_type_name() + "\".");
 
     }
 

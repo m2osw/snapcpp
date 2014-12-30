@@ -87,32 +87,55 @@ void Compiler::parameters(Node::pointer_t parameters_node)
         for(size_t j(0); j < jmax; ++j)
         {
             Node::pointer_t child(param->get_child(j));
-            if(child->get_type() == Node::node_t::NODE_SET)
+            switch(child->get_type())
             {
+            case Node::node_t::NODE_SET:
+std::cerr << "Oh... parameter SET!!!\n" << *child->get_child(0) << "--- parse expression now: ";
                 expression(child->get_child(0));
-            }
-            else
-            {
-                expression(child);
-                Node::pointer_t type(child->get_link(Node::link_t::LINK_INSTANCE));
-                if(type)
+std::cerr << "Hmmm... what is NODE_SET opposed to NODE_ASSIGNMENT?\n";
+                break;
+
+            case Node::node_t::NODE_TYPE:
                 {
-                    Node::pointer_t existing_type(param->get_link(Node::link_t::LINK_TYPE));
-                    if(!existing_type)
+std::cerr << "Parameter type = ...\n";
+                    Node::pointer_t expr(child->get_child(0));
+                    expression(expr);
+                    Node::pointer_t type(child->get_link(Node::link_t::LINK_INSTANCE));
+                    if(type)
                     {
-                        param->set_link(Node::link_t::LINK_TYPE, type);
+                        Node::pointer_t existing_type(param->get_link(Node::link_t::LINK_TYPE));
+                        if(!existing_type)
+                        {
+                            param->set_link(Node::link_t::LINK_TYPE, type);
+                        }
+                        else if(existing_type != type)
+                        {
+                            Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INVALID_TYPE, param->get_position());
+                            msg << "Existing type is:\n" << existing_type << "\nNew type would be:\n" << type;
+                        }
                     }
-                    else if(existing_type != type)
-                    {
-                        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INVALID_TYPE, param->get_position());
-                        msg << "Existing type is:\n" << existing_type << "\nNew type would be:\n" << type;
-                    }
+std::cerr << "Done with parameter type!\n";
                 }
+                break;
+
+            case Node::node_t::NODE_ASSIGNMENT:
+                {
+std::cerr << "Oh... assignment of parameter!!!\n";
+                    Node::pointer_t expr(child->get_child(0));
+                    expression(expr);
+std::cerr << "Done with parameter assignment...\n";
+                }
+                break;
+
+            default:
+                throw exception_internal_error("found incompatible node in the list of parameters");
+
             }
         }
     }
 
     // if some parameter was referenced by another, mark it as such
+std::cerr << "Check children...\n";
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t param(parameters_node->get_child(idx));
@@ -127,6 +150,7 @@ void Compiler::parameters(Node::pointer_t parameters_node)
 
 void Compiler::function(Node::pointer_t function_node)
 {
+    // skip "deleted" functions
     if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_UNUSED)
     || get_attribute(function_node, Node::attribute_t::NODE_ATTR_FALSE))
     {
@@ -136,10 +160,10 @@ void Compiler::function(Node::pointer_t function_node)
     // Here we search for a parent for this function.
     // The parent can be a class, an interface or a package in which
     // case the function is viewed as a member. Otherwise it is
-    // just a local or global definition. Different attributes are
-    // only valid on members and some attributes have specific
-    // effects which need to be tested here (i.e. a function marked
-    // final in a class can't be overwritten)
+    // just a local (parent is a function) or global definition (no parents
+    // of interest...) Different attributes are only valid on members
+    // and some attributes have specific effects which need to be tested
+    // here (i.e. a function marked final in a class cannot be overwritten.)
 
     Node::pointer_t parent(function_node);
     Node::pointer_t list;
@@ -250,25 +274,29 @@ void Compiler::function(Node::pointer_t function_node)
 
     // define_function_type() may be recursive so we make sure that it
     // is called before we lock function_node
+std::cerr << "Ready to check the function type!\n";
     if(!define_function_type(function_node))
     {
         return;
     }
 
-    Node::pointer_t end_list, directive_list_node;
+    Node::pointer_t end_list, directive_list_node, the_class;
     NodeLock ln(function_node);
     size_t const max_children(function_node->get_children_size());
+std::cerr << "Function being checked has " << max_children << " children.\n";
     for(size_t idx(0); idx < max_children; ++idx)
     {
-        Node::pointer_t child = function_node->get_child(idx);
+        Node::pointer_t child(function_node->get_child(idx));
         switch(child->get_type())
         {
         case Node::node_t::NODE_PARAMETERS:
             // parse the parameters which have a default value
+std::cerr << "Checking parameters of function...\n";
             parameters(child);
             break;
 
         case Node::node_t::NODE_DIRECTIVE_LIST:
+std::cerr << "Checking directive list of function...\n";
             if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_IMPROPER_STATEMENT, function_node->get_position());
@@ -281,22 +309,33 @@ void Compiler::function(Node::pointer_t function_node)
             directive_list_node = child;
             break;
 
-        default:
+        case Node::node_t::NODE_TYPE:
             // the expression represents the function return type
-            expression(child);
-            // constructors only support Void (or should
-            // it be the same name as the class?)
-            if(is_constructor(function_node))
+std::cerr << "Checking type of function...\n";
+            if(child->get_children_size() == 1)
             {
-                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
-                msg << "a constructor must return \"void\" and nothing else, \"" << function_node->get_string() << "\" is invalid.";
+                Node::pointer_t expr(child->get_child(0));
+std::cerr << "  +--> Calculating type expression...\n";
+                expression(expr);
+                // constructors only support Void (or should
+                // it be the same name as the class?)
+std::cerr << "  +--> Is constructor?...\n";
+                if(is_constructor(function_node, the_class))
+                {
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
+                    msg << "a constructor must return \"void\" and nothing else, \"" << function_node->get_string() << "\" is invalid.";
+                }
             }
+            break;
+
+        default:
             break;
 
         }
     }
 
-    if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER) && is_constructor(function_node))
+std::cerr << "Okay... check the NEVER flag now\n";
+    if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_NEVER) && is_constructor(function_node, the_class))
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_RETURN_TYPE, function_node->get_position());
         msg << "a constructor must return (it cannot be marked Never).";
@@ -344,19 +383,24 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
         return function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_VOID);
     }
 
+std::cerr << "define_function_type() -- ???\n";
     {
         NodeLock ln(function_node);
 
         for(; idx < max_children; ++idx)
         {
             Node::pointer_t type(function_node->get_child(idx));
-            if(type->get_type() != Node::node_t::NODE_PARAMETERS
-            && type->get_type() != Node::node_t::NODE_DIRECTIVE_LIST)
+            if(type->get_type() == Node::node_t::NODE_TYPE
+            && type->get_children_size() == 1)
             {
                 // then this is the type definition
-                expression(type);
+                Node::pointer_t expr(type->get_child(0));
+                expr->set_attribute_tree(Node::attribute_t::NODE_ATTR_TYPE, true);
+std::cerr << "define_function_type() -- got an expression! resolve ... \n" << *expr << "\n";
+                expression(expr);
                 Node::pointer_t resolution;
-                if(resolve_name(type, type, resolution, Node::pointer_t(), 0))
+std::cerr << "define_function_type() -- got an expression! ... and save!\n";
+                if(resolve_name(expr, expr, resolution, Node::pointer_t(), 0))
                 {
 #if 0
                     // we may want to have that in
@@ -391,10 +435,12 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
                     }
 #endif
 
-//fprintf(stderr, "  final function type is:\n");
-//resolution.Display(stderr);
+std::cerr << "  for function:\n" << *function_node << "\n";
+std::cerr << "  final function type is:\n" << *resolution << "\n";
 
+                    ln.unlock();
                     function_node->set_link(Node::link_t::LINK_TYPE, resolution);
+std::cerr << "  -- type saved!!!\n";
                 }
                 break;
             }
@@ -555,11 +601,13 @@ bool Compiler::check_function(Node::pointer_t function_node, Node::pointer_t& re
     // The fact that a function is marked UNUSED should
     // be an error, but overloading prevents us from
     // generating an error here...
+std::cerr << "check_function(): attributes\n";
     if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_UNUSED))
     {
         return false;
     }
 
+std::cerr << "check_function(): getter/setter or " << name << "\n";
     if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER)
     && (search_flags & SEARCH_FLAG_GETTER) != 0)
     {
@@ -582,6 +630,7 @@ bool Compiler::check_function(Node::pointer_t function_node, Node::pointer_t& re
     }
     else if(function_node->get_string() != name)
     {
+std::cerr << "check_function(): false then?\n";
         return false;
     }
 
@@ -602,8 +651,9 @@ func.Display(stderr);
         || function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_SETTER))
         {
             // warning: we have to check whether we hit a constructor
-            //          before to generate an error
-            if(!is_constructor(function_node))
+            //          before generating an error
+            Node::pointer_t the_class;
+            if(!is_constructor(function_node, the_class))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_MISMATCH_FUNC_VAR, function_node->get_position());
                 msg << "a variable name was expected, we found the function '" << function_node->get_string() << "' instead.";

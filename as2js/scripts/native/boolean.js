@@ -33,7 +33,7 @@ SOFTWARE.
 
 */
 
-native package Global
+native package Native
 {
 
 
@@ -41,7 +41,7 @@ class Boolean extends Object
 {
     use extended_operators(2);
 
-    function Boolean(var in value: Boolean := false) : Boolean;
+    function Boolean(var in value: Boolean := false);
 
     function toString(var in base: Number := undefined) : String;
     function valueOf(Void) : Number;

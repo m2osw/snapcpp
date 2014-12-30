@@ -338,13 +338,16 @@ void Compiler::check_this_validity(Node::pointer_t expr)
             // don't have access to 'this'. Note that
             // it doesn't matter whether we're in a
             // class or not...
-            if(parent->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR)
-            || get_attribute(parent, Node::attribute_t::NODE_ATTR_STATIC)
-            || get_attribute(parent, Node::attribute_t::NODE_ATTR_CONSTRUCTOR)
-            || is_constructor(parent))
             {
-                Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_STATIC, expr->get_position());
-                msg << "'this' cannot be used in a static function nor a constructor.";
+                Node::pointer_t the_class;
+                if(parent->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR)
+                || get_attribute(parent, Node::attribute_t::NODE_ATTR_STATIC)
+                || get_attribute(parent, Node::attribute_t::NODE_ATTR_CONSTRUCTOR)
+                || is_constructor(parent, the_class))
+                {
+                    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_STATIC, expr->get_position());
+                    msg << "'this' cannot be used in a static function nor a constructor.";
+                }
             }
             return;
 
@@ -379,7 +382,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
     Node::pointer_t type(left->get_link(Node::link_t::LINK_TYPE));
     if(!type)
     {
-//fprintf(stderr, "WARNING: operand of unary operator isn't typed.\n");
+//std::cerr << "WARNING: operand of unary operator is not typed.\n";
         return;
     }
 
@@ -387,14 +390,18 @@ void Compiler::unary_operator(Node::pointer_t expr)
     l->set_string("left");
 
     Node::pointer_t params(expr->create_replacement(Node::node_t::NODE_LIST));
+std::cerr << "Unary operator trouble?!\n";
     params->append_child(l);
+std::cerr << "Not this one...\n";
 
     Node::pointer_t id(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
     id->set_string(op);
     id->append_child(params);
+std::cerr << "Not that one either...\n";
 
     size_t const del(expr->get_children_size());
     expr->append_child(id);
+std::cerr << "What about append of the ID?...\n";
 
     Node::pointer_t resolution;
     int funcs = 0;
@@ -412,7 +419,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
         return;
     }
 
-//fprintf(stderr, "Found operator!!!\n");
+//std::cerr << "Found operator!!!\n";
 
     Node::pointer_t op_type(resolution->get_link(Node::link_t::LINK_TYPE));
 
@@ -443,12 +450,12 @@ void Compiler::unary_operator(Node::pointer_t expr)
 
         }
         // we keep intrinsic operators as is
-//fprintf(stderr, "It is intrinsic...\n");
+//std::cerr << "It is intrinsic...\n";
         expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
         expr->set_link(Node::link_t::LINK_TYPE, op_type);
         return;
     }
-//fprintf(stderr, "Not intrinsic...\n");
+//std::cerr << "Not intrinsic...\n";
 
     id->set_link(Node::link_t::LINK_INSTANCE, resolution);
 
@@ -482,9 +489,12 @@ void Compiler::unary_operator(Node::pointer_t expr)
 
         // Save that name for next reference!
         assignment = expr->create_replacement(Node::node_t::NODE_ASSIGNMENT);
+std::cerr << "assignment temp_var?!\n";
         assignment->append_child(temp_var);
+std::cerr << "assignment left?!\n";
         assignment->append_child(left);
 
+std::cerr << "post list assignment?!\n";
         post_list->append_child(assignment);
     }
 
@@ -494,6 +504,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
     Node::pointer_t function_node;
     resolve_internal_type(expr, "Function", function_node);
     member->set_link(Node::link_t::LINK_TYPE, function_node);
+std::cerr << "call member?!\n";
     call->append_child(member);
 
     // we need a function to get the name of 'type'
@@ -522,26 +533,32 @@ void Compiler::unary_operator(Node::pointer_t expr)
             r->set_string("#temp_var#");
         }
 
+std::cerr << "member r?!\n";
         member->append_child(r);
     }
     else
     {
+std::cerr << "member left?!\n";
         member->append_child(left);
     }
+std::cerr << "member id?!\n";
     member->append_child(id);
 
-//fprintf(stderr, "NOTE: add a list (no params)\n");
+//std::cerr << "NOTE: add a list (no params)\n";
     Node::pointer_t list(expr->create_replacement(Node::node_t::NODE_LIST));
     list->set_link(Node::link_t::LINK_TYPE, op_type);
+std::cerr << "call and list?!\n";
     call->append_child(list);
 
     if(is_post)
     {
+std::cerr << "post stuff?!\n";
         post_list->append_child(call);
 
         Node::pointer_t temp_var(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
         // TODO: use the same name as used in the 1st temp_var#
         temp_var->set_string("#temp_var#");
+std::cerr << "temp var stuff?!\n";
         post_list->append_child(temp_var);
 
         expr->get_parent()->set_child(expr->get_offset(), post_list);
@@ -553,7 +570,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
         //expr = call;
     }
 
-//expr.Display(stderr);
+//std::cerr << expr << "\n";
 }
 
 
@@ -683,8 +700,8 @@ bool Compiler::special_identifier(Node::pointer_t expr)
     // that means they are at least 5 characters and they need to
     // start with '__'
 
-//fprintf(stderr, "ID [%.*S]\n", data.f_str.GetLength(), data.f_str.Get());
-    String id(expr->get_string());
+    String const id(expr->get_string());
+//std::cerr << "ID [" << id << "]\n";
     if(id.length() < 5)
     {
         return false;
@@ -919,7 +936,7 @@ bool Compiler::special_identifier(Node::pointer_t expr)
     else if(!parent)
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, expr->get_position());
-        msg << "'" << expr->get_string() << "' was used outside " << what << ".";
+        msg << "'" << id << "' was used outside " << what << ".";
         // we keep the string as is!
     }
     else
@@ -960,7 +977,9 @@ void Compiler::type_expr(Node::pointer_t expr)
 
     case Node::node_t::NODE_TRUE:
     case Node::node_t::NODE_FALSE:
+std::cerr << "Got to (re-)resolve the Boolean type here...\n";
         resolve_internal_type(expr, "Boolean", resolution);
+std::cerr << "Then save that as this FALSE (TRUE?) Boolean...\n";
         expr->set_link(Node::link_t::LINK_TYPE, resolution);
         break;
 
@@ -1281,7 +1300,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
         return;
     }
 
-    // try to optimize the expression before to compile it
+    // try to optimize the expression before compiling it
     // (it can make a huge difference!)
     Optimizer::optimize(expr);
 
@@ -1353,7 +1372,6 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
     case Node::node_t::NODE_IN:
     case Node::node_t::NODE_INCREMENT:
     case Node::node_t::NODE_INSTANCEOF:
-    case Node::node_t::NODE_TYPEOF:
     case Node::node_t::NODE_IS:
     case Node::node_t::NODE_LESS:
     case Node::node_t::NODE_LESS_EQUAL:
@@ -1381,6 +1399,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
     case Node::node_t::NODE_STRICTLY_EQUAL:
     case Node::node_t::NODE_STRICTLY_NOT_EQUAL:
     case Node::node_t::NODE_SUBTRACT:
+    case Node::node_t::NODE_TYPEOF:
         break;
 
     case Node::node_t::NODE_NEW:
@@ -1436,6 +1455,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
         if(!special_identifier(expr))
         {
             Node::pointer_t resolution;
+std::cerr << "Not a special identifier so resolve name... [" << *expr << "]\n";
             if(resolve_name(expr, expr, resolution, params, SEARCH_FLAG_GETTER))
             {
                 if(!replace_constant_variable(expr, resolution))
@@ -1443,16 +1463,24 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
                     Node::pointer_t current(expr->get_link(Node::link_t::LINK_INSTANCE));
                     if(current)
                     {
-                        // TBD: I'm not exactly sure what this does right now, we
-                        //      probably can ameliorate the error message, although
-                        //      we should actually never get it!
-                        throw exception_internal_error("The link instance of this VIDENTIFIER was already defined...");
+                        if(current != resolution)
+                        {
+std::cerr << "Expression already typed is (starting from parent): [" << *expr->get_parent() << "]\n";
+                            // TBD: I am not exactly sure what this does right now, we
+                            //      probably can ameliorate the error message, although
+                            //      we should actually never get it!
+                            throw exception_internal_error("The link instance of this [V]IDENTIFIER was already defined...");
+                        }
+                        // should the type be checked in this case too?
                     }
-                    expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
-                    Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
-                    if(type)
+                    else
                     {
-                        expr->set_link(Node::link_t::LINK_TYPE, type);
+                        expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
+                        Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
+                        if(type)
+                        {
+                            expr->set_link(Node::link_t::LINK_TYPE, type);
+                        }
                     }
                 }
             }
@@ -1461,6 +1489,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, expr->get_position());
                 msg << "cannot find any variable or class declaration for: '" << expr->get_string() << "'.";
             }
+std::cerr << "got type?\n";
         }
         return;
 
