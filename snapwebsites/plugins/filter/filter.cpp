@@ -708,14 +708,10 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                         }
                     }
                 }
-                QString unbracketed_quote(f_token.mid(1, f_token.length() - 2));
-                unbracketed_quote.replace('"', "&quot;")
-                                 .replace('<', "&lt;")
-                                 .replace('>', "&gt;")
-                                 .replace('\'', "&#39;");
+                QString const unbracketed_quote(f_token.mid(1, f_token.length() - 2));
                 info.f_replacement = QString("<%1 class=\"filter-token\" token=\"%2\">%3</%1>")
                         .arg(use_span ? "span" : "div")
-                        .arg(unbracketed_quote)
+                        .arg(encode_text_for_html(unbracketed_quote))
                         .arg(info.f_replacement);
             }
             ungets(info.f_replacement);
@@ -1141,6 +1137,22 @@ bool filter::filter_uri(QString& uri)
     }
 
     return unwanted.isEmpty();
+}
+
+
+QString filter::encode_text_for_html(QString const& text)
+{
+    QString quoted(text);
+
+    // replacing quotes is not required in plain text areas, but that way
+    // the function works for both: plain text and attributes
+    quoted.replace('"', "&quot;")
+          .replace('<', "&lt;")
+          .replace('>', "&gt;")
+          .replace('&', "&amp;")
+          .replace('\'', "&#39;");
+
+    return quoted;
 }
 
 

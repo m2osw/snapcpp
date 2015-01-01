@@ -19,6 +19,7 @@
 
 #include "log.h"
 #include "not_reached.h"
+#include "snap_uri.h"
 #include "snapwebsites.h"
 
 #include <algorithm>
@@ -194,13 +195,53 @@ std::string http_request::get_request() const
 }
 
 
-// TODO: Disect the URI using a snap_uri object
-//void http_request::set_uri(std::string const& uri)
-//{
-//    f_host = ...;
-//    f_post = ...;
-//    f_path = ...;
-//}
+/** \brief Set the host, port, and path at once.
+ *
+ * HTTP accepts full URIs in the GET, POST, etc. line
+ * so the following would be valid:
+ *
+ *    GET http://snapwebsites.org/some/path?a=view HTTP/1.1
+ *
+ * However, we break it down in a few separate parts instead, because
+ * (a) we need the host to connect to the server, (b) we need the port
+ * to connect to the server:
+ *
+ * 1. Remove protocol, this defines whether we use plain text (http)
+ *    or encryption (https/ssl)
+ * 2. Get the port, if not specified after the domain, use the default
+ *    of the specified URI protocol
+ * 3. Domain name is moved to the 'Host: ...' header
+ * 4. Path and query string are kept as is
+ *
+ * So the example above changes to:
+ *
+ *    GET /some/path?a=view HTTP/1.1
+ *    Host: snapwebsites.org
+ *
+ * We use a plain text connection (http:) and the port is the default
+ * port for the HTTP protocol (80). That information does not appear
+ * in the HTTP header.
+ *
+ * \param[in] uri  The URI to save in this HTTP request.
+ */
+void http_request::set_uri(std::string const& uri)
+{
+    snap::snap_uri u(QString::fromUtf8(uri.c_str()));
+    f_host = u.full_domain().toUtf8().data();
+    f_port = u.get_port();
+
+    // use set_path() to make sure we get an absolute path
+    // (which is not the case by default)
+    set_path(u.path().toUtf8().data());
+
+    // keep the query string parameters if any are defined
+    QString const q(u.query_string());
+    if(!q.isEmpty())
+    {
+        f_path += "?";
+        f_path += q.toUtf8().data();
+    }
+}
 
 
 void http_request::set_host(std::string const& host)
@@ -466,7 +507,7 @@ void http_response::read_response(tcp_client_server::bio_client::pointer_t conne
         void read_protocol()
         {
             // first check that the protocol is HTTP and get the answer code
-SNAP_LOG_ERROR("*** read a line...: ");
+SNAP_LOG_ERROR("*** read the protocol line: ");
             std::string protocol;
             int const r(read_line(protocol));
             if(r < 0)
@@ -672,6 +713,7 @@ http_response::pointer_t http_client::send_request(http_request const& request)
 
     // build and send the request to the server
     std::string const data(request.get_request());
+//std::cerr << "***\n*** request = [" << data << "]\n***\n";
     f_connection->write(data.c_str(), data.length());
 
     // create a response and read the server's answer in that object

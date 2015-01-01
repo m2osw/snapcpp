@@ -70,7 +70,7 @@ public:
     std::string     get_body() const; // also returns data
     std::string     get_request() const;
 
-    //void            set_uri(std::string const& uri);
+    void            set_uri(std::string const& uri);
     void            set_host(std::string const& host);
     void            set_path(std::string const& path);
     void            set_port(int port);

@@ -543,7 +543,7 @@ QString const snap_uri::get_uri(bool use_hash_bang) const
     }
 
     // query string
-    QString q(query_string());
+    QString const q(query_string());
     if(!q.isEmpty())
     {
         uri += '?';

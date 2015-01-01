@@ -496,7 +496,7 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
  * to be removed!) We Want to offer a button "Add Comment" as well as a
  * comment box already open.
  *
- * Once a payment is ready to be processed, the user can call the process()
+ * Once a payment is ready to be processed, the code calls the process()
  * function. This has multiple phases which may or may not be required by
  * the various payment facilities. This processing is possible only once
  * all the necessary data is available (i.e. for a credit card payment, you
@@ -504,13 +504,15 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
  * and probably a zip code or address to further verify the card.) This
  * processing includes the following states:
  *
+ * \li created -- the invoice was created (generate_invoice() called)
  * \li processing -- started payment processing;
- * \li canceled -- the payment was canceled before it was completed
  * \li pending -- waiting for an asynchroneous reply from a payment facility
- * (i.e. Paypal does not send the reply immediately, although generally
+ * (i.e. the old Paypal does not send replies immediately, although generally
  * it is very fast, it is definitively 100% asynchroneous); this step
  * only applies to facilities that require our system to wait for
- * confirmation;
+ * confirmation asynchroneously (i.e. PayPal REST does not need this status);
+ * \li canceled -- the payment was canceled before it was completed, in
+ * most cases this is the user canceling (see failed too);
  * \li failed -- the payment failed (i.e. credit card refused, check
  * bounced, etc.);
  * \li paid -- the payment was confirmed, now we can ship (if shipping
@@ -919,6 +921,9 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
         {
             var name = jQuery(this).attr("name"),
                 facility = that.getPaymentFacility(snapwebsites.castToString(name, "epayment-facility tag had no 'name' attribute?"));
+
+            e.preventDefault();
+            e.stopPropagation();
 
             facility.buttonClicked();
         });

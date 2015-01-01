@@ -167,22 +167,21 @@ public:
             const bool valid(size >= min && (max == -1 || size <= max));
             if(!valid)
             {
-                f_error = true;
                 f_found = true;
-                f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> " + f_name + " expects ";
+                QString msg(f_name + " expects ");
                 if(min == max)
                 {
                     if(min == 0)
                     {
-                        f_replacement += "no arguments";
+                        msg += "no arguments";
                     }
                     else if(min == 1)
                     {
-                        f_replacement += "exactly 1 argument";
+                        msg += "exactly 1 argument";
                     }
                     else
                     {
-                        f_replacement += QString("exactly %1 arguments").arg(min);
+                        msg += QString("exactly %1 arguments").arg(min);
                     }
                 }
                 else
@@ -191,30 +190,30 @@ public:
                     {
                         if(max == 1)
                         {
-                            f_replacement += "at most 1 argument";
+                            msg += "at most 1 argument";
                         }
                         else
                         {
-                            f_replacement += QString("at most %1 arguments").arg(max);
+                            msg += QString("at most %1 arguments").arg(max);
                         }
                     }
                     else if(max == -1)
                     {
                         if(min == 1)
                         {
-                            f_replacement += "at least 1 argument";
+                            msg += "at least 1 argument";
                         }
                         else
                         {
-                            f_replacement += QString("at least %1 arguments").arg(min);
+                            msg += QString("at least %1 arguments").arg(min);
                         }
                     }
                     else
                     {
-                        f_replacement += QString("between %1 and %2 arguments").arg(min).arg(max);
+                        msg += QString("between %1 and %2 arguments").arg(min).arg(max);
                     }
                 }
-                f_replacement += "</span>";
+                error(msg);
             }
             return valid;
         }
@@ -262,8 +261,8 @@ public:
                 {
                     if(position == -1)
                     {
-                        f_error = true;
-                        f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> %1 is missing from the list of parameters, you may need to name your parameters.</span>").arg(name);
+                        error(QString("%1 is missing from the list of parameters, you may need to name your parameters.")
+                                .arg(name));
                         return null;
                     }
                 }
@@ -283,18 +282,24 @@ public:
             }
             if(it == f_parameters.end())
             {
-                f_error = true;
-                f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"%1\" (position: %2) was not found in the list.</span>").arg(name).arg(position);
+                error(QString("parameter \"%1\" (position: %2) was not found in the list.")
+                        .arg(name).arg(position));
                 return null;
             }
             if(type != TOK_UNDEFINED && it->f_type != type)
             {
-                f_error = true;
-                f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> parameter \"%1\" (position: %2) is a %3 not of the expected type: %4.</span>")
-                                        .arg(name).arg(position).arg(parameter_t::type_name(it->f_type)).arg(parameter_t::type_name(type));
+                error(QString("parameter \"%1\" (position: %2) is a %3 not of the expected type: %4.")
+                        .arg(name).arg(position).arg(parameter_t::type_name(it->f_type)).arg(parameter_t::type_name(type)));
                 return null;
             }
             return *it;
+        }
+
+        void error(QString const& msg)
+        {
+            f_error = true;
+            f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> %1</span>")
+                    .arg(filter::encode_text_for_html(msg));
         }
 
         void reset()
@@ -316,6 +321,8 @@ public:
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_xss_filter(QDomNode& node, QString const& accepted_tags, QString const& accepted_attributes);
     void                on_token_filter(content::path_info_t& ipath, QDomDocument& xml);
+
+    static QString      encode_text_for_html(QString const& text);
 
     SNAP_SIGNAL(replace_token, (content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token), (ipath, plugin_owner, xml, token));
 

@@ -43,6 +43,30 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS:
+        return "epayment::invoice_status";
+
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
+        return "canceled";
+
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+        return "completed";
+
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED:
+        return "created";
+
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
+        return "failed";
+
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+        return "paid";
+
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING:
+        return "pending";
+
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING:
+        return "processing";
+
     case SNAP_NAME_EPAYMENT_PRICE:
         return "epayment::price";
 
@@ -240,6 +264,109 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
     //       (it may already be done! search on add_javascript() for info.)
     content::content::instance()->add_javascript(doc, "epayment");
     content::content::instance()->add_css(doc, "epayment");
+}
+
+
+name_t epayment::get_invoice_status(content::path_info_t& invoice_ipath)
+{
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(invoice_ipath.get_key()));
+    QString const status(row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
+
+    // convert string to ID, makes it easier to test the status
+    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED))
+    {
+        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED;
+    }
+    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED))
+    {
+        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED;
+    }
+    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED))
+    {
+        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED;
+    }
+    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED))
+    {
+        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED;
+    }
+    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID))
+    {
+        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID;
+    }
+    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING))
+    {
+        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING;
+    }
+    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING))
+    {
+        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING;
+    }
+
+    throw snap_logic_exception(QString("invoice \"%1\" has unknown status \"%2\".").arg(invoice_ipath.get_key()).arg(status));
+}
+
+
+/** \brief Signal used to change the invoice status.
+ *
+ * Other plugins that want to react whenever an invoice changes its status
+ * can make use of this signal. For example, once an invoice is marked PAID
+ * and the cart included items that need to be shipped, the corresponding
+ * plugin can make the invoice visible to the administrator who is
+ * responsible for the handling.
+ *
+ * Another example is about users who purchase software. Once the invoice
+ * is marked as PAID, the software becomes downloadable by the user.
+ *
+ * \todo
+ * We need to see whether we want to enforce the status change in the
+ * sense that the status cannot go from PAID back to CANCELED or PENDING.
+ *
+ * \exception snap_logic_exception
+ * This exception is raised when the function is called with an invalid
+ * status.
+ *
+ * \param[in,out] invoice_ipath  The path to the invoice changing its status.
+ * \param[in] status  The new status as an epayment name_t.
+ *
+ * \return true if the status changed, false if the status does not change
+ *         or an error is detected and we can continue.
+ */
+bool epayment::set_invoice_status_impl(content::path_info_t& invoice_ipath, name_t const status)
+{
+    // make sure the status is properly defined
+    switch(status)
+    {
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING:
+        break;
+
+    default:
+        // status is contolled as the few types defined in this switch;
+        // anything else is not allowed
+        throw snap_logic_exception("invalid SNAP_NAME_EPAYMENT_INVOICE_STATUS_...");
+
+    }
+
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    QtCassandra::QCassandraRow::pointer_t row(content_table->row(invoice_ipath.get_key()));
+    QString const current_status(row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
+    QString const new_status(get_name(status));
+    if(current_status == new_status)
+    {
+        // status not changing, avoid any additional work
+        return false;
+    }
+    row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->setValue(new_status);
+
+    return true;
 }
 
 

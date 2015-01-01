@@ -61,10 +61,10 @@ void QHtmlSerializer::attribute(const QXmlName& name, const QStringRef& value)
     f_output->write(name.localName(f_namepool).toUtf8());
     f_output->write("=\"");
     QString v(value.toString());
-    v.replace('\"', "&quot;");
-    v.replace('<', "&lt;");
-    v.replace('>', "&gt;");
-    v.replace('&', "&amp;");
+    v.replace('\"', "&quot;")
+     .replace('<', "&lt;")
+     .replace('>', "&gt;")
+     .replace('&', "&amp;");
     f_output->write(v.toUtf8());
     f_output->write("\"");
 }
@@ -74,9 +74,9 @@ void QHtmlSerializer::characters(const QStringRef& value)
     closeElement();
 
     QString v(value.toString());
-    v.replace('<', "&lt;");
-    v.replace('>', "&gt;");
-    v.replace('&', "&amp;");
+    v.replace('<', "&lt;")
+     .replace('>', "&gt;")
+     .replace('&', "&amp;");
     f_output->write(v.toUtf8());
 }
 

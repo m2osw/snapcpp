@@ -17,6 +17,8 @@
 #pragma once
 
 #include "../path/path.h"
+#include "../layout/layout.h"
+#include "../filter/filter.h"
 
 #include "http_client_server.h"
 
@@ -41,12 +43,16 @@ enum name_t
     SNAP_NAME_EPAYMENT_PAYPAL_RETURN_URL,
     SNAP_NAME_EPAYMENT_PAYPAL_SETTINGS_PATH,
     SNAP_NAME_EPAYMENT_PAYPAL_TABLE,
+    SNAP_NAME_EPAYMENT_PAYPAL_TOKEN_POST_FIELD,
 
     // SECURE (saved in "secret" table)
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CLIENT_ID,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_PAYMENT,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_PAYMENT_HEADER,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT_HEADER,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_PAYMENT,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_SECRET_ID,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_ACCESS_TOKEN,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_APP_ID,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_DATA,
@@ -88,7 +94,8 @@ public:
 
 
 class epayment_paypal : public plugins::plugin
-                      //, public path::path_execute
+                      , public path::path_execute
+                      , public layout::layout_content
 {
 public:
                                 epayment_paypal();
@@ -103,12 +110,14 @@ public:
     void                        on_bootstrap(snap_child *snap);
     void                        on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
     void                        on_process_post(QString const& uri_path);
-    void                        on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    //virtual bool                on_path_execute(content::path_info_t& ipath);
+    virtual bool                on_path_execute(content::path_info_t& ipath);
+    virtual void                on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
 
 private:
     void                        initial_update(int64_t variables_timestamp);
     void                        content_update(int64_t variables_timestamp);
+    void                        cancel_invoice(QString const& token);
     bool                        get_oauth2_token(http_client_server::http_client& http, std::string& token_type, std::string& access_token);
     bool                        get_debug();
 

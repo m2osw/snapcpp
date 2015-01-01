@@ -1,6 +1,6 @@
 /*
  * Name: ecommerce
- * Version: 0.0.1.9
+ * Version: 0.0.1.10
  * Browsers: all
  * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -190,14 +190,16 @@ div#ecommerce-cart div.cart-buttons a.clear-cart
 {
 	float: left;
 	background-color: #fbea2f;
-	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+	background: linear-gradient(to bottom, #ff3d3d, #fb2f2f 25%, #fb2f2f 85%, #c42727);
+	text-shadow: 0 0 6px #ff5858, 2px 2px 2px #883309;
 }
 
 div#ecommerce-cart div.cart-buttons a.continue-shopping
 {
 	float: right;
 	background-color: #fbea2f;
-	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+	background: linear-gradient(to bottom, #a6ff9f, #3efb2f 25%, #3efb2f 85%, #32c427);
+	text-shadow: 0 0 6px #9fff98, 2px 2px 2px #448809;
 }
 
 div#ecommerce-cart div.cart-buttons a.checkout
@@ -216,5 +218,30 @@ div#ecommerce-cart div.cart-buttons a.checkout.disabled
 	background-color: #b1b1b1;
 	background: linear-gradient(to bottom, #dcdcdc, #b1b1b1 25%, #b1b1b1 85%, #8b8b8b);
 	cursor: default;
+}
+
+div.ecommerce-invoice-details
+{
+	float: right;
+	background: #f0f0f0;
+	border: 1px solid black;
+	border-radius: 3px;
+	padding: 10px 13px;
+}
+
+div.ecommerce-invoice-details div
+{
+	margin: 5px;
+}
+
+div.ecommerce-invoice-details .invoice-label
+{
+	font-weight: bold;
+}
+
+div.ecommerce-invoice-details .invoice-value
+{
+	color: #000066;
+	font-style: italic;
 }
 

@@ -27,14 +27,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="layout::layout" revision="global" overwrite="yes">"epayment-paypal-settings-parser";</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
-  <content path="/epayment/paypal/return" owner="output">
-    <param name="content::title" revision="revision">Thank You</param>
+  <content path="/epayment/paypal/ready" owner="epayment_paypal">
+    <param name="content::title" revision="revision">Final Review</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Thank you for your payment.</p>]]>
+      <![CDATA[<div class="epayment_paypal-invoice"><p>Please review your order one last time and click on <strong>Process</strong> below.</p>[ecommerce::invoice("last-invoice")][epayment_paypal::process_buttons]<div style="clear: both;"></div></div>]]>
     </param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
-  <content path="/epayment/paypal/cancel" owner="output">
+  <content path="/epayment/paypal/cancel" owner="epayment_paypal">
     <param name="content::title" revision="revision">Order Canceled</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>We are sorry to see you cancel your order.</p>]]>

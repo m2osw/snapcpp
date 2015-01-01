@@ -313,11 +313,15 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 {
     QString const n( get_column_name( c ) );
 
-    if(n == "ecommerce::invoice_number"
-    || n == "shorturl::identifier"
-    || n == "users::identifier"
-    || n == "finball::invoice_number" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
-    )
+    if(n == "sessions::check_flags")
+    {
+        return CT_int64_value;
+    }
+    else if(n == "ecommerce::invoice_number"
+         || n == "shorturl::identifier"
+         || n == "users::identifier"
+         || n == "finball::invoice_number" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         )
     {
         return CT_uint64_value;
     }
@@ -499,8 +503,15 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
     QString v;
     try
     {
-        switch( column_type_t ct = get_column_type( c ) )
+        column_type_t const ct( get_column_type( c ) );
+        switch( ct )
         {
+            case CT_int64_value:
+            {
+                v = QString("%1").arg(c->value().int64Value());
+            }
+            break;
+
             case CT_uint64_value:
             {
                 v = QString("%1").arg(c->value().uint64Value());
@@ -737,7 +748,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
 
             case CT_string_value:
             {
-                v = c->value().stringValue().replace("\n", "\\n");
+                v = c->value().stringValue().replace("\r", "\\r").replace("\n", "\\n");
             }
             break;
 
@@ -761,6 +772,12 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
     //
     switch( get_column_type( c ) )
     {
+        case CT_int64_value:
+        {
+            cvalue.setInt64Value( static_cast<uint64_t>(v.toLongLong()) );
+        }
+        break;
+
         case CT_uint64_value:
         {
             cvalue.setUInt64Value( static_cast<uint64_t>(v.toULongLong()) );
@@ -1024,7 +1041,7 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
             // all others viewed as strings
             //v = c->value().stringValue().replace("\n", "\\n");
             QString convert( v );
-            cvalue.setStringValue( convert.replace( "\\n", "\n" ) );
+            cvalue.setStringValue( convert.replace( "\\r", "\r" ).replace( "\\n", "\n" ) );
         }
         break;
     }

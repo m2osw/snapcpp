@@ -52,6 +52,7 @@ public:
 private:
     enum column_type_t
     {
+        CT_int64_value,
         CT_uint64_value,
         CT_time_microseconds,
         CT_time_seconds,

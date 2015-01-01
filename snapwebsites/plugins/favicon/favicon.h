@@ -45,7 +45,10 @@ public:
 
 
 
-class favicon : public plugins::plugin, public path::path_execute, public layout::layout_content, public form::form_post
+class favicon : public plugins::plugin
+              , public path::path_execute
+              , public layout::layout_content
+              , public form::form_post
 {
 public:
     static const sessions::sessions::session_info::session_id_t FAVICON_SESSION_ID_SETTINGS = 1;      // settings-form.xml

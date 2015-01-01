@@ -32,6 +32,14 @@ namespace epayment
 
 enum name_t
 {
+    SNAP_NAME_EPAYMENT_INVOICE_STATUS,
+    SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED,
+    SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED,
+    SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED,
+    SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED,
+    SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID,
+    SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING,
+    SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING,
     SNAP_NAME_EPAYMENT_PRICE,
     SNAP_NAME_EPAYMENT_PRODUCT_DESCRIPTION,
     SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH
@@ -67,7 +75,10 @@ public:
     void                        on_bootstrap(snap_child *snap);
     void                        on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
 
+    name_t                      get_invoice_status(content::path_info_t& invoice_ipath);
+
     SNAP_SIGNAL_WITH_MODE(generate_invoice, (content::path_info_t& invoice_ipath, uint64_t& invoice_number), (invoice_ipath, invoice_number), NEITHER);
+    SNAP_SIGNAL(set_invoice_status, (content::path_info_t& invoice_ipath, name_t const status), (invoice_ipath, status));
 
 private:
     void                        content_update(int64_t variables_timestamp);
