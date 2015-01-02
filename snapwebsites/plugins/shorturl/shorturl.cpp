@@ -1,5 +1,5 @@
 // Snap Websites Server -- short URL handling
-// Copyright (C) 2013-2014  Made to Order Software Corp.
+// Copyright (C) 2013-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -260,26 +260,17 @@ void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement
 {
     if(ipath.get_cpath().startsWith("s/"))
     {
-        bool ok;
-        uint64_t const identifier(ipath.get_cpath().mid(2).toULongLong(&ok, 36));
-        if(ok)
+        QString url(get_shorturl(ipath.get_cpath().mid(2), 36));
+        if(!url.isEmpty())
         {
-            QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
-            QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
-            QtCassandra::QCassandraValue identifier_value;
-            identifier_value.setUInt64Value(identifier);
-            QtCassandra::QCassandraValue url(shorturl_table->row(index)->cell(identifier_value.binaryValue())->value());
-            if(!url.nullValue())
-            {
-                // redirect the user
-                // TODO: the HTTP link header should not use the set_header()
-                //       because we may have many links and they should all
-                //       appear in one "Link: ..." line
-                QString http_link("<" + ipath.get_cpath() + ">; rel=shorturl");
-                f_snap->set_header(get_name(SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
-                f_snap->page_redirect(url.stringValue(), snap_child::HTTP_CODE_FOUND);
-                NOTREACHED();
-            }
+            // redirect the user
+            // TODO: the HTTP link header should not use the set_header()
+            //       because we may have many links and they should all
+            //       appear in one "Link: ..." line
+            QString const http_link("<" + ipath.get_cpath() + ">; rel=shorturl");
+            f_snap->set_header(get_name(SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
+            f_snap->page_redirect(url, snap_child::HTTP_CODE_FOUND);
+            NOTREACHED();
         }
         // else -- warn or something?
 
@@ -295,6 +286,64 @@ void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement
     }
 }
 
+
+/** \brief Convert a Short URL identifier to a path.
+ *
+ * This function attempts to convert a Short URL identifier to a path,
+ * assuming such a path exists.
+ *
+ * The id must represent the identifier number in the specified base.
+ *
+ * \param[in] id  The identifier of the Short URL to fetch.
+ * \param[in] base  The base used to convert the identifier to a number.
+ *
+ * \return The full path to the Short URL or an empty string if the
+ *         conversion fails.
+ */
+QString shorturl::get_shorturl(QString const& id, int base)
+{
+    bool ok;
+    uint64_t const identifier(id.toULongLong(&ok, base));
+    if(ok)
+    {
+        return get_shorturl(identifier);
+    }
+
+    return "";
+}
+
+
+/** \brief Convert a Short URL identifier to a path.
+ *
+ * This function attempts to convert a Short URL identifier to a path,
+ * assuming such a path exists.
+ *
+ * The id must represent the identifier number. Note that identifier zero
+ * is never considered valid for a Short URL.
+ *
+ * \param[in] id  The identifier of the Short URL to fetch.
+ * \param[in] base  The base used to convert the identifier to a number.
+ *
+ * \return The full path to the Short URL or an empty string if the
+ *         conversion fails.
+ */
+QString shorturl::get_shorturl(uint64_t identifier)
+{
+    if(identifier != 0)
+    {
+        QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
+        QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
+        QtCassandra::QCassandraValue identifier_value;
+        identifier_value.setUInt64Value(identifier);
+        QtCassandra::QCassandraValue url(shorturl_table->row(index)->cell(identifier_value.binaryValue())->value());
+        if(!url.nullValue())
+        {
+            return url.stringValue();
+        }
+    }
+
+    return "";
+}
 
 
 /** \brief Generate the header common content.

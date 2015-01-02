@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle a cart, checkout, wishlist, affiliates...
-// Copyright (C) 2011-2014  Made to Order Software Corp.
+// Copyright (C) 2011-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include "../path/path.h"
 #include "../filter/filter.h"
+#include "../layout/layout.h"
 
 /** \file
  * \brief Header of the ecommerce plugin.
@@ -65,6 +66,7 @@ char const *get_name(name_t name) __attribute__ ((const));
 
 class ecommerce : public plugins::plugin
                 , public path::path_execute
+                , public layout::layout_content
 {
 public:
                                 ecommerce();
@@ -78,8 +80,10 @@ public:
     void                        on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
     void                        on_process_post(QString const& uri_path);
     virtual bool                on_path_execute(content::path_info_t& ipath);
+    virtual void                on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate);
     void                        on_generate_invoice(content::path_info_t& invoice_ipath, uint64_t& invoice_number);
     void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                        on_preprocess_path(content::path_info_t& ipath, plugins::plugin *path_plugin);
 
     SNAP_SIGNAL(product_allowed, (QDomElement product, content::path_info_t product_ipath), (product, product_ipath));
 

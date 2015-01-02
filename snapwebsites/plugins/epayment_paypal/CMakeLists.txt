@@ -13,7 +13,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2014 Made to Order Software Corp.
+#      Copyright (c) 2011-2015 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -36,7 +36,7 @@
 project(plugin_epayment_paypal)
 
 # Get as2js for the JSON parser
-find_package( As2Js 0.0.1 REQUIRED )
+find_package( As2Js 0.1.0 REQUIRED )
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )

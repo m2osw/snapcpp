@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle a cart, checkout, wishlist, affiliates...
-// Copyright (C) 2011-2014  Made to Order Software Corp.
+// Copyright (C) 2011-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,11 +21,17 @@
 #include "../epayment/epayment.h"
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
+#include "../output/output.h"
 #include "../permissions/permissions.h"
+#include "../shorturl/shorturl.h"
 
 #include "qdomxpath.h"
 #include "not_reached.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#include <controlled_vars/controlled_vars_fauto_init.h>
+#pragma GCC diagnostic pop
 #include <QtCassandra/QCassandraLock.h>
 
 #include <iostream>
@@ -33,6 +39,86 @@
 #include <QDateTime>
 
 #include "poison.h"
+
+
+/** \file
+ * \brief Define the base of the e-Commerce Cart/Product Manager.
+ *
+ * This file defines the base Product Manager which alloes you
+ * to handle a very large number of capabilities on any one
+ * product.
+ *
+ * It also manages the user cart on the backend here and the front
+ * end using JavaScript code.
+ *
+ * The following lists the capabilities of the Product Manager
+ * documenting the fields used by the Product Manager to define
+ * a product details:
+ *
+ * \li Brief Description -- content::title -- the title of a product
+ * page is considered to be the brief description of the
+ * product, it is often viewed as the display name (or end user name)
+ * of the product.
+ *
+ * \li Name -- ecommerce::product_name -- the technical name of the
+ * product; most often only used internally. This gives you the
+ * possibility to create several pages with the exact same name and
+ * still distinguish each product using their technical name (although
+ * the URI is also a unique identifier for these products and the cart
+ * uses the URI...)
+ *
+ * \li Price -- ecommerce::price -- the current sale price of the
+ * product. Costs and inventory value are managed by the inventory
+ * extension, not be the base ecommerce plugin.
+ *
+ * \li Standard Price -- ecommerce::standard_price -- the price setup by
+ * the manufacturer; if undefined, use ecommerce::price.
+ *
+ * \li Minimum Quantity -- ecommerce::min_quantity -- minimum number
+ * of items to be able to checkout (i.e. you sell pens with a company
+ * name and force customers to get at leat 100.)
+ *
+ * \li Maximum Quantity -- ecommerce::max_quantity -- maximum number
+ * of items to be able to checkout (i.e. you sell paid for accounts
+ * on your website, users cannot by more than 1 at a time.) When the
+ * stock handling plugin is installed, this may be limited to what
+ * is available in the stock.
+ *
+ * \li Quantity Multiple -- ecommerce::multiple -- quantity has to
+ * be a multiple of this number to be valid.
+ *
+ * \li Quantity Unit -- ecommerce::quantity_unit -- one of pounds,
+ * kilos, grammes, meters, ..., or a simple count. List of units can
+ * be managed by the end user.
+ *
+ * \li Category -- ecommerce::category -- one or more categories
+ * linked to this product; this is a standard link so it is used
+ * in the branch table and not in the revision table.
+ * TBD -- management of the tags used for product categorization;
+ *        at this point I am thinking of a set of taxonomy tags
+ *        under a specific ecommerce/category path and each entry
+ *        is one name and their children are the various choices
+ *        i.e. ecommerce/category/color/blue and
+ *             ecommerce/category/color/red to select the blue
+ *             and red colors
+ *
+ * \li Logo -- ecommerce::logo -- one image representing the product
+ * or the brand of the product.
+ *
+ * \li Display Image -- ecommerce::image -- one display image, to
+ * show on the website page. This is generally small enough to fit
+ * in a standard page.
+ *
+ * \li Images -- ecommerce::images -- one or more images that
+ * display the product in a fullscreen size manner possibly with
+ * a full zoom feature while moving the mouse.
+ * TBD -- this has to be a list, we can easily have many attachments
+ *        to a single page, but a field representing a list is a
+ *        bit of an annoyment to handle. Especially if we want
+ *        to be able to give each image a few parameters, so this
+ *        is probably going to be a full structure which is saved
+ *        using the serialization.
+ */
 
 
 SNAP_PLUGIN_START(ecommerce, 1, 0)
@@ -320,6 +406,7 @@ void ecommerce::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(ecommerce, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(ecommerce, "epayment", epayment::epayment, generate_invoice, _1, _2);
     SNAP_LISTEN(ecommerce, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(ecommerce, "path", path::path, preprocess_path, _1, _2);
 }
 
 
@@ -375,7 +462,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 30, 22, 23, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 1, 14, 32, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -668,6 +755,397 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
     }
 
     return false;
+}
+
+
+/** \brief Check whether the user added e-Commerce query strings.
+ *
+ * The query string understood by e-Commerce allows administrators
+ * to add items to the cart without having the end user click on
+ * any button.
+ *
+ * \param[in,out] ipath  The path being worked on.
+ * \param[in] path_plugin  The pointer to the plugin path.
+ */
+void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin *path_plugin)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(path_plugin);
+
+    snap_uri const main_uri(f_snap->get_uri());
+    bool const cart(main_uri.has_query_option("cart"));
+    if(cart)
+    {
+        // the "cart" option is a set of commands that we want to apply
+        // now to the cart; if no cart exists, create a new one
+        // the Short URL support is optional
+        shorturl::shorturl *shorturl_plugin(plugins::exists("shorturl")
+                        ? shorturl::shorturl::instance() // dynamic_cast<shorturl::shorturl *>(plugins::get_plugin("shorturl"))
+                        : nullptr);
+        QString const cart_code(main_uri.query_option("cart"));
+        struct product_t
+        {
+            product_t()
+                : f_quantity(1.0)
+            {
+            }
+
+            void clear()
+            {
+                f_attributes.clear();
+                f_product.clear();
+                f_operation = '*';
+                f_quantity = 1.0;
+            }
+
+            typedef controlled_vars::limited_auto_init<uint32_t, 0, 0x10FFFF, '*'> operation_t;
+            typedef controlled_vars::fauto_init<double> quantity_t; // always initialized to 0.0 because a template parameter cannot be a double
+
+            QStringList     f_attributes;
+            QString         f_product;
+            operation_t     f_operation;
+            quantity_t      f_quantity;
+        };
+        product_t product;
+        std::vector<product_t> product_list;
+        bool valid(true);
+        bool keep(true);
+        QChar const *code(cart_code.data());
+        while(code->unicode() != '\0' && valid)
+        {
+            switch(code->unicode())
+            {
+            case 'a':
+                {
+                    QString path;
+
+                    ++code; // skip the 'a'
+                    if(code->unicode() >= '0' && code->unicode() <= '9')
+                    {
+                        if(shorturl_plugin == nullptr)
+                        {
+                            messages::messages::instance()->set_error(
+                                "Unsupported Product Path",
+                                "e-Commerce attributes cannot use a Short URL number without the shorturl plugin running.",
+                                "shorturl not available.",
+                                false
+                            );
+                            valid = false;
+                        }
+                        else
+                        {
+                            // this is the shortcut identifier
+                            uint64_t sc(0);
+                            for(; code->unicode() >= '0' && code->unicode() <= '9'; ++code)
+                            {
+                                sc = sc * 10 + code->unicode() - '0';
+                            }
+                            path = shorturl_plugin->get_shorturl(sc);
+                            valid = !path.isEmpty();
+                        }
+                    }
+                    else
+                    {
+                        // this is the path to the product, it has to be
+                        // written between colons
+                        if(code->unicode() != '!')
+                        {
+                            messages::messages::instance()->set_error(
+                                "Invalid Product Path",
+                                QString("e-Commerce product paths in the cart=... option must be written between exclamation points (!)."),
+                                "invalid numbers are not accepted as quantities and no product gets added.",
+                                false
+                            );
+                            valid = false;
+                        }
+                        else
+                        {
+                            ++code; // skip the '!'
+                            path.clear();
+                            for(; code->unicode() != '\0' && code->unicode() != '!'; ++code)
+                            {
+                                path += code->unicode();
+                            }
+                            if(code->unicode() == '\0')
+                            {
+                                messages::messages::instance()->set_error(
+                                    "Invalid Product Path",
+                                    QString("e-Commerce product paths in the cart=... option must be written between exclamation points (!)."),
+                                    "invalid numbers are not accepted as quantities and no product gets added.",
+                                    false
+                                );
+                                valid = false;
+                            }
+                            else
+                            {
+                                ++code; // skip the '!'
+                            }
+                        }
+                    }
+                    // got a valid attribute path
+                    product.f_attributes << path;
+                }
+                break;
+
+            case 'e':
+                ++code; // skip the 'e'
+                keep = false;
+                break;
+
+            case 'p':
+                ++code; // skip the 'p'
+                if(code->unicode() >= '0' && code->unicode() <= '9')
+                {
+                    if(shorturl_plugin == nullptr)
+                    {
+                        messages::messages::instance()->set_error(
+                            "Unsupported Product Path",
+                            "e-Commerce products cannot use a Short URL number without the shorturl plugin running.",
+                            "shorturl not available.",
+                            false
+                        );
+                        valid = false;
+                    }
+                    else
+                    {
+                        // this is the shortcut identifier
+                        int sc(0);
+                        for(; code->unicode() >= '0' && code->unicode() <= '9'; ++code)
+                        {
+                            sc = sc * 10 + code->unicode() - '0';
+                        }
+                        product.f_product = shorturl_plugin->get_shorturl(sc);
+                        valid = !product.f_product.isEmpty();
+                    }
+                }
+                else
+                {
+                    // this is the path to the product, it has to be
+                    // written between colons
+                    if(code->unicode() != '!')
+                    {
+                        messages::messages::instance()->set_error(
+                            "Invalid Product Path",
+                            QString("e-Commerce product paths in the cart=... option must be written between exclamation points (!)."),
+                            "invalid numbers are not accepted as quantities and no product gets added.",
+                            false
+                        );
+                        valid = false;
+                    }
+                    else
+                    {
+                        ++code; // skip the '!'
+                        for(; code->unicode() != '\0' && code->unicode() != '!'; ++code)
+                        {
+                            product.f_product += code->unicode();
+                        }
+                        if(code->unicode() == '\0')
+                        {
+                            messages::messages::instance()->set_error(
+                                "Invalid Product Path",
+                                QString("e-Commerce product paths in the cart=... option must be written between exclamation points (!)."),
+                                "invalid numbers are not accepted as quantities and no product gets added.",
+                                false
+                            );
+                            valid = false;
+                        }
+                        else
+                        {
+                            ++code; // skip the '!'
+                            // add the product now
+                        }
+                    }
+                }
+                // TODO SECURITY: verify quantity versus product
+
+                // add product in 'path' with 'quantity' and 'attributes'
+                product_list.push_back(product);
+                product.clear();
+                break;
+
+            case 'q':
+                ++code;
+                if(code->unicode() == '*'
+                || code->unicode() == '='
+                || code->unicode() == '+'
+                || code->unicode() == '-')
+                {
+                    product.f_operation = code->unicode();
+                    ++code;
+                }
+                else if(code->unicode() == ' ')
+                {
+                    // we mean '+', browser must send ' '...
+                    product.f_operation = '+';
+                    ++code;
+                }
+                product.f_quantity = 0;
+                for(; code->unicode() >= '0' && code->unicode() <= '9'; ++code)
+                {
+                    product.f_quantity = product.f_quantity * 10.0 + static_cast<double>(code->unicode() - '0');
+                }
+                if(code->unicode() == '.')
+                {
+                    ++code;
+                    double f(10.0);
+                    for(; code->unicode() >= '0' && code->unicode() <= '9'; ++code, f /= 10.0)
+                    {
+                        product.f_quantity += static_cast<double>(code->unicode() - '0') / f;
+                    }
+                }
+                break;
+
+            default:
+                messages::messages::instance()->set_error(
+                    "Invalid Cart Query String",
+                    QString("The cart query string does not understand the '%1' character.").arg(code->unicode()),
+                    "unsupported character found in the cart query string",
+                    false
+                );
+                valid = false;
+                break;
+
+            }
+        }
+        if(valid)
+        {
+            // the whole cart info is valid, apply it
+            users::users *users_plugin(users::users::instance());
+            QDomDocument doc;
+            QDomElement cart_tag;
+            if(keep)
+            {
+                // read the existing cart if the user did not want to
+                // empty it first
+                QString cart_xml(users_plugin->get_from_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+                doc.setContent(cart_xml);
+                cart_tag = doc.documentElement();
+                if(cart_tag.tagName() != "cart") // make sure it is a cart element
+                {
+                    cart_tag.clear();
+                    // clear the document too because it is probably no good
+                    doc = QDomDocument();
+                }
+            }
+            if(cart_tag.isNull())
+            {
+                cart_tag = doc.createElement("cart");
+                doc.appendChild(cart_tag);
+            }
+            for(auto it(product_list.begin()); it != product_list.end(); ++it)
+            {
+                QDomNodeList product_tags(doc.documentElement().elementsByTagName("product"));
+                int const max_products(product_tags.size());
+                bool found(false);
+                for(int i(0); i < max_products; ++i)
+                {
+                    QDomElement p(product_tags.at(i).toElement());
+                    QString const guid(p.attribute("guid"));
+                    if(guid == it->f_product)
+                    {
+                        // TODO: check the attributes too
+                        switch(it->f_operation)
+                        {
+                        case '=':
+                            if(it->f_quantity == 0.0)
+                            {
+                                // remove the item from the cart
+                                p.parentNode().removeChild(p);
+                            }
+                            else
+                            {
+                                // force quantity to what user specified
+                                p.setAttribute("q", it->f_quantity);
+                            }
+                            found = true;
+                            break;
+
+                        case '-':
+                            {
+                                QString const quantity_str(p.attribute("q"));
+                                bool ok;
+                                double quantity(quantity_str.toDouble(&ok));
+                                if(!ok)
+                                {
+                                    quantity = 0.0;
+                                }
+                                if(quantity <= it->f_quantity)
+                                {
+                                    // removing all items is equivalent to deleting
+                                    p.parentNode().removeChild(p);
+                                }
+                                else
+                                {
+                                    p.setAttribute("q", quantity - it->f_quantity);
+                                }
+                                found = true;
+                            }
+                            break;
+
+                        case '+':
+                            {
+                                QString const quantity_str(p.attribute("q"));
+                                bool ok;
+                                double quantity(quantity_str.toDouble(&ok));
+                                if(!ok)
+                                {
+                                    quantity = 0.0;
+                                }
+                                p.setAttribute("q", quantity + it->f_quantity);
+                                found = true;
+                            }
+                            break;
+
+                        case '*':
+                            // by default ignore if it exists
+                            found = true;
+                            break;
+
+                        default:
+                            throw snap_logic_exception(QString("invalid product.f_operation \"%1\"").arg(it->f_operation));;
+
+                        }
+                        // exit for() loop
+                        break;
+                    }
+                }
+                if(!found && it->f_operation != '-' && it->f_quantity > 0)
+                {
+                    QDomElement p(doc.createElement("product"));
+                    cart_tag.appendChild(p);
+                    p.setAttribute("guid", it->f_product);
+                    p.setAttribute("q", it->f_quantity);
+                    // TODO: add attributes
+                }
+            }
+            users_plugin->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), doc.toString());
+        }
+    }
+}
+
+
+/** \brief Generate the page main content.
+ *
+ * This function generates the main content of the page. Other
+ * plugins will also have the event called if they subscribed and
+ * thus will be given a chance to add their own content to the
+ * main page. This part is the one that (in most cases) appears
+ * as the main content on the page although the content of some
+ * columns may be interleaved with this content.
+ *
+ * Note that this is NOT the HTML output. It is the \<page\> tag of
+ * the snap XML file format. The theme layout XSLT will be used
+ * to generate the final output.
+ *
+ * \param[in,out] ipath  The path being managed.
+ * \param[in,out] page  The page being generated.
+ * \param[in,out] body  The body being generated.
+ * \param[in] ctemplate  The path to a template page in case cpath is not defined.
+ */
+void ecommerce::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate)
+{
+    // our pages are like any standard pages
+    output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
 
 

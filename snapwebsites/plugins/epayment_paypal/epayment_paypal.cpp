@@ -1,5 +1,5 @@
 // Snap Websites Server -- handle the Paypal payment facility
-// Copyright (C) 2011-2014  Made to Order Software Corp.
+// Copyright (C) 2011-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -413,14 +413,16 @@ void epayment_paypal::on_generate_main_content(content::path_info_t& ipath, QDom
 }
 
 
-/** \brief This function gets called when a dynamic path gets executed.
+/** \brief This function gets called when a PayPal specific page gets output.
  *
- * This function checks the dynamic path supported. If the path
- * is the ecommerce-cart.js file, then the file generates a JavaScript file
- * and returns that to the client. This file is always marked as
- * requiring a reload (i.e. no caching allowed.)
+ * This function has some special handling of the review and cancel
+ * back links. These are used to make sure that PayPal information
+ * gets saved in Cassandra as soon as possible (instead of waiting
+ * for a click on the Cancel or Process buttons.)
  *
  * \param[in] ipath  The path of the page being executed.
+ *
+ * \return true if the path was properly displayed, false otherwise.
  */
 bool epayment_paypal::on_path_execute(content::path_info_t& ipath)
 {
@@ -980,6 +982,7 @@ std::cerr << "***\n*** HERE: " << invoice_number << "\n***\n";
             //          }'
             //
             // Sample answer:
+            //
             //      [
             //          {
             //              "id":"PAY-1234567890",
@@ -1556,6 +1559,58 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
         }
     }
 }
+
+
+// PayPal allows the creation of plans for subscriptions:
+//
+// curl -v POST https://api.sandbox.paypal.com/v1/payments/billing-plans
+// -H 'Content-Type:application/json'
+// -H 'Authorization: Bearer <Access-Token>'
+// -d '{
+//     "name": "T-Shirt of the Month Club Plan",
+//     "description": "Template creation.",
+//     "type": "fixed",
+//     "payment_definitions": [
+//         {
+//             "name": "Regular Payments",
+//             "type": "REGULAR",
+//             "frequency": "MONTH",
+//             "frequency_interval": "2",
+//             "amount": {
+//                 "value": "100",
+//                 "currency": "USD"
+//             },
+//             "cycles": "12",
+//             "charge_models": [
+//                 {
+//                     "type": "SHIPPING",
+//                     "amount": {
+//                         "value": "10",
+//                         "currency": "USD"
+//                     }
+//                 },
+//                 {
+//                     "type": "TAX",
+//                     "amount": {
+//                         "value": "12",
+//                         "currency": "USD"
+//                     }
+//                 }
+//             ]
+//         }
+//     ],
+//     "merchant_preferences": {
+//         "setup_fee": {
+//             "value": "1",
+//             "currency": "USD"
+//         },
+//         "return_url": "http://www.return.com",
+//         "cancel_url": "http://www.cancel.com",
+//         "auto_bill_amount": "YES",
+//         "initial_fail_amount_action": "CONTINUE",
+//         "max_fail_attempts": "0"
+//     }
+//
 
 
 // PayPal REST documentation at time of writing

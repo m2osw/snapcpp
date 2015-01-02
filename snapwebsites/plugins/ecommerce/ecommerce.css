@@ -1,8 +1,8 @@
 /*
  * Name: ecommerce
- * Version: 0.0.1.10
+ * Version: 0.0.1.11
  * Browsers: all
- * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 
@@ -217,6 +217,7 @@ div#ecommerce-cart div.cart-buttons a.checkout.disabled
 	color: #666666;
 	background-color: #b1b1b1;
 	background: linear-gradient(to bottom, #dcdcdc, #b1b1b1 25%, #b1b1b1 85%, #8b8b8b);
+	text-shadow: 0 0 6px #ffffff, 2px 2px 2px #886619;
 	cursor: default;
 }
 

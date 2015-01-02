@@ -1,5 +1,5 @@
 // Snap Websites Server -- shorturl management (smaller URLs for all pages)
-// Copyright (C) 2013-2014  Made to Order Software Corp.
+// Copyright (C) 2013-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -69,6 +69,9 @@ public:
     void                on_create_content(content::path_info_t& path, const QString& owner, const QString& type);
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     void                on_page_cloned(content::content::cloned_tree_t const& tree);
+
+    QString             get_shorturl(QString const& id, int base);
+    QString             get_shorturl(uint64_t identifier);
 
     SNAP_SIGNAL(allow_shorturl, (content::path_info_t& ipath, QString const& owner, QString const& type, bool& allow), (ipath, owner, type, allow));
 
