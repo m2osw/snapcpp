@@ -34,20 +34,17 @@ include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}
 )
-add_library( ${PROJECT_NAME} STATIC
+add_library( ${PROJECT_NAME} SHARED
     advgetopt.h
     advgetopt.cpp
 )
-#set_property( TARGET ${PROJECT_NAME} PROPERTY LINK_FLAGS "-fPIC" )
 install(
     TARGETS ${PROJECT_NAME}
-    ARCHIVE DESTINATION lib
-    COMPONENT development
+    LIBRARY DESTINATION lib
 )
 install(
     FILES advgetopt.h
     DESTINATION include/advgetopt
-    COMPONENT development
 )
 
 # vim: ts=4 sw=4 et nocindent
