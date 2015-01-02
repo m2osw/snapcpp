@@ -1,1 +1,2 @@
-usr/share/*
+usr/lib/lib*.so.*
+usr/share/doc/libadvgetopt/*
