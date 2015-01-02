@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Snap Websites Server == default list theme layout setup
-Copyright (C) 2011-2014  Made to Order Software Corp.
+Copyright (C) 2011-2015  Made to Order Software Corp.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

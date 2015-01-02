@@ -11,7 +11,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2014 Made to Order Software Corp.
+#      Copyright (c) 2014-2015 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com

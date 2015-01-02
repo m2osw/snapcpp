@@ -1,5 +1,5 @@
 // Snap Websites Server -- find out the MIME type of client's files
-// Copyright (C) 2014  Made to Order Software Corp.
+// Copyright (C) 2014-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

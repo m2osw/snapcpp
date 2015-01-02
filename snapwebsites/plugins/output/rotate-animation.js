@@ -3,7 +3,7 @@
  * Version: 0.0.1.3
  * Browsers: all
  * Depends: jquery-rotate (2.3)
- * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
 

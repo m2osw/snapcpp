@@ -1,6 +1,10 @@
 /** @preserve
+ * Name: list
  * Version: 0.0.5
  * Browsers: all
+ * Depends: ...
+ * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
+ * License: GPL 2.0
  */
 
 //

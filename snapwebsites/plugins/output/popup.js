@@ -2,7 +2,7 @@
  * Name: popup
  * Version: 0.1.0.29
  * Browsers: all
- * Copyright: Copyright 2014 (c) Made to Order Software Corporation  All rights reverved.
+ * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
  * License: GPL 2.0
  */

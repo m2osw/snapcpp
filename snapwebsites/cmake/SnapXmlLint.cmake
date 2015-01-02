@@ -1,6 +1,6 @@
 ################################################################################
 # Snap Websites Server -- prepare XML content for checking against DTD
-# Copyright (C) 2013-2014  Made to Order Software Corp.
+# Copyright (C) 2013-2015  Made to Order Software Corp.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
