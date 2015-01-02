@@ -50,6 +50,7 @@ include( SnapXmlLint )
 #
 add_subdirectory(antivirus)
 add_subdirectory(attachment)
+add_subdirectory(avatar)
 add_subdirectory(char_chart)
 add_subdirectory(content)
 add_subdirectory(ecommerce)

@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <key refid="confirm_password">q</key>
     <key refid="save">s</key><!-- default submit is expected to be [Shift-]Alt-S -->
   </accesskeys>
-  <widget id="shorturl_settings" type="fieldset">
+  <widget id="feed_settings" type="fieldset">
     <label>Short URL Settings</label>
     <tooltip>Whenever you want to share a URL, having a short one usually makes it a lot simpler!</tooltip>
     <help>The registration form let you enter the necessary information to create an account on the Snap! System. Note that you will then be able to use your website on all Snap! websites running at Made to Order Software Corporation.</help>

@@ -462,7 +462,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 1, 14, 32, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 2, 4, 48, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
