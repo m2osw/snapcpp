@@ -151,6 +151,8 @@ class Number extends Object
 // snap extension
 class Integer extends Number
 {
+    function Integer(var in value: Number := 0.0) : Integer;
+
     // constants
     const var MIN_VALUE;
     const var MAX_VALUE;
@@ -160,6 +162,7 @@ class Integer extends Number
 // snap extension
 class Double extends Number
 {
+    function Double(var in value: Number := 0.0) : Double;
 };
 
 
