@@ -824,6 +824,23 @@ QCassandraValue::QCassandraValue(const QByteArray& value)
     // f_value properly initialized already
 }
 
+/** \brief Initialize a QCassandraValue object.
+ *
+ * This function initializes a QCassandraValue object to a buffer.
+ *
+ * \param[in] data  The start value of the value object.
+ * \param[in] data_size  The number of bytes to copy from the data buffer.
+ */
+QCassandraValue::QCassandraValue(const char *data, int data_size)
+    : f_value(data, data_size)
+      //f_ttl(TTL_PERMANENT) -- auto-init
+      //f_consistency_level(CONSISTENCY_LEVEL_DEFAULT) -- auto-init
+      //f_timestamp_mode(TIMESTAMP_MODE_AUTO) -- auto-init
+      //f_timestamp(0) -- auto-init
+{
+    // f_value properly initialized already
+}
+
 /** \brief Make the value empty.
  *
  * This function empties the value buffer.
@@ -1026,6 +1043,26 @@ void QCassandraValue::setStringValue(const QString& value)
 void QCassandraValue::setBinaryValue(const QByteArray& value)
 {
     QtCassandra::setBinaryValue(f_value, value);
+}
+
+/** \brief Set value to this binary buffer.
+ *
+ * This function sets the contents of this value object to
+ * the specified binary buffer. This is the only case where
+ * the input data is saved untouched in the value buffer.
+ *
+ * \exception std::runtime_error
+ * This exception is raised whenever the input binary buffer is
+ * larger than 64Mb. Later we may allow you to change the limit,
+ * however, we probably will give you a way to save large data
+ * sets using multiple cells instead (i.e. blobs.)
+ *
+ * \param[in] data  The binary data to save in this value object.
+ * \param[in] data_size  The size of the buffer.
+ */
+void QCassandraValue::setBinaryValue(const char *data, int data_size)
+{
+    f_value = QByteArray(data, data_size);
 }
 
 /** \brief Return the size of the value.

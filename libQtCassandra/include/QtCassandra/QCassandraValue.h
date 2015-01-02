@@ -784,6 +784,7 @@ public:
 
     // CASSANDRA_VALUE_TYPE_BINARY
     QCassandraValue(const QByteArray& value);
+    QCassandraValue(const char *data, int size);
 
     void setNullValue();
     void setBoolValue(bool value);
@@ -800,6 +801,7 @@ public:
     void setDoubleValue(double value);
     void setStringValue(const QString& value);
     void setBinaryValue(const QByteArray& value);
+    void setBinaryValue(const char *data, int data_size);
 
     int size() const;
 
