@@ -988,7 +988,7 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                 {
                     ++code;
                     double f(10.0);
-                    for(; code->unicode() >= '0' && code->unicode() <= '9'; ++code, f /= 10.0)
+                    for(; code->unicode() >= '0' && code->unicode() <= '9'; ++code, f *= 10.0)
                     {
                         product.f_quantity += static_cast<double>(code->unicode() - '0') / f;
                     }
