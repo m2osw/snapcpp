@@ -258,7 +258,7 @@ void listener::on_process_post(QString const& uri_path)
             message.appendChild(permission_denied);
             result.setAttribute("status", "failed");
         }
-        server_access_plugin->ajax_append_data("listener", doc.toString().toUtf8());
+        server_access_plugin->ajax_append_data("listener", doc.toString(-1).toUtf8());
     }
 
     server_access_plugin->create_ajax_result(ipath, true);

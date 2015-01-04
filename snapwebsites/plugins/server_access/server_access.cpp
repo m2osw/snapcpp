@@ -348,7 +348,7 @@ void server_access::ajax_output()
     // the type in this case is XML
     f_snap->set_header(snap::get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/xml; charset=utf-8");
 
-    f_snap->output(f_ajax.toString());
+    f_snap->output(f_ajax.toString(-1));
 }
 
 

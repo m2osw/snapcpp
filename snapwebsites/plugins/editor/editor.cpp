@@ -2935,9 +2935,9 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // now process the XML data with the plugin specialized data for
     // each field through the editor XSLT
     prepare_editor_form(this);
-    QString const editor_xsl(f_editor_form.toString());
+    QString const editor_xsl(f_editor_form.toString(-1));
 
-    QString const editor_xml(editor_widgets.toString());
+    QString const editor_xml(editor_widgets.toString(-1));
     if(editor_xml.isEmpty())
     {
         throw snap_logic_exception(QString("somehow the memory XML document for the editor XSTL parser is empty, ipath key is \"%1\"").arg(ipath.get_key()));
@@ -2975,8 +2975,8 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     QDomReceiver receiver(q.namePool(), doc_output);
     q.evaluateTo(&receiver);
 
-//std::cerr << "Editor Focus [" << editor_widgets.toString() << "]\n";
-//std::cerr << "Editor Output [" << doc_output.toString() << "]\n";
+//std::cerr << "Editor Focus [" << editor_widgets.toString(-1) << "]\n";
+//std::cerr << "Editor Output [" << doc_output.toString(-1) << "]\n";
 
     QDomNodeList result_widgets(doc_output.elementsByTagName("widget"));
     int const max_results(result_widgets.size());
@@ -2993,7 +2993,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             g_added_editor_form_js_css = ADDED_FORM_FILE_NOT_YET;
         }
     }
-//std::cerr << "Editor XML [" << doc.toString() << "]\n";
+//std::cerr << "Editor XML [" << doc.toString(-1) << "]\n";
 
     if(g_added_editor_form_js_css == ADDED_FORM_FILE_NOT_YET)
     {

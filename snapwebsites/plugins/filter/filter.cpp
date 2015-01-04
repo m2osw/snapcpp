@@ -133,7 +133,7 @@ void filter::on_bootstrap(::snap::snap_child *snap)
  * 4) Remove entities that look like NT4 entities: &{\<name>};
  *
  * \note
- * The call \c QDomNode::toString().toUft8().data() generates a valid UTF-8
+ * The call \c QDomNode::toString(-1).toUft8().data() generates a valid UTF-8
  * string no matter what. Therefore we do not need to filter for illegal
  * characters in this filter function. The output will always be correct.
  *
@@ -306,7 +306,7 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
                 dom_xpath.setXPath(param.f_value);
                 QDomXPath::node_vector_t result(dom_xpath.apply(xml));
 //FILE *o(fopen("/tmp/test.xml", "w"));
-//fprintf(o, "%s\n", xml.toString().toUtf8().data());
+//fprintf(o, "%s\n", xml.toString(-1).toUtf8().data());
 //fclose(o);
                 // at this point we expect the result to be 1 (or 0) entries
                 // if more than 1, ignore the following nodes
@@ -324,7 +324,7 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
                             QDomDocument document;
                             QDomNode copy(document.importNode(result[0], true));
                             document.appendChild(copy);
-                            token.f_replacement = document.toString();
+                            token.f_replacement = document.toString(-1);
                         }
                     }
                     else if(result[0].isAttr())
@@ -543,6 +543,13 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                 {
                     f_result += QChar(c);
                 }
+            }
+
+            // TBD: we may be able to move this very class in the
+            //      filter_text_impl() instead...
+            if(!f_result.isEmpty())
+            {
+                f_filter->filter_text(f_ipath, f_xml, f_result, changed);
             }
 
             return changed;
@@ -969,14 +976,14 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
     // start the token replacement
     filter_state_t state(xml, ipath);
 
-    QDomNode n = xml.firstChild();
+    QDomNode n(xml.firstChild());
     while(!n.isNull())
     {
         QVector<QDomNode> to_pop;
 
         // determine the next pointer so we can delete this node
-        QDomNode parent = n.parentNode();
-        QDomNode next = n.firstChild();
+        QDomNode parent(n.parentNode());
+        QDomNode next(n.firstChild());
         if(next.isNull())
         {
             next = n.nextSibling();
@@ -1017,7 +1024,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
 //std::cerr << "*** text [" << text.data() << "]\n";
             if(t.parse())
             {
-//std::cerr << "replace text [" << text.data() << "] with [" << t.result() << "]\n";
+//std::cerr << "***\n*** replace text [" << text.data() << "] with [" << t.result() << "]\n***\n";
                 // replace the text with its contents
                 snap_dom::replace_node_with_html_string(n, t.result());
             }

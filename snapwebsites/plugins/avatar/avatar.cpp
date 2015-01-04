@@ -36,36 +36,10 @@ SNAP_PLUGIN_START(avatar, 1, 0)
  */
 char const *get_name(name_t name)
 {
-    switch(name) {
-    case SNAP_NAME_AVATAR_ADMIN_SETTINGS:
-        return "admin/settings/avatar";
-
-    case SNAP_NAME_AVATAR_AGE:
-        return "avatar::age";
-
-    case SNAP_NAME_AVATAR_ATTACHMENT_TYPE:
-        return "types/taxonomy/system/content-types/avatar/attachment";
-
-    case SNAP_NAME_AVATAR_DESCRIPTION:
-        return "avatar::description";
-
-    case SNAP_NAME_AVATAR_EXTENSION:
-        return "avatar::extension";
-
-    case SNAP_NAME_AVATAR_MIMETYPE:
-        return "avatar::mimetype";
-
-    case SNAP_NAME_AVATAR_PAGE_LAYOUT:
-        return "avatar::page_layout";
-
+    switch(name)
+    {
     case SNAP_NAME_AVATAR_TITLE:
         return "avatar::title";
-
-    case SNAP_NAME_AVATAR_TTL:
-        return "avatar::ttl";
-
-    case SNAP_NAME_AVATAR_TYPE:
-        return "avatar::type";
 
     default:
         // invalid index

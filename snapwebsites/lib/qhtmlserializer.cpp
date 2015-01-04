@@ -39,9 +39,11 @@ QHtmlSerializer::QHtmlSerializer(QXmlNamePool namepool, QBuffer *output, bool co
 {
 }
 
+
 QHtmlSerializer::~QHtmlSerializer()
 {
 }
+
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -49,6 +51,7 @@ void QHtmlSerializer::atomicValue(const QVariant& value)
 {
 }
 #pragma GCC diagnostic pop
+
 
 void QHtmlSerializer::attribute(const QXmlName& name, const QStringRef& value)
 {
@@ -65,9 +68,10 @@ void QHtmlSerializer::attribute(const QXmlName& name, const QStringRef& value)
      .replace('<', "&lt;")
      .replace('>', "&gt;")
      .replace('&', "&amp;");
-    f_output->write(v.toUtf8());
+    f_output->write(v.simplified().toUtf8());
     f_output->write("\"");
 }
+
 
 void QHtmlSerializer::characters(const QStringRef& value)
 {
@@ -79,6 +83,7 @@ void QHtmlSerializer::characters(const QStringRef& value)
      .replace('&', "&amp;");
     f_output->write(v.toUtf8());
 }
+
 
 void QHtmlSerializer::comment(const QString& value)
 {
@@ -93,10 +98,12 @@ void QHtmlSerializer::comment(const QString& value)
     f_output->write("-->");
 }
 
+
 void QHtmlSerializer::endDocument()
 {
     // we are done
 }
+
 
 void QHtmlSerializer::endElement()
 {
@@ -174,10 +181,12 @@ void QHtmlSerializer::endElement()
     }
 }
 
+
 void QHtmlSerializer::endOfSequence()
 {
     // nothing to do here
 }
+
 
 void QHtmlSerializer::namespaceBinding(const QXmlName& name)
 {
@@ -201,6 +210,7 @@ void QHtmlSerializer::namespaceBinding(const QXmlName& name)
     }
 }
 
+
 void QHtmlSerializer::processingInstruction(const QXmlName& target, const QString& value )
 {
     closeElement();
@@ -218,10 +228,12 @@ void QHtmlSerializer::processingInstruction(const QXmlName& target, const QStrin
     f_output->write("?>");
 }
 
+
 void QHtmlSerializer::startDocument()
 {
     // should we create docs here?
 }
+
 
 void QHtmlSerializer::startElement(const QXmlName& name)
 {
@@ -239,10 +251,12 @@ void QHtmlSerializer::startElement(const QXmlName& name)
     f_element_stack.push_back(element);
 }
 
+
 void QHtmlSerializer::startOfSequence()
 {
     // nothing to do here
 }
+
 
 void QHtmlSerializer::closeElement()
 {
@@ -252,5 +266,6 @@ void QHtmlSerializer::closeElement()
         f_output->write(">");
     }
 }
+
 
 // vim: ts=4 sw=4 et

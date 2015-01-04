@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<snap-form owner="avatar" content-modified="2015-01-02 04:16:35">
+<editor-form owner="avatar" content-modified="2015-01-02 04:16:35">
   <auto-reset minutes="120"/>
   <mode action="edit"/>
   <immediate/>
@@ -29,13 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tabindex refid="snap_images"/>
     <tabindex refid="gravatar_images"/>
   </taborder>
-  <accesskeys>
-    <!-- by keeping those in alphabetical order you will avoid problems (duplicates) -->
-    <key refid="local_images">l</key>
-    <key refid="share_images">s</key>
-    <key refid="snap_images">i</key>
-    <key refid="gravatar_images">g</key>
-  </accesskeys>
+  <widget id="editor-session" type="silent" field="editor::session" path="editor/session">
+  </widget>
   <widget id="local_images" type="checkmark" field="avatar::local_images" path="avatar/local_images" auto-save="int8">
     <label>Show user image on this website</label>
     <tooltip>Select this checkmark to allow the Avatar plugin to make use of images loaded on this Snap! Websites.</tooltip>
@@ -60,6 +55,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>Many users have an account registered with Gravatar which is a major Avatar system on the Internet. This option allows the use of Gravatar from this website.</help>
     <value>0</value>
   </widget>
-</snap-form>
+</editor-form>
 <!-- vim: ts=2 sw=2 et
 -->

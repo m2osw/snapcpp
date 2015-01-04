@@ -1118,7 +1118,7 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                     // TODO: add attributes
                 }
             }
-            users_plugin->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), doc.toString());
+            users_plugin->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), doc.toString(-1));
         }
     }
 }
@@ -1248,7 +1248,7 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
     if(new_max_products != max_products)
     {
         // save the new DOM as a string back in the database
-        cart_xml = doc.toString();
+        cart_xml = doc.toString(-1);
         users_plugin->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), cart_xml);
 
         // since the cart changed we need to send it back to the client

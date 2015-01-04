@@ -230,7 +230,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
         }
         // WARNING WARNING WARNING
         // Do not turn on the namespaces because otherwise it gets all messed
-        // up by the toString() below (it's to wonder how messed up it must be
+        // up by the toString() below (it is to wonder how messed up it must be
         // in memory.)
         if(!f_form_elements.setContent(&file, false))
         {
@@ -261,7 +261,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
         // give other plugins a chance to add their own widgets to the XSTL
         // (this is used to extend the capability of Snap! forms)
         form_element(this);
-        f_form_elements_string = f_form_elements.toString();
+        f_form_elements_string = f_form_elements.toString(-1);
 //printf("form [%s]\n", f_form_elements_string.toUtf8().data());
         f_form_initialized = true;
     }
@@ -295,7 +295,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     QXmlQuery q(QXmlQuery::XSLT20);
     QMessageHandler msg;
     q.setMessageHandler(&msg);
-    q.setFocus(xml_form.toString());
+    q.setFocus(xml_form.toString(-1));
     // somehow the bind works here...
     q.bindVariable("form_session", QVariant(sessions::sessions::instance()->create_session(info)));
     ++g_unique_id;
@@ -2167,7 +2167,7 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     // 6. Run the XSLT against the form and save the result
     //
     QDomDocument result(form_to_html(info, form_doc));
-    token.f_replacement = result.toString();
+    token.f_replacement = result.toString(-1);
 //printf("form is [%s] (%d), %d\n", token.f_replacement.toUtf8().data(), static_cast<int>(token.f_error), static_cast<int>(token.f_found));
 }
 

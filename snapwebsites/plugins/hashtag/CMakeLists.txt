@@ -1,15 +1,15 @@
 #
 # File:
-#      plugins/avatar/CMakeLists.txt
+#      plugins/hashtag/CMakeLists.txt
 #
 # Description:
-#      Transform an email address in a picture.
+#      Transform words preceeded by a hash into tags.
 #
 # Documentation:
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2015 Made to Order Software Corp.
+#      Copyright (c) 2013-2015 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -29,7 +29,7 @@
 #      Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 
-project(plugin_avatar)
+project(plugin_hashtag)
 
 find_package( Qt4 4.8.1 QUIET REQUIRED QtCore )
 include( ${QT_USE_FILE} )
@@ -46,39 +46,41 @@ include_directories(
 )
 
 QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
-    avatar.qrc
+    hashtag.qrc
 )
 
 
-snap_validate_xml( content.xml        content/content.dtd )
+snap_validate_xml( content.xml content/content.dtd )
 
-snap_validate_xml( avatar-settings-page.xml    editor/editor-form.dtd )
-snap_validate_xml( avatar-settings-parser.xsl  layout/simplified-xslt20.dtd )
+snap_validate_xml( hashtag-settings-page.xml    editor/editor-form.dtd )
+snap_validate_xml( hashtag-settings-parser.xsl  layout/simplified-xslt20.dtd )
 
 
-add_library(avatar SHARED
-    avatar.cpp
+add_library(hashtag SHARED
+    hashtag.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
     content.xml
-    avatar-settings-page.xml
-    avatar-settings-parser.xsl
+    hashtag.css
+    hashtag-settings-page.xml
+    hashtag-settings-parser.xsl
 )
 
-target_link_libraries( avatar ${QT_LIBRARIES} )
+target_link_libraries( hashtag ${QT_LIBRARIES} )
 
 get_property( 3RDPARTY_INCLUDED GLOBAL PROPERTY 3RDPARTY_INCLUDED )
 if( 3RDPARTY_INCLUDED )
-    add_dependencies( avatar make_controlled_vars_headers )
+    add_dependencies( hashtag make_controlled_vars_headers )
 endif()
 
 install(
-    TARGETS avatar LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
+    TARGETS hashtag LIBRARY DESTINATION ${PLUGIN_INSTALL_DIR}
 )
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-    DESTINATION include/snapwebsites/plugins/avatar
+    DESTINATION include/snapwebsites/plugins/hashtag
     FILES_MATCHING PATTERN "*.h"
 )
+
 
 # vim: ts=4 sw=4 et

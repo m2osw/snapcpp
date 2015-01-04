@@ -727,7 +727,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
 
     // concerned (owner) plugin generates content
     content_plugin->on_generate_main_content(ipath, page, body, ctemplate);
-//std::cout << "Header + Main XML is [" << doc.toString() << "]\n";
+//std::cout << "Header + Main XML is [" << doc.toString(-1) << "]\n";
 
     // add boxes content
     // if the "boxes" entry does not exist yet then we can create it now
@@ -741,7 +741,7 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
 
     // other plugins are allowed to modify the content if so they wish
     generate_page_content(ipath, page, body, ctemplate);
-//std::cout << "Prepared XML is [" << doc.toString() << "]\n";
+//std::cout << "Prepared XML is [" << doc.toString(-1) << "]\n";
 
     // TODO: the filtering needs to be a lot more generic!
     //       plus the owner of the page should be able to select the
@@ -757,18 +757,18 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     filtered_content(ipath, doc, xsl);
 
 #if 0
-std::cout << "Generated XML is [" << doc.toString() << "]\n";
+std::cout << "Generated XML is [" << doc.toString(-1) << "]\n";
 std::cout << "Generated XSL is [" << xsl            << "]\n";
 #endif
 
 #if 0
 QFile out("/tmp/doc.xml");
 out.open(QIODevice::WriteOnly);
-out.write(doc.toString().toUtf8());
+out.write(doc.toString(-1).toUtf8());
 #endif
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
-    QString doc_str(doc.toString());
+    QString doc_str(doc.toString(-1));
     if(doc_str.isEmpty())
     {
         throw snap_logic_exception("somehow the memory XML document for the body XSLT is empty");
@@ -803,7 +803,7 @@ out.write(doc.toString().toUtf8());
             //printf("Got a node!\n");
             QXmlNodeModelIndex node_index(item.toNodeModelIndex());
             QDomNode node(m.toDomNode(node_index));
-            printf("Got a node! [%s]\n", node.localName()/*ownerDocument().toString()*/.toUtf8().data());
+            printf("Got a node! [%s]\n", node.localName()/*ownerDocument().toString(-1)*/.toUtf8().data());
         }
         item = results.next();
     }
@@ -814,7 +814,7 @@ out.write(doc.toString().toUtf8());
     q.evaluateTo(&receiver);
     extract_js_and_css(doc, doc_output);
     body.appendChild(doc.importNode(doc_output.documentElement(), true));
-//std::cout << "Body HTML is [" << doc_output.toString() << "]\n";
+//std::cout << "Body HTML is [" << doc_output.toString(-1) << "]\n";
 #else
     //QDomDocument doc_body("body");
     //doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, nullptr, nullptr, nullptr);
@@ -1150,7 +1150,7 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
     QXmlQuery q(QXmlQuery::XSLT20);
-    QString doc_str(doc.toString());
+    QString doc_str(doc.toString(-1));
     if(doc_str.isEmpty())
     {
         throw snap_logic_exception("somehow the memory XML document for the theme XSLT is empty");
@@ -1594,7 +1594,7 @@ bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomEleme
         // generate!
         ;
 
-//SNAP_LOG_TRACE() << "layout stuff [" << header.ownerDocument().toString() << "]";
+//SNAP_LOG_TRACE() << "layout stuff [" << header.ownerDocument().toString(-1) << "]";
     return true;
 }
 

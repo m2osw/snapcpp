@@ -1955,7 +1955,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                         ;
 
                     layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, dynamic_cast<layout_content *>(item_plugin));
-//std::cerr << "source to be parsed [" << item_doc.toString() << "]\n";
+//std::cerr << "source to be parsed [" << item_doc.toString(-1) << "]\n";
                     QDomElement item_body(snap_dom::get_element(item_doc, "body"));
                     item_body.setAttribute("index", index);
                     QString themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
@@ -1969,7 +1969,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                     ++index; // index only counts items added to the output
                 }
             }
-//std::cerr << "resulting XML [" << list_doc.toString() << "]\n";
+//std::cerr << "resulting XML [" << list_doc.toString(-1) << "]\n";
 
             // now theme the list as a whole
             // we add a wrapper so we can use /node()/* in the final theme

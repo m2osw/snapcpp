@@ -2725,7 +2725,7 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
                     QDomDocument document;
                     QDomNode copy(document.importNode(result[0], true));
                     document.appendChild(copy);
-                    token.f_replacement = document.toString();
+                    token.f_replacement = document.toString(-1);
                 }
                 else if(result[0].isAttr())
                 {

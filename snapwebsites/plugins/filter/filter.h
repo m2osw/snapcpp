@@ -325,6 +325,7 @@ public:
     static QString      encode_text_for_html(QString const& text);
 
     SNAP_SIGNAL(replace_token, (content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token), (ipath, plugin_owner, xml, token));
+    SNAP_SIGNAL_WITH_MODE(filter_text, (content::path_info_t& ipath, QDomDocument& xml, QString& result, bool& changed), (ipath, xml, result, changed), NEITHER);
 
 private:
     zpsnap_child_t      f_snap;

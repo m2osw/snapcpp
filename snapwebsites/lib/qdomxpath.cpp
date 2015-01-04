@@ -1364,8 +1364,9 @@ public:
      * between parenthesis and separated by commas.
      *
      * In case of a node-set, only the first node (in document order) is
-     * transformed to a string with the DOM toString() function. The content
-     * returned depends on the type of node:
+     * transformed to a string with the DOM toString() function (maybe with
+     * -1 as the indent parameter to avoid having spaces added by the DOM
+     * output functions.) The content returned depends on the type of node:
      *
      * \li Document Node -- all the child text nodes.
      * \li Element -- all the child text nodes.

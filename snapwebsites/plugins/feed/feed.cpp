@@ -51,7 +51,8 @@ SNAP_PLUGIN_START(feed, 1, 0)
  */
 char const *get_name(name_t name)
 {
-    switch(name) {
+    switch(name)
+    {
     case SNAP_NAME_FEED_ADMIN_SETTINGS:
         return "admin/settings/feed";
 
@@ -489,7 +490,7 @@ void feed::generate_feeds()
                 }
             }
 
-            QString const doc_str(result.toString());
+            QString const doc_str(result.toString(-1));
             if(doc_str.isEmpty())
             {
                 throw snap::snap_logic_exception("somehow the memory XML document is empty");
@@ -658,7 +659,7 @@ void feed::generate_feeds()
                 }
 
 //std::cout << "***\n*** SRC = [" << doc_str << "]\n";
-//std::cout << "*** DOC = [" << feed_result.toString() << "]\n***\n";
+//std::cout << "*** DOC = [" << feed_result.toString(-1) << "]\n***\n";
 
                 if(success)
                 {
@@ -677,7 +678,7 @@ void feed::generate_feeds()
                     attachment.set_file_creation_time(start_date);
                     attachment.set_file_modification_time(start_date);
                     attachment.set_file_index(1);
-                    attachment.set_file_data(feed_result.toString().toUtf8());
+                    attachment.set_file_data(feed_result.toString(-1).toUtf8());
                     attachment.set_file_mime_type(mimetype);
 
                     // TODO: we probably want to test the return value

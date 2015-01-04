@@ -825,7 +825,7 @@ void sitemapxml::on_backend_process()
 
     // TODO: we need to look into supporting multiple sitemap.xml files
     f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_COUNT), 1);
-    f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML), doc.toString());
+    f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML), doc.toString(-1));
 
     //QString content_table_name(snap::get_name(snap::SNAP_NAME_CONTENT));
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
