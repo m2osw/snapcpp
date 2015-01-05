@@ -37,10 +37,7 @@ SOFTWARE.
 
 #include    "as2js/compare.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
 #include    <controlled_vars/controlled_vars_fauto_init.h>
-#pragma GCC diagnostic pop
 
 #include    <limits>
 #include    <cmath>
@@ -134,9 +131,12 @@ public:
 
                         // comparing two floats properly handles infinity
                         // (at least in g++ on Intel processors)
-                        return f_float == rhs.f_float ? compare_t::COMPARE_EQUAL
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                        return f_float.value() == rhs.f_float.value() ? compare_t::COMPARE_EQUAL
                              : (f_float < rhs.f_float ? compare_t::COMPARE_LESS
                                                       : compare_t::COMPARE_GREATER);
+#pragma GCC diagnostic pop
                     }
 
     static float64_type default_epsilon()
@@ -149,21 +149,21 @@ public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
                         // already equal?
-                        if(f_float == rhs.f_float)
+                        if(f_float.value() == rhs.f_float.value())
                         {
                             return true;
                         }
 
                         float64_type const diff = fabs(f_float - rhs.f_float);
-                        if(f_float == 0.0
-                        || rhs.f_float == 0.0
+                        if(f_float.value() == 0.0
+                        || rhs.f_float.value() == 0.0
                         || diff < std::numeric_limits<double>::min())
                         {
                             return diff < (epsilon * std::numeric_limits<double>::min());
                         }
+#pragma GCC diagnostic pop
 
                         return diff / (fabs(f_float) + fabs(rhs.f_float)) < epsilon;
-#pragma GCC diagnostic pop
                     }
  
 
