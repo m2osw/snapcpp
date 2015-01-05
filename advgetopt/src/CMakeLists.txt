@@ -30,14 +30,22 @@
 ## AdvGetopt library
 ##
 project(advgetopt)
+
 include_directories(
     ${CONTROLLEDVARS_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}
 )
+
 add_library( ${PROJECT_NAME} SHARED
     advgetopt.h
     advgetopt.cpp
 )
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES
+    VERSION ${ADVGETOPT_VERSION_MAJOR}.${ADVGETOPT_VERSION_MINOR}
+    SOVERSION ${ADVGETOPT_VERSION_MAJOR}
+)
+
 install(
     TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION lib
