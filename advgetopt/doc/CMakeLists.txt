@@ -52,12 +52,12 @@ AddDoxygenTarget( advgetopt
 
 install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/advgetopt-doc-${ADVGETOPT_VERSION_MAJOR}.${ADVGETOPT_VERSION_MINOR}/.
-    DESTINATION share/doc/advgetopt/html
+    DESTINATION share/doc/libadvgetopt/html
     COMPONENT documentation
 )
 install(
     FILES ${advgetopt_library_SOURCE_DIR}/LICENSE.txt
-    DESTINATION share/doc/advgetopt
+    DESTINATION share/doc/libadvgetopt
     COMPONENT development
 )
 
