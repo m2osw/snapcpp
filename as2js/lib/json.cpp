@@ -145,10 +145,11 @@ void append_string(String& result, String const& str)
             result += '"';
             break;
 
-        case '\'':
-            result += '\\';
-            result += '\'';
-            break;
+        // Escaping a single quote (') is not valid JSON
+        //case '\'':
+        //    result += '\\';
+        //    result += '\'';
+        //    break;
 
         default:
             if(str[idx] < 0x0020)
