@@ -65,6 +65,8 @@ public:
 
     std::string     get_host() const;
     int             get_port() const;
+    std::string     get_command() const;
+    std::string     get_path() const;
     std::string     get_header(std::string const& name) const;
     std::string     get_post(std::string const& name) const;
     std::string     get_body() const; // also returns data
@@ -72,8 +74,9 @@ public:
 
     void            set_uri(std::string const& uri);
     void            set_host(std::string const& host);
-    void            set_path(std::string const& path);
     void            set_port(int port);
+    void            set_command(std::string const& command);
+    void            set_path(std::string const& path);
     void            set_header(std::string const& name, std::string const& value);
     void            set_post(std::string const& name, std::string const& value);
     void            set_basic_auth(std::string const& username, std::string const& secret);
@@ -84,6 +87,7 @@ private:
     typedef controlled_vars::auto_init<int32_t, -1>     m1port_t;
 
     std::string                 f_host;
+    std::string                 f_command;
     std::string                 f_path;
     m1port_t                    f_port;
     header_t                    f_headers;

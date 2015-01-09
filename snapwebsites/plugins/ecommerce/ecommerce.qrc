@@ -35,9 +35,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <qresource prefix="/css/ecommerce">
     <file>ecommerce.css</file>
   </qresource>
-  <qresource prefix="/xsl/layout">
-    <file>ecommerce-product-parser.xsl</file>
-  </qresource>
 </RCC>
 <!--
 vim: ts=2 sw=2 et syntax=xml

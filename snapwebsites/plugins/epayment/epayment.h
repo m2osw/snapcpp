@@ -18,6 +18,9 @@
 
 #include "../content/content.h"
 
+#include <controlled_vars/controlled_vars_fauto_init.h>
+#include <controlled_vars/controlled_vars_limited_need_init.h>
+
 /** \file
  * \brief Header of the epayment plugin.
  *
@@ -32,6 +35,9 @@ namespace epayment
 
 enum name_t
 {
+    SNAP_NAME_EPAYMENT_CANCELED_PATH,
+    SNAP_NAME_EPAYMENT_DESCRIPTION,
+    SNAP_NAME_EPAYMENT_FAILED_PATH,
     SNAP_NAME_EPAYMENT_INVOICE_STATUS,
     SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED,
     SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED,
@@ -40,25 +46,255 @@ enum name_t
     SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID,
     SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING,
     SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING,
+    SNAP_NAME_EPAYMENT_LONG_DESCRIPTION,
     SNAP_NAME_EPAYMENT_PRICE,
+    SNAP_NAME_EPAYMENT_PRODUCT,
     SNAP_NAME_EPAYMENT_PRODUCT_DESCRIPTION,
-    SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH
+    SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH,
+    SNAP_NAME_EPAYMENT_QUANTITY,
+    SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT,
+    SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM,
+    SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM,
+    SNAP_NAME_EPAYMENT_RECURRING,
+    SNAP_NAME_EPAYMENT_RECURRING_FEE,
+    SNAP_NAME_EPAYMENT_SKU,
+    SNAP_NAME_EPAYMENT_THANK_YOU_PATH,
+    SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
 
-//class epayment_exception : public snap_exception
-//{
-//public:
-//    epayment_exception(char const *       what_msg) : snap_exception("epayment", what_msg) {}
-//    epayment_exception(std::string const& what_msg) : snap_exception("epayment", what_msg) {}
-//    epayment_exception(QString const&     what_msg) : snap_exception("epayment", what_msg) {}
-//};
+class epayment_exception : public snap_exception
+{
+public:
+    epayment_exception(char const *       what_msg) : snap_exception("epayment", what_msg) {}
+    epayment_exception(std::string const& what_msg) : snap_exception("epayment", what_msg) {}
+    epayment_exception(QString const&     what_msg) : snap_exception("epayment", what_msg) {}
+};
+
+class epayment_invalid_type_exception : public epayment_exception
+{
+public:
+    epayment_invalid_type_exception(char const *       what_msg) : epayment_exception(what_msg) {}
+    epayment_invalid_type_exception(std::string const& what_msg) : epayment_exception(what_msg) {}
+    epayment_invalid_type_exception(QString const&     what_msg) : epayment_exception(what_msg) {}
+};
+
+class epayment_cannot_set_exception : public epayment_exception
+{
+public:
+    epayment_cannot_set_exception(char const *       what_msg) : epayment_exception(what_msg) {}
+    epayment_cannot_set_exception(std::string const& what_msg) : epayment_exception(what_msg) {}
+    epayment_cannot_set_exception(QString const&     what_msg) : epayment_exception(what_msg) {}
+};
+
+class epayment_cannot_unset_exception : public epayment_exception
+{
+public:
+    epayment_cannot_unset_exception(char const *       what_msg) : epayment_exception(what_msg) {}
+    epayment_cannot_unset_exception(std::string const& what_msg) : epayment_exception(what_msg) {}
+    epayment_cannot_unset_exception(QString const&     what_msg) : epayment_exception(what_msg) {}
+};
+
+class epayment_cannot_find_exception : public epayment_exception
+{
+public:
+    epayment_cannot_find_exception(char const *       what_msg) : epayment_exception(what_msg) {}
+    epayment_cannot_find_exception(std::string const& what_msg) : epayment_exception(what_msg) {}
+    epayment_cannot_find_exception(QString const&     what_msg) : epayment_exception(what_msg) {}
+};
+
+class epayment_missing_product_exception : public epayment_exception
+{
+public:
+    epayment_missing_product_exception(char const *       what_msg) : epayment_exception(what_msg) {}
+    epayment_missing_product_exception(std::string const& what_msg) : epayment_exception(what_msg) {}
+    epayment_missing_product_exception(QString const&     what_msg) : epayment_exception(what_msg) {}
+};
+
+class epayment_invalid_recurring_field_exception : public epayment_exception
+{
+public:
+    epayment_invalid_recurring_field_exception(char const *       what_msg) : epayment_exception(what_msg) {}
+    epayment_invalid_recurring_field_exception(std::string const& what_msg) : epayment_exception(what_msg) {}
+    epayment_invalid_recurring_field_exception(QString const&     what_msg) : epayment_exception(what_msg) {}
+};
 
 
 
 
+class epayment_product_list;
 
+
+
+// the epayment_product represents one product in the cart
+class epayment_product
+{
+public:
+    enum class type_t
+    {
+        TYPE_STRING,
+        TYPE_INTEGER,
+        TYPE_FLOAT
+    };
+    typedef controlled_vars::limited_need_enum_init<type_t, type_t::TYPE_STRING, type_t::TYPE_FLOAT> safe_type_t;
+
+    void                clear();
+
+    bool                verify_guid() const;
+
+    void                set_property(QString const& name, QString const& value);
+    void                set_property(QString const& name, int64_t const value);
+    void                set_property(QString const& name, double const value);
+
+    void                unset_property(QString const& name);
+
+    bool                has_property(QString const& name) const;
+    type_t              get_property_type(QString const& name) const;
+    QString const       get_string_property(QString const& name) const;
+    int64_t             get_integer_property(QString const& name) const;
+    double              get_float_property(QString const& name) const;
+
+    double              get_total() const;
+
+private:
+    friend epayment_product_list;
+
+    class value_t
+    {
+    public:
+                        value_t(); // required for std::map<> to work
+                        value_t(QString const& value);
+                        value_t(int64_t const value);
+                        value_t(double const value);
+
+        type_t          get_type() const;
+        QString const&  get_string_value() const;
+        int64_t         get_integer_value() const;
+        double          get_float_value() const;
+
+    private:
+        safe_type_t                 f_type;
+        QString                     f_string;
+        controlled_vars::zint64_t   f_integer;
+        controlled_vars::zdouble_t  f_float;
+    };
+
+    // name / value
+    typedef std::map<QString, value_t>      properties_t;
+
+    enum class verification_t
+    {
+        VERIFICATION_NOT_DONE,
+        VERIFICATION_VALID,
+        VERIFICATION_INVALID
+    };
+    typedef controlled_vars::limited_auto_enum_init<
+                verification_t,
+                verification_t::VERIFICATION_NOT_DONE,
+                verification_t::VERIFICATION_INVALID,
+                verification_t::VERIFICATION_NOT_DONE>
+                        safe_verification_t;
+
+    // constructor is private so that way users cannot create a product directly
+    // (see epayment_product_list::add_product(...) below)
+    epayment_product(QString const& product, double const quantity, QString const& description);
+
+    mutable properties_t                                f_properties;
+
+    // when checking parameters from the database, keep those pointers for
+    // later fast reference
+    mutable safe_verification_t                         f_verified;
+    mutable content::path_info_t                        f_product_ipath;
+    mutable content::content *                          f_content_plugin;
+    mutable QtCassandra::QCassandraTable::pointer_t     f_revision_table;
+    mutable QtCassandra::QCassandraRow::pointer_t       f_revision_row;
+};
+
+
+// the epayment_product represents the whole cart
+// it can include "special" products such as shipping and taxes
+class epayment_product_list
+{
+public:
+    epayment_product&       add_product(QString const& product, double const quantity, QString const& description);
+
+    bool                    empty() const;
+    size_t                  size() const;
+    void                    clear();
+
+    double                  get_grand_total() const;
+    epayment_product&       operator [] (int idx);
+    epayment_product const& operator [] (int idx) const;
+
+private:
+    typedef std::vector<epayment_product>   product_list_t;
+
+    product_list_t  f_products;
+};
+
+
+
+
+class recurring_t
+{
+public:
+    typedef uint32_t            compressed_t;
+
+    // we use shifts and masks instead of a structure with bit fields which
+    // are not reliable in C/C++ (varies depending on the platform/processor)
+    static int const            REPEAT_SHIFT = 20;
+    static compressed_t const   REPEAT_MASK = 0x00000FFF;
+    static int const            INTERVAL_SHIFT = 4;
+    static compressed_t const   INTERVAL_MASK = 0x0000FFFF;
+    static int const            FREQUENCY_SHIFT = 0;
+    static compressed_t const   FREQUENCY_MASK = 0x0000000F;
+
+    typedef int                 repeat_t;
+    static repeat_t const       INFINITE_REPEAT = -1;
+    static repeat_t const       MAX_REPEAT = 1000;
+
+    typedef int                 interval_t;
+    static interval_t const     MAX_INTERVAL_YEARS = 5; // i.e. 60 montsh, 260 weeks, 1830 days
+
+    // ***********
+    // WARNING: these values are saved as is in the database DO NOT CHANGE!
+    // ***********
+    typedef uint8_t             frequency_t;
+    static frequency_t const    FREQUENCY_DAY = 1;
+    static frequency_t const    FREQUENCY_WEEK = 2;
+    static frequency_t const    FREQUENCY_TWICE_A_MONTH = 3; // i.e. 1st and 15th... most systems do not support this one though...
+    static frequency_t const    FREQUENCY_MONTH = 4;
+    static frequency_t const    FREQUENCY_YEAR = 5;
+
+    typedef controlled_vars::limited_need_init<frequency_t, FREQUENCY_DAY, FREQUENCY_YEAR> safe_frequency_t;
+
+                            recurring_t();
+                            recurring_t(QString const& field);
+
+    void                    set(QString const& field);
+    void                    set(repeat_t repeat, interval_t interval, frequency_t frequency);
+    void                    set(compressed_t compressed);
+
+    repeat_t                get_repeat() const;
+    interval_t              get_interval() const;
+    frequency_t             get_frequency() const;
+
+    QString                 to_string() const;
+    compressed_t            to_compressed() const;
+
+    static QString          freq_to_string(frequency_t frequency);
+
+    bool                    is_null() const;
+    bool                    is_infinite() const;
+    bool                    operator == (recurring_t const& rhs) const;
+    bool                    operator != (recurring_t const& rhs) const;
+
+private:
+    repeat_t                f_repeat;
+    interval_t              f_interval;
+    safe_frequency_t        f_frequency;
+};
 
 
 
@@ -77,8 +313,10 @@ public:
 
     name_t                      get_invoice_status(content::path_info_t& invoice_ipath);
 
-    SNAP_SIGNAL_WITH_MODE(generate_invoice, (content::path_info_t& invoice_ipath, uint64_t& invoice_number), (invoice_ipath, invoice_number), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(generate_invoice, (content::path_info_t& invoice_ipath, uint64_t& invoice_number, epayment_product_list& plist), (invoice_ipath, invoice_number, plist), NEITHER);
     SNAP_SIGNAL(set_invoice_status, (content::path_info_t& invoice_ipath, name_t const status), (invoice_ipath, status));
+
+    static recurring_t          parser_recurring_field(QString const& info);
 
 private:
     void                        content_update(int64_t variables_timestamp);

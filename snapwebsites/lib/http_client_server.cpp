@@ -65,6 +65,18 @@ int http_request::get_port() const
 }
 
 
+std::string http_request::get_command() const
+{
+    return f_command;
+}
+
+
+std::string http_request::get_path() const
+{
+    return f_path;
+}
+
+
 std::string http_request::get_header(std::string const& name) const
 {
     if(f_headers.find(name) == f_headers.end())
@@ -105,7 +117,8 @@ std::string http_request::get_request() const
 
     if(f_has_attachment)
     {
-        request << "POST " << f_path << " HTTP/1.1\r\n";
+        request << (f_command.empty() ? "POST" : f_command.c_str())
+                << " " << f_path << " HTTP/1.1\r\n";
 
         throw http_client_server_logic_error("attachments not supported yet");
     }
@@ -113,7 +126,8 @@ std::string http_request::get_request() const
     {
         // TODO: support the case where the post variables are passed using
         //       a GET and a query string
-        request << "POST " << f_path << " HTTP/1.1\r\n";
+        request << (f_command.empty() ? "POST" : f_command.c_str())
+                << " " << f_path << " HTTP/1.1\r\n";
         content_type = "application/x-www-form-urlencoded";
 
         body = "";
@@ -130,17 +144,20 @@ std::string http_request::get_request() const
     }
     else if(f_has_data)
     {
-        request << "POST " << f_path << " HTTP/1.1\r\n";
+        request << (f_command.empty() ? "POST" : f_command.c_str())
+                << " " << f_path << " HTTP/1.1\r\n";
         body = f_body;
     }
     else if(f_has_body)
     {
-        request << "GET " << f_path << " HTTP/1.1\r\n";
+        request << (f_command.empty() ? "GET" : f_command.c_str())
+                << " " << f_path << " HTTP/1.1\r\n";
         body = f_body;
     }
     else
     {
-        request << "GET " << f_path << " HTTP/1.1\r\n";
+        request << (f_command.empty() ? "GET" : f_command.c_str())
+                << " " << f_path << " HTTP/1.1\r\n";
         // body is empty by default
         //body = "";
     }
@@ -250,6 +267,20 @@ void http_request::set_host(std::string const& host)
 }
 
 
+void http_request::set_port(int port)
+{
+    // port will be verified by the tcp_client_server code, so no need to
+    // do that again here
+    f_port = port;
+}
+
+
+void http_request::set_command(std::string const& command)
+{
+    f_command = command;
+}
+
+
 void http_request::set_path(std::string const& path)
 {
     // TODO: better verify path validity
@@ -265,14 +296,6 @@ void http_request::set_path(std::string const& path)
     {
         f_path = "/" + path;
     }
-}
-
-
-void http_request::set_port(int port)
-{
-    // port will be verified by the tcp_client_server code, so no need to
-    // do that again here
-    f_port = port;
 }
 
 

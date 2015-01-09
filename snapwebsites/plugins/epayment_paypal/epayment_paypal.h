@@ -16,9 +16,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include "../path/path.h"
-#include "../layout/layout.h"
+#include "../epayment/epayment.h"
 #include "../filter/filter.h"
+#include "../layout/layout.h"
+#include "../path/path.h"
 
 #include "http_client_server.h"
 
@@ -37,18 +38,34 @@ namespace epayment_paypal
 
 enum name_t
 {
+    SNAP_NAME_EPAYMENT_PAYPAL_CANCEL_PLAN_URL,
     SNAP_NAME_EPAYMENT_PAYPAL_CANCEL_URL,
     SNAP_NAME_EPAYMENT_PAYPAL_CLICKED_POST_FIELD,
     SNAP_NAME_EPAYMENT_PAYPAL_DEBUG,
+    SNAP_NAME_EPAYMENT_PAYPAL_RETURN_PLAN_THANK_YOU,
+    SNAP_NAME_EPAYMENT_PAYPAL_RETURN_PLAN_URL,
+    SNAP_NAME_EPAYMENT_PAYPAL_RETURN_THANK_YOU,
     SNAP_NAME_EPAYMENT_PAYPAL_RETURN_URL,
     SNAP_NAME_EPAYMENT_PAYPAL_SETTINGS_PATH,
     SNAP_NAME_EPAYMENT_PAYPAL_TABLE,
     SNAP_NAME_EPAYMENT_PAYPAL_TOKEN_POST_FIELD,
 
     // SECURE (saved in "secret" table)
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_ACTIVATED_PLAN,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_ACTIVATED_PLAN_HEADER,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_TOKEN,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_URL,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CLIENT_ID,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_AGREEMENT,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_AGREEMENT_HEADER,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_PAYMENT,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_PAYMENT_HEADER,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_PLAN,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_PLAN_HEADER,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_AGREEMENT,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_AGREEMENT,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_AGREEMENT_HEADER,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT_HEADER,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_PAYMENT,
@@ -63,6 +80,8 @@ enum name_t
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PAYMENT_ID,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PAYMENT_TOKEN,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PAYER_ID,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PLAN_ID,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PLAN_URL,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SANDBOX_CLIENT_ID,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SANDBOX_SECRET,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SECRET
@@ -119,6 +138,7 @@ private:
     void                        content_update(int64_t variables_timestamp);
     void                        cancel_invoice(QString const& token);
     bool                        get_oauth2_token(http_client_server::http_client& http, std::string& token_type, std::string& access_token);
+    QString                     get_product_plan(http_client_server::http_client http, std::string const& token_type, std::string const& access_token, epayment::epayment_product const& recurring_product, double const recurring_fee, QString& plan_id);
     bool                        get_debug();
 
     zpsnap_child_t                              f_snap;

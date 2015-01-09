@@ -54,8 +54,6 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content/content.dtd )
 
-snap_validate_xml( ecommerce-product-parser.xsl    layout/simplified-xslt20.dtd )
-
 snap_validate_js( ecommerce.js )
 snap_validate_js( ecommerce-cart.js )
 
@@ -66,6 +64,7 @@ add_library(ecommerce SHARED
     button-delete-red-48x48.png
     button-minus-green-48x48.png
     button-plus-blue-48x48.png
+    content.xml
     ecommerce.js
     ecommerce-cart.js
     empty-shopping-cart.png

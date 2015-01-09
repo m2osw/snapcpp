@@ -19,6 +19,7 @@
 #include "../path/path.h"
 #include "../filter/filter.h"
 #include "../layout/layout.h"
+#include "../epayment/epayment.h"
 
 /** \file
  * \brief Header of the ecommerce plugin.
@@ -41,10 +42,7 @@ enum name_t
     SNAP_NAME_ECOMMERCE_INVOICE_PATH,
     SNAP_NAME_ECOMMERCE_INVOICES_PATH,
     SNAP_NAME_ECOMMERCE_INVOICE_TABLE,
-    SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART,
-    SNAP_NAME_ECOMMERCE_PRICE,
-    SNAP_NAME_ECOMMERCE_PRODUCT_DESCRIPTION,
-    SNAP_NAME_ECOMMERCE_PRODUCT_TYPE_PATH
+    SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -56,7 +54,6 @@ char const *get_name(name_t name) __attribute__ ((const));
 //    ecommerce_exception(std::string const& what_msg) : snap_exception("ecommerce", what_msg) {}
 //    ecommerce_exception(QString const&     what_msg) : snap_exception("ecommerce", what_msg) {}
 //};
-
 
 
 
@@ -81,7 +78,7 @@ public:
     void                        on_process_post(QString const& uri_path);
     virtual bool                on_path_execute(content::path_info_t& ipath);
     virtual void                on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                        on_generate_invoice(content::path_info_t& invoice_ipath, uint64_t& invoice_number);
+    void                        on_generate_invoice(content::path_info_t& invoice_ipath, uint64_t& invoice_number, epayment::epayment_product_list& plist);
     void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
     void                        on_preprocess_path(content::path_info_t& ipath, plugins::plugin *path_plugin);
 

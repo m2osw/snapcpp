@@ -53,6 +53,8 @@ QT4_ADD_RESOURCES(SNAP_MANAGER_RESOURCES_RCC
 
 snap_validate_xml( content.xml content/content.dtd )
 
+snap_validate_xml( epayment-product-parser.xsl    layout/simplified-xslt20.dtd )
+
 snap_validate_js( epayment.js )
 
 
@@ -60,6 +62,9 @@ add_library(epayment SHARED
     epayment.cpp
     ${SNAP_MANAGER_MOC_CXX}
     ${SNAP_MANAGER_RESOURCES_RCC}
+    content.xml
+    epayment.js
+    epayment-product-parser.xsl
 )
 
 target_link_libraries( epayment

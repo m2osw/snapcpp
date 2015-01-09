@@ -37,48 +37,78 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
          public data anyway) -->
     <param name="list::original_test_script" overwrite="yes">
       <![CDATA[!strmatch("^admin/", path)
-            && linked_to("ecommerce::product", page, "types/taxonomy/system/content-types/ecommerce/product*", false)
+            && linked_to("ecommerce::product", page, "types/taxonomy/system/content-types/epayment/product*", false)
             && perms(path, "user", "view", "visitor")]]>
     </param>
-    <param name="list::selector" overwrite="yes"><![CDATA[type=types/taxonomy/system/content-types/ecommerce/product]]></param>
+    <param name="list::selector" overwrite="yes"><![CDATA[type=types/taxonomy/system/content-types/epayment/product]]></param>
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
-  <content path="/products/test-1" owner="output">
+  <content path="/products/test-01" owner="output">
     <param name="content::title" revision="revision">Product Test 1</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>The perfect software you always dreamed about!</p>]]>
     </param>
-    <param name="ecommerce::price" revision="revision">
+    <param name="epayment::price" revision="revision">
       <![CDATA[128.50]]>
     </param>
-    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/ecommerce/product</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
-  <content path="/products/test-2" owner="output">
+  <content path="/products/test-02" owner="output">
     <param name="content::title" revision="revision">Product Test 2</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Version two of the perfect software which is even better than version 1 which means we cannot even describe it!</p>]]>
     </param>
-    <param name="ecommerce::price" revision="revision">
+    <param name="epayment::price" revision="revision">
       <![CDATA[200]]>
     </param>
-    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/ecommerce/product</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
-  <content path="/products/test-3" owner="output">
+  <content path="/products/test-03" owner="output">
     <param name="content::title" revision="revision">Product Test 3</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike.</p>]]>
     </param>
-    <param name="ecommerce::price" revision="revision">
+    <param name="epayment::price" revision="revision">
       <![CDATA[200]]>
     </param>
-    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/ecommerce/product</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
+  </content>
+  <content path="/products/test-04" owner="output">
+    <param name="content::title" revision="revision">Product Test 4 -- subscription (daily)</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike. This is the subscription that gives you access to all the features without the need for anything more.</p>]]>
+    </param>
+    <param name="epayment::price" revision="revision">
+      <![CDATA[2]]>
+    </param>
+    <param name="epayment::recurring" revision="revision">
+      <![CDATA[DAY]]>
+    </param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
+  </content>
+  <content path="/products/test-05" owner="output">
+    <param name="content::title" revision="revision">Product Test 5 -- subscription (weekly)</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike. This is the subscription that gives you access to all the features without the need for anything more.</p>]]>
+    </param>
+    <param name="epayment::price" revision="revision">
+      <![CDATA[2]]>
+    </param>
+    <param name="epayment::recurring" revision="revision">
+      <![CDATA[WEEK]]>
+    </param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
   </content>
@@ -87,7 +117,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Snap! e-Commerce Invoices.</p>]]>
     </param>
-    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/ecommerce/product</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/system-page</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/administer/website</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
@@ -108,15 +138,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Various types used in link with the e-Commerce plugin.</p>]]>
     </param>
-    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
-    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
-  </content>
-  <content path="/types/taxonomy/system/content-types/ecommerce/product" owner="output">
-    <param name="content::title" revision="revision">An e-Commerce Product</param>
-    <param name="content::body" revision="revision">
-      <![CDATA[<p>A page marked with this type or a child of this type is viewed as a product by the e-Commerce plugin and thus it can be added to the cart, processed through the checkout, and other similar functionality.</p>]]>
-    </param>
-    <param name="layout::layout" revision="global" overwrite="yes">"ecommerce-product";</param>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
     <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
   </content>

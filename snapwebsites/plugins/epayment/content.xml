@@ -18,6 +18,41 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
+  <content path="/epayment" owner="output">
+    <param name="content::title" revision="revision">Various e-Payment Pages!</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<div class="epayment_paypal-invoice"><p>e-Payment offers various pages, such as a Thank You, Canceled, and Payment Failed pages.</p></div>]]>
+    </param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+  </content>
+  <content path="/epayment/thank-you" owner="output">
+    <param name="content::title" revision="revision">Thank You!</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<div class="epayment_paypal-invoice"><p>Thank you for your payment.</p></div>]]>
+    </param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+  </content>
+  <content path="/epayment/thank-you-subscription" owner="output">
+    <param name="content::title" revision="revision">Thank You!</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<div class="epayment_paypal-invoice"><p>Thank you for subscribing to our services.</p></div>]]>
+    </param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+  </content>
+  <content path="/epayment/canceled" owner="output">
+    <param name="content::title" revision="revision">Order Canceled!</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<div class="epayment_paypal-invoice"><p>We're Sorry You Canceled.</p></div>]]>
+    </param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+  </content>
+  <content path="/epayment/failed" owner="output">
+    <param name="content::title" revision="revision">Payment Failed!</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<div class="epayment_paypal-invoice"><p>Your payment somehow failed. You may try <a href="/epayment/restore-cart">ordering again</a> if you'd like.</p></div>]]>
+    </param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+  </content>
   <content path="/admin/settings/epayment" owner="output">
     <param name="content::title" revision="revision">e-Payment Global Settings</param>
     <param name="content::body" revision="revision">
@@ -56,6 +91,23 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
+  </content>
+  <content path="/types/taxonomy/system/content-types/epayment" owner="output">
+    <param name="content::title" revision="revision">e-Payment Related Types</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Various types used in link with the e-Payment plugin.</p>]]>
+    </param>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
+  </content>
+  <content path="/types/taxonomy/system/content-types/epayment/product" owner="output">
+    <param name="content::title" revision="revision">An e-Payment Product</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>A page marked with this type or a child of this type is viewed as a product by the e-Payment plugin and thus it can be added as a product to a list of products.</p>]]>
+    </param>
+    <param name="layout::layout" revision="global" overwrite="yes">"epayment-product";</param>
+    <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
+    <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer</link>
   </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
