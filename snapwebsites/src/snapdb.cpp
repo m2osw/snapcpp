@@ -361,6 +361,7 @@ void snapdb::drop_tables(bool all)
     context->dropTable("branch");
     context->dropTable("content");
     context->dropTable("emails");
+    context->dropTable("epayment_paypal");
     context->dropTable("files");
     context->dropTable("layout");
     context->dropTable("libQtCassandraLockTable");
@@ -369,6 +370,8 @@ void snapdb::drop_tables(bool all)
     context->dropTable("listref");
     context->dropTable("processing");
     context->dropTable("revision");
+    context->dropTable("secret");
+    context->dropTable("serverstats");
     context->dropTable("sessions");
     context->dropTable("shorturl");
     context->dropTable("sites");
