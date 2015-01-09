@@ -27,12 +27,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="layout::layout" revision="global" overwrite="yes">"epayment-paypal-settings-parser";</param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
+  <content path="/epayment/paypal" owner="epayment_paypal">
+    <param name="content::title" revision="revision">Various Paypal Specific Pages</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>We support several return URL pages to satisfy standard PayPal payments.</p>]]>
+    </param>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
+  </content>
   <content path="/epayment/paypal/return" owner="epayment_paypal">
     <!-- on success user is then sent to /epayment/thank-you
          on failure user is then sent to /epayment/failed -->
     <param name="content::title" revision="revision">Return From Approval</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<div class="epayment_paypal-invoice"><p>This page is a placeholder to process the return GET from Paypal when a user approved a PayPal payment.</p></div>]]>
+      <![CDATA[<p>This page is a placeholder to process the return GET from Paypal when a user approved a PayPal payment.</p>]]>
     </param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>
@@ -41,7 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
          on failure user is then sent to /epayment/failed -->
     <param name="content::title" revision="revision">Return From Approval</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<div class="epayment_paypal-invoice"><p>This page is a placeholder to process the return GET from PayPal when a user approved a PayPal agreement plan.</p></div>]]>
+      <![CDATA[<p>This page is a placeholder to process the return GET from PayPal when a user approved a PayPal agreement plan.</p>]]>
     </param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
   </content>

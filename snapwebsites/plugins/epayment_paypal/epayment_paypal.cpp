@@ -284,7 +284,7 @@ int64_t epayment_paypal::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 1, 8, 17, 35, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 8, 22, 41, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -625,6 +625,204 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
                     false
                 );
                 break;
+            }
+
+            // the URL to send the execute request to PayPal is saved in the
+            // invoice secret area
+            QString const execute_url(secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_PAYMENT))->value().stringValue());
+
+            http_client_server::http_client http;
+            http.set_keep_alive(true);
+
+            std::string token_type;
+            std::string access_token;
+            if(!get_oauth2_token(http, token_type, access_token))
+            {
+                // a message was already generated if false
+                break;
+            }
+
+            //
+            // Ready to send the Execute message to PayPal, the payer identifier
+            // is the identifier we received in the last GET. The HTTP header is
+            // about the same as when sending a create payment order:
+            //
+            //   {
+            //     "payer_id": "123"
+            //   }
+            //
+            // Execute replies look like this:
+            //
+            //   {
+            //     "id": "PAY-123",
+            //     "create_time": "2014-12-31T23:18:55Z",
+            //     "update_time": "2014-12-31T23:19:39Z",
+            //     "state": "approved",
+            //     "intent": "sale",
+            //     "payer":
+            //     {
+            //       "payment_method": "paypal",
+            //       "payer_info":
+            //       {
+            //         "email": "paypal-buyer@paypal.com",
+            //         "first_name": "Test",
+            //         "last_name": "Buyer",
+            //         "payer_id": "123",
+            //         "shipping_address":
+            //         {
+            //           "line1": "1 Main St",
+            //           "city": "San Jose",
+            //           "state": "CA",
+            //           "postal_code": "95131",
+            //           "country_code": "US",
+            //           "recipient_name": "Test Buyer"
+            //         }
+            //       }
+            //     },
+            //     "transactions":
+            //     [
+            //       {
+            //         "amount":
+            //         {
+            //           "total": "111.34",
+            //           "currency": "USD",
+            //           "details":
+            //           {
+            //             "subtotal": "111.34"
+            //           }
+            //         },
+            //         "description": "Hello from Snap! Websites",
+            //         "related_resources":
+            //         [
+            //           {
+            //             "sale":
+            //             {
+            //               "id": "123",
+            //               "create_time": "2014-12-31T23:18:55Z",
+            //               "update_time": "2014-12-31T23:19:39Z",
+            //               "amount":
+            //               {
+            //                 "total": "111.34",
+            //                 "currency": "USD"
+            //               },
+            //               "payment_mode": "INSTANT_TRANSFER",
+            //               "state": "completed",
+            //               "protection_eligibility": "ELIGIBLE",
+            //               "protection_eligibility_type": "ITEM_NOT_RECEIVED_ELIGIBLE,UNAUTHORIZED_PAYMENT_ELIGIBLE",
+            //               "parent_payment": "PAY-123",
+            //               "links":
+            //               [
+            //                 {
+            //                   "href": "https://api.sandbox.paypal.com/v1/payments/sale/123",
+            //                   "rel": "self",
+            //                   "method": "GET"
+            //                 },
+            //                 {
+            //                   "href": "https://api.sandbox.paypal.com/v1/payments/sale/123/refund",
+            //                   "rel": "refund",
+            //                   "method": "POST"
+            //                 },
+            //                 {
+            //                   "href": "https://api.sandbox.paypal.com/v1/payments/payment/PAY-123",
+            //                   "rel": "parent_payment",
+            //                   "method": "GET"
+            //                 }
+            //               ]
+            //             }
+            //           }
+            //         ]
+            //       }
+            //     ],
+            //     "links":
+            //     [
+            //       {
+            //         "href": "https://api.sandbox.paypal.com/v1/payments/payment/PAY-123",
+            //         "rel": "self",
+            //         "method": "GET"
+            //       }
+            //     ]
+            //   }
+            //
+            QString const body(QString(
+                        "{"
+                            "\"payer_id\":\"%1\""
+                        "}"
+                    ).arg(payer_id)
+                );
+
+            http_client_server::http_request execute_request;
+            // execute_url is a full URL, for example:
+            //   https://api.sandbox.paypal.com/v1/payments/payment/PAY-123/execute
+            // and the set_uri() function takes care of everything for us in that case
+            execute_request.set_uri(execute_url.toUtf8().data());
+            //execute_request.set_path("...");
+            //execute_request.set_port(443); // https
+            execute_request.set_header("Accept", "application/json");
+            execute_request.set_header("Accept-Language", "en_US");
+            execute_request.set_header("Content-Type", "application/json");
+            execute_request.set_header("Authorization", QString("%1 %2").arg(token_type.c_str()).arg(access_token.c_str()).toUtf8().data());
+            execute_request.set_header("PayPal-Request-Id", invoice_ipath.get_key().toUtf8().data());
+            execute_request.set_data(body.toUtf8().data());
+            http_client_server::http_response::pointer_t response(http.send_request(execute_request));
+
+            secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
+            secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT))->setValue(QString::fromUtf8(response->get_response().c_str()));
+
+            // looks pretty good, check the actual answer...
+            as2js::JSON::pointer_t json(new as2js::JSON);
+            as2js::StringInput::pointer_t in(new as2js::StringInput(response->get_response()));
+            as2js::JSON::JSONValue::pointer_t value(json->parse(in));
+            if(!value)
+            {
+                SNAP_LOG_ERROR("JSON parser failed parsing 'execute' response");
+                throw epayment_paypal_exception_io_error("JSON parser failed parsing 'execute' response");
+            }
+            as2js::JSON::JSONValue::object_t const& object(value->get_object());
+
+            // ID
+            // verify that the payment identifier corresponds to what we expect
+            if(object.find("id") == object.end())
+            {
+                SNAP_LOG_ERROR("'id' missing in 'execute' response");
+                throw epayment_paypal_exception_io_error("'id' missing in 'execute' response");
+            }
+            QString const execute_id(QString::fromUtf8(object.at("id")->get_string().to_utf8().c_str()));
+            if(execute_id != id)
+            {
+                SNAP_LOG_ERROR("'id' in 'execute' response is not the same as the invoice 'id'");
+                throw epayment_paypal_exception_io_error("'id' in 'execute' response is not the same as the invoice 'id'");
+            }
+
+            // INTENT
+            // verify that: "intent" == "sale"
+            if(object.find("intent") == object.end())
+            {
+                SNAP_LOG_ERROR("'intent' missing in 'execute' response");
+                throw epayment_paypal_exception_io_error("'intent' missing in 'execute' response");
+            }
+            if(object.at("intent")->get_string() != "sale")
+            {
+                SNAP_LOG_ERROR("'intent' in 'execute' response is not 'sale'");
+                throw epayment_paypal_exception_io_error("'intent' in 'execute' response is not 'sale'");
+            }
+
+            // STATE
+            // now check the state of the sale
+            if(object.find("state") == object.end())
+            {
+                SNAP_LOG_ERROR("'state' missing in 'execute' response");
+                throw epayment_paypal_exception_io_error("'state' missing in 'execute' response");
+            }
+            if(object.at("state")->get_string() == "approved")
+            {
+                // the execute succeeded, mark the invoice as paid
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID);
+            }
+            else
+            {
+                // the execute did not approve the sale
+                // mark the invoice as failed...
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
             }
 
             f_snap->page_redirect(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_THANK_YOU_PATH), snap_child::HTTP_CODE_SEE_OTHER);
@@ -2688,251 +2886,6 @@ std::cerr << "***\n*** JSON BODY: ["
 
         // now we are going on PayPal so the payment is pending...
         epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING);
-    }
-    else if(click == "cancel")
-    {
-        // "cancel" -- the user just clicked the cancel button in the .../ready page
-        //             we cancel the invoice and forget about that payment
-        QString const token(f_snap->postenv(get_name(SNAP_NAME_EPAYMENT_PAYPAL_TOKEN_POST_FIELD)));
-        cancel_invoice(token);
-    }
-    else if(click == "process")
-    {
-        // "process" -- the user just clicked the cancel button in the .../ready page
-        //              we "execute" the payment (i.e. capture the money)
-
-        QtCassandra::QCassandraTable::pointer_t epayment_paypal_table(get_epayment_paypal_table());
-
-        // the invoice is linked by the "paymentId" sent in the token field
-        // TODO: should we make use of both: paymentId and token here too?
-        QString const id(f_snap->postenv(get_name(SNAP_NAME_EPAYMENT_PAYPAL_TOKEN_POST_FIELD)));
-        snap_uri const main_uri(f_snap->get_uri());
-        QString const invoice(epayment_paypal_table->row(main_uri.full_domain())->cell("id/" + id)->value().stringValue());
-        content::path_info_t invoice_ipath;
-        invoice_ipath.set_path(invoice);
-
-        // the invoice has to still be pending, otherwise it possibly
-        // was already marked as canceled or failed
-        epayment::epayment *epayment_plugin(epayment::epayment::instance());
-        epayment::name_t status(epayment_plugin->get_invoice_status(invoice_ipath));
-        if(status != epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING)
-        {
-            // TODO: support a default page in this case if the user is
-            //       the correct user (this is only for people who hit
-            //       reload, so no big deal right now)
-            //messages::messages::instance()->set_error(
-            //    "PayPal Processed",
-            //    "PayPal invoice was already processed. Please go to your account to view your existing invoices.", 
-            //    QString("Found the invoice, but somehow it is not marked \"pending\" (it is \"%1\" instead).").arg(epayment::get_name(status)),
-            //    false
-            //);
-            //return;
-            SNAP_LOG_ERROR("PayPal invoice was already processed. Please go to your account to view your existing invoices.");
-            throw epayment_paypal_exception_io_error("PayPal invoice was already processed. Please go to your account to view your existing invoices.");
-        }
-
-        // the URL to send the execute request to PayPal is saved in the
-        // invoice secret area
-        content::content *content_plugin(content::content::instance());
-        //QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-        QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-        QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(invoice_ipath.get_key()));
-
-        QString const execute_url(secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_PAYMENT))->value().stringValue());
-
-        http_client_server::http_client http;
-        http.set_keep_alive(true);
-
-        std::string token_type;
-        std::string access_token;
-        if(!get_oauth2_token(http, token_type, access_token))
-        {
-            return;
-        }
-
-        //
-        // Ready to send the Execute message to PayPal, the payer identifier
-        // is the identifier we received in the last GET. The HTTP header is
-        // about the same as when sending a create payment order:
-        //
-        //   {
-        //     "payer_id": "123"
-        //   }
-        //
-        // Execute replies look like this:
-        //
-        //   {
-        //     "id": "PAY-123",
-        //     "create_time": "2014-12-31T23:18:55Z",
-        //     "update_time": "2014-12-31T23:19:39Z",
-        //     "state": "approved",
-        //     "intent": "sale",
-        //     "payer":
-        //     {
-        //       "payment_method": "paypal",
-        //       "payer_info":
-        //       {
-        //         "email": "paypal-buyer@paypal.com",
-        //         "first_name": "Test",
-        //         "last_name": "Buyer",
-        //         "payer_id": "123",
-        //         "shipping_address":
-        //         {
-        //           "line1": "1 Main St",
-        //           "city": "San Jose",
-        //           "state": "CA",
-        //           "postal_code": "95131",
-        //           "country_code": "US",
-        //           "recipient_name": "Test Buyer"
-        //         }
-        //       }
-        //     },
-        //     "transactions":
-        //     [
-        //       {
-        //         "amount":
-        //         {
-        //           "total": "111.34",
-        //           "currency": "USD",
-        //           "details":
-        //           {
-        //             "subtotal": "111.34"
-        //           }
-        //         },
-        //         "description": "Hello from Snap! Websites",
-        //         "related_resources":
-        //         [
-        //           {
-        //             "sale":
-        //             {
-        //               "id": "123",
-        //               "create_time": "2014-12-31T23:18:55Z",
-        //               "update_time": "2014-12-31T23:19:39Z",
-        //               "amount":
-        //               {
-        //                 "total": "111.34",
-        //                 "currency": "USD"
-        //               },
-        //               "payment_mode": "INSTANT_TRANSFER",
-        //               "state": "completed",
-        //               "protection_eligibility": "ELIGIBLE",
-        //               "protection_eligibility_type": "ITEM_NOT_RECEIVED_ELIGIBLE,UNAUTHORIZED_PAYMENT_ELIGIBLE",
-        //               "parent_payment": "PAY-123",
-        //               "links":
-        //               [
-        //                 {
-        //                   "href": "https://api.sandbox.paypal.com/v1/payments/sale/123",
-        //                   "rel": "self",
-        //                   "method": "GET"
-        //                 },
-        //                 {
-        //                   "href": "https://api.sandbox.paypal.com/v1/payments/sale/123/refund",
-        //                   "rel": "refund",
-        //                   "method": "POST"
-        //                 },
-        //                 {
-        //                   "href": "https://api.sandbox.paypal.com/v1/payments/payment/PAY-123",
-        //                   "rel": "parent_payment",
-        //                   "method": "GET"
-        //                 }
-        //               ]
-        //             }
-        //           }
-        //         ]
-        //       }
-        //     ],
-        //     "links":
-        //     [
-        //       {
-        //         "href": "https://api.sandbox.paypal.com/v1/payments/payment/PAY-123",
-        //         "rel": "self",
-        //         "method": "GET"
-        //       }
-        //     ]
-        //   }
-        //
-        QString const payer_id(secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PAYER_ID))->value().stringValue());
-        QString const body(QString(
-                    "{"
-                        "\"payer_id\":\"%1\""
-                    "}"
-                ).arg(payer_id)
-            );
-
-        http_client_server::http_request execute_request;
-        // execute_url is a full URL, for example:
-        //   https://api.sandbox.paypal.com/v1/payments/payment/PAY-123/execute
-        // and the set_uri() function takes care of everything for us in that case
-        execute_request.set_uri(execute_url.toUtf8().data());
-        //execute_request.set_path("...");
-        //execute_request.set_port(443); // https
-        execute_request.set_header("Accept", "application/json");
-        execute_request.set_header("Accept-Language", "en_US");
-        execute_request.set_header("Content-Type", "application/json");
-        execute_request.set_header("Authorization", QString("%1 %2").arg(token_type.c_str()).arg(access_token.c_str()).toUtf8().data());
-        execute_request.set_header("PayPal-Request-Id", invoice_ipath.get_key().toUtf8().data());
-        execute_request.set_data(body.toUtf8().data());
-        http_client_server::http_response::pointer_t response(http.send_request(execute_request));
-
-        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
-        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT))->setValue(QString::fromUtf8(response->get_response().c_str()));
-
-        // looks pretty good, check the actual answer...
-        as2js::JSON::pointer_t json(new as2js::JSON);
-        as2js::StringInput::pointer_t in(new as2js::StringInput(response->get_response()));
-        as2js::JSON::JSONValue::pointer_t value(json->parse(in));
-        if(!value)
-        {
-            SNAP_LOG_ERROR("JSON parser failed parsing 'execute' response");
-            throw epayment_paypal_exception_io_error("JSON parser failed parsing 'execute' response");
-        }
-        as2js::JSON::JSONValue::object_t const& object(value->get_object());
-
-        // ID
-        // verify that the payment identifier corresponds to what we expect
-        if(object.find("id") == object.end())
-        {
-            SNAP_LOG_ERROR("'id' missing in 'execute' response");
-            throw epayment_paypal_exception_io_error("'id' missing in 'execute' response");
-        }
-        QString const execute_id(QString::fromUtf8(object.at("id")->get_string().to_utf8().c_str()));
-        if(execute_id != id)
-        {
-            SNAP_LOG_ERROR("'id' in 'execute' response is not the same as the invoice 'id'");
-            throw epayment_paypal_exception_io_error("'id' in 'execute' response is not the same as the invoice 'id'");
-        }
-
-        // INTENT
-        // verify that: "intent" == "sale"
-        if(object.find("intent") == object.end())
-        {
-            SNAP_LOG_ERROR("'intent' missing in 'execute' response");
-            throw epayment_paypal_exception_io_error("'intent' missing in 'execute' response");
-        }
-        if(object.at("intent")->get_string() != "sale")
-        {
-            SNAP_LOG_ERROR("'intent' in 'execute' response is not 'sale'");
-            throw epayment_paypal_exception_io_error("'intent' in 'execute' response is not 'sale'");
-        }
-
-        // STATE
-        // now check the state of the sale
-        if(object.find("state") == object.end())
-        {
-            SNAP_LOG_ERROR("'state' missing in 'execute' response");
-            throw epayment_paypal_exception_io_error("'state' missing in 'execute' response");
-        }
-        if(object.at("state")->get_string() == "approved")
-        {
-            // the execute succeeded, mark the invoice as paid
-            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID);
-        }
-        else
-        {
-            // the execute did not approve the sale
-            // mark the invoice as failed...
-            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
-        }
     }
     else
     {
