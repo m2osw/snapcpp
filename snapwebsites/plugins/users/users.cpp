@@ -548,32 +548,19 @@ void users::on_process_cookies()
                     {
                         // the user is requesting to log out, here we avoid
                         // dealing with all the session information again
-                        // inside the user_logout() function and this way
-                        // we right away cancel the session
-                        f_info->set_object_path("/user/");
-
-                        // drop the referrer if there is one, it is a
-                        // security issue to keep that info on an explicit
-                        // log out!
-                        static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
-
-                        QtCassandra::QCassandraRow::pointer_t row(users_table->row(key));
-
-                        // Save the date when the user logged out
-                        QtCassandra::QCassandraValue value;
-                        value.setInt64Value(f_snap->get_start_date());
-                        row->cell(get_name(SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
-
-                        // Save the user IP address when logged out
-                        value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-                        row->cell(get_name(SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
+                        // this way we right away cancel the log in but
+                        // we actually keep the session
+                        f_user_key = key;
+                        user_logout();
                     }
                     else
                     {
-                        // the user still has a valid session, but he may not
-                        // be fully logged in... (i.e. not have as much
-                        // permission as given with a fresh log in) -- we need
-                        // an additional form to authorize the user to do more
+                        // the user still has a valid session, but he may
+                        // not be fully logged in... (i.e. not have as much
+                        // permission as given with a fresh log in)
+                        //
+                        // TODO: we need an additional form to authorize
+                        //       the user to do more
                         f_user_logged_in = f_snap->get_start_time() < f_info->get_login_limit();
 
                         // the website may opt out of the long session scheme
@@ -655,6 +642,60 @@ void users::on_process_cookies()
         // sent when we have a valid cookie)
         logged_in_user_ready();
     }
+}
+
+
+/** \brief This function can be used to log the user out.
+ *
+ * If your software detects a situation where a currently logged in
+ * user should be forcibly logged out, this function can be called.
+ * The result is to force the user to log back in.
+ *
+ * Note that you should let the user know why you are kicking him
+ * or her out otherwise they are likely to try to log back in again
+ * and again and possibly get locked out (i.e. too many loggin
+ * attempts.) In most cases, an error or warning message and a
+ * redirect will do. This function does not do either so it is
+ * likely that the user will be redirect to the log in page if
+ * you do not do a redirect yourself.
+ *
+ * \warning
+ * The function should never be called before the process_cookies()
+ * signal gets processed, although this function should work if called
+ * from within the user_logged_in() function.
+ *
+ * \warning
+ * If you return from your function (instead of redirecting the user)
+ * you may get unwanted results (i.e. the user could still be shown
+ * the page accessed.)
+ */
+void users::user_logout()
+{
+    // the software is requesting to log the user out
+    //
+    // inside the user_logout() function and this way
+    // we right away cancel the session
+    f_info->set_object_path("/user/");
+
+    // drop the referrer if there is one, it is a
+    // security issue to keep that info on an explicit
+    // log out!
+    static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
+
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_key));
+
+    // Save the date when the user logged out
+    QtCassandra::QCassandraValue value;
+    value.setInt64Value(f_snap->get_start_date());
+    row->cell(get_name(SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
+
+    // Save the user IP address when logged out
+    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+    row->cell(get_name(SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
+
+    f_user_key.clear();
+    f_user_logged_in = false;
 }
 
 
@@ -1969,6 +2010,10 @@ void users::process_login_form(login_mode_t login_mode)
 
                 // this is now the current user
                 f_user_key = key;
+                // we just logged in so we are logged in
+                // (although the user_logged_in() signal could log the
+                // user out if something is awry)
+                f_user_logged_in = true;
 
                 // Copy the previous login date and IP to the previous fields
                 if(row->exists(get_name(SNAP_NAME_USERS_LOGIN_ON)))
@@ -1995,35 +2040,45 @@ void users::process_login_form(login_mode_t login_mode)
                 logged_info.set_email(key);
                 user_logged_in(logged_info);
 
-                // make sure user locale/timezone get used on next
-                // locale/timezone access
-                locale::locale::instance()->reset_locale();
-
-                // send a signal that the user is ready (this signal is also
-                // sent when we have a valid cookie)
-                logged_in_user_ready();
-
-                if(force_redirect_password_change)
+                // user got logged out by a plugin and not redirected?!
+                if(!f_user_key.isEmpty())
                 {
-                    // this URI has priority over other plugins URIs
-                    logged_info.set_uri("user/password");
-                }
-                else if(logged_info.get_uri().isEmpty())
-                {
-                    // here we detach from the session since we want to
-                    // redirect only once to that page
-                    logged_info.set_uri(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
-                    if(logged_info.get_uri().isEmpty())
+                    // make sure user locale/timezone get used on next
+                    // locale/timezone access
+                    locale::locale::instance()->reset_locale();
+
+                    // send a signal that the user is ready (this signal is also
+                    // sent when we have a valid cookie)
+                    logged_in_user_ready();
+
+                    if(force_redirect_password_change)
                     {
-                        // User is now logged in, redirect him to his profile
-                        //
-                        // TODO: the admin needs to be able to change that
-                        //       default redirect
-                        logged_info.set_uri("user/me");
+                        // this URI has priority over other plugins URIs
+                        logged_info.set_uri("user/password");
                     }
+                    else if(logged_info.get_uri().isEmpty())
+                    {
+                        // here we detach from the session since we want to
+                        // redirect only once to that page
+                        logged_info.set_uri(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
+                        if(logged_info.get_uri().isEmpty())
+                        {
+                            // User is now logged in, redirect him to his profile
+                            //
+                            // TODO: the admin needs to be able to change that
+                            //       default redirect
+                            logged_info.set_uri("user/me");
+                        }
+                    }
+                    f_snap->page_redirect(logged_info.get_uri(), snap_child::HTTP_CODE_SEE_OTHER);
+                    NOTREACHED();
                 }
-                f_snap->page_redirect(logged_info.get_uri(), snap_child::HTTP_CODE_SEE_OTHER);
-                NOTREACHED();
+
+                // user does not have enough permission to log in?
+                // (i.e. a pay for website where the account has no more
+                //       credit and this very user is not responsible for
+                //       the payment)
+                details = "good credential, invalid status according to another plugin that logged the user out immediately";
             }
             else
             {
@@ -2069,8 +2124,22 @@ void users::process_login_form(login_mode_t login_mode)
  * \brief Tell plugins that the user is now logged in.
  *
  * This signal is used to tell plugins that the user is now logged in.
- * Note that this signal only happens at the time the user logs in, not
+ *
+ * Note I: this signal only happens at the time the user logs in, not
  * each time the user accesses the server.
+ *
+ * Note II: a plugin has the capability to log the user out by calling
+ * the user_logout() function; this means when your callback gets called
+ * the user may not be logged in anymore! This means you should always
+ * make a call as follow to verify that the user is indeed logged in
+ * before making use of the user's information:
+ *
+ * \code
+ *      if(!users::users::instance()->user_is_logged_in())
+ *      {
+ *          return;
+ *      }
+ * \endcode
  *
  * In most cases the plugins are expected to check one thing or another that
  * may be important for that user and act accordingly. If the result is that

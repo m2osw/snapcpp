@@ -215,6 +215,7 @@ public:
     QString                 get_from_session(QString const& name) const;
     void                    set_referrer( QString path );
     void                    send_to_replace_password_page(QString const& email, bool const set_status);
+    void                    user_logout();
 
     int64_t                 get_user_identifier(QString const& user_path) const;
     QString                 get_user_email(QString const& user_path);
