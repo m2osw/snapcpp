@@ -61,6 +61,7 @@ class output : public plugins::plugin
              , public path::path_execute
              , public layout::layout_content
              , public javascript::javascript_dynamic_plugin
+             , public layout::layout_boxes
 {
 public:
                         output();
@@ -73,6 +74,7 @@ public:
     void                on_bootstrap(snap_child *snap);
     virtual bool        on_path_execute(content::path_info_t& ipath);
     virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void        on_generate_boxes_content(content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
     void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     static QString      phone_to_uri(QString const phone);

@@ -267,6 +267,22 @@ void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
 }
 
 
+/** \brief Generate boxes marked as owned by the output plugin.
+ *
+ * \param[in] page_cpath  The page where the box appears.
+ * \param[in] ipath  The box being worked on.
+ * \param[in] page  The page element.
+ * \param[in] box  The box element.
+ * \param[in] ctemplate  A template name in case no other layout applies.
+ */
+void output::on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate)
+{
+    static_cast<void>(page_cpath);
+
+    on_generate_main_content(ipath, page, box, ctemplate);
+}
+
+
 /** \brief Generate the page common content.
  *
  * This function generates some content that is expected in a page

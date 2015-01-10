@@ -493,7 +493,6 @@ void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElem
 
     QDomDocument doc(header.ownerDocument());
 
-std::cerr << "***\n*** Got in header of e-Commerce...\n***\n";
     // make sure this is a product, if so, add product fields
     links::link_info product_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(product_info));
@@ -504,10 +503,8 @@ std::cerr << "***\n*** Got in header of e-Commerce...\n***\n";
         // use a path_info_t to retrieve the cpath instead
         content::path_info_t type_ipath;
         type_ipath.set_path(product_child_info.key());
-std::cerr << "***\n*** Testing type of page: " << type_ipath.get_key() << "...\n***\n";
         if(type_ipath.get_cpath().startsWith(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)))
         {
-std::cerr << "***\n*** Do addition, but maybe page theme not set right?...\n***\n";
             // if the content is the main page then define the titles and body here
             FIELD_SEARCH
                 (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
