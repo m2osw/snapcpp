@@ -706,6 +706,9 @@ char const *css_extensions[] =
  * other valid default):
  *
  * \code
+ * // WARNING: this code is not up to date...
+ * //          especially, the SELF function returns a QtCassandraValue
+ * //          and the run() function is automatically called on destruction
  * QStringList result(cmd_info_t()
  *      (PARAMETER_OPTION_FIELD_NAME, "modified")
  *      (PARAMETER_OPTION_SELF, path)
@@ -804,6 +807,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
     case COMMAND_NEW_CHILD_ELEMENT:
     case COMMAND_ELEMENT_ATTR:
     case COMMAND_SAVE:
+    case COMMAND_SAVE_FLOAT64:
     case COMMAND_SAVE_INT64:
     case COMMAND_SAVE_INT64_DATE:
     case COMMAND_SAVE_XML:
@@ -1054,6 +1058,7 @@ field_search& field_search::operator () (command_t cmd)
  * \li COMMAND_NEW_CHILD_ELEMENT
  * \li COMMAND_ELEMENT_ATTR
  * \li COMMAND_SAVE
+ * \li COMMAND_SAVE_FLOAT64
  * \li COMMAND_SAVE_INT64
  * \li COMMAND_SAVE_INT64_DATE
  * \li COMMAND_SAVE_XML
@@ -1929,9 +1934,24 @@ void field_search::run()
             }
         }
 
+        // TODO: look into adding support for complex destinations
+        void cmd_save_float64(QString const& child_name)
+        {
+            if(!f_result.isEmpty() && !f_element.isNull() && static_cast<size_t>(f_result[0].size()) >= sizeof(double))
+            {
+                QDomDocument doc(f_element.ownerDocument());
+                QDomElement child(doc.createElement(child_name));
+                f_element.appendChild(child);
+                QDomText text(doc.createTextNode(QString("%1").arg(f_result[0].doubleValue())));
+                child.appendChild(text);
+                cmd_reset(true);
+            }
+        }
+
+        // TODO: look into adding support for complex destinations
         void cmd_save_int64(QString const& child_name)
         {
-            if(!f_result.isEmpty() && !f_element.isNull())
+            if(!f_result.isEmpty() && !f_element.isNull() && static_cast<size_t>(f_result[0].size()) >= sizeof(int64_t))
             {
                 QDomDocument doc(f_element.ownerDocument());
                 QDomElement child(doc.createElement(child_name));
@@ -1942,9 +1962,10 @@ void field_search::run()
             }
         }
 
+        // TODO: look into adding support for complex destinations
         void cmd_save_int64_date(QString const& child_name)
         {
-            if(!f_result.isEmpty() && !f_element.isNull())
+            if(!f_result.isEmpty() && !f_element.isNull() && static_cast<size_t>(f_result[0].size()) >= sizeof(int64_t))
             {
                 QDomDocument doc(f_element.ownerDocument());
                 QDomElement child(doc.createElement(child_name));
@@ -2127,6 +2148,10 @@ void field_search::run()
 
                 case COMMAND_SAVE:
                     cmd_save(f_program[i].get_string());
+                    break;
+
+                case COMMAND_SAVE_FLOAT64:
+                    cmd_save_float64(f_program[i].get_string());
                     break;
 
                 case COMMAND_SAVE_INT64:

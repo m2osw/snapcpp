@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment-paypal
- * Version: 0.0.1.14
+ * Version: 0.0.1.16
  * Browsers: all
  * Depends: epayment (>= 0.0.1)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -96,35 +96,6 @@
  */
 snapwebsites.ePaymentFacilityPayPal = function()
 {
-    // if we are on page "/epayment/paypal/ready", we have buttons to
-    // connect to and we want to do that here
-    var that = this,
-        process_buttons = jQuery(".epayment_paypal-process-buttons");
-
-    process_buttons
-        .children(".epayment_paypal-cancel")
-        .click(function(e)
-            {
-                var token = snapwebsites.OutputInstance.qsParam("token");
-
-                e.preventDefault();
-                e.stopPropagation();
-
-                that.sendClick("cancel", token);
-            });
-
-    process_buttons
-        .children(".epayment_paypal-process")
-        .click(function(e)
-            {
-                var paymentId = snapwebsites.OutputInstance.qsParam("paymentId");
-
-                e.preventDefault();
-                e.stopPropagation();
-
-                that.sendClick("process", paymentId); // PayPal calls this "execute"
-            });
-
     return this;
 };
 
@@ -221,32 +192,15 @@ snapwebsites.ePaymentFacilityPayPal.prototype.getButtonHTML = function()
  */
 snapwebsites.ePaymentFacilityPayPal.prototype.buttonClicked = function()
 {
-    this.sendClick("checkout", "");
-};
-
-
-/** \brief Send a click to the server.
- *
- * This function makes use of AJAX to send a click to the server.
- *
- * The \p type parameter is used to tell the server which button was
- * clicked.
- *
- * @param {string} type  The name of the button clicked.
- * @param {string} token  The token or paymenId or "" if not available yet.
- */
-snapwebsites.ePaymentFacilityPayPal.prototype.sendClick = function(type, token)
-{
     if(!this.serverAccess_)
     {
         this.serverAccess_ = new snapwebsites.ServerAccess(this);
     }
 
-    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href") + "?a=view", "casting href of the canonical link to a string in snapwebsites.EditorForm.saveData()"));
+    this.serverAccess_.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.EditorForm.saveData()") + "?a=view");
     this.serverAccess_.setData(
         {
-            epayment__epayment_paypal: type,
-            epayment__epayment_paypal_token: token
+            epayment__epayment_paypal: "checkout"
         });
     this.serverAccess_.send();
 
@@ -257,104 +211,6 @@ snapwebsites.ePaymentFacilityPayPal.prototype.sendClick = function(type, token)
     // while processing...
     snapwebsites.PopupInstance.darkenPage(150, true);
 };
-
-
-/*jslint unparam: true */
-/** \brief Function called on success.
- *
- * This function is called if the remote access was successful. The
- * \p result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.ePaymentFacilityPayPal.prototype.serverAccessSuccess = function(result) // virtual
-{
-    var data_tags = result.jqxhr.responseXML.getElementsByTagName("data"),
-        name,
-        event;
-
-    for(idx = 0; idx < data_tags.length; ++idx)
-    {
-        // make sure it is one of our parameters
-        name = data_tags[idx].getAttribute("name");
-        if(name === "epayment__epayment_paypal_token")
-        {
-            event = data_tags[idx].textContent;
-            if(event == "cancel")
-            {
-                // this was a cancel, mark invoice as canceled
-                // and hide the various buttons
-                jQuery(".epayment_paypal-process-buttons").hide();
-
-                jQuery(".ecommerce-invoice-status .invoice-value")
-                    .html("canceled");
-            }
-            else if(event == "process")
-            {
-                // this was a cancel, mark invoice as canceled
-                // and hide the various buttons
-                jQuery(".epayment_paypal-process-buttons").hide();
-
-                // We use "Paid" here although it could be "Completed"
-                // if a plugin forces that status automatically.
-                jQuery(".ecommerce-invoice-status .invoice-value")
-                    .html("paid");
-            }
-        }
-    }
-
-    // finally call the super class version
-    snapwebsites.ePaymentFacilityPayPal.superClass_.serverAccessSuccess.call(this, result);
-};
-/*jslint unparam: false */
-
-
-// /*jslint unparam: true */
-// /** \brief Function called on error.
-//  *
-//  * This function is called if the remote access generated an error.
-//  * In this case errors include I/O errors, server errors, and application
-//  * errors. All call this function so you do not have to repeat the same
-//  * code for each type of error.
-//  *
-//  * \li I/O errors -- somehow the AJAX command did not work, maybe the
-//  *                   domain name is wrong or the URI has a syntax error.
-//  * \li server errors -- the server received the POST but somehow refused
-//  *                      it (maybe the request generated a crash.)
-//  * \li application errors -- the server received the POST and returned an
-//  *                           HTTP 200 result code, but the result includes
-//  *                           a set of errors (not enough permissions,
-//  *                           invalid data, etc.)
-//  *
-//  * By default this function does nothing.
-//  *
-//  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
-//  *          resulting data with information about the error(s).
-//  */
-// snapwebsites.ePaymentFacilityPayPal.prototype.serverAccessError = function(result) // virtual
-// {
-//     snapwebsites.ePaymentFacilityPayPal.superClass_.serverAccessComplete.call(result);
-// };
-// /*jslint unparam: false */
-//
-//
-// /*jslint unparam: true */
-// /** \brief Function called on completion.
-//  *
-//  * This function is called once the whole process is over. It is most
-//  * often used to do some cleanup.
-//  *
-//  * By default this function does nothing.
-//  *
-//  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
-//  *          resulting data with information about the error(s).
-//  */
-// snapwebsites.ePaymentFacilityPayPal.prototype.serverAccessComplete = function(result) // virtual
-// {
-// };
-// /*jslint unparam: false */
 
 
 

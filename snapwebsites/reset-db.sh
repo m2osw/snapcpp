@@ -48,6 +48,7 @@ echo
 echo "After a reset, remember that all your data is lost. So you will"
 echo "have to register a new user and make him root again with a command"
 echo "that looks like this (change the -c and -p parameters as required):"
+echo ${BINDIR}/snapbackend -d -c ${CONFIGFILE} -a makeadministrator -p ROOT_USER_EMAIL=admin@example.com
 echo ${BINDIR}/snapbackend -d -c ${CONFIGFILE} -a makeroot -p ROOT_USER_EMAIL=you@example.com
 
 # vim: ts=4 sw=4 et nocindent

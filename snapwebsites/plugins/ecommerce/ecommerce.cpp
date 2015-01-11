@@ -448,7 +448,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 8, 14, 44, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 10, 16, 13, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -527,7 +527,7 @@ void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElem
                 // /snap/head/metadata/ecommerce/product-price
                 (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE))
                 (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_SAVE, "product-price")
+                (content::field_search::COMMAND_SAVE_FLOAT64, "product-price")
 
                 // generate!
                 ;
@@ -680,10 +680,10 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
                 if(product_result.size() == 2)
                 {
                     QString product_description(product_result[0].stringValue());
-                    QString price(product_result[1].stringValue());
-                    if(!product_description.isEmpty()
-                    && !price.isEmpty())
+                    if(!product_description.isEmpty())
                     {
+                        double const price(product_result[1].safeDoubleValue(10.00));
+
                         // add a product type
                         if(first)
                         {
@@ -1298,20 +1298,19 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
                 }
 
                 QString const product_description(product_result[0].stringValue());
-                QString const price_string(product_result[1].stringValue());
-                double price(price_string.toDouble(&ok));
-                if(!ok)
+                if(product_result[1].size() != sizeof(int64_t))
                 {
                     messages::messages::instance()->set_error(
                         "Invalid Price",
-                        QString("Could not parse price \"%1\" as a valid decimal number.").arg(price_string),
+                        "Invalid size of a price in that product definition.",
                         "We got a cart with an invalid price",
                         false
                     );
                     // TBD: should we stop here? At this point we go on
                     //      also the price should always be okay...
-                    price = 10.00;  // what kind of a default is that?!
                 }
+                // what kind of a default is that 10.00?!
+                double const price(product_result[1].safeDoubleValue(10.00));
 
                 // create a product in the plist
                 epayment::epayment_product& p(plist.add_product(product_ipath.get_key(), quantity, product_description));
@@ -1493,7 +1492,7 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
     //        }
 
     //        QString const product_description(product_result[0].stringValue());
-    //        QString const price_string(product_result[1].stringValue());
+    //        QString const price_string(product_result[1].safeDoubleValue(10.00)); <- this changed
     //        double price(price_string.toDouble(&ok));
     //        if(!ok)
     //        {
@@ -1593,7 +1592,7 @@ bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t p
     // product either...
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    if(revision_table->row(product_ipath.get_revision_key())->cell(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE))->value().nullValue())
+    if(revision_table->row(product_ipath.get_revision_key())->cell(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE))->value().size() != sizeof(double))
     {
         // no price?!
         messages::messages::instance()->set_error(

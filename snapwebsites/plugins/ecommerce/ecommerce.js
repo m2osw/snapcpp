@@ -2584,6 +2584,7 @@ snapwebsites.eCommerceCart.prototype.generateCartHtml_ = function()
                 return;
             }
 
+            // TODO: avoid searching for the cart payment/summary multiple times
             if(!that.cartPaymentDefined_)
             {
                 that.cartPaymentDefined_ = true;

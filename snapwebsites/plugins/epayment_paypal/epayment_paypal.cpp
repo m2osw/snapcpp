@@ -284,7 +284,7 @@ int64_t epayment_paypal::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 1, 8, 22, 41, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 10, 15, 34, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -430,10 +430,42 @@ void epayment_paypal::on_generate_header_content(content::path_info_t& ipath, QD
     //     }
     // }
 
-    // TODO: find a way to include e-Payment data only if required
-    //       (it may already be done! search on add_javascript() for info.)
-    content::content::instance()->add_javascript(doc, "epayment-paypal");
-    content::content::instance()->add_css(doc, "epayment-paypal");
+    // we have a test to see whether the PayPal facility was properly setup
+    // and if not we do not add the JavaScript because otherwise the button
+    // will not work right...
+    content::path_info_t settings_ipath;
+    settings_ipath.set_path(get_name(SNAP_NAME_EPAYMENT_PAYPAL_SETTINGS_PATH));
+
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(settings_ipath.get_key()));
+
+    bool const debug(get_debug());
+
+    QString client_id;
+    QString secret;
+
+    if(debug)
+    {
+        // User setup debug mode for now
+        client_id = secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SANDBOX_CLIENT_ID))->value().stringValue();
+        secret = secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SANDBOX_SECRET))->value().stringValue();
+    }
+    else
+    {
+        // Normal user settings
+        client_id = secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CLIENT_ID))->value().stringValue();
+        secret = secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SECRET))->value().stringValue();
+    }
+
+    if(!client_id.isEmpty()
+    && !secret.isEmpty())
+    {
+        // TODO: find a way to include e-Payment-PayPal data only if required
+        //       (it may already be done! search on add_javascript() for info.)
+        content::content::instance()->add_javascript(doc, "epayment-paypal");
+        content::content::instance()->add_css(doc, "epayment-paypal");
+    }
 }
 
 
@@ -476,7 +508,7 @@ void epayment_paypal::on_generate_main_content(content::path_info_t& ipath, QDom
 bool epayment_paypal::on_path_execute(content::path_info_t& ipath)
 {
     QString const cpath(ipath.get_cpath());
-std::cerr << "***\n*** cpath = [" << cpath << "]\n***\n";
+std::cerr << "***\n*** epayment_paypal::on_path_execute() cpath = [" << cpath << "]\n***\n";
     if(cpath == get_name(SNAP_NAME_EPAYMENT_PAYPAL_CANCEL_URL)
     || cpath == get_name(SNAP_NAME_EPAYMENT_PAYPAL_CANCEL_PLAN_URL))
     {
@@ -1136,6 +1168,8 @@ bool epayment_paypal::get_debug()
 
         QtCassandra::QCassandraValue debug_value(revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_DEBUG))->value());
         f_debug = !debug_value.nullValue() && debug_value.signedCharValue();
+
+        f_debug_defined = true;
     }
 
     return f_debug;
@@ -2036,7 +2070,6 @@ void epayment_paypal::on_process_post(QString const& uri_path)
             epayment::epayment_product const& product(plist[idx]);
             if(product.has_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING_FEE)))
             {
-std::cerr << "***\n*** recurring fee now???\n***\n";
                 recurring_fee += product.get_total();
                 recurring_fee_defined = true;
             }
@@ -2059,7 +2092,6 @@ std::cerr << "***\n*** recurring fee now???\n***\n";
                     return;
                 }
                 recurring.set(product.get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)));
-std::cerr << "***\n*** recurring is true? " << product.get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)) << "\n***\n";
                 if(!recurring.is_null())
                 {
                     recurring_defined = true;

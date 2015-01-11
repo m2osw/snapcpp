@@ -51,9 +51,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>The perfect software you always dreamed about!</p>]]>
     </param>
-    <param name="epayment::price" revision="revision">
-      <![CDATA[128.50]]>
-    </param>
+    <param name="epayment::price" revision="revision" type="float64">128.50</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
@@ -63,9 +61,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Version two of the perfect software which is even better than version 1 which means we cannot even describe it!</p>]]>
     </param>
-    <param name="epayment::price" revision="revision">
-      <![CDATA[200]]>
-    </param>
+    <param name="epayment::price" revision="revision" type="float64">200</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
@@ -75,9 +71,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike.</p>]]>
     </param>
-    <param name="epayment::price" revision="revision">
-      <![CDATA[200]]>
-    </param>
+    <param name="epayment::price" revision="revision" type="float64">200</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/epayment/product</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
@@ -87,9 +81,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike. This is the subscription that gives you access to all the features without the need for anything more.</p>]]>
     </param>
-    <param name="epayment::price" revision="revision">
-      <![CDATA[2]]>
-    </param>
+    <param name="epayment::price" revision="revision" type="float64">2</param>
     <param name="epayment::recurring" revision="revision">
       <![CDATA[DAY]]>
     </param>
@@ -102,9 +94,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::body" revision="revision">
       <![CDATA[<p>Turn Watcher online, the best tool for DMs and players alike. This is the subscription that gives you access to all the features without the need for anything more.</p>]]>
     </param>
-    <param name="epayment::price" revision="revision">
-      <![CDATA[2]]>
-    </param>
+    <param name="epayment::price" revision="revision" type="float64">2</param>
     <param name="epayment::recurring" revision="revision">
       <![CDATA[WEEK]]>
     </param>

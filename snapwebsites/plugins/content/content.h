@@ -406,6 +406,7 @@ public:
         COMMAND_RESULT,                 // + search_result_t
         COMMAND_LAST_RESULT_TO_VAR,     // + var name
         COMMAND_SAVE,                   // + child name
+        COMMAND_SAVE_FLOAT64,           // + child name
         COMMAND_SAVE_INT64,             // + child name
         COMMAND_SAVE_INT64_DATE,        // + child name
         COMMAND_SAVE_XML,               // + child name

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment
- * Version: 0.0.1.24
+ * Version: 0.0.1.25
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -903,16 +903,21 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
                   + "</div>";
         }
     }
-    html += "</div><div class='epayment-buttons'>";
-    if(back_button)
+    html += "</div>";
+    if(back_button || max < this.sortedPaymentFacility_.length)
     {
-        html += "<a class='epayment-back' href='#back'>« Back</a>";
+        html += "<div class='epayment-buttons'>";
+        if(back_button)
+        {
+            html += "<a class='epayment-back' href='#back'>« Back</a>";
+        }
+        if(max < this.sortedPaymentFacility_.length)
+        {
+            html += "<a class='epayment-more' href='#more'>More</a>";
+        }
+        html += "</div>";
     }
-    if(max < this.sortedPaymentFacility_.length)
-    {
-        html += "<a class='epayment-more' href='#more'>More</a>";
-    }
-    html += "</div></div>";
+    html += "</div>";
 
     cart_payment.append(html);
 
