@@ -40,6 +40,12 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case SNAP_NAME_ROBOTSTXT_FORBIDDEN_PATH:
+        return "types/taxonomy/system/robotstxt/forbidden";
+
+    case SNAP_NAME_ROBOTSTXT_FORBIDDEN:
+        return "robotstxt::forbidden";
+
     case SNAP_NAME_ROBOTSTXT_NOARCHIVE:
         return "robotstxt::noarchive";
 
@@ -147,7 +153,7 @@ int64_t robotstxt::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2012, 10, 13, 17, 16, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 10, 20, 38, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -248,7 +254,7 @@ void robotstxt::output() const
     {
         if(r->first == "*" || r->first == "")
         {
-            // skip the all robots ("*") and global ("") entries
+            // skip the "all robots" ("*") and "global" ("") entries
             continue;
         }
         f_snap->output("User-agent: ");
@@ -268,17 +274,44 @@ void robotstxt::output() const
  *
  * This function readies the generate_robotstxt signal.
  *
- * This function generates the header of the robots.txt.
+ * This function generates the main folders that we consider as forbidden.
+ * It adds the "/cgi-bin/" path automatically. It also goes through the
+ * list of paths marked as forbidden and adds them. If you have some really
+ * special entries you want to add to the robots.txt file, you may implement
+ * this signal too.
+ *
+ * The system list include the following directories at this time:
+ *
+ * \li "/admin/" -- all administration only pages
+ *
+ * \param[in] r  The robotstxt plugin, use to call the add_robots_txt_field()
+ *               and other functions.
  *
  * \return true if the signal has to be sent to other plugins.
  */
 bool robotstxt::generate_robotstxt_impl(robotstxt *r)
 {
-    r->add_robots_txt_field("/admin/");
     r->add_robots_txt_field("/cgi-bin/");
+
+    // admin is marked as forbidden so the following loop will capture it
+    // so no need to add it manually
+    //r->add_robots_txt_field("/admin/");
+
+    content::path_info_t forbidden_ipath;
+    forbidden_ipath.set_path(get_name(SNAP_NAME_ROBOTSTXT_FORBIDDEN_PATH));
+    links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_FORBIDDEN), false, forbidden_ipath.get_key(), forbidden_ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
+    links::link_info robots_txt;
+    while(link_ctxt->next_link(robots_txt))
+    {
+        content::path_info_t page_ipath;
+        page_ipath.set_path(robots_txt.key());
+        r->add_robots_txt_field(QString("/%1/").arg(page_ipath.get_cpath()));
+    }
 
     return true;
 }
+
 
 /** \brief Add Disallows to the robots.txt file.
  *
@@ -292,7 +325,7 @@ bool robotstxt::generate_robotstxt_impl(robotstxt *r)
  * /cgi-bin/ folder.
  *
  * \todo
- * The order can be important so we'll need to work on that part at some point.
+ * The order can be important so we will need to work on that part at some point.
  * At this time we print the entries in this order:
  *
  * \li global entries (i.e. robot = "")
@@ -314,9 +347,9 @@ bool robotstxt::generate_robotstxt_impl(robotstxt *r)
  * \param[in] robot  The name of the robot (default "*")
  * \param[in] unique  The field is unique, if already defined throw an error
  */
-void robotstxt::add_robots_txt_field(const QString& value,
-                                     const QString& field,
-                                     const QString& robot,
+void robotstxt::add_robots_txt_field(QString const& value,
+                                     QString const& field,
+                                     QString const& robot,
                                      bool unique)
 {
     if(field.isEmpty())
@@ -352,12 +385,9 @@ void robotstxt::add_robots_txt_field(const QString& value,
  * value of the robots meta tag.
  *
  * \todo
- * At this time there are problems with links (at least it seems that way
- * because I don't recall adding a nofollow link on the home page and yet
- * it gets the nofollow. Yet lookat at the path of the link, it appears
- * that we're reading the link for "/admin" instead if "/[index.html]".
- * I probably use some kind of default. Not that the noindex has the exact
- * same problem.
+ * Pages that are forbidden (because it or one of its parents is forbidden)
+ * should always return an empty list of robots in f_robots_cache. This is
+ * not the end of the world, but we would save on transfer amounts over time.
  *
  * \param[in,out] ipath  The path of the page for which links are checked to determine the robots setup.
  */
@@ -370,7 +400,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
         {
 // linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
 // <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
-            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOINDEX), false, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOINDEX), true, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -380,7 +410,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             }
         }
         {
-            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOFOLLOW), false, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOFOLLOW), true, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -390,7 +420,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             }
         }
         {
-            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOARCHIVE), false, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOARCHIVE), true, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -419,17 +449,19 @@ void robotstxt::define_robots(content::path_info_t& ipath)
  * \param[in,out] metadata  The XML metadata used with the XSLT parser.
  * \param[in] ctemplate  Another path in case ipath is missing parameters.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 void robotstxt::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, const QString& ctemplate)
 {
+    static_cast<void>(header);
+    static_cast<void>(metadata);
+    static_cast<void>(ctemplate);
+
     define_robots(ipath);
     if(!f_robots_cache.isEmpty())
     {
+        // Set the HTTP header
         f_snap->set_header("X-Robots", f_robots_cache);
     }
 }
-#pragma GCC diagnostic pop
 
 
 /** \brief Implement the main content for this class.
@@ -437,7 +469,7 @@ void robotstxt::on_generate_header_content(content::path_info_t& ipath, QDomElem
  * If this object becomes the content object, the the layout will call this
  * function to generate the content.
  *
- * In case of the robots.txt file, we use a lower level function
+ * In case of the robots.txt file, we use a lower level function.
  *
  * \todo
  * Check whether this function is required (i.e. we may not need to derive
@@ -478,6 +510,7 @@ void robotstxt::on_generate_page_content(content::path_info_t& ipath, QDomElemen
     define_robots(ipath);
     if(!f_robots_cache.isEmpty())
     {
+        // /snap/body/robots/tracking/...(noindex,noarchive,etc.)...
         QDomElement created_root(doc.createElement("robots"));
         body.appendChild(created_root);
         QDomElement created(doc.createElement("tracking"));

@@ -50,12 +50,13 @@
  * documenting the fields used by the Product Manager to define
  * a product details:
  *
- * \li Brief Description -- content::title -- the title of a product
+ * \li Brief Description -- epayment::description if defined, otherwise
+ * fallback and use content::title instead -- the title of a product
  * page is considered to be the brief description of the
  * product, it is often viewed as the display name (or end user name)
  * of the product.
  *
- * \li Name -- ecommerce::product_name -- the technical name of the
+ * \li Name -- epayment::product_name -- the technical name of the
  * product; most often only used internally. This gives you the
  * possibility to create several pages with the exact same name and
  * still distinguish each product using their technical name (although
@@ -448,7 +449,7 @@ int64_t ecommerce::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 10, 16, 13, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 10, 21, 18, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -492,47 +493,6 @@ void ecommerce::on_generate_header_content(content::path_info_t& ipath, QDomElem
     static_cast<void>(ctemplate);
 
     QDomDocument doc(header.ownerDocument());
-
-    // make sure this is a product, if so, add product fields
-    links::link_info product_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
-    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(product_info));
-    links::link_info product_child_info;
-    if(link_ctxt->next_link(product_child_info))
-    {
-        // the link_info returns a full key with domain name
-        // use a path_info_t to retrieve the cpath instead
-        content::path_info_t type_ipath;
-        type_ipath.set_path(product_child_info.key());
-        if(type_ipath.get_cpath().startsWith(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)))
-        {
-            // if the content is the main page then define the titles and body here
-            FIELD_SEARCH
-                (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                (content::field_search::COMMAND_ELEMENT, metadata)
-                (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
-
-                // /snap/head/metadata/ecommerce
-                (content::field_search::COMMAND_CHILD_ELEMENT, "ecommerce")
-
-                // /snap/head/metadata/ecommerce/product-name
-                (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_DESCRIPTION))
-                (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_IF_FOUND, 1)
-                    // use page title as a fallback
-                    (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
-                    (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_LABEL, 1)
-                (content::field_search::COMMAND_SAVE, "product-description")
-
-                // /snap/head/metadata/ecommerce/product-price
-                (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE))
-                (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_SAVE_FLOAT64, "product-price")
-
-                // generate!
-                ;
-        }
-    }
 
     // TODO: find a way to include e-Commerce data only if required
     //       (it may already be done! search on add_javascript() for info.)
@@ -637,12 +597,13 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
 
         // first add all the product types
         bool first(true);
-        if(!no_types) for(int i(0); i < max_products; ++i)
+        for(int i(0); i < max_products; ++i)
         {
             // we found the product, retrieve its description and price
             QDomElement product(product_tags[i].toElement());
             QString const guid(product.attribute("guid"));
-            if(ipath.get_key() != guid) // this page is the product?
+            if(ipath.get_key() == guid // this page is a product?
+            || !no_types)
             {
                 // TODO: We must verify that the GUID points to a product
                 //       AND that the user has enough permissions to see

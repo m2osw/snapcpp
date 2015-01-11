@@ -85,7 +85,7 @@ char const *get_name(name_t name)
     case SNAP_NAME_EPAYMENT_PRODUCT:
         return "epayment::product";
 
-    case SNAP_NAME_EPAYMENT_PRODUCT_DESCRIPTION:
+    case SNAP_NAME_EPAYMENT_PRODUCT_NAME:
         return "epayment::product_name";
 
     case SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH:
@@ -1471,7 +1471,7 @@ int64_t epayment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 10, 15, 1, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 10, 20, 53, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1538,7 +1538,12 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
                 (content::field_search::COMMAND_CHILD_ELEMENT, "epayment")
 
                 // /snap/head/metadata/epayment/product-name
-                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_PRODUCT_DESCRIPTION))
+                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_PRODUCT_NAME))
+                (content::field_search::COMMAND_SELF)
+                (content::field_search::COMMAND_SAVE, "product-name")
+
+                // /snap/head/metadata/epayment/product-description
+                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_DESCRIPTION))
                 (content::field_search::COMMAND_SELF)
                 (content::field_search::COMMAND_IF_FOUND, 1)
                     // use page title as a fallback
@@ -1550,7 +1555,7 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
                 // /snap/head/metadata/epayment/product-price
                 (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_PRICE))
                 (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_SAVE, "product-price")
+                (content::field_search::COMMAND_SAVE_FLOAT64, "product-price")
 
                 // generate!
                 ;

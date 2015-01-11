@@ -26,6 +26,8 @@ namespace robotstxt
 
 enum name_t
 {
+    SNAP_NAME_ROBOTSTXT_FORBIDDEN_PATH,
+    SNAP_NAME_ROBOTSTXT_FORBIDDEN,
     SNAP_NAME_ROBOTSTXT_NOARCHIVE,
     SNAP_NAME_ROBOTSTXT_NOFOLLOW,
     SNAP_NAME_ROBOTSTXT_NOINDEX
@@ -60,7 +62,9 @@ public:
 
 
 
-class robotstxt : public plugins::plugin, public path::path_execute, public layout::layout_content
+class robotstxt : public plugins::plugin
+                , public path::path_execute
+                , public layout::layout_content
 {
 public:
     static const char *ROBOT_NAME_ALL;

@@ -80,6 +80,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Prevent the Yahoo! robots from accessing this page.</p>]]>
     </param>
   </content>
+  <content path="/types/taxonomy/system/robotstxt/forbidden">
+    <param name="content::title" revision="revision">Robots: this page and anything below is forbidden</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Prevent the Yahoo! robots from accessing this page.</p>]]>
+    </param>
+  </content>
 </snap-tree>
 <!-- vim: ts=2 sw=2 et syntax=xml
 -->

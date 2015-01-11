@@ -1,6 +1,6 @@
 /*
  * Name: epayment
- * Version: 0.0.1.8
+ * Version: 0.0.1.9
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -67,5 +67,45 @@
 	float: right;
 	background-color: #fbea2f;
 	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+}
+
+/* product details box */
+div.epayment-product
+{
+	float: right;
+	border: 1px solid black;
+	border-radius: 3px;
+	padding: 20px 10px;
+	background-color: rgba(200, 200, 200, 200);
+	width: 250px;
+}
+
+div.epayment-product .epayment-button-area
+{
+	text-align: center;
+	padding: 10px;
+}
+
+div.epayment-product .epayment-button-area a.buy-now-button
+{
+	border: 1px solid #ffee33;
+	border-top-color: #eecc00;
+	border-radius: 7px;
+	padding: 10px 30px;
+	text-align: center;
+	box-shadow: 2px 2px 3px 0px #888888;
+	background-color: #ffee33;
+	background: linear-gradient(to bottom, #fff79f, #ffee33 25%, #ffee33 85%, #c4b727);
+	/*color: #386621; -- greenish */
+	color: black;
+	text-shadow: 0 0 6px #ffffff, 2px 2px 2px #886619;
+	text-decoration: none;
+}
+
+div.epayment-product .epayment-button-area a.buy-now-button:hover
+{
+	background-color: #fbea2f;
+	background: linear-gradient(to bottom, #fff79f, #fbea2f 25%, #fbea2f 85%, #c4b727);
+	box-shadow: 2px 2px 3px 0px #888888, 0 0 7px 7px #96BEC8;
 }
 
