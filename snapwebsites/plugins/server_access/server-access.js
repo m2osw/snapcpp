@@ -44,6 +44,17 @@
  *  };
  * \endcode
  *
+ * \todo
+ * Look into a way to save the data in a cookie in case the request fails.
+ * We want the server_access to synchronize the requests using a
+ * synchronization counter that way we can clearly send request number 1,
+ * 2, 3, etc. and save these numbers in the cookie as well. Once a
+ * completed() returns with the same number, we can remove that request from
+ * the cookie. All requests should NOT be saved, only those that contain
+ * user data that we do not want to lose. In other words, we do not need to
+ * save anything in this cookie if it is just a request for a dropdown,
+ * or similar completion request, for example.
+ *
  * @return {snapwebsites.ServerAccessCallbacks}
  *
  * @constructor

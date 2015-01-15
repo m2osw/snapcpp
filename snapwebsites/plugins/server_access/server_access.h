@@ -17,6 +17,7 @@
 #pragma once
 
 #include "../content/content.h"
+#include "../test_plugin/test_plugin.h"
 
 namespace snap
 {
@@ -40,6 +41,15 @@ public:
     server_access_exception_create_called_twice(QString const&     what_msg) : server_access_exception(what_msg) {}
 };
 
+
+
+
+
+enum name_t
+{
+    SNAP_NAME_SERVER_ACCESS_AJAX_FIELD
+};
+char const *get_name(name_t name) __attribute__ ((const));
 
 
 
@@ -69,10 +79,16 @@ public:
 
     SNAP_SIGNAL_WITH_MODE(process_ajax_result, (content::path_info_t& ipath, bool const succeeded), (ipath, succeeded), NEITHER);
 
+    // links test suite
+    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
+
 private:
     typedef QMap<QString, QByteArray>   data_map_t;
 
     void                        content_update(int64_t variables_timestamp);
+
+    // tests
+    SNAP_TEST_PLUGIN_TEST_DECL(test_ajax)
 
     zpsnap_child_t              f_snap;
     QDomDocument                f_ajax;

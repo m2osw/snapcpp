@@ -354,7 +354,7 @@ void epayment_paypal::content_update(int64_t variables_timestamp)
  * above it could have been "www.snapwebsites.org" in which case it
  * is different from "snapwebsites.org".
  *
- * \return The pointer to the content table.
+ * \return The pointer to the epayment_paypal table.
  */
 QtCassandra::QCassandraTable::pointer_t epayment_paypal::get_epayment_paypal_table()
 {
@@ -564,7 +564,32 @@ std::cerr << "***\n*** epayment_paypal::on_path_execute() cpath = [" << cpath <<
 
             QString const id(main_uri.query_option("paymentId"));
 std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]\n";
-            QString const invoice(epayment_paypal_table->row(main_uri.full_domain())->cell("id/" + id)->value().stringValue());
+            QString const date_invoice(epayment_paypal_table->row(main_uri.full_domain())->cell("id/" + id)->value().stringValue());
+            int const pos(date_invoice.indexOf(','));
+            if(pos < 1)
+            {
+                messages::messages::instance()->set_error(
+                    "PayPal Invalid Token",
+                    "Agreement token is missing the date of creation", 
+                    "Somehow the agreement token does not include a comma and thus a \"date,invoice\".",
+                    false
+                );
+                break;
+            }
+            QString const token_date(date_invoice.mid(0, pos));
+            bool ok(false);
+            int64_t const token_date_created(token_date.toLongLong(&ok, 10));
+            if(!ok)
+            {
+                messages::messages::instance()->set_error(
+                    "PayPal Missing Option",
+                    "PayPal replied without a \"token\" parameter", 
+                    "Without the \"token\" parameter we cannot know which invoice this is linked with.",
+                    false
+                );
+                break;
+            }
+            QString const invoice(date_invoice.mid(pos + 1));
             content::path_info_t invoice_ipath;
             invoice_ipath.set_path(invoice);
 
@@ -646,9 +671,8 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
 
             // TODO: add settings so the administrator can choose to setup
             //       the amount of time to or or less than 1 day
-            int64_t const invoice_created(content_table->row(invoice_ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             int64_t const start_date(f_snap->get_start_date());
-            if(start_date > invoice_created + 86400000000LL) // 1 day in micro seconds
+            if(start_date > token_date_created + 86400000000LL) // 1 day in micro seconds
             {
                 messages::messages::instance()->set_error(
                     "Session Timedout",
@@ -891,7 +915,32 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
 
             QString const token(main_uri.query_option("token"));
 std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\n";
-            QString const invoice(epayment_paypal_table->row(main_uri.full_domain())->cell("agreement/" + token)->value().stringValue());
+            QString const date_invoice(epayment_paypal_table->row(main_uri.full_domain())->cell("agreement/" + token)->value().stringValue());
+            int const pos(date_invoice.indexOf(','));
+            if(pos < 1)
+            {
+                messages::messages::instance()->set_error(
+                    "PayPal Invalid Token",
+                    "Agreement token is missing the date of creation", 
+                    "Somehow the agreement token does not include a comma and thus a \"date,invoice\".",
+                    false
+                );
+                break;
+            }
+            QString const token_date(date_invoice.mid(0, pos));
+            bool ok(false);
+            int64_t const token_date_created(token_date.toLongLong(&ok, 10));
+            if(!ok)
+            {
+                messages::messages::instance()->set_error(
+                    "PayPal Missing Option",
+                    "PayPal replied without a \"token\" parameter", 
+                    "Without the \"token\" parameter we cannot know which invoice this is linked with.",
+                    false
+                );
+                break;
+            }
+            QString const invoice(date_invoice.mid(pos + 1));
             content::path_info_t invoice_ipath;
             invoice_ipath.set_path(invoice);
 
@@ -943,9 +992,8 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
 
             // TODO: add settings so the administrator can choose to setup
             //       the amount of time to or or less than 1 day
-            int64_t const invoice_created(content_table->row(invoice_ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             int64_t const start_date(f_snap->get_start_date());
-            if(start_date > invoice_created + 86400000000LL) // 1 day in micro seconds
+            if(start_date > token_date_created + 86400000000LL) // 1 day in micro seconds
             {
                 messages::messages::instance()->set_error(
                     "Session Timedout",
@@ -2393,7 +2441,8 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
                         // The Cancel URL only receives the token,
                         // not the payment identifier!
                         QString const token(redirect_uri.query_option("token"));
-                        epayment_paypal_table->row(main_uri.full_domain())->cell("agreement/" + token)->setValue(invoice_ipath.get_key());
+                        QString const date_invoice(QString("%1,%2").arg(f_snap->get_start_date()).arg(invoice_ipath.get_key()));
+                        epayment_paypal_table->row(main_uri.full_domain())->cell("agreement/" + token)->setValue(date_invoice);
                         secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_TOKEN))->setValue(token);
                     }
                     else if(rel == "execute")
@@ -2814,7 +2863,8 @@ std::cerr << "***\n*** JSON BODY: ["
             secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PAYMENT_ID))->setValue(id);
 
             // save a back reference in the epayment_paypal table
-            epayment_paypal_table->row(main_uri.full_domain())->cell("id/" + id)->setValue(invoice_ipath.get_key());
+            QString const date_invoice(QString("%1,%2").arg(f_snap->get_start_date()).arg(invoice_ipath.get_key()));
+            epayment_paypal_table->row(main_uri.full_domain())->cell("id/" + id)->setValue(date_invoice);
 
             // we need a way to verify that the user coming back is indeed the
             // user who started the process so the thank you page can show the

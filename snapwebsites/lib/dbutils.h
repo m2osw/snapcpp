@@ -30,24 +30,25 @@ namespace snap
 class dbutils
 {
 public:
-                dbutils( const QString& table_name, const QString& row_name );
+                dbutils( QString const& table_name, QString const& row_name );
 
     static void copy_row(QtCassandra::QCassandraTable::pointer_t ta, QString const& a,  // source
                          QtCassandra::QCassandraTable::pointer_t tb, QString const& b); // destination
 
-    static QString    byte_to_hex   ( const char        byte );
-    static QString    key_to_string ( const QByteArray& key  );
-    static QByteArray string_to_key ( const QString&    str  );
+    static QString      byte_to_hex            ( char const        byte );
+    static QString      key_to_string          ( QByteArray const& key  );
+    static QByteArray   string_to_key          ( QString const&    str  );
+    static QString      microseconds_to_string ( int64_t const&    time, bool const full );
 
     int         get_display_len() const;
-    void        set_display_len( const int val );
+    void        set_display_len( int const val );
 
     QByteArray  get_row_key() const;
     QString     get_row_name( QtCassandra::QCassandraRow::pointer_t p_r ) const;
 
     QString     get_column_name ( QtCassandra::QCassandraCell::pointer_t c ) const;
-    QString     get_column_value( QtCassandra::QCassandraCell::pointer_t c, const bool display_only = false ) const;
-    void        set_column_value( QtCassandra::QCassandraCell::pointer_t c, const QString& v );
+    QString     get_column_value( QtCassandra::QCassandraCell::pointer_t c, bool const display_only = false ) const;
+    void        set_column_value( QtCassandra::QCassandraCell::pointer_t c, QString const& v );
 
 private:
     enum column_type_t

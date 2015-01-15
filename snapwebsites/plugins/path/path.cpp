@@ -45,7 +45,8 @@ SNAP_PLUGIN_START(path, 1, 0)
 //{
 //    // Note: <branch>.<revision> are actually replaced by a full version
 //    //       when dealing with JavaScript and CSS files (Version: field)
-//    switch(name) {
+//    switch(name)
+//    {
 //    case SNAP_NAME_CONTENT_PRIMARY_OWNER:
 //        return "path::primary_owner";
 //

@@ -110,7 +110,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/types/permissions/rights/administer/website">
     <param name="content::title" revision="revision">Administer the Website Right</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Administer the website settings.</p><p>This is the main right allowing someone to administer anything in the website.</p>]]>
+      <![CDATA[<p>Administer the website settings.</p><p>This is the main right allowing someone to administer anything on the website.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/administer/form">

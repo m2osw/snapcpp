@@ -6,8 +6,9 @@
 
 set -e
 
+HOST=127.0.0.1
 COUNT=1000
-SNAPDB="../BUILD/snapwebsites/src/snapdb --host 127.0.0.1 --count $COUNT"
+SNAPDB="../BUILD/snapwebsites/src/snapdb --host $HOST --count $COUNT"
 
 tables=`$SNAPDB`
 
@@ -22,7 +23,7 @@ do
 	do
 		echo "-- Row: $r"
 
-		# in most cases problems with occur here
+		# in most cases problems will occur here
 		$SNAPDB $t $r || exit 1
 	done
 done

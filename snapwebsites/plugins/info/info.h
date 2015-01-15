@@ -37,17 +37,17 @@ char const *get_name(name_t name) __attribute__ ((const));
 class info_exception : public snap_exception
 {
 public:
-    info_exception(char const *what_msg) : snap_exception("Info: " + std::string(what_msg)) {}
+    info_exception(char const *       what_msg) : snap_exception("Info: " + std::string(what_msg)) {}
     info_exception(std::string const& what_msg) : snap_exception("Info: " + what_msg) {}
-    info_exception(QString const& what_msg) : snap_exception("Info: " + what_msg.toStdString()) {}
+    info_exception(QString const&     what_msg) : snap_exception("Info: " + what_msg.toStdString()) {}
 };
 
 class info_exception_invalid_path : public info_exception
 {
 public:
-    info_exception_invalid_path(char const *what_msg) : info_exception(what_msg) {}
+    info_exception_invalid_path(char const *       what_msg) : info_exception(what_msg) {}
     info_exception_invalid_path(std::string const& what_msg) : info_exception(what_msg) {}
-    info_exception_invalid_path(QString const& what_msg) : info_exception(what_msg) {}
+    info_exception_invalid_path(QString const&     what_msg) : info_exception(what_msg) {}
 };
 
 
@@ -73,8 +73,7 @@ public:
     void                    on_improve_signature(QString const& path, QString& signature);
 
 private:
-    void initial_update(int64_t variables_timestamp);
-    void content_update(int64_t variables_timestamp);
+    void                    content_update(int64_t variables_timestamp);
 
     zpsnap_child_t          f_snap;
 };

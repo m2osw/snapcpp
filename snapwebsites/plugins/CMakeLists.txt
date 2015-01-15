@@ -88,6 +88,8 @@ add_subdirectory(server_access)
 add_subdirectory(shorturl)
 add_subdirectory(sitemapxml)
 add_subdirectory(taxonomy)
+add_subdirectory(test_plugin_suite)
+add_subdirectory(test_plugin)
 add_subdirectory(users)
 add_subdirectory(versions)
 

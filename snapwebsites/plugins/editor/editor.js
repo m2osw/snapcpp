@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.262
+ * Version: 0.0.3.263
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -1267,7 +1267,11 @@ snapwebsites.EditorLinkDialog = function(editor_base)
     jQuery(html).appendTo("body");
     this.linkDialogPopup_ = jQuery("#snap_editor_link_dialog");
 
-    jQuery("#snap_editor_link_ok").click(this.close);
+    jQuery("#snap_editor_link_ok").click(function(e)
+        {
+            e.preventDefault();
+            this.close();
+        });
 
     return this;
 };
@@ -3202,21 +3206,29 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
     this.saveDialogPopup_.css("left", jQuery(window).outerWidth(true) - 190);
 
     jQuery("#snap_editor_publish")
-        .click(function(){
-            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_PUBLISH);
-        });
+        .click(function(e)
+            {
+                e.preventDefault();
+                that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_PUBLISH);
+            });
     jQuery("#snap_editor_save")
-        .click(function(){
-            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_SAVE);
-        });
+        .click(function(e)
+            {
+                e.preventDefault();
+                that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_SAVE);
+            });
     jQuery("#snap_editor_save_new_branch")
-        .click(function(){
-            alert("Save New Branch! (to be implemented)");
-        });
+        .click(function(e)
+            {
+                e.preventDefault();
+                alert("Save New Branch! (to be implemented)");
+            });
     jQuery("#snap_editor_save_draft")
-        .click(function(){
-            that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_SAVE_DRAFT);
-        });
+        .click(function(e)
+            {
+                e.preventDefault();
+                that.editorForm_.saveData(snapwebsites.EditorFormBase.SAVE_MODE_SAVE_DRAFT);
+            });
 
     // while creating a new page, the page is kept under "admin/drafts"
     // and in that case "save" and "save new branch" do not make sense
@@ -5316,8 +5328,10 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
     edit_button_popup = w.children(".editor-edit-button");
 
     // user has to click Edit to activate the editor
-    edit_button_popup.children(".activate-editor").click(function()
+    edit_button_popup.children(".activate-editor").click(function(e)
         {
+            e.preventDefault();
+
             // simulate a mouseleave so the edit button form gets hidden
             // then remove the hover events
             w.mouseleave().off("mouseenter mouseleave");

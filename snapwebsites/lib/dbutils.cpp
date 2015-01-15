@@ -198,6 +198,29 @@ QByteArray dbutils::string_to_key( const QString& str )
 }
 
 
+QString dbutils::microseconds_to_string ( int64_t const& time, bool const full )
+{
+    char buf[64];
+    struct tm t;
+    time_t const seconds(time / 1000000);
+    gmtime_r(&seconds, &t);
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+    if(full)
+    {
+        return QString("%1.%2 (%3)")
+                .arg(buf)
+                .arg(time % 1000000, 6, 10, QChar('0'))
+                .arg(time);
+    }
+    else
+    {
+        return QString("%1.%2")
+                .arg(buf)
+                .arg(time % 1000000, 6, 10, QChar('0'));
+    }
+}
+
+
 int dbutils::get_display_len() const
 {
     return f_displayLen;
@@ -249,13 +272,8 @@ QString dbutils::get_column_name( QCassandraCell::pointer_t c ) const
     else if((f_tableName == "list" && f_rowName != "*standalone*")
          || (f_tableName == "files" && f_rowName == "images"))
     {
-        uint64_t time(QtCassandra::uint64Value(key, 0));
-        char buf[64];
-        struct tm t;
-        time_t const seconds(time / 1000000);
-        gmtime_r(&seconds, &t);
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-        name = QString("%1.%2 (%3) %4").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
+        QString const time(microseconds_to_string(QtCassandra::uint64Value(key, 0), true));
+        name = QString("%1 %4").arg(time).arg(QtCassandra::stringValue(key, sizeof(uint64_t)));
     }
     else if(f_tableName == "branch" && (key.startsWith(content_attachment_reference.toAscii())) )
     {
@@ -362,6 +380,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::invoice_end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || (f_tableName == "test_results" && n == "test_plugin::end_date")
+         || (f_tableName == "test_results" && n == "test_plugin::start_date")
          )
     {
         // 64 bit value (microseconds)
@@ -431,6 +451,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "sessions::used_up"
          || (f_tableName == "files" && f_rowName == "new")
          || (f_tableName == "files" && f_rowName == "images")
+         || (f_tableName == "test_results" && n == "test_plugin::success")
          )
     {
         // unsigned 8 bit value
@@ -522,19 +543,14 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             case CT_time_microseconds:
             {
                 // 64 bit value (microseconds)
-                uint64_t time(c->value().uint64Value());
+                uint64_t const time(c->value().uint64Value());
                 if(time == 0)
                 {
                     v = "time not set (0)";
                 }
                 else
                 {
-                    char buf[64];
-                    struct tm t;
-                    time_t const seconds(time / 1000000);
-                    gmtime_r(&seconds, &t);
-                    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                    v = QString("%1.%2 (%3)").arg(buf).arg(time % 1000000, 6, 10, QChar('0')).arg(time);
+                    v = microseconds_to_string(time, true);
                 }
             }
             break;
@@ -542,16 +558,8 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             case CT_time_microseconds_and_string:
             {
                 QByteArray value(c->value().binaryValue());
-                uint64_t time(QtCassandra::uint64Value(value, 0));
-                char buf[64];
-                struct tm t;
-                time_t const seconds(time / 1000000);
-                gmtime_r(&seconds, &t);
-                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
-                v = QString("%1.%2 (%3) %4")
-                            .arg(buf)
-                            .arg(time % 1000000, 6, 10, QChar('0'))
-                            .arg(time)
+                v = QString("%1 %2")
+                            .arg(microseconds_to_string(QtCassandra::uint64Value(value, 0), true))
                             .arg(QtCassandra::stringValue(value, sizeof(uint64_t)));
             }
             break;

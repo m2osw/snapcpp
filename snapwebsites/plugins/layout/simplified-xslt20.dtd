@@ -249,7 +249,8 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT span ANY>
 <!ATTLIST span class CDATA #IMPLIED
-               id CDATA #IMPLIED>
+               id CDATA #IMPLIED
+               title CDATA #IMPLIED>
 
 <!ELEMENT strong ANY>
 <!ELEMENT style ANY>

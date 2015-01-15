@@ -3100,8 +3100,8 @@ snapwebsites.eCommerceCart.prototype.serverAccessTimerReady = function(request_n
 
     xml += "</cart>";
 
-    // TODO: I am adding a=view to the Query String in an unsafe manner
-    server_access.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href") + "?a=view", "casting href of the canonical link to a string in snapwebsites.eCommerceCart.serverAccessTimerReady()"));
+    // TODO: I am appending "...?a=view" to the Query String in an unsafe manner
+    server_access.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.eCommerceCart.serverAccessTimerReady()") + "?a=view");
     server_access.setData({ ecommerce__cart_products: xml });
 };
 

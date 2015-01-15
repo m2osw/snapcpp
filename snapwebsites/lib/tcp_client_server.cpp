@@ -787,24 +787,23 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
     case mode_t::MODE_ALWAYS_SECURE:
         {
             // Use TLS v1 only as all versions of SSL are flawed...
-            f_ssl_ctx = std::shared_ptr<SSL_CTX>(SSL_CTX_new(TLSv1_client_method()));
-            //f_ssl_ctx = std::shared_ptr<SSL_CTX>(SSL_CTX_new(SSLv23_client_method()));
-            if(f_ssl_ctx == nullptr)
+            std::shared_ptr<SSL_CTX> ssl_ctx(SSL_CTX_new(TLSv1_client_method()), ssl_ctx_deleter);
+            if(!ssl_ctx)
             {
                 ERR_print_errors_fp(stderr);
                 throw tcp_client_server_initialization_error("failed initializing an SSL_CTX object");
             }
 
             // load root certificates (correct path for Ubuntu?)
-            if(SSL_CTX_load_verify_locations(f_ssl_ctx.get(), NULL, "/etc/ssl/certs") != 1)
+            if(SSL_CTX_load_verify_locations(ssl_ctx.get(), NULL, "/etc/ssl/certs") != 1)
             {
                 ERR_print_errors_fp(stderr);
                 throw tcp_client_server_initialization_error("failed loading verification certificates in an SSL_CTX object");
             }
 
             // create a BIO connected to SSL ciphers
-            f_bio = std::shared_ptr<BIO>(BIO_new_ssl_connect(f_ssl_ctx.get()), bio_deleter);
-            if(!f_bio)
+            std::shared_ptr<BIO> bio(BIO_new_ssl_connect(f_ssl_ctx.get()), bio_deleter);
+            if(!bio)
             {
                 ERR_print_errors_fp(stderr);
                 throw tcp_client_server_initialization_error("failed initializing a BIO object");
@@ -814,7 +813,7 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
             SSL *ssl(nullptr);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-            BIO_get_ssl(f_bio.get(), &ssl);
+            BIO_get_ssl(bio.get(), &ssl);
 #pragma GCC diagnostic pop
             if(ssl == nullptr)
             {
@@ -832,20 +831,20 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-            BIO_set_conn_hostname(f_bio.get(), const_cast<char *>(addr.c_str()));
+            BIO_set_conn_hostname(bio.get(), const_cast<char *>(addr.c_str()));
 #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
-            BIO_set_conn_int_port(f_bio.get(), &port);
+            BIO_set_conn_int_port(bio.get(), &port);
 #pragma GCC diagnostic pop
 
             // connect to the server (open the socket)
-            if(BIO_do_connect(f_bio.get()) <= 0)
+            if(BIO_do_connect(bio.get()) <= 0)
             {
                 ERR_print_errors_fp(stderr);
                 throw tcp_client_server_initialization_error("failed connecting BIO object to server");
             }
 
             // encryption handshake
-            if(BIO_do_handshake(f_bio.get()) != 1)
+            if(BIO_do_handshake(bio.get()) != 1)
             {
                 ERR_print_errors_fp(stderr);
                 throw tcp_client_server_initialization_error("failed establishing a secure BIO connection with server");
@@ -865,6 +864,10 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
                 throw tcp_client_server_initialization_error("peer certificate could not be verified");
             }
 
+            // it worked, save the results
+            f_ssl_ctx = ssl_ctx;
+            f_bio = bio;
+
             // secure connection ready
         }
         break;
@@ -872,8 +875,8 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
     case mode_t::MODE_PLAIN:
         {
             // create a plain BIO connection
-            f_bio = std::shared_ptr<BIO>(BIO_new(BIO_s_connect()), bio_deleter);
-            if(!f_bio)
+            std::shared_ptr<BIO> bio(BIO_new(BIO_s_connect()), bio_deleter);
+            if(!bio)
             {
                 ERR_print_errors_fp(stderr);
                 throw tcp_client_server_initialization_error("failed initializing a BIO object");
@@ -881,17 +884,20 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-            BIO_set_conn_hostname(f_bio.get(), const_cast<char *>(addr.c_str()));
+            BIO_set_conn_hostname(bio.get(), const_cast<char *>(addr.c_str()));
 #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
-            BIO_set_conn_int_port(f_bio.get(), &port);
+            BIO_set_conn_int_port(bio.get(), &port);
 #pragma GCC diagnostic pop
 
             // connect to the server (open the socket)
-            if(BIO_do_connect(f_bio.get()) <= 0)
+            if(BIO_do_connect(bio.get()) <= 0)
             {
                 ERR_print_errors_fp(stderr);
                 throw tcp_client_server_initialization_error("failed connecting BIO object to server");
             }
+
+            // it worked, save the results
+            f_bio = bio;
 
             // plain connection ready
         }

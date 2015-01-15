@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="menu::admin" to="menu::admin" mode="1:*">/types/taxonomy/system/menu/item/admin</link>
   </content>
-  <content path="/types/permissions/rights/administer/website/info">
+  <content path="/types/permissions/rights/administer/website/info" owner="permissions">
     <param name="content::title" revision="revision">Administer Basic Website Information Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Administer basic information on the website.</p><p>This right gives the user access to all basic information available on the website.</p>]]>

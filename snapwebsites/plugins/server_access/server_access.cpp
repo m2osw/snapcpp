@@ -31,6 +31,33 @@
 SNAP_PLUGIN_START(server_access, 1, 0)
 
 
+/* \brief Get a fixed server_access name.
+ *
+ * The server_access plugin makes use of different names in the database.
+ * This function ensures that you get the right spelling for a given name.
+ *
+ * \param[in] name  The name to retrieve.
+ *
+ * \return A pointer to the name.
+ */
+char const *get_name(name_t name)
+{
+    // Note: <branch>.<revision> are actually replaced by a full version
+    //       when dealing with JavaScript and CSS files (Version: field)
+    switch(name)
+    {
+    case SNAP_NAME_SERVER_ACCESS_AJAX_FIELD:
+        return "_ajax";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid SNAP_NAME_PATH_...");
+
+    }
+    NOTREACHED();
+}
+
+
 
 /** \brief Initialize the server_access plugin.
  *
@@ -68,6 +95,8 @@ void server_access::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(server_access, "server", server, output_result, _1, _2);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(server_access);
 }
 
 
@@ -149,7 +178,7 @@ void server_access::content_update(int64_t variables_timestamp)
  */
 bool server_access::is_ajax_request() const
 {
-    return f_snap->postenv_exists("ajax");
+    return f_snap->postenv_exists(get_name(SNAP_NAME_SERVER_ACCESS_AJAX_FIELD));
 }
 
 

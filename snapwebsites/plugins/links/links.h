@@ -18,6 +18,8 @@
 
 #include "snapwebsites.h"
 
+#include "../test_plugin_suite/test_plugin_suite.h"
+
 
 namespace snap
 {
@@ -261,9 +263,15 @@ public:
 
     QSharedPointer<link_context> new_link_context(link_info const& info, int const count = DELETE_RECORD_COUNT);
 
+    // links test suite
+    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
+
 private:
     void                initial_update(int64_t variables_timestamp);
     void                init_tables();
+
+    // tests
+    SNAP_TEST_PLUGIN_TEST_DECL(test_unique_unique_create_delete)
 
     zpsnap_child_t                                  f_snap;
     QtCassandra::QCassandraTable::pointer_t         f_links_table;

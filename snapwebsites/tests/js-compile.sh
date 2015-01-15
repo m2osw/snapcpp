@@ -23,7 +23,8 @@ FILES="plugins/ecommerce/ecommerce.js
        plugins/output/output.js
        plugins/output/popup.js
        plugins/output/rotate-animation.js
-       plugins/server_access/server-access.js"
+       plugins/server_access/server-access.js
+       plugins/test_plugin/test-plugin.js"
 
 CLOSURE_COMPILER=/home/snapwebsites/tmp/google-js-compiler/closure-compiler
 
