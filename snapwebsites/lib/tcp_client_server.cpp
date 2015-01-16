@@ -802,7 +802,7 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
             }
 
             // create a BIO connected to SSL ciphers
-            std::shared_ptr<BIO> bio(BIO_new_ssl_connect(f_ssl_ctx.get()), bio_deleter);
+            std::shared_ptr<BIO> bio(BIO_new_ssl_connect(ssl_ctx.get()), bio_deleter);
             if(!bio)
             {
                 ERR_print_errors_fp(stderr);
