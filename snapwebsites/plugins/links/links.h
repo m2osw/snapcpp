@@ -272,6 +272,7 @@ private:
 
     // tests
     SNAP_TEST_PLUGIN_TEST_DECL(test_unique_unique_create_delete)
+    SNAP_TEST_PLUGIN_TEST_DECL(test_multiple_multiple_create_delete)
 
     zpsnap_child_t                                  f_snap;
     QtCassandra::QCassandraTable::pointer_t         f_links_table;

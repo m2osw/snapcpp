@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-tree>
-  <content path="/admin/settings/test-plugin" owner="output">
+  <content path="/admin/test-plugin" owner="output">
     <param name="content::title" revision="revision">Test Plugin Basic Settings</param>
     <param name="content::body" revision="revision"><![CDATA[
       <p>You are running Snap! v[version] (test_plugin v[test_plugin::version])</p>
@@ -42,7 +42,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/test-plugin</link>
     <link name="menu::admin" to="menu::admin" mode="1:*">/types/taxonomy/system/menu/item/admin</link>
   </content>
-  <content path="/admin/settings/test-plugin/run">
+  <content path="/admin/test-plugin/run">
     <param name="content::title" revision="revision">Run a Test</param>
     <param name="content::body" revision="revision">This page is a placeholder so the JavaScript implementation can send us signal to run various tests.</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/private</link>

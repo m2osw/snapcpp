@@ -38,9 +38,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					| Last run on <span title="It run until {@end_date}"><xsl:value-of select="@start_date"/></span>
 					for <xsl:value-of select="@duration"/> seconds
 					and
-					<xsl:if test="@success = 1">succeeded</xsl:if>
-					<xsl:if test="@success != 1">failed</xsl:if>
-					.
+					<xsl:if test="@success = 1">succeeded.</xsl:if>
+					<xsl:if test="@success != 1">failed.</xsl:if>
 				</xsl:if>
 			</span>
 		</div>

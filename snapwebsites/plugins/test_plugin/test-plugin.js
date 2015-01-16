@@ -1,6 +1,6 @@
 /** @preserve
  * Name: test-plugin
- * Version: 0.0.1.17
+ * Version: 0.0.1.23
  * Browsers: all
  * Depends: popup (>= 0.1.0.1), server-access (>= 0.0.1.20)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -411,8 +411,14 @@ snapwebsites.TestPluginTest.prototype.isInGroup = function(group)
  */
 snapwebsites.TestPluginTest.prototype.setupServerAccess = function(server)
 {
-    server.setURI("/admin/settings/test-plugin/run");
+    server.setURI("/admin/test-plugin/run");
     server.setData({test_plugin__test_name: this.getName()});
+
+    this.test_.removeClass("ran")
+              .removeClass("failed")
+              .removeClass("succeeded")
+              .removeClass("never-ran")
+              .addClass("working");
 };
 
 
@@ -439,6 +445,7 @@ snapwebsites.TestPluginTest.prototype.ran = function(xml_data)
     this.test_.removeClass("never-ran")
               .removeClass("failed")
               .removeClass("suceeded")
+              .removeClass("working")
               .addClass("ran")
               .addClass(result == 0 ? "failed" : "succeeded");
 

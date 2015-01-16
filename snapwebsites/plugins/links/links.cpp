@@ -993,7 +993,6 @@ std::cerr << "***\n*** delete_link() called!\n***\n";
     if(!f_branch_table->exists(info.row_key()))
     {
         // probably not an error if the row does not even exist...
-std::cerr << "***\n*** can't find [" << info.row_key() << "]!\n***\n";
         return;
     }
 
@@ -1008,7 +1007,6 @@ std::cerr << "***\n*** can't find [" << info.row_key() << "]!\n***\n";
     QString const unique_link_name(info.cell_name());
     if(src_row->exists(unique_link_name))
     {
-std::cerr << "***\n*** believed unique? [" << unique_link_name << "]!\n***\n";
         // we are here, this means it was a "1,1" or "1,*" link
         QtCassandra::QCassandraValue link(src_row->cell(unique_link_name)->value());
 
@@ -1105,8 +1103,6 @@ std::cerr << "***\n*** believed unique? [" << unique_link_name << "]!\n***\n";
         //column_predicate.setEndColumnName(QString("%1;").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
         column_predicate.setCount(delete_record_count);
         column_predicate.setIndex(); // behave like an index
-std::cerr << "*** Trying to delete using column predicate [" << get_name(SNAP_NAME_LINKS_NAMESPACE) 
-<< "::...] with row [" << info.link_key() << "]\n";
         for(;;)
         {
             // we MUST clear the cache in case we read the same list of links twice
@@ -1153,7 +1149,7 @@ std::cerr << "*** Trying to delete using column predicate [" << get_name(SNAP_NA
                     else
                     {
                         QtCassandra::QCassandraRow::pointer_t dst_row(f_links_table->row(destination_info.link_key()));
-                        if(dst_row->exists(destination_info.key())) // should always be true
+                        if(dst_row->exists(info.key())) // should always be true
                         {
                             QString const dst_key(dst_row->cell(info.key())->value().stringValue());
                             dst_row->dropCell(info.key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
@@ -1161,83 +1157,8 @@ std::cerr << "*** Trying to delete using column predicate [" << get_name(SNAP_NA
                         }
                     }
                 }
-
-#if 0
-                //QString const destination_name(cell_iterator.value()->value().stringValue());
-                //int const hash_pos(destination_name.indexOf('#'));
-                //// also ignore the "links::" namespace part
-                //QString const cell_fullname(destination_name.mid(strlen(get_name(SNAP_NAME_LINKS_NAMESPACE)) + 2, hash_pos));
-                //int const dash_pos(cell_fullname.indexOf('-'));
-                //QString const cell_name(cell_fullname.mid(0, dash_pos));
-                //QString const cell_unique_number(cell_fullname.mid(dash_pos + 1));
-                //QString const cell_branch_str(destination_name.mid(hash_pos + 1));
-                //bool ok(false);
-                //int64_t const cell_branch(cell_branch_str.toLongLong(&ok, 10));
-                //if(!ok)
-                //{
-                //    // probably not an error if a link does not exist at all...
-                //    SNAP_LOG_ERROR("links::delete_link() could not parse the branch number \"")
-                //                (cell_branch_str)("\" as a valid number from name \"")
-                //                (destination_name)("\"");
-                //}
-
-                //link_info cell_info;
-                //cell_info.set_key(key);
-                //cell_info.set_name(cell_name);
-                //cell_info.set_branch(cell_branch);
-
-std::cerr << "***\n*** cell is [" << key << "]!\n***\n";
-                if(!f_branch_table->exists(key))
-                {
-                    // probably not an error if a link does not exist at all...
-                    SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                                (cell_info.row_key())("\" with name \"")
-                                (cell_name)("\" (destination row missing in \"branch\" table.)");
-                }
-                else
-                {
-                    QtCassandra::QCassandraRow::pointer_t dst_row(f_branch_table->row(cell_info.row_key()));
-                    if(dst_row->exists(destination_name))
-                    {
-                        // here we have a "*:1"
-                        dst_row->dropCell(destination_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-                    }
-                    else
-                    {
-                        // here we have a "*:*"
-                        QString const link_key(cell_info.link_key());
-                        if(!f_links_table->exists(link_key))
-                        {
-                            SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                                        (cell_info.row_key())("\" (destination row missing in \"links\" table).");
-                        }
-                        else
-                        {
-                            QtCassandra::QCassandraRow::pointer_t link_row(f_links_table->row(link_key));
-                            // here we have a "*:*" although note that we want to
-                            // only delete one link in this destination
-                            if(!link_row->exists(cell_name))
-                            {
-                                // the destination does not exist anywhere!?
-                                // (this could happen in case the server crashes or something
-                                // of the sort...)
-                                SNAP_LOG_WARNING("links::delete_link() could not find the destination link for \"")
-                                            (key)("\" with cell named \"")
-                                            (dest_cell_unique_name)("\" (cell missing in \"links\" table).");
-                            }
-                            else
-                            {
-                                // we can drop that link now
-                                link_row->dropCell(dest_cell_unique_name, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-                            }
-                        }
-                    }
-                }
-#endif
-
             }
         }
-std::cerr << "*** exit loop\n";
 
         // NOTE: I'm wary of this simplification at this time; I think it
         //       works, but it is easier to understand the code if we

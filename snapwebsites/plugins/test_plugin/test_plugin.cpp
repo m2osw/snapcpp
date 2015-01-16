@@ -178,7 +178,7 @@ int64_t test_plugin::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 1, 15, 2, 47, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 15, 21, 21, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
