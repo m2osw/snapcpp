@@ -91,7 +91,9 @@ void snap_manager_initialize_website::send_request()
     // send info to the console too
     QListWidget *console = getChild<QListWidget>(parentWidget(), "snapServerConsole");
     console->clear();
-    console->addItem("snap::server version: " + QString(snap::server::version()));
+    QString const version("snap::server version: " + QString(snap::server::version()));
+    console->addItem(version);
+    add_status(version, true);
 
     // get snap server host/port from the parent window
     QString snap_host(f_snap_server_host->text());
@@ -99,7 +101,9 @@ void snap_manager_initialize_website::send_request()
     {
         snap_host = "localhost";
     }
-    console->addItem("Snap Server Host: " + snap_host);
+    QString const server_host("Snap Server Host: " + snap_host);
+    console->addItem(server_host);
+    add_status(server_host);
 
     int snap_port(4004);
     if(!f_snap_server_port->text().isEmpty())
@@ -109,6 +113,7 @@ void snap_manager_initialize_website::send_request()
         if(!ok)
         {
             console->addItem("Invalid Port.");
+            add_status("Invalid Port.");
             QMessageBox msg(QMessageBox::Critical, "Invalid Port", "The Port is not a valid integer. Please close this window and fix the port to connect to the Snap! server.", QMessageBox::Ok, this);
             msg.exec();
             return;
@@ -116,27 +121,34 @@ void snap_manager_initialize_website::send_request()
         if(snap_port < 1 | snap_port > 65535)
         {
             console->addItem("Invalid Port (out of range).");
+            add_status("Invalid Port (out of range).");
             QMessageBox msg(QMessageBox::Critical, "Invalid Port", "The Port is out of range. Please close this window and fix the port to connect to the Snap! server.", QMessageBox::Ok, this);
             msg.exec();
             return;
         }
     }
-    console->addItem("Snap Server Port: " + QString::number(snap_port));
+    QString const server_port("Snap Server Port: " + QString::number(snap_port));
+    console->addItem(server_port);
+    add_status(server_port);
 
     // get URI and port for query
     QString const url(f_website_url->text());
     if(url.isEmpty())
     {
         console->addItem("Missing URI.");
+        add_status("Missing URI.");
         QMessageBox msg(QMessageBox::Critical, "Missing URI", "The URI is missing. Please enter a URI first and try again.", QMessageBox::Ok, this);
         msg.exec();
         return;
     }
-    console->addItem("Website URI: " + url);
+    QString const website_uri("Website URI: " + url);
+    console->addItem(website_uri);
+    add_status(website_uri);
 
     if(f_port->text().isEmpty())
     {
         console->addItem("Missing Port.");
+        add_status("Missing Port.");
         QMessageBox msg(QMessageBox::Critical, "Missing Port", "The Port is missing. Please enter a Port first and try again.", QMessageBox::Ok, this);
         msg.exec();
         return;
@@ -146,6 +158,7 @@ void snap_manager_initialize_website::send_request()
     if(!ok)
     {
         console->addItem("Invalid Port.");
+        add_status("Invalid Port.");
         QMessageBox msg(QMessageBox::Critical, "Invalid Port", "The Port is not a valid integer. Please enter a valid Port number and try again.", QMessageBox::Ok, this);
         msg.exec();
         return;
@@ -153,11 +166,14 @@ void snap_manager_initialize_website::send_request()
     if(site_port < 1 | site_port > 65535)
     {
         console->addItem("Invalid Port (out of range).");
+        add_status("Invalid Port (out of range).");
         QMessageBox msg(QMessageBox::Critical, "Invalid Port", "The Port is out of range. Please enter a valid Port number and try again.", QMessageBox::Ok, this);
         msg.exec();
         return;
     }
-    console->addItem("Apache Port: " + QString::number(site_port));
+    QString const apache_port("Apache Port: " + QString::number(site_port));
+    console->addItem(apache_port);
+    add_status(apache_port);
 
     // now send the request to the server
     f_initialize_website.reset(new snap::snap_initialize_website(snap_host, snap_port, url, site_port));
@@ -169,12 +185,14 @@ void snap_manager_initialize_website::send_request()
         f_initialize_website.reset();
 
         console->addItem("Failed starting initialization process.");
+        add_status("Failed starting initialization process.");
         QMessageBox msg(QMessageBox::Critical, "Failure", "Somehow the initialization process did not start.", QMessageBox::Ok, this);
         msg.exec();
         return;
     }
 
-    add_status("Processing Request...", true);
+    console->addItem("Processing Request...");
+    add_status("Processing Request...");
 
     // disable the interface until the thread is done
     f_timer_id = startTimer(100); // 0.1 second interval
