@@ -1368,7 +1368,7 @@ bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, st
 
     // save that info in case of failure we may have a chance to check
     // what went wrong
-    signed char debug_flag(debug ? 1 : 0);
+    signed char const debug_flag(debug ? 1 : 0);
     secret_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_DEBUG))->setValue(debug_flag);
     secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
     secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_DATA))->setValue(QString::fromUtf8(response->get_response().c_str()));

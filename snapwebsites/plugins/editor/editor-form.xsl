@@ -332,6 +332,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <!-- use the current value when there is one -->
           <xsl:copy-of select="value/node()"/>
         </xsl:when>
+        <xsl:otherwise>0</xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
     <widget path="{@path}">
