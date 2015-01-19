@@ -1929,7 +1929,7 @@ void users::process_login_form(login_mode_t login_mode)
         {
             QString const site_key(f_snap->get_site_key_with_slash());
 
-//printf("Current status is [%s] / [%s]\n", status_info.key().toUtf8().data(), (site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH)).toUtf8().data());
+//std::cerr << "***\n*** Current user status on log in is [" << status_info.key() << "] / [" << (site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH)) << "]\n***\n";
             // the status link exists...
             // this means the user is either a new user (not yet verified)
             // or he is blocked

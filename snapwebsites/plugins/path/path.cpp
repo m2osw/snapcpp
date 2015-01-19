@@ -223,7 +223,7 @@ void dynamic_plugin_t::set_plugin(plugins::plugin *p)
  * \li jquery-1.2.3.min.js
  * \li jquery-1.2.3.min.js.gz
  *
- * File types of filenames that we support in the core:
+ * File types of filenames that we support in core:
  *
  * \li Compressions: .gz, .bz2, .xz, ...
  * \li Minified: .min.js, .min.css

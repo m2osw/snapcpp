@@ -5741,9 +5741,9 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
             QString const site_key(get_site_key());
             if(f_cassandra)
             {
-                // TODO: the description could also come from a user defined page
-                //       so that way it can get translated (only for some
-                //       4XX errors though)
+                // TODO: the description could also come from a user defined
+                //       page so that way it can get a translated message
+                //       (only for some 4XX errors though)
 
                 QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
                 signature = QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue());
