@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.271
+ * Version: 0.0.3.281
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -4367,11 +4367,12 @@ snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
  * private:
  *      function attachToForms_();
  *      function initUnload_();
- *      function unload_() : string;
+ *      function beforeUnload_() : String;
+ *      function unloadCanceled_();
  *
  *      toolbar_: EditorToolbar;
- *      editorSession_: Array; // of strings
- *      editorForm_: Object; // map of editor forms
+ *      editorForms_: Object;
+ *      editorFormsByName_: Object;
  *      unloadCalled_: boolean;
  *      linkDialog_: EditorLinkDialog;
  * };
@@ -4428,23 +4429,23 @@ snapwebsites.Editor.prototype.toolbar_ = null;
 /** \brief List of EditorForm objects.
  *
  * This variable member holds the map of EditorForm objects indexed by
- * their name.
- *
- * @type {Object.<snapwebsites.EditorForm>}
- * @private
- */
-snapwebsites.Editor.prototype.editorFormsByName_; // = {} -- initialized in the constructor to avoid problems
-
-
-/** \brief List of EditorForm objects.
- *
- * This variable member holds the map of EditorForm objects indexed by
  * their sessions number (although those numbers are managed as strings).
  *
  * @type {Object.<snapwebsites.EditorForm>}
  * @private
  */
 snapwebsites.Editor.prototype.editorForms_; // = {}; -- initialized in the constructor to avoid problems
+
+
+/** \brief List of EditorForm objects.
+ *
+ * This variable member holds the map of EditorForm objects indexed by
+ * their name.
+ *
+ * @type {Object.<snapwebsites.EditorForm>}
+ * @private
+ */
+snapwebsites.Editor.prototype.editorFormsByName_; // = {} -- initialized in the constructor to avoid problems
 
 
 /** \brief Whether unload is being processed.
@@ -4528,14 +4529,15 @@ snapwebsites.Editor.prototype.getFormByName = function(form_name)
 snapwebsites.Editor.prototype.initUnload_ = function()
 {
     var that = this;
-    jQuery(window).bind("beforeunload", function()
+    jQuery(window)
+        .bind("beforeunload", function()
         {
-            return that.unload_();
+            return that.beforeUnload_();
         });
 };
 
 
-/** \brief Handle the unload event.
+/** \brief Handle the beforeunload event.
  *
  * This function is called whenever the user is about to close their
  * browser window or tab. The function checks whether anything needs
@@ -4547,7 +4549,7 @@ snapwebsites.Editor.prototype.initUnload_ = function()
  *
  * @private
  */
-snapwebsites.Editor.prototype.unload_ = function()
+snapwebsites.Editor.prototype.beforeUnload_ = function()
 {
     var key,                // loop index
         that = this;        // this pointer in the closure function
@@ -4568,7 +4570,7 @@ snapwebsites.Editor.prototype.unload_ = function()
                     // we create a function in a for() loop because
                     // right after that statement we return
                     setTimeout(function(){
-                            that.unloadCalled_ = false;
+                            that.unloadCanceled_();
                         }, 20);
 
                     // TODO: translation
@@ -4581,6 +4583,51 @@ snapwebsites.Editor.prototype.unload_ = function()
     }
 
     return;
+};
+
+
+/** \brief The unload event was aborted.
+ *
+ * This function is called whenever the confirm dialog of a closing
+ * window is closed.
+ *
+ * AFter one second, the function triggers an event called
+ * unload_maybe_canceled on all the editor form widgets. Something
+ * like the following can be used to catch the event:
+ *
+ * \code
+ *      editor = snapwebsites.EditorInstance;
+ *      selector = editor.getFormByName("my_form");
+ *      selector.getFormWidget()
+ *          .bind("unload_maybe_canceled", function(e)
+ *              {
+ *                  ...
+ *              });
+ * \endcode
+ *
+ * The event says "maybe" become in many cases the event will be triggered
+ * even if the window is about to be unloaded. There is, unfortunately,
+ * no good way, other than waiting \em enough time to know whether the
+ * window is going to be closed or not. It is still quite useful to know
+ * that the confirmation popup was closed in case you darken the screen
+ * because you still will want to undarken the screen, just in case.
+ *
+ * \warning
+ * Note that this function triggers the event on all the editor forms.
+ *
+ * @private
+ */
+snapwebsites.Editor.prototype.unloadCanceled_ = function()
+{
+    this.unloadCalled_ = false;
+
+    setTimeout(function()
+        {
+            var e = jQuery.Event("unload_maybe_canceled", {});
+
+            jQuery(".editor-form").trigger(e);
+        },
+        1000);
 };
 
 

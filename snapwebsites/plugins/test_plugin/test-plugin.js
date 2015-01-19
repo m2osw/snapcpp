@@ -431,11 +431,11 @@ snapwebsites.TestPluginTest.prototype.setupServerAccess = function(server)
  * status in the DOM by create the corresponding HTML depending
  * on what happened.
  *
- * @param {xml} xml_data  The XML data returned by the server.
+ * @param {jQuery} xml_data  The XML data returned by the server.
  */
 snapwebsites.TestPluginTest.prototype.ran = function(xml_data)
 {
-    var result = parseInt(xml_data.find("data[name='test_plugin__result']").text()),
+    var result = parseInt(xml_data.find("data[name='test_plugin__result']").text(), 10),
         start_date = xml_data.find("data[name='test_plugin__start_date']").text(),
         end_date = xml_data.find("data[name='test_plugin__end_date']").text(),
         duration = xml_data.find("data[name='test_plugin__duration']").text(),
