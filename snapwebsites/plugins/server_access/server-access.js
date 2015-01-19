@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.20
+ * Version: 0.0.1.23
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -576,8 +576,14 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
  */
 snapwebsites.ServerAccess.prototype.onError_ = function(result)
 {
-    result.error_message = "An error occured while posting AJAX (status: "
-                    + result.result_status + " / error: " + result.ajax_error_message + ")";
+    result.error_message =
+                      "Error "
+                    + result.jqxhr.status
+                    + " occured while posting AJAX (status: "
+                    + result.result_status
+                    + (result.result_status == "error" ? ": " : " / error: ")
+                    + result.ajax_error_message
+                    + ")";
     this.callback_.serverAccessError(result);
 };
 

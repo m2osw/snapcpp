@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.263
+ * Version: 0.0.3.271
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -3871,8 +3871,15 @@ snapwebsites.EditorForm.prototype.serverAccessComplete = function(result) // vir
 
     if(!result.will_redirect && result.messages && result.messages.length > 0)
     {
+        // "clean" programmer error
         this.setSaving(false, false);
         snapwebsites.OutputInstance.displayMessages(result.messages);
+    }
+    else if(result.error_message)
+    {
+        // connection failed, a die(), or a crash of the server
+        this.setSaving(false, false);
+        snapwebsites.OutputInstance.displayOneMessage("Error", result.error_message);
     }
     else
     {
