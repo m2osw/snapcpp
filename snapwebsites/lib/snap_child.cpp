@@ -5721,14 +5721,18 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
         {
             // On error we do not return the HTTP protocol, only the Status field
             // it just needs to be first to make sure it works right
-            set_header("Status", QString("%1 %2\n")
-                    .arg(static_cast<int>(err_code))
-                    .arg(err_name));
+            set_header("Status",
+                       QString("%1 %2\n")
+                            .arg(static_cast<int>(err_code))
+                            .arg(err_name),
+                       HEADER_MODE_ERROR);
 
             // content type is HTML, we reset this header because it could have
             // been changed to something else and prevent the error from showing
             // up in the browser
-            set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
+            set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+                       "text/html; charset=utf8",
+                       HEADER_MODE_EVERYWHERE);
 
             // Generate the signature
             server::pointer_t server( f_server.lock() );
@@ -6034,17 +6038,19 @@ void snap_child::set_header(QString const& name, QString const& value, header_mo
             }
             if(lc == L'\n' && wc == L'\n')
             {
-                // don't double '\n' (happens when user sends us "\r\n")
+                // do not double '\n' (happens when user sends us "\r\n")
                 continue;
             }
             v += QChar(wc);
             lc = wc;
         }
+        // remove ending spaces which would otherwise cause problems in
+        // the HTTP header
         while(!v.isEmpty())
         {
             QChar c(v.right(1)[0]);
             // we skip the '\r' because those were removed anyway
-            if(c != ' ' || c != '\t' /*|| c != '\r'*/ || c != '\n')
+            if(c != ' ' && c != '\t' /*&& c != '\r'*/ && c != '\n')
             {
                 break;
             }
@@ -6926,7 +6932,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
         }
         else
         {
-            // This 406 is in the spec. (RFC2616) but frankly?!
+            // Code 406 is in the spec. (RFC2616) but frankly?!
             float const identity_level(encodings.get_level("identity"));
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"

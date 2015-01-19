@@ -196,21 +196,29 @@ bool server_access::is_ajax_request() const
 void server_access::on_output_result(QString const& uri_path, QByteArray& result)
 {
     // AJAX request?
-    if(!is_ajax_request()
-    || f_ajax_initialized)  // already an AJAX response
+    if(!is_ajax_request()  // already an AJAX response
+    || f_ajax_output)
     {
         return;
     }
 
     // remove the Location header if present!
-    f_snap->set_header("Location", "", snap_child::HEADER_MODE_REDIRECT);
+    f_snap->set_header(snap::get_name(SNAP_NAME_CORE_LOCATION_HEADER), "", snap_child::HEADER_MODE_EVERYWHERE);
 
     // This is viewed as an AJAX request... transform the response here
     content::path_info_t ipath;
     ipath.set_path(uri_path);
 
     // if we arrive here, we suppose that the AJAX answer is a failure
-    create_ajax_result(ipath, false);
+    if(!f_ajax_initialized)
+    {
+        create_ajax_result(ipath, false);
+    }
+    else
+    {
+        // make sure it shows up as a failure
+        ajax_failure();
+    }
     ajax_append_data("default-response", result);
     ajax_output();
     result = f_snap->get_output();
@@ -282,10 +290,11 @@ void server_access::create_ajax_result(content::path_info_t& ipath, bool success
  */
 void server_access::ajax_output()
 {
-    if(!f_ajax_initialized)
+    if(!f_ajax_initialized || f_ajax_output)
     {
-        throw snap_logic_exception("ajax_output() called before create_ajax_result()");
+        throw snap_logic_exception("ajax_output() called before create_ajax_result() or called a second time");
     }
+    f_ajax_output = true;
 
     QDomElement snap_tag(f_ajax.documentElement());
 
@@ -367,15 +376,19 @@ void server_access::ajax_output()
         if(errcnt != 0)
         {
             // on errors generate a warning in the header
-            f_snap->set_header(messages::get_name(messages::SNAP_NAME_MESSAGES_WARNING_HEADER),
+            f_snap->set_header(
+                    messages::get_name(messages::SNAP_NAME_MESSAGES_WARNING_HEADER),
                     QString("This page generated %1 error%2")
                             .arg(errcnt)
-                            .arg(errcnt == 1 ? "" : "s"));
+                            .arg(errcnt == 1 ? "" : "s"),
+                    snap_child::HEADER_MODE_EVERYWHERE);
         }
     }
 
     // the type in this case is XML
-    f_snap->set_header(snap::get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/xml; charset=utf-8");
+    f_snap->set_header(snap::get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+                       "text/xml; charset=utf-8",
+                       snap_child::HEADER_MODE_EVERYWHERE);
 
     f_snap->output(f_ajax.toString(-1));
 }
@@ -416,6 +429,20 @@ void server_access::ajax_failure()
         {
             snap_tag.removeChild(redirect_tag);
         }
+
+        // in case the result was already defined, make sure to mark it as false
+        QDomText text(f_ajax.createTextNode(f_success ? "success" : "failure"));
+        QDomElement result(snap_dom::get_child_element(snap_tag, "result"));
+        if(result.isNull())
+        {
+            result = f_ajax.createElement("result");
+            snap_tag.appendChild(result);
+        }
+        else
+        {
+            snap_dom::remove_all_children(result);
+        }
+        result.appendChild(text);
     }
 }
 

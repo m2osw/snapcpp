@@ -93,6 +93,7 @@ private:
     zpsnap_child_t              f_snap;
     QDomDocument                f_ajax;
     controlled_vars::fbool_t    f_ajax_initialized;
+    controlled_vars::fbool_t    f_ajax_output;
     controlled_vars::fbool_t    f_success;
     QString                     f_ajax_redirect;
     QString                     f_ajax_target;

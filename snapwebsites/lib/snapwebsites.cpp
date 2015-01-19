@@ -153,6 +153,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CORE_LAST_UPDATED:
         return "core::last_updated";
 
+    case SNAP_NAME_CORE_LOCATION_HEADER:
+        return "Location";
+
     case SNAP_NAME_CORE_ORIGINAL_RULES:
         return "core::original_rules";
 
@@ -1899,13 +1902,9 @@ bool server::load_file_impl(snap_child::post_file_t& file, bool& found)
 /** \fn void server::output_result(QString const& uri_path, QByteArray& result)
  * \brief Implementation of the output_result signal.
  *
- * This function readies the output_result signal.
- *
- * At this time, it does nothing.
- *
- * This signal offers the result buffer to all the plugins to look at.
- * Since the buffer is passed as a reference, a plugin can modify it
- * as required although it is not generally expected to happen.
+ * The output_result() signal offers the result buffer to all the plugins
+ * to look at. Since the buffer is passed as a reference, a plugin can
+ * modify it as required although it is not generally expected to happen.
  *
  * It may also be used to process the result and exit if a plugin thinks
  * that the default processing is not going to be capable of handling
