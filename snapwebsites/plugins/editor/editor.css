@@ -1,6 +1,6 @@
 /*
  * Name: editor
- * Version: 0.0.1.21
+ * Version: 0.0.1.24
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -412,6 +412,33 @@
 	position: fixed;
 }
 
+.editable.dropdown .dropdown-items li.active,
+.top-window.dropdown-items li.active
+{
+	background-color: #eeffcc;
+	cursor: pointer;
+	border: 1px dashed #ccff88;
+}
+.editable.dropdown .dropdown-items li.active:hover,
+.top-window.dropdown-items li.active:hover
+{
+	background-color: #ccffee;
+}
+
+.editable.dropdown .dropdown-items li.disabled,
+.top-window.dropdown-items li.disabled
+{
+	color: #777777;
+	background-color: #eeeeee;
+	cursor: default;
+	border: none;
+}
+
+.editable.dropdown .dropdown-items li.hidden,
+.top-window.dropdown-items li.hidden
+{
+	display: none;
+}
 
 /** CHECKMARK **/
 .editable.checkmark

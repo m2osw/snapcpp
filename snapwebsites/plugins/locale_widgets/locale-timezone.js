@@ -1,6 +1,6 @@
 /** @preserve
  * Name: locale-timezone
- * Version: 0.0.1.20
+ * Version: 0.0.1.23
  * Browsers: all
  * Depends: editor (>= 0.0.3.245)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -192,8 +192,8 @@ snapwebsites.EditorWidgetTypeLocaleTimezone.prototype.selectCities_ = function(e
     if(continent_name)
     {
         city_widget.enable();
-        city.find("li").hide();
-        city.find("li." + continent_name).show();
+        city.find("li").addClass("hidden");
+        city.find("li." + continent_name).removeClass("hidden");
         selected = city.find("li.selected");
         if(!selected.exists() || !selected.hasClass(continent_name))
         {

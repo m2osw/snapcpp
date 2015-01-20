@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.281
+ * Version: 0.0.3.309
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -5766,61 +5766,18 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
     // we just closed.)
     w.click(function(e)
         {
-            var that_element = jQuery(this),
-                visible,
-                z,
-                pos,
-                iframe_pos;
+            var visible = w.is(".disabled") || d.is(":visible");
 
             // avoid default browser behavior
             e.preventDefault();
             e.stopPropagation();
-
-            visible = that_element.is(".disabled") || d.is(":visible");
 
             // hide the dropdown AFTER we checked its visibility
             that.hideDropdown();
 
             if(!visible)
             {
-                // test with 'window.' so it works in IE
-                if(window.self != window.top)
-                {
-                    that.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered' style='position: absolute;'>" + d.html() + "</div>").appendTo("body");
-                    pos = c.offset();
-                    iframe_pos = window.top.jQuery("#create-finball.snap-popup .popup-body iframe").offset();
-                    pos.left += iframe_pos.left;
-                    pos.top += iframe_pos.top + w.height();
-                    that.openDropdown_.offset(pos);
-                    that.clonedDropdown_ = true;
-
-                    that.openDropdown_
-                        .children(".dropdown-selection")
-                        .children(".dropdown-item")
-                        .click(function(e)
-                            {
-                                that.itemClicked(e, editor_widget);
-                            });
-
-                    // setup z-index
-                    // (reset itself first so we do not just +1 each time)
-                    that.openDropdown_.css("z-index", 0);
-                    z = window.top.jQuery("div.zordered").maxZIndex() + 1;
-                    that.openDropdown_.css("z-index", z);
-                }
-                else
-                {
-                    // the newly visible dropdown
-                    that.openDropdown_ = d;
-
-                    // setup z-index
-                    // (reset itself first so we do not just +1 each time)
-                    that.openDropdown_.css("z-index", 0);
-                    z = jQuery("div.zordered").maxZIndex() + 1;
-                    that.openDropdown_.css("z-index", z);
-                }
-
-                that.openDropdown_.fadeIn(150);
+                that.openDropdown(editor_widget);
             }
         });
 
@@ -5828,20 +5785,210 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.initializeWidget = function(widg
         .children(".dropdown-item")
         .click(function(e)
             {
-                that.itemClicked(e, editor_widget);
+                // avoid default browser behavior
+                e.preventDefault();
+                e.stopPropagation();
+
+                that.itemClicked(editor_widget, jQuery(e.target));
             });
 
     c.blur(function()
         {
             that.hideDropdown();
-        });
+        })
+     .keydown(function(e)
+        {
+            var item;
 
-    // TODO: we need to add support for the up/down arrow keys to change
-    //       the selection
-    //w.keydown(function(e)
-    //    {
-    //        // ...
-    //    });
+            switch(e.which)
+            {
+            case 40: // arrow down
+                // avoid default browser behavior
+                e.preventDefault();
+
+                if(d.is(":visible"))
+                {
+                    that.selectItem(editor_widget, "down");
+                }
+                else if(!w.is(".disabled"))
+                {
+                    that.openDropdown(editor_widget);
+                    that.selectItem(editor_widget, "first");
+                }
+                break;
+
+            case 38: // arrow up
+                // avoid default browser behavior
+                e.preventDefault();
+
+                if(d.is(":visible"))
+                {
+                    that.selectItem(editor_widget, "up");
+                }
+                else if(!w.is(".disabled"))
+                {
+                    that.openDropdown(editor_widget);
+                    that.selectItem(editor_widget, "last");
+                }
+                break;
+
+            case 37: // arrow left
+                if(d.is(":visible"))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.selectItem(editor_widget, "left");
+                }
+                break;
+
+            case 39: // arrow right
+                if(d.is(":visible"))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.selectItem(editor_widget, "right");
+                }
+                break;
+
+            case 36: // home
+                if(d.is(":visible"))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.selectItem(editor_widget, "first"); // should be first-item-or-first-column
+                }
+                break;
+
+            case 35: // end
+                if(d.is(":visible"))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.selectItem(editor_widget, "last"); // should be last-item-or-last-column
+                }
+                break;
+
+            case 33: // page up
+                if(d.is(":visible"))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.selectItem(editor_widget, "top"); // should be first-item-or-first-column
+                }
+                break;
+
+            case 34: // page down
+                if(d.is(":visible"))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.selectItem(editor_widget, "bottom"); // should be last-item-or-last-column
+                }
+                break;
+
+            case 27: // escape (close, no changes)
+                if(d.is(":visible"))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    that.hideDropdown();
+                }
+                break;
+
+            case 13: // return (select)
+                if(d.is(":visible"))
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    e.stopPropagation();
+                    item = d.children(".dropdown-selection")
+                            .children(".dropdown-item")
+                            .filter(".active");
+                    if(item.exists())
+                    {
+                        that.itemClicked(editor_widget, item);
+                    }
+                }
+                break;
+
+            default:
+                // not too sure how we could extend that to UTF-16...
+                // right now, A to Z works well
+                if(d.is(":visible") && e.which >= 65 && e.which <= 90)
+                {
+                    that.selectItem(editor_widget, String.fromCharCode(e.which).toLowerCase());
+                }
+                break;
+
+            }
+        });
+};
+
+
+/** \brief Open the specified dropdown object.
+ *
+ * This function opens the dropdown selection window. This selection
+ * always appears in the top window so it can, without a problem, extend
+ * outside of a popup.
+ *
+ * he dropdown window will also showing multiple columns if there is
+ * not enough room to show all the items in a single column.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget being initialized.
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.openDropdown = function(editor_widget)
+{
+    var that = this,
+        w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        d = w.children(".dropdown-items"),
+        z,
+        pos,
+        iframe_pos;
+
+    // test with 'window.' so it works in IE
+    if(window.self != window.top)
+    {
+        this.openDropdown_ = window.top.jQuery("<div class='top-window dropdown-items zordered' style='position: absolute;'>" + d.html() + "</div>").appendTo("body");
+        pos = c.offset();
+        iframe_pos = window.top.jQuery("#create-finball.snap-popup .popup-body iframe").offset();
+        pos.left += iframe_pos.left;
+        pos.top += iframe_pos.top + w.height();
+        this.openDropdown_.offset(pos);
+        this.clonedDropdown_ = true;
+
+        this.openDropdown_
+            .children(".dropdown-selection")
+            .children(".dropdown-item")
+            .click(function(e)
+                {
+                    // avoid default browser behavior
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    that.itemClicked(editor_widget, jQuery(e.target));
+                });
+
+        // setup z-index
+        // (reset itself first so we do not just +1 each time)
+        this.openDropdown_.css("z-index", 0);
+        z = window.top.jQuery("div.zordered").maxZIndex() + 1;
+        this.openDropdown_.css("z-index", z);
+    }
+    else
+    {
+        // the newly visible dropdown
+        this.openDropdown_ = d;
+        this.clonedDropdown_ = false;
+
+        // setup z-index
+        // (reset itself first so we do not just +1 each time)
+        this.openDropdown_.css("z-index", 0);
+        z = jQuery("div.zordered").maxZIndex() + 1;
+        this.openDropdown_.css("z-index", z);
+    }
+
+    this.openDropdown_.fadeIn(150);
 };
 
 
@@ -5860,6 +6007,14 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
         {
             clone = this.openDropdown_;
         }
+        else
+        {
+            // in case we have items marked as active, remove the class
+            this.openDropdown_
+                .children(".dropdown-selection")
+                .children(".dropdown-item")
+                .removeClass("active");
+        }
         this.openDropdown_.fadeOut(150, function()
             {
                 if(clone)
@@ -5877,61 +6032,243 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.hideDropdown = function()
  * This function is called whenever the user clicks on a dropdown
  * item.
  *
- * @param {Event} e  The jQuery click event on this item.
  * @param {snapwebsites.EditorWidget} editor_widget  The widget representing the dropdown.
+ * @param {jQuery} selected_item  The widget that was clicked.
  */
-snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(e, editor_widget)
+snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(editor_widget, selected_item)
 {
     var w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent(),
         d = w.children(".dropdown-items"),
-        that_element = jQuery(e.target),
         value,
         widget_change;
 
-    // avoid default browser behavior
-    e.preventDefault();
-    e.stopPropagation();
-
-    // hide the dropdown (we could use d.toggle() but that
-    // would not update the openDropdon_ variable member)
-    this.hideDropdown();
-
-    // first select the new item
-    d.find(".dropdown-item").removeClass("selected");
-    that_element.addClass("selected");
-
-    // then copy the item label to the "content" (line edit)
-    c.empty();
-    c.append(that_element.html());
-
-    // finally, get the resulting value if there is one
-    value = that_element.attr("value");
-    if(value)
+    // ignore the click if that item is disabled
+    if(!selected_item.is(".disabled"))
     {
-        c.attr("value", snapwebsites.castToString(value, "dropdown item value attribute"));
+        // hide the dropdown (we could use d.toggle() but that
+        // would not update the openDropdon_ variable member)
+        this.hideDropdown();
+
+        // first select the new item
+        d.find(".dropdown-item").removeClass("selected");
+        selected_item.addClass("selected");
+
+        // then copy the item label to the "content" (line edit)
+        c.empty();
+        c.append(selected_item.html());
+
+        // finally, get the resulting value if there is one
+        value = selected_item.attr("value");
+        if(value)
+        {
+            c.attr("value", snapwebsites.castToString(value, "dropdown item value attribute"));
+        }
+        else
+        {
+            // canonicalize the undefined value
+            value = null; // TBD should it be value = c.text(); ?
+            c.removeAttr("value");
+        }
+
+        // make that dropdown the currently active object
+        c.focus();
+        editor_widget.getEditorBase().setActiveElement(c);
+
+        // send an event for each change because the user
+        // make want to know even if the value was not actually
+        // modified
+        widget_change = jQuery.Event("widgetchange", {
+                widget: editor_widget,
+                value: value
+            });
+        w.trigger(widget_change);
+
+        editor_widget.getEditorBase().checkModified();
+    }
+};
+
+
+/** \brief Select a different item in the list of items of the dropdown.
+ *
+ * This function is used whenever the user goes through the list of items
+ * in the dropdown using arrow up or arrow down. The selection looks very
+ * similar to what it would look like if the user hovered over the list
+ * of items in the dropdown list.
+ *
+ * The function takes one parameter indicating the direction or which
+ * item should be selected next:
+ *
+ * \li first -- select the very first item
+ * \li last -- select the very last item
+ * \li up -- select the previous item in the same column or the last in the
+ *           previous column or the very last item
+ * \li down -- select the next item in the same column or the first in the
+ *             next column or the very first item
+ * \li left -- select the item on the left (multi-column only)
+ * \li right -- select the item on the right (multi-column only)
+ * \li top -- select the first item in this column
+ * \li bottom -- select the last item in this column
+ * \li 'A' to 'Z' -- select the first item with that character, or the next one
+ *                   if already on such an item
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The concerned widget.
+ * @param {string} direction  A direction as indicated in the notes.
+ *
+ * \sa resetValue()
+ */
+snapwebsites.EditorWidgetTypeDropdown.prototype.selectItem = function(editor_widget, direction)
+{
+    var w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        d = w.children(".dropdown-items"),
+        item = d.children(".dropdown-selection").children(".dropdown-item").not(".hidden"),
+        pos = item.index(item.filter(".active")),
+        inc = 1,
+        turn_around = false,
+        that_item, // = item.eq(pos),
+        columns = 1, // TODO: implement columns
+        items_per_column = item.length / columns;
+
+    if(direction == "first")
+    {
+        if(pos == 0)
+        {
+            return;
+        }
+        pos = 0;
+    }
+    else if(direction == "last")
+    {
+        if(pos + 1 >= item.length)
+        {
+            return;
+        }
+        pos = item.length - 1;
+        inc = -1;
+    }
+    else if(direction == "up")
+    {
+        if(pos == 0)
+        {
+            pos = item.length - 1;
+        }
+        else
+        {
+            --pos;
+        }
+        inc = -1;
+        turn_around = true;
+    }
+    else if(direction == "down")
+    {
+        ++pos;
+        if(pos >= item.length)
+        {
+            pos = 0;
+        }
+        turn_around = true;
+    }
+    else if(direction == "left")
+    {
+        // no effect if only 1 column or already in first column
+        if(pos < items_per_column)
+        {
+            return;
+        }
+        inc = -items_per_column;
+        pos += inc;
+    }
+    else if(direction == "right")
+    {
+        // no effect if only 1 column or already in last column
+        if(pos + items_per_column >= item.length)
+        {
+            return;
+        }
+        inc = items_per_column;
+        pos += inc;
+    }
+    else if(direction == "top")
+    {
+        pos -= pos % items_per_column;
+    }
+    else if(direction == "bottom")
+    {
+        pos = pos - pos % items_per_column + items_per_column - 1;
+        if(pos >= item.length)
+        {
+            // last column may be shorter
+            pos = item.length - 1;
+        }
+        inc = -1;
+    }
+    else if(direction.length == 1)
+    {
+        // search for the first or next item with the same starting letter
+        that_item = item.eq(pos);
+        if(that_item.text().substr(0, 1).toLowerCase() == direction)
+        {
+            // search next item with same starting letter
+            for(++pos; pos < item.length; ++pos)
+            {
+                that_item = item.eq(pos);
+                if(that_item.text().substr(0, 1).toLowerCase() == direction)
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            for(pos = 0; pos < item.length; ++pos)
+            {
+                that_item = item.eq(pos);
+                if(that_item.text().substr(0, 1).toLowerCase() == direction)
+                {
+                    break;
+                }
+            }
+        }
+        if(pos == item.length)
+        {
+            // no match or futher match, ignore
+            return;
+        }
     }
     else
     {
-        // canonicalize the undefined value
-        value = null; // TBD should it be value = c.text(); ?
-        c.removeAttr("value");
+        throw new Error("unknown direction (" + direction + ")");
     }
 
-    // make that dropdown the currently active object
-    c.focus();
-    editor_widget.getEditorBase().setActiveElement(c);
+    that_item = item.eq(pos);
+    while(that_item.is(".disabled"))
+    {
+        pos += inc;
+        if(pos < 0 || pos >= item.length)
+        {
+            if(!turn_around)
+            {
+                // could not find another widget that's not disabled
+                return;
+            }
+            // turn around at most once
+            turn_around = false;
+            if(pos < 0)
+            {
+                pos = item.length - 1;
+            }
+            else //if(pos >= item.length)
+            {
+                pos = 0;
+            }
+        }
+        that_item = item.eq(pos);
+    }
 
-    // send an event for each change because the user
-    // make want to know even if the value was not actually
-    // modified
-    widget_change = jQuery.Event("widgetchange", {
-            widget: editor_widget,
-            value: value
-        });
-    w.trigger(widget_change);
-
-    editor_widget.getEditorBase().checkModified();
+    // change the active selection
+    item.removeClass("active");
+    that_item.addClass("active");
 };
 
 
@@ -6033,6 +6370,9 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
  *
  * If the index number is too large or the specified string is not found
  * in the existing items, then nothing happens.
+ *
+ * \todo
+ * Add support for disabled value which cannot be selected.
  *
  * @param {!Object} widget  The concerned widget.
  * @param {!Object|string|number} value  The value to be saved.

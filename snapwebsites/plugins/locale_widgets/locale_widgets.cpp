@@ -145,7 +145,7 @@ int64_t locale_widgets::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2014, 12, 4, 16, 44, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 20, 4, 16, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
