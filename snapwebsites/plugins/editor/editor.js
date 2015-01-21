@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.309
+ * Version: 0.0.3.317
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -4881,15 +4881,20 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
 {
     var that = this,
         editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        //w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent();
 
     this.setupEditButton(editor_widget); // allow overrides to an empty function
 
     // widget was possibly modified, so make sure we stay on top
-    c.on("keyup bind cut copy paste", function()
+    c.on("keyup cut copy paste", function()
         {
-            editor_widget.getEditorBase().checkModified();
+            // use a timeout so we execute checkModified()
+            // AFTER the changes were made... otherwise we are
+            // way too early
+            setTimeout(function()
+                {
+                    editor_widget.getEditorBase().checkModified();
+                }, 0);
         });
 
     // widget gets the focus, make it the active widget
@@ -4933,7 +4938,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
         });
 
     // the user just moved over a widget while dragging something
-    c.on("dragenter",function(e)
+    c.on("dragenter", function(e)
         {
             e.preventDefault();
             e.stopPropagation();
@@ -5646,8 +5651,8 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.getType = function()
  */
 snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widget) // virtual
 {
-    var editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
-        //w = editor_widget.getWidget(),
+    var that = this,
+        editor_widget = /** @type {snapwebsites.EditorWidget} */ (widget),
         c = editor_widget.getWidgetContent();
 
     snapwebsites.EditorWidgetTypeLineEdit.superClass_.initializeWidget.call(this, widget);
@@ -5662,9 +5667,61 @@ snapwebsites.EditorWidgetTypeLineEdit.prototype.initializeWidget = function(widg
                 //       there is one
                 //
                 e.preventDefault();
-                e.stopPropagation();
             }
         });
+
+    c.on("paste", function()
+        {
+            // after a paste we may have HTML that we would need to remove
+            setTimeout(function()
+                {
+                    that.verifyValue_(editor_widget);
+                }, 0);
+        });
+};
+
+
+/** \brief Setup the verification value.
+ *
+ * This function verifies that the widget value does not include
+ * HTML data. You may ask to keep basic HTML, but most will be
+ * removed (i.e. blocks, br, etc.)
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget that was just modified.
+ *
+ * @private
+ */
+snapwebsites.EditorWidgetTypeLineEdit.prototype.verifyValue_ = function(editor_widget)
+{
+    var w = editor_widget.getWidget(),
+        c = editor_widget.getWidgetContent(),
+        keep_html = w.is(".keep-html"),
+        selection;
+
+    if(keep_html)
+    {
+        // TODO: parse the DOM and remove anything that we do not like
+        //       at the very list we have to remove <br/> and any block
+        //       tags (<p>, <div>, etc.) although we probably want to
+        //       list tags we accept to keep instead (i.e. <b>, <strong>,
+        //       <em>, <i>, etc.)
+    }
+    else
+    {
+        // remove ALL tags if any
+        if(c.html() != c.text())
+        {
+            // TODO: fix selection problems
+            // the select is completely lost afterward... we would
+            // need to transform all the tags to text to calculate
+            // the position as if no tags were present, then "restore"
+            // accordingly (i.e. set the position appropriately and
+            // not using a previously saved selection object.)
+            selection = snapwebsites.EditorSelection.saveSelection();
+            c.text(/** @type {string} */ (c.text()));
+            snapwebsites.EditorSelection.restoreSelection(selection);
+        }
+    }
 };
 
 
