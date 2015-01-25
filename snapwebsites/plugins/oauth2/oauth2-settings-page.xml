@@ -42,11 +42,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>When the OAuth2 tool logs an application in, it has to make use of a user. This is done by assigning the session identifier to the email address specified here. Note that the application will have all the rights that this user has.</help>
     <background-value>email</background-value>
   </widget>
-  <widget id="oauth2_identifier" type="line-edit" field="oauth2::identifier" path="oauth2/identifier" auto-save="plain" secret="secret">
+  <widget id="oauth2_identifier" type="text-edit" field="oauth2::identifier" path="oauth2/identifier" auto-save="plain" secret="secret">
     <tooltip>The OAuth2 plugin generates a connection identifier. This field shows you that identifier.</tooltip>
     <state>read-only</state>
   </widget>
-  <widget id="oauth2_secret" type="line-edit" field="oauth2::secret" path="oauth2/secret" auto-save="plain" secret="secret">
+  <widget id="oauth2_secret" type="text-edit" field="oauth2::secret" path="oauth2/secret" auto-save="plain" secret="secret">
     <tooltip>The OAuth2 plugin generates a connection secret. This field shows you that identifier.</tooltip>
     <state>read-only</state>
   </widget>
