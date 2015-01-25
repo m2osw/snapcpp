@@ -365,6 +365,154 @@ QDomElement create_element(QDomNode parent, QString const& path)
 }
 
 
+/** \brief Encode entities converting a plain text to an HTML string.
+ *
+ * Somehow the linker cannot find the Qt::escape() function so we
+ * have our own version here.
+ *
+ * \param[in] str  The string to transform.
+ *
+ * \return The converted string.
+ */
+QString escape(QString const& str)
+{
+    QString result;
+    result.reserve(str.length() * 112 / 100 + 20);
+
+    for(QChar const *s(str.data()); s->unicode() != '\0'; ++s)
+    {
+        switch(s->unicode())
+        {
+        case '&':
+            result += "&amp;";
+            break;
+
+        case '<':
+            result += "&lt;";
+            break;
+
+        case '>':
+            result += "&gt;";
+            break;
+
+        case '"':
+            result += "&quot;";
+            break;
+
+        default:
+            result += *s;
+            break;
+
+        }
+    }
+
+    return result;
+}
+
+
+/** \brief Decode entities converting a string to plain text.
+ *
+ * When receiving certain strings from the website, they may include
+ * HTML entities even though you want to consider the string as plain
+ * text which means entities need to be changed to plain text.
+ *
+ * Qt offers a function called escape() which transforms plain text
+ * to HTML with entities (so for example \< becomes \&lt;,) but for
+ * some weird reason they do not offer an unescape() function...
+ */
+QString unescape(QString const& str)
+{
+    QString result;
+    result.reserve(str.length() + 10);
+
+    QString name;
+    name.reserve(25);
+
+    for(QChar const *s(str.data()); s->unicode() != '\0'; )
+    {
+        if(s->unicode() == '&')
+        {
+            ++s;
+            bool const number(s->unicode() == '#');
+            if(number)
+            {
+                // numerical
+                ++s;
+            }
+            // named/number
+            name.clear();
+            for(int i(0); i < 20 && s->unicode() != '\0' && s->unicode() != ';' && !s->isSpace(); ++i, ++s)
+            {
+                name += *s;
+            }
+            if(s->unicode() == ';')
+            {
+                ++s;
+            }
+            uint c('\0');
+            if(number)
+            {
+                bool ok(false);
+                if(name[0] == 'x')
+                {
+                    // hexadecimal
+                    name.remove(0, 1);
+                    c = name.toLongLong(&ok, 16);
+                }
+                else
+                {
+                    c = name.toLongLong(&ok, 10);
+                }
+                if(!ok)
+                {
+                    c = '\0';
+                }
+            }
+            else if(name == "quot")
+            {
+               c = '"';
+            }
+            else if(name == "apos")
+            {
+               c = '\'';
+            }
+            else if(name == "lt")
+            {
+               c = '<';
+            }
+            else if(name == "gt")
+            {
+               c = '>';
+            }
+            else if(name == "amp")
+            {
+               c = '&';
+            }
+std::cerr << "***\n*** n '" << name << "' -> c = '" << c << "'\n***\n";
+            if(c != 0)
+            {
+                if(QChar::requiresSurrogates(c))
+                {
+                    result += QChar::highSurrogate(c);
+                    result += QChar::lowSurrogate(c);
+                }
+                else
+                {
+                    result += QChar(c);
+                }
+            }
+        }
+        else
+        {
+            result += *s;
+            ++s;
+        }
+    }
+
+    return result;
+}
+
+
 
 } // namespace snap_dom
 } // namespace snap

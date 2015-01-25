@@ -36,6 +36,7 @@
 
 #include <iostream>
 
+#include <QTextDocument>
 #include <QXmlQuery>
 #include <QFile>
 #include <QFileInfo>
@@ -1048,6 +1049,12 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                         data_row->cell(field_name)->setValue(value);
                         current_value = value;
                     }
+                    else if(widget_auto_save == "plain")
+                    {
+                        // no special handling for empty strings here
+                        current_value = snap_dom::unescape(post_value);
+                        data_row->cell(field_name)->setValue(current_value);
+                    }
                 }
                 else
                 {
@@ -1085,6 +1092,11 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                              || widget_auto_save == "html")
                         {
                             // no special handling for empty strings here
+                            current_value = value.stringValue();
+                        }
+                        else if(widget_auto_save == "plain")
+                        {
+                            // already as expected in this case
                             current_value = value.stringValue();
                         }
                         else if(widget_auto_save == "ms-date-us")
@@ -2896,11 +2908,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             {
                 // the string is plain text so make sure special characters
                 // are properly escaped
-                current_value = value.stringValue();
-                current_value.replace("&", "&amp;")
-                             //.replace("\"", "&quot;") -- TBD
-                             .replace("<", "&lt;")
-                             .replace(">", "&gt;");
+                current_value = snap_dom::escape(value.stringValue());
             }
             else
             {

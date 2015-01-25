@@ -465,6 +465,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     }
     else if(n == "content::prevent_delete"
          || n == "epayment_paypal::debug"
+         || n == "oauth2::enable"
          || n == "permissions::dynamic"
          || n == "users::multiuser"
          || n == "users::long_sessions"

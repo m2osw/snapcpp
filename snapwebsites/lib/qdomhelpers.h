@@ -53,6 +53,8 @@ void            remove_all_children(QDomElement& parent);
 QDomElement     get_element(QDomDocument& doc, QString const& name, bool must_exist = true);
 QDomElement     get_child_element(QDomNode parent, QString const& path);
 QDomElement     create_element(QDomNode parent, QString const& path);
+QString         escape(QString const& str);
+QString         unescape(QString const& str);
 
 
 } // namespace snap_dom
