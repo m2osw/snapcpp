@@ -555,7 +555,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
         </xsl:if>
         <xsl:if test="tooltip != ''">
-          <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
+          <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
         </xsl:if>
         <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
         <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>

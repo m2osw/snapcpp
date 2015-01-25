@@ -508,6 +508,14 @@ QString users::get_user_cookie_name()
  */
 void users::on_process_cookies()
 {
+    // prevent cookies on a set of method that do not require them
+    QString const method(f_snap->snapenv("REQUEST_METHOD"));
+    if(method == "HEAD"
+    || method == "TRACE")
+    {
+        return;
+    }
+
     bool create_new_session(true);
 
     // get cookie name
@@ -543,7 +551,7 @@ void users::on_process_cookies()
                 if(users_table->exists(key))
                 {
                     // this is a valid user email address!
-                    QString uri_path(f_snap->get_uri().path());
+                    QString const uri_path(f_snap->get_uri().path());
                     if(uri_path == "/logout" || uri_path.left(8) == "/logout/")
                     {
                         // the user is requesting to log out, here we avoid
@@ -1860,12 +1868,6 @@ void users::on_process_form_post(content::path_info_t& ipath, sessions::sessions
  */
 void users::process_login_form(login_mode_t login_mode)
 {
-    QString details;
-    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-
-    bool validation_required(false);
-
     // retrieve the row for that user
     QString const key(f_snap->postenv("email"));
     if(login_mode == LOGIN_MODE_VERIFICATION && f_user_key != key)
@@ -1875,13 +1877,75 @@ void users::process_login_form(login_mode_t login_mode)
         //     third attempt!)
         messages::messages::instance()->set_error(
             "Wrong Credentials",
-            "These are the wrong credentials. If you are not sure who you were logged as, please <a href=\"/logout\">log out</a> first and then log back in.",
-            "users::process_login_form() email mismatched when verifying credentials (got \""
-                         + key + "\", expected \"" + f_user_key + "\").",
+            "These are wrong credentials. If you are not sure who you were logged as, please <a href=\"/logout\">log out</a> first and then log back in.",
+            QString("users::process_login_form() email mismatched when verifying credentials (got \"%1\", expected \"%2\").").arg(key).arg(f_user_key),
             false
         );
         return;
     }
+
+    QString const password(f_snap->postenv("password"));
+
+    bool validation_required(false);
+    QString const details(login_user(key, password, validation_required, login_mode));
+
+    if(!details.isEmpty())
+    {
+        // IMPORTANT:
+        //   We have ONE error message because whatever the error we do not
+        //   want to tell the user exactly what went wrong (i.e. wrong email,
+        //   or wrong password.)
+        //
+        //   This is important because if someone is registered with an email
+        //   such as example@snapwebsites.info and a hacker tries that email
+        //   and gets an error message saying "wrong password," now the hacker
+        //   knows that the user is registered on that Snap! C++ system.
+
+        // user not registered yet?
+        // email misspelled?
+        // incorrect password?
+        // email still not validated?
+        //
+        // TODO: Put the messages in the database so they can be translated
+        messages::messages::instance()->set_error(
+            "Could Not Log You In",
+            validation_required
+              ? "Your account was not yet <a href=\"/verify\" title=\"Click here to enter a verification code\">validated</a>. Please make sure to first follow the link we sent in your email. If you did not yet receive that email, we can send you another <a href=\"/verify/resend\">confirmation email</a>."
+              : "Your email or password were incorrect. If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?",
+            details,
+            false // should this one be true?
+        );
+    }
+}
+
+
+/** \brief Log a user in.
+ *
+ * This function can be used to log a user in. You have to be extremely
+ * careful to not create a way to log a user without proper credential.
+ * This is generally used when a mechanism such a third party authentication
+ * mechanism is used to log the user in his account.
+ *
+ * If the \p password parameter is empty, the system creates a user session
+ * without verify the user password. This is the case where another
+ * mechanism must have been used to properly log the user before calling
+ * this function.
+ *
+ * The function still verifies that the user was properly verified and
+ * not blocked. It also makes sure that the user password does not need
+ * to be changed. If a password change is required for that user, then
+ * the login fails.
+ *
+ * \param[in] key  The key of the user: i.e. his email address
+ * \param[in] password  The password to log the user in.
+ * \param[in] validation_required  Whether the user needs to validate his account.
+ * \param[in] login_mode  The mode used to log in: full, verification.
+ *
+ * \return A string representing an error, an empty string if the login worked.
+ */
+QString users::login_user(QString const& key, QString const& password, bool& validation_required, login_mode_t login_mode)
+{
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
 
     if(users_table->exists(key))
     {
@@ -1896,8 +1960,8 @@ void users::process_login_form(login_mode_t login_mode)
             messages::messages::instance()->set_error(
                 "Could Not Log You In",
                 "Somehow your user identifier is not available. Without it we cannot log your in.",
-                "users::process_login_form() could not load the user identifier, the row exists but the cell did not make it ("
-                             + key + "/" + get_name(SNAP_NAME_USERS_IDENTIFIER) + ").",
+                QString("users::process_login_form() could not load the user identifier, the row exists but the cell did not make it (%1/%2).")
+                             .arg(key).arg(get_name(SNAP_NAME_USERS_IDENTIFIER)),
                 false
             );
             if(login_mode == LOGIN_MODE_VERIFICATION)
@@ -1936,22 +2000,23 @@ void users::process_login_form(login_mode_t login_mode)
             // either way it means he cannot log in at this time!
             if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
             {
-                details = "user's account is not yet active (not yet verified)";
                 validation_required = true;
-                valid = false;
+                return "user's account is not yet active (not yet verified)";
             }
             else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_BLOCKED_PATH))
             {
-                details = "user's account is blocked";
-                valid = false;
+                return "user's account is blocked";
             }
             else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_AUTO_PATH))
             {
-                details = "user did not register, this is an auto-account only";
-                valid = false;
+                return "user did not register, this is an auto-account only";
             }
             else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
             {
+                if(password.isEmpty())
+                {
+                    return "user has to update his password, this application cannot currently log in";
+                }
                 // user requested a new password but it looks like he
                 // remembered the old one in between; for redirect this user
                 // to the password form
@@ -1968,31 +2033,37 @@ void users::process_login_form(login_mode_t login_mode)
         }
         if(valid)
         {
-            // compute the hash of the password
-            // (1) get the digest
-            value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value();
-            QString const digest(value.stringValue());
+            bool valid_password(password.isEmpty());
+            if(!valid_password)
+            {
+                // compute the hash of the password
+                // (1) get the digest
+                value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value();
+                QString const digest(value.stringValue());
 
-            // (2) we need the passord:
-            QString const password(f_snap->postenv("password"));
+                // (2) we need the passord (passed as a parameter now)
+                //QString const password(f_snap->postenv("password"));
 
-            // (3) get the salt in a buffer
-            value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
-            QByteArray const salt(value.binaryValue());
+                // (3) get the salt in a buffer
+                value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
+                QByteArray const salt(value.binaryValue());
 
-            // (4) compute the expected hash
-            QByteArray hash;
-            encrypt_password(digest, password, salt, hash);
+                // (4) compute the expected hash
+                QByteArray hash;
+                encrypt_password(digest, password, salt, hash);
 
-            // (5) retrieved the saved hash
-            value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
-            QByteArray const saved_hash(value.binaryValue());
+                // (5) retrieved the saved hash
+                value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
+                QByteArray const saved_hash(value.binaryValue());
 
-            // (6) compare both hashes
-            // (note: at this point I don't trust the == operator of the QByteArray
-            // object; will it work with '\0' bytes???)
-            if(hash.size() == saved_hash.size()
-            && memcmp(hash.data(), saved_hash.data(), hash.size()) == 0)
+                // (6) compare both hashes
+                // (note: at this point I don't trust the == operator of the QByteArray
+                // object; will it work with '\0' bytes???)
+                valid_password = hash.size() == saved_hash.size()
+                              && memcmp(hash.data(), saved_hash.data(), hash.size()) == 0;
+            }
+
+            if(valid_password)
             {
                 // User credentials are correct, create a session & cookie
 
@@ -2078,45 +2149,18 @@ void users::process_login_form(login_mode_t login_mode)
                 // (i.e. a pay for website where the account has no more
                 //       credit and this very user is not responsible for
                 //       the payment)
-                details = "good credential, invalid status according to another plugin that logged the user out immediately";
+                return "good credential, invalid status according to another plugin that logged the user out immediately";
             }
             else
             {
                 // user mistyped his password?
-                details = "invalid credentials (password doesn't match)";
+                return "invalid credentials (password doesn't match)";
             }
         }
     }
-    else
-    {
-        // user mistyped his email or is not registered?
-        details = "invalid credentials (user with specified email does not exist)";
-    }
 
-    // IMPORTANT:
-    //   We have ONE error message because whatever the error we do not
-    //   want to tell the user exactly what went wrong (i.e. wrong email,
-    //   or wrong password.)
-    //
-    //   This is important because if someone is registered with an email
-    //   such as example@snapwebsites.info and a hacker tries that email
-    //   and gets an error message saying "wrong password," now the hacker
-    //   knows that the user is registered on that Snap! C++ system.
-
-    // user not registered yet?
-    // email misspelled?
-    // incorrect password?
-    // email still not validated?
-    //
-    // TODO: Put the messages in the database so they can be translated
-    messages::messages::instance()->set_error(
-        "Could Not Log You In",
-        validation_required
-          ? "Your account was not yet <a href=\"/verify\" title=\"Click here to enter a verification code\">validated</a>. Please make sure to first follow the link we sent in your email. If you did not yet receive that email, we can send you another <a href=\"/verify/resend\">confirmation email</a>."
-          : "Your email or password were incorrect. If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?",
-        details,
-        false // should this one be true?
-    );
+    // user mistyped his email or is not registered?
+    return "invalid credentials (user with specified email does not exist)";
 }
 
 
@@ -3586,6 +3630,10 @@ void users::on_define_locales(QString& locales)
  * It is strongly advised to NOT send such passwords to the user via email
  * because they may contain "strange" characters and emails are notoriously
  * not safe.
+ *
+ * \todo
+ * Look into defining a set of character in each language instead of
+ * just basic ASCII.
  *
  * \return The string with the new password.
  */

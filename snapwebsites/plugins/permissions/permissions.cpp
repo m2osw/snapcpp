@@ -1286,6 +1286,8 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
         // the signal may set the flag to false to prevent such redirects
         bool redirect_to_login(true);
         permit_redirect_to_login_on_not_allowed(ipath, redirect_to_login);
+        QString const method(f_snap->snapenv("REQUEST_METHOD"));
+        bool const redirect_method(method == "GET" || method == "POST");
 
         users::users *users_plugin(users::users::instance());
         if(users_plugin->get_user_key().isEmpty())
@@ -1294,7 +1296,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
             if(users_plugin->user_is_a_spammer())
             {
                 // force a redirect on error, but not from the home page
-                if(ipath.get_cpath() != "" && redirect_to_login)
+                if(ipath.get_cpath() != "" && redirect_to_login && redirect_method)
                 {
                     // spammers are expected to have enough rights to access
                     // the home page so we try to redirect them there
@@ -1332,7 +1334,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
                         true);
                 return;
             }
-            if(!redirect_to_login)
+            if(!redirect_to_login || !redirect_method)
             {
                 // The login page is accessible but we do not want to redirect
                 // on this file (i.e. probably an attachment)
@@ -1371,7 +1373,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
         }
         else
         {
-            if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED) && redirect_to_login)
+            if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED) && redirect_to_login && redirect_method)
             {
                 // allowed if logged in?
                 content::permission_flag allowed_if_logged_in;

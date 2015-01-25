@@ -555,7 +555,7 @@ QString path::default_action(content::path_info_t& ipath)
  * from the URL information.
  *
  * \todo
- * Should we also test with case insensitive paths? (i.e. if all
+ * Should we also test with case insensitive paths? (if all
  * else failed) Or should we make sure URL is all lowercase and
  * thus always make it case insensitive?
  *

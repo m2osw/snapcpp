@@ -64,10 +64,10 @@ void QHtmlSerializer::attribute(const QXmlName& name, const QStringRef& value)
     f_output->write(name.localName(f_namepool).toUtf8());
     f_output->write("=\"");
     QString v(value.toString());
-    v.replace('\"', "&quot;")
+    v.replace('&', "&amp;")
+     .replace('\"', "&quot;")
      .replace('<', "&lt;")
-     .replace('>', "&gt;")
-     .replace('&', "&amp;");
+     .replace('>', "&gt;");
     f_output->write(v.simplified().toUtf8());
     f_output->write("\"");
 }
@@ -78,9 +78,9 @@ void QHtmlSerializer::characters(const QStringRef& value)
     closeElement();
 
     QString v(value.toString());
-    v.replace('<', "&lt;")
-     .replace('>', "&gt;")
-     .replace('&', "&amp;");
+    v.replace('&', "&amp;")
+     .replace('<', "&lt;")
+     .replace('>', "&gt;");
     f_output->write(v.toUtf8());
 }
 
@@ -115,7 +115,8 @@ void QHtmlSerializer::endElement()
 
     QString e(element.toLower());
     bool is_empty(false);
-    if(f_is_html) switch(e[0].unicode()) {
+    if(f_is_html) switch(e[0].unicode())
+    {
     case 'a':
         is_empty = e == "area";
         break;

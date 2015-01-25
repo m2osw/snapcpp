@@ -130,6 +130,12 @@ class users : public plugins::plugin
             , public form::form_post
 {
 public:
+    enum login_mode_t
+    {
+        LOGIN_MODE_FULL,
+        LOGIN_MODE_VERIFICATION
+    };
+
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN = 1;                    // login-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_LOG_IN_BOX = 2;                // login-box-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_REGISTER = 3;                  // register-form.xml
@@ -215,6 +221,7 @@ public:
     QString                 get_from_session(QString const& name) const;
     void                    set_referrer( QString path );
     void                    send_to_replace_password_page(QString const& email, bool const set_status);
+    QString                 login_user(QString const& key, QString const& password, bool& validation_required, login_mode_t login_mode = LOGIN_MODE_FULL);
     void                    user_logout();
 
     int64_t                 get_user_identifier(QString const& user_path) const;
@@ -223,11 +230,6 @@ public:
     QString                 get_user_path(QString const& email);
 
 private:
-    enum login_mode_t
-    {
-        LOGIN_MODE_FULL,
-        LOGIN_MODE_VERIFICATION
-    };
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
     void                    show_user(content::path_info_t& cpath, QDomElement& page, QDomElement& body);

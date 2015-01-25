@@ -2892,6 +2892,16 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                 // no special handling for strings / html
                 current_value = value.stringValue();
             }
+            else if(widget_auto_save == "plain")
+            {
+                // the string is plain text so make sure special characters
+                // are properly escaped
+                current_value = value.stringValue();
+                current_value.replace("&", "&amp;")
+                             //.replace("\"", "&quot;") -- TBD
+                             .replace("<", "&lt;")
+                             .replace(">", "&gt;");
+            }
             else
             {
                 // If no auto-save we expect a plugin to furnish the current

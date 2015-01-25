@@ -986,7 +986,6 @@ void links::delete_link(link_info const& info, int const delete_record_count)
     // here we assume that the is_unique() could be misleading
     // this way we can avoid all sorts of pitfalls where someone
     // creates a link with "*:1" and tries to delete it with "1:*"
-std::cerr << "***\n*** delete_link() called!\n***\n";
 
     init_tables();
 

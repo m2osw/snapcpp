@@ -236,10 +236,11 @@ bool snap_cgi::verify()
         }
     }
 
-    // catch "invalid" methods early so we don't waste
-    // any time with methods we don't support
-    // later we may add support for PUT and DELETE though
-    const char *request_method(getenv("REQUEST_METHOD"));
+    // catch "invalid" methods early so we do not waste
+    // any time with methods we do not support
+    // later we may add support for PUT, PATCH and DELETE though
+    // WARNING: do not use std::string because NULL will crash
+    char const *request_method(getenv("REQUEST_METHOD"));
     if(request_method == NULL)
     {
         std::cout   << "Status: 405 Method Not Defined"         << std::endl
@@ -264,9 +265,11 @@ bool snap_cgi::verify()
             std::cout << "Status: 405 Method Not Allowed" << std::endl;
         }
         //
-        std::cout   << "Expires: Sat, 1 Jan 2000 00:00:00 GMT" << std::endl
-                    << "Allow: GET, HEAD, POST"                << std::endl
-                    << std::endl;
+        std::cout   << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                    << "Allow: GET, HEAD, POST"                 << std::endl
+                    << "Content-Type: text/html; charset=utf-8" << std::endl
+                    << std::endl
+                    << "<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>";
         return false;
     }
 
@@ -276,9 +279,20 @@ bool snap_cgi::verify()
 
 int snap_cgi::process()
 {
-    std::string const request_method( getenv("REQUEST_METHOD") );
-#ifdef DEBUG
-    SNAP_LOG_DEBUG("processing request_method=")(request_method.c_str());
+    // WARNING: do not use std::string because NULL will crash
+    char const *request_method( getenv("REQUEST_METHOD") );
+    if(request_method == NULL)
+    {
+        std::cout   << "Status: 405 Method Not Defined"         << std::endl
+                    << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
+                    << "Allow: GET, HEAD, POST"                 << std::endl
+                    << "Content-Type: text/html; charset=utf-8" << std::endl
+                    << std::endl
+                    << "<html><head><title>Method Not Defined</title></head><body><p>Sorry. We only support GET, HEAD, and POST.</p></body></html>";
+        return false;
+    }
+#ifdef _DEBUG
+    SNAP_LOG_DEBUG("processing request_method=")(request_method);
 
     SNAP_LOG_DEBUG("f_address=")(f_address.c_str())(", f_port=")(f_port);
 #endif
@@ -299,7 +313,7 @@ int snap_cgi::process()
         // to keep from causing the snap_child to complain and die.
         //
         std::replace( env.begin(), env.end(), '\n', '|' );
-#ifdef DEBUG
+#ifdef _DEBUG
         //SNAP_LOG_DEBUG("Writing environment '")(env.c_str())("'");
 #endif
         if(socket.write(env.c_str(), len) != len)
@@ -311,9 +325,9 @@ int snap_cgi::process()
             return error("504 Gateway Timeout", "error while writing to the child process (3).");
         }
     }
-    if( request_method == "POST" )
+    if( strcmp(request_method, "POST") == 0 )
     {
-#ifdef DEBUG
+#ifdef _DEBUG
         SNAP_LOG_DEBUG("writing #POST");
 #endif
         if(socket.write("#POST\n", 6) != 6)
@@ -342,7 +356,7 @@ int snap_cgi::process()
                 {
                     return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str());
                 }
-#ifdef DEBUG
+#ifdef _DEBUG
                 SNAP_LOG_DEBUG("wrote var=")(var.c_str());
 #endif
                 if(c == EOF)
@@ -358,7 +372,7 @@ int snap_cgi::process()
             }
         }
     }
-#ifdef DEBUG
+#ifdef _DEBUG
     SNAP_LOG_DEBUG("writing #END");
 #endif
     if(socket.write("#END\n", 5) != 5)
@@ -381,7 +395,7 @@ int snap_cgi::process()
         int r(socket.read(buf, sizeof(buf)));
         if(r > 0)
         {
-//#ifdef DEBUG
+//#ifdef _DEBUG
 //            SNAP_LOG_DEBUG("writing buf=")(buf);
 //#endif
             if(fwrite(buf, r, 1, stdout) != 1)
@@ -407,7 +421,7 @@ int snap_cgi::process()
         }
         else if(r == -1)
         {
-#ifdef DEBUG
+#ifdef _DEBUG
             SNAP_LOG_DEBUG("Done reading from socket.");
 #endif
             break;
@@ -421,14 +435,14 @@ int snap_cgi::process()
                 break;
             }
             more = true;
-#ifdef DEBUG
+#ifdef _DEBUG
             SNAP_LOG_DEBUG("Waiting, sleep 1");
 #endif
             sleep(1);
         }
     }
     // TODO: handle potential read problems...
-#ifdef DEBUG
+#ifdef _DEBUG
     SNAP_LOG_DEBUG("Closing connection...");
 #endif
     return 0;

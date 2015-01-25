@@ -36,23 +36,36 @@ namespace snap_dom
  * HTML code, call this function, it will first convert the string to XML
  * then insert the result as children of the \p child element.
  *
+ * \warning
+ * If the string is plain text, YOU are responsible for converting the
+ * \<, \>, and \& characters before calling this function. Or maybe just
+ * make use of the doc.createTextNode(plain_text) function.
+ *
  * \param[in,out] child  DOM element receiving the result as children nodes.
  * \param[in] xml  The input XML string.
  */
 void insert_html_string_to_xml_doc(QDomNode& child, QString const& xml)
 {
     // parsing the XML can be slow, try to avoid that if possible
-    if(xml.contains('<'))
+    int const max(xml.length());
+    for(int idx(0); idx < max; ++idx)
     {
-        QDomDocument xml_doc("wrapper");
-        xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
-        insert_node_to_xml_doc(child, xml_doc.documentElement());
+        // Note: we do not have to check for '>' because a '>' by itself
+        //       is a spurious character in the stream which most parsers
+        //       accept properly; however, we must use the wrapper scheme
+        //       if we have a '<' (a tag) or a '&' (an entity)
+        ushort c(xml[idx].unicode());
+        if(c == '<' || c == '&')
+        {
+            QDomDocument xml_doc("wrapper");
+            xml_doc.setContent("<wrapper>" + xml + "</wrapper>", true, nullptr, nullptr, nullptr);
+            insert_node_to_xml_doc(child, xml_doc.documentElement());
+            return;
+        }
     }
-    else
-    {
-        QDomText text(child.ownerDocument().createTextNode(xml));
-        child.appendChild(text);
-    }
+
+    QDomText text(child.ownerDocument().createTextNode(xml));
+    child.appendChild(text);
 }
 
 

@@ -21,10 +21,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <auto-reset minutes="30"/> <!-- 30 minutes -->
   <mode action="edit"/>
   <immediate/>
-  <focus refid="debug"/>
+  <focus refid="client_id"/>
   <on-save allow-edit="yes"/>
   <taborder>
+    <tabindex refid="client_id"/>
+    <tabindex refid="secret"/>
     <tabindex refid="debug"/>
+    <tabindex refid="sandbox_client_id"/>
+    <tabindex refid="sandbox_secret"/>
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>

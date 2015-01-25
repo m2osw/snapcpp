@@ -3373,7 +3373,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 {
                     // TODO: verify that f_name is a valid header name
                     f_env[f_name] = f_value;
-//fprintf(stderr, " f_env[\"%s\"] = \"%s\"\n", f_name.toUtf8().data(), f_value.toUtf8().data());
+//std::cerr << " f_env[\"" << f_name << "\"] = \"" << f_value << "\"\n";
                 }
             }
         }
@@ -4568,8 +4568,8 @@ void snap_child::canonicalize_options()
     // support...)
     compression_vector_t compressions;
     bool got_gzip(false);
-    float gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
-    float deflate_level(encodings.get_level("deflate"));
+    float const gzip_level(std::max(std::max(encodings.get_level("gzip"), encodings.get_level("x-gzip")), encodings.get_level("*")));
+    float const deflate_level(encodings.get_level("deflate"));
     if(gzip_level > 0.0f && gzip_level >= deflate_level)
     {
         compressions.push_back(COMPRESSION_GZIP);
@@ -4949,6 +4949,11 @@ void snap_child::site_redirect()
  *
  * The path may include a query string and an anchor.
  *
+ * \note
+ * This function does not allow redirecting an application which used a
+ * method other than GET, HEAD, and POST. Applications are expected to
+ * get their URI right.
+ *
  * \warning
  * The function does not return since after sending a redirect to a client
  * there is nothing more you can do. So if you need to save some data, make
@@ -4969,6 +4974,16 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
         die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Initialization Mismatch",
                 "An internal server error was detected while initializing the process.",
                 "The server snap_child::page_redirect() function was called before the website got canonicalized.");
+        NOTREACHED();
+    }
+    QString const method(snapenv("REQUEST_METHOD"));
+    if(method != "GET"
+    && method != "POST"
+    && method != "HEAD")
+    {
+        die(HTTP_CODE_FORBIDDEN, "Method Not Allowed",
+                QString("Prevented a redirect when using method %1.").arg(method),
+                "We do not currently support redirecting users for methods other than GET, POST, and HEAD.");
         NOTREACHED();
     }
 
@@ -6960,12 +6975,18 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
 
     output_headers(modes);
 
-    // write the body unless method is HEAD
-    if(snapenv("REQUEST_METHOD") != "HEAD")
+    // write the body in all circumstances unless
+    // the method is HEAD and the request did not fail
+    //
+    // IMPORTANT NOTE: it looks like Apache2 removes the body no matter what
+    //                 which is probably sensible... if a HEAD is used it is
+    //                 not a browser anyway
+    if(snapenv("REQUEST_METHOD") != "HEAD"
+    /*|| (modes & HEADER_MODE_NO_ERROR) == 0 -- not working... */)
     {
         write(output_data, output_data.size());
-// Warning: don't use this std::cout if you allow compression... 8-)
-//std::cout << f_output.buffer().data() << " [" << f_output.buffer().size() << "]\n";
+// Warning: do not use this std::cout if you allow compression... 8-)
+//std::cout << "output [" << output_data.data() << "] [" << output_data.size() << "]\n";
     }
 }
 
