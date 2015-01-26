@@ -30,7 +30,9 @@ enum name_t
     SNAP_NAME_OAUTH2_EMAIL,
     SNAP_NAME_OAUTH2_ENABLE,
     SNAP_NAME_OAUTH2_IDENTIFIER,
-    SNAP_NAME_OAUTH2_SECRET
+    SNAP_NAME_OAUTH2_IDENTIFIERS,
+    SNAP_NAME_OAUTH2_SECRET,
+    SNAP_NAME_OAUTH2_USER_ENABLE
 };
 char const *get_name(name_t name) __attribute__ ((const));
 

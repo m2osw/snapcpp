@@ -39,12 +39,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<a class="settings-save-button" href="#">Save Changes</a>
 					<a class="settings-cancel-button right-aligned" href="{/snap/head/metadata/desc[@type='page_uri']/data}">Cancel</a>
 				</xsl:if-->
-				<h2>OAuth2 Settings</h2>
+				<!--h2>OAuth2 Settings</h2-->
 				<div>
 					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
 
 					<fieldset>
-						<legend>OAuth2 Access Codes</legend>
+						<legend>Global OAuth2 Settings</legend>
 
 						<div class="editor-block">
 							<xsl:copy-of select="page/body/oauth2/enable/node()"/>
@@ -64,6 +64,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<label for="oauth2_secret" class="settings-title">Application Secret</label>
 							<xsl:copy-of select="page/body/oauth2/secret/node()"/>
 						</div>
+					</fieldset>
+
+					<fieldset>
+						<legend>Per User OAuth2 Extensions</legend>
+
+						<div class="editor-block">
+							<xsl:copy-of select="page/body/oauth2/user_enable/node()"/>
+						</div>
+
+						<!-- TODO: add support to select types of users (i.e. users given
+						           a certain set of tags) -->
 					</fieldset>
 
 				</div>

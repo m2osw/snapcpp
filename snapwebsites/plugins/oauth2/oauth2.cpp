@@ -61,8 +61,14 @@ const char *get_name(name_t name)
     case SNAP_NAME_OAUTH2_IDENTIFIER:
         return "oauth2::identifier";
 
+    case SNAP_NAME_OAUTH2_IDENTIFIERS:
+        return "*oauth2::identifier*";
+
     case SNAP_NAME_OAUTH2_SECRET:
         return "oauth2::secret";
+
+    case SNAP_NAME_OAUTH2_USER_ENABLE:
+        return "oauth2::user_enable";
 
     default:
         // invalid index
@@ -270,7 +276,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
                     "The OAuth2 system is currently disabled (%1 -> %2).");
         NOTREACHED();
     }
-    QString const email(revision_row->cell(get_name(SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
+    QString email(revision_row->cell(get_name(SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
     if(email.isEmpty())
     {
         f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
@@ -313,25 +319,54 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
         NOTREACHED();
     }
 
+    users::users *users_plugin(users::users::instance());
+
     // Check validity (i.e. is the application logged in?)
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-    QString const identifier(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue());
-    QString const secret(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_SECRET))->value().stringValue());
+    QString identifier(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue());
+    QString secret(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_SECRET))->value().stringValue());
     if(identifier != identifier_secret[0]
     || secret     != identifier_secret[1])
     {
-        require_oauth2_login();
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
-                    "Forbidden Authentication",
-                    "Your OAuth2 identifier and secret do not match this website OAuth2 information.",
-                    QString("Invalid%1%2")
-                            .arg(identifier != identifier_secret[0] ? " identifier" : "")
-                            .arg(secret     != identifier_secret[1] ? " secret"     : ""));
-        NOTREACHED();
+        // check whether it could be a user instead of the global OAuth2
+        bool invalid(true);
+        int8_t const user_enable(revision_row->cell(get_name(SNAP_NAME_OAUTH2_USER_ENABLE))->value().safeSignedCharValue());
+        if(user_enable)
+        {
+            // in this case we need to determine the secret from the user
+            // account which is identifier by "identifier"
+            QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
+            if(users_table->exists(get_name(SNAP_NAME_OAUTH2_IDENTIFIERS))
+            && users_table->row(get_name(SNAP_NAME_OAUTH2_IDENTIFIERS))->exists(identifier_secret[0]))
+            {
+                // change the email to that user's email
+                email = users_table->row(get_name(SNAP_NAME_OAUTH2_IDENTIFIERS))->cell(identifier_secret[0])->value().stringValue();
+                if(users_table->exists(email))
+                {
+                    identifier = users_table->row(email)->cell(get_name(SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue();
+                    secret = users_table->row(email)->cell(get_name(SNAP_NAME_OAUTH2_SECRET))->value().stringValue();
+                    invalid = identifier != identifier_secret[0]
+                           || secret     != identifier_secret[1];
+                }
+            }
+        }
+
+        // if still not equal, the user credentials are not 100% valid
+        if(invalid)
+        {
+            require_oauth2_login();
+            f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+                        "Forbidden Authentication",
+                        "Your OAuth2 identifier and secret do not match this website OAuth2 information.",
+                        QString("Invalid%1%2")
+                                .arg(identifier != identifier_secret[0] ? " identifier" : "")
+                                .arg(secret     != identifier_secret[1] ? " secret"     : ""));
+            NOTREACHED();
+        }
     }
 
     // create a new user session since the username and password matched
-    users::users *users_plugin(users::users::instance());
+    time_t login_limit(0);
     bool validation_required(false);
     QString const details(users_plugin->login_user(email, "", validation_required));
     QString session_id;
@@ -341,6 +376,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
         session_id = QString("%1/%2")
                     .arg(session_info.get_session_key())
                     .arg(session_info.get_session_random());
+        login_limit = session_info.get_login_limit();
     }
     else
     {
@@ -361,6 +397,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
             "\"result\":\"%3\""
             "%4"
             "%5"
+            "%6"
             "}")
                 .arg(get_major_version()).arg(get_minor_version())
                 .arg(details.isEmpty() ? "success" : "failure")
@@ -368,6 +405,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
                 .arg(details.isEmpty() ? "" : QString(",\"error\":\"%1\"")
                         .arg(validation_required ? "The account you chose as the OAuth2 account was not yet validated."
                                                  : "Your OAuth2 credentials were incorrect."))
+                .arg(login_limit == 0 ? "" : QString(",\"timeout\":%1").arg(login_limit))
             );
     }
     else
@@ -378,6 +416,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
                 "<result>%3</result>"
                 "%4"
                 "%5"
+                "%6"
             "</snap>")
                 .arg(get_major_version()).arg(get_minor_version())
                 .arg(details.isEmpty() ? "success" : "failure")
@@ -385,6 +424,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
                 .arg(details.isEmpty() ? "" : QString("<error>%1</error>")
                         .arg(validation_required ? "The account you chose as the OAuth2 account was not yet validated."
                                                  : "Your OAuth2 credentials were incorrect."))
+                .arg(login_limit == 0 ? "" : QString("<timeout>%1</timeout>").arg(login_limit))
             );
     }
 

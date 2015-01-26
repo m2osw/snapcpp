@@ -50,6 +50,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <tooltip>The OAuth2 plugin generates a connection secret. This field shows you that identifier.</tooltip>
     <state>read-only</state>
   </widget>
+  <widget id="oauth2_user_enable" type="checkmark" field="oauth2::user_enable" path="oauth2/user_enable" auto-save="int8">
+    <label>Turn the OAuth2 feature ON or OFF for Users</label>
+    <tooltip>Each user may be entitled to make us of an application. To allow your users to make use of that application, they will need to have their own identifier and secret codes. These are found in their account, but this checkmark has to be turned on for them to see and use the codes.</tooltip>
+    <help>Help</help>
+    <value>0</value>
+  </widget>
 </editor-form>
 <!-- vim: ts=2 sw=2 et
 -->
