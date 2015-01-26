@@ -216,12 +216,14 @@ public:
     bool                    user_is_logged_in();
     static QString          create_password();
     bool                    register_user(QString const& email, QString const& password);
+    sessions::sessions::session_info const& get_session() const;
     void                    attach_to_session(QString const& name, QString const& data);
     QString                 detach_from_session(QString const& name);
     QString                 get_from_session(QString const& name) const;
     void                    set_referrer( QString path );
     void                    send_to_replace_password_page(QString const& email, bool const set_status);
     QString                 login_user(QString const& key, QString const& password, bool& validation_required, login_mode_t login_mode = LOGIN_MODE_FULL);
+    bool                    authenticated_user(QString const& key, sessions::sessions::session_info *info);
     void                    user_logout();
 
     int64_t                 get_user_identifier(QString const& user_path) const;

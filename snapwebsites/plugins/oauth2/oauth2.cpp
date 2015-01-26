@@ -28,23 +28,9 @@
 #include "oauth2.h"
 
 #include "../users/users.h"
-//#include "../messages/messages.h"
-//#include "../sendmail/sendmail.h"
-//#include "../server_access/server_access.h"
 
 #include "http_strings.h"
-//#include "qstring_stream.h"
-//#include "not_reached.h"
 #include "log.h"
-
-//#include <iostream>
-//
-//#include <QtCassandra/QCassandraLock.h>
-//
-//#include <openssl/evp.h>
-//#include <openssl/rand.h>
-//#include <boost/static_assert.hpp>
-//#include <QFile>
 
 #include "poison.h"
 
@@ -197,6 +183,7 @@ void oauth2::on_bootstrap(::snap::snap_child *snap)
 {
     f_snap = snap;
 
+    SNAP_LISTEN0(oauth2, "server", server, process_cookies);
     SNAP_LISTEN(oauth2, "content", content::content, create_content, _1, _2, _3);
 }
 
@@ -262,119 +249,316 @@ void oauth2::on_create_content(content::path_info_t& ipath, QString const& owner
  */
 bool oauth2::on_path_execute(content::path_info_t& ipath)
 {
-    if(ipath.get_cpath() == "user/oauth2")
+    if(ipath.get_cpath() != "user/oauth2")
     {
+        return false;
+    }
+
+    f_snap->set_ignore_cookies();
+
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    content::path_info_t settings_ipath;
+    settings_ipath.set_path("admin/settings/oauth2");
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+    int8_t const enable(revision_row->cell(get_name(SNAP_NAME_OAUTH2_ENABLE))->value().safeSignedCharValue());
+    if(!enable)
+    {
+        f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+                    "Unauthorized Authentication",
+                    "This website does not authorize OAuth2 authentications at the moment.",
+                    "The OAuth2 system is currently disabled (%1 -> %2).");
+        NOTREACHED();
+    }
+    QString const email(revision_row->cell(get_name(SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
+    if(email.isEmpty())
+    {
+        f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+                    "Invalid Settings",
+                    "Your OAuth2 settings do not include a user email for us to log your application in.",
+                    "The OAuth2 system is currently \"disabled\" because no user email was specified.");
+        NOTREACHED();
+    }
+
+    // Retrieve the Snap-Authorization Field
+    //
+    // Note:
+    // We do not use the Authorization field because that field is
+    // removed by Apache2 (at least when you run mod_auth_basic and
+    // similar modules)
+    QString const authorization(f_snap->snapenv("HTTP_SNAP_AUTHORIZATION"));
+    QStringList const snap_base64(authorization.simplified().split(" "));
+    if(snap_base64.size() != 2
+    || snap_base64[0].toUpper() != "SNAP")
+    {
+        require_oauth2_login();
+        f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+                    "Unauthorized Method of Authentication",
+                    "We only support the Snap authentication method.",
+                    QString("The authorization did not have 2 parts (Snap and Secret) or the first is not \"Snap\" (\"%1\")")
+                            .arg(snap_base64.size() == 2 ? snap_base64[0] : "undefined"));
+        NOTREACHED();
+    }
+
+    // Decrypt the buffer
+    QByteArray const base64_buffer(QByteArray::fromBase64(snap_base64[1].toUtf8()));
+    QStringList const identifier_secret(QString::fromUtf8(base64_buffer.data()).split(":"));
+    if(identifier_secret.size() != 2)
+    {
+        require_oauth2_login();
+        f_snap->die(snap_child::HTTP_CODE_BAD_REQUEST,
+                    "Invalid Authentication",
+                    "The authentication identifier and secret codes are expected to include only one colon character.",
+                    "The expected authorization \"id:secret\" not available.");
+        NOTREACHED();
+    }
+
+    // Check validity (i.e. is the application logged in?)
+    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    QString const identifier(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue());
+    QString const secret(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_SECRET))->value().stringValue());
+    if(identifier != identifier_secret[0]
+    || secret     != identifier_secret[1])
+    {
+        require_oauth2_login();
+        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+                    "Forbidden Authentication",
+                    "Your OAuth2 identifier and secret do not match this website OAuth2 information.",
+                    QString("Invalid%1%2")
+                            .arg(identifier != identifier_secret[0] ? " identifier" : "")
+                            .arg(secret     != identifier_secret[1] ? " secret"     : ""));
+        NOTREACHED();
+    }
+
+    // create a new user session since the username and password matched
+    users::users *users_plugin(users::users::instance());
+    bool validation_required(false);
+    QString const details(users_plugin->login_user(email, "", validation_required));
+    QString session_id;
+    if(details.isEmpty())
+    {
+        sessions::sessions::session_info const& session_info(users_plugin->get_session());
+        session_id = QString("%1/%2")
+                    .arg(session_info.get_session_key())
+                    .arg(session_info.get_session_random());
+    }
+    else
+    {
+        SNAP_LOG_ERROR("Could not log this application in because the user attached to this website OAuth2 was not accepted. Details: ")(details);
+    }
+
+    // generate the result, an OAuth2 session
+    // accept XML and JSON
+    http_strings::WeightedHttpString encodings(f_snap->snapenv("HTTP_ACCEPT"));
+    float const xml_level(encodings.get_level("application/xml"));
+    float const json_level(encodings.get_level("application/json"));
+    if(json_level > xml_level)
+    {
+        f_snap->output(QString(
+            "{"
+            "\"version\":\"" SNAPWEBSITES_VERSION_STRING "\","
+            "\"oauth2\":\"%1.%2\","
+            "\"result\":\"%3\""
+            "%4"
+            "%5"
+            "}")
+                .arg(get_major_version()).arg(get_minor_version())
+                .arg(details.isEmpty() ? "success" : "failure")
+                .arg(session_id.isEmpty() ? "" : QString(",\"session\":\"%1\",\"session_type\":\"Bearer\"").arg(session_id))
+                .arg(details.isEmpty() ? "" : QString(",\"error\":\"%1\"")
+                        .arg(validation_required ? "The account you chose as the OAuth2 account was not yet validated."
+                                                 : "Your OAuth2 credentials were incorrect."))
+            );
+    }
+    else
+    {
+        f_snap->output(QString(
+            "<?xml version=\"1.0\"?>"
+            "<snap version=\"" SNAPWEBSITES_VERSION_STRING "\" oauth2=\"%1.%2\">"
+                "<result>%3</result>"
+                "%4"
+                "%5"
+            "</snap>")
+                .arg(get_major_version()).arg(get_minor_version())
+                .arg(details.isEmpty() ? "success" : "failure")
+                .arg(session_id.isEmpty() ? "" : QString("<oauth2-session type=\"Bearer\">%1</oauth2-session>").arg(session_id))
+                .arg(details.isEmpty() ? "" : QString("<error>%1</error>")
+                        .arg(validation_required ? "The account you chose as the OAuth2 account was not yet validated."
+                                                 : "Your OAuth2 credentials were incorrect."))
+            );
+    }
+
+    return true;
+}
+
+
+/** \brief An application may need to be logged in.
+ *
+ * This function checks whether the application is logged in or not.
+ *
+ * The login makes use of the session identifier and random number
+ * defined in the Snap-Authorization field. The random number is
+ * currently ignored because it would otherwise require applications
+ * to support changing the random number on their next access which
+ * is "complicated" to do.
+ *
+ * The function returns only if the user (application) is properly
+ * logged in. In all other cases the application is not logged in
+ * and the process calls die() with a 401 or a 403 error.
+ */
+void oauth2::application_login()
+{
+    // prevent login in with the "wrong" methods
+    QString const method(f_snap->snapenv("REQUEST_METHOD"));
+    if(method == "HEAD"
+    || method == "TRACE")
+    {
+        require_oauth2_login();
+        f_snap->die(snap_child::HTTP_CODE_METHOD_NOT_ALLOWED,
+                    "Method Not Allowed",
+                    "Applications do not accept method HEAD or TRACE.",
+                    "Invalid method to access an application page.");
+        NOTREACHED();
+    }
+
+    // if the user is not accessing the OAuth2 log in feature
+    // we check whether a Snap-Authorization field exists with
+    // type named Bearer and if so verify the session identifier
+    // and random
+    QString const authorization(f_snap->snapenv("HTTP_SNAP_AUTHORIZATION"));
+
+    QStringList const session_id(authorization.simplified().split(" "));
+    if(session_id.size() != 2
+    || session_id[0].toUpper() != "BEARER")
+    {
+        require_oauth2_login();
+        f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+                "Permission Denied",
+                "This page requires a Snap-Authorization.",
+                QString("An API page was accessed with any invalid Snap-Authorization field (%1).").arg(authorization));
+        NOTREACHED();
+    }
+
+    // is that session a valid "user" session?
+    QStringList const parameters(session_id[1].split("/"));
+    QString const session_key(parameters[0]);
+
+    // Ignore the random key for applications
+    //QString random_key; // TODO: really support the case of "no random key"???
+    //if(parameters.size() > 1)
+    //{
+    //    random_key = parameters[1];
+    //}
+
+    sessions::sessions::session_info info;
+    sessions::sessions::instance()->load_session(session_key, info, false);
+    QString const path(info.get_object_path());
+    if(info.get_session_type() == sessions::sessions::session_info::SESSION_INFO_VALID
+    && info.get_session_id() == users::users::USERS_SESSION_ID_LOG_IN_SESSION
+    //&& info.get_session_random() == random_key.toInt() -- ignored here
+    && info.get_user_agent() == f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
+    && path.left(6) == "/user/"
+    && users::users::instance()->authenticated_user(path.mid(6), &info))
+    {
+        // this session qualifies as a log in session
+        return;
+    }
+
+    // we reach here if the application used the /logout path to delete
+    // its session
+    content::path_info_t main_ipath;
+    main_ipath.set_path(f_snap->get_uri().path());
+    if(main_ipath.get_cpath() == "logout"
+    || main_ipath.get_cpath() == "logout/")
+    {
+        // it was a log out, there is nothing more to do, but there is no
+        // error in logging out from a website
+        //
+        // generate the result, an OAuth2 session
         // accept XML and JSON
+        QString buffer;
         http_strings::WeightedHttpString encodings(f_snap->snapenv("HTTP_ACCEPT"));
         float const xml_level(encodings.get_level("application/xml"));
         float const json_level(encodings.get_level("application/json"));
-
-        content::content *content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-        content::path_info_t settings_ipath;
-        settings_ipath.set_path("admin/settings/oauth2");
-        int8_t const enable(revision_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_ENABLE))->value().safeSignedCharValue());
-        if(!enable)
-        {
-            f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
-                        "Unauthorized Authentication",
-                        "This website does not authorize OAuth2 authentications at the moment.",
-                        "The OAuth2 system is currently disabled.");
-            NOTREACHED();
-        }
-        QString const email(revision_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
-        if(email.isEmpty())
-        {
-            f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
-                        "Invalid Settings",
-                        "Your OAuth2 settings do not include a user email for us to log your application in.",
-                        "The OAuth2 system is currently \"disabled\" because no user email was specified.");
-            NOTREACHED();
-        }
-
-        // Retrieve Authorization Field
-        QString const authorization(f_snap->snapenv("HTTP_AUTHORIZATION"));
-        QStringList const basic_base64(authorization.simplified().split(" "));
-        if(basic_base64.size() != 2
-        || basic_base64[0].toUpper() != "BASIC")
-        {
-            f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
-                        "Unauthorized Method of Authentication",
-                        "We only support the Basic authentication method.",
-                        "The authorization did not have 2 parts (Basic and Secret)");
-            NOTREACHED();
-        }
-
-        // Decrypt the buffer
-        QByteArray const base64_buffer(QByteArray::fromBase64(basic_base64[1].toUtf8()));
-        QStringList const identifier_secret(QString::fromUtf8(base64_buffer.data()).split(":"));
-        if(identifier_secret.size() != 2)
-        {
-            f_snap->die(snap_child::HTTP_CODE_BAD_REQUEST,
-                        "Invalid Authentication",
-                        "The authentication identifier and secret codes are expected to include only one colon character.",
-                        "The expected authorization \"id:secret\" not available.");
-            NOTREACHED();
-        }
-
-        // Check validity (i.e. is the application logged in?)
-        QString const identifier(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue());
-        QString const secret(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_SECRET))->value().stringValue());
-        if(identifier != identifier_secret[0]
-        || secret     != identifier_secret[1])
-        {
-            f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
-                        "Forbidden Authentication",
-                        "Your OAuth2 identifier and secret do not match this website OAuth2 information.",
-                        QString("Invalid%1%2")
-                                .arg(identifier != identifier_secret[0] ? " identifier" : "")
-                                .arg(secret     != identifier_secret[1] ? " secret"     : ""));
-            NOTREACHED();
-        }
-
-        // create a new user session
-        bool validation_required(false);
-        users::users *users_plugin(users::users::instance()->instance());
-        QString const details(users_plugin->login_user(email, "", validation_required));
-
-        // generate the result, an OAuth2 session
         if(json_level > xml_level)
         {
-            // TODO: we want an XSLT for this process
-            f_snap->die(snap_child::HTTP_CODE_NOT_IMPLEMENTED,
-                        "No JSON Support Yet",
-                        "The OAuth2 does not yet have support for JSON.",
-                        "TODO: Implement the OAuth2 XML to JSON XSLT file.");
-            NOTREACHED();
+            buffer = QString(
+                "{"
+                "\"version\":\"" SNAPWEBSITES_VERSION_STRING "\","
+                "\"oauth2\":\"%1.%2\","
+                "\"result\":\"logged out\""
+                "}")
+                    .arg(get_major_version()).arg(get_minor_version())
+                ;
         }
         else
         {
-            f_snap->output(QString(
+            buffer = QString(
                 "<?xml version=\"1.0\"?>"
-                "<snap>"
-                    "<oauth2-session>%1</oauth2-session>"
-                    "<result>%2</result>"
-                    "%3"
+                "<snap version=\"" SNAPWEBSITES_VERSION_STRING "\" oauth2=\"%1.%2\">"
+                    "<result>logged out</result>"
                 "</snap>")
-                    .arg("session-id")
-                    .arg(details.isEmpty() ? "success" : "failure")
-                    .arg(details.isEmpty() ? "" : QString("<error>%1</error>")
-                            .arg(validation_required ? "The account you chose as the OAuth2 account was not yet validated."
-                                                     : "Your OAuth2 credentials were incorrect."))
-                );
-
-            if(!details.isEmpty())
-            {
-                SNAP_LOG_ERROR("Could not log this application in because the user attached to this website OAuth2 was not accepted. Details: ")(details);
-            }
+                    .arg(get_major_version()).arg(get_minor_version())
+                ;
         }
-        return true;
+        // we are in an odd location and to end the child now
+        // we need to do all the work ourselves
+        f_snap->output_result(snap_child::HEADER_MODE_NO_ERROR, buffer.toUtf8());
+
+        // IMPORTANT NOTE:
+        // We are still inside the process_cookies() signal and thus the
+        // detach_from_session() signal was not yet emitted so we do not
+        // have to call the attach_to_session() signal before exiting.
+        exit(0);
+        NOTREACHED();
     }
 
-    return false;
+    require_oauth2_login();
+    f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+            "Unauthorized",
+            "This page requires a valid Snap-Authorization. If you had such, it may have timed out.",
+            "The application session information was not valid and the user could not be authenticated properly.");
+    NOTREACHED();
 }
 
+
+/** \brief Send the authorization mechanism to the client.
+ *
+ * This function is used by plugins that implement an API and
+ * find out that the page being accessed requires more permissions.
+ *
+ * The function sends the client an additional header with
+ * the authentication type and realm.
+ */
+void oauth2::require_oauth2_login()
+{
+    f_snap->set_header("WWW-Snap-Authenticate", "Snap realm=\"Snap OAuth2\"", snap_child::HEADER_MODE_ERROR);
+}
+
+
+/** \brief Check whether we have a Snap-Authorization field.
+ *
+ * This signal is raised pretty early on and we use it here to try to
+ * avoid redirects to /login on permission problems.
+ */
+void oauth2::on_process_cookies()
+{
+    QString const authorization(f_snap->snapenv("HTTP_SNAP_AUTHORIZATION"));
+    if(!authorization.isEmpty())
+    {
+        f_snap->set_ignore_cookies();
+
+        QStringList const auth(authorization.simplified().split(" "));
+        if(auth.size() == 2
+        && auth[0].toUpper() != "SNAP")
+        {
+            // we have to log in right now otherwise permissions will
+            // prevent access to the other plugin pages before they
+            // get a chance to do anything
+            application_login();
+        }
+    }
+}
 
 
 SNAP_PLUGIN_END()

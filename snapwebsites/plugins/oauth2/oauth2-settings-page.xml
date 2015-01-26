@@ -32,8 +32,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
   <widget id="oauth2_enable" type="checkmark" field="oauth2::enable" path="oauth2/enable" auto-save="int8">
-    <label>Turn the OAuth2 feature &lt;ON&gt; or OFF</label>
-    <tooltip>Check this &lt;box&gt; to enable the OAuth2 feature. When OAuth2 is enabled application that know of various API supported by your website can log in and manage your website remotely.</tooltip>
+    <label>Turn the OAuth2 feature ON or OFF</label>
+    <tooltip>Check this box to enable the OAuth2 feature. When OAuth2 is enabled applications that know of various API supported by your website can log in and manage your website remotely.</tooltip>
     <help>Help</help>
     <value>0</value>
   </widget>

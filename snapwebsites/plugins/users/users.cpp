@@ -543,46 +543,7 @@ void users::on_process_cookies()
         {
             // this session qualifies as a log in session
             // so now verify the user
-            QString const key(path.mid(6));
-            // authenticated user?
-            if(!key.isEmpty())
-            {
-                QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-                if(users_table->exists(key))
-                {
-                    // this is a valid user email address!
-                    QString const uri_path(f_snap->get_uri().path());
-                    if(uri_path == "/logout" || uri_path.left(8) == "/logout/")
-                    {
-                        // the user is requesting to log out, here we avoid
-                        // dealing with all the session information again
-                        // this way we right away cancel the log in but
-                        // we actually keep the session
-                        f_user_key = key;
-                        user_logout();
-                    }
-                    else
-                    {
-                        // the user still has a valid session, but he may
-                        // not be fully logged in... (i.e. not have as much
-                        // permission as given with a fresh log in)
-                        //
-                        // TODO: we need an additional form to authorize
-                        //       the user to do more
-                        f_user_logged_in = f_snap->get_start_time() < f_info->get_login_limit();
-
-                        // the website may opt out of the long session scheme
-                        // the following loses the user key if the website
-                        // administrator said so...
-                        QtCassandra::QCassandraValue long_sessions(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_LONG_SESSIONS)));
-                        if(f_user_logged_in
-                        || (long_sessions.nullValue() || long_sessions.signedCharValue()))
-                        {
-                            f_user_key = key;
-                        }
-                    }
-                }
-            }
+            authenticated_user(path.mid(6), nullptr);
             create_new_session = false;
         }
     }
@@ -653,6 +614,85 @@ void users::on_process_cookies()
 }
 
 
+/** \brief Allow other plugins to authenticate a user.
+ *
+ * The user cookie is used to determine whether a user is logged in. If
+ * a different plugin is used that does not make use of the cookies,
+ * then this function can be called with the email address of the user
+ * to see whether the user's session is still active.
+ *
+ * If the path used to access this function starts with /logout then
+ * the user is forcibly logged out instead of logged in.
+ *
+ * \note
+ * The specified info is saved in the users' plugin f_info variable
+ * member only if the user gets authenticated.
+ *
+ * \param[in] key  The user email.
+ * \param[in] info  A pointer to the user's information to be used.
+ *
+ * \return true if the user gets authenticated, false in all other cases
+ */
+bool users::authenticated_user(QString const& key, sessions::sessions::session_info *info)
+{
+    // called with a seemingly valid key?
+    if(key.isEmpty())
+    {
+        return false;
+    }
+
+    // called with the email address of a user who registered before?
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    if(!users_table->exists(key))
+    {
+        return false;
+    }
+
+    // is the user/application trying to log out
+    QString const uri_path(f_snap->get_uri().path());
+    if(uri_path == "/logout" || uri_path.left(8) == "/logout/")
+    {
+        // the user is requesting to be logged out, here we avoid
+        // dealing with all the session information again this
+        // way we right away cancel the log in but we actually
+        // keep the session
+        f_user_key = key;
+        if(info)
+        {
+            *f_info = *info;
+        }
+        user_logout();
+        return false;
+    }
+
+    // the user still has a valid session, but he may
+    // not be fully logged in... (i.e. not have as much
+    // permission as given with a fresh log in)
+    //
+    // TODO: we need an additional form to authorize
+    //       the user to do more
+    time_t limit(info ? info->get_login_limit() : f_info->get_login_limit());
+    f_user_logged_in = f_snap->get_start_time() < limit;
+
+    // the website may opt out of the long session scheme
+    // the following loses the user key if the website
+    // administrator said so...
+    QtCassandra::QCassandraValue long_sessions(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_LONG_SESSIONS)));
+    if(f_user_logged_in
+    || (long_sessions.nullValue() || long_sessions.signedCharValue()))
+    {
+        f_user_key = key;
+        if(info)
+        {
+            *f_info = *info;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+
 /** \brief This function can be used to log the user out.
  *
  * If your software detects a situation where a currently logged in
@@ -701,6 +741,8 @@ void users::user_logout()
     // Save the user IP address when logged out
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
     row->cell(get_name(SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
+
+    sessions::sessions::instance()->save_session(*f_info, false);
 
     f_user_key.clear();
     f_user_logged_in = false;
@@ -1941,7 +1983,8 @@ void users::process_login_form(login_mode_t login_mode)
  * \param[in] validation_required  Whether the user needs to validate his account.
  * \param[in] login_mode  The mode used to log in: full, verification.
  *
- * \return A string representing an error, an empty string if the login worked.
+ * \return A string representing an error, an empty string if the login worked
+ *         and the user is not being redirected.
  */
 QString users::login_user(QString const& key, QString const& password, bool& validation_required, login_mode_t login_mode)
 {
@@ -2121,6 +2164,13 @@ QString users::login_user(QString const& key, QString const& password, bool& val
                     // send a signal that the user is ready (this signal is also
                     // sent when we have a valid cookie)
                     logged_in_user_ready();
+
+                    if(password.isEmpty())
+                    {
+                        // This looks like an API login someone, we just
+                        // return and let the caller handle the rest
+                        return "";
+                    }
 
                     if(force_redirect_password_change)
                     {
@@ -3350,6 +3400,27 @@ void users::forgot_password_email(QString const& email)
     // really this just saves it in the database, the sendmail itself
     // happens on the backend; see sendmail::on_backend_action()
     sendmail::sendmail::instance()->post_email(e);
+}
+
+
+/** \brief Get a constant reference to the session information.
+ *
+ * This function can be used to retrieve a reference to the session
+ * information of the current user. Note that could be an anonymous
+ * user. It is up to you to determine whether the user is logged in
+ * if the intend is to use the session information only of logged in
+ * users.
+ *
+ * \return A constant reference to this user session information.
+ */
+sessions::sessions::session_info const& users::get_session() const
+{
+    if(f_info)
+    {
+        return *f_info;
+    }
+
+    throw snap_logic_exception("users::get_sessions() called when the session point is still nullptr");
 }
 
 

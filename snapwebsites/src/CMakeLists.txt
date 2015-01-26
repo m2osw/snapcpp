@@ -95,6 +95,31 @@ install(
 
 
 #################################################################################
+## Encode a username and password for basic auth
+##
+project(snap_uuencode_basic_auth)
+
+add_executable(${PROJECT_NAME}
+    snap_uuencode_basic_auth.cpp
+)
+
+# while developing you may need to set LD_LIBRARY_PATH
+target_link_libraries(${PROJECT_NAME}
+    #snapwebsites
+    ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
+    ${QT_LIBRARIES}
+    #${THRIFT_LIBRARIES}
+    #${LIBTLD_LIBRARIES}
+    #dl
+)
+
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
 ## The Snap! Passthrough CGI script
 ##
 project(snapcgi)

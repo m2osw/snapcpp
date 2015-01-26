@@ -3365,7 +3365,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                                 NOTREACHED();
                             }
                             f_browser_cookies[cookie_name] = cookie_value;
-//fprintf(stderr, "f_browser_cookies[\"%s\"] = \"%s\";\n", cookie_name.toUtf8().data(), cookie_value.toUtf8().data());
+//std::cerr << " f_browser_cookies[\"" << cookie_name << "\"] = \"" << cookie_value << "\";\n";
                         }
                     }
                 }
@@ -6226,6 +6226,19 @@ void snap_child::set_cookie(http_cookie const& cookie_info)
 }
 
 
+/** \brief Ask for the cookies to not be output.
+ *
+ * When implementing an interface such as REST or SOAP you do not want
+ * to output the cookies. It would not be safe to send cookies to the
+ * browser. This function should be called by any such implementation
+ * to make sure that the cookies do not go back out.
+ */
+void snap_child::set_ignore_cookies()
+{
+    f_ignore_cookies = true;
+}
+
+
 /** \brief Output the cookies in your header.
  *
  * Since we generate HTTP headers in different places but still want to
@@ -6241,6 +6254,11 @@ void snap_child::set_cookie(http_cookie const& cookie_info)
  */
 void snap_child::output_cookies()
 {
+    if(f_ignore_cookies)
+    {
+        return;
+    }
+
     if(!f_cookies.isEmpty())
     {
         for(cookie_map_t::const_iterator it(f_cookies.begin());

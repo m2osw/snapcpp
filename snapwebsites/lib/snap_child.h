@@ -320,6 +320,7 @@ public:
     time_t                      get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
     void                        set_header(QString const& name, QString const& value, header_mode_t modes = HEADER_MODE_NO_ERROR);
     void                        set_cookie(http_cookie const& cookie);
+    void                        set_ignore_cookies();
     bool                        has_header(QString const& name) const;
     QString                     get_header(QString const& name) const;
     QString                     get_unique_number();
@@ -445,6 +446,7 @@ private:
     QBuffer                                     f_output;
     header_map_t                                f_header;
     cookie_map_t                                f_cookies;
+    controlled_vars::flbool_t                   f_ignore_cookies;
     QString                                     f_language;
     QString                                     f_country;
     QString                                     f_language_key;

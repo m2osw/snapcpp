@@ -172,7 +172,7 @@ public:
     virtual void            on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     QString                 create_session(session_info& info);
-    void                    save_session(session_info& info, bool new_random);
+    void                    save_session(session_info& info, bool const new_random);
     void                    load_session(QString const& session_id, session_info& info, bool use_once = true);
 
     void                    attach_to_session(session_info const& info, QString const& name, QString const& data);

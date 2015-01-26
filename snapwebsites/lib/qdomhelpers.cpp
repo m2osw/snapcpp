@@ -440,7 +440,7 @@ QString unescape(QString const& str)
                 ++s;
             }
             // named/number
-            name.clear();
+            name.resize(0);
             for(int i(0); i < 20 && s->unicode() != '\0' && s->unicode() != ';' && !s->isSpace(); ++i, ++s)
             {
                 name += *s;

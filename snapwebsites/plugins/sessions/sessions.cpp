@@ -1148,7 +1148,7 @@ QString sessions::create_session(session_info& info)
  * \param[in,out] info  The session info to save.
  * \param[in] new_random  Whether the session should be given a new random number.
  */
-void sessions::save_session(session_info& info, bool new_random)
+void sessions::save_session(session_info& info, bool const new_random)
 {
     if(new_random)
     {
