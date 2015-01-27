@@ -132,9 +132,9 @@ snap_software_description *snap_software_description::instance()
  */
 QString snap_software_description::description() const
 {
-    return "The Snap Software Description plugin offers end users a way to"
-          " define a set of description for software that they are offering"
-          " for download on their website. The software may be free or for"
+    return "The Snap Software Description plugin offers you a way to"
+          " define a set of descriptions for software that you are offering"
+          " for download on your website. The software may be free or for"
           " a fee. It may also be a shareware.";
 }
 

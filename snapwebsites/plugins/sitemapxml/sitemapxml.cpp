@@ -716,7 +716,7 @@ void sitemapxml::on_backend_process()
 {
     SNAP_LOG_TRACE() << "backend_process: process sitemap.xml content.";
 
-    uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
+    uint64_t const start_date(f_snap->get_start_date());
 
     // now give other plugins a chance to add dynamic links to the sitemap.xml
     // file; we don't give the users access to the XML file, they call our

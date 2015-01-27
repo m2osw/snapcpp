@@ -2680,13 +2680,6 @@ SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(
         // (not a full 301, just show site B instead of site A)
         site_redirect();
 
-        // save the start date as a variable so all the plugins have access
-        // to it as any other variable (really we can do f_snap->get_start_date()
-        // now to directly get the int64 value.)
-        // TODO: make sure this is not used anywhere anymore and then remove
-        //       it; it is a lot faster to use f_snap->get_start_date()
-        f_uri.set_option("start_date", QString("%1").arg(f_start_date));
-
         // start the plugins and there initialization
         QStringList list_of_plugins(init_plugins(true));
 

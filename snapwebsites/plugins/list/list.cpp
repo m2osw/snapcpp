@@ -108,7 +108,7 @@ char const *get_name(name_t name)
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_OUTPUT_...");
+        throw snap_logic_exception("invalid SNAP_NAME_LIST_...");
 
     }
     NOTREACHED();

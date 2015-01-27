@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/admin/settings/oauth2" owner="output">
     <param name="content::title" revision="revision">OAuth2 Settings</param>
     <param name="content::body" revision="revision">
-        <![CDATA[<p>Setup the OAuth2 feature for this website.</p>]]>
+      <![CDATA[<p>Setup the OAuth2 feature for this website.</p>]]>
     </param>
     <param name="editor::layout" revision="global" overwrite="yes">"oauth2-settings-page";</param>
     <param name="layout::layout" revision="global" overwrite="yes">"oauth2-settings-parser";</param>

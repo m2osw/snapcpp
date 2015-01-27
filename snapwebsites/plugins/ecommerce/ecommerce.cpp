@@ -471,15 +471,11 @@ void ecommerce::content_update(int64_t variables_timestamp)
 }
 
 
-/** \brief Setup page for the editor.
+/** \brief Setup page for the e-Commerce plugin.
  *
- * The editor has a set of dynamic parameters that the users are offered
- * to setup. These parameters need to be sent to the user and we use this
- * function for that purpose.
- *
- * \todo
- * Look for a way to generate the editor data only if necessary (too
- * complex for now.)
+ * The e-Commerce module offers a JavaScript cart which we want on all
+ * pages of an e-Commerce website since the user may want to checkout
+ * at any time.
  *
  * \param[in,out] ipath  The path being managed.
  * \param[in,out] header  The header being generated.

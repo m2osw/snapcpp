@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<!--
+Snap Websites Server == QR Code page widgets
+Copyright (C) 2014-2015  Made to Order Software Corp.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<editor-form owner="qrcode" content-modified="2014-11-21 16:42:08">
+  <auto-reset minutes="30"/> <!-- 30 minutes -->
+  <mode action="edit"/>
+  <immediate/>
+  <focus refid="qrcode_private_enable"/>
+  <on-save allow-edit="yes"/>
+  <taborder>
+    <tabindex refid="qrcode_private_enable"/>
+    <tabindex refid="qrcode_default_scale"/>
+    <tabindex refid="qrcode_default_edge"/>
+  </taborder>
+  <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
+  </widget>
+  <widget id="qrcode_private_enable" type="checkmark" field="qrcode::private_enable" path="qrcode/private_enable" auto-save="int8">
+    <label>Allow QR Code generation for private pages</label>
+    <tooltip>Select this checkmark to allow QR code for private pages. By default this is off because there is not much need for private pages to receive a QR code.</tooltip>
+    <help>Help</help>
+    <value>0</value>
+  </widget>
+  <widget id="qrcode_default_scale" type="radio" field="qrcode::default_scale" path="qrcode/default_scale" auto-save="int8">
+    <tooltip>Select the default scale of your QR Code. The scale does not define the white area around the resulting image. That part is defined by the edge parameter.</tooltip>
+    <help>Help</help>
+    <preset>
+      <item value="1"><img src="/images/qrcode/index.html?scale=1&amp;edge=71"/></item>
+      <item value="2"><img src="/images/qrcode/index.html?scale=2&amp;edge=54"/></item>
+      <item value="3"><img src="/images/qrcode/index.html?scale=3&amp;edge=38"/></item>
+      <item value="4"><img src="/images/qrcode/index.html?scale=4&amp;edge=21"/></item>
+      <item value="5"><img src="/images/qrcode/index.html?scale=5&amp;edge=5"/></item>
+    </preset>
+    <value>3</value>
+  </widget>
+  <widget id="qrcode_default_edge" type="line-edit" field="qrcode::default_edge" path="qrcode/default_edge" auto-save="int8">
+    <tooltip>Enter the widget of the edge around the QR Code. It most cases it should be set to 5 x Scale. We allow values from zero (0) to 50.</tooltip>
+    <help>Help</help>
+    <background-value>edge width</background-value>
+    <sizes>
+      <min>0</min>
+      <max>3</max>
+    </sizes>
+    <value>15</value>
+  </widget>
+</editor-form>
+<!-- vim: ts=2 sw=2 et
+-->

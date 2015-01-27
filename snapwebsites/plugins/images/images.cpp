@@ -35,6 +35,7 @@ SNAP_PLUGIN_START(images, 1, 0)
 //
 // Magick Documentation
 // http://www.imagemagick.org/Magick++/Image.html
+// http://www.imagemagick.org/script/formats.php
 //
 
 
@@ -222,7 +223,7 @@ images *images::instance()
 QString images::description() const
 {
     return "Transform images in one way or another. Also used to generate"
-           " previews of attachments such as the first page of a PDF file.";
+          " previews of attachments such as the first page of a PDF file.";
 }
 
 

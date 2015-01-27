@@ -53,10 +53,7 @@ public:
 
 
 class oauth2 : public plugins::plugin
-             //, public links::links_cloned
              , public path::path_execute
-             //, public layout::layout_content
-             //, public layout::layout_boxes
 {
 public:
                             oauth2();

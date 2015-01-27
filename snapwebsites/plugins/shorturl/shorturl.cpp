@@ -510,7 +510,7 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
     // save the date when the Short URL is generated so if the user changes
     // the parameters we can regenerate only those that were generated before
     // the date of the change
-    uint64_t const start_date(f_snap->get_uri().option("start_date").toLongLong());
+    uint64_t const start_date(f_snap->get_start_date());
     row->cell(get_name(SNAP_NAME_SHORTURL_DATE))->setValue(start_date);
 
     // TODO allow the user to change the "%1" number parameters
