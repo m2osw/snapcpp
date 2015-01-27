@@ -135,6 +135,9 @@ DTD of the XSLT 2.0.
 <!ATTLIST body class CDATA #IMPLIED
                popup CDATA #IMPLIED>
 
+<!ELEMENT code ANY>
+<!ATTLIST code class CDATA #IMPLIED>
+
 <!ELEMENT div ANY>
 <!ATTLIST div class CDATA #IMPLIED
               id CDATA #IMPLIED
@@ -240,6 +243,9 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT p ANY>
 <!ATTLIST p class CDATA #IMPLIED>
+
+<!ELEMENT pre ANY>
+<!ATTLIST pre class CDATA #IMPLIED>
 
 <!ELEMENT script ANY>
 <!ATTLIST script type CDATA #REQUIRED>

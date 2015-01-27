@@ -32,6 +32,25 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<div id="content" class="editor-form" form_name="qrcode_settings">
 				<xsl:attribute name="session"><xsl:copy-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 
+				<p>To generate the QR Code of a page, use an image tag as follow:</p>
+				<pre>    &lt;img src="/images/qrcode/path/to/page"/&gt;</pre>
+				<p>Simply replace <b>path/to/page</b> with the real path to your
+				   page and the module will automatically return the QR Code for
+					 that page. You can only generate codes for your own website.
+					 To generate a QR Code for your home page use <b>index.html</b>
+					 as the <b>path/to/page</b> parameter.</p>
+				<p>You may force the scale by using the query string parameter
+				   named <b>scale</b>. The default is <code>...?scale=3</code>.
+					 The scale must be one of: 1, 2, 3, 4, or 5.</p>
+				<p>You may force the width of the edge by using the query string
+				   parameter named <b>edge</b>. The default is
+					 <code>...?edge=15</code>.
+					 The edge must be defined between 0 and 50 inclusive.</p>
+				<p>You may first generate the image, then check the size and specify
+				   the width and height parameters of the image in the tag.
+					 Those attributes are not mandatory, but may help the browser to
+					 properly size the page elements even before getting the QR Code.</p>
+
 				<fieldset>
 					<legend>Basics</legend>
 

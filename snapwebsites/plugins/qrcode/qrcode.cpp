@@ -80,6 +80,17 @@ char const *get_name(name_t name)
  *
  * It is possible to select various settings such as the size of the QR
  * Code and whether it encodes the full URI or the Short URL.
+ *
+ * \todo
+ * As an extension, we may want to offer a way to generate QR Codes in
+ * the settings area. That should work for any URI, even foreign ones.
+ * Also that generator could create very large versions for high DPI
+ * quality for print purposes.
+ *
+ * \todo
+ * We may also want to offer a way to also pass QR Code images in the
+ * image filters to get codes that are watermarked, inverted, flipped,
+ * etc.
  */
 
 
