@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- COMMAND PARTS -->
   <xsl:template name="snap:common-parts">
     <xsl:param name="type" select="@type"/>
-    <xsl:if test="help != ''">
+    <xsl:if test="help">
       <!-- make this hidden by default because it is expected to be -->
       <div class="editor-help {$type}-help" style="display: none;">
         <xsl:copy-of select="help/node()"/>
@@ -49,7 +49,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:value-of
           select="concat(' ', classes)"/></xsl:attribute>
-      <xsl:if test="background-value != ''">
+      <xsl:if test="background-value">
         <!-- by default "snap-editor-background" objects have "display: none"
              a script shows them on load once ready AND if the value is empty
              also it is a "pointer-event: none;" -->
@@ -75,7 +75,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:attribute name="tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
           <xsl:attribute name="original_tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="tooltip != ''">
+        <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
         <xsl:if test="sizes/min"><xsl:attribute name="min-sizes"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
@@ -83,11 +83,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="sizes/max"><xsl:attribute name="max-sizes"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
         <!-- now the actual value of this line -->
         <xsl:choose>
-          <xsl:when test="post != ''">
+          <xsl:when test="post">
             <!-- use the post value when there is one, it has priority -->
             <xsl:copy-of select="post/node()"/>
           </xsl:when>
-          <xsl:when test="value != ''">
+          <xsl:when test="value">
             <!-- use the current value when there is one -->
             <xsl:copy-of select="value/node()"/>
           </xsl:when>
@@ -111,6 +111,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:template name="snap:image-box">
     <xsl:param name="path"/>
     <xsl:param name="name"/>
+    <xsl:param name="value"/>
     <div field_type="image-box">
       <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="class"><xsl:if
@@ -119,7 +120,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
           test="$name = /editor-form/focus/@refid"> auto-focus</xsl:if> <xsl:value-of
           select="concat(' ', classes)"/></xsl:attribute>
-      <xsl:if test="background-value != ''">
+      <xsl:if test="background-value">
         <!-- by default "snap-editor-background" objects have "display: none"
              a script shows them on load once ready AND if the value is empty
              also it is a "pointer-event: none;" -->
@@ -136,32 +137,36 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
           <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="tooltip != ''">
+        <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
         <xsl:if test="sizes/min"><xsl:attribute name="min-sizes"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
         <xsl:if test="sizes/resize"><xsl:attribute name="resize-sizes"><xsl:value-of select="sizes/resize"/></xsl:attribute></xsl:if>
         <xsl:if test="sizes/max"><xsl:attribute name="max-sizes"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
         <!-- now the actual value of this line -->
-        <xsl:choose>
-          <xsl:when test="post != ''">
-            <!-- use the post value when there is one, it has priority -->
-            <xsl:copy-of select="post/node()"/>
-          </xsl:when>
-          <xsl:when test="value != ''">
-            <!-- use the current value when there is one -->
-            <xsl:copy-of select="value/node()"/>
-          </xsl:when>
-        </xsl:choose>
+        <xsl:copy-of select="$value"/>
       </div>
       <xsl:call-template name="snap:common-parts"/>
     </div>
   </xsl:template>
   <xsl:template match="widget[@type='image-box']">
+    <xsl:variable name="value">
+      <xsl:choose>
+        <xsl:when test="post">
+          <!-- use the post value when there is one, it has priority -->
+          <xsl:copy-of select="post/node()"/>
+        </xsl:when>
+        <xsl:when test="value">
+          <!-- use the current value when there is one -->
+          <xsl:copy-of select="value/node()"/>
+        </xsl:when>
+      </xsl:choose>
+    </xsl:variable>
     <widget path="{@path}">
       <xsl:call-template name="snap:image-box">
         <xsl:with-param name="path" select="@path"/>
         <xsl:with-param name="name" select="@id"/>
+        <xsl:with-param name="value" select="$value"/>
       </xsl:call-template>
     </widget>
   </xsl:template>
@@ -181,7 +186,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         test="state = 'disabled'"> disabled</xsl:if><xsl:if
         test="not(@mode) or @mode = 'select-only'"> read-only</xsl:if></xsl:attribute>
       <div class="snap-editor-dropdown-reset-value"><xsl:copy-of select="default/node()"/></div>
-      <xsl:if test="background-value != ''">
+      <xsl:if test="background-value">
         <!-- by default "snap-editor-background" has "display: none"
              a script shows them on load once ready AND if the value is
              empty also it is a "pointer-event: none;" -->
@@ -201,7 +206,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:attribute name="tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
           <xsl:attribute name="original_tabindex"><xsl:value-of select="$tabindex"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="tooltip != ''">
+        <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
         <xsl:if test="not(@mode) or @mode = 'select-only'">
@@ -212,12 +217,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <!-- WARNING: the order of this xsl:choose is VERY important -->
         <xsl:choose>
           <!-- search for one @value that matches $value, this is the preferred method of selection -->
-          <xsl:when test="$value != '' and preset/item[$value = @value]">
+          <xsl:when test="$value and preset/item[$value = @value]">
             <xsl:attribute name="value"><xsl:copy-of select="$value"/></xsl:attribute>
             <xsl:copy-of select="preset/item[$value = @value]"/>
           </xsl:when>
           <!-- value is defined, use it... -->
-          <xsl:when test="$value != ''">
+          <xsl:when test="$value">
             <!-- if we did not match an @value, then we assume there are none (TBD?) -->
             <xsl:copy-of select="$value"/>
           </xsl:when>
@@ -270,9 +275,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:variable name="value">
       <xsl:choose>
         <!-- use the post value when there is one, it has priority -->
-        <xsl:when test="post != ''"><xsl:copy-of select="post/node()"/></xsl:when>
+        <xsl:when test="post"><xsl:copy-of select="post/node()"/></xsl:when>
         <!-- use the current value when there is one -->
-        <xsl:when test="value != ''"><xsl:copy-of select="value/node()"/></xsl:when>
+        <xsl:when test="value"><xsl:copy-of select="value/node()"/></xsl:when>
         <xsl:otherwise></xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
@@ -305,7 +310,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
           <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="tooltip != ''">
+        <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
 
@@ -324,11 +329,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:template match="widget[@type='checkmark']">
     <xsl:variable name="value">
       <xsl:choose>
-        <xsl:when test="post != ''">
+        <xsl:when test="post">
           <!-- use the post value when there is one, it has priority -->
           <xsl:copy-of select="post/node()"/>
         </xsl:when>
-        <xsl:when test="value != ''">
+        <xsl:when test="value">
           <!-- use the current value when there is one -->
           <xsl:copy-of select="value/node()"/>
         </xsl:when>
@@ -388,7 +393,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <div>
         <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
         <xsl:attribute name="class">editor-content no-toolbar</xsl:attribute>
-        <xsl:if test="tooltip != ''">
+        <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
 
@@ -396,13 +401,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:variable name="default_position">
           <xsl:for-each select="preset/item">
             <!-- search for one @value that matches $value, this is the preferred method of selection -->
-            <xsl:if test="$value != '' and $value = @value">
+            <xsl:if test="$value and $value = @value">
               <p><xsl:value-of select="position()"/></p>
             </xsl:if>
           </xsl:for-each>
           <xsl:for-each select="preset/item">
             <!-- maybe it is the current value -->
-            <xsl:if test="$value != '' and $value = node()">
+            <xsl:if test="$value and $value = node()">
               <p><xsl:value-of select="position()"/></p>
             </xsl:if>
           </xsl:for-each>
@@ -429,11 +434,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:template match="widget[@type='radio']">
     <xsl:variable name="value">
       <xsl:choose>
-        <xsl:when test="post != ''">
+        <xsl:when test="post">
           <!-- use the post value when there is one, it has priority -->
           <xsl:copy-of select="post/node()"/>
         </xsl:when>
-        <xsl:when test="value != ''">
+        <xsl:when test="value">
           <!-- use the current value when there is one -->
           <xsl:copy-of select="value/node()"/>
         </xsl:when>
@@ -466,7 +471,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <!-- avoid spellcheck of non-editable widgets -->
         <xsl:attribute name="spellcheck">false</xsl:attribute>
       </xsl:if>
-      <xsl:if test="background-value != ''">
+      <xsl:if test="background-value">
         <!-- by default "snap-editor-background" has "display: none"
              a script shows them on load once ready AND if the value is empty
              also it is a "pointer-event: none;" -->
@@ -483,18 +488,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
           <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="tooltip != ''">
+        <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
         <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
         <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
         <!-- now the actual value of this text widget -->
         <xsl:choose>
-          <xsl:when test="post != ''">
+          <xsl:when test="post">
             <!-- use the post value when there is one, it has priority -->
             <xsl:copy-of select="post/node()"/>
           </xsl:when>
-          <xsl:when test="value != ''">
+          <xsl:when test="value">
             <!-- use the current value when there is one -->
             <xsl:copy-of select="value/node()"/>
           </xsl:when>
@@ -537,7 +542,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <!-- avoid spellcheck of non-editable widgets -->
         <xsl:attribute name="spellcheck">false</xsl:attribute>
       </xsl:if>
-      <xsl:if test="background-value != ''">
+      <xsl:if test="background-value">
         <!-- by default "snap-editor-background" has "display: none"
              a script shows them on load once ready AND if the value is empty
              also it is a "pointer-event: none;" -->
@@ -554,18 +559,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="/editor-form/taborder/tabindex[@refid=$name]">
           <xsl:attribute name="tabindex"><xsl:value-of select="/editor-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
         </xsl:if>
-        <xsl:if test="tooltip != ''">
+        <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:copy-of select="tooltip"/></xsl:attribute>
         </xsl:if>
         <xsl:if test="sizes/min"><xsl:attribute name="minlength"><xsl:value-of select="sizes/min"/></xsl:attribute></xsl:if>
         <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
         <!-- now the actual value of this line -->
         <xsl:choose>
-          <xsl:when test="post != ''">
+          <xsl:when test="post">
             <!-- use the post value when there is one, it has priority -->
             <xsl:copy-of select="post/node()"/>
           </xsl:when>
-          <xsl:when test="value != ''">
+          <xsl:when test="value">
             <!-- use the current value when there is one -->
             <xsl:copy-of select="value/node()"/>
           </xsl:when>
