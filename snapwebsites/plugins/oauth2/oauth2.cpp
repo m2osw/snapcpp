@@ -600,6 +600,31 @@ void oauth2::on_process_cookies()
     }
 }
 
+/*
+
+telnet csnap.m2osw.com 80
+GET /user/oauth2 HTTP 1.1
+Host: csnap.m2osw.com
+User-Agent: telnet 0.17-36build2
+Accept: application/json;q=0.7,application/xml;q=0.9
+Snap-Authorization: Snap ...
+
+telnet csnap.m2osw.com 80
+GET /admin/settings/oauth2 HTTP 1.1
+Host: csnap.m2osw.com
+User-Agent: telnet 0.17-36build2
+Accept: application/json;q=0.7,application/xml;q=1.0
+Snap-Authorization: Bearer 38e81b746237c816/897095972
+
+telnet csnap.m2osw.com 80
+GET /logout HTTP 1.1
+Host: csnap.m2osw.com
+User-Agent: telnet 0.17-36build2
+Accept: application/json;q=0.7,application/xml;q=0.5
+Snap-Authorization: Bearer 231749675e79d6ae/1651269099
+
+*/
+
 
 SNAP_PLUGIN_END()
 

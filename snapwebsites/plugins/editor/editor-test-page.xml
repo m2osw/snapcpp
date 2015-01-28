@@ -48,7 +48,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </filters-->
     <background-value>Drag &amp; Drop<br/>An Image<br/>Here</background-value>
   </widget>
-  <widget id="line_edit_widget" type="line-edit" field="editor::line_edit_widget" path="editor/line_edit_widget" auto-save="string">
+  <!-- TBD: we probably need to test each type of widget with each type of auto-save value available! -->
+  <widget id="line_edit_widget" type="line-edit" field="editor::line_edit_widget" path="editor/line_edit_widget" auto-save="plain">
     <tooltip>Tooltip</tooltip>
     <help>Help</help>
     <sizes>

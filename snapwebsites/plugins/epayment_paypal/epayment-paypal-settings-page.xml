@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </taborder>
   <widget id="editor-session" type="hidden" field="editor::session" path="editor/session">
   </widget>
-  <widget id="client_id" type="line-edit" field="epayment_paypal::client_id" path="epayment_paypal/client_id" auto-save="string" secret="secret">
+  <widget id="client_id" type="line-edit" field="epayment_paypal::client_id" path="epayment_paypal/client_id" auto-save="plain" secret="secret">
     <tooltip>The PayPal plugin makes use of users who have a specific client identifier and secret. This field is expected to be filled with the client_id.</tooltip>
     <help>Help</help>
     <sizes>
@@ -41,7 +41,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </sizes>
     <background-value>client_id</background-value>
   </widget>
-  <widget id="secret" type="line-edit" field="epayment_paypal::secret" path="epayment_paypal/secret" auto-save="string" secret="secret">
+  <widget id="secret" type="line-edit" field="epayment_paypal::secret" path="epayment_paypal/secret" auto-save="plain" secret="secret">
     <tooltip>The PayPal plugin makes use of users who have a specific client identifier and secret. This field is expected to be filled with the secret.</tooltip>
     <help>Help</help>
     <sizes>
@@ -56,7 +56,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>Help</help>
     <value>0</value>
   </widget>
-  <widget id="sandbox_client_id" type="line-edit" field="epayment_paypal::sandbox_client_id" path="epayment_paypal/sandbox_client_id" auto-save="string" secret="secret">
+  <widget id="sandbox_client_id" type="line-edit" field="epayment_paypal::sandbox_client_id" path="epayment_paypal/sandbox_client_id" auto-save="plain" secret="secret">
     <tooltip>When in debug mode, the PayPal plugin makes use of sandbox users who have a specific client identifier and secret. This field is expected to be filled with the client_id.</tooltip>
     <help>Help</help>
     <sizes>
@@ -65,7 +65,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </sizes>
     <background-value>client_id</background-value>
   </widget>
-  <widget id="sandbox_secret" type="line-edit" field="epayment_paypal::sandbox_secret" path="epayment_paypal/sandbox_secret" auto-save="string" secret="secret">
+  <widget id="sandbox_secret" type="line-edit" field="epayment_paypal::sandbox_secret" path="epayment_paypal/sandbox_secret" auto-save="plain" secret="secret">
     <tooltip>When in debug mode, the PayPal plugin makes use of sandbox users who have a specific client identifier and secret. This field is expected to be filled with the secret.</tooltip>
     <help>Help</help>
     <sizes>

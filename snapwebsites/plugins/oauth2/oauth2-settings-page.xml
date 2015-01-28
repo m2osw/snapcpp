@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <help>Help</help>
     <value>0</value>
   </widget>
-  <widget id="oauth2_email" type="line-edit" field="oauth2::email" path="oauth2/email" auto-save="string">
+  <widget id="oauth2_email" type="line-edit" field="oauth2::email" path="oauth2/email" auto-save="plain">
     <tooltip>Enter the email address of the user who will be logged in for this application to work with private data.</tooltip>
     <help>When the OAuth2 tool logs an application in, it has to make use of a user. This is done by assigning the session identifier to the email address specified here. Note that the application will have all the rights that this user has.</help>
     <background-value>email</background-value>

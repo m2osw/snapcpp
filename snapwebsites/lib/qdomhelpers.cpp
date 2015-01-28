@@ -365,6 +365,32 @@ QDomElement create_element(QDomNode parent, QString const& path)
 }
 
 
+/** \brief Remove tags from a string of HTML.
+ *
+ * This function is used to transform the specified \p html string to
+ * plain text without any tags.
+ *
+ * To do so, it puts the string in a wrapper in an QDomDocument and
+ * then retrieves the text from the wrapper.
+ *
+ * \todo
+ * We may want to support any type of entities which I think the current
+ * implementation will fail to convert (because XML is limit to 3...)
+ *
+ * \param[in] html  The input that includes trags.
+ *
+ * \return The text found in the html string if any.
+ */
+QString remove_tags(QString const& html)
+{
+    QDomDocument doc;
+    // TBD: shall we make sure that this 'html' string is compatible XML?
+    doc.setContent("<wrapper>" + html + "</wrapper>", true, nullptr, nullptr, nullptr);
+    QDomElement wrapper(doc.documentElement());
+    return wrapper.text();
+}
+
+
 /** \brief Encode entities converting a plain text to an HTML string.
  *
  * Somehow the linker cannot find the Qt::escape() function so we
@@ -488,7 +514,7 @@ QString unescape(QString const& str)
             {
                c = '&';
             }
-std::cerr << "***\n*** n '" << name << "' -> c = '" << c << "'\n***\n";
+            // TODO: add all the names supported by browsers (HTML)
             if(c != 0)
             {
                 if(QChar::requiresSurrogates(c))

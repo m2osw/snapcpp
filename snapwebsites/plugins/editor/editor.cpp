@@ -176,7 +176,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 20, 16, 59, 45, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 27, 16, 38, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1051,8 +1051,10 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     }
                     else if(widget_auto_save == "plain")
                     {
-                        // no special handling for empty strings here
-                        current_value = snap_dom::unescape(post_value);
+                        // in case of plain text we want to remove all
+                        // tags if any and then unescape entities which
+                        // the remove_tags() function does all at once
+                        current_value = snap_dom::remove_tags(post_value);
                         data_row->cell(field_name)->setValue(current_value);
                     }
                 }

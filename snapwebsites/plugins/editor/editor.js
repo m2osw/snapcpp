@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.317
+ * Version: 0.0.3.318
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -4387,6 +4387,10 @@ snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
 snapwebsites.Editor = function()
 {
     snapwebsites.Editor.superClass_.constructor.call(this);
+
+    // attempt to not have URLs and emails transforms to anchors
+    document.execCommand("AutoUrlDetect", false, false);
+
     this.editorForms_ = {};
     this.editorFormsByName_ = {};
     this.initUnload_();
