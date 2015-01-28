@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.318
+ * Version: 0.0.3.321
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -2374,7 +2374,7 @@ snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
 {
     if(opt_recheck || !this.modified_)
     {
-        this.modified_ = this.originalData_ != this.widgetContent_.html();
+        this.modified_ = snapwebsites.trim(this.originalData_) != snapwebsites.trim(this.widgetContent_.html());
     }
     return this.modified_;
 };
@@ -4580,7 +4580,7 @@ snapwebsites.Editor.prototype.beforeUnload_ = function()
                     // TODO: translation
                     //       (although it doesn't show up in FireFox based
                     //       browsers many others do show this message)
-                    return "You made changes to this page! Click Cancel to avoid closing the window and Save your changes first.";
+                    return "You made changes to this page! Click Cancel or Stay on Page to avoid closing the window and Save your changes first.";
                 }
             }
         }

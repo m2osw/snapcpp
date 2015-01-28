@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.33
+ * Version: 0.1.5.35
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -160,6 +160,58 @@ snapwebsites.inherits = function(child_class, super_class) // static
     child_class.prototype.constructor = child_class;
     child_class.superClass_ = super_class.prototype;
     child_class.snapwebsitesInherited_ = true;
+};
+
+
+/** \brief Checks a string and remove any spaces and new lines.
+ *
+ * This function removes starting and ending spaces and new lines
+ * from a string. A newline may be represened by a \<br> tag
+ * (especially with IE.)
+ *
+ * @param {string} s  The string to trim.
+ *
+ * @return {string}  The trimmed string.
+ */
+snapwebsites.trim = function(s)
+{
+    var i, start, end, re = /( |\t|\r|\n|<br ?\/?>)/;
+
+    for(i = s.length - 1; i > Math.max(0, s.length - 6); --i)
+    {
+        end = s.substr(i);
+        if(end.match(re))
+        //if(end === " "
+        //|| end === "\t"
+        //|| end === "\r"
+        //|| end === "\n"
+        //|| end === "<br>" // use regex?
+        //|| end === "<br/>"
+        //|| end === "<br />")
+        {
+            s = s.substr(0, i);
+            i = s.length;
+        }
+    }
+
+    for(i = 1; i < Math.max(6, s.length); ++i)
+    {
+        start = s.substr(0, i);
+        if(start.match(re))
+        //if(start === " "
+        //|| start === "\t"
+        //|| start === "\r"
+        //|| start === "\n"
+        //|| start === "<br>" // use regex?
+        //|| start === "<br/>"
+        //|| start === "<br />")
+        {
+            s = s.substr(i);
+            i = 0;
+        }
+    }
+
+    return s;
 };
 
 
