@@ -142,7 +142,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 27, 21, 51, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 1, 28, 3, 6, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -502,14 +502,15 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
  * Source: http://tools.ietf.org/html/rfc3966#page-6
  *
  * \param[in] phone  The phone number to transform.
+ * \param[in] type  The type of phone number to transform.
  *
  * \return The phone number to put in the href of an anchor.
  */
-QString output::phone_to_uri(QString const phone)
+QString output::phone_to_uri(QString const phone, phone_number_type_t const type)
 {
     QString number(phone.toLower());
 
-    if(number.startsWith("tel:"))
+    if(number.startsWith("tel:") || number.startsWith("fax:"))
     {
         number.remove(0, 4);
     }
@@ -527,7 +528,27 @@ QString output::phone_to_uri(QString const phone)
         return QString();
     }
 
-    return QString("tel:%1").arg(number);
+    QString prefix;
+    switch(type)
+    {
+    case PHONE_NUMBER_TYPE_FAX:
+        prefix = "fax";
+        break;
+        
+    case PHONE_NUMBER_TYPE_SKYPE:
+        prefix = "callto";
+        break;
+
+    case PHONE_NUMBER_TYPE_TELEPHONE:
+        prefix = "tel";
+        break;
+
+    default:
+        throw snap_logic_exception(QString("unknown phone number type (%1) in output::phone_to_uri()").arg(static_cast<int>(type)));
+
+    }
+
+    return QString("%1:%2").arg(prefix).arg(number);
 }
 
 

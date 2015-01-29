@@ -217,12 +217,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <!-- WARNING: the order of this xsl:choose is VERY important -->
         <xsl:choose>
           <!-- search for one @value that matches $value, this is the preferred method of selection -->
-          <xsl:when test="$value and preset/item[$value = @value]">
+          <xsl:when test="$value != '' and preset/item[$value = @value]">
             <xsl:attribute name="value"><xsl:copy-of select="$value"/></xsl:attribute>
             <xsl:copy-of select="preset/item[$value = @value]"/>
           </xsl:when>
           <!-- value is defined, use it... -->
-          <xsl:when test="$value">
+          <xsl:when test="$value != ''">
             <!-- if we did not match an @value, then we assume there are none (TBD?) -->
             <xsl:copy-of select="$value"/>
           </xsl:when>
@@ -278,7 +278,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:when test="post"><xsl:copy-of select="post/node()"/></xsl:when>
         <!-- use the current value when there is one -->
         <xsl:when test="value"><xsl:copy-of select="value/node()"/></xsl:when>
-        <xsl:otherwise></xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
     <widget path="{@path}">
@@ -401,13 +400,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:variable name="default_position">
           <xsl:for-each select="preset/item">
             <!-- search for one @value that matches $value, this is the preferred method of selection -->
-            <xsl:if test="$value and $value = @value">
+            <xsl:if test="$value != '' and $value = @value">
               <p><xsl:value-of select="position()"/></p>
             </xsl:if>
           </xsl:for-each>
           <xsl:for-each select="preset/item">
             <!-- maybe it is the current value -->
-            <xsl:if test="$value and $value = node()">
+            <xsl:if test="$value != '' and $value = node()">
               <p><xsl:value-of select="position()"/></p>
             </xsl:if>
           </xsl:for-each>

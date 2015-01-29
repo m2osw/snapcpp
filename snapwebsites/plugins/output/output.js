@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.35
+ * Version: 0.1.5.67
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -169,25 +169,27 @@ snapwebsites.inherits = function(child_class, super_class) // static
  * from a string. A newline may be represened by a \<br> tag
  * (especially with IE.)
  *
+ * \todo
+ * TBD: should we trim any \&nbsp; character too? The fact is that
+ * the no break spaces are not totally removed so keep them probably
+ * makes more sense.
+ *
  * @param {string} s  The string to trim.
  *
  * @return {string}  The trimmed string.
  */
 snapwebsites.trim = function(s)
 {
-    var i, start, end, re = /( |\t|\r|\n|<br ?\/?>)/;
+    var i,
+        start,
+        end,
+        sre = /^( |\t|\r|\n|<br *\/?>)/,
+        ere = /( |\t|\r|\n|<br *\/?>)$/;
 
     for(i = s.length - 1; i > Math.max(0, s.length - 6); --i)
     {
         end = s.substr(i);
-        if(end.match(re))
-        //if(end === " "
-        //|| end === "\t"
-        //|| end === "\r"
-        //|| end === "\n"
-        //|| end === "<br>" // use regex?
-        //|| end === "<br/>"
-        //|| end === "<br />")
+        if(end.match(ere))
         {
             s = s.substr(0, i);
             i = s.length;
@@ -197,14 +199,7 @@ snapwebsites.trim = function(s)
     for(i = 1; i < Math.max(6, s.length); ++i)
     {
         start = s.substr(0, i);
-        if(start.match(re))
-        //if(start === " "
-        //|| start === "\t"
-        //|| start === "\r"
-        //|| start === "\n"
-        //|| start === "<br>" // use regex?
-        //|| start === "<br/>"
-        //|| start === "<br />")
+        if(start.match(sre))
         {
             s = s.substr(i);
             i = 0;
@@ -212,6 +207,58 @@ snapwebsites.trim = function(s)
     }
 
     return s;
+};
+
+
+/** \brief Convert XML to a string.
+ *
+ * This function is used to convert an XML element and all of its children
+ * in a string.
+ *
+ * \todo
+ * Transform to a jQuery extension instead.
+ *
+ * @param {jQuery} xml_object  A jQuery object representing an XML tag.
+ *
+ * @return {string}  The string representation of the XML DOM passed in.
+ */
+snapwebsites.xmlToString = function(xml_object) // static
+{
+    var element,
+        start,
+        end,
+        serializer,
+        result;
+
+    try
+    {
+        // this works in case xml_object is an empty list
+        return xml_object.html();
+    }
+    catch(e)
+    {
+        // IE has a problem with .html() because XML documents
+        // do not have an innerHTML parameter (which makes sense!)
+
+        // older IE versions have an xml property
+        element = xml_object.get()[0];
+        if(element.xml)
+        {
+            // Internet Explorer
+            return element.xml();
+        }
+
+        serializer = new XMLSerializer();
+        result = serializer.serializeToString(element);
+
+        // the serialization includes the parent tag
+        // so here we manually remove it
+        //
+        // TBD: find a better (faster) way to handle this problem?
+        start = result.indexOf(">");
+        end = result.lastIndexOf("<");
+        return result.substr(start + 1, end - start - 1);
+    }
 };
 
 
@@ -729,6 +776,12 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
         warnings = 0,
         call_handle = false;
 
+    // if the list is empty, ignore
+    if(!xml || xml.length == 0)
+    {
+        return;
+    }
+
     if(msg.length == 0)
     {
         // that <div class="user-messages"> does not exist yet so create it
@@ -756,8 +809,8 @@ snapwebsites.Output.prototype.displayMessages = function(xml)
             // TODO: add debug to test that 'id' and 'type' are valid
             //       for how they get used (i.e. XML TOKEN).
             var m = jQuery(this),
-                title = m.children("title").html(),
-                body = m.children("body").html(),
+                title = snapwebsites.xmlToString(m.children("title")),
+                body = snapwebsites.xmlToString(m.children("body")),
                 id = m.attr("msg-id"),  // WARNING: the "id" attribute represents the name of a widget in the editor
                 type = m.attr("type"),
                 txt = "<div id='" + id

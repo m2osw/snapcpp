@@ -64,6 +64,13 @@ class output : public plugins::plugin
              , public layout::layout_boxes
 {
 public:
+    enum phone_number_type_t
+    {
+        PHONE_NUMBER_TYPE_FAX,
+        PHONE_NUMBER_TYPE_SKYPE,
+        PHONE_NUMBER_TYPE_TELEPHONE
+    };
+
                         output();
                         ~output();
 
@@ -77,7 +84,7 @@ public:
     virtual void        on_generate_boxes_content(content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
     void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
-    static QString      phone_to_uri(QString const phone);
+    static QString      phone_to_uri(QString const phone, phone_number_type_t const type);
 
     // dynamic javascript property support
     virtual int         js_property_count() const;

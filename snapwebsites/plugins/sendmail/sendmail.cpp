@@ -2740,6 +2740,9 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
 
 SNAP_PLUGIN_END()
 
+// Multipart emails are documented here
+// http://tools.ietf.org/html/rfc2557
+
 // There is an example of SMTP
 // Actually we're under Linux and want to use sendmail instead (much easier!)
 // http://stackoverflow.com/questions/9317305/sending-an-email-from-a-c-c-program-in-linux
