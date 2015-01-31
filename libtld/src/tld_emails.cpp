@@ -288,13 +288,12 @@ void trim(std::string& value)
 {
     if(!value.empty())
     {
-        size_t i(value.length() - 1);
+        size_t i(value.length());
         for(; i > 0; --i)
         {
-            const char c(value[i]);
+            const char c(value[i - 1]);
             if(c != ' ' && c != '\r' && c != '\n' && c != '\t')
             {
-                ++i;
                 break;
             }
         }
@@ -376,7 +375,9 @@ tld_email_list::tld_email_list()
  * of valid emails from a list of valid and invalid emails.
  *
  * \param[in] emails  A list of email address to be parsed.
- * \param[in] flags  A set of flags to define what should be checked and what should be ignored.
+ * \param[in] flags  A set of flags to define what should be checked
+ *                   and what should be ignored. No flags are defined
+ *                   yet.
  *
  * \return TLD_RESULT_SUCCESS when no errors were detected, TLD_RESULT_INVALID
  *         or some other value if any error occured.

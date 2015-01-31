@@ -91,6 +91,10 @@ const tld_email list_of_results[] =
 {
     { "", "alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
+    { "", "a@m2osw.com",
+      "", "a", "m2osw.com", "a@m2osw.com", "a@m2osw.com" },
+    { "", "b@c.com",
+      "", "b", "c.com", "b@c.com", "b@c.com" },
     { "", "alexis@m2osw.com",
       "", "alexis", "m2osw.com", "alexis@m2osw.com", "alexis@m2osw.com" },
     { "", "\"Wilke, Alexis\" <alexis@m2osw.com>",
@@ -147,6 +151,8 @@ const tld_email list_of_results[] =
 const valid_email list_of_valid_emails[] =
 {
     { "alexis@m2osw.com", 1 },
+    { "a@m2osw.com", 1 },
+    { "b@c.com", 1 },
     { " \t alexis@m2osw.com\n \t", 1 },
     { "\"Wilke, Alexis\" <alexis@m2osw.com>", 1 },
     { " (* Pascal Comments *) \t alexis@m2osw.com\n (Just (kidding) he! he!) \t", 1 },
