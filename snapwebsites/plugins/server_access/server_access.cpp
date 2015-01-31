@@ -390,7 +390,8 @@ void server_access::ajax_output()
                        "text/xml; charset=utf-8",
                        snap_child::HEADER_MODE_EVERYWHERE);
 
-    f_snap->output(f_ajax.toString(-1));
+    // This is an XML file, so put the XML header, just in case
+    f_snap->output("<?xml version=\"1.0\"?>" + f_ajax.toString(-1));
 }
 
 

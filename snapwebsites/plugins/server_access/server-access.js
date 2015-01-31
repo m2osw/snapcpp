@@ -515,7 +515,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
         };
 
     // TODO: add an AJAX object definition or find the one from jQuery externs
-    //       to have closure ensure we don't mess up this object parameters
+    //       to have closure ensure we do not mess up this object parameters
     var ajax_options =
         {
             type: "POST",
@@ -633,6 +633,8 @@ snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
         {
             doc_type_start += 9; // skip the <!DOCTYPE part
             doc_type_end = result.jqxhr.responseText.indexOf(">", doc_type_start);
+            // WARNING: the 'doc_type' variable will include spaces and
+            //          possibly SYSTEM and other such definitions
             doc_type = result.jqxhr.responseText.substr(doc_type_start, doc_type_end - doc_type_start);
             if(doc_type.indexOf("html") !== -1)
             {
@@ -667,7 +669,7 @@ snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
             // false if applicable
             if(result.will_redirect)
             {
-                // used asked to redirect the user after a
+                // server asked to redirect the user after a
                 // successful save
                 doc = document;
 
