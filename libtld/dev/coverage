@@ -5,6 +5,7 @@
 
 set -e
 start_date=`date`
+SOURCE=`pwd`
 mkdir -p tmp/coverage
 rm -rf tmp/coverage/*
 cd tmp/coverage
@@ -125,7 +126,7 @@ gcov -o ../BUILD/src/CMakeFiles/tld.dir/tld_emails.cpp.gcno ../../../src/tld_ema
 cd ..
 
 
-lcov --capture --directory BUILD --output-file coverage.info
+lcov --capture --no-external --directory BUILD --base-directory $SOURCE --output-file coverage.info
 mkdir -p html
 genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.info --output-directory html
 

@@ -2,7 +2,7 @@
 # File:         CMakeLists.txt
 # Object:       Definitions to create the build environment with cmake
 #
-# Copyright:    Copyright (c) 2011-2014 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2011-2015 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/project/libtld
@@ -29,7 +29,7 @@
 
 set(LIBTLD_VERSION_MAJOR 1)
 set(LIBTLD_VERSION_MINOR 4)
-set(LIBTLD_VERSION_PATCH 20)
+set(LIBTLD_VERSION_PATCH 21)
 
 cmake_minimum_required(VERSION 2.8.4)
 

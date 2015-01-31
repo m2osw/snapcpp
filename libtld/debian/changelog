@@ -1,3 +1,9 @@
+libtld (1.4.21) trusty; urgency=high
+
+  * Fixed email address of one letter.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 31 Jan 2015 03:54:44 -0800
+
 libtld (1.4.20.139~trusty) trusty; urgency=high
 
   * Nightly build.
