@@ -166,6 +166,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(dynamic_editor_widget, (content::path_info_t& cpath, QString const& name, QDomDocument& editor_widgets), (cpath, name, editor_widgets), NEITHER);
     SNAP_SIGNAL_WITH_MODE(init_editor_widget, (content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row), (ipath, field_id, field_type, widget, row), NEITHER);
     SNAP_SIGNAL_WITH_MODE(new_attachment_saved, (content::attachment_file& the_attachment, QDomElement const& widget, QDomElement const& attachment_tag), (the_attachment, widget, attachment_tag), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(finish_editor_form_processing, (content::path_info_t& ipath, bool& succeeded), (ipath, succeeded), NEITHER);
 
 private:
     void                content_update(int64_t variables_timestamp);

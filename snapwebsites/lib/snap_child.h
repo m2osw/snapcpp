@@ -75,6 +75,14 @@ public:
     snap_child_exception_no_server(QString const&     whatmsg) : snap_child_exception(whatmsg) {}
 };
 
+class snap_child_exception_invalid_email : public snap_child_exception
+{
+public:
+    snap_child_exception_invalid_email(char const *       whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_email(std::string const& whatmsg) : snap_child_exception(whatmsg) {}
+    snap_child_exception_invalid_email(QString const&     whatmsg) : snap_child_exception(whatmsg) {}
+};
+
 
 
 class permission_error_callback;
@@ -301,6 +309,7 @@ public:
     bool                        has_post() const { return f_has_post; }
     QString                     get_action() const;
     void                        set_action(QString const& action);
+    static void                 verify_email(QString const& email, size_t const max = 1);
 
     void                        exit(int code);
     bool                        is_debug() const;

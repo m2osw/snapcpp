@@ -2278,13 +2278,13 @@ void users::process_register_form()
     // with the same email, that's probably not a normal user (i.e. a
     // normal user would not be able to create two accounts at the
     // same time.) The email is the row key of the user table.
-    QString email(f_snap->postenv("email"));
+    QString const email(f_snap->postenv("email"));
     if(register_user(email, f_snap->postenv("password")))
     {
         verify_email(email);
         messages->set_info(
             "We registered your account",
-            "We sent you an email to \"" + email + "\". In the email there is a link you need to follow to finish your registration."
+            QString("We sent you an email to \"%1\". In the email there is a link you need to follow to finish your registration.").arg(email)
         );
         // redirect the user to the verification form
         f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
@@ -2294,8 +2294,8 @@ void users::process_register_form()
     {
         messages->set_error(
             "User Already Exists",
-            "A user with email \"" + email + "\" already exists. If it is you, then try to request a new password if you need a reminder.",
-            "user \"" + email + "\" trying to register a second time.",
+            QString("A user with email \"%1\" already exists. If it is you, then try to request a new password if you need a reminder.").arg(email),
+            QString("user \"%1\" trying to register a second time.").arg(email),
             true
         );
     }
@@ -3099,6 +3099,9 @@ QString users::get_user_path(QString const& email)
  */
 bool users::register_user(QString const& email, QString const& password)
 {
+    // make sure that the user email is valid
+    f_snap->verify_email(email);
+
     QByteArray salt;
     QByteArray hash;
     QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
@@ -3121,12 +3124,11 @@ bool users::register_user(QString const& email, QString const& password)
     }
 
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    QString key(email);
-    QtCassandra::QCassandraRow::pointer_t row(users_table->row(key));
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
 
     QtCassandra::QCassandraValue value;
     value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    value.setStringValue(key);
+    value.setStringValue(email);
 
     int64_t identifier(0);
     QString const id_key(get_name(SNAP_NAME_USERS_ID_ROW));
@@ -3137,7 +3139,7 @@ bool users::register_user(QString const& email, QString const& password)
     // we got as much as we could ready before locking
     {
         // first make sure this email is unique
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
+        QtCassandra::QCassandraLock lock(f_snap->get_context(), email);
 
         // TODO: we have to look at all the possible email addresses
         const char *email_key(get_name(SNAP_NAME_USERS_ORIGINAL_EMAIL));

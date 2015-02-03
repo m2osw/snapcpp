@@ -582,10 +582,10 @@ sendmail::email::~email()
  *
  * \param[in] from  The name and email address of the sender
  */
-void sendmail::email::set_from(const QString& from)
+void sendmail::email::set_from(QString const& from)
 {
     tld_email_list emails;
-    if(emails.parse(from.toStdString(), 0) != TLD_RESULT_SUCCESS)
+    if(emails.parse(from.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
     {
         throw sendmail_exception_invalid_argument("invalid From: email");
     }

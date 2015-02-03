@@ -247,7 +247,7 @@ void server_access::create_ajax_result(content::path_info_t& ipath, bool success
 {
     if(f_ajax_initialized)
     {
-        throw server_access_exception_create_called_twice("the create_ajax_result() function cannot be called more than once.");
+        throw server_access_exception_create_called_twice("the server_access::create_ajax_result() function cannot be called more than once.");
     }
     f_ajax_initialized = true;
 
@@ -292,7 +292,7 @@ void server_access::ajax_output()
 {
     if(!f_ajax_initialized || f_ajax_output)
     {
-        throw snap_logic_exception("ajax_output() called before create_ajax_result() or called a second time");
+        throw snap_logic_exception("server_access::ajax_output() called before server_access::create_ajax_result() or called a second time");
     }
     f_ajax_output = true;
 

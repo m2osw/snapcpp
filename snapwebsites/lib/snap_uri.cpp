@@ -805,7 +805,7 @@ bool snap_uri::process_domain(QString const& full_domain_name,
     // encoding is the same as ASCII)
     QByteArray full_domain_utf8(full_domain_name.toUtf8());
     struct tld_info info;
-    const char *fd(full_domain_utf8.data());
+    char const *fd(full_domain_utf8.data());
     tld_result r(::tld(fd, &info));
     if(r != TLD_RESULT_SUCCESS)
     {
@@ -828,7 +828,7 @@ bool snap_uri::process_domain(QString const& full_domain_name,
             break;
         }
     }
-    domain_name = urldecode(QString::fromLatin1(compute_domain_name, static_cast<int>(info.f_tld - compute_domain_name)));
+    domain_name = urldecode(QString::fromUtf8(compute_domain_name, static_cast<int>(info.f_tld - compute_domain_name)));
 
     // now cut the remainder on each period, these are the sub-domains
     // there may be none if there are no other periods in the full name
@@ -837,7 +837,7 @@ bool snap_uri::process_domain(QString const& full_domain_name,
         // forget the period
         --compute_domain_name;
     }
-    QString all_sub_domains(QString::fromLatin1(fd, static_cast<int>(compute_domain_name - fd)));
+    QString all_sub_domains(QString::fromUtf8(fd, static_cast<int>(compute_domain_name - fd)));
     sub_domain_names = all_sub_domains.split('.');
 
     // verify that all the sub-domains are valid (i.e. no "..")
@@ -852,6 +852,16 @@ bool snap_uri::process_domain(QString const& full_domain_name,
             return false;
         }
         sub_domain_names[i] = urldecode(sub_domain_names[i]);
+
+        // TODO: look into whether we have to check for periods in the
+        //       decoded sub-domain names (i.e. a %2E is probably not a
+        //       valid character in a sub-domain name, at the same time
+        //       if we reach here, there should not be such a DNS entry...
+        //       but not automatically because a hacker can take an IP
+        //       and use it with any URI and send an HTTP request that
+        //       way... still, we would catch that in our domain/website
+        //       canonicalization.) Maybe we should decode the domain part
+        //       first, then parse it.
     }
 
     return true;

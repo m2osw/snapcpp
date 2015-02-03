@@ -69,6 +69,10 @@ include_directories(
         ${OPENSSL_INCLUDE_DIR}
 )
 
+include_directories(
+    ${LIBTLD_INCLUDE_DIRS}
+)
+
 QT4_ADD_RESOURCES(SNAP_LIBRARY_RESOURCES_RCC
     snap.qrc
 )

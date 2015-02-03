@@ -710,8 +710,14 @@ void editor::on_process_post(QString const& uri_path)
         }
     }
 
+    // for forms that are not automatically saved by the editor, further
+    // processing may be required
+    bool succeeded(messages->get_error_count() == 0);
+    finish_editor_form_processing(ipath, succeeded);
+    succeeded = succeeded && messages->get_error_count() == 0;
+
     // create the AJAX response
-    server_access_plugin->create_ajax_result(ipath, messages->get_error_count() == 0);
+    server_access_plugin->create_ajax_result(ipath, succeeded);
     server_access_plugin->ajax_output();
 }
 

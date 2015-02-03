@@ -34,6 +34,7 @@
 #include "snap_exception.h"
 
 #include <QtSerialization/QSerialization.h>
+#include <libtld/tld.h>
 
 #include <sstream>
 #include <memory>
@@ -3852,6 +3853,51 @@ void snap_child::set_action(QString const& action)
         throw snap_logic_exception("server pointer is nullptr");
     }
     f_uri.set_query_option(server->get_parameter("qs_action"), action);
+}
+
+
+/** \brief Check that the email is legal.
+ *
+ * A legal email has a legal name on the left of the @ character
+ * and a valid domain and TLD. We do not accept emails that represent
+ * local userbox (i.e. webmaster, root, etc. by themselves) because
+ * from a website these do not really make sense.
+ *
+ * \exception users_exception_invalid_email
+ * This function does not return if the email is invalid. Instead it throws.
+ * We may later want to have a version that returns true if valid, false
+ * otherwise. At the same time, we generate three different errors here.
+ *
+ * \param[in] email  The email to verify.
+ * \param[in] max  The maximum number of emails supported. May be 0, usually 1.
+ */
+void snap_child::verify_email(QString const& email, size_t const max)
+{
+    // is there an actual email?
+    // (we may want to remove standalone and duplicated commas too)
+    if(email.isEmpty())
+    {
+        if(max == 0)
+        {
+            return;
+        }
+        throw snap_child_exception_invalid_email("no email defined");
+    }
+
+    // check the email name, domain, and TLD
+    tld_email_list tld_emails;
+    if(tld_emails.parse(email.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
+    {
+        throw snap_child_exception_invalid_email("invalid user email");
+    }
+
+    // make sure there is a limit to the number of emails, if max was set
+    // to 1 we expect exactly one email (we previously eliminated the
+    // case where there would be none)
+    if(static_cast<size_t>(tld_emails.count()) > max)
+    {
+        throw snap_child_exception_invalid_email(QString("too many emails, excepted up to %1 got %2").arg(max).arg(tld_emails.count()));
+    }
 }
 
 
