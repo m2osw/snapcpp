@@ -37,7 +37,7 @@ file( GLOB MODULES Modules/*.cmake )
 message( "CMake Modules to install: '${MODULES}'" )
 install( FILES ${MODULES} DESTINATION share/cmake-2.8/Modules )
 
-file (GLOB SCRIPTS Modules/*.sh )
+file( GLOB SCRIPTS Modules/*.sh )
 message( "Shell scripts to install: '${SCRIPTS}'" )
 install( FILES ${SCRIPTS} DESTINATION bin )
 
