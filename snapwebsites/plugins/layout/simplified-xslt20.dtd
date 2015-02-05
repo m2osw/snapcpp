@@ -334,11 +334,24 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT sales-total-amount ANY>
 <!ELEMENT sales-total-count ANY>
+<!ELEMENT main-sales-total-amount ANY>
+<!ELEMENT main-sales-total-count ANY>
 <!ELEMENT cpm-sales-total-amount ANY>
 <!ELEMENT cpm-sales-total-count ANY>
 <!ELEMENT coupons-total-amount ANY>
 <!ELEMENT labor-total-amount ANY>
 <!ELEMENT labor-total-count ANY>
+<!ELEMENT labor-count-without-management ANY>
+<!ELEMENT coupon-amount ANY>
+<!ELEMENT coupon-count ANY>
+<!ELEMENT discount-amount ANY>
+<!ELEMENT discount-count ANY>
+<!ELEMENT details-amount ANY>
+<!ELEMENT details-count ANY>
+<!ELEMENT extras-amount ANY>
+<!ELEMENT extras-count ANY>
+<!ELEMENT gc-ppd-amount ANY>
+<!ELEMENT gc-ppd-count ANY>
 <!ELEMENT computed ANY>
 
 <!-- for the feed... -->

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.321
+ * Version: 0.0.3.323
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -998,7 +998,7 @@ snapwebsites.EditorWidgetTypeBase.prototype.setValue = function(editor_widget, v
  *      function setActiveElement(element: jQuery);
  *      function getActiveElement() : jQuery;
  *      function refocus();
- *      virtual function checkModified();
+ *      virtual function checkModified(editor_widget);
  *      virtual function getLinkDialog() : EditorLinkDialog;
  *      virtual function registerWidgetType(widget_type: EditorWidgetType);
  *      function hasWidgetType(type_name: string) : boolean;
@@ -1154,9 +1154,12 @@ snapwebsites.EditorBase.prototype.refocus = function()
  * As a side effect it also lets the toolbar know so if it needs to be
  * moved, it happens.
  *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget that
+ *                               generates the checkModified() call.
+ *
  * @throws {Error}  The base class throws.
  */
-snapwebsites.EditorBase.prototype.checkModified = function() // virtual
+snapwebsites.EditorBase.prototype.checkModified = function(editor_widget) // virtual
 {
     throw new Error("checkModified() cannot directly be called on the EditorBase class.");
 };
@@ -1886,7 +1889,7 @@ snapwebsites.EditorToolbar.prototype.command = function(idx)
                                     false, null);
         }
     }
-    this.editorBase_.checkModified();
+    this.editorBase_.checkModified(null);
 
     return true;
 };
@@ -4359,7 +4362,7 @@ snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
  * public:
  *      function Editor() : Editor;
  *      virtual function getToolbar() : EditorToolbar;
- *      virtual function checkModified();
+ *      virtual function checkModified(editor_widget);
  *      function getActiveEditorForm() : EditorForm;
  *      virtual function getLinkDialog() : EditorLinkDialog;
  *      virtual function registerWidgetType(widget_type: EditorWidgetType);
@@ -4664,14 +4667,22 @@ snapwebsites.Editor.prototype.getToolbar = function() // virtual
  * As a side effect it also lets the toolbar know so if it needs to be
  * moved, it happens.
  *
+ * \note
+ * The editor_widget may be set to null to avoid the widgetchange
+ * signal.
+ *
+ * @param {snapwebsites.EditorWidget} editor_widget  The widget that
+ *                               generates the checkModified() call.
+ *
  * @override
  */
-snapwebsites.Editor.prototype.checkModified = function() // virtual
+snapwebsites.Editor.prototype.checkModified = function(editor_widget) // virtual
 {
     var active_element,
         active_form = this.getActiveEditorForm(),
         widget_name,
-        widget;
+        widget,
+        widget_change;
 
     // checkModified only applies to the active element so make sure
     // there is one when called
@@ -4695,6 +4706,19 @@ snapwebsites.Editor.prototype.checkModified = function() // virtual
         widget_name = snapwebsites.castToString(active_element.parent().attr("field_name"), "Editor active element \"field_name\" attribute");
         widget = active_form.getWidgetByName(widget_name);
         widget.checkForBackgroundValue();
+    }
+
+    // send an event for each change because the user
+    // make want to know even if the value was not actually
+    // modified
+    if(editor_widget)
+    {
+        widget = editor_widget.getWidget();
+        widget_change = jQuery.Event("widgetchange", {
+                widget: widget,
+                value: editor_widget.getValue()
+            });
+        widget.trigger(widget_change);
     }
 };
 
@@ -4897,7 +4921,7 @@ snapwebsites.EditorWidgetType.prototype.initializeWidget = function(widget) // v
             // way too early
             setTimeout(function()
                 {
-                    editor_widget.getEditorBase().checkModified();
+                    editor_widget.getEditorBase().checkModified(editor_widget);
                 }, 0);
         });
 
@@ -6136,16 +6160,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(editor_wi
         c.focus();
         editor_widget.getEditorBase().setActiveElement(c);
 
-        // send an event for each change because the user
-        // make want to know even if the value was not actually
-        // modified
-        widget_change = jQuery.Event("widgetchange", {
-                widget: editor_widget,
-                value: value
-            });
-        w.trigger(widget_change);
-
-        editor_widget.getEditorBase().checkModified();
+        editor_widget.getEditorBase().checkModified(editor_widget);
     }
 };
 
@@ -6406,7 +6421,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
             });
         w.trigger(widget_change);
 
-        editor_widget.getEditorBase().checkModified();
+        editor_widget.getEditorBase().checkModified(editor_widget);
     }
 
     // if the item had a value attribute, this returns true
@@ -6547,7 +6562,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, valu
             });
         w.trigger(widget_change);
 
-        editor_widget.getEditorBase().checkModified();
+        editor_widget.getEditorBase().checkModified(editor_widget);
 
         return true;
     }
@@ -6627,7 +6642,7 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
                 // tell the editor that something may have changed
                 // TODO: call the widget function which in turn tells the
                 //       editor instead of re-testing all the widgets?!
-                editor_widget.getEditorBase().checkModified();
+                editor_widget.getEditorBase().checkModified(editor_widget);
             };
 
     snapwebsites.EditorWidgetTypeCheckmark.superClass_.initializeWidget.call(this, widget);
@@ -6741,7 +6756,7 @@ snapwebsites.EditorWidgetTypeRadio.prototype.initializeWidget = function(widget)
                     // tell the editor that something may have changed
                     // TODO: call the widget function which in turn tells the
                     //       editor instead of re-testing all the widgets?!
-                    editor_widget.getEditorBase().checkModified();
+                    editor_widget.getEditorBase().checkModified(editor_widget);
                 }
             };
 
@@ -6866,7 +6881,7 @@ snapwebsites.EditorWidgetTypeImageBox.prototype.droppedImage = function(e, img)
     editor = snapwebsites.EditorInstance;
     saved_active_element = editor.getActiveElement();
     editor.setActiveElement(e.target.snapEditorWidget.getWidgetContent());
-    editor.checkModified();
+    editor.checkModified(e.target.snapEditorWidget);
     editor.setActiveElement(saved_active_element);
 };
 
@@ -7093,7 +7108,7 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.serverAccessSucces
                     // now make sure the editor detects the change
                     // (even though we do not expect to re-save this widget)
                     editor.setActiveElement(preview_widget);
-                    editor.checkModified();
+                    editor.checkModified(editor_widget);
                     editor.setActiveElement(saved_active_element);
                 },
             error: function(request)
