@@ -52,6 +52,7 @@ class QHttpRequest : public QObject
 
 public:
 	QHttpRequest(QObject *parent, QGooglePageRank::RequestType index);
+	virtual ~QHttpRequest();
 
 	void exec(const QString& uri);
 

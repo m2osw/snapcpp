@@ -478,6 +478,9 @@ QGooglePageRank::GooglePageRankStatus QGooglePageRank::pageRank(RequestType requ
 	}
 
 	details::QHttpRequest *req = dynamic_cast<details::QHttpRequest *>(children()[request]);
+	if(req == nullptr) {
+		throw std::logic_error("somehow the QHttpRequest pointer could not be converted to a QHttpRequest");
+	}
 	if(req->isAborted()) {
 		return PageRankInvalid;
 	}
