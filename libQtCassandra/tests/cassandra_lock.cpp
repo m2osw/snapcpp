@@ -324,6 +324,10 @@ int main(int argc, char *argv[])
         qDebug() << "error: -n must be followed by a valid decimal number larger than 0";
         exit(1);
     }
+    if(repeat > 10000000) { // TBD: reduce this maximum?
+        qDebug() << "error: -n must be followed by a number smaller or equal to 10,000,000";
+        exit(1);
+    }
 
     qDebug() << "+ Starting test with" << process_count << "processes and repeat the lock" << repeat << "times";
 
