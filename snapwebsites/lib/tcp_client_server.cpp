@@ -692,9 +692,10 @@ int tcp_server::accept( const int max_wait_ms )
     }
 
     // accept the next connection
-    socklen_t addr_len(sizeof(f_accepted_addr));
-    memset(&f_accepted_addr, 0, sizeof(f_accepted_addr));
-    f_accepted_socket = ::accept(f_socket, reinterpret_cast<struct sockaddr *>(&f_accepted_addr), &addr_len);
+    struct sockaddr_in accepted_addr;
+    socklen_t addr_len(sizeof(accepted_addr));
+    memset(&accepted_addr, 0, sizeof(accepted_addr));
+    f_accepted_socket = ::accept(f_socket, reinterpret_cast<struct sockaddr *>(&accepted_addr), &addr_len);
 
     // mark the new connection with the SO_KEEPALIVE flag
     if(f_accepted_socket != -1 && f_keepalive)

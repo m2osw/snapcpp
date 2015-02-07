@@ -20,6 +20,8 @@
 #include "log.h"
 #include "qstring_stream.h"
 
+#include <controlled_vars/controlled_vars_no_init.h>
+
 #include <iostream>
 
 #include <QList>
@@ -1784,7 +1786,7 @@ struct parser_state
 
     controlled_vars::flbool_t       f_lock;
 
-    int                             f_line;
+    controlled_vars::rint32_t       f_line;
     parser_state *                  f_parent;
     state_array_t                   f_children;
 
