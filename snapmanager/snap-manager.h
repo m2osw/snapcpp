@@ -44,7 +44,7 @@ T *getChild(QWidget *parent, const char *name)
     T *w = parent->findChild<T *>(name);
     if(w == nullptr)
     {
-            QString error(QString("Can't find the widget: %1.").arg(name));
+            QString const error(QString("Can't find the widget: %1.").arg(name));
             QMessageBox msg(QMessageBox::Critical, "Internal Error", error, QMessageBox::Ok, parent);
             msg.exec();
             exit(1);
@@ -129,9 +129,9 @@ private:
     QPointer<QWidget>               f_decode_utf8;
     QPointer<QTabWidget>            f_tabs;
     QPointer<QWidget>               f_tab_connect;
-    int                             f_idx_connect;
+    //controlled_vars::zint32_t       f_idx_connect;
     QPointer<QWidget>               f_tab_domain;
-    int                             f_idx_domain;
+    //controlled_vars::zint32_t       f_idx_domain;
 
     QPointer<QAction>               f_reset_domains_index;
     QPointer<QAction>               f_reset_websites_index;
@@ -181,11 +181,11 @@ private:
     QPointer<QListView>             f_sites_list;
     QPointer<QLineEdit>             f_sites_name;
     QPointer<QTableView>            f_sites_parameters;
-    QString                         f_sites_org_parameter_name;
+    //QString                         f_sites_org_parameter_name;
     QPointer<QLineEdit>             f_sites_parameter_name;
     QString                         f_sites_org_parameter_value;
     QPointer<QLineEdit>             f_sites_parameter_value;
-    int                             f_sites_org_parameter_type;
+    controlled_vars::zint32_t       f_sites_org_parameter_type;
     QPointer<QComboBox>             f_sites_parameter_type;
     QPointer<QPushButton>           f_sites_new;
     QPointer<QPushButton>           f_sites_save;
@@ -193,11 +193,11 @@ private:
 
     // snap server
     QString                         f_snap_host;
-    int                             f_snap_port;
+    controlled_vars::zint32_t       f_snap_port;
 
     // cassandra data
     QString                                     f_cassandra_host;
-    int                                         f_cassandra_port;
+    controlled_vars::zint32_t                   f_cassandra_port;
     QtCassandra::QCassandra::pointer_t          f_cassandra;
     QtCassandra::QCassandraContext::pointer_t   f_context;
 };
