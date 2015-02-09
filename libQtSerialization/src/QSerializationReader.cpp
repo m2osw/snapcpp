@@ -464,7 +464,7 @@ QString QReader::xmlDecode(const QString& string)
             QChar buf[8];
             bool valid(false);
             size_t p(0);
-            for(; p < sizeof(buf) && it != string.end(); ++it, ++p) {
+            for(; p < sizeof(buf) / sizeof(buf[0]) && it != string.end(); ++it, ++p) {
                 buf[p] = it->unicode();
                 if(buf[p] == ';') {
                     valid = true;

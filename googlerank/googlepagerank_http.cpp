@@ -225,10 +225,25 @@ namespace details
  * \param[in] index  The index of the request using this QHttpRequest.
  */
 QHttpRequest::QHttpRequest(QObject *prnt, QGooglePageRank::RequestType index)
-	: QObject(prnt),
-	  f_index(index),
-	  f_rank(QGooglePageRank::PageRankUnknown)
+	: QObject(prnt)
+	//, f_uri("") -- auto-init
+	//, f_finished(false), -- auto-init
+	//, f_aborted(false), -- auto-init
+	, f_network_access_manager(nullptr)
+	, f_reply(nullptr)
+	//, f_data(""), -- auto-init
+	, f_index(index)
+	, f_rank(QGooglePageRank::PageRankUnknown)
 {
+}
+
+/** \brief Clean up a QHttpRequest object.
+ *
+ * This destructor deletes the network access manager if we allocated one.
+ */
+QHttpRequest::~QHttpRequest()
+{
+	delete f_network_access_manager;
 }
 
 /** \brief Execute the request.
@@ -243,10 +258,13 @@ QHttpRequest::QHttpRequest(QObject *prnt, QGooglePageRank::RequestType index)
  * The management of the loop is based on the example shown here:
  * http://developer.qt.nokia.com/doc/qt-4.8/network-http.html
  *
+ * You may call the wait() function to block until the system gets
+ * the reply.
+ *
  * \exception std::logic_error
  * If the URI is an empty string then the function raises this exception.
  * Also, this function can only be called once. To send multiple requests
- * created other QHttpRequests.
+ * created other QHttpRequests objects.
  *
  * \exception std::runtime_error
  * This exception is raised if the resulting network reply object cannot
@@ -259,7 +277,7 @@ void QHttpRequest::exec(const QString& uri)
 	if(uri.isEmpty()) {
 		throw std::logic_error("URI cannot be an empty string");
 	}
-	if(!f_uri.isEmpty()) {
+	if(!f_uri.isEmpty() || f_network_access_manager != nullptr) {
 		throw std::logic_error("QHttpRequest exec() function called twice");
 	}
 	f_uri = uri;
@@ -301,6 +319,9 @@ void QHttpRequest::finished()
  */
 void QHttpRequest::readyRead()
 {
+	if(!f_reply) {
+		throw std::runtime_error("QHttpRequest readyRead() function called with f_reply still null");
+	}
 	f_data += f_reply->readAll();
 }
 
@@ -367,6 +388,9 @@ void QHttpRequest::extractRank()
 void QHttpRequest::wait() const
 {
 	if(!f_finished) {
+		if(!f_reply) {
+			throw std::runtime_error("QHttpRequest wait() function called with f_reply still null");
+		}
 		// wait until finished() gets signaled
 		QEventLoop loop;
 		connect(f_reply, SIGNAL(finished()), &loop, SLOT(quit()));

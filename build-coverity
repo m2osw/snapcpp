@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Build Snap! C++ using Coverity
+#
+# Note: We have a more complete script for Coverity that includes
+#       copying the file to an Apache2 server and then uploading it
+#       to Coverity (the payload is about 360Mb at time of writing).
+#       We do not make that available here since it includes a path
+#       and a secret code which we do not want to share. Sorry!
+#
+
+set -e
+
+# Add the path to the coverity tools
+export PATH=${PATH}:`pwd`/cov-analysis-linux64-7.6.0/bin
+
+# Setup the BUILD_COVERITY environment
+rm -rf BUILD_COVERITY
+mkdir BUILD_COVERITY
+cd BUILD_COVERITY
+cmake ..
+
+# Now run the make process with Coverity
+# making sure that the the Coverity .../bin folder is in our PATH
+cov-build --dir cov-int make
+
+# Package the result
+tar caf snapcpp.xz cov-int

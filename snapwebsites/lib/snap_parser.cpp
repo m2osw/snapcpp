@@ -20,6 +20,8 @@
 #include "log.h"
 #include "qstring_stream.h"
 
+#include <controlled_vars/controlled_vars_no_init.h>
+
 #include <iostream>
 
 #include <QList>
@@ -1571,12 +1573,15 @@ typedef QMap<parser_state *, int> state_map_t;
 struct parser_state
 {
     parser_state(parser_state *parent, choices& c, int r)
-        : f_parent(parent),
-          f_choices(&c),
-          f_rule(r)
-          //f_position(0) -- auto-init
-          //f_node() -- auto-init
-          //f_add_on_reduce() -- auto-init
+        //: f_lock(false) -- auto-init
+        //, f_line(<random>) -- auto-init
+        : f_parent(parent)
+        //, f_children() -- auto-init
+        , f_choices(&c)
+        , f_rule(r)
+        //, f_position(0) -- auto-init
+        //, f_node() -- auto-init
+        //, f_add_on_reduce() -- auto-init
     {
         if(parent != nullptr)
         {
@@ -1784,7 +1789,7 @@ struct parser_state
 
     controlled_vars::flbool_t       f_lock;
 
-    int                             f_line;
+    controlled_vars::rint32_t       f_line;
     parser_state *                  f_parent;
     state_array_t                   f_children;
 
@@ -1852,6 +1857,7 @@ void next_token(parser_state *state, state_array_t& current, state_array_t& free
                     {
                         parser_state *s(parser_state::alloc(free_states, state->f_parent, *state->f_choices, i));
                         //parser_state *s(parser_state::copy(free_states, state));
+                        s->f_line = state->f_line;
                         s->add_node(state->f_node);
                         current.push_back(s);
 //std::cerr << "** sub-next_token (recursive) " << reinterpret_cast<void*>(s) << "\n";

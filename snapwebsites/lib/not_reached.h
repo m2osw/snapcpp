@@ -21,6 +21,7 @@
 
 namespace snap {
 
+// coverity[+kill]
 __attribute__ ((noreturn)) inline void NOTREACHED()
 {
     // TODO: add call to print stack trace

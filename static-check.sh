@@ -3,7 +3,7 @@
 # The result is saved in cppcheck.out (it can be quite large)
 cppcheck \
 	advgetopt/ \
-	cassandra/ \
+	as2js/ \
 	cassview/ \
 	controlled_vars/ \
 	googlerank/ \
@@ -12,5 +12,7 @@ cppcheck \
 	libQtCassandra/ \
 	libQtSerialization/ \
 	libtld/ \
+	snapmanager/ \
+	snapwatchdog/ \
 	snapwebsites/ \
 		>cppcheck.out 2>&1
