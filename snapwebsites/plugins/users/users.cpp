@@ -792,6 +792,17 @@ void users::user_logout()
  */
 void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
+    // is that path already going to be handled by someone else?
+    // (avoid wasting time if that is the case)
+    //
+    // this happens when the attachment plugin is to handle user
+    // image previews
+    if(plugin_info.get_plugin()
+    || plugin_info.get_plugin_if_renamed())
+    {
+        return;
+    }
+
     //
     // WARNING:
     //
@@ -804,7 +815,6 @@ void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynami
     //
     QString cpath(ipath.get_cpath());
     if(cpath == "user"                      // list of (public) users
-    || cpath.left(5) == "user/"             // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
     || cpath == "profile"                   // the logged in user profile
     || cpath == "login"                     // form to log user in
     || cpath == "logout"                    // log user out
@@ -818,6 +828,14 @@ void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynami
     {
         // tell the path plugin that this is ours
         plugin_info.set_plugin(this);
+    }
+    else if(cpath.left(5) == "user/")       // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
+    {
+        QStringList const user_segments(cpath.split("/"));
+        if(user_segments.size() == 2)
+        {
+            plugin_info.set_plugin(this);
+        }
     }
 }
 

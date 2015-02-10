@@ -625,7 +625,7 @@ void images::on_modified_content(content::path_info_t& ipath)
         if(!old_date_value.nullValue())
         {
             // not null, there is an old date
-            int64_t old_date(old_date_value.int64Value());
+            int64_t const old_date(old_date_value.int64Value());
             if(old_date == start_date)
             {
                 // we already marked that as a change on this run, ignore
@@ -833,6 +833,7 @@ int64_t images::transform_images()
 {
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+    files_table->clearCache();
     QtCassandra::QCassandraRow::pointer_t images_row(files_table->row(get_name(SNAP_NAME_IMAGES_ROW)));
 
     // we use a smaller number (100) instead of a larger number (1000)
@@ -842,7 +843,7 @@ int64_t images::transform_images()
     column_predicate.setCount(100);
     column_predicate.setIndex(); // behave like an index
 
-    // loop until all cells were deleted
+    // loop until all cells were deleted or the STOP signal was received
     for(;;)
     {
         // Note: because it is sorted, the oldest entries are worked on first
@@ -885,7 +886,7 @@ int64_t images::transform_images()
             }
 
             QString const image_key(QtCassandra::stringValue(key, sizeof(int64_t)));
-SNAP_LOG_INFO() << "image path from key [" << image_key << "]\n";
+SNAP_LOG_INFO() << "image path from key [" << image_key << "]";
 
             // print out the row being worked on
             // (if it crashes it is really good to know where)
@@ -903,8 +904,7 @@ SNAP_LOG_INFO() << "image path from key [" << image_key << "]\n";
 
             if(do_image_transformations(image_key))
             {
-                // we handled that page for all the lists that we have on
-                // this website, so drop it now
+                // we handled that image so drop it now
                 images_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
             }
 
@@ -937,7 +937,12 @@ SNAP_LOG_INFO() << "image path from key [" << image_key << "]\n";
 bool images::do_image_transformations(QString const& image_key)
 {
     content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+    content_table->clearCache();
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    branch_table->clearCache();
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    revision_table->clearCache();
     content::path_info_t image_ipath;
     image_ipath.set_path(image_key);
 
@@ -1031,7 +1036,7 @@ Magick::Image images::apply_image_script(QString const& script, content::path_in
         params.f_command = commands[idx].simplified();
         if(params.f_command.isEmpty())
         {
-            // skip empty lines (could be many if the script ended with \r\n)
+            // skip empty lines (could be many if script lines ended with \r\n)
             continue;
         }
         if(params.f_command[0] == '#')
@@ -1047,10 +1052,10 @@ Magick::Image images::apply_image_script(QString const& script, content::path_in
         {
             pos = params.f_command.length();
         }
-        QString cmd(params.f_command.mid(0, pos));
+        QString const cmd(params.f_command.mid(0, pos));
 
         // search for this command using a fast binary search
-        QByteArray name(cmd.toUtf8());
+        QByteArray const name(cmd.toUtf8());
         char const *n(name.data());
 
         size_t p(static_cast<size_t>(-1));
@@ -1129,7 +1134,7 @@ Magick::Image images::apply_image_script(QString const& script, content::path_in
 
         // transform variables (if any) to actual paths
 // for now keep a log to see what is happening
-SNAP_LOG_INFO() << " ++ [" << params.f_command << "]\n";
+SNAP_LOG_INFO() << " ++ [" << params.f_command << "]";
         for(int k(0); k < params.f_params.size(); ++k)
         {
             int start_pos(0);
@@ -1157,7 +1162,7 @@ SNAP_LOG_INFO() << " ++ [" << params.f_command << "]\n";
                     }
                 }
             }
-SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]\n";
+SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
         }
 
         // call the command
@@ -1246,7 +1251,7 @@ void images::func_read(parameters_t& params)
 {
     // param 1 is the ipath (key)
     // param 2 is the name used to load the file from the files table
-    // param 3 is the image number, zero by default (optional)
+    // param 3 is the image number, zero by default (optional -- currently unused)
 
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());

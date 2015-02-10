@@ -243,6 +243,8 @@ void snap_initialize_website::snap_initialize_website_runner::message(QString co
 
 QString snap_initialize_website::snap_initialize_website_runner::next_message()
 {
+    // TODO: It looks like we created our own queue here when the thread
+    // implementation offers one that most certainly works just fine -- switch!
     snap_thread::snap_lock lock(f_mutex);
     if(f_message_queue.empty())
     {

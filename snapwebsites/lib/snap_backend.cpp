@@ -58,54 +58,55 @@ snap_backend::udp_monitor::udp_monitor()
 
 snap_backend::udp_signal_t snap_backend::udp_monitor::get_signal() const
 {
-    snap_thread::snap_lock lock( f_mutex );
+    snap_thread::snap_lock lock( f_mutex_and_message_fifo );
     return f_udp_signal;
 }
 
 
 void snap_backend::udp_monitor::set_signal( snap_backend::udp_signal_t signal )
 {
-    snap_thread::snap_lock lock( f_mutex );
+    snap_thread::snap_lock lock( f_mutex_and_message_fifo );
     f_udp_signal = signal;
 }
 
 
 void snap_backend::udp_monitor::set_backend( zpsnap_backend_t backend )
 {
-    snap_thread::snap_lock lock( f_mutex );
+    snap_thread::snap_lock lock( f_mutex_and_message_fifo );
     f_backend = backend;
 }
 
 
 bool snap_backend::udp_monitor::get_error() const
 {
-    snap_thread::snap_lock lock( f_mutex );
+    snap_thread::snap_lock lock( f_mutex_and_message_fifo );
     return f_error;
 }
 
 
 bool snap_backend::udp_monitor::stop_received() const
 {
-    snap_thread::snap_lock lock( f_mutex );
+    snap_thread::snap_lock lock( f_mutex_and_message_fifo );
     return f_stop_received;
 }
 
 
 bool snap_backend::udp_monitor::is_message_pending() const
 {
-    snap_thread::snap_lock lock( f_mutex );
-    return !f_message_fifo.empty();
+    // Note: the message FIFO is its own mutex and the empty() function
+    //       already calls lock() as required
+    return !f_mutex_and_message_fifo.empty();
 }
 
 
 bool snap_backend::udp_monitor::pop_message( message_t& message, int const wait_msecs )
 {
     // already received STOP? bypass the possible wait...
-    if(f_stop_received)
+    if(stop_received()) // must lock, hence call the function
     {
         return false;
     }
-    return f_message_fifo.pop_front(message, wait_msecs);
+    return f_mutex_and_message_fifo.pop_front(message, static_cast<int64_t>(wait_msecs) * 1000UL);
 }
 
 
@@ -115,7 +116,7 @@ void snap_backend::udp_monitor::run()
 {
     while( !get_thread()->is_stopping() )
     {
-        snap_thread::snap_lock lock( f_mutex );
+        snap_thread::snap_lock lock( f_mutex_and_message_fifo );
         if( f_udp_signal )
         {
             break;
@@ -143,24 +144,23 @@ void snap_backend::udp_monitor::run()
             //
             if(strcmp(buf, g_stop_message) == 0)
             {
-                // this is a special case where we do not need to push
-                // the message because all we want now is stop
+                // this is a special case where we also mark the
+                // backend as "stopping"
                 //
-                snap_thread::snap_lock lock( f_mutex );
+                snap_thread::snap_lock lock( f_mutex_and_message_fifo );
 
                 f_stop_received = true;
 
-                // we have to push that or the listener is likely to
-                // continue to wait for minutes...
+                // we have to push the STOP message anyway or the
+                // listener is likely to continue to wait for minutes...
+                // (i.e. that triggers the signal as required)
                 //
-                f_message_fifo.push_back( buf );
+                f_mutex_and_message_fifo.push_back( buf );
                 break; // no need to listen for more
             }
             else
             {
-                snap_thread::snap_lock lock( f_mutex );
-
-                f_message_fifo.push_back( buf );
+                f_mutex_and_message_fifo.push_back( buf );
             }
         }
     }

@@ -66,10 +66,10 @@ private:
         mutable snap_thread::snap_mutex     f_mutex;
         controlled_vars::fbool_t            f_done;
         QString const                       f_snap_host;
-        int                                 f_snap_port;
+        controlled_vars::mint32_t           f_snap_port;
         QString const                       f_website_uri;
-        int                                 f_destination_port;
-        std::deque<QString>                 f_message_queue;
+        controlled_vars::mint32_t           f_destination_port;
+        std::deque<QString>                 f_message_queue; // TODO: look into reusing the message queue from the thread with T = QString!?
     };
 
     std::unique_ptr<snap_initialize_website_runner>     f_website_runner;

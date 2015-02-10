@@ -31,29 +31,76 @@ namespace snap
 /** \class snap_thread::snap_mutex
  * \brief A mutex object to ensures atomicity.
  *
- * This class is used to by threads when some data accessed by more than
+ * This class is used by threads when some data accessed by more than
  * one thread is about to be accessed. In most cases it is used with the
  * snap_lock class so it is safe even in the event an exception is raised.
+ *
+ * The snap_mutex also includes a condition variable which can be signaled
+ * using the signal() function. This wakes threads that are currently
+ * waiting on the condition with one of the wait() functions.
+ *
+ * \note
+ * We use a recursive mutex so you may lock the mutex any number of times.
+ * It has to be unlocked that many times, of course.
  */
+
+
 
 /** \brief An inter-thread mutex to ensure unicity of execution.
  *
  * The mutex object is used to lock part of the code that needs to be run
- * by only one thread at a time. This is also called a critical section.
+ * by only one thread at a time. This is also called a critical section
+ * and a memory barrier.
  *
- * In most cases one uses the snap_lock_mutex object to temporary lock
+ * In most cases one uses the snap_lock object to temporarily lock
  * the mutex using the stack to help ensure the mutex gets unlocked as
  * required in the event an exception occurs.
  *
  * \code
  * {
- *    snap_locak_mutex lock(&my_mutex)
+ *    snap_thread::snap_lock lock(&my_mutex)
  *    ... // protected code
  * }
  * \endcode
  *
  * The lock can be tried to see whether another thread already has the
  * lock and fail if so. See the try_lock() function.
+ *
+ * The class also includes a condition in order to send signals and wait
+ * on signals. There are two ways to send signals and three ways to wait.
+ * Note that to call any one of the wait funtions you must first have the
+ * mutex locked, what otherwise happens is undefined.
+ *
+ * \code
+ * {
+ *      // wake one waiting thread
+ *      my_mutex.signal();
+ *
+ *      // wake all the waiting thread
+ *      my_mutex.broadcast();
+ *
+ *      // wait on the signal forever
+ *      {
+ *          snap_thread::snap_lock lock(&my_mutex);
+ *          my_mutex.wait();
+ *      }
+ *
+ *      // wait on the signal for the specified amount of time
+ *      {
+ *          snap_thread::snap_lock lock(&my_mutex);
+ *          my_mutex.timed_wait(1000000UL); // wait up to 1 second
+ *      }
+ *
+ *      // wait on the signal for until date or later or the signal
+ *      {
+ *          snap_thread::snap_lock lock(&my_mutex);
+ *          my_mutex.dated_wait(date); // wait on signal or until date
+ *      }
+ * }
+ * \endcode
+ *
+ * If you need a FIFO of messages between your threads, look at the
+ * snap_fifo template.
  *
  * \note
  * Care must be used to always initialized a mutex before it
@@ -69,6 +116,7 @@ snap_thread::snap_mutex::snap_mutex()
     //, f_mutex() -- init below
     //, f_condition() -- init below
 {
+    // initialize the mutex
     pthread_mutexattr_t mattr;
     int err(pthread_mutexattr_init(&mattr));
     if(err != 0)
@@ -98,6 +146,7 @@ snap_thread::snap_mutex::snap_mutex()
         throw snap_thread_exception_invalid_error("pthread_mutexattr_destroy() failed");
     }
 
+    // initialize the condition
     pthread_condattr_t cattr;
     err = pthread_condattr_init(&cattr);
     if(err != 0)
@@ -117,11 +166,12 @@ snap_thread::snap_mutex::snap_mutex()
     err = pthread_condattr_destroy(&cattr);
     if(err != 0)
     {
-        SNAP_LOG_FATAL("a mutex condition attribute structure could not be initialized, error #")(err);
+        SNAP_LOG_FATAL("a mutex condition attribute structure could not be destroyed, error #")(err);
         pthread_mutex_destroy(&f_mutex);
         throw snap_thread_exception_invalid_error("pthread_condattr_destroy() failed");
     }
 }
+
 
 /** \brief Clean up a mutex object.
  *
@@ -152,6 +202,7 @@ snap_thread::snap_mutex::~snap_mutex()
     }
 }
 
+
 /** \brief Lock a mutex
  *
  * This function locks the mutex. The function waits until the mutex is
@@ -159,7 +210,7 @@ snap_thread::snap_mutex::~snap_mutex()
  * want to use the try_lock() function instead.
  *
  * Although the function cannot fail, the call can lock up a process if
- * two or more mutexes are used and another process is already waiting
+ * two or more mutexes are used and another thread is already waiting
  * on this process.
  *
  * \exception snap_thread_exception_invalid_error
@@ -167,17 +218,18 @@ snap_thread::snap_mutex::~snap_mutex()
  */
 void snap_thread::snap_mutex::lock()
 {
-    int err(pthread_mutex_lock(&f_mutex));
+    int const err(pthread_mutex_lock(&f_mutex));
     if(err != 0)
     {
         SNAP_LOG_ERROR("a mutex lock generated error #")(err);
         throw snap_thread_exception_invalid_error("pthread_mutex_lock() failed");
     }
 
-    // note: we don't need an atomic call since we
-    //       already know we're alone running here...
+    // note: we do not need an atomic call since we
+    //       already know we are running alone here...
     ++f_reference_count;
 }
+
 
 /** \brief Try locking the mutex.
  *
@@ -192,21 +244,26 @@ void snap_thread::snap_mutex::lock()
  */
 bool snap_thread::snap_mutex::try_lock()
 {
-    int err(pthread_mutex_trylock(&f_mutex));
+    int const err(pthread_mutex_trylock(&f_mutex));
     if(err == 0)
     {
-        // note: we don't need an atomic call since we
-        //       already know we're alone running here...
+        // note: we do not need an atomic call since we
+        //       already know we are running alone here...
         ++f_reference_count;
-    }
-    else if(err != EBUSY)
-    {
-        SNAP_LOG_ERROR("a mutex try lock generated error #")(err);
-        throw snap_thread_exception_invalid_error("pthread_mutex_trylock() failed");
+        return true;
     }
 
-    return err == 0;
+    // failed because another thread has the lock?
+    if(err == EBUSY)
+    {
+        return false;
+    }
+
+    // another type of failure
+    SNAP_LOG_ERROR("a mutex try lock generated error #")(err);
+    throw snap_thread_exception_invalid_error("pthread_mutex_trylock() failed");
 }
+
 
 /** \brief Unlock a mutex.
  *
@@ -232,11 +289,11 @@ void snap_thread::snap_mutex::unlock()
         throw snap_thread_exception_not_locked_error("unlock was called too many times");
     }
 
-    // NOTE: we don't need an atomic call since we
-    //       already know we're alone running here...
+    // NOTE: we do not need an atomic call since we
+    //       already know we are running alone here...
     --f_reference_count;
 
-    int err(pthread_mutex_unlock(&f_mutex));
+    int const err(pthread_mutex_unlock(&f_mutex));
     if(err != 0)
     {
         SNAP_LOG_ERROR("a mutex unlock generated error #")(err);
@@ -244,11 +301,18 @@ void snap_thread::snap_mutex::unlock()
     }
 }
 
+
 /** \brief Wait on a mutex condition.
  *
  * At times it is useful to wait on a mutex to become available without
- * polling the mutex (which uselessly wastes previous processing time.)
+ * polling the mutex (which uselessly wastes precious processing time.)
  * This function can be used to wait on a mutex condition.
+ *
+ * This version of the wait() blocks until a signal is received.
+ *
+ * \warning
+ * This function cannot be called if the mutex is not locked or the
+ * wait will fail in unpredicatable ways.
  *
  * \exception snap_thread_exception_not_locked_once_error
  * This exception is raised if the reference count is not exactly 1.
@@ -272,7 +336,7 @@ void snap_thread::snap_mutex::wait()
     //    SNAP_LOG_FATAL("attempting to wait on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
     //    throw snap_thread_exception_not_locked_once_error();
     //}
-    int err(pthread_cond_wait(&f_condition, &f_mutex));
+    int const err(pthread_cond_wait(&f_condition, &f_mutex));
     if(err != 0)
     {
         // an error occurred!
@@ -281,7 +345,8 @@ void snap_thread::snap_mutex::wait()
     }
 }
 
-/** \brief Wait on a mutex condition.
+
+/** \brief Wait on a mutex condition with a time limit.
  *
  * At times it is useful to wait on a mutex to become available without
  * polling the mutex, but only for some time. This function waits for
@@ -289,20 +354,22 @@ void snap_thread::snap_mutex::wait()
  * the condition was triggered. Otherwise it waits until the specified
  * number of micro seconds elapsed and then returns.
  *
- * \exception snap_thread_exception_not_locked_once_error
- * This exception is raised if the reference count is not exactly 1.
- * In other words, the mutex must be locked by the caller but only
- * one time.
+ * \warning
+ * This function cannot be called if the mutex is not locked or the
+ * wait will fail in unpredicatable ways.
+ *
+ * \exception snap_thread_exception_system_error
+ * This exception is raised if a function returns an unexpected error.
  *
  * \exception snap_thread_exception_mutex_failed_error
  * This exception is raised when the mutex wait function fails.
  *
- * \param[in] usec  The number of micro seconds to wait until you acquiring
- *                  getting the lock.
+ * \param[in] usecs  The maximum number of micro seconds to wait until you
+ *                   receive the signal.
  *
- * \return true if the condition was raised, false if the wait times out.
+ * \return true if the condition was raised, false if the wait timed out.
  */
-bool snap_thread::snap_mutex::timed_wait(uint64_t usec)
+bool snap_thread::snap_mutex::timed_wait(uint64_t const usecs)
 {
     // For any mutex wait to work, we MUST have the
     // mutex locked already and just one time.
@@ -330,13 +397,14 @@ bool snap_thread::snap_mutex::timed_wait(uint64_t usec)
 
     // now + user specified usec
     struct timespec timeout;
-    timeout.tv_sec = vtime.tv_sec + usec / 1000000ULL;
-    usec = vtime.tv_usec + usec % 1000000ULL;
-    if(usec > 1000000ULL) {
+    timeout.tv_sec = vtime.tv_sec + usecs / 1000000ULL;
+    uint64_t micros(vtime.tv_usec + usecs % 1000000ULL);
+    if(micros > 1000000ULL)
+    {
         timeout.tv_sec++;
-        usec -= 1000000ULL;
+        micros -= 1000000ULL;
     }
-    timeout.tv_nsec = static_cast<long>(usec * 1000ULL);
+    timeout.tv_nsec = static_cast<long>(micros * 1000ULL);
 
     err = pthread_cond_timedwait(&f_condition, &f_mutex, &timeout);
     if(err != 0)
@@ -354,17 +422,25 @@ bool snap_thread::snap_mutex::timed_wait(uint64_t usec)
     return true;
 }
 
+
 /** \brief Wait on a mutex until the specified date.
  *
- * This function waits on the mutex condition to be signaled until the
+ * This function waits on the mutex condition to be signaled up until the
  * specified date is passed.
  *
- * \param[in] msec  The date when the mutex times out in milliseconds.
+ * \warning
+ * This function cannot be called if the mutex is not locked or the
+ * wait will fail in unpredicatable ways.
+ *
+ * \exception snap_thread_exception_mutex_failed_error
+ * This exception is raised whenever the thread wait functionf fails.
+ *
+ * \param[in] usec  The date when the mutex times out in microseconds.
  *
  * \return true if the condition occurs before the function times out,
  *         false if the function times out.
  */
-bool snap_thread::snap_mutex::dated_wait(uint64_t msec)
+bool snap_thread::snap_mutex::dated_wait(uint64_t usec)
 {
     // For any mutex wait to work, we MUST have the
     // mutex locked already and just one time.
@@ -381,10 +457,10 @@ bool snap_thread::snap_mutex::dated_wait(uint64_t msec)
 
     // setup the timeout date
     struct timespec timeout;
-    timeout.tv_sec = static_cast<long>(msec / 1000ULL);
-    timeout.tv_nsec = static_cast<long>((msec % 1000ULL) * 1000000ULL);
+    timeout.tv_sec = static_cast<long>(usec / 1000000ULL);
+    timeout.tv_nsec = static_cast<long>((usec % 1000000ULL) * 1000ULL);
 
-    int err(pthread_cond_timedwait(&f_condition, &f_mutex, &timeout));
+    int const err(pthread_cond_timedwait(&f_condition, &f_mutex, &timeout));
     if(err != 0)
     {
         if(err == ETIMEDOUT)
@@ -400,10 +476,14 @@ bool snap_thread::snap_mutex::dated_wait(uint64_t msec)
     return true;
 }
 
+
 /** \brief Signal a mutex.
  *
  * Our mutexes include a condition that get signaled by calling this
- * function.
+ * function. This function wakes up one listening thread.
+ *
+ * The function ensures that the mutex is locked before broadcasting
+ * the signal so you do not have to lock the mutex yourself.
  *
  * \exception snap_thread_exception_invalid_error
  * If one of the pthread system functions return an error, the function
@@ -411,25 +491,40 @@ bool snap_thread::snap_mutex::dated_wait(uint64_t msec)
  */
 void snap_thread::snap_mutex::signal()
 {
-    int err(pthread_mutex_lock(&f_mutex));
-    if(err != 0)
-    {
-        SNAP_LOG_ERROR("a mutex lock generated error #")(err);
-        throw snap_thread_exception_invalid_error("pthread_mutex_lock() failed");
-    }
+    snap_lock lock_mutex(*this);
 
-    err = pthread_cond_signal(&f_condition);
+    int const err(pthread_cond_signal(&f_condition));
     if(err != 0)
     {
         SNAP_LOG_ERROR("a mutex condition signal generated error #")(err);
         throw snap_thread_exception_invalid_error("pthread_cond_signal() failed");
     }
+}
 
-    err = pthread_mutex_unlock(&f_mutex);
+
+/** \brief Broadcast a mutex signal.
+ *
+ * Our mutexes include a condition that get signaled by calling this
+ * function. This function actually signals all the threads that are
+ * currently listening to the mutex signal. The order in which the
+ * threads get awaken is unspecified.
+ *
+ * The function ensures that the mutex is locked before broadcasting
+ * the signal so you do not have to lock the mutex yourself.
+ *
+ * \exception snap_thread_exception_invalid_error
+ * If one of the pthread system functions return an error, the function
+ * raises this exception.
+ */
+void snap_thread::snap_mutex::broadcast()
+{
+    snap_lock lock_mutex(*this);
+
+    int const err(pthread_cond_broadcast(&f_condition));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex unlock generated error #")(err);
-        throw snap_thread_exception_invalid_error("pthread_mutex_unlock() failed");
+        SNAP_LOG_ERROR("a mutex signal broadcast generated error #")(err);
+        throw snap_thread_exception_invalid_error("pthread_cond_broadcast() failed");
     }
 }
 
@@ -452,6 +547,7 @@ void snap_thread::snap_mutex::signal()
  * \endcode
  */
 
+
 /** \brief Lock a mutex.
  *
  * This function locks the specified mutex and keep track of the lock
@@ -472,11 +568,15 @@ snap_thread::snap_lock::snap_lock(snap_mutex& mutex)
     f_mutex->lock();
 }
 
+
 /** \brief Ensure that the mutex was unlocked.
  *
  * The destructor ensures that the mutex gets unlocked. Note that it is
  * written to avoid exceptions, however, if an exception occurs it ends
  * up calling exit(1).
+ *
+ * \note
+ * If a function throws it logs information using the Snap! logger.
  */
 snap_thread::snap_lock::~snap_lock()
 {
@@ -491,11 +591,15 @@ snap_thread::snap_lock::~snap_lock()
     }
 }
 
+
 /** \brief Unlock this mutex.
  *
  * This function can be called any number of times. The first time it is
  * called, the mutex gets unlocked. Further calls (in most cases one more
  * when the destructor is called) have no effects.
+ *
+ * This function may throw an exception if the mutex unlock call
+ * fails.
  */
 void snap_thread::snap_lock::unlock()
 {
@@ -525,6 +629,7 @@ void snap_thread::snap_lock::unlock()
  * starts running.
  */
 
+
 /** \brief Initializes the runner.
  *
  * The constructor expects a name. The name is mainly used in case a
@@ -539,6 +644,7 @@ snap_thread::snap_runner::snap_runner(QString const& name)
     : f_name(name)
 {
 }
+
 
 /** \brief The destructor checks that the thread was stopped.
  *
@@ -559,6 +665,7 @@ snap_thread::snap_runner::~snap_runner()
     }
 }
 
+
 /** \brief Check whether this thread runner is ready.
  *
  * By default a thread runner is considered ready. If you reimplement this
@@ -571,6 +678,7 @@ bool snap_thread::snap_runner::is_ready() const
 {
     return true;
 }
+
 
 /** \brief Whether the thread should continue running.
  *
@@ -772,12 +880,15 @@ bool snap_thread::is_stopping() const
  * function expects.
  *
  * \param[in] thread  The thread pointer.
+ *
+ * \return We return a null pointer, which we do not use because we do
+ *         not call the pthread_join() function.
  */
 void *func_internal_start(void *thread)
 {
     snap_thread *t = reinterpret_cast<snap_thread *>(thread);
     t->internal_run();
-    return nullptr;
+    return nullptr; // == pthread_exit(nullptr);
 }
 
 
@@ -849,7 +960,7 @@ bool snap_thread::start()
     f_started = false;
     f_stopping = false; // make sure it is reset
 
-    int err(pthread_create(&f_thread, &f_thread_attr, &func_internal_start, this));
+    int const err(pthread_create(&f_thread, &f_thread_attr, &func_internal_start, this));
     if(err != 0)
     {
         SNAP_LOG_ERROR("the thread could not be created, error #")(err);
@@ -878,6 +989,11 @@ bool snap_thread::start()
  * \warning
  * This function throws the thread exceptions that weren't caught in your
  * run() function. This happens after the thread has completed.
+ *
+ * \todo
+ * We may want to look into using pthread_join() instead of just
+ * waiting for f_running to go to false. At this time we use detached
+ * threads though and that prevents joining.
  */
 void snap_thread::stop()
 {
@@ -886,29 +1002,34 @@ void snap_thread::stop()
 
         if(!f_running)
         {
+            // we return immediately in this case because
+            // no exception can happen if the thread never
+            // started...
             return;
         }
 
         // request the child to stop
         f_stopping = true;
-    }
 
-    // wait for the child to be stopped
-    // the loop is used in case the signal happens "inadvertendly"
-    // (the documentation clearly says that spurious signals may happen
-    // although I haven't really experienced it, we check until f_running
-    // is really false)
-    for(;;)
-    {
-        snap_lock lock(f_mutex);
-
-        if(!f_running)
+        // wait for the child to be stopped
+        // the loop is used in case the signal happens "inadvertendly"
+        // (the documentation clearly says that spurious signals may happen
+        // although I have not really experienced it, we check until f_running
+        // is really false)
+        for(;;)
         {
-            // exit for() loop
-            break;
+            if(!f_running)
+            {
+                // exit for() loop
+                break;
+            }
+
+            f_mutex.wait();
         }
 
-        f_mutex.wait();
+        // We cannot join since our threads are detached (change?)
+        //void *ignore;
+        //pthread_join(f_thread, &ignore);
     }
 
     // if the child died because of a standard exception, rethrow it now
@@ -923,6 +1044,7 @@ void snap_thread::stop()
     // process thread as soon as the lock is released. Yet the only thing
     // left in the thread is exiting.
 }
+
 
 } // namespace snap
 

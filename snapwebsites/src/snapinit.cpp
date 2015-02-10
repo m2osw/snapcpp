@@ -434,6 +434,12 @@ void process::stop_service()
     }
 
     // run the corresponding snapsignal command to stop this process
+    //
+    // TODO: Note that when f_name is "server" the snapsignal is not really
+    //       expected to understand; it should be "snapserver" instead
+    //       I think that the snapinit tool should only use "snapserver"
+    //       everywhere instead of "server"
+    //
     QString const command( QString("%1/snapsignal -c %2 -a %3 STOP").arg(f_path).arg(f_config_filename).arg(f_name) );
     int const retval = system( command.toUtf8().data() );
     if( retval == -1 )
@@ -886,6 +892,7 @@ void snap_init::start_processes()
         const std::string word( udp_signals->timed_recv( BUFSIZE, TIMEOUT ) );
         if( word == "STOP" )
         {
+            SNAP_LOG_INFO("STOP received, terminate processes.");
             terminate_processes();
             break;
         }
@@ -952,6 +959,8 @@ void snap_init::stop()
 
     snap::server::udp_ping_server( UDP_SERVER, "STOP" );
 
+    // TODO: add a timer, by default wait at most 60 seconds
+    //       (add a parameter in the .conf to allow for shorter/longer waits)
     do
     {
         // We wait until the remote process removes the lockfile...

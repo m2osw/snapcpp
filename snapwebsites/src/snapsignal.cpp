@@ -49,7 +49,8 @@ int main(int argc, char *argv[])
     {
         s->udp_ping("pagelist_udp_signal", msg.toUtf8().data());
     }
-    else if(s->get_parameter("__BACKEND_ACTION") == "snapserver")
+    else if(s->get_parameter("__BACKEND_ACTION") == "snapserver"
+         || s->get_parameter("__BACKEND_ACTION") == "server")
     {
         s->udp_ping("snapserver_udp_signal", msg.toUtf8().data());
     }
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        std::cerr << "error: unknown/unsupported action." << std::endl;
+        std::cerr << "error: unknown/unsupported action \"" << s->get_parameter("__BACKEND_ACTION") << "\"." << std::endl;
         s->exit(1);
         snap::NOTREACHED();
     }

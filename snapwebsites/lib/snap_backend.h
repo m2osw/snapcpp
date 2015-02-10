@@ -66,13 +66,12 @@ private:
         virtual void run();
 
     private:
-        mutable snap_thread::snap_mutex f_mutex;
+        mutable snap_thread::snap_fifo<message_t>   f_mutex_and_message_fifo;
 
         zpsnap_backend_t                    f_backend;
         udp_signal_t                        f_udp_signal;
         controlled_vars::flbool_t           f_error;
         controlled_vars::flbool_t           f_stop_received;
-        snap_thread::snap_fifo<message_t>   f_message_fifo;
     };
 
     //mutable snap_thread::snap_mutex f_mutex;
