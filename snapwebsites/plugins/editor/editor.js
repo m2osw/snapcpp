@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.323
+ * Version: 0.0.3.324
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -4714,8 +4714,10 @@ snapwebsites.Editor.prototype.checkModified = function(editor_widget) // virtual
     if(editor_widget)
     {
         widget = editor_widget.getWidget();
-        widget_change = jQuery.Event("widgetchange", {
-                widget: widget,
+        widget_change = jQuery.Event(
+            "widgetchange",
+            {
+                widget: editor_widget,
                 value: editor_widget.getValue()
             });
         widget.trigger(widget_change);
