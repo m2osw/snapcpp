@@ -41,7 +41,7 @@ int main(int /*argc*/, char * /*argv*/[])
     {
         SNAP_LOG_INFO("Testing regular exception:");
         throw snap::snap_exception( "This is an exception!" );
-        snap::NOTREACHED();
+        SNAP_NOTREACHED();
     }
     catch( snap::snap_exception& except )
     {

@@ -74,12 +74,12 @@ int main(int argc, char *argv[])
     {
         std::cerr << "error: unknown/unsupported action \"" << s->get_parameter("__BACKEND_ACTION") << "\"." << std::endl;
         s->exit(1);
-        snap::NOTREACHED();
+        SNAP_NOTREACHED();
     }
 
     // exit via the server so the server can clean itself up properly
     s->exit(0);
-    snap::NOTREACHED();
+    SNAP_NOTREACHED();
 
     return 0;
 }

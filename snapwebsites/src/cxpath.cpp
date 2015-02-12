@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
     if(g_opt->is_defined("help"))
     {
         g_opt->usage(advgetopt::getopt::no_error, "Usage: cxpath [--<opt>] [-p '<xpath>'] | [-x <filename>.xpath <filename>.xml ...]");
-        snap::NOTREACHED();
+        SNAP_NOTREACHED();
     }
     g_verbose = g_opt->is_defined("verbose");
     g_results = g_opt->is_defined("results");

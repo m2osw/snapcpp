@@ -110,7 +110,13 @@ std::ostream::int_type snap_pipe::underflow()
     }
 #endif
 
-    return traits_type::to_int_type(fgetc(f_file.get()));
+    int_type c(traits_type::to_int_type(fgetc(f_file.get())));
+    if(c < 0 || c > 255)
+    {
+        throw snap_pipe_exception_cannot_read(QString("snap_pipe::underflow(): fgetc() returned an error (%1)").arg(c));
+    }
+
+    return static_cast<std::ostream::int_type>(c);
 }
 
 

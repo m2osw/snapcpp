@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     // exit via the server so the server can clean itself up properly
     //
     snap::server::exit( exitval );
-    snap::NOTREACHED();
+    SNAP_NOTREACHED();
     return 0;
 }
 

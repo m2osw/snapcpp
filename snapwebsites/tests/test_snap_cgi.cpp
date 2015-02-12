@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 
             case 'h':
                 usage();
-                snap::NOTREACHED();
+                SNAP_NOTREACHED();
 
             case 'v':
                 for(const char *q = argv[i] + 1; *q != '\0'; ++q) {
@@ -354,12 +354,12 @@ int main(int argc, char *argv[])
     }
     if(help) {
         usage();
-        snap::NOTREACHED();
+        SNAP_NOTREACHED();
     }
     if(!got_url) {
         fprintf(stderr, "error: no URL specified, it is mandatory.\n");
         usage();
-        snap::NOTREACHED();
+        SNAP_NOTREACHED();
     }
 
     if(verbose > 2) {
