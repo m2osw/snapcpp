@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 
 /// Number of errors so we know whether to exit with 0 or 1
 int err_count = 0;
@@ -140,59 +141,68 @@ void usage()
  */
 int main(int argc, char *argv[])
 {
-    bool uri(false);
-
-    for(int i(1); i < argc; ++i)
+    try
     {
-        if(argv[i][0] == '-')
+        bool uri(false);
+
+        for(int i(1); i < argc; ++i)
         {
-            if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+            if(argv[i][0] == '-')
             {
-                usage();
-                /*NOTREACHED*/
-            }
-            else if(strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--list") == 0)
-            {
-                list();
-                /*NOTREACHED*/
-            }
-            else if(strcmp(argv[i], "--version") == 0)
-            {
-                printf("%s\n", LIBTLD_VERSION);
-                if(verbose)
+                if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
                 {
-                    printf("libtld v%s\n", tld_version());
+                    usage();
+                    /*NOTREACHED*/
                 }
-                exit(1);
-            }
-            else if(strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--schemes") == 0)
-            {
-                ++i;
-                if(i >= argc)
+                else if(strcmp(argv[i], "-l") == 0 || strcmp(argv[i], "--list") == 0)
                 {
-                    fprintf(stderr, "error: the --schemes option requires a list of comma separated schemes.\n");
+                    list();
+                    /*NOTREACHED*/
                 }
-                user_schemes = argv[i];
+                else if(strcmp(argv[i], "--version") == 0)
+                {
+                    printf("%s\n", LIBTLD_VERSION);
+                    if(verbose)
+                    {
+                        printf("libtld v%s\n", tld_version());
+                    }
+                    exit(1);
+                }
+                else if(strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--schemes") == 0)
+                {
+                    ++i;
+                    if(i >= argc)
+                    {
+                        fprintf(stderr, "error: the --schemes option requires a list of comma separated schemes.\n");
+                    }
+                    user_schemes = argv[i];
+                }
+                else if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0)
+                {
+                    verbose = 1;
+                }
             }
-            else if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0)
+            else
             {
-                verbose = 1;
+                uri = true;
+                check_uri(argv[i]);
             }
         }
-        else
+
+        if(!uri)
         {
-            uri = true;
-            check_uri(argv[i]);
+            fprintf(stderr, "error: no URI were specified on the command line.\n");
+            ++err_count;
         }
-    }
 
-    if(!uri)
+        return err_count > 0 ? 1 : 0;
+    }
+    catch(std::exception const& e)
     {
-        fprintf(stderr, "error: no URI were specified on the command line.\n");
-        ++err_count;
+        // an exception occured, print out the message and exit with an error
+        std::cerr << "exception: " << e.what() << std::endl;
+        exit(1);
     }
-
-    return err_count > 0 ? 1 : 0;
 }
 
 // vim: ts=4 sw=4 et
