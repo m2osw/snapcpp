@@ -18,7 +18,7 @@
  *      thereof to run the test for multiple days.
  *
  * License:
- *      Copyright (c) 2013 Made to Order Software Corp.
+ *      Copyright (c) 2013-2015 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -49,6 +49,7 @@
 #include <QDebug>
 #include <QStringList>
 #include <QFileInfo>
+#include <iostream>
 #include <unistd.h>
 
 
@@ -333,8 +334,17 @@ void parse_arguments(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    parse_arguments(argc, argv);
-    run_command(g_cmd);
+    try
+    {
+        parse_arguments(argc, argv);
+        run_command(g_cmd);
+    }
+    catch(std::exception const& e)
+    {
+        // manage an exception just like a "standard error"
+        std::cerr << "error:exception: \"" << e.what() << "\"" << std::endl;
+        return 1;
+    }
     return 0;
 }
 

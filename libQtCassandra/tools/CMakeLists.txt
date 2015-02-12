@@ -45,4 +45,9 @@ target_link_libraries(qcassandra-lock
     QtCassandra
 )
 
+install(
+    TARGETS qcassandra-lock
+    RUNTIME DESTINATION bin
+)
+
 # vim: ts=4 sw=4 et

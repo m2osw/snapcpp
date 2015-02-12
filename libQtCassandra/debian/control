@@ -34,7 +34,7 @@ Description: C++ bindings to the Cassandra database server.
  servers in C++.
  Contrary to the basic Cassadra server interface, this C++ library brings you
  separate objects that handle each level of the server data, i.e. the cluster,
- contexts, table, rows, cells.
+ contexts, tables, rows, cells.
  Details for developers can be found on the reference pages (a 100% complete
  Doxygen documentation of the library including source code and working
  examples.)
