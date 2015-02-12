@@ -3,7 +3,7 @@
 // Object:	Query the Google Page Rank from a URL specified on the
 //              command line
 //
-// Copyright:	Copyright (c) 2012 Made to Order Software Corp.
+// Copyright:	Copyright (c) 2012-2015 Made to Order Software Corp.
 //		All Rights Reserved.
 //
 // http://snapwebsites.org/
@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <googlepagerank.h>
 #include <QCoreApplication>
+#include <iostream>
 
 /** \brief Print the usage / help for this tool.
  *
@@ -90,41 +91,58 @@ void usage()
  */
 int main(int argc, char *argv[])
 {
-	QCoreApplication app(argc, argv);
-	bool rank_only(false);
-	bool test(false);
+	try
+	{
+		QCoreApplication app(argc, argv);
+		bool rank_only(false);
+		bool test(false);
 
-	for(int i = 1; i < argc; ++i) {
-		if(strcmp(argv[i], "-h") == 0
-		|| strcmp(argv[i], "--help") == 0) {
-			usage();
-			/*NOTREACHED*/
-		}
-		if(strcmp(argv[i], "-r") == 0
-		|| strcmp(argv[i], "--rank") == 0) {
-			rank_only = true;
-		}
-		if(strcmp(argv[i], "-t") == 0
-		|| strcmp(argv[i], "--test") == 0) {
-			test = true;
-		}
-		else if(argv[i][0] == '-') {
-			fprintf(stderr, "googlerank:error:unknown command line flag \"%s\".\n", argv[i]);
-			exit(1);
-		}
-		else {
-			googlerank::QGooglePageRank pr;
-			googlerank::QGooglePageRank::RequestType req = pr.requestRank(QString(argv[i]), test);
-			googlerank::QGooglePageRank::GooglePageRankStatus rank = pr.pageRank(req, true);
-			if(rank_only) {
-				printf("%d\n", rank);
+		for(int i = 1; i < argc; ++i)
+		{
+			if(strcmp(argv[i], "-h") == 0
+			|| strcmp(argv[i], "--help") == 0)
+			{
+				usage();
+				/*NOTREACHED*/
 			}
-			else {
-				printf("%s %d\n", argv[i], rank);
+			if(strcmp(argv[i], "-r") == 0
+			|| strcmp(argv[i], "--rank") == 0)
+			{
+				rank_only = true;
+			}
+			if(strcmp(argv[i], "-t") == 0
+			|| strcmp(argv[i], "--test") == 0)
+			{
+				test = true;
+			}
+			else if(argv[i][0] == '-')
+			{
+				fprintf(stderr, "googlerank:error:unknown command line flag \"%s\".\n", argv[i]);
+				exit(1);
+			}
+			else
+			{
+				googlerank::QGooglePageRank pr;
+				googlerank::QGooglePageRank::RequestType req = pr.requestRank(QString(argv[i]), test);
+				googlerank::QGooglePageRank::GooglePageRankStatus rank = pr.pageRank(req, true);
+				if(rank_only)
+				{
+					printf("%d\n", rank);
+				}
+				else
+				{
+					printf("%s %d\n", argv[i], rank);
+				}
 			}
 		}
+
+		exit(0);
 	}
-
-	exit(0);
+	catch(std::exception const& e)
+	{
+		// an exception occur, print a message with it and exit with an error
+		std::cerr << "exception: " << e.what() << std::endl;
+		exit(1);
+	}
 }
 
