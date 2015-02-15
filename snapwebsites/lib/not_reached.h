@@ -22,20 +22,12 @@
 namespace snap
 {
 
-// Coverity does not get that one, so we eliminate it completely to
-// avoid some 100 (thus far) error reported for nothing.
-#ifndef __COVERITY__
 __attribute__ ((noreturn)) inline void NOTREACHED()
 {
     // TODO: add call to print stack trace
     std::cerr << "NOTREACHED called, process will abort." << std::endl;
     abort();
 }
-#define SNAP_NOTREACHED()   ::snap::NOTREACHED()
-#else
-#define NOTREACHED()
-#define SNAP_NOTREACHED()
-#endif
 
 } // namespace snap
 // vim: ts=4 sw=4 et

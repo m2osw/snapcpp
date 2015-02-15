@@ -802,6 +802,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                     tok += QChar(c);
                     c = getc();
                 }
+                /*FLOWTHROUGH*/
             case '.':
                 if(c == '.')
                 {

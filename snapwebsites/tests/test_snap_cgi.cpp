@@ -79,13 +79,16 @@ int verbose(0);
 void request(const char *progname)
 {
     const char *p(NULL), *q(NULL);
-    for(const char *s(progname); *s != '\0'; ++s) {
-        if(*s == '/') {
+    for(const char *s(progname); *s != '\0'; ++s)
+    {
+        if(*s == '/')
+        {
             p = q;
             q = s;
         }
     }
-    if(p == NULL) {
+    if(p == NULL)
+    {
         fprintf(stderr, "error: process was not started as expected (full path or relative including at least 2 directories.)\n");
         exit(1);
     }
@@ -102,7 +105,8 @@ void request(const char *progname)
     // prepare environ for execve() call
     char **exec_environ = new char *[env.size() + 1];
     int i = 0;
-    for(environ_t::const_iterator it(env.begin()); it != env.end(); ++it, ++i) {
+    for(environ_t::const_iterator it(env.begin()); it != env.end(); ++it, ++i)
+    {
         exec_environ[i] = strdup((it->first + "=" + it->second).c_str());
 //fprintf(stderr, "env = [%s]\n", exec_environ[i]);
     }
@@ -120,28 +124,33 @@ void request(const char *progname)
 void parse_url(const char *url)
 {
     // extract the protocol
-    if(strncmp("http://", url, 7) == 0) {
+    if(strncmp("http://", url, 7) == 0)
+    {
         // do nothing...
         url += 7;
         env["SERVER_PORT"] = "80"; // default port, can be changed
     }
-    else if(strncmp("https://", url, 8) == 0) {
+    else if(strncmp("https://", url, 8) == 0)
+    {
         env["HTTPS"] = "on";
         env["SERVER_PORT"] = "443"; // default port, can be changed
         url += 8;
     }
-    else {
+    else
+    {
         fprintf(stderr, "error: the only supported protocols are HTTP and HTTPS.\n");
         exit(1);
     }
 
     // extract the domain
     const char *slash = strchr(url, '/');
-    if(slash == NULL) {
+    if(slash == NULL)
+    {
         slash = url + strlen(url);
     }
     int len(static_cast<int>(slash - url));
-    if(len == 0) {
+    if(len == 0)
+    {
         fprintf(stderr, "error: could not determine domain name, got 3 or more / after the protocol or domain name is missing?\n");
         exit(1);
     }
@@ -153,17 +162,21 @@ void parse_url(const char *url)
     std::string port;
     const char *d = domain.c_str();
     const char *u = strchr(d, '@');
-    if(u != NULL) {
+    if(u != NULL)
+    {
         // got a user, change the domain and extract the user/password info
         const char *p = strchr(d, ':');
-        if(p > u) {
+        if(p > u)
+        {
             name.assign(d, u - d);
             // no password...
         }
-        else {
+        else
+        {
             name.assign(d, p - d);
             pass.assign(p + 1, u - p - 1);
-            if(name.empty() ^ pass.empty()) {
+            if(name.empty() ^ pass.empty())
+            {
                 fprintf(stderr, "error: when a name/password definition includes a ':', then both must be indicated (not empty).\n");
                 exit(1);
             }
@@ -175,10 +188,12 @@ void parse_url(const char *url)
     // domain may have changed, get the pointer again
     d = domain.c_str();
     const char *p = strchr(d, ':');
-    if(p != NULL) {
+    if(p != NULL)
+    {
         // got a port
         port.assign(p + 1);
-        if(port.empty()) {
+        if(port.empty())
+        {
             fprintf(stderr, "error: port cannot be empty.\n");
             exit(1);
         }
@@ -186,32 +201,38 @@ void parse_url(const char *url)
         std::string new_domain(d, p - d);
         domain = new_domain;
 
-        for(++p; *p != '\0'; ++p) {
-            if(*p < '0' || *p > '9') {
+        for(++p; *p != '\0'; ++p)
+        {
+            if(*p < '0' || *p > '9')
+            {
                 fprintf(stderr, "error: port must be a positive decimal number.\n");
                 exit(1);
             }
         }
-        if(atoi(port.c_str()) == 0) {
+        if(atoi(port.c_str()) == 0)
+        {
             fprintf(stderr, "error: port cannot be zero.\n");
             exit(1);
         }
     }
 
     env["HTTP_HOST"] = domain;
-    if(!port.empty()) {
+    if(!port.empty())
+    {
         env["SERVER_PORT"] = port;
     }
     // which vars take the name/password?
 
-    if(*slash == '/') {
+    if(*slash == '/')
+    {
         ++slash;
     }
     url = slash;
 
     // verify that the anchor was not specified
     const char *hash = strchr(url, '#');
-    if(hash != NULL) {
+    if(hash != NULL)
+    {
         fprintf(stderr, "error: a server cannot be sent the anchor data.\n");
         exit(1);
     }
@@ -221,11 +242,13 @@ void parse_url(const char *url)
 
     // check for a query string
     const char *query = strchr(url, '?');
-    if(query != NULL) {
+    if(query != NULL)
+    {
         // note that query + 1 may be ""
         env["QUERY_STRING"] = query + 1;
     }
-    else {
+    else
+    {
         // do not define the QUERY_STRING when not specified
     }
 }
@@ -276,7 +299,8 @@ int main(int argc, char *argv[])
     static const char id_chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     std::string uniq;
     srand(static_cast<unsigned int>(time(nullptr)));
-    for(int i(0); i < 24; ++i) {
+    for(int i(0); i < 24; ++i)
+    {
         uniq += id_chars[rand() % (sizeof(id_chars) - 1)];
     }
     env["UNIQUE_ID"] = uniq;
@@ -284,16 +308,21 @@ int main(int argc, char *argv[])
     // parse user options
     bool help(false);
     bool got_url(false);
-    for(int i(1); i < argc; ++i) {
-        if(argv[i][0] == '-') {
-            switch(argv[i][1]) {
+    for(int i(1); i < argc; ++i)
+    {
+        if(argv[i][0] == '-')
+        {
+            switch(argv[i][1])
+            {
             case 'a':
                 ++i;
-                if(i >= argc || argv[i][0] == '-') {
+                if(i >= argc || argv[i][0] == '-')
+                {
                     fprintf(stderr, "error: -a is expected to be followed by the name of the agent.\n");
                     help = true;
                 }
-                else {
+                else
+                {
                     env["HTTP_USER_AGENT"] = argv[i];
                 }
                 break;
@@ -301,19 +330,23 @@ int main(int argc, char *argv[])
             case 'e':
                 // adding an environment variable
                 ++i;
-                if(i >= argc || argv[i][0] == '-') {
+                if(i >= argc || argv[i][0] == '-')
+                {
                     fprintf(stderr, "error: -e is expected to be followed by an environment variable name and value.\n");
                     help = true;
                 }
-                else {
+                else
+                {
                     const char *value = strchr(argv[i], '=');
                     const char *end;
-                    if(value == NULL) {
+                    if(value == NULL)
+                    {
                         // put a default value (should we err instead?)
                         value = "1";
                         end = value + strlen(value);
                     }
-                    else {
+                    else
+                    {
                         end = value;
                         ++value;
                     }
@@ -324,11 +357,13 @@ int main(int argc, char *argv[])
 
             case 'h':
                 usage();
-                SNAP_NOTREACHED();
+                snap::NOTREACHED();
 
             case 'v':
-                for(const char *q = argv[i] + 1; *q != '\0'; ++q) {
-                    if(*q != 'v') {
+                for(const char *q = argv[i] + 1; *q != '\0'; ++q)
+                {
+                    if(*q != 'v')
+                    {
                         fprintf(stderr, "error: invalid usage of the -v option.\n");
                         help = true;
                     }
@@ -343,32 +378,39 @@ int main(int argc, char *argv[])
 
             }
         }
-        else if(!got_url) {
+        else if(!got_url)
+        {
             got_url = true;
             parse_url(argv[i]);
         }
-        else {
+        else
+        {
             fprintf(stderr, "error: only one URL is accepted per call.\n");
             help = true;
         }
     }
-    if(help) {
+    if(help)
+    {
         usage();
-        SNAP_NOTREACHED();
+        snap::NOTREACHED();
     }
-    if(!got_url) {
+    if(!got_url)
+    {
         fprintf(stderr, "error: no URL specified, it is mandatory.\n");
         usage();
-        SNAP_NOTREACHED();
+        snap::NOTREACHED();
     }
 
-    if(verbose > 2) {
+    if(verbose > 2)
+    {
         // show the environment
-        for(environ_t::const_iterator it(env.begin()); it != env.end(); ++it) {
+        for(environ_t::const_iterator it(env.begin()); it != env.end(); ++it)
+        {
             fprintf(stderr, "%s=%s\n", it->first.c_str(), it->second.c_str());
         }
     }
-    if(verbose > 1) {
+    if(verbose > 1)
+    {
         fprintf(stderr, "HTTP request on \"%s\"\n", env["HTTP_HOST"].c_str());
     }
 

@@ -611,7 +611,7 @@ lexer::token_t lexer::get_normal_token()
             }
             std::cerr << "error: unsupported character in token in \"" << f_filenames[f_fpos - 1] << "\".\n";
             exit(1);
-            SNAP_NOTREACHED();
+            snap::NOTREACHED();
 
         }
     }
@@ -726,7 +726,7 @@ lexer::token_t lexer::get_number_token(int c)
             }
             d = getc();
         }
-        SNAP_NOTREACHED();
+        snap::NOTREACHED();
     }
 
     // first read the number as if it were an integer
@@ -772,6 +772,7 @@ lexer::token_t lexer::get_number_token(int c)
         {
             // exponent
             double sign(1.0);
+            d = getc();
             if(d == '-')
             {
                 sign = -1.0;
@@ -967,7 +968,7 @@ lexer::token_t lexer::get_string_token()
         }
         str += c; // note: c may be '\0' here!
     }
-    SNAP_NOTREACHED();
+    snap::NOTREACHED();
 }
 
 
@@ -1695,7 +1696,7 @@ void parser::parse()
                 default:
                     std::cerr << "error: a type followed by & must be an integral type.\n";
                     exit(1);
-                    SNAP_NOTREACHED();
+                    snap::NOTREACHED();
 
                 }
                 token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
@@ -1919,7 +1920,7 @@ void parser::parse()
                 default:
                     std::cerr << "error: a type followed by / must be a string type.\n";
                     exit(1);
-                    SNAP_NOTREACHED();
+                    snap::NOTREACHED();
 
                 }
                 break;
@@ -1946,6 +1947,7 @@ void parser::parse()
         case entry_t::ENTRY_TYPE_BEDOUBLE:
         case entry_t::ENTRY_TYPE_LEDOUBLE:
             is_float = true;
+            /*FLOWTHROUGH*/
         case entry_t::ENTRY_TYPE_BYTE:
         case entry_t::ENTRY_TYPE_UBYTE:
         case entry_t::ENTRY_TYPE_SHORT:
@@ -2009,7 +2011,7 @@ void parser::parse()
                         case '~':
                             std::cerr << "error: & used with a floating point number.\n";
                             exit(1);
-                            SNAP_NOTREACHED();
+                            snap::NOTREACHED();
 
                         }
                     }
@@ -2042,7 +2044,7 @@ void parser::parse()
                     default:
                         std::cerr << "error: unknown comparison operator " << token.get_character() << ".\n";
                         exit(1);
-                        SNAP_NOTREACHED();
+                        snap::NOTREACHED();
 
                     }
                     token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
@@ -2132,7 +2134,7 @@ void parser::parse()
         case entry_t::ENTRY_TYPE_UNKNOWN:
             std::cerr << "error: entry type still unknown when defining its value.\n";
             exit(1);
-            SNAP_NOTREACHED();
+            snap::NOTREACHED();
 
         }
         token = f_lexer->get_token(lexer::LEXER_MODE_MESSAGE);
@@ -2873,19 +2875,19 @@ int main(int argc, char *argv[])
         || strcmp(argv[i], "--help") == 0)
         {
             usage();
-            SNAP_NOTREACHED();
+            snap::NOTREACHED();
         }
         if(strcmp(argv[i], "--version") == 0)
         {
             std::cout << MIMETYPE_VERSION_STRING << std::endl;
             exit(1);
-            SNAP_NOTREACHED();
+            snap::NOTREACHED();
         }
         if(strcmp(argv[i], "--lib-version") == 0)
         {
             std::cout << SNAPWEBSITES_VERSION_MAJOR << "." << SNAPWEBSITES_VERSION_MINOR << "." << SNAPWEBSITES_VERSION_PATCH << std::endl;
             exit(1);
-            SNAP_NOTREACHED();
+            snap::NOTREACHED();
         }
         if(strcmp(argv[i], "-d") == 0
         || strcmp(argv[i], "--debug") == 0)

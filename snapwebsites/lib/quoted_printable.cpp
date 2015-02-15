@@ -189,7 +189,7 @@ std::string encode(const std::string& input, int flags)
                 return !(c >= ' ' && c <= '~');
 
             }
-            SNAP_NOTREACHED();
+            snap::NOTREACHED();
         }
 
         void add_char(char c)

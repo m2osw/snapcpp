@@ -998,7 +998,7 @@ int bio_client::get_client_port() const
         return -1;
 
     }
-    SNAP_NOTREACHED();
+    snap::NOTREACHED();
 }
 
 /** \brief Get the TCP client address.
