@@ -285,32 +285,40 @@ void expr(std::string const& expr)
 
 int main(int argc, char *argv[])
 {
-    const std::vector<std::string> no_config;
-    g_opt = new advgetopt::getopt(argc, argv, g_options, no_config, NULL);
-    if(g_opt->is_defined("help"))
+    try
     {
-        g_opt->usage(advgetopt::getopt::no_error, "Usage: %s [--<opts>] <expressions> ...\n", argv[0]);
-        exit(1);
-    }
-    g_verbose = g_opt->is_defined("verbose");
+        const std::vector<std::string> no_config;
+        g_opt = new advgetopt::getopt(argc, argv, g_options, no_config, NULL);
+        if(g_opt->is_defined("help"))
+        {
+            g_opt->usage(advgetopt::getopt::no_error, "Usage: %s [--<opts>] <expressions> ...\n", argv[0]);
+            exit(1);
+        }
+        g_verbose = g_opt->is_defined("verbose");
 
-    if(!g_opt->is_defined("no-cassandra"))
+        if(!g_opt->is_defined("no-cassandra"))
+        {
+            connect_cassandra();
+        }
+
+        // XXX -- the expression may actually make use of signals that
+        //        different plugins may want to answer; this tool does
+        //        not load the plugins (yet); should we not? for instance
+        //        the secure fields are returned because the code does
+        //        not know whether the cell is considered secure
+        int const max_expressions(g_opt->size("expression"));
+        for(int i = 0; i < max_expressions; ++i)
+        {
+            expr(g_opt->get_string("expression", i));
+        }
+
+        return g_errcnt == 0 ? 0 : 1;
+    }
+    catch(std::exception const& e)
     {
-        connect_cassandra();
+        std::cerr << "snapexpr: exception: " << e.what() << std::endl;
+        return 1;
     }
-
-    // XXX -- the expression may actually make use of signals that
-    //        different plugins may want to answer; this tool does
-    //        not load the plugins (yet); should we not? for instance
-    //        the secure fields are returned because the code does
-    //        not know whether the cell is considered secure
-    int const max_expressions(g_opt->size("expression"));
-    for(int i = 0; i < max_expressions; ++i)
-    {
-        expr(g_opt->get_string("expression", i));
-    }
-
-    return g_errcnt == 0 ? 0 : 1;
 }
 
 // vim: ts=4 sw=4 et

@@ -547,11 +547,17 @@ void snapdb::display()
 
 int main(int argc, char *argv[])
 {
-    snapdb  s(argc, argv);
-
-    s.display();
-
-    return 0;
+    try
+    {
+        snapdb  s(argc, argv);
+        s.display();
+        return 0;
+    }
+    catch(std::exception const& e)
+    {
+        std::cerr << "snapdb: exception: " << e.what() << std::endl;
+        return 1;
+    }
 }
 
 // vim: ts=4 sw=4 et

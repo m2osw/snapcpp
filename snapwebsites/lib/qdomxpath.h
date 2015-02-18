@@ -181,6 +181,15 @@ public:
     }
 };
 
+class QDomXPathException_DivisionByZero : public QDomXPathException_ExecutionTime
+{
+public:
+    QDomXPathException_DivisionByZero(std::string const& err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+};
+
 
 
 class QDomXPath

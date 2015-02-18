@@ -130,7 +130,9 @@ private:
                                 process(const process& rhs) = delete;
                                 process& operator = (const process& rhs) = delete;
 
-    const QString               f_name;
+    typedef controlled_vars::auto_init<pid_t, 0>    safe_pid_t;
+
+    QString const               f_name;
     zmode_t                     f_mode;
     QString                     f_command;
     QStringList                 f_arguments;
@@ -140,7 +142,6 @@ private:
     controlled_vars::flbool_t   f_forced_environment;
     zpprocess_output_callback_t f_output_callback;
     snap_thread::snap_mutex     f_mutex;
-    int                         f_pid;
 };
 
 

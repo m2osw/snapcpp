@@ -451,31 +451,40 @@ int snap_cgi::process()
 
 int main(int argc, char *argv[])
 {
-    snap_cgi cgi( argc, argv );
     try
     {
-        if(!cgi.verify())
+        snap_cgi cgi( argc, argv );
+        try
         {
+            if(!cgi.verify())
+            {
+                return 1;
+            }
+            return cgi.process();
+        }
+        catch(const std::runtime_error& e)
+        {
+            // this should never happen!
+            cgi.error("503 Service Unavailable", ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
             return 1;
         }
-        return cgi.process();
+        catch(const std::logic_error& e)
+        {
+            // this should never happen!
+            cgi.error("503 Service Unavailable", ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
+            return 1;
+        }
+        catch(...)
+        {
+            // this should never happen!
+            cgi.error("503 Service Unavailable", "The Snap! C++ CGI script caught an unknown exception.");
+            return 1;
+        }
     }
-    catch(const std::runtime_error& e)
+    catch(std::exception const& e)
     {
-        // this should never happen!
-        cgi.error("503 Service Unavailable", ("The Snap! C++ CGI script caught a runtime exception: " + std::string(e.what()) + ".").c_str());
-        return 1;
-    }
-    catch(const std::logic_error& e)
-    {
-        // this should never happen!
-        cgi.error("503 Service Unavailable", ("The Snap! C++ CGI script caught a logic exception: " + std::string(e.what()) + ".").c_str());
-        return 1;
-    }
-    catch(...)
-    {
-        // this should never happen!
-        cgi.error("503 Service Unavailable", "The Snap! C++ CGI script caught an unknown exception.");
+        // we are in trouble, we cannot even answer
+        std::cerr << "snap: exception: " << e.what() << std::endl;
         return 1;
     }
 }

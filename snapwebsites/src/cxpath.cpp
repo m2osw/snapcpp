@@ -321,7 +321,12 @@ void cxpath_disassemble()
         exit(1);
     }
     fseek(f, 0, SEEK_END);
-    const int program_size(ftell(f));
+    int const program_size(ftell(f));
+    if(program_size < 0)
+    {
+        std::cerr << "error: ftell() failed to return file size of \"" << program_filename.c_str() << "\"." << std::endl;
+        exit(1);
+    }
     fseek(f, 0, SEEK_SET);
     QDomXPath::program_t program;
     program.resize(program_size);
@@ -343,35 +348,43 @@ void cxpath_disassemble()
 
 int main(int argc, char *argv[])
 {
-    std::vector<std::string> empty_list;
-    g_opt = new advgetopt::getopt(argc, argv, cxpath_options, empty_list, NULL);
-    if(g_opt->is_defined("version"))
+    try
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
-        exit(1);
-    }
-    if(g_opt->is_defined("help"))
-    {
-        g_opt->usage(advgetopt::getopt::no_error, "Usage: cxpath [--<opt>] [-p '<xpath>'] | [-x <filename>.xpath <filename>.xml ...]");
-        snap::NOTREACHED();
-    }
-    g_verbose = g_opt->is_defined("verbose");
-    g_results = g_opt->is_defined("results");
+        std::vector<std::string> empty_list;
+        g_opt = new advgetopt::getopt(argc, argv, cxpath_options, empty_list, NULL);
+        if(g_opt->is_defined("version"))
+        {
+            std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+            exit(1);
+        }
+        if(g_opt->is_defined("help"))
+        {
+            g_opt->usage(advgetopt::getopt::no_error, "Usage: cxpath [--<opt>] [-p '<xpath>'] | [-x <filename>.xpath <filename>.xml ...]");
+            snap::NOTREACHED();
+        }
+        g_verbose = g_opt->is_defined("verbose");
+        g_results = g_opt->is_defined("results");
 
-    if(g_opt->is_defined("compile"))
-    {
-        cxpath_compile();
-    }
-    else if(g_opt->is_defined("execute"))
-    {
-        cxpath_execute();
-    }
-    else if(g_opt->is_defined("disassemble"))
-    {
-        cxpath_disassemble();
-    }
+        if(g_opt->is_defined("compile"))
+        {
+            cxpath_compile();
+        }
+        else if(g_opt->is_defined("execute"))
+        {
+            cxpath_execute();
+        }
+        else if(g_opt->is_defined("disassemble"))
+        {
+            cxpath_disassemble();
+        }
 
-    return 0;
+        return 0;
+    }
+    catch(std::exception const& e)
+    {
+        std::cerr << "cxpath: exception: " << e.what() << std::endl;
+        return 1;
+    }
 }
 
 

@@ -2701,13 +2701,14 @@ SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(
     }
     catch( snap_exception const& except )
     {
-        SNAP_LOG_FATAL("snap_child::process(): exception caught: ")(except.what());
+        SNAP_LOG_FATAL("snap_child::process(): snap_exception caught: ")(except.what());
     }
     catch( std::exception const& std_except )
     {
-        // the snap_logic_exception is no a snap_exception
+        // the snap_logic_exception is not a snap_exception
         // and other libraries may generate other exceptions
-        SNAP_LOG_FATAL("snap_child::process(): exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
+        // (i.e. controlled_vars, thrift...)
+        SNAP_LOG_FATAL("snap_child::process(): std::exception caught: ")(std_except.what())(" (there are mainly two kinds of exceptions happening here: Snap logic errors and Cassandra exceptions that are thrown by thrift)");
     }
     catch( ... )
     {

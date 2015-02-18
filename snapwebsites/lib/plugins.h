@@ -83,14 +83,14 @@ typedef std::shared_ptr<plugin>                 plugin_ptr_t;
 typedef QMap<QString, plugin *>                 plugin_list_t;
 typedef controlled_vars::ptr_auto_init<plugin>  plugin_zptr_t;
 
-QStringList list_all(QString const& plugin_path);
-bool load(QString const& plugin_path, plugin_ptr_t server, QStringList const& list_of_plugins);
-QString find_plugin_filename(QStringList const& plugin_paths, QString const& name);
-bool exists(QString const& name);
-void register_plugin(QString const& name, plugin *p);
-plugin *get_plugin(QString const& name);
-plugin_list_t const& get_plugin_list();
-bool verify_plugin_name(QString const& name);
+QStringList             list_all(QString const& plugin_path);
+bool                    load(QString const& plugin_path, plugin_ptr_t server, QStringList const& list_of_plugins);
+QString                 find_plugin_filename(QStringList const& plugin_paths, QString const& name);
+bool                    exists(QString const& name);
+void                    register_plugin(QString const& name, plugin *p);
+plugin *                get_plugin(QString const& name);
+plugin_list_t const&    get_plugin_list();
+bool                    verify_plugin_name(QString const& name);
 
 /** \brief Initialize a plugin by creating a mini-factory.
  *

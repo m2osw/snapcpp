@@ -93,21 +93,21 @@ QtCassandra::QCassandraValue const& variable_t::get_value() const
 
 void variable_t::set_value(variable_type_t type, QtCassandra::QCassandraValue const& value)
 {
-    f_type = static_cast<int>(type);        // FIXME cast
+    f_type = type;
     f_value = value;
 }
 
 
 void variable_t::set_value()
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_NULL);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_NULL;
     f_value.setNullValue();
 }
 
 
 void variable_t::set_value(bool value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_BOOL);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_BOOL;
     f_value = value;
 }
 
@@ -115,91 +115,105 @@ void variable_t::set_value(bool value)
 void variable_t::set_value(char value)
 {
     // with g++ this is unsigned...
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_UINT8);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_UINT8;
     f_value = value;
 }
 
 
 void variable_t::set_value(signed char value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_INT8);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_INT8;
     f_value = value;
 }
 
 
 void variable_t::set_value(unsigned char value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_UINT8);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_UINT8;
     f_value = value;
 }
 
 
 void variable_t::set_value(int16_t value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_INT16);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_INT16;
     f_value = value;
 }
 
 
 void variable_t::set_value(uint16_t value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_UINT16);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_UINT16;
     f_value = value;
 }
 
 
 void variable_t::set_value(int32_t value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_INT32);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_INT32;
     f_value = value;
 }
 
 
 void variable_t::set_value(uint32_t value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_UINT32);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_UINT32;
     f_value = value;
 }
 
 
 void variable_t::set_value(int64_t value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_INT64);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_INT64;
     f_value = value;
 }
 
 
 void variable_t::set_value(uint64_t value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_UINT64);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_UINT64;
     f_value = value;
 }
 
 
 void variable_t::set_value(float value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_FLOAT);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_FLOAT;
     f_value = value;
 }
 
 
 void variable_t::set_value(double value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_DOUBLE);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_DOUBLE;
     f_value = value;
+}
+
+
+void variable_t::set_value(char const *value)
+{
+    f_type = EXPR_VARIABLE_TYPE_STRING;
+    f_value = QString::fromUtf8(value);
+}
+
+
+void variable_t::set_value(wchar_t const *value)
+{
+    f_type = EXPR_VARIABLE_TYPE_STRING;
+    f_value = QString::fromWCharArray(value);
 }
 
 
 void variable_t::set_value(QString const& value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_STRING);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_STRING;
     f_value = value;
 }
 
 
 void variable_t::set_value(QByteArray const& value)
 {
-    f_type = static_cast<int>(EXPR_VARIABLE_TYPE_BINARY);        // FIXME cast
+    f_type = EXPR_VARIABLE_TYPE_BINARY;
     f_value = value;
 }
 
@@ -434,14 +448,19 @@ public:
         // Variable
         NODE_TYPE_VARIABLE
     };
-    typedef controlled_vars::limited_need_init<node_type_t, NODE_TYPE_UNKNOWN, NODE_TYPE_VARIABLE> safe_node_type_t;
+    typedef controlled_vars::limited_need_enum_init<node_type_t, NODE_TYPE_UNKNOWN, NODE_TYPE_VARIABLE> safe_node_type_t;
 
     static char const *type_names[NODE_TYPE_VARIABLE + 1];
 
     expr_node(node_type_t type)
-        : f_type(static_cast<int>(type))        // FIXME cast
+        : f_type(type)
+        //, f_name("")
         , f_variable("")
         //, f_children() -- auto-init
+    {
+    }
+
+    virtual ~expr_node()
     {
     }
 
@@ -532,7 +551,7 @@ public:
         QtSerialization::QFieldString node_str(comp, "str", value_str);
         QtSerialization::QFieldTag vars(comp, "node", this);
         r.read(comp);
-        f_type = type;
+        f_type = static_cast<node_type_t>(type);
         switch(f_type)
         {
         case NODE_TYPE_UNKNOWN:
@@ -819,14 +838,32 @@ public:
     class op_divide
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a / b; }
-        static double floating_points(double a, double b) { return a / b; }
+        static int64_t integers(int64_t a, int64_t b)
+        {
+            if(b == 0)
+            {
+                throw snap_expr_exception_division_by_zero("expr_node::op_divide() called with integers and a denominator set to zero");
+            }
+            return a / b;
+        }
+        static double floating_points(double a, double b)
+        {
+            // in this case division by zero is well defined!
+            return a / b;
+        }
     };
 
     class op_modulo
     {
     public:
-        static int64_t integers(int64_t a, int64_t b) { return a % b; }
+        static int64_t integers(int64_t a, int64_t b)
+        {
+            if(b == 0)
+            {
+                throw snap_expr_exception_division_by_zero("expr_node::op_modulo() called with integers and a denominator set to zero");
+            }
+            return a % b;
+        }
     };
 
     class op_add
@@ -1360,7 +1397,7 @@ public:
         switch(sub_results[0].get_type())
         {
         case variable_t::EXPR_VARIABLE_TYPE_BOOL:
-            value.setBoolValue(~sub_results[0].get_value().safeBoolValue());
+            value.setBoolValue(~static_cast<int>(sub_results[0].get_value().safeBoolValue()));
             break;
 
         case variable_t::EXPR_VARIABLE_TYPE_INT8:

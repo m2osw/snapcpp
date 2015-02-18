@@ -64,7 +64,7 @@ SNAP_PLUGIN_START(path, 1, 0)
 class path_error_callback : public permission_error_callback
 {
 public:
-    path_error_callback(snap_child *snap, content::path_info_t ipath)
+    path_error_callback(snap_child *snap, content::path_info_t& ipath)
         : f_snap(snap)
         , f_ipath(ipath)
         //, f_plugin(nullptr)

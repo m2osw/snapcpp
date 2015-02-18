@@ -95,6 +95,14 @@ public:
     snap_expr_exception_invalid_data(QString const&     what_msg) : snap_expr_exception(what_msg) {}
 };
 
+class snap_expr_exception_division_by_zero : public snap_expr_exception
+{
+public:
+    snap_expr_exception_division_by_zero(char const *       what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_division_by_zero(std::string const& what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_division_by_zero(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+};
+
 
 
 
@@ -124,7 +132,7 @@ public:
         EXPR_VARIABLE_TYPE_STRING,
         EXPR_VARIABLE_TYPE_BINARY
     };
-    typedef controlled_vars::limited_auto_init<variable_type_t, EXPR_VARIABLE_TYPE_NULL, EXPR_VARIABLE_TYPE_BINARY, EXPR_VARIABLE_TYPE_NULL> safe_variable_type_t;
+    typedef controlled_vars::limited_auto_enum_init<variable_type_t, EXPR_VARIABLE_TYPE_NULL, EXPR_VARIABLE_TYPE_BINARY, EXPR_VARIABLE_TYPE_NULL> safe_variable_type_t;
 
                                         variable_t(QString const& name = "");
 
@@ -146,6 +154,8 @@ public:
     void                                set_value(uint64_t value);
     void                                set_value(float value);
     void                                set_value(double value);
+    void                                set_value(char const *value);
+    void                                set_value(wchar_t const *value);
     void                                set_value(QString const& value);
     void                                set_value(QByteArray const& value);
 
@@ -230,6 +240,7 @@ private:
 class expr_node_base
 {
 public:
+    virtual ~expr_node_base() {}
 };
 
 

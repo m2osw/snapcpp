@@ -150,22 +150,31 @@ void image_info()
 
 int main(int argc, char *argv[])
 {
-    const std::vector<std::string> no_config;
-    g_opt = new advgetopt::getopt(argc, argv, g_options, no_config, NULL);
-    if(g_opt->is_defined("version"))
+    try
     {
-        std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
-        exit(1);
+        const std::vector<std::string> no_config;
+        g_opt = new advgetopt::getopt(argc, argv, g_options, no_config, NULL);
+        if(g_opt->is_defined("version"))
+        {
+            std::cerr << SNAPWEBSITES_VERSION_STRING << std::endl;
+            exit(1);
+        }
+        if(g_opt->is_defined("help"))
+        {
+            g_opt->usage(advgetopt::getopt::no_error, "Usage: %s [--<opts>] <imagefile> ...\n", argv[0]);
+            exit(1);
+        }
+
+        image_info();
+
+        return g_errcnt == 0 ? 0 : 1;
     }
-    if(g_opt->is_defined("help"))
+    catch(std::exception const& e)
     {
-        g_opt->usage(advgetopt::getopt::no_error, "Usage: %s [--<opts>] <imagefile> ...\n", argv[0]);
-        exit(1);
+        // clean way to exit if an exception occurs
+        std::cerr << "snapimg: exception: " << e.what() << std::endl;
+        return 1;
     }
-
-    image_info();
-
-    return g_errcnt == 0 ? 0 : 1;
 }
 
 // vim: ts=4 sw=4 et

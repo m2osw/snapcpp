@@ -818,7 +818,7 @@ const char *sessions::session_info::session_type_to_string(session_info_type_t t
         "SESSION_INFO_USED_UP",
         "SESSION_INFO_INCOMPATIBLE"
     };
-    if(type < 0 || type > sizeof(type_names) / sizeof(type_names[0]))
+    if(type < 0 || type >= sizeof(type_names) / sizeof(type_names[0]))
     {
         throw sessions_exception_invalid_range("type is invalid while calling session_type_to_string()");
     }

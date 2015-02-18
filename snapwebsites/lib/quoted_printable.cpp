@@ -319,33 +319,30 @@ std::string decode(const std::string& input)
 
         int getc()
         {
-            for(;;)
+            int c(get_byte());
+            if(c == '\0')
             {
-                int c(get_byte());
-                if(c == '\0')
-                {
-                    return '\0';
-                }
-                if(c == '=')
-                {
-                    // all equal must be followed by a newline (taken care
-                    // off already) or a 2 hex digits
-                    c = getc();
-                    int p(from_hex(c));
-                    if(p == -1)
-                    {
-                        return '?';
-                    }
-                    c = getc();
-                    int q(from_hex(c));
-                    if(q == -1)
-                    {
-                        return '?';
-                    }
-                    return p * 16 + q;
-                }
-                return c;
+                return '\0';
             }
+            if(c == '=')
+            {
+                // all equal must be followed by a newline (taken care
+                // off already) or a 2 hex digits
+                c = get_byte();
+                int const p(from_hex(c));
+                if(p == -1)
+                {
+                    return '?';
+                }
+                c = get_byte();
+                int const q(from_hex(c));
+                if(q == -1)
+                {
+                    return '?';
+                }
+                return p * 16 + q;
+            }
+            return c;
         }
 
         void process()

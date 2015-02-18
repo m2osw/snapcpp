@@ -2277,7 +2277,9 @@ void sendmail::sendemail(QString const& key, QString const& unique_key)
         boundary = "=Snap.Websites=";
         for(int i(0); i < 20; ++i)
         {
-            int c(static_cast<int>(rand() % (sizeof(allowed) - 1)));
+            // this is just for boundaries, so rand() is more than enough
+            // it just needs to be unique
+            int const c(static_cast<int>(rand() % (sizeof(allowed) - 1)));
             boundary += allowed[c];
         }
         headers[get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = "multipart/mixed;\n  boundary=\"" + boundary + "\"";

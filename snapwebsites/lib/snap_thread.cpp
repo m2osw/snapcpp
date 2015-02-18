@@ -773,7 +773,13 @@ snap_thread *snap_thread::snap_runner::get_thread() const
 snap_thread::snap_thread(QString const& name, snap_runner *runner)
     : f_name(name)
     , f_runner(runner)
+    //, f_mutex() -- auto-init
     //, f_running(false) -- auto-init
+    //, f_started(false) -- auto-init
+    //, f_stopping(false) -- auto-init
+    //, f_thread_id(-1) -- auto-init
+    //, f_thread_attr(...) -- see below
+    //, f_exception() -- auto-init
 {
     if(!f_runner)
     {
@@ -951,8 +957,15 @@ bool snap_thread::start()
 {
     snap_lock lock(f_mutex);
 
-    if(f_running || !f_runner->is_ready())
+    if(f_running)
     {
+        SNAP_LOG_WARNING("the thread is already running");
+        return false;
+    }
+
+    if(!f_runner->is_ready())
+    {
+        SNAP_LOG_WARNING("the thread running is ready");
         return false;
     }
 
@@ -960,7 +973,7 @@ bool snap_thread::start()
     f_started = false;
     f_stopping = false; // make sure it is reset
 
-    int const err(pthread_create(&f_thread, &f_thread_attr, &func_internal_start, this));
+    int const err(pthread_create(f_thread_id.ptr(), &f_thread_attr, &func_internal_start, this));
     if(err != 0)
     {
         SNAP_LOG_ERROR("the thread could not be created, error #")(err);
@@ -1029,7 +1042,7 @@ void snap_thread::stop()
 
         // We cannot join since our threads are detached (change?)
         //void *ignore;
-        //pthread_join(f_thread, &ignore);
+        //pthread_join(f_thread_id, &ignore);
     }
 
     // if the child died because of a standard exception, rethrow it now

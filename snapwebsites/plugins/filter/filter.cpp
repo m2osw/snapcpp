@@ -1022,7 +1022,6 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
         {
             QDomText text(n.toText());
             text_t t(f_snap, this, state.ipath(), state.owner(), xml, text.data());
-//std::cerr << "*** text [" << text.data() << "]\n";
             if(t.parse())
             {
 //std::cerr << "***\n*** replace text [" << text.data() << "] with [" << t.result() << "]\n***\n";

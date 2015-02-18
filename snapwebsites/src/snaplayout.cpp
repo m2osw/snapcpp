@@ -1083,11 +1083,17 @@ void snap_layout::run()
 
 int main(int argc, char *argv[])
 {
-    snap_layout     s(argc, argv);
-
-    s.run();
-
-    return 0;
+    try
+    {
+        snap_layout     s(argc, argv);
+        s.run();
+        return 0;
+    }
+    catch(std::exception const& e)
+    {
+        std::cerr << "snaplayout: expcetion: " << e.what() << std::endl;
+        return 1;
+    }
 }
 
 // vim: ts=4 sw=4 et

@@ -2266,11 +2266,16 @@ attachment_file::attachment_file(snap_child *snap)
     : f_snap(snap)
     //, f_file()
     //, f_multiple(false) -- auto-init
+    //, f_has_cpath(false) -- auto-init
     //, f_parent_cpath("") -- auto-init
     //, f_field_name("") -- auto-init
     //, f_attachment_cpath("") -- auto-init
     //, f_attachment_owner("") -- auto-init
     //, f_attachment_type("") -- auto-init
+    //, f_name("") -- auto-init
+    //, f_creation_time(0) -- auto-init
+    //, f_update_time(0) -- auto-init
+    //, f_dependencies() -- auto-init
 {
 }
 

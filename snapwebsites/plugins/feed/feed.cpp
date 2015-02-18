@@ -367,11 +367,12 @@ void feed::generate_feeds()
             // others are silently ignored
             quiet_error_callback feed_error_callback(f_snap, true);
             plugins::plugin *layout_ready(path_plugin->get_plugin(page_ipath, feed_error_callback));
-            if(layout_ready)
+            layout::layout_content *layout_ptr(dynamic_cast<layout::layout_content *>(layout_ready));
+            if(layout_ptr)
             {
                 QDomDocument doc(layout_plugin->create_document(page_ipath, layout_ready));
                 // should we have a ctemplate for this create body?
-                layout_plugin->create_body(doc, page_ipath, feed_parser_layout, dynamic_cast<layout::layout_content *>(layout_ready), "", false, "feed-parser");
+                layout_plugin->create_body(doc, page_ipath, feed_parser_layout, layout_ptr, "", false, "feed-parser");
                 if(first)
                 {
                     first = false;

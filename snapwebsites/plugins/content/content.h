@@ -547,8 +547,8 @@ private:
     QString                         f_attachment_owner;
     QString                         f_attachment_type;
     mutable QString                 f_name;
-    int64_t                         f_creation_time;
-    int64_t                         f_update_time;
+    controlled_vars::zint64_t       f_creation_time;
+    controlled_vars::zint64_t       f_update_time;
     dependency_list_t               f_dependencies;
 };
 

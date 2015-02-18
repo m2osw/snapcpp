@@ -20,6 +20,11 @@
 #include "floats.h"
 #include "qstring_stream.h"
 
+#include <controlled_vars/controlled_vars_auto_init.h>
+#include <controlled_vars/controlled_vars_no_init.h>
+#include <controlled_vars/controlled_vars_no_enum_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -720,6 +725,7 @@ public:
         ATOMIC_TYPE_NODE_SET
         //ATOMIC_TYPE_CONTEXT
     };
+    typedef controlled_vars::limited_auto_enum_init<type_t, ATOMIC_TYPE_UNDEFINED, ATOMIC_TYPE_NODE_SET, ATOMIC_TYPE_UNDEFINED> safe_type_t;
 
     /** \brief Initialize the atomic value.
      *
@@ -730,13 +736,117 @@ public:
      */
     atomic_value_t()
         : f_type(ATOMIC_TYPE_NULL)
-        //, f_boolean(false) -- not necessary
+        //, f_boolean(false) -- not necessary -- not actually used for now
         //, f_integer(0) -- not necessary
-        //, f_decimal(0) -- not necessary
+        //, f_decimal(0) -- not necessary -- not actually used for now
         //, f_single(0.0f) -- not necessary
         //, f_doulbe(0.0) -- not necessary
         //, f_string("") -- auto-init
     {
+    }
+
+    /** \brief Copy a value in another.
+     *
+     * Because some parameters may not be defined, the copy operator is
+     * overloaded to only copy what is necessary and avoid errors.
+     *
+     * \param[in] rhs  The right hand side to copy in this value.
+     */
+    atomic_value_t(atomic_value_t const& rhs)
+        : f_type(rhs.f_type)
+        //, f_boolean(false) -- handled below if necessary -- not actually used for now
+        //, f_integer(0) -- handled below if necessary
+        //, f_decimal(0) -- handled below if necessary -- not actually used for now
+        //, f_single(0.0f) -- handled below if necessary
+        //, f_doulbe(0.0) -- handled below if necessary
+        //, f_string("") -- handled below if necessary
+    {
+        switch(f_type)
+        {
+        case ATOMIC_TYPE_NULL:
+        case ATOMIC_TYPE_END_OF_ARGUMENTS:
+            // no data to copy
+            break;
+
+        case ATOMIC_TYPE_BOOLEAN:
+            //f_boolean = rhs.f_boolean; // using integer instead for now
+        case ATOMIC_TYPE_INTEGER:
+            f_integer = rhs.f_integer;
+            break;
+
+        case ATOMIC_TYPE_SINGLE:
+            f_single = rhs.f_single;
+            break;
+
+        case ATOMIC_TYPE_DOUBLE:
+            f_double = rhs.f_double;
+            break;
+
+        case ATOMIC_TYPE_STRING:
+            f_string = rhs.f_string;
+            break;
+
+        case ATOMIC_TYPE_SET:
+        case ATOMIC_TYPE_NODE_SET:
+            break;
+
+        //case ATOMIC_TYPE_UNDEFINED:
+        default:
+            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)).toStdString());
+
+        }
+    }
+
+    /** \brief Copy a value in another.
+     *
+     * Because some parameters may not be defined, the copy operator is
+     * overloaded to only copy what is necessary and avoid errors.
+     *
+     * \param[in] rhs  The right hand side to copy in this value.
+     *
+     * \return A reference to this object.
+     */
+    atomic_value_t& operator = (atomic_value_t const& rhs)
+    {
+        if(this != &rhs)
+        {
+            f_type = rhs.f_type;
+            switch(f_type)
+            {
+            case ATOMIC_TYPE_NULL:
+            case ATOMIC_TYPE_END_OF_ARGUMENTS:
+                // no data to copy
+                break;
+
+            case ATOMIC_TYPE_BOOLEAN:
+                //f_boolean = rhs.f_boolean; // using integer instead for now
+            case ATOMIC_TYPE_INTEGER:
+                f_integer = rhs.f_integer;
+                break;
+
+            case ATOMIC_TYPE_SINGLE:
+                f_single = rhs.f_single;
+                break;
+
+            case ATOMIC_TYPE_DOUBLE:
+                f_double = rhs.f_double;
+                break;
+
+            case ATOMIC_TYPE_STRING:
+                f_string = rhs.f_string;
+                break;
+
+            case ATOMIC_TYPE_SET:
+            case ATOMIC_TYPE_NODE_SET:
+                break;
+
+            //case ATOMIC_TYPE_UNDEFINED:
+            default:
+                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)).toStdString());
+
+            }
+        }
+        return *this;
     }
 
     /** \brief Get the type.
@@ -814,13 +924,13 @@ public:
         case ATOMIC_TYPE_INTEGER:
             return f_integer != 0;
 
-        case ATOMIC_TYPE_SINGLE:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            return f_single != 0.0f;
+        case ATOMIC_TYPE_SINGLE:
+            return 0.0f != f_single;
 
         case ATOMIC_TYPE_DOUBLE:
-            return f_double != 0.0;
+            return 0.0 != f_double;
 #pragma GCC diagnostic pop
 
         case ATOMIC_TYPE_STRING:
@@ -1175,15 +1285,15 @@ public:
 
 
 protected:
-    type_t                      f_type;
+    safe_type_t                 f_type;
 
 private:
-    //bool                        f_boolean; -- save some space by using integer 0 or 1
-    int64_t                     f_integer;
+    //controlled_vars::rbool_t    f_boolean; -- save some space by using integer 0 or 1
+    controlled_vars::rint64_t   f_integer;
     // definition? http://www.w3.org/2002/ws/databinding/patterns/6/09/PrecisionDecimal/
     //QDecimal                    f_decimal; // a 32:32 fix number (we need a fixed number class!)
-    float                       f_single;
-    double                      f_double;
+    controlled_vars::rfloat_t   f_single;
+    controlled_vars::rdouble_t  f_double;
     QString                     f_string;
 };
 
@@ -1203,14 +1313,90 @@ typedef QVector<atomic_value_t> atomic_vector_t;
 class variant_t : public atomic_value_t
 {
 public:
-    // The default constructor is enough
-    //variant_t()
-    //    //: atomic_value_t()
-    //    //, f_atomic() -- auto-init
-    //    //, f_set() -- auto-init
-    //    //, f_node_set() -- auto-init
-    //{
-    //}
+    // need to have an explicit constructor so we can have a copy
+    // constructor as well...
+    variant_t()
+        //: atomic_value_t()
+        //, f_atomic() -- auto-init
+        //, f_set() -- auto-init
+        //, f_node_set() -- auto-init
+    {
+    }
+
+    variant_t(variant_t const& rhs)
+        : atomic_value_t(rhs)
+    {
+        switch(f_type)
+        {
+        case ATOMIC_TYPE_NULL:
+        case ATOMIC_TYPE_END_OF_ARGUMENTS:
+        case ATOMIC_TYPE_BOOLEAN:
+        case ATOMIC_TYPE_INTEGER:
+        case ATOMIC_TYPE_SINGLE:
+        case ATOMIC_TYPE_DOUBLE:
+        case ATOMIC_TYPE_STRING:
+            // already handled, avoid the default: ...
+            break;
+
+        case ATOMIC_TYPE_SET:
+            f_set = rhs.f_set;
+            break;
+
+        case ATOMIC_TYPE_NODE_SET:
+            f_node_set = rhs.f_node_set;
+            break;
+
+        default:
+            // this should be done in the previous level
+            // (i.e. this line should not be reachable)
+            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)).toStdString());
+
+        }
+    }
+
+    /** \brief Copy a value in another.
+     *
+     * Because some parameters may not be defined, the copy operator is
+     * overloaded to only copy what is necessary and avoid errors.
+     *
+     * \param[in] rhs  The right hand side to copy in this value.
+     *
+     * \return A reference to this object.
+     */
+    variant_t& operator = (variant_t const& rhs)
+    {
+        if(this != &rhs)
+        {
+            f_type = rhs.f_type;
+            switch(f_type)
+            {
+            case ATOMIC_TYPE_NULL:
+            case ATOMIC_TYPE_END_OF_ARGUMENTS:
+            case ATOMIC_TYPE_BOOLEAN:
+            case ATOMIC_TYPE_INTEGER:
+            case ATOMIC_TYPE_SINGLE:
+            case ATOMIC_TYPE_DOUBLE:
+            case ATOMIC_TYPE_STRING:
+                // ignore the result, we return *this below
+                static_cast<void>(atomic_value_t::operator = (rhs));
+                break;
+
+            case ATOMIC_TYPE_SET:
+                f_set = rhs.f_set;
+                break;
+
+            case ATOMIC_TYPE_NODE_SET:
+                f_node_set = rhs.f_node_set;
+                break;
+
+            //case ATOMIC_TYPE_UNDEFINED:
+            default:
+                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)).toStdString());
+
+            }
+        }
+        return *this;
+    }
 
     /** \brief Retrieve the Boolean value.
      *
@@ -1521,7 +1707,7 @@ public:
      *
      * \param[in] set  The set to become the variant atomic set.
      */
-    void setValue(const atomic_vector_t& set)
+    void setValue(atomic_vector_t const& set)
     {
         f_type = ATOMIC_TYPE_SET;
         f_set = set;
@@ -1868,17 +2054,21 @@ enum node_type_t
  */
 QDomXPathImpl(QDomXPath *owner, const QString& xpath)
     : f_owner(owner)
+    //f_show_commands() -- auto-init
     , f_xpath(xpath)
     , f_start(f_xpath.data())
     , f_in(f_start)
     //, f_unget_token() -- auto-init
     //, f_last_token() -- auto-init
-    , f_label_counter(0)
-    //, f_program() -- auto-init
-    //, f_result() -- auto-init
-    //, f_functions() --auto-init
-    //, f_states() --auto-init
-    //, f_labels() --auto-init
+    //, f_label_counter(0) -- auto-init
+    //, f_labels() -- auto-init
+    //, f_future_labels() -- auto-init
+    //, f_end_label("") -- auto-init
+    //, f_predicate_variable("") -- auto-init
+    //, f_result() -- auto-init -- not currently used
+    //, f_program_start_offset(...) -- see below
+    //, f_program() -- see below
+    //, f_functions() -- auto-init
 {
     f_program.push_back(QDomXPath::MAGIC[0]);
     f_program.push_back(QDomXPath::MAGIC[1]);
@@ -2225,7 +2415,7 @@ void func_calculate_sum_or_average(variant_vector_t& arguments, bool sum_only)
     }
     else
     {
-        if(!sum_only)
+        if(!sum_only && count > 0)
         {
             // compute the average
             dsum /= static_cast<double>(count);
@@ -3989,6 +4179,11 @@ void inst_idivide()
     }
 #endif
     variant_t rhs(pop_variant_data());
+    int64_t const right_value(rhs.getIntegerValue(true));
+    if(right_value == 0)
+    {
+        throw QDomXPathException_DivisionByZero("the 'idiv' operator cannot be used with the left and right hand side types");
+    }
     variant_t lhs(pop_variant_data());
     variant_t result;
     switch(lhs.getType() | (rhs.getType() << 16))
@@ -4002,7 +4197,7 @@ void inst_idivide()
     case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
     case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
     case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-        result.atomic_value_t::setValue(lhs.getIntegerValue(true) / rhs.getIntegerValue(true));
+        result.atomic_value_t::setValue(lhs.getIntegerValue(true) / right_value);
         break;
 
     default:
@@ -5081,7 +5276,6 @@ void inst_axis()
     }
 
     QDomXPath::node_vector_t result;
-    //QDomNode context_node(f_states.back().f_nodes[f_states.back().f_position]);
     QDomNode context_node;
     if(context_node_variant.getNodeSetValue().size() == 1) // TBD -- can it even be more than one?
     {
@@ -6400,7 +6594,7 @@ void append_push_integer(const int64_t integer)
         add_to_program(static_cast<QDomXPath::instruction_t>(integer >> 8));
         add_to_program(static_cast<QDomXPath::instruction_t>(integer));
     }
-    else if(integer <= -65536 && integer < 0)
+    else if(integer >= -65536 && integer < 0)
     {
         add_to_program(INST_PUSH_NEGATIVE_SHORT);
         add_to_program(static_cast<QDomXPath::instruction_t>(integer >> 8));
@@ -6414,7 +6608,7 @@ void append_push_integer(const int64_t integer)
         add_to_program(static_cast<QDomXPath::instruction_t>(integer >> 8));
         add_to_program(static_cast<QDomXPath::instruction_t>(integer));
     }
-    else if(integer <= -0x100000000LL && integer < 0)
+    else if(integer >= -0x100000000LL && integer < 0)
     {
         add_to_program(INST_PUSH_NEGATIVE_LONG);
         add_to_program(static_cast<QDomXPath::instruction_t>(integer >> 24));
@@ -7582,13 +7776,13 @@ QDomXPath::node_vector_t apply(QDomXPath::node_vector_t& nodes)
     // execute the program
     for(;;)
     {
+        uint32_t const pc(f_functions.back().f_pc);
         if(f_show_commands)
         {
-            disassemble_instruction(f_functions.back().f_pc);
+            disassemble_instruction(pc);
         }
 
-        uint32_t pc(f_functions.back().f_pc);
-        instruction_t instruction(f_program[pc]);
+        instruction_t const instruction(f_program[pc]);
         if(instruction == INST_END)
         {
             // found the end of the program, return
@@ -8203,12 +8397,12 @@ uint32_t disassemble_pop_context(uint32_t pc)
 
 
 
-int disassemble_instruction(int pc)
+int disassemble_instruction(int const pc)
 {
     // a small indentation
     std::ostream out(std::cout.rdbuf()); // copy so we don't mess up the manipulator in std::cout
     out << std::setw(6) << pc << "- ";
-    instruction_t inst(f_program[pc]);
+    instruction_t const inst(f_program[pc]);
     return (this->*g_disassemble_instructions[inst])(pc + 1);
 }
 
@@ -8260,7 +8454,7 @@ const QDomXPath::program_t& getProgram() const
 
 private:
     QDomXPath *                 f_owner;
-    bool                        f_show_commands;
+    controlled_vars::rbool_t    f_show_commands;
 
     // parser parameters
     QString                     f_xpath;
@@ -8268,7 +8462,7 @@ private:
     const QChar *               f_in;
     token_t                     f_unget_token;
     token_t                     f_last_token;
-    uint32_t                    f_label_counter;
+    controlled_vars::zuint32_t  f_label_counter;
     label_offsets_t             f_labels;
     future_labels_t             f_future_labels;
     QString                     f_end_label;
@@ -8276,7 +8470,7 @@ private:
 
     // execution environment
     //QDomXPath::node_vector_t    f_result;
-    int                         f_program_start_offset;
+    controlled_vars::rint32_t   f_program_start_offset;
     QDomXPath::program_t        f_program;
     function_vector_t           f_functions;
 };

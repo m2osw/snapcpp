@@ -20,7 +20,9 @@
 #include "snap_thread.h"
 #include "log.h"
 
+#include <controlled_vars/controlled_vars_no_init.h>
 #include <controlled_vars/controlled_vars_ptr_need_init.h>
+#include <controlled_vars/controlled_vars_ptr_no_init.h>
 
 #include <stdio.h>
 #include <unistd.h>
@@ -504,6 +506,7 @@ int process::run()
     {
     public:
         typedef controlled_vars::auto_init<int, -1> m1int_t;
+        typedef controlled_vars::auto_init<pid_t, -1> m1pid_t;
 
         raii_fork()
             //: f_child(-1)
@@ -553,7 +556,7 @@ int process::run()
         }
 
     private:
-        m1int_t         f_child;
+        m1pid_t         f_child;
         m1int_t         f_exit;
     };
     raii_fork child;
@@ -696,6 +699,9 @@ int process::run()
                 out_t(QByteArray& output)
                     : snap_runner("process::out")
                     , f_output(output)
+                    //, f_pipe() -- auto-init
+                    //, f_callback() -- auto-init
+                    //, f_process() -- auto-init
                 {
                 }
 
@@ -711,6 +717,7 @@ int process::run()
                     //       calls the output_available() whenever a new
                     //       line of data, delimited by new line (\r or \n)
                     //       characters, is read (semi-buffering)
+std::cerr << "***\n*** out_t::run() called!\n***\n";
                     for(;;)
                     {
                         char buf[4096];
@@ -729,14 +736,19 @@ int process::run()
                     }
                 }
 
-                QByteArray&                 f_output;
-                int                         f_pipe;
-                process_output_callback *   f_callback;
-                process *                   f_process;
+                typedef controlled_vars::ptr_no_init<process_output_callback>   rp_process_output_callback_t;
+                typedef controlled_vars::ptr_no_init<process>                   rp_process_t;
+
+                QByteArray&                     f_output;
+                controlled_vars::rint32_t       f_pipe;
+                rp_process_output_callback_t    f_callback;
+                rp_process_t                    f_process;
             } out(f_output);
+std::cerr << "***\n*** out_t out; created!\n***\n";
             out.f_pipe = inout.f_pipes[2];
             out.f_callback = f_output_callback;
             out.f_process = this;
+std::cerr << "***\n*** out_t out; initialized!\n***\n";
             snap_thread out_thread("process::out::thread", &out);
             if(!out_thread.start())
             {

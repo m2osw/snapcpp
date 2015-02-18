@@ -2853,86 +2853,94 @@ void parser::output_footer()
 
 int usage()
 {
-    std::cout << "Usage: magic-to-js <input files> ...\n";
-    std::cout << "You may also want to redirect the output to a .js file\n";
-    std::cout << "  --debug | -d    print out debug information in stderr\n";
-    std::cout << "  --help | -h     print out this help screen\n";
-    std::cout << "  --lib-version   print out this tool's version\n";
-    std::cout << "  --name | -n     specify the name of the magic MIME to output\n";
-    std::cout << "  --version       print out this tool's version\n";
+    std::cout << "Usage: magic-to-js <input files> ..." << std::endl;
+    std::cout << "You may also want to redirect the output to a .js file" << std::endl;
+    std::cout << "  --debug | -d    print out debug information in stderr" << std::endl;
+    std::cout << "  --help | -h     print out this help screen" << std::endl;
+    std::cout << "  --lib-version   print out this tool's version" << std::endl;
+    std::cout << "  --name | -n     specify the name of the magic MIME to output" << std::endl;
+    std::cout << "  --version       print out this tool's version" << std::endl;
     exit(1);
 }
 
 
 int main(int argc, char *argv[])
 {
-    lexer::filenames_t fn;
-    std::string magic_name;
-
-    for(int i(1); i < argc; ++i)
+    try
     {
-        if(strcmp(argv[i], "-h") == 0
-        || strcmp(argv[i], "--help") == 0)
+        lexer::filenames_t fn;
+        std::string magic_name;
+
+        for(int i(1); i < argc; ++i)
         {
-            usage();
-            snap::NOTREACHED();
-        }
-        if(strcmp(argv[i], "--version") == 0)
-        {
-            std::cout << MIMETYPE_VERSION_STRING << std::endl;
-            exit(1);
-            snap::NOTREACHED();
-        }
-        if(strcmp(argv[i], "--lib-version") == 0)
-        {
-            std::cout << SNAPWEBSITES_VERSION_MAJOR << "." << SNAPWEBSITES_VERSION_MINOR << "." << SNAPWEBSITES_VERSION_PATCH << std::endl;
-            exit(1);
-            snap::NOTREACHED();
-        }
-        if(strcmp(argv[i], "-d") == 0
-        || strcmp(argv[i], "--debug") == 0)
-        {
-            std::cerr << "info: turning debug ON\n";
-            g_debug = true;
-        }
-        else if(strcmp(argv[i], "-n") == 0
-             || strcmp(argv[i], "--name") == 0)
-        {
-            ++i;
-            if(i >= argc)
+            if(strcmp(argv[i], "-h") == 0
+            || strcmp(argv[i], "--help") == 0)
             {
-                std::cerr << "error: -n/--name expect to be followed by one argument, the magic name.\n";
-                exit(1);
+                usage();
+                snap::NOTREACHED();
             }
-            magic_name = argv[i];
+            if(strcmp(argv[i], "--version") == 0)
+            {
+                std::cout << MIMETYPE_VERSION_STRING << std::endl;
+                exit(1);
+                snap::NOTREACHED();
+            }
+            if(strcmp(argv[i], "--lib-version") == 0)
+            {
+                std::cout << SNAPWEBSITES_VERSION_MAJOR << "." << SNAPWEBSITES_VERSION_MINOR << "." << SNAPWEBSITES_VERSION_PATCH << std::endl;
+                exit(1);
+                snap::NOTREACHED();
+            }
+            if(strcmp(argv[i], "-d") == 0
+            || strcmp(argv[i], "--debug") == 0)
+            {
+                std::cerr << "info: turning debug ON\n";
+                g_debug = true;
+            }
+            else if(strcmp(argv[i], "-n") == 0
+                 || strcmp(argv[i], "--name") == 0)
+            {
+                ++i;
+                if(i >= argc)
+                {
+                    std::cerr << "error: -n/--name expect to be followed by one argument, the magic name." << std::endl;
+                    exit(1);
+                }
+                magic_name = argv[i];
+            }
+            else
+            {
+                fn.push_back(argv[i]);
+            }
         }
-        else
+
+        if(fn.empty())
         {
-            fn.push_back(argv[i]);
+            std::cerr << "error: expected at least one filename on the command line. Try --help for more info." << std::endl;
+            exit(1);
         }
-    }
 
-    if(fn.empty())
+        if(magic_name.empty())
+        {
+            std::cerr << "error: a magic name must be specified (--name option)" << std::endl;
+            exit(1);
+        }
+
+        lexer::pointer_t l(new lexer(fn));
+        parser::pointer_t p(new parser(l, magic_name));
+        p->parse();
+
+        // it worked, the parser has now a pile of parsed lines we can
+        // convert in JavaScript
+        p->output();
+
+        return 0;
+    }
+    catch(std::exception const& e)
     {
-        std::cerr << "error: expected at least one filename on the command line. Try --help for more info.\n";
-        exit(1);
+        std::cerr << "magic-to-js: exception: " << e.what() << std::endl;
+        return 1;
     }
-
-    if(magic_name.empty())
-    {
-        std::cerr << "error: a magic name must be specified (--name option)\n";
-        exit(1);
-    }
-
-    lexer::pointer_t l(new lexer(fn));
-    parser::pointer_t p(new parser(l, magic_name));
-    p->parse();
-
-    // it worked, the parser has now a pile of parsed lines we can
-    // convert in JavaScript
-    p->output();
-
-    return 0;
 }
 
 

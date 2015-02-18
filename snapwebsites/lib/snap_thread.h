@@ -38,57 +38,65 @@ namespace snap
 class snap_thread_exception : public snap_exception
 {
 public:
-    snap_thread_exception(const char *whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snap_thread_exception(const char *       whatmsg) : snap_exception("snap_thread", whatmsg) {}
     snap_thread_exception(const std::string& whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    snap_thread_exception(const QString& whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snap_thread_exception(const QString&     whatmsg) : snap_exception("snap_thread", whatmsg) {}
+};
+
+class snap_thread_exception_not_started : public snap_thread_exception
+{
+public:
+    snap_thread_exception_not_started(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_started(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_started(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_in_use_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_in_use_error(const char *whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_in_use_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
     snap_thread_exception_in_use_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_in_use_error(const QString& whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_in_use_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_not_locked_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_not_locked_error(const char *whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
     snap_thread_exception_not_locked_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_error(const QString& whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_not_locked_once_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_not_locked_once_error(const char *whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_once_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
     snap_thread_exception_not_locked_once_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_once_error(const QString& whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_once_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_mutex_failed_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_mutex_failed_error(const char *whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_mutex_failed_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
     snap_thread_exception_mutex_failed_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_mutex_failed_error(const QString& whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_mutex_failed_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_invalid_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_invalid_error(const char *whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_invalid_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
     snap_thread_exception_invalid_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_invalid_error(const QString& whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_invalid_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_system_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_system_error(const char *whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_system_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
     snap_thread_exception_system_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_system_error(const QString& whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_system_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 
@@ -151,6 +159,7 @@ public:
 
     private:
         friend class snap_thread;
+
         zpthread_t          f_thread;
         const QString       f_name;
     };
@@ -305,7 +314,13 @@ public:
             {
                 throw snap_logic_exception("snap_thread_life pointer is nullptr");
             }
-            f_thread->start();
+            if(!f_thread->start())
+            {
+                // we cannot really just generate an error if the thread
+                // does not start because we do not offer a way for the
+                // user to know so we have to throw for now
+                throw snap_thread_exception_not_started("somehow the thread was not started, an error should have been logged");
+            }
         }
 
         ~snap_thread_life()
@@ -316,7 +331,7 @@ public:
         }
 
     private:
-        snap_thread *   f_thread;
+        zpthread_t      f_thread;
     };
 
                                 snap_thread(const QString& name, snap_runner *runner);
@@ -329,6 +344,8 @@ public:
     void                        stop();
 
 private:
+    typedef controlled_vars::auto_init<pthread_t, -1> m1pthread_t;
+
     // prevent copies
                                 snap_thread(const snap_thread& rhs);
                                 snap_thread& operator = (const snap_thread& rhs);
@@ -343,7 +360,7 @@ private:
     controlled_vars::flbool_t   f_running;
     controlled_vars::flbool_t   f_started;
     controlled_vars::flbool_t   f_stopping;
-    pthread_t                   f_thread;
+    m1pthread_t                 f_thread_id;
     pthread_attr_t              f_thread_attr;
     std::exception_ptr          f_exception;
 };
