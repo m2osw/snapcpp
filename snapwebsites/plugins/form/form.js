@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.2.1
+ * Version: 0.0.2.2
  * Browsers: all
  * Depends: output (>= 0.0.5), jquery-extensions (>= 1.0.1)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -59,6 +59,50 @@ snapwebsites.Form = function()
             {
                 that.blur_(e);
             });
+
+    // At least in Firefox, checkboxes do not reflect the checked="checked"
+    // attribute properly on a reload (reload which can happen after a
+    // standard POST!); so here we fix the problem in JavaScript
+    jQuery("input[type='checkbox']")
+        .each(function(i, e)
+            {
+                var w = jQuery(e),
+                    status = w.attr("status-on-load");
+
+                if(status == "checked")
+                {
+                    w.attr("checked", "checked");
+                }
+                else
+                {
+                    w.removeAttr("checked");
+                }
+            });
+
+    // TODO: check on how to handle the case of multiple forms and one Enter key
+    //       if there is more than one form, we've got a problem on this one...
+    //       since it looks like we're going to do the POST on a single form
+    //       which may not be the right one.
+    jQuery("form")
+        .keydown(function(e)
+            {
+                if(e.which == 13)
+                {
+                    // got a Return/Enter, so force the default button
+                    // action now
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // simulate a click on the default button
+                    jQuery(this).find("input.default-button").click();
+                }
+            });
+        // TODO: verify the data as much as possible before we allow a submit
+        //       also change the default data with "" otherwise we'll be
+        //       sending the background-value to the server!?
+        //.submit(function(e)
+        //    {
+        //    });
 
     return this;
 };

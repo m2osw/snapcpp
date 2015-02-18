@@ -275,11 +275,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <xsl:if test="sizes/max"><xsl:attribute name="maxlength"><xsl:value-of select="sizes/max"/></xsl:attribute></xsl:if>
       <xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if>
       <xsl:if test="$checked_status != ''"><xsl:attribute name="checked">checked</xsl:attribute></xsl:if>
+      <xsl:attribute name="status-on-load"><xsl:value-of select="$checked_status"/></xsl:attribute>
     </input>
-    <!-- checkboxes have a bug in Firefox browsers (and maybe others)
-         on Reload they don't get reset as expected, the following script
-         fixes the problem by setting the state as it should be on load -->
-    <script type="text/javascript">jQuery("#<xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/>").attr("checked","<xsl:value-of select="$checked_status"/>");</script>
   </xsl:template>
   <xsl:template match="widget[@type='checkbox']">
     <div class="form-item checkbox {@id}">
@@ -413,10 +410,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <xsl:template name="snap:submit">
     <xsl:param name="name" select="@id"/>
     <input type="submit" disabled="disabled">
-      <xsl:variable name="default_button"><xsl:if test="default-button/@refid = @id">default-button</xsl:if></xsl:variable>
       <xsl:attribute name="id"><xsl:value-of select="$name"/>_<xsl:value-of select="$unique_id"/></xsl:attribute>
       <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-      <xsl:attribute name="class">submit-input <xsl:value-of select="classes"/> <xsl:value-of select="$default_button"/></xsl:attribute>
+      <xsl:attribute name="class"><xsl:value-of select="classes"/> submit-input <xsl:if test="/snap-form/default-button/@refid = @id">default-button</xsl:if></xsl:attribute>
       <xsl:if test="/snap-form/taborder/tabindex[@refid=$name]/position() != 0">
         <xsl:attribute name="tabindex"><xsl:value-of select="/snap-form/taborder/tabindex[@refid=$name]/count(preceding-sibling::tabindex) + 1 + $tabindex_base"/></xsl:attribute>
       </xsl:if>
@@ -508,10 +504,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:if test="(//widget)[@type='file' or @type='image']">
             <xsl:attribute name="enctype">multipart/form-data</xsl:attribute>
           </xsl:if>
-          <xsl:if test="default-button/@refid">
-            <!-- the event check should be in a function and it should verify that the element with focus is an input[type=text] -->
-            <xsl:attribute name="onkeypress">javascript:if((event.which&amp;&amp;event.which==13)||(event.keyCode&amp;&amp;event.keyCode==13))fire_event(<xsl:value-of select="default-button/@refid"/>_<xsl:value-of select="$unique_id"/>,'click');</xsl:attribute>
-          </xsl:if>
           <!-- see http://stackoverflow.com/questions/153527/setting-the-character-encoding-in-form-submit-for-internet-explorer -->
           <input id="form__iehack" name="form__iehack" type="hidden" value="&#9760;"/>
           <input id="form_session" name="form_session" type="hidden" value="{$form_session}"/>
@@ -536,24 +528,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                        so it does not trigger too soon!
                        use setTimer() instead too, to avoid infinite loops -->
             <script type="text/javascript">function auto_reset_<xsl:value-of select="$unique_id"/>(){form_<xsl:value-of select="$unique_id"/>.reset();}window.setInterval(auto_reset_<xsl:value-of select="$unique_id"/>,<xsl:value-of select="auto-reset/@minutes * 60000"/>);</script>
-          </xsl:if>
-          <xsl:if test="default-button/@refid">
-            <script type="text/javascript">
-              <!-- TODO: move this one in a JS -->
-              function fire_event(element, event_type)
-              {
-                if(element.fireEvent)
-                {
-                  element.fireEvent('on' + event_type);
-                }
-                else
-                {
-                  var event = document.createEvent('Events');
-                  event.initEvent(event_type, true, false);
-                  element.dispatchEvent(event);
-                }
-              }
-            </script>
           </xsl:if>
         </form>
         <!-- enable buttons after the form is fully loaded to avoid problems (early submissions) -->

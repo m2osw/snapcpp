@@ -2666,7 +2666,10 @@ bool snap_child::process(int socket)
         setup_uri();                // the raw URI
 
 #ifdef DEBUG
-SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(f_uri.get_uri())(")");
+{
+QString const method(snapenv("REQUEST_METHOD"));
+SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(")");
+}
 #endif
 
         // now we connect to the DB
