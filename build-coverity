@@ -14,6 +14,34 @@ set -e
 # Add the path to the coverity tools
 export PATH=${PATH}:`pwd`/cov-analysis-linux64-7.6.0/bin
 
+# WARNING:
+# Coverity has problems with GCC diagnostic pragmas and our NOTREACHED() function
+# In our script we also apply grep and sed as follow:
+#
+# (However, we do not do it here, because that requires a copy of your source
+# tree since those commands are destructive.)
+#
+## # Now create a "somewhat modified" coverity version
+## #
+## # 1. Remove all "#pragma GCC diagnostic ..."
+## # 2. Remove all 'NOTREACHED();' calls
+## rm -rf snapwebsites-sources
+## cp -r snapwebsites-original snapwebsites-sources
+## for f in `cd snapwebsites-original && find as2js/include/as2js -name '*.h'` \
+##          `cd snapwebsites-original && find as2js/src -name '*.h'` \
+##          `cd snapwebsites-original && find as2js/src -name '*.cpp'` \
+##          `cd snapwebsites-original && find snapwebsites/lib -name '*.cpp'` \
+##          `cd snapwebsites-original && find snapwebsites/lib -name '*.h'` \
+##          `cd snapwebsites-original && find snapwebsites/plugins -name '*.cpp'` \
+##          `cd snapwebsites-original && find snapwebsites/plugins -name '*.h'`
+## do
+##     grep -v '#pragma.*GCC.*diag' snapwebsites-original/$f | grep -v 'NOTREACHED();' >snapwebsites-sources/$f
+## done
+## 
+## # 3. Remove all warnings from the command line (or we'd get compiling errors without the pragmas)
+## sed -e 's/\(-W[-a-z]\+\(=[^ ]\+\)\?\)\|\(-pedantic\)//g' snapwebsites-original/snapCMakeModules/Modules/FindSnapCMakeModules.cmake >snapwebsites-sources/snapCMakeModules/Modules/FindSnapCMakeModules.cmake
+
+
 # Setup the BUILD_COVERITY environment
 rm -rf BUILD_COVERITY
 mkdir BUILD_COVERITY
