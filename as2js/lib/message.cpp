@@ -1,8 +1,8 @@
-/* message.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* message.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -66,8 +66,8 @@ namespace
  */
 Message::Message(message_level_t message_level, err_code_t error_code, Position const& pos)
     //: stringstream() -- auto-init
-    : f_message_level(static_cast<int32_t>(message_level))
-    , f_error_code(static_cast<int32_t>(error_code))
+    : f_message_level(message_level)
+    , f_error_code(error_code)
     , f_position(pos)
 {
 }
@@ -84,8 +84,8 @@ Message::Message(message_level_t message_level, err_code_t error_code, Position 
  */
 Message::Message(message_level_t message_level, err_code_t error_code)
     //: stringstream() -- auto-init
-    : f_message_level(static_cast<int32_t>(message_level))
-    , f_error_code(static_cast<int32_t>(error_code))
+    : f_message_level(message_level)
+    , f_error_code(error_code)
     //, f_position()
 {
 }

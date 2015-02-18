@@ -1,8 +1,8 @@
-/* test_as2js_lexer.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_lexer.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -3950,13 +3950,15 @@ void As2JsLexerUnitTests::test_invalid_strings()
                     expected.f_pos.new_page();
                     break;
 
-                case 0x2028:
-                    expected.f_pos.new_line();
-                    break;
-
-                case 0x2029:
-                    expected.f_pos.new_paragraph();
-                    break;
+                // 0x2028 and 0x2029 cannot happen here since we caught them
+                // earlier (see previous switch level)
+                //case 0x2028:
+                //    expected.f_pos.new_line();
+                //    break;
+                //
+                //case 0x2029:
+                //    expected.f_pos.new_paragraph();
+                //    break;
 
                 }
                 test_callback tc;

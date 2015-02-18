@@ -1,8 +1,8 @@
-/* compiler_class.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* compiler_class.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -332,6 +332,7 @@ fprintf(stderr, "WARNING: 'super.member()' should only be used in a class functi
 
 void Compiler::link_type(Node::pointer_t type)
 {
+std::cerr << "find_type()\n";
     // already linked?
     Node::pointer_t link(type->get_link(Node::link_t::LINK_INSTANCE));
     if(link)
@@ -344,7 +345,7 @@ void Compiler::link_type(Node::pointer_t type)
     {
         // we cannot link (determine) the type at compile time
         // if we have a type expression
-//fprintf(stderr, "WARNING: dynamic type?!\n");
+//std::cerr << "WARNING: dynamic type?!\n";
         return;
     }
 
@@ -480,6 +481,7 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
 {
     NodeLock link_ln(link);
     size_t const max_children(link->get_children_size());
+std::cerr << "  +++ check_field() " << max_children << " +++\n";
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t list(link->get_child(idx));
@@ -508,8 +510,10 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
             }
             else if(child->get_type() != Node::node_t::NODE_EMPTY)
             {
+std::cerr << "  +++ check_field(): check_name() from compiler class +++\n";
                 if(check_name(list, j, resolution, field, params, search_flags))
                 {
+std::cerr << "  +++ check_field(): funcs_name() called too +++\n";
                     if(funcs_name(funcs, resolution))
                     {
                         Node::pointer_t inst(field->get_link(Node::link_t::LINK_INSTANCE));
@@ -523,6 +527,7 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
                             // we have a real problem
                             throw exception_internal_error("found a LINK_INSTANCE twice, but it was different each time");
                         }
+std::cerr << "  +++ check_field(): and return true +++\n";
                         return true;
                     }
                 }
@@ -530,17 +535,17 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
         }
     }
 
+std::cerr << "  +++ check_field(): but return true +++\n";
     return false;
 }
 
 
 bool Compiler::find_any_field(Node::pointer_t link, Node::pointer_t field, int& funcs, Node::pointer_t& resolution, Node::pointer_t params, int const search_flags)
 {
-//fprintf(stderr, "Find Any Field...\n");
-
+std::cerr << "  *** find_any_field()\n";
     if(check_field(link, field, funcs, resolution, params, search_flags))
     {
-//fprintf(stderr, "Check Field true...\n");
+//std::cerr << "Check Field true...\n";
         return true;
     }
     if(funcs != 0)
@@ -549,11 +554,11 @@ bool Compiler::find_any_field(Node::pointer_t link, Node::pointer_t field, int& 
         // this is wrong, we need a depth test on the best
         // functions but we need to test all the functions
         // of inherited fields too
-//fprintf(stderr, "funcs != 0 true...\n");
+//std::cerr << "funcs != 0 true...\n";
         return true;
     }
 
-//fprintf(stderr, "FindInExtends?!...\n");
+//std::cerr << "FindInExtends?!...\n";
     return find_in_extends(link, field, funcs, resolution, params, search_flags); // recursive
 }
 
@@ -685,6 +690,7 @@ fprintf(stderr, " is a function.\n");
 
 bool Compiler::find_member(Node::pointer_t member, Node::pointer_t& resolution, Node::pointer_t params, int search_flags)
 {
+std::cerr << "find_member()\n";
     // Just in case the caller is re-using the same node
     resolution.reset();
 
@@ -839,6 +845,7 @@ bool Compiler::find_member(Node::pointer_t member, Node::pointer_t& resolution, 
 
 void Compiler::resolve_member(Node::pointer_t expr, Node::pointer_t params, int const search_flags)
 {
+std::cerr << "Compiler::resolve_member()\n";
     Node::pointer_t resolution;
     if(!find_member(expr, resolution, params, search_flags))
     {
@@ -863,10 +870,6 @@ fprintf(stderr, "WARNING: cannot find field member.\n");
     }
 
     // the name was fully resolved, check it out
-
-//Data& d = resolution.GetData();
-//fprintf(stderr, "Member resolution is %d\n", d.f_type);
-
     if(replace_constant_variable(expr, resolution))
     {
         // just a constant, we're done
@@ -886,7 +889,7 @@ fprintf(stderr, "WARNING: cannot find field member.\n");
     if(resolution->get_type() == Node::node_t::NODE_FUNCTION
     && resolution->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER))
     {
-fprintf(stderr, "CAUGHT! getter...\n");
+std::cerr << "CAUGHT! getter...\n";
         // so expr is a MEMBER at this time
         // it has two children
         Node::pointer_t left(expr->get_child(0));

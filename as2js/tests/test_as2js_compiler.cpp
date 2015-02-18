@@ -1,8 +1,8 @@
-/* test_as2js_compiler.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_compiler.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -1164,7 +1164,7 @@ void init_rc(bool bad_script = false)
           "  'temporary_variable_name': '@temp$'\n"
           "}\n";
 
-    mkdir("as2js", 0700);
+    CPPUNIT_ASSERT(mkdir("as2js", 0700) == 0);
     as2js::FileOutput output;
     CPPUNIT_ASSERT(output.open("as2js/as2js.rc"));
     output.write(rc);

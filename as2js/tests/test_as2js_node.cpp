@@ -1,8 +1,8 @@
-/* test_as2js_node.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_node.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -36,9 +36,10 @@ SOFTWARE.
 #include    "test_as2js_node.h"
 #include    "test_as2js_main.h"
 
-#include    "as2js/node.h"
-#include    "as2js/message.h"
 #include    "as2js/exceptions.h"
+#include    "as2js/message.h"
+#include    "as2js/node.h"
+#include    "as2js/os_raii.h"
 
 #include    <cstring>
 #include    <algorithm>
@@ -1449,7 +1450,7 @@ void As2JsNodeUnitTests::test_tree()
             ++f_count;
         }
 
-        ~TrackedNode()
+        virtual ~TrackedNode()
         {
             --f_count;
         }

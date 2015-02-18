@@ -1,8 +1,8 @@
-/* as2js.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* as2js.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -191,7 +191,17 @@ as2js_compiler::as2js_compiler(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    as2js_compiler::pointer_t c(new as2js_compiler(argc, argv));
+    try
+    {
+        as2js_compiler::pointer_t c(new as2js_compiler(argc, argv));
+    }
+    catch(std::exception const& e)
+    {
+        std::cerr << "as2js: exception: " << e.what() << std::endl;
+        exit(1);
+    }
+
+    return 0;
 }
 
 

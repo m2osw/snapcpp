@@ -1,8 +1,8 @@
-/* string.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* string.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -146,7 +146,10 @@ String::String(wchar_t const *str, int len)
 String::String(as_char_t const *str, int len)
     : basic_string()
 {
-    from_as_char(str, len);
+    if(from_as_char(str, len) != conversion_result_t::STRING_GOOD)
+    {
+        throw exception_internal_error("String::String() called with an invalid input string");
+    }
 }
 
 

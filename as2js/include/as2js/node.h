@@ -1,10 +1,10 @@
 #ifndef AS2JS_NODE_H
 #define AS2JS_NODE_H
-/* node.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* node.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -433,7 +433,7 @@ public:
     };
 
                                 Node(node_t type);
-                                ~Node() noexcept(false);
+    virtual                     ~Node() noexcept(false); // virtual because of shared pointers
 
     /** \brief Do not allow direct copies of nodes.
      *

@@ -1,8 +1,8 @@
-/* parser_function.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* parser_function.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -371,6 +371,7 @@ void Parser::function(Node::pointer_t& node, bool const expression_function)
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_ALLOWED, f_lexer->get_input()->get_position());
             msg << "the '" << f_node->get_type_name() << "' operator is only available when extended operators are authorized (use extended_operators;).";
         }
+        /*FLOWTHROUGH*/
     case Node::node_t::NODE_ADD:
     case Node::node_t::NODE_ASSIGNMENT:
     case Node::node_t::NODE_ASSIGNMENT_ADD:

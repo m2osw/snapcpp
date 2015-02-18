@@ -1,8 +1,8 @@
-/* test_as2js_rc.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_rc.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -485,9 +485,9 @@ void As2JsRCUnitTests::test_load_from_local()
     g_empty_home_too_late = 1;
 
     // just in case it failed before...
-    unlink("as2js/as2js.rc");
+    static_cast<void>(unlink("as2js/as2js.rc"));
 
-    mkdir("as2js", 0700);
+    CPPUNIT_ASSERT(mkdir("as2js", 0700) == 0);
 
     {
         test_callback tc;
@@ -665,10 +665,10 @@ void As2JsRCUnitTests::test_load_from_user_config()
     // not reach here if the .rc already existed!)
     as2js::String config(home);
     config += "/.config";
-    mkdir(config.to_utf8().c_str(), 0700); // usually this is 0755, but for security we cannot take that risk...
+    CPPUNIT_ASSERT(mkdir(config.to_utf8().c_str(), 0700) == 0); // usually this is 0755, but for security we cannot take that risk...
     as2js::String as2js_conf(config);
     as2js_conf += "/as2js";
-    mkdir(as2js_conf.to_utf8().c_str(), 0700);
+    CPPUNIT_ASSERT(mkdir(as2js_conf.to_utf8().c_str(), 0700) == 0);
     as2js::String as2js_rc(as2js_conf);
     as2js_rc += "/as2js.rc";
     unlink(as2js_rc.to_utf8().c_str()); // delete that, just in case (the setup verifies that it does not exist)
@@ -859,7 +859,7 @@ void As2JsRCUnitTests::test_load_from_system_config()
     // (although it was checked in the setUp() function and thus we should
     // not reach here if the .rc already existed!)
     as2js::String as2js_conf("/etc/as2js");
-    mkdir(as2js_conf.to_utf8().c_str(), 0700); // usually this is 0755, but for security we cannot take that risk...
+    CPPUNIT_ASSERT(mkdir(as2js_conf.to_utf8().c_str(), 0700) == 0); // usually this is 0755, but for security we cannot take that risk...
     as2js::String as2js_rc(as2js_conf);
     as2js_rc += "/as2js.rc";
     unlink(as2js_rc.to_utf8().c_str()); // delete that, just in case (the setup verifies that it does not exist)
@@ -1038,11 +1038,11 @@ void As2JsRCUnitTests::test_empty_home()
 
     as2js::String config(home);
     config += "/.config";
-    mkdir(config.to_utf8().c_str(), 0700);
+    CPPUNIT_ASSERT(mkdir(config.to_utf8().c_str(), 0700) == 0);
 
     as2js::String rc_path(config);
     rc_path += "/as2js";
-    mkdir(rc_path.to_utf8().c_str(), 0700);
+    CPPUNIT_ASSERT(mkdir(rc_path.to_utf8().c_str(), 0700) == 0);
 
     as2js::String rc_filename(rc_path);
     rc_filename += "/as2js.rc";

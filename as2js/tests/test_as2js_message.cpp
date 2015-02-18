@@ -1,8 +1,8 @@
-/* test_as2js_message.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_message.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -56,6 +56,8 @@ class test_callback : public as2js::MessageCallback
 {
 public:
     test_callback()
+        : f_expected_message_level(as2js::message_level_t::MESSAGE_LEVEL_OFF)
+        , f_expected_error_code(as2js::err_code_t::AS_ERR_NONE)
     {
         as2js::Message::set_message_callback(this);
         g_warning_count = as2js::Message::warning_count();
@@ -105,8 +107,8 @@ public:
 
     controlled_vars::tlbool_t   f_expected_call;
     controlled_vars::flbool_t   f_got_called;
-    as2js::message_level_t      f_expected_message_level;
-    as2js::err_code_t           f_expected_error_code;
+    controlled_vars::need_enum_init<as2js::message_level_t>  f_expected_message_level;
+    controlled_vars::need_enum_init<as2js::err_code_t>       f_expected_error_code;
     as2js::Position             f_expected_pos;
     std::string                 f_expected_message; // UTF-8 string
     static controlled_vars::zint32_t   g_warning_count;

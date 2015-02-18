@@ -1,8 +1,8 @@
-/* compiler_variable.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* compiler_variable.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -35,6 +35,7 @@ SOFTWARE.
 
 #include    "as2js/compiler.h"
 
+#include    "as2js/exceptions.h"
 #include    "as2js/message.h"
 
 
@@ -170,7 +171,12 @@ void Compiler::variable(Node::pointer_t variable_node, bool const side_effects_o
 
     // make sure to get the attributes before the node gets locked
     // (we know that the result is true in this case)
-    get_attribute(variable_node, Node::attribute_t::NODE_ATTR_DEFINED);
+    if(!get_attribute(variable_node, Node::attribute_t::NODE_ATTR_DEFINED))
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, variable_node->get_position());
+        msg << "get_attribute() did not return true as expected.";
+        throw exception_exit(1, "get_attribute() did not return true as expected.");
+    }
 
     NodeLock ln(variable_node);
     int set(0);

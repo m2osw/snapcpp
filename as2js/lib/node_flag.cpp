@@ -1,8 +1,8 @@
-/* node_flag.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* node_flag.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -198,7 +198,8 @@ void Node::verify_flag(flag_t f) const
 
     case flag_t::NODE_IDENTIFIER_FLAG_WITH:
     case flag_t::NODE_IDENTIFIER_FLAG_TYPED:
-        if(f_type == node_t::NODE_IDENTIFIER
+        if(f_type == node_t::NODE_CLASS
+        || f_type == node_t::NODE_IDENTIFIER
         || f_type == node_t::NODE_VIDENTIFIER
         || f_type == node_t::NODE_STRING)
         {

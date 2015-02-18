@@ -1,10 +1,10 @@
 #ifndef AS2JS_MESSAGE_H
 #define AS2JS_MESSAGE_H
-/* message.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* message.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -39,7 +39,7 @@ SOFTWARE.
 #include    "int64.h"
 #include    "float64.h"
 
-#include    <controlled_vars/controlled_vars_need_init.h>
+#include    <controlled_vars/controlled_vars_need_enum_init.h>
 
 #include    <sstream>
 
@@ -208,9 +208,9 @@ public:
     static int          error_count();
 
 private:
-    controlled_vars::need_init<message_level_t> f_message_level;
-    controlled_vars::need_init<err_code_t>      f_error_code;
-    Position                                    f_position;
+    controlled_vars::need_enum_init<message_level_t>    f_message_level;
+    controlled_vars::need_enum_init<err_code_t>         f_error_code;
+    Position                                            f_position;
 };
 
 

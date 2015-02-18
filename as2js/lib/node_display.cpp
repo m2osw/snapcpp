@@ -1,8 +1,8 @@
-/* node_display.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* node_display.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -34,6 +34,7 @@ SOFTWARE.
 */
 
 #include    "as2js/node.h"
+#include    "as2js/os_raii.h"
 
 #include    <controlled_vars/controlled_vars_auto_enum_init.h>
 
@@ -93,6 +94,9 @@ namespace as2js
  */
 void Node::display_data(std::ostream& out) const
 {
+    // safely save the output stream flags
+    raii_stream_flags stream_flags(out);
+
     struct sub_function
     {
         static void display_str(std::ostream& out, String str)
@@ -420,6 +424,9 @@ void Node::display_data(std::ostream& out) const
  */
 void Node::display(std::ostream& out, int indent, char c) const
 {
+    // safely save the output stream flags
+    raii_stream_flags stream_flags(out);
+
     // this pointer and indentation
     out << this << ": " << std::setfill('0') << std::setw(2) << indent << std::setfill(' ') << c << std::setw(indent) << "";
 

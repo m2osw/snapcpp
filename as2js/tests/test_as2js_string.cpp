@@ -1,8 +1,8 @@
-/* test_as2js_string.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_string.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -113,7 +113,7 @@ int wctombs(char *mb, uint32_t wc)
         mb[5] = '\0';
         return 5;
     }
-    if(wc > 0)    // <=> (unsigned long) wc < 0x80000000
+    if(static_cast<int32_t>(wc) > 0)    // <=> (uint32_t) wc < 0x80000000
     {
         mb[0] = (wc >> 30) | 0xFC;
         mb[1] = ((wc >> 24) & 0x3F) | 0x80;
@@ -1334,7 +1334,7 @@ void As2JsStringUnitTests::test_utf32()
         CPPUNIT_ASSERT(str1.valid());
 
         as2js::String str2;
-        str2.from_as_char(null_char32_ptr, 6);
+        CPPUNIT_ASSERT(str2.from_as_char(null_char32_ptr, 6) == as2js::String::conversion_result_t::STRING_GOOD);
         CPPUNIT_ASSERT(&(str2 = "") == &str2);
         CPPUNIT_ASSERT(str2.empty());
         CPPUNIT_ASSERT(str2.length() == 0);

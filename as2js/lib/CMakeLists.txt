@@ -2,7 +2,7 @@
 # File:         CMakeLists.txt
 # Object:       Definitions to create the build environment with cmake
 #
-# Copyright:    Copyright (c) 2005-2014 Made to Order Software Corp.
+# Copyright:    Copyright (c) 2005-2015 Made to Order Software Corp.
 #               All Rights Reserved.
 #
 # http://snapwebsites.org/project/as2js
@@ -71,6 +71,7 @@ add_library( as2js SHARED
     optimizer_optimize.cpp
     optimizer_tables.cpp
     options.cpp
+    os_raii.cpp
     parser.cpp
     parser_class.cpp
     parser_directive.cpp

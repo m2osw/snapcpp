@@ -1,8 +1,8 @@
-/* compiler_compile.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* compiler_expression.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -877,7 +877,12 @@ bool Compiler::special_identifier(Node::pointer_t expr)
     }
     else if(id == "__UNIXTIME__")
     {
-        expr->to_int64();
+        if(!expr->to_int64())
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, expr->get_position());
+            msg << "somehow could not change expression to int64.";
+            throw exception_exit(1, "somehow could not change expression to int64.");
+        }
         Int64 integer;
         time_t now(f_time);
         integer.set(now);
@@ -925,7 +930,12 @@ bool Compiler::special_identifier(Node::pointer_t expr)
     }
 
     // even if it fails, we convert this expression into a string
-    expr->to_string();
+    if(!expr->to_string())
+    {
+        Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, expr->get_position());
+        msg << "somehow could not change expression to a string.";
+        throw exception_exit(1, "somehow could not change expression to a string.");
+    }
     if(!result.empty())
     {
         expr->set_string(result);
@@ -1458,9 +1468,11 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
 std::cerr << "Not a special identifier so resolve name... [" << *expr << "]\n";
             if(resolve_name(expr, expr, resolution, params, SEARCH_FLAG_GETTER))
             {
+std::cerr << "  +--> returned from resolve_name() with resolution\n";
                 if(!replace_constant_variable(expr, resolution))
                 {
                     Node::pointer_t current(expr->get_link(Node::link_t::LINK_INSTANCE));
+std::cerr << "  +--> not constant var... [" << (current ? "has a current ptr" : "no current ptr") << "]\n";
                     if(current)
                     {
                         if(current != resolution)
@@ -1477,9 +1489,13 @@ std::cerr << "Expression already typed is (starting from parent): [" << *expr->g
                     {
                         expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
                         Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
+std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type ptr" : "no current type ptr") << "]\n";
                         if(type)
                         {
-                            expr->set_link(Node::link_t::LINK_TYPE, type);
+                            if(!expr->get_link(Node::link_t::LINK_TYPE))
+                            {
+                                expr->set_link(Node::link_t::LINK_TYPE, type);
+                            }
                         }
                     }
                 }
@@ -1489,7 +1505,7 @@ std::cerr << "Expression already typed is (starting from parent): [" << *expr->g
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, expr->get_position());
                 msg << "cannot find any variable or class declaration for: '" << expr->get_string() << "'.";
             }
-std::cerr << "got type?\n";
+std::cerr << "---------- got type? ----------\n";
         }
         return;
 

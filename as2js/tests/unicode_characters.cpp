@@ -1,8 +1,8 @@
-/* unicode_characters.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* unicode_characters.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -159,7 +159,7 @@ void identifier()
     }
     if(first != -1)
     {
-        std::cout << std::hex << "  " << first << ", " << 0x10FFFF << ",\n";
+        std::cout << std::hex << "  " << first << ", " << 0x10FFFF << std::dec << ",\n";
         ++count;
     }
     std::cout << "got " << count << " groups\n\n";

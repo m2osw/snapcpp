@@ -1,8 +1,8 @@
-/* test_as2js_stream.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_stream.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -96,7 +96,7 @@ int wctombs(char *mb, uint32_t wc)
         mb[5] = '\0';
         return 5;
     }
-    if(wc > 0)    // <=> (uint32_t) wc < 0x80000000
+    if(static_cast<int32_t>(wc) > 0)    // <=> (uint32_t) wc < 0x80000000
     {
         mb[0] = (wc >> 30) | 0xFC;
         mb[1] = ((wc >> 24) & 0x3F) | 0x80;
@@ -1468,8 +1468,10 @@ void As2JsStreamUnitTests::test_output()
         char const *filename("/tmp/test789012.js");
 
         // 2. determine the current fd
+        //    (see use of fd_to_close further below)
         char const *find_fd("/tmp/test345678.js");
         int fd_to_close(open(find_fd, O_RDWR|O_CREAT, 0600));
+        CPPUNIT_ASSERT(fd_to_close >= 0);
         close(fd_to_close);
         unlink(find_fd);
 

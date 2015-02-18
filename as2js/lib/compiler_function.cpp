@@ -1,8 +1,8 @@
-/* compiler_function.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* compiler_function.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -221,8 +221,7 @@ void Compiler::function(Node::pointer_t function_node)
     }
     while(more);
 
-    // any one of the following flags implies that the function is
-    // defined in a class; check to make sure!
+    // the following flags imply that the function is defined in a class
     if(get_attribute(function_node, Node::attribute_t::NODE_ATTR_ABSTRACT)
     || get_attribute(function_node, Node::attribute_t::NODE_ATTR_STATIC)
     || get_attribute(function_node, Node::attribute_t::NODE_ATTR_PROTECTED)
@@ -236,6 +235,7 @@ void Compiler::function(Node::pointer_t function_node)
             msg << "function \"" << function_node->get_string() << "\" was defined with an attribute which can only be used with a function member inside a class definition.";
         }
     }
+    // the operator flag also implies that the operator was defined in a class
     if(function_node->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_OPERATOR))
     {
         if(!member)
@@ -256,8 +256,8 @@ void Compiler::function(Node::pointer_t function_node)
         }
     }
 
-    // member functions need to not be defined in a super class
-    // as final since that means you cannot overwrite these functions
+    // member functions need to not be defined as final in a super class
+    // since that means it cannot be overwritten
     if(member)
     {
         if(check_final_functions(function_node, parent))
@@ -449,6 +449,7 @@ std::cerr << "  -- type saved!!!\n";
 
     if(idx == max_children)
     {
+std::cerr << "============== No type found for " << function_node->get_string() << ", search for Object and use as the default... =============\n";
         // if no type defined, put a default of Object
         Node::pointer_t object;
         resolve_internal_type(function_node, "Object", object);
