@@ -717,7 +717,6 @@ int process::run()
                     //       calls the output_available() whenever a new
                     //       line of data, delimited by new line (\r or \n)
                     //       characters, is read (semi-buffering)
-std::cerr << "***\n*** out_t::run() called!\n***\n";
                     for(;;)
                     {
                         char buf[4096];
@@ -744,11 +743,9 @@ std::cerr << "***\n*** out_t::run() called!\n***\n";
                 rp_process_output_callback_t    f_callback;
                 rp_process_t                    f_process;
             } out(f_output);
-std::cerr << "***\n*** out_t out; created!\n***\n";
             out.f_pipe = inout.f_pipes[2];
             out.f_callback = f_output_callback;
             out.f_process = this;
-std::cerr << "***\n*** out_t out; initialized!\n***\n";
             snap_thread out_thread("process::out::thread", &out);
             if(!out_thread.start())
             {
