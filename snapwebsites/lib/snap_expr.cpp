@@ -1512,7 +1512,14 @@ public:
 
         // verify whether reading the content is considered secure
         server::secure_field_flag_t secure;
-        server::instance()->cell_is_secure(table_name, row_name, cell_name, secure);
+        if(table_name == "libQtCassandraLockTable")
+        {
+            secure.mark_as_secure();
+        }
+        else
+        {
+            server::instance()->cell_is_secure(table_name, row_name, cell_name, secure);
+        }
         if(secure.is_secure())
         {
             // TBD: should we just return a string with an error in it
