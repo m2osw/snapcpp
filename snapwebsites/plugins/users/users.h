@@ -41,6 +41,7 @@ enum name_t
     SNAP_NAME_USERS_IDENTIFIER,
     SNAP_NAME_USERS_ID_ROW,
     SNAP_NAME_USERS_INDEX_ROW,
+    SNAP_NAME_USERS_LAST_VERIFICATION_SESSION,
     SNAP_NAME_USERS_LOCALE,
     SNAP_NAME_USERS_LOCALES,
     SNAP_NAME_USERS_LOGIN_IP,
@@ -151,6 +152,18 @@ public:
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_PASSWORD = 13;                 // password-form.xml
     static const sessions::sessions::session_info::session_id_t USERS_SESSION_ID_VERIFY_CREDENTIALS = 14;       // verify-credentials-form.xml
 
+    enum class status_t
+    {
+        STATUS_UNKNOWN,         // user has a status link we do not know what it is
+        STATUS_UNDEFINED,       // status not known
+        STATUS_NOT_FOUND,       // user does not exist in database
+        STATUS_VALID,           // user is registered and verified
+        STATUS_NEW,             // user is registered but not yet verified (maked as "NEW")
+        STATUS_BLOCKED,         // user got blocked (marked as "BLOCKED")
+        STATUS_AUTO,            // user did not register, account was auto-generated (marked as "AUTO")
+        STATUS_PASSWORD         // user has to enter a new password (marked as "PASSWORD")
+    };
+
     class user_logged_info_t
     {
     public:
@@ -230,6 +243,8 @@ public:
     QString                 get_user_email(QString const& user_path);
     QString                 get_user_email(int64_t const identifier);
     QString                 get_user_path(QString const& email);
+    status_t                user_status(QString const& email, QString& status_key);
+    bool                    resend_verification_email(QString const& email);
 
 private:
     void                    initial_update(int64_t variables_timestamp);

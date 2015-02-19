@@ -170,6 +170,7 @@ public:
 
     void                    on_bootstrap(snap_child *snap);
     virtual void            on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                    on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure);
 
     QString                 create_session(session_info& info);
     void                    save_session(session_info& info, bool const new_random);

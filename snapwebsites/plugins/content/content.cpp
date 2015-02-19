@@ -9612,9 +9612,11 @@ void content::on_cell_is_secure(QString const& table, QString const& row, QStrin
     static_cast<void>(row);
     static_cast<void>(cell);
 
-    if(table == get_name(SNAP_NAME_CONTENT_SECRET_TABLE))
+    // all data in the secret table are considered secure
+    // also check the lock table which really does not need to be public
+    if(table == get_name(SNAP_NAME_CONTENT_SECRET_TABLE)
+    || table == f_snap->get_context()->lockTableName())
     {
-        // all data in the secret table are considered secure
         secure.mark_as_secure();
     }
 }

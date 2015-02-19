@@ -855,6 +855,8 @@ sessions::~sessions()
 void sessions::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
+
+    SNAP_LISTEN(sessions, "server", server, cell_is_secure, _1, _2, _3, _4);
 }
 
 
@@ -1092,7 +1094,7 @@ QString sessions::create_session(session_info& info)
     }
 
     // generate the session identifier
-    int r(RAND_bytes(buf, size));
+    int const r(RAND_bytes(buf, size));
     if(r != 1)
     {
         throw sessions_exception_no_random_data("RAND_bytes() could not generate a random number.");
@@ -1102,7 +1104,7 @@ QString sessions::create_session(session_info& info)
     QString result;
     for(int i(0); i < size; ++i)
     {
-        QString hex(QString("%1").arg(static_cast<int>(buf[i]), 2, 16, static_cast<QChar>('0')));
+        QString const hex(QString("%1").arg(static_cast<int>(buf[i]), 2, 16, static_cast<QChar>('0')));
         result += hex;
     }
     info.set_session_key(result);
@@ -1158,9 +1160,9 @@ void sessions::save_session(session_info& info, bool const new_random)
     QString key(f_snap->get_website_key() + "/" + info.get_session_key());
 
     // define timestamp for the session value in seconds
-    time_t time_limit(info.get_time_limit());
-    int32_t time_to_live(info.get_time_to_live());
-    int64_t now(f_snap->get_start_time());
+    time_t const time_limit(info.get_time_limit());
+    int32_t const time_to_live(info.get_time_to_live());
+    int64_t const now(f_snap->get_start_time());
     int64_t timestamp(0);
     if(time_limit == 0)
     {
@@ -1193,7 +1195,7 @@ void sessions::save_session(session_info& info, bool const new_random)
     }
     // keep it in the database for 1 more day than what we need it for
     // the difference should always fit 32 bits
-    int64_t ttl(timestamp + 86400 - now);
+    int64_t const ttl(timestamp + 86400 - now);
     if(ttl < 0 || ttl > 0x7FFFFFFF)
     {
         throw sessions_exception_invalid_range(QString("the session computed ttl %1 is out of bounds (save_session)").arg(ttl));
@@ -1571,6 +1573,40 @@ QString sessions::get_from_session(const session_info& info, const QString& name
     QtCassandra::QCassandraValue value(row->cell(name)->value());
 
     return value.stringValue();
+}
+
+
+/** \brief Check whether the cell can securily be used in a script.
+ *
+ * This signal is sent by the cell() function of snap_expr objects.
+ * The plugin receiving the signal can check the table, row, and cell
+ * names and mark that specific cell as secure. This will prevent the
+ * script writer from accessing that specific cell.
+ *
+ * This is used, for example, to protect the user password. Even though
+ * the password is encrypted, allowing an end user to get a copy of
+ * the encrypted password would dearly simplify the work of a hacker in
+ * finding the unencrypted password.
+ *
+ * The \p secure flag is used to mark the cell as secure. Simply call
+ * the mark_as_secure() function to do so.
+ *
+ * \param[in] table  The table being accessed.
+ * \param[in] row  The row being accessed.
+ * \param[in] cell  The cell being accessed.
+ * \param[in] secure  Whether the cell is secure.
+ *
+ * \return This function returns true in case the signal needs to proceed.
+ */
+void sessions::on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure)
+{
+    static_cast<void>(row);
+    static_cast<void>(cell);
+
+    if(table == get_name(SNAP_NAME_SESSIONS_TABLE))
+    {
+        secure.mark_as_secure();
+    }
 }
 
 

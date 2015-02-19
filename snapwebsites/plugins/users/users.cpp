@@ -127,6 +127,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_INDEX_ROW:
         return "*index_row*";
 
+    case SNAP_NAME_USERS_LAST_VERIFICATION_SESSION:
+        return "users::last_verification_session";
+
     case SNAP_NAME_USERS_LOCALE: // format locale for dates/numbers
         return "users::locale";
 
@@ -677,7 +680,7 @@ bool users::authenticated_user(QString const& key, sessions::sessions::session_i
     // the website may opt out of the long session scheme
     // the following loses the user key if the website
     // administrator said so...
-    QtCassandra::QCassandraValue long_sessions(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_LONG_SESSIONS)));
+    QtCassandra::QCassandraValue const long_sessions(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_LONG_SESSIONS)));
     if(f_user_logged_in
     || (long_sessions.nullValue() || long_sessions.signedCharValue()))
     {
@@ -998,7 +1001,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
         }
 
         {   // snap/head/metadata/desc[@type='users::name']/data
-            QtCassandra::QCassandraValue value(user_row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
+            QtCassandra::QCassandraValue const value(user_row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
             if(!value.nullValue())
             {
                 QDomElement desc(doc.createElement("desc"));
@@ -1012,7 +1015,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
         }
 
         {   // snap/head/metadata/desc[@type='users::created']/data
-            QtCassandra::QCassandraValue value(user_row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
+            QtCassandra::QCassandraValue const value(user_row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
             if(!value.nullValue())
             {
                 QDomElement desc(doc.createElement("desc"));
@@ -1054,7 +1057,7 @@ void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& p
         user_ipath.set_path(user_info.key());
 
         {   // snap/page/body/author[@type="users::name"]/data
-            QtCassandra::QCassandraValue value(content_table->row(user_ipath.get_key())->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
+            QtCassandra::QCassandraValue const value(content_table->row(user_ipath.get_key())->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
             if(!value.nullValue())
             {
                 QDomElement author(doc.createElement("author"));
@@ -1084,7 +1087,7 @@ void users::on_create_content(content::path_info_t& ipath, QString const& owner,
         QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
         if(users_table->exists(f_user_key))
         {
-            QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
             if(!value.nullValue())
             {
                 int64_t const identifier(value.int64Value());
@@ -1463,7 +1466,7 @@ void users::verify_user(content::path_info_t& ipath)
 
     if(!f_user_key.isEmpty())
     {
-        QtCassandra::QCassandraValue multiuser(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_MULTIUSER)));
+        QtCassandra::QCassandraValue const multiuser(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_MULTIUSER)));
         if(multiuser.nullValue() || !multiuser.signedCharValue())
         {
             // user is logged in already, just send him to his profile
@@ -1508,7 +1511,7 @@ void users::verify_user(content::path_info_t& ipath)
         f_user_key.clear();
     }
 
-    // remove "verify/" so the path is just the session ID
+    // remove "verify/" to retrieve the session ID
     QString const session_id(ipath.get_cpath().mid(7));
     sessions::sessions::session_info info;
     sessions::sessions *session(sessions::sessions::instance());
@@ -1557,7 +1560,7 @@ void users::verify_user(content::path_info_t& ipath)
     }
 
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
-    const QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+    QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
     if(user_identifier.nullValue())
     {
         SNAP_LOG_FATAL("users::verify_user() could not load the user identifier, the row exists but the cell did not make it (")
@@ -1728,7 +1731,7 @@ void users::verify_password(content::path_info_t& ipath)
     }
 
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
-    const QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+    QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
     if(user_identifier.nullValue())
     {
         SNAP_LOG_FATAL("users::process_new_password_form() could not load the user identifier, the row exists but the cell did not make it (")
@@ -2015,7 +2018,7 @@ QString users::login_user(QString const& key, QString const& password, bool& val
         QtCassandra::QCassandraValue value;
 
         // existing users have a unique identifier
-        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
         if(user_identifier.nullValue())
         {
             messages::messages::instance()->set_error(
@@ -2342,7 +2345,7 @@ void users::process_forgot_password_form()
 
         // existing users have a unique identifier
         // necessary to create the user key below
-        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
             int64_t const identifier(user_identifier.int64Value());
@@ -2474,7 +2477,7 @@ void users::process_replace_password_form()
 
         // existing users have a unique identifier
         // necessary to create the user key below
-        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
             int64_t const identifier(user_identifier.int64Value());
@@ -2491,7 +2494,7 @@ void users::process_replace_password_form()
                 QString const site_key(f_snap->get_site_key_with_slash());
                 if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
                 {
-                    // We're good, save the new password and remove that link
+                    // We are good, save the new password and remove that link
 
                     // First encrypt the password
                     QString const password(f_snap->postenv("password"));
@@ -2620,7 +2623,7 @@ void users::process_password_form()
 
         // existing users have a unique identifier
         // necessary to create the user key below
-        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
             int64_t const identifier(user_identifier.int64Value());
@@ -2797,7 +2800,7 @@ void users::process_verify_resend_form()
 
         // existing users have a unique identifier
         // necessary to create the user key below
-        QtCassandra::QCassandraValue user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
             int64_t const identifier(user_identifier.int64Value());
@@ -2973,6 +2976,86 @@ QString users::get_user_path() const
 }
 
 
+/** \brief Check the current status of the specified user.
+ *
+ * This function checks the status of the user specified by an
+ * email address.
+ *
+ * \note
+ * The function returns STATUS_UNDEFINED if the email address is
+ * the empty string.
+ *
+ * \note
+ * The function returns STATUS_UNKNOWN if the status is not known
+ * by the users plugin. The status itself is saved in the status_key
+ * parameter so one can further check what the status is and act on
+ * it appropriately.
+ *
+ * \todo
+ * Allow the use of the user path and user identifier instead of
+ * just the email address.
+ *
+ * \param[in] email  The email address of the user being checked.
+ * \param[out] status_key  Return the status key if available.
+ *
+ * \return The status of the user.
+ */
+users::status_t users::user_status(QString const& email, QString& status_key)
+{
+    status_key.clear();
+
+    if(email.isEmpty())
+    {
+        return status_t::STATUS_UNDEFINED;
+    }
+
+    QString const user_path(get_user_path(email));
+    if(user_path.isEmpty())
+    {
+        return status_t::STATUS_NOT_FOUND;
+    }
+    content::path_info_t user_ipath;
+    user_ipath.set_path(user_path);
+
+    // before we actually accept this verification code, we must make sure
+    // the user is still marked as a new user (he should or the session
+    // would be invalid, but for security it is better to check again)
+    links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+    QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
+    links::link_info status_info;
+    if(!link_ctxt->next_link(status_info))
+    {
+        // if the status link does not exist, then the user is considered
+        // verified and valid
+        return status_t::STATUS_VALID;
+    }
+    status_key = status_info.key();
+
+    // a status link exists... check that the user is not marked as a NEW user
+    QString const site_key(f_snap->get_site_key_with_slash());
+    if(status_key == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+    {
+        return status_t::STATUS_NEW;
+    }
+    if(status_key == site_key + get_name(SNAP_NAME_USERS_BLOCKED_PATH))
+    {
+        return status_t::STATUS_BLOCKED;
+    }
+    if(status_key == site_key + get_name(SNAP_NAME_USERS_AUTO_PATH))
+    {
+        return status_t::STATUS_AUTO;
+    }
+    if(status_key != site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+    {
+        return status_t::STATUS_PASSWORD;
+    }
+
+    // anything else we do not know what the heck it is
+    // (we'll need a signal to allow for extensions by other plugins)
+    return status_t::STATUS_UNKNOWN;
+}
+
+
 /** \brief Retrieve the user identifier from its user path.
  *
  * This function parses the path to a user's account and return its
@@ -2994,7 +3077,7 @@ int64_t users::get_user_identifier(QString const& user_path) const
     int pos(0);
     if(user_path.startsWith(site_key))
     {
-        // remove the site key, including the slash
+        // "remove" the site key, including the slash
         pos = site_key.length();
     }
     if(user_path.mid(pos, 5) == "user/")
@@ -3083,7 +3166,7 @@ QString users::get_user_path(QString const& email)
         QtCassandra::QCassandraValue const value(users_table->row(email)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!value.nullValue())
         {
-            int64_t identifier(value.int64Value());
+            int64_t const identifier(value.int64Value());
             return QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier);
         }
     }
@@ -3163,7 +3246,7 @@ bool users::register_user(QString const& email, QString const& password)
         const char *email_key(get_name(SNAP_NAME_USERS_ORIGINAL_EMAIL));
         QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
         cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-        QtCassandra::QCassandraValue email_data(cell->value());
+        QtCassandra::QCassandraValue const email_data(cell->value());
         if(!email_data.nullValue())
         {
             // someone else already registered with that email
@@ -3197,7 +3280,7 @@ bool users::register_user(QString const& email, QString const& password)
             QtCassandra::QCassandraRow::pointer_t id_row(users_table->row(id_key));
             QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
             id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-            QtCassandra::QCassandraValue current_identifier(id_cell->value());
+            QtCassandra::QCassandraValue const current_identifier(id_cell->value());
             if(current_identifier.nullValue())
             {
                 // this means no user can register until this value gets
@@ -3366,11 +3449,83 @@ void users::verify_email(QString const& email)
     QString const session(sessions::sessions::instance()->create_session(info));
     e.add_parameter(get_name(SNAP_NAME_USERS_VERIFY_EMAIL), session);
 
+    // to allow a "resend" without regenerating a new session, we save
+    // the session identifier--since those are short lived, it will anyway
+    // not be extremely useful, but some systems may use that once in a while
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    //if(!users_table->exists(f_user_key)) ... ?
+    QtCassandra::QCassandraValue session_value(session);
+    int64_t const ttl(86400 * 3 - 86400 / 2); // keep in the database for a little less than the session itself
+    session_value.setTtl(ttl);
+    users_table->row(email)->cell(get_name(SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->setValue(session_value);
+
     // send the email
     //
     // really this just saves it in the database, the sendmail itself
     // happens on the backend; see sendmail::on_backend_action()
     sendmail::sendmail::instance()->post_email(e);
+}
+
+
+/** \brief Resend a verification email.
+ *
+ * This function is a repeat of the verify_email() function. That is,
+ * by default it attempts to reuse the same session information to
+ * send the verification email to the user. It is generally used by
+ * an administrator who registered a user on their behalf and is told
+ * that the user did not receive their verification email.
+ *
+ * If the function is called too long after the session was created,
+ * it will be erased by Cassandra so a new session gets created
+ * instead. Unfortunately, there is no information to the end user
+ * if that happens.
+ *
+ * If the verification email is not sent, then the function returns false.
+ * This specifically happens if the users table does not have a user
+ * with the specified email.
+ *
+ * \param[in] email  The user email.
+ *
+ * \return true if the email was sent, false otherwise.
+ */
+bool users::resend_verification_email(QString const& email)
+{
+    // to allow a "resend" without regenerating a new session, we save
+    // the session identifier--since those are short lived, it will anyway
+    // not be extremely useful, but some systems may use that once in a while
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    if(!users_table->exists(email))
+    {
+        return false;
+    }
+    QString const session(users_table->row(email)->cell(get_name(SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->value().stringValue());
+    if(session.isEmpty())
+    {
+        verify_email(email);
+        return true;
+    }
+
+    sendmail::sendmail::email e;
+
+    // mark priority as High
+    e.set_priority(sendmail::sendmail::email::EMAIL_PRIORITY_HIGH);
+
+    // destination email address
+    e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
+
+    // add the email subject and body using a page
+    e.set_email_path("admin/email/users/verify");
+
+    // verification makes use of the existing session identifier
+    e.add_parameter(get_name(SNAP_NAME_USERS_VERIFY_EMAIL), session);
+
+    // send the email
+    //
+    // really this just saves it in the database, the sendmail itself
+    // happens on the backend; see sendmail::on_backend_action()
+    sendmail::sendmail::instance()->post_email(e);
+
+    return true;
 }
 
 
@@ -4087,8 +4242,9 @@ void users::on_cell_is_secure(QString const& table, QString const& row, QString 
     if(table == get_name(SNAP_NAME_USERS_TABLE))
     {
         if(cell == get_name(SNAP_NAME_USERS_PASSWORD)
-        && cell == get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)
-        && cell == get_name(SNAP_NAME_USERS_PASSWORD_SALT))
+        || cell == get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)
+        || cell == get_name(SNAP_NAME_USERS_PASSWORD_SALT)
+        || cell == get_name(SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))
         {
             // password is considered secure
             secure.mark_as_secure();
