@@ -153,7 +153,7 @@ public:
     QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
     static save_mode_t  string_to_save_mode(QString const& mode);
     static QString      clean_post_value(QString const& widget_type, QString const& value);
-    void                parse_out_inline_img(content::path_info_t& ipath, QString& body, QString const& force_filename);
+    void                parse_out_inline_img(content::path_info_t& ipath, QString& body, QDomElement widget);
     QDomDocument        get_editor_widgets(content::path_info_t& ipath);
     void                add_editor_widget_templates(QDomDocument doc);
     void                add_editor_widget_templates(QString const& doc);
@@ -174,7 +174,7 @@ private:
     void                editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info);
     void                editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info, server_access::server_access *server_access_plugin);
     void                editor_create_new_branch(content::path_info_t& ipath);
-    bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString const& force_filename);
+    bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString filename, QDomElement widget);
 
     zpsnap_child_t      f_snap;
     QDomDocument        f_editor_form;  // XSL from editor-form.xsl + other plugin extensions

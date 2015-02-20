@@ -1034,24 +1034,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     {
                         // like a string, but convert inline images too
                         QString value(post_value);
-                        // TODO: test the new implementation of
-                        //       the "force-filename"
-                        QDomNodeList attachment_tags(widget.elementsByTagName("attachment"));
-                        int const max_attachments(attachment_tags.size());
-                        if(max_attachments >= 2)
-                        {
-                            throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
-                        }
-                        QString widget_force_filename; // this one is #IMPLIED
-                        if(max_attachments == 1)
-                        {
-                            QDomElement attachment_tag(attachment_tags.at(0).toElement());
-                            if(!attachment_tag.isNull())
-                            {
-                                widget_force_filename = attachment_tag.attribute("force-filename", ""); // this one is #IMPLIED
-                            }
-                        }
-                        parse_out_inline_img(ipath, value, widget_force_filename);
+                        parse_out_inline_img(ipath, value, widget);
                         data_row->cell(field_name)->setValue(value);
                         current_value = value;
                     }
@@ -2511,7 +2494,10 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
         //
         // body may include images, transform the <img src="inline-data"/>
         // to an <img src="/images/..."/> link instead
-        parse_out_inline_img(ipath, body, "");
+        QDomDocument doc;
+        QDomElement body_widget(doc.createElement("widget"));
+        // add stuff as required by the parse_out_inline_img() -- nothing for now for the body
+        parse_out_inline_img(ipath, body, body_widget);
         // TODO: XSS filter body
         revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
     }
@@ -2529,14 +2515,34 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
  *
  * \param[in,out] ipath  The ipath to the page being modified.
  * \param[in,out] body  The HTML to be parsed and "fixed."
+ * \param[in] widget  The tag representing the widget being saved.
  */
-void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body, QString const& force_filename)
+void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body, QDomElement widget)
 {
     QDomDocument doc;
     //doc.setContent("<?xml version='1.1' encoding='utf-8'?><element>" + body + "</element>");
     doc.setContent(QString("<element>%1</element>").arg(body));
     QDomNodeList imgs(doc.elementsByTagName("img"));
 
+    // we check for a force-filename here because of the counter
+    // below which requires a name
+    QDomNodeList attachment_tags(widget.elementsByTagName("attachment"));
+    int const max_attachments(attachment_tags.size());
+    if(max_attachments >= 2)
+    {
+        throw editor_exception_too_many_tags(QString("you can have 0 or 1 attachment tag in a widget, you have %1 right now.").arg(max_attachments));
+    }
+    QString force_filename; // this one is #IMPLIED
+    if(max_attachments == 1)
+    {
+        QDomElement attachment_tag(attachment_tags.at(0).toElement());
+        if(!attachment_tag.isNull())
+        {
+            force_filename = attachment_tag.attribute("force-filename", ""); // this one is #IMPLIED
+        }
+    }
+
+    QStringList used_filenames;
     int changed(0);
     int const max_images(imgs.size());
     for(int i(0); i < max_images; ++i)
@@ -2551,10 +2557,36 @@ void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body, QS
                 // TBD: should multi-image + force_filename be an error?
                 //if(changed && !force_filename.isEmpty()) ...error...
 
-                QString ff(changed == 0
-                            ? force_filename
-                            : QString("%1-%2").arg(force_filename).arg(changed));
-                bool const valid(save_inline_image(ipath, img, src, ff));
+                // TODO: we need to extract the function from save_inline_image()
+                //       to "calculate" the proper filename, especially because
+                //       we need to force the correct extension and the current
+                //       version does not do it 100% correctly
+                QString ff(force_filename);
+                if(ff.isEmpty())
+                {
+                    ff = img.attribute("filename");
+                    if(ff.isEmpty())
+                    {
+                        ff = "image";
+                    }
+                }
+                if(used_filenames.contains(ff))
+                {
+                    int const p1(ff.lastIndexOf('.'));
+                    int const p2(ff.lastIndexOf('/'));
+                    if(p1 > p2)
+                    {
+                        // make sure to remove the extension
+                        ff = QString("%1-%2%3").arg(ff.mid(0, p1)).arg(changed).arg(ff.mid(p1));
+                    }
+                    else
+                    {
+                        // no valid extension it looks like
+                        ff = QString("%1-%2").arg(ff).arg(changed);
+                    }
+                }
+                used_filenames.push_back(ff);
+                bool const valid(save_inline_image(ipath, img, src, ff, widget));
                 if(valid)
                 {
                     ++changed;
@@ -2579,7 +2611,18 @@ void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body, QS
 }
 
 
-bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString const& force_filename)
+/** \brief Save the inline image as an attachment.
+ *
+ * This function retrieves an inline image and transforms it in an
+ * attachment to the specified path.
+ *
+ * \param[in,out] ipath  The path of the page with the image.
+ * \param[in] img  The image element being saved.
+ * \param[in] filename  The name to used to save the attachment, if empty
+ *                      save as "image.<type>"
+ * \param[in] widget  The widget being saved.
+ */
+bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString filename, QDomElement widget)
 {
     static uint32_t g_index = 0;
 
@@ -2645,14 +2688,6 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
 
     // by default we want to use the widget forced filename if defined
     // otherwise use the user defined filename
-    QString filename(force_filename);
-
-    // get the filename in lowercase, remove path, fix extension, make sure
-    // it is otherwise acceptable...
-    if(filename.isEmpty())
-    {
-        filename = img.attribute("filename");
-    }
 
     // remove the path if there is one
     int const slash(filename.lastIndexOf('/'));
@@ -2712,6 +2747,26 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     }
 //}
 
+    QString identification;
+    QDomNodeList attachment_tags(widget.elementsByTagName("attachment"));
+    int const max_attachments(attachment_tags.size());
+    QString widget_identification; // this one is #IMPLIED
+    QDomElement attachment_tag;
+    if(max_attachments == 1)
+    {
+        attachment_tag = attachment_tags.at(0).toElement();
+        if(!attachment_tag.isNull())
+        {
+            identification = attachment_tag.attribute("identification", ""); // this one is #IMPLIED
+        }
+    }
+
+    if(identification.isEmpty())
+    {
+        // TODO: should we default to attachment/private instead?
+        identification = "attachment/public";
+    }
+
     snap_child::post_file_t postfile;
     postfile.set_name("image");
     postfile.set_filename(filename);
@@ -2723,13 +2778,14 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     postfile.set_image_height(image.get_buffer(0)->get_height());
     ++g_index;
     postfile.set_index(g_index);
+
     content::attachment_file the_attachment(f_snap, postfile);
     the_attachment.set_multiple(false);
     the_attachment.set_parent_cpath(ipath.get_cpath());
     the_attachment.set_field_name("image");
     the_attachment.set_attachment_owner(attachment::attachment::instance()->get_plugin_name());
     // TODO: determine the correct attachment permission (public by default is probably wrong!)
-    the_attachment.set_attachment_type("attachment/public");
+    the_attachment.set_attachment_type(identification);
     // TODO: define the locale in some ways... for now we use "neutral"
     content::content::instance()->create_attachment(the_attachment, ipath.get_branch(), "");
 
@@ -2737,6 +2793,8 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
     //
     // TODO: this most certainly won't work if the website definition uses a path
     img.setAttribute("src", QString("/%1/%2").arg(ipath.get_cpath()).arg(filename));
+
+    new_attachment_saved(the_attachment, widget, attachment_tag);
 
     return true;
 }
