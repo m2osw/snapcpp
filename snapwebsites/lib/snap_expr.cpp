@@ -383,6 +383,57 @@ QString variable_t::get_string(QString const& name) const
 }
 
 
+QString variable_t::to_string() const
+{
+    switch(f_type)
+    {
+    case EXPR_VARIABLE_TYPE_NULL:
+        return "(null)";
+
+    case EXPR_VARIABLE_TYPE_BOOL:
+        return f_value.safeBoolValue() ? "true" : "false";
+
+    case EXPR_VARIABLE_TYPE_INT8:
+        return QString("%1").arg(f_value.safeSignedCharValue());
+
+    case EXPR_VARIABLE_TYPE_UINT8:
+        return QString("%1").arg(static_cast<int>(f_value.safeUnsignedCharValue()));
+
+    case EXPR_VARIABLE_TYPE_INT16:
+        return QString("%1").arg(f_value.safeInt16Value());
+
+    case EXPR_VARIABLE_TYPE_UINT16:
+        return QString("%1").arg(f_value.safeUInt16Value());
+
+    case EXPR_VARIABLE_TYPE_INT32:
+        return QString("%1").arg(f_value.safeInt32Value());
+
+    case EXPR_VARIABLE_TYPE_UINT32:
+        return QString("%1").arg(f_value.safeUInt32Value());
+
+    case EXPR_VARIABLE_TYPE_INT64:
+        return QString("%1").arg(f_value.safeInt64Value());
+
+    case EXPR_VARIABLE_TYPE_UINT64:
+        return QString("%1").arg(f_value.safeUInt64Value());
+
+    case EXPR_VARIABLE_TYPE_FLOAT:
+        return QString("%1").arg(f_value.safeFloatValue());
+
+    case EXPR_VARIABLE_TYPE_DOUBLE:
+        return QString("%1").arg(f_value.safeDoubleValue());
+
+    case EXPR_VARIABLE_TYPE_STRING:
+        return QString("\"%1\"").arg(f_value.stringValue());
+
+    case EXPR_VARIABLE_TYPE_BINARY:
+        return "#...TODO: binary...#";
+
+    }
+    NOTREACHED();
+}
+
+
 
 
 
@@ -1014,147 +1065,150 @@ public:
         switch(f_type)
         {
         case NODE_TYPE_UNKNOWN:
-            std::cerr << "execute: NODE_TYPE_UNKNOWN\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_UNKNOWN";
             break;
 
         case NODE_TYPE_LOADING:
-            std::cerr << "execute: NODE_TYPE_LOADING\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LOADING";
             break;
 
         case NODE_TYPE_OPERATION_LIST:
-            std::cerr << "execute: NODE_TYPE_OPERATION_LIST\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LIST";
             break;
 
         case NODE_TYPE_OPERATION_LOGICAL_NOT:
-            std::cerr << "execute: NODE_TYPE_OPERATION_LOGICAL_NOT\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LOGICAL_NOT";
             break;
 
         case NODE_TYPE_OPERATION_BITWISE_NOT:
-            std::cerr << "execute: NODE_TYPE_OPERATION_BITWISE_NOT\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_BITWISE_NOT";
             break;
 
         case NODE_TYPE_OPERATION_NEGATE:
-            std::cerr << "execute: NODE_TYPE_OPERATION_NEGATE\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_NEGATE";
             break;
 
         case NODE_TYPE_OPERATION_FUNCTION:
-            std::cerr << "execute: NODE_TYPE_OPERATION_FUNCTION -- " << f_name << "()\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_FUNCTION -- " << f_name << "()";
             break;
 
         case NODE_TYPE_OPERATION_MULTIPLY:
-            std::cerr << "execute: NODE_TYPE_OPERATION_MULTIPLY (*)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_MULTIPLY (*)";
             break;
 
         case NODE_TYPE_OPERATION_DIVIDE:
-            std::cerr << "execute: NODE_TYPE_OPERATION_DIVIDE (/)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_DIVIDE (/)";
             break;
 
         case NODE_TYPE_OPERATION_MODULO:
-            std::cerr << "execute: NODE_TYPE_OPERATION_MODULO (%)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_MODULO (%)";
             break;
 
         case NODE_TYPE_OPERATION_ADD:
-            std::cerr << "execute: NODE_TYPE_OPERATION_ADD (+)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_ADD (+)";
             break;
 
         case NODE_TYPE_OPERATION_SUBTRACT:
-            std::cerr << "execute: NODE_TYPE_OPERATION_SUBTRACT (-)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_SUBTRACT (-)";
             break;
 
         case NODE_TYPE_OPERATION_SHIFT_LEFT:
-            std::cerr << "execute: NODE_TYPE_OPERATION_SHIFT_LEFT (<<)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_SHIFT_LEFT (<<)";
             break;
 
         case NODE_TYPE_OPERATION_SHIFT_RIGHT:
-            std::cerr << "execute: NODE_TYPE_OPERATION_SHIFT_RIGHT (>>)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_SHIFT_RIGHT (>>)";
             break;
 
         case NODE_TYPE_OPERATION_LESS:
-            std::cerr << "execute: NODE_TYPE_OPERATION_LESS (<)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LESS (<)";
             break;
 
         case NODE_TYPE_OPERATION_LESS_OR_EQUAL:
-            std::cerr << "execute: NODE_TYPE_OPERATION_LESS_OR_EQUAL (<=)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LESS_OR_EQUAL (<=)";
             break;
 
         case NODE_TYPE_OPERATION_GREATER:
-            std::cerr << "execute: NODE_TYPE_OPERATION_GREATER (>)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_GREATER (>)";
             break;
 
         case NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
-            std::cerr << "execute: NODE_TYPE_OPERATION_GREATER_OR_EQUAL (>=)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_GREATER_OR_EQUAL (>=)";
             break;
 
         case NODE_TYPE_OPERATION_MINIMUM:
-            std::cerr << "execute: NODE_TYPE_OPERATION_MINIMUM (<?)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_MINIMUM (<?)";
             break;
 
         case NODE_TYPE_OPERATION_MAXIMUM:
-            std::cerr << "execute: NODE_TYPE_OPERATION_MAXIMUM (>?)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_MAXIMUM (>?)";
             break;
 
         case NODE_TYPE_OPERATION_EQUAL:
-            std::cerr << "execute: NODE_TYPE_OPERATION_EQUAL (==)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_EQUAL (==)";
             break;
 
         case NODE_TYPE_OPERATION_NOT_EQUAL:
-            std::cerr << "execute: NODE_TYPE_OPERATION_NOT_EQUAL (!=)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_NOT_EQUAL (!=)";
             break;
 
         case NODE_TYPE_OPERATION_BITWISE_AND:
-            std::cerr << "execute: NODE_TYPE_OPERATION_BITWISE_AND (&)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_BITWISE_AND (&)";
             break;
 
         case NODE_TYPE_OPERATION_BITWISE_XOR:
-            std::cerr << "execute: NODE_TYPE_OPERATION_BITWISE_XOR (^)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_BITWISE_XOR (^)";
             break;
 
         case NODE_TYPE_OPERATION_BITWISE_OR:
-            std::cerr << "execute: NODE_TYPE_OPERATION_BITWISE_OR (|)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_BITWISE_OR (|)";
             break;
 
         case NODE_TYPE_OPERATION_LOGICAL_AND:
-            std::cerr << "execute: NODE_TYPE_OPERATION_LOGICAL_AND (&&)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LOGICAL_AND (&&)";
             break;
 
         case NODE_TYPE_OPERATION_LOGICAL_XOR:
-            std::cerr << "execute: NODE_TYPE_OPERATION_LOGICAL_XOR (^^)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LOGICAL_XOR (^^)";
             break;
 
         case NODE_TYPE_OPERATION_LOGICAL_OR:
-            std::cerr << "execute: NODE_TYPE_OPERATION_LOGICAL_OR (||)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LOGICAL_OR (||)";
             break;
 
         case NODE_TYPE_OPERATION_CONDITIONAL:
-            std::cerr << "execute: NODE_TYPE_OPERATION_CONDITIONAL (?:)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_CONDITIONAL (?:)";
             break;
 
         case NODE_TYPE_OPERATION_ASSIGNMENT:
-            std::cerr << "execute: NODE_TYPE_OPERATION_ASSIGNMENT (" << f_name << ":= ...)\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_ASSIGNMENT (" << f_name << ":= ...)";
             break;
 
         case NODE_TYPE_OPERATION_VARIABLE:
-            std::cerr << "execute: NODE_TYPE_OPERATION_VARIABLE (" << f_name << ")\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_VARIABLE (" << f_name
+                << (variables.contains(f_name) ? " = " : "")
+                << (variables.contains(f_name) ? variables[f_name].to_string() : "")
+                << ")";
             break;
 
         case NODE_TYPE_LITERAL_BOOLEAN:
-            std::cerr << "execute: NODE_TYPE_LITERAL_BOOLEAN (" << (f_variable.get_bool(f_name) ? "true" : "false") << ")\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LITERAL_BOOLEAN (" << (f_variable.get_bool(f_name) ? "true" : "false") << ")";
             break;
 
         case NODE_TYPE_LITERAL_INTEGER:
-            std::cerr << "execute: NODE_TYPE_LITERAL_INTEGER (" << f_variable.get_integer(f_name) << ")\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LITERAL_INTEGER (" << f_variable.get_integer(f_name) << ")";
             break;
 
         case NODE_TYPE_LITERAL_FLOATING_POINT:
-            std::cerr << "execute: NODE_TYPE_LITERAL_FLOATING_POINT (" << f_variable.get_value().safeDoubleValue() << ")\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LITERAL_FLOATING_POINT (" << f_variable.get_value().safeDoubleValue() << ")";
             break;
 
         case NODE_TYPE_LITERAL_STRING:
-            std::cerr << "execute: NODE_TYPE_LITERAL_STRING (" << f_variable.get_string(f_name) << ")\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LITERAL_STRING (" << f_variable.get_string(f_name) << ")";
             break;
 
         case NODE_TYPE_VARIABLE:
-            std::cerr << "execute: NODE_TYPE_VARIABLE\n";
+            SNAP_LOG_TRACE() << "execute: NODE_TYPE_VARIABLE";
             break;
 
         }
@@ -4220,9 +4274,12 @@ void expr::execute(variable_t& result, variable_t::variable_map_t& variables, fu
     {
         throw snap_expr_exception_unknown_function("cannot execute an empty program");
     }
+
+    // an internal variable
     variable_t pi("pi");
     pi.set_value(M_PI);
     variables["pi"] = pi;
+
     static_cast<expr_node *>(&*f_program_tree)->execute(result, variables, functions);
 }
 

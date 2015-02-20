@@ -166,6 +166,8 @@ public:
 
     bool                                is_true() const;
 
+    QString                             to_string() const;
+
 private:
     QString                             f_name;
     safe_variable_type_t                f_type;

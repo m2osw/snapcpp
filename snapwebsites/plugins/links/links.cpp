@@ -1398,10 +1398,10 @@ void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variab
     }
 
     // if last char is '*' then the expected path is changed to
-    // expected to start with path (startWith() function instead of '==')
+    // expected to start with path (startsWith() function instead of '==')
     // (Note: we know that type_name is not an empty string)
-    bool const start_with(*(type_name.end() - 1) == '*');
-    if(start_with)
+    bool const starts_with(*(type_name.end() - 1) == '*');
+    if(starts_with)
     {
         type_name.remove(type_name.length() - 1, 1);
     }
@@ -1414,8 +1414,10 @@ void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variab
     bool r(false);
     if(link_ctxt->next_link(result_info))
     {
-        QString const expected_path(content::content::instance()->get_snap()->get_site_key_with_slash() + type_name);
-        if(start_with
+        content::path_info_t type_ipath;
+        type_ipath.set_path(type_name);
+        QString const expected_path(type_ipath.get_key());
+        if(starts_with
                 ? result_info.key().startsWith(expected_path)
                 : result_info.key() == expected_path)
         {
@@ -1427,7 +1429,7 @@ void call_linked_to(snap_expr::variable_t& result, snap_expr::variable_t::variab
             // not unique, check all the existing links
             while(link_ctxt->next_link(result_info))
             {
-                if(start_with
+                if(starts_with
                         ? result_info.key().startsWith(expected_path)
                         : result_info.key() == expected_path)
                 {
@@ -1486,7 +1488,7 @@ void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
  *              'LINK_MODE=1,*'
  * \endcode
  *
- * In order to delete a link, use the deletelink instead of createlink,
+ * In order to delete a link, use the deletelink action instead of createlink,
  * specify the name of the field, and one or two URLs as in:
  *
  * \code
