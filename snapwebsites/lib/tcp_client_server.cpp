@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tcp_client_server.h"
+
 #include "not_reached.h"
 
 #include <iostream>
@@ -265,13 +266,17 @@ std::string tcp_client::get_addr() const
  * This function retrieve the port of the client (used on your computer).
  * This is retrieved from the socket using the getsockname() function.
  *
- * \return The port.
+ * \return The port or -1 if it cannot be determined.
  */
 int tcp_client::get_client_port() const
 {
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
-    getsockname(f_socket, &addr, &len);
+    int r(getsockname(f_socket, &addr, &len));
+    if(r != 0)
+    {
+        return -1;
+    }
     // Note: I know the port is at the exact same location in both
     //       structures in Linux but it could change on other Unices
     if(addr.sa_family == AF_INET)
@@ -298,7 +303,11 @@ std::string tcp_client::get_client_addr() const
 {
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
-    getsockname(f_socket, &addr, &len);
+    int const r(getsockname(f_socket, &addr, &len));
+    if(r != 0)
+    {
+        throw tcp_client_server_runtime_error("address not available");
+    }
     char buf[BUFSIZ];
     switch(addr.sa_family)
     {
@@ -311,7 +320,7 @@ std::string tcp_client::get_client_addr() const
         break;
 
     default:
-        return "unknown.address.family";
+        throw tcp_client_server_runtime_error("unknown address family");
 
     }
     return buf;
@@ -484,8 +493,8 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
         // try to mark the socket address as immediately reusable
         // if this fails, we ignore the error (TODO log an INFO message)
         int optval(1);
-        socklen_t optlen(sizeof(optval));
-        setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen);
+        socklen_t const optlen(sizeof(optval));
+        static_cast<void>(setsockopt(f_socket, SOL_SOCKET, SO_REUSEADDR, &optval, optlen));
     }
 
     if(bind(f_socket, addr_info.f_addrinfo->ai_addr, addr_info.f_addrinfo->ai_addrlen) < 0)
@@ -702,8 +711,8 @@ int tcp_server::accept( const int max_wait_ms )
     {
         // if this fails, we ignore the error (TODO log an INFO message)
         int optval(1);
-        socklen_t optlen(sizeof(optval));
-        /*int r(*/setsockopt(f_accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen); //);
+        socklen_t const optlen(sizeof(optval));
+        static_cast<void>(setsockopt(f_accepted_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen));
     }
 
     return f_accepted_socket;
@@ -981,7 +990,11 @@ int bio_client::get_client_port() const
 {
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
-    getsockname(get_socket(), &addr, &len);
+    int const r(getsockname(get_socket(), &addr, &len));
+    if(r != 0)
+    {
+        return -1;
+    }
     // Note: I know the port is at the exact same location in both
     //       structures in Linux but it could change on other Unices
     switch(addr.sa_family)
@@ -1012,7 +1025,11 @@ std::string bio_client::get_client_addr() const
 {
     struct sockaddr addr;
     socklen_t len(sizeof(addr));
-    getsockname(get_socket(), &addr, &len);
+    int const r(getsockname(get_socket(), &addr, &len));
+    if(r != 0)
+    {
+        throw tcp_client_server_runtime_error("failed reading address");
+    }
     char buf[BUFSIZ];
     switch(addr.sa_family)
     {
@@ -1025,7 +1042,7 @@ std::string bio_client::get_client_addr() const
         break;
 
     default:
-        return "unknown.address.family";
+        throw tcp_client_server_runtime_error("unknown address family");
 
     }
     return buf;

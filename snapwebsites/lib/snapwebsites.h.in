@@ -87,6 +87,14 @@ public:
     snapwebsites_exception_invalid_parameters(QString const&     whatmsg) : snapwebsites_exception(whatmsg) {}
 };
 
+class snapwebsites_exception_io_error : public snapwebsites_exception
+{
+public:
+    snapwebsites_exception_io_error(char const *       whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_io_error(std::string const& whatmsg) : snapwebsites_exception(whatmsg) {}
+    snapwebsites_exception_io_error(QString const&     whatmsg) : snapwebsites_exception(whatmsg) {}
+};
+
 
 
 

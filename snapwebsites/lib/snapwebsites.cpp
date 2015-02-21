@@ -1298,7 +1298,12 @@ void server::udp_ping_server( const QString& udp_addr_port, char const *message 
         throw snapwebsites_exception_invalid_parameters("invalid IPv4:port specification, port missing for UDP ping");
     }
     udp_client_server::udp_client client(addr.toUtf8().data(), port.toInt());
-    client.send(message, strlen(message)); // we do not send the '\0'
+    size_t const len(strlen(message));
+    if(static_cast<size_t>(client.send(message, len)) != len) // we do not send the '\0'
+    {
+        // XXX: we need to determine whether we want to throw here
+        throw snapwebsites_exception_io_error("send failed sending all the data");
+    }
 }
 
 

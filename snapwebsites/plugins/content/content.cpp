@@ -7924,7 +7924,10 @@ void content::on_save_content()
 
             snap_child::post_file_t f;
             f.set_filename(a->f_filename);
-            f_snap->load_file(f);
+            if(!f_snap->load_file(f))
+            {
+                throw content_exception_io_error("content::on_save_content(): load_file() failed");
+            }
             file.set_file_data(f.get_data());
 
             // for images, also check the dimensions and if available

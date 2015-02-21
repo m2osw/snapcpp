@@ -1954,7 +1954,12 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                         // retrieve names of all the boxes
                         ;
 
-                    layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, dynamic_cast<layout_content *>(item_plugin));
+                    layout_content *l(dynamic_cast<layout_content *>(item_plugin));
+                    if(!l)
+                    {
+                        throw snap_logic_exception("the item_plugin pointer was not a layout_content");
+                    }
+                    layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, l);
 //std::cerr << "source to be parsed [" << item_doc.toString(-1) << "]\n";
                     QDomElement item_body(snap_dom::get_element(item_doc, "body"));
                     item_body.setAttribute("index", index);

@@ -212,6 +212,14 @@ public:
     content_exception_data_missing(QString const&     what_msg) : content_exception(what_msg) {}
 };
 
+class content_exception_io_error : public content_exception
+{
+public:
+    content_exception_io_error(char const *       what_msg) : content_exception(what_msg) {}
+    content_exception_io_error(std::string const& what_msg) : content_exception(what_msg) {}
+    content_exception_io_error(QString const&     what_msg) : content_exception(what_msg) {}
+};
+
 
 
 

@@ -315,7 +315,12 @@ public:
 
     virtual QString name() const
     {
-        return dynamic_cast<plugins::plugin *>(f_plugin)->get_plugin_name();
+        plugins::plugin *p(dynamic_cast<plugins::plugin *>(f_plugin));
+        if(!p)
+        {
+            throw std::runtime_error("plugin pointer is null (dynamic_plugin_class::name)");
+        }
+        return p->get_plugin_name();
     }
 
     virtual QScriptClassPropertyIterator *newIterator(QScriptValue const& object)
@@ -408,7 +413,12 @@ public:
         {
             throw std::runtime_error("querying the name of the iterator object when the iterator pointer is out of scope");
         }
-        return f_engine->toStringHandle(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[f_pos])->get_plugin_name());
+        plugins::plugin *p(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[f_pos]));
+        if(!p)
+        {
+            throw std::runtime_error("plugin pointer is null (javascript_plugins_iterator::name)");
+        }
+        return f_engine->toStringHandle(p->get_plugin_name());
     }
 
     virtual void next()
@@ -504,7 +514,12 @@ public:
         int const max_plugins(f_javascript->f_dynamic_plugins.size());
         for(int i(0); i < max_plugins; ++i)
         {
-            if(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i])->get_plugin_name() == temp_name)
+            plugins::plugin *p(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i]));
+            if(!p)
+            {
+                throw std::runtime_error("plugin pointer is null (plugins_class::property)");
+            }
+            if(p->get_plugin_name() == temp_name)
             {
                 QSharedPointer<dynamic_plugin_class> plugin(new dynamic_plugin_class(f_javascript, engine(), f_javascript->f_dynamic_plugins[i]));
                 f_dynamic_plugins[temp_name] = plugin;
