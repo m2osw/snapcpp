@@ -2826,7 +2826,7 @@ public:
     {
         verify_binary(sub_results);
 
-        variable_t::variable_type_t type(std::max(sub_results[0].get_type(), sub_results[1].get_type()));  // FIXME cast
+        variable_t::variable_type_t type(std::max(sub_results[0].get_type(), sub_results[1].get_type()));
 
         bool lstring_type(false), rstring_type(false);
         bool lfloating_point(false), rfloating_point(false);
@@ -2963,7 +2963,7 @@ public:
     {
         verify_binary(sub_results);
 
-        variable_t::variable_type_t type(std::max(sub_results[0].get_type(), sub_results[1].get_type()));  // FIXME cast
+        variable_t::variable_type_t type(std::max(sub_results[0].get_type(), sub_results[1].get_type()));
 
         bool lstring_type(false), rstring_type(false);
         bool lfloating_point(false), rfloating_point(false);

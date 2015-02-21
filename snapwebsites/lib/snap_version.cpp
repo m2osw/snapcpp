@@ -825,7 +825,7 @@ bool version_operator::set_operator(operator_t op)
     case OPERATOR_LATER:
     case OPERATOR_EARLIER_OR_EQUAL:
     case OPERATOR_LATER_OR_EQUAL:
-        f_operator = static_cast<int>(op); // FIXME remove cast
+        f_operator = op;
         return true;
 
     default:
@@ -1686,10 +1686,15 @@ bool dependency::is_valid() const
  * The source is expected to be UTF-8.
  */
 quick_find_version_in_source::quick_find_version_in_source()
-    : f_data(nullptr)
-    , f_end(nullptr)
+    //: f_data(nullptr) -- auto-init
+    //, f_end(nullptr) -- auto-init
+    //, f_name() -- auto-init
+    //, f_layout() -- auto-init
     //, f_version("") -- auto-init
     //, f_browsers("") -- auto-init
+    //, f_error("") -- auto-init
+    //, f_description("") -- auto-init
+    //, f_depends() -- auto-init
 {
 }
 
@@ -1984,11 +1989,11 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
  */
 int quick_find_version_in_source::getc()
 {
-    if(f_data >= f_end)
+    if(f_data.get() >= f_end.get())
     {
         return EOF;
     }
-    // note: UTF-8 can be ignored because what we're interested
+    // note: UTF-8 can be ignored because what we are interested
     //       in is using ASCII only
     return *f_data++;
 }

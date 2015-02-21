@@ -758,7 +758,7 @@ field_search::cmd_info_t::cmd_info_t()
  * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd)
-    : f_cmd(static_cast<int>(cmd)) // FIXME fix cast
+    : f_cmd(cmd)
     //, f_value(str_value)
     //, f_element() -- auto-init
     //, f_result(nullptr) -- auto-init
@@ -788,7 +788,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd)
  * \param[in] str_value  The string value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
-    : f_cmd(static_cast<int>(cmd)) // FIXME fix cast
+    : f_cmd(cmd)
     , f_value(str_value)
     //, f_element() -- auto-init
     //, f_result(nullptr) -- auto-init
@@ -830,7 +830,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
  * \param[in] int_value  The integer value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
-    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    : f_cmd(cmd)
     , f_value(int_value)
     //, f_element() -- auto-init
     //, f_result(nullptr) -- auto-init
@@ -866,7 +866,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
  * \param[in] value  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue& value)
-    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    : f_cmd(cmd)
     , f_value(value)
     //, f_element() -- auto-init
     //, f_result(nullptr) -- auto-init
@@ -894,7 +894,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue
  * \param[in] element  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
-    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    : f_cmd(cmd)
     //, f_value() -- auto-init
     , f_element(element)
     //, f_result(nullptr) -- auto-init
@@ -921,7 +921,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
  * \param[in] doc  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomDocument doc)
-    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    : f_cmd(cmd)
     //, f_value() -- auto-init
     , f_element(doc.documentElement())
     //, f_result(nullptr) -- auto-init
@@ -948,7 +948,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomDocument doc)
  * \param[in,out] result  The value attached to that instruction.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
-    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    : f_cmd(cmd)
     //, f_value() -- auto-init
     //, f_element(element)
     , f_result(&result)
@@ -975,7 +975,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
  * \param[in] ipath  A full defined path to a page.
  */
 field_search::cmd_info_t::cmd_info_t(command_t cmd, path_info_t const& ipath)
-    : f_cmd(static_cast<int>(cmd)) // XXX fix cast
+    : f_cmd(cmd)
     //, f_value() -- auto-init
     //, f_element() -- auto-init
     //, f_result(nullptr) -- auto-init
@@ -1317,7 +1317,7 @@ void field_search::run()
 
         void cmd_mode(int64_t mode)
         {
-            f_mode = static_cast<int>(mode); // XXX fix, should be a cast to mode_t
+            f_mode = static_cast<mode_t>(mode);
         }
 
         void cmd_branch_path(int64_t main_page)
@@ -3685,7 +3685,7 @@ void path_info_t::force_extended_revision(QString const& revision, QString const
         throw snap_logic_exception(QString("invalid version string (%1) in \"%2\" (force_extended_revision): not enough numbers (at least 1 required).").arg(revision).arg(filename));
     }
     f_branch = version_numbers[0];
-    f_revision = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_EXTENDED); // FIXME cast
+    f_revision = snap_version::SPECIAL_VERSION_EXTENDED;
 
     // WARNING: the revision string includes the branch
     f_revision_string = v.get_version_string();
@@ -3948,10 +3948,9 @@ snap_version::version_number_t path_info_t::get_branch(bool create_new_if_requir
 {
     if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
     {
-        // FIXME cast
         f_branch = f_main_page
-                    ? static_cast<snap_version::basic_version_number_t>(f_snap->get_branch())
-                    : static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED);
+                    ? f_snap->get_branch()
+                    : static_cast<snap_version::version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED);
 
         if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
         {
@@ -3997,8 +3996,8 @@ snap_version::version_number_t path_info_t::get_revision() const
 
         // reset values
         f_revision = f_main_page
-                    ? static_cast<snap_version::basic_version_number_t>(f_snap->get_revision())
-                    : static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED);
+                    ? f_snap->get_revision()
+                    : static_cast<snap_version::version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED);
 
         // TODO if user did not specify the locale, we still have a chance
         //      to find out which locale to use -- at this point the following
@@ -4171,8 +4170,8 @@ QString path_info_t::get_extended_revision() const
 
 void path_info_t::clear(bool keep_parameters)
 {
-    f_branch = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED); // FIXME cast
-    f_revision = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED); // FIXME cast
+    f_branch = snap_version::SPECIAL_VERSION_UNDEFINED;
+    f_revision = snap_version::SPECIAL_VERSION_UNDEFINED;
     f_revision_string.clear();
     f_locale.clear();
     f_branch_key.clear();
@@ -4861,7 +4860,7 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
                         .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
 
     // increase revision if one exists, otherwise we keep the user default (1)
-    snap_version::version_number_t branch(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH));
+    snap_version::version_number_t branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
 
     QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
 
@@ -5126,7 +5125,7 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     snap_version::version_number_t const previous_branch(
-        old_branch == static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED)
+        old_branch == snap_version::SPECIAL_VERSION_UNDEFINED
             ? branch
             : old_branch);
 
@@ -5149,7 +5148,7 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     }
 
     // increase revision if one exists, otherwise we keep the default (0)
-    snap_version::version_number_t revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    snap_version::version_number_t revision(snap_version::SPECIAL_VERSION_FIRST_REVISION);
 
     QtCassandra::QCassandraLock lock(f_snap->get_context(), key);
 
@@ -5208,8 +5207,8 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     //      also the caller will lose the lock too!
 
     if(repeat
-    && (revision != static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION)
-       || old_branch != static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED))
+    && (revision != snap_version::SPECIAL_VERSION_FIRST_REVISION
+       || old_branch != snap_version::SPECIAL_VERSION_UNDEFINED)
     && previous_revision != revision)
     {
         // get two revision keys like:
@@ -5377,7 +5376,7 @@ void content::initialize_branch(QString const& key)
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
     // *** BRANCH ***
-    snap_version::version_number_t branch_number(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH));
+    snap_version::version_number_t branch_number(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
     {
         // Last branch
         QString const last_branch_key(QString("%1::%2")
@@ -6371,7 +6370,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
         // TODO: allow editing of any branch, not just the working
         //       branch... (when using "?branch=123"...)
 
-        snap_version::version_number_t revision_number(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED));
+        snap_version::version_number_t revision_number(snap_version::SPECIAL_VERSION_UNDEFINED);
 
         if(file_exists
         && snap_version::SPECIAL_VERSION_UNDEFINED != branch_number
@@ -6410,7 +6409,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
                 branch_number = get_new_branch(attachment_ipath.get_key(), locale);
                 set_branch_key(attachment_ipath.get_key(), branch_number, true);
                 // new branches automatically get a revision of zero (0)
-                revision_number = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION);
+                revision_number = snap_version::SPECIAL_VERSION_FIRST_REVISION;
             }
             else
             {
@@ -6577,8 +6576,9 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
     //     likelihood that these exist is so small that I'll skip at this
     //     time; we do save them in the files table
 
-    // TODO: create an even for this last part because it requires JavaScript
+    // TODO: create an event for this last part because it requires JavaScript
     //       or CSS support which is not part of the base content plugin.
+
     // We depend on the JavaScript plugin so we have to do some of its
     // work here...
     if(is_js || is_css)
@@ -7535,7 +7535,7 @@ void content::set_param_type(QString const& path, QString const& name, param_typ
         throw content_exception_parameter_not_defined("no param with name \"" + path + "\" found in block \"" + path + "\"");
     }
 
-    p->f_type = static_cast<int>(param_type); // XXX fix cast
+    p->f_type = param_type;
 }
 
 
@@ -9481,7 +9481,7 @@ bool content::trash_page(path_info_t& ipath)
 
         trashcan_ipath.set_path(trashcan_path);
         trashcan_ipath.force_branch(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
-        trashcan_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+        trashcan_ipath.force_revision(snap_version::SPECIAL_VERSION_FIRST_REVISION);
 
         // TODO: would we have a language attached to the trashcan?
         //       (certainly because the title should change depending on
@@ -9518,7 +9518,7 @@ bool content::trash_page(path_info_t& ipath)
     clone_info_t destination;
     destination.f_ipath.set_path(trashcan_path);
     destination.f_ipath.force_branch(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
-    destination.f_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
+    destination.f_ipath.force_revision(snap_version::SPECIAL_VERSION_FIRST_REVISION);
     destination.f_ipath.force_locale("xx"); // TBD: should the language be set as... maybe the page being deleted?
     destination.f_processing_state.set_state(path_info_t::status_t::state_t::CREATE);
     destination.f_processing_state.set_working(path_info_t::status_t::working_t::CREATING);

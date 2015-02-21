@@ -421,7 +421,7 @@ public:
         COMMAND_RESET,                  // no parameters
         COMMAND_WARNING                 // + warning message
     };
-    typedef controlled_vars::limited_auto_init<command_t, COMMAND_UNKNOWN, COMMAND_DEFAULT_VALUE, COMMAND_UNKNOWN> safe_command_t;
+    typedef controlled_vars::limited_auto_enum_init<command_t, COMMAND_UNKNOWN, COMMAND_DEFAULT_VALUE, COMMAND_UNKNOWN> safe_command_t;
 
     enum mode_t
     {
@@ -429,7 +429,7 @@ public:
         SEARCH_MODE_EACH,             // return a list of QCassandraValue's of all the entire tree
         SEARCH_MODE_PATHS             // return a list of paths (for debug purposes usually)
     };
-    typedef controlled_vars::limited_auto_init<mode_t, SEARCH_MODE_FIRST, SEARCH_MODE_PATHS, SEARCH_MODE_FIRST> safe_mode_t;
+    typedef controlled_vars::limited_auto_enum_init<mode_t, SEARCH_MODE_FIRST, SEARCH_MODE_PATHS, SEARCH_MODE_FIRST> safe_mode_t;
 
     typedef QVector<QtCassandra::QCassandraValue> search_result_t;
     typedef QMap<QString, QString> variables_t;
@@ -607,7 +607,7 @@ public:
         dependency_list_t   f_dependencies;
     };
 
-    typedef controlled_vars::limited_auto_init<param_type_t, PARAM_TYPE_STRING, PARAM_TYPE_INT64, PARAM_TYPE_STRING> safe_param_type_t;
+    typedef controlled_vars::limited_auto_enum_init<param_type_t, PARAM_TYPE_STRING, PARAM_TYPE_INT64, PARAM_TYPE_STRING> safe_param_type_t;
 
     enum param_revision_t
     {

@@ -509,7 +509,7 @@ public:
 
 void archiver_t::file_t::set_type(type_t type)
 {
-    f_type = static_cast<int>(type);    // FIXME cast
+    f_type = type;
 }
 
 

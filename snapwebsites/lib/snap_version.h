@@ -22,8 +22,8 @@
 
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
-
-//#include <iostream>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
+#include <controlled_vars/controlled_vars_ptr_auto_init.h>
 
 #include <QVector>
 
@@ -83,7 +83,7 @@ enum operator_t
     /* <= */ OPERATOR_EARLIER_OR_EQUAL,
     /* >= */ OPERATOR_LATER_OR_EQUAL
 };
-typedef controlled_vars::limited_auto_init<operator_t, OPERATOR_UNORDERED, OPERATOR_LATER_OR_EQUAL, OPERATOR_UNORDERED> safe_operator_t;
+typedef controlled_vars::limited_auto_enum_init<operator_t, OPERATOR_UNORDERED, OPERATOR_LATER_OR_EQUAL, OPERATOR_UNORDERED> safe_operator_t;
 
 
 char const *find_extension(QString const& filename, char const **extensions);
@@ -229,16 +229,18 @@ public:
     name_vector_t const&        get_browsers() const { return f_browsers; }
     QString const&              get_description() const { return f_description; }
     dependency_vector_t const&  get_depends() const { return f_depends; }
-    bool                        is_defined() const { return f_data != NULL; }
+    bool                        is_defined() const { return f_data; }
     bool                        is_valid() const;
     QString const&              get_error() const { return f_error; }
 
 private:
+    typedef controlled_vars::ptr_auto_init<char const>    zpdata_t;
+
     int                         getc();
     QString                     get_line();
 
-    char const *                f_data;
-    char const *                f_end;
+    zpdata_t                    f_data;
+    zpdata_t                    f_end;
 
     name                        f_name;
     name                        f_layout;

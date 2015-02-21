@@ -233,7 +233,7 @@ snapwebsites.xmlToString = function(xml_object) // static
     try
     {
         // this works in case xml_object is an empty list
-        return xml_object.html();
+        return snapwebsites.castToString(xml_object.html(), "expected html() to return a string in xmlToString()");
     }
     catch(e)
     {

@@ -176,7 +176,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 2, 10, 22, 43, 45, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 2, 20, 21, 45, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -799,7 +799,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     if(switch_branch)
     {
         // force a user branch if that page still uses a system branch!
-        branch_number = static_cast<int>(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);  // FIXME cast
+        branch_number = snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH;
     }
     QString const key(ipath.get_key());
     QString const locale(ipath.get_locale());

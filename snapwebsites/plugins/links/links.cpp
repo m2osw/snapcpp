@@ -1363,7 +1363,7 @@ void links::fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_c
         if(link_owner != nullptr)
         {
             // the repair itself is exactly the same as for a cloned page,
-            // the link_owner may or may not re-create that link, voilà
+            // the link_owner may or may not re-create that link, voila
             link_owner->repair_link_of_cloned_page(destination_uri, destination_branch_number, src_li, dst_li, false);
         }
     }

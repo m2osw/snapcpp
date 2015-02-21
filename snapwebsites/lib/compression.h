@@ -19,6 +19,7 @@
 #include "snap_exception.h"
 
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
+#include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
 #include <QString>
 #include <QStringList>
@@ -97,7 +98,7 @@ public:
             FILE_TYPE_REGULAR,
             FILE_TYPE_DIRECTORY
         };
-        typedef controlled_vars::limited_auto_init<type_t, FILE_TYPE_REGULAR, FILE_TYPE_DIRECTORY, FILE_TYPE_REGULAR> safe_type_t;
+        typedef controlled_vars::limited_auto_enum_init<type_t, FILE_TYPE_REGULAR, FILE_TYPE_DIRECTORY, FILE_TYPE_REGULAR> safe_type_t;
 
         void                set_type(type_t type);
         void                set_data(QByteArray const& data);

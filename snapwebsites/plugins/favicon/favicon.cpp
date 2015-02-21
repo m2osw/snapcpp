@@ -287,7 +287,7 @@ void favicon::on_process_form_post(content::path_info_t& ipath, sessions::sessio
         spath.set_path(ipath.get_cpath() + "/" + file.get_basename());
         content::path_info_t dpath;
         dpath.set_path("types/permissions/rights/administer/website/info");
-		// TODO: this "...::direct::action::..." is probably not correct
+        // TODO: this "...::direct::action::..." is probably not correct
         QString const source_link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER));
         bool const source_unique(false);
         QString const destination_link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));

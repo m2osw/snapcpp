@@ -538,11 +538,34 @@ void users::on_process_cookies()
         }
         sessions::sessions::instance()->load_session(session_key, *f_info, false);
         QString const path(f_info->get_object_path());
-        if(f_info->get_session_type() == sessions::sessions::session_info::SESSION_INFO_VALID
-        && f_info->get_session_id() == USERS_SESSION_ID_LOG_IN_SESSION
-        && f_info->get_session_random() == random_key.toInt()
-        && f_info->get_user_agent() == f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
-        && path.left(6) == "/user/")
+        bool authenticated(true);
+        if(f_info->get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
+        {
+            SNAP_LOG_INFO("cookie refused because session is not marked as valid, ")(static_cast<int>(f_info->get_session_type()));
+            authenticated = false;
+        }
+        if(f_info->get_session_id() != USERS_SESSION_ID_LOG_IN_SESSION)
+        {
+            SNAP_LOG_INFO("cookie refused because this is not a user session, ")(f_info->get_session_id());
+            authenticated = false;
+        }
+        if(f_info->get_session_random() != random_key.toInt())
+        {
+            SNAP_LOG_INFO("cookie refused because random key ")(random_key)(" does not match ")(f_info->get_session_random());
+            authenticated = false;
+        }
+        if(f_info->get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
+        {
+            SNAP_LOG_INFO("cookie refused because user agent \"")(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
+                            ("\" does not match \"")(f_info->get_user_agent())("\"");
+            authenticated = false;
+        }
+        if(path.left(6) != "/user/")
+        {
+            SNAP_LOG_INFO("cookie refused because the path does not start with /user/, ")(path);
+            authenticated = false;
+        }
+        if(authenticated)
         {
             // this session qualifies as a log in session
             // so now verify the user
@@ -641,6 +664,7 @@ bool users::authenticated_user(QString const& key, sessions::sessions::session_i
     // called with a seemingly valid key?
     if(key.isEmpty())
     {
+        SNAP_LOG_INFO("cannot authenticate user without a key");
         return false;
     }
 
@@ -648,6 +672,7 @@ bool users::authenticated_user(QString const& key, sessions::sessions::session_i
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(!users_table->exists(key))
     {
+        SNAP_LOG_INFO("user key \"")(key)("\" was not found in the users table");
         return false;
     }
 
@@ -676,6 +701,10 @@ bool users::authenticated_user(QString const& key, sessions::sessions::session_i
     //       the user to do more
     time_t limit(info ? info->get_login_limit() : f_info->get_login_limit());
     f_user_logged_in = f_snap->get_start_time() < limit;
+    if(!f_user_logged_in)
+    {
+        SNAP_LOG_INFO("user authentication timed out");
+    }
 
     // the website may opt out of the long session scheme
     // the following loses the user key if the website
@@ -2135,7 +2164,7 @@ QString users::login_user(QString const& key, QString const& password, bool& val
                 // the other parameters were already defined in the
                 // on_process_cookies() function
                 f_info->set_object_path("/user/" + key);
-                f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (needs to become a parameter)
+                f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
                 sessions::sessions::instance()->save_session(*f_info, true); // force new random session number
 
                 http_cookie cookie(f_snap, get_user_cookie_name(), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
@@ -2532,6 +2561,7 @@ void users::process_replace_password_form()
                     //      and ask them when the user request the new password or
                     //      when he comes back in the replace password form
                     f_info->set_object_path("/user/" + f_user_changing_password_key);
+                    f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
                     sessions::sessions::instance()->save_session(*f_info, true); // force a new random session number
 
                     http_cookie cookie(f_snap, get_user_cookie_name(), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));

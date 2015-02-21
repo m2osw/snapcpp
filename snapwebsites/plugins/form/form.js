@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.2.2
+ * Version: 0.0.2.6
  * Browsers: all
  * Depends: output (>= 0.0.5), jquery-extensions (>= 1.0.1)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -96,13 +96,22 @@ snapwebsites.Form = function()
                     // simulate a click on the default button
                     jQuery(this).find("input.default-button").click();
                 }
+            })
+        .submit(function(e)
+            {
+                // TODO: verify the data as much as possible before we allow a submit
+                //       also change the default data with "" otherwise we'll be
+                //       sending the background-value to the server!?
+                if(that.submitted_)
+                {
+                    // a form is being processed, somehow we got two calls
+                    // to the submit() function, prevent the second call
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                that.submitted_ = true;
             });
-        // TODO: verify the data as much as possible before we allow a submit
-        //       also change the default data with "" otherwise we'll be
-        //       sending the background-value to the server!?
-        //.submit(function(e)
-        //    {
-        //    });
 
     return this;
 };
@@ -120,9 +129,23 @@ snapwebsites.base(snapwebsites.Form);
  * This class is a singleton and as such it makes use of a static
  * reference to itself. It gets created on load.
  *
- * \@type {snapwebsites.Form}
+ * @type {snapwebsites.Form}
  */
 snapwebsites.FormInstance = null; // static
+
+
+/** \brief A form was submitted once this is true.
+ *
+ * With a standard form and no AJAX, only one form can be submitted and
+ * it can only be submitted once. The Enter key and buttons may be double
+ * clicked and we want to avoid a possible second call so we use this
+ * flag to prevent that from happening.
+ *
+ * @type {boolean}
+ *
+ * @private
+ */
+snapwebsites.Form.prototype.submitted_ = false;
 
 
 /** \brief This function is called whenever a widget gets the focus.

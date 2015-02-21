@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.324
+ * Version: 0.0.3.325
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -2377,7 +2377,7 @@ snapwebsites.EditorWidget.prototype.wasModified = function(opt_recheck)
 {
     if(opt_recheck || !this.modified_)
     {
-        this.modified_ = snapwebsites.trim(this.originalData_) != snapwebsites.trim(this.widgetContent_.html());
+        this.modified_ = snapwebsites.trim(this.originalData_) != snapwebsites.trim(snapwebsites.castToString(this.widgetContent_.html(), "expected html() to return a string in this case"));
     }
     return this.modified_;
 };
