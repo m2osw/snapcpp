@@ -69,6 +69,7 @@
  */
 
 
+
 /** \brief Editor widget type for locale timezone settings.
  *
  * This class handles the locale timezone settings form. Mainly it ensures

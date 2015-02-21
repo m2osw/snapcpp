@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.325
+ * Version: 0.0.3.326
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -2818,7 +2818,6 @@ snapwebsites.EditorWidget.prototype.showWaitImage = function()
 
     if(!this.waitWidget_)
     {
-        //wait_image = w.children(".widget-wait-image");
         w.prepend("<div class=\"widget-wait-image\"/>");
         this.waitWidget_ = w.children(".widget-wait-image");
     }
@@ -2854,6 +2853,7 @@ snapwebsites.EditorWidget.prototype.showWaitImage = function()
     //
     //if(!this.rotateWait_)
     //{
+    //    wait_image = w.children(".widget-wait-image");
     //    this.rotateWait_ = new snapwebsites.RotateAnimation(wait_image, 30);
     //}
     //this.rotateWait_.start();
@@ -5579,7 +5579,7 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
 
     c.keydown(function(e)
         {
-            var widget = c.parent();
+            var w = c.parent();
 
             // do not prevent the Tab and Enter
             if(e.which == 9 || e.which == 13)
@@ -5589,8 +5589,8 @@ snapwebsites.EditorWidgetTypeTextEdit.prototype.initializeWidget = function(widg
 
             // TBD: we may need to allow various keys when the widget is
             //      marked as 'read-only' (i.e. Ctrl-C, arrows, etc.)
-            if(widget.is(".read-only")
-            || widget.is(".disabled"))
+            if(w.is(".read-only")
+            || w.is(".disabled"))
             {
                 // no typing allowed
                 e.preventDefault();
@@ -6127,8 +6127,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(editor_wi
     var w = editor_widget.getWidget(),
         c = editor_widget.getWidgetContent(),
         d = w.children(".dropdown-items"),
-        value,
-        widget_change;
+        value;
 
     // ignore the click if that item is disabled
     if(!selected_item.is(".disabled"))
@@ -6198,7 +6197,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(editor_wi
 snapwebsites.EditorWidgetTypeDropdown.prototype.selectItem = function(editor_widget, direction)
 {
     var w = editor_widget.getWidget(),
-        c = editor_widget.getWidgetContent(),
+        //c = editor_widget.getWidgetContent(),
         d = w.children(".dropdown-items"),
         item = d.children(".dropdown-selection").children(".dropdown-item").not(".hidden"),
         pos = item.index(item.filter(".active")),
@@ -7003,7 +7002,6 @@ snapwebsites.EditorWidgetTypeDroppedFileWithPreview.prototype.droppedAttachment 
         session = editor_form.getSession(),
         title_widget = editor_form.getWidgetByName("title"),
         name = editor_widget.getName(),
-        wait_image,
         broken_icon = jQuery(".broken-attachment-icon"),
         icon_widget = w.children(".attachment-icon");
 

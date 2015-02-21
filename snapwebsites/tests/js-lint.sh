@@ -24,7 +24,7 @@ mkdir -p $OUTPUT
 # Disable:
 #   0002 -- Missing space before "("
 #   0110 -- Line too long (over 80 characters)
-#   0120 -- Binary operator should go on previous line "&&" 
+#   0120 -- Binary operator should go on previous line "&&"
 #   0131 -- Single-quoted string preferred over double-quoted string.
 #
 

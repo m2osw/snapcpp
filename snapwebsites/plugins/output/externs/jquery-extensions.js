@@ -12,10 +12,12 @@
  * @externs
  */
 
+
 /**
  * @return {number}
  */
 jQuery.prototype.maxZIndex = function() {};
+
 
 /**
  * @return {boolean}

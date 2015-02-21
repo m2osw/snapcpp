@@ -254,6 +254,7 @@ snapwebsites.base(snapwebsites.TestPluginGroup);
  * a jQuery object which represents the group in the HTML DOM.
  *
  * @type {jQuery}
+ * @private
  */
 snapwebsites.TestPluginGroup.prototype.group_ = null;
 
@@ -332,6 +333,7 @@ snapwebsites.base(snapwebsites.TestPluginTest);
  * a jQuery object which represents the test in the HTML DOM.
  *
  * @type {jQuery}
+ * @private
  */
 snapwebsites.TestPluginTest.prototype.test_ = null;
 
@@ -543,7 +545,7 @@ snapwebsites.TestPluginManagerInstance = null; // static
 
 /** \brief The map of group objects.
  *
- * The test plugin manager retrieves the lists of groups 
+ * The test plugin manager retrieves the lists of groups
  * defined in the DOM and saves them as JavaScript objects in
  * this map.
  *
@@ -692,7 +694,7 @@ snapwebsites.TestPluginManager.prototype.runGroup = function(group_name) // abst
     this.runNextTest();
     // we return after we start the first group, it will restart once
     // we get a response from the server that the first test is done.
-}
+};
 
 
 /** \brief Call the next test that matches the group name.

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment
- * Version: 0.0.1.25
+ * Version: 0.0.1.26
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -865,8 +865,7 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
         idx,
         max,
         facility,
-        name,
-        icon;
+        name;
 
     this.sortFacilitiesByPriority();
 
@@ -924,13 +923,13 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
     // now connect to those buttons
     cart_payment.find(".epayment-facility").click(function(e)
         {
-            var name = jQuery(this).attr("name"),
-                facility = that.getPaymentFacility(snapwebsites.castToString(name, "epayment-facility tag had no 'name' attribute?"));
+            var facility_name = jQuery(this).attr("name"),
+                this_facility = that.getPaymentFacility(snapwebsites.castToString(facility_name, "epayment-facility tag had no 'name' attribute?"));
 
             e.preventDefault();
             e.stopPropagation();
 
-            facility.buttonClicked();
+            this_facility.buttonClicked();
         });
     cart_payment.find(".epayment-back").click(function(e)
         {

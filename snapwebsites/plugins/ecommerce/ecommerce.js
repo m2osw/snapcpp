@@ -1,6 +1,6 @@
 /** @preserve
  * Name: ecommerce
- * Version: 0.0.1.63
+ * Version: 0.0.1.64
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -2245,7 +2245,6 @@ snapwebsites.eCommerceCart.prototype.removeProduct = function(guid)
 {
     var i = this.products_.length,
         product_type = this.productTypes_[guid],
-        product,
         other_product_type,
         modified = false;
 

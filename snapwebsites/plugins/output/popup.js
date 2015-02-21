@@ -1,6 +1,6 @@
 /** @preserve
  * Name: popup
- * Version: 0.1.0.29
+ * Version: 0.1.0.30
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: output (0.0.5)
@@ -576,8 +576,7 @@ snapwebsites.Popup.prototype.forget = function(popup)
  */
 snapwebsites.Popup.prototype.messageBox = function(msg)
 {
-    var popup = /** @type {snapwebsites.Popup.PopupData} */ (new Object),
-        counter = 0,
+    var popup = /** @type {snapwebsites.Popup.PopupData} */ ({}),
         that = this,
         key;
 
@@ -597,7 +596,6 @@ snapwebsites.Popup.prototype.messageBox = function(msg)
     {
         if(msg.buttons.hasOwnProperty(key))
         {
-            ++counter;
             popup.html += "<a class=\"message-button\" name=\""
                     + msg.buttons[key].name
                     + "\" href=\"#\">" + msg.buttons[key].label + "</a>";

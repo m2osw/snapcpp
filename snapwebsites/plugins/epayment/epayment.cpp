@@ -18,7 +18,6 @@
 #include "epayment.h"
 
 #include "../editor/editor.h"
-//#include "../output/output.h"
 
 #include "not_reached.h"
 
@@ -1471,7 +1470,7 @@ int64_t epayment::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 10, 20, 53, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 2, 20, 22, 14, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
