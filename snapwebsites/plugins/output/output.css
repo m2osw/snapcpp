@@ -1,6 +1,6 @@
 /*
  * Name: output
- * Version: 0.0.6
+ * Version: 0.0.7
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
@@ -28,6 +28,7 @@ div.user-messages .close-button
 {
 	float: right;
 	padding: 10px 0 10px 10px;
+	cursor: pointer;
 }
 div.user-messages h3
 {

@@ -142,7 +142,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 2, 23, 13, 27, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 2, 23, 14, 30, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -153,7 +153,8 @@ int64_t output::do_update(int64_t last_updated)
  * Send our content to the database so the system can find us when a
  * user references our pages.
  *
- * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ * \param[in] variables_timestamp  The timestamp for all the variables added
+ *                        to the database by this update (in micro-seconds).
  */
 void output::content_update(int64_t variables_timestamp)
 {
