@@ -176,7 +176,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 2, 20, 22, 14, 45, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 2, 22, 23, 12, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -232,7 +232,6 @@ void editor::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
 void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
 {
     static_cast<void>(ipath);
-    static_cast<void>(metadata);
     static_cast<void>(ctemplate);
 
     QDomDocument doc(header.ownerDocument());
@@ -240,6 +239,38 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
     // TODO: find a way to include the editor only if required
     //       (it may already be done! search on add_javascript() for info.)
     content::content::instance()->add_javascript(doc, "editor");
+
+    // TODO: change the following behavior to allow editing in various
+    //       other ways than when the action is edit or administer
+    //
+    // TODO: change the way the session ID gets in the page?
+    //       (i.e. it would be better to have it go there
+    //       using an AJAX request)
+    QDomDocument editor_widgets(get_editor_widgets(ipath));
+    if(editor_widgets.isNull())
+    {
+        QString const action(f_snap->get_action());
+        if(action == "edit" || action == "administer")
+        {
+            sessions::sessions::session_info info;
+            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_FORM);
+            info.set_session_id(EDITOR_SESSION_ID_EDIT);
+            info.set_plugin_owner(get_plugin_name()); // ourselves
+            info.set_page_path(ipath.get_key());
+            //info.set_object_path();
+            info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+            info.set_time_to_live(86400);  // 24 hours
+            QString const session(sessions::sessions::instance()->create_session(info));
+            int32_t const random(info.get_session_random());
+
+            // /metadata/page_session
+            QString const session_identification(QString("%1/%2").arg(session).arg(random));
+            QDomElement session_tag(doc.createElement("page_session"));
+            QDomText session_text(doc.createTextNode(session_identification));
+            session_tag.appendChild(session_text);
+            metadata.appendChild(session_tag);
+        }
+    }
 }
 
 

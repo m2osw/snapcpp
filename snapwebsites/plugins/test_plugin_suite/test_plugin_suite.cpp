@@ -118,7 +118,6 @@ void test_list_t::add_test(QString const& name, func_t func)
         throw test_plugin_suite_already_exists(QString("Test \"%1\" already exists in the list of tests.").arg(name));
     }
 
-std::cerr << "***\nAdding test [" << name << "]\n***\n";
     f_tests[name] = func;
 }
 

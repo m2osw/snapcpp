@@ -36,7 +36,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<div id="content">
 				<!-- add the messages at the top -->
 				<xsl:call-template name="snap:user-messages"/>
-				<xsl:copy-of select="page/body/content/node()"/>
+				<div field_type="text-edit" field_name="body"><xsl:attribute name="class"><xsl:if test="$action = 'administer'">snap-editor</xsl:if></xsl:attribute>
+					 <div class="editor-content"><xsl:copy-of select="page/body/content/node()"/></div></div>
 			</div>
 			<div id="footer">Bare Footer</div>
 		</output>

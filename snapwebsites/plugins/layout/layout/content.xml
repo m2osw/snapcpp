@@ -67,7 +67,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>The cascading style sheets of the default theme.</p>]]>
     </param>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
-    <attachment name="style" type="attachment/public" owner="output">
+    <attachment name="style" type="attachment/public">
       <path>qrc:/css/layout/style.css</path>
       <mime-type>text/css</mime-type>
     </attachment>

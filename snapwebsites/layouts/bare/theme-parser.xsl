@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <!-- some special variables to define the theme -->
   <xsl:variable name="layout-name">bare</xsl:variable>
   <xsl:variable name="layout-area">theme-parser</xsl:variable>
-	<xsl:variable name="layout-modified">2014-12-03 09:44:54</xsl:variable>
+  <xsl:variable name="layout-modified">2014-12-03 09:44:54</xsl:variable>
 
   <xsl:template match="snap">
     <!--
@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <head>
         <xsl:call-template name="snap:html-header"/>
         <link rel="stylesheet" type="text/css" href="/css/bare/style.css"/>
+        <link rel="stylesheet" type="text/css" href="/css/editor/editor.css"/>
       </head>
       <xsl:apply-templates select="page/body"/>
     </html>
@@ -53,7 +54,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   </xsl:template-->
   <xsl:template match="page/body">
     <body>
-      <div class="page">
+      <div>
+        <xsl:choose>
+          <xsl:when test="/snap/head/metadata/page_session">
+            <xsl:attribute name="class">page editor-form</xsl:attribute>
+            <xsl:attribute name="form_name">page_form</xsl:attribute>
+            <xsl:attribute name="session"><xsl:value-of select="/snap/head/metadata/page_session"/></xsl:attribute>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:attribute name="class">page</xsl:attribute>
+          </xsl:otherwise>
+        </xsl:choose>
         <div class="header">
           <h1><xsl:value-of select="/snap/head/metadata/desc[@type='name']/data"/></h1>
         </div>
@@ -78,9 +89,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </div>
           <div class="content">
             <!--  contenteditable="true" -->
-            <div class="page-title snap-editor"><div class="editor-tooltip">
-                <a class="activate-editor" href="#">Edit</a> the page title.
-              </div><div><h2 class="editor-content"><xsl:choose>
+            <div class="page-title">
+              <div><h2 name="title"><xsl:choose>
                 <xsl:when test="/snap/page/body/titles/long-title">
                   <xsl:copy-of select="/snap/page/body/titles/long-title/node()"/>
                 </xsl:when>
@@ -88,11 +98,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                   <xsl:copy-of select="/snap/page/body/titles/title/node()"/>
                 </xsl:otherwise>
             </xsl:choose></h2></div></div>
-            <div class="body snap-editor"><div class="editor-tooltip">
-              <a class="activate-editor" href="#">Edit</a> the page content.
-            </div><div class="editor-content">
+            <div class="body">
               <xsl:copy-of select="output/node()"/>
-            </div></div>
+            </div>
           </div>
           <div class="clear-both"></div>
         </div>

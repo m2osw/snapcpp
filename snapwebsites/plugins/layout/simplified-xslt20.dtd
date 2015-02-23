@@ -147,6 +147,8 @@ DTD of the XSLT 2.0.
               field_name CDATA #IMPLIED
               field_type CDATA #IMPLIED
               form_name CDATA #IMPLIED
+              session CDATA #IMPLIED
+              name CDATA #IMPLIED
               invoice_number CDATA #IMPLIED
               title CDATA "">
 
@@ -162,6 +164,7 @@ DTD of the XSLT 2.0.
 
 <!ELEMENT h2 ANY>
 <!ATTLIST h2 class CDATA #IMPLIED
+             name CDATA #IMPLIED
              id ID #IMPLIED>
 
 <!ELEMENT h3 ANY>

@@ -72,7 +72,8 @@ enum name_t
     SNAP_NAME_USERS_USERNAME,
     SNAP_NAME_USERS_VERIFIED_IP,
     SNAP_NAME_USERS_VERIFIED_ON,
-    SNAP_NAME_USERS_VERIFY_EMAIL
+    SNAP_NAME_USERS_VERIFY_EMAIL,
+    SNAP_NAME_USERS_WEBSITE_REFERENCE
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -154,7 +155,7 @@ public:
 
     enum class status_t
     {
-        STATUS_UNKNOWN,         // user has a status link we do not know what it is
+        STATUS_UNKNOWN,         // user has a status link and we do not know what it is
         STATUS_UNDEFINED,       // status not known
         STATUS_NOT_FOUND,       // user does not exist in database
         STATUS_VALID,           // user is registered and verified
@@ -228,7 +229,8 @@ public:
     bool                    user_is_a_spammer();
     bool                    user_is_logged_in();
     static QString          create_password();
-    bool                    register_user(QString const& email, QString const& password);
+    status_t                register_user(QString const& email, QString const& password);
+    status_t                user_status(QString const& email, QString& status_key);
     sessions::sessions::session_info const& get_session() const;
     void                    attach_to_session(QString const& name, QString const& data);
     QString                 detach_from_session(QString const& name);
@@ -243,7 +245,6 @@ public:
     QString                 get_user_email(QString const& user_path);
     QString                 get_user_email(int64_t const identifier);
     QString                 get_user_path(QString const& email);
-    status_t                user_status(QString const& email, QString& status_key);
     bool                    resend_verification_email(QString const& email);
 
 private:

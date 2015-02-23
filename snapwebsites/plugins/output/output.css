@@ -6,6 +6,36 @@
  * License: GPL 2.0
  */
 
+/** error messages popup **/
+div.user-messages
+{
+	position: fixed;
+	margin-left: 150px;
+	top: 50px;
+	width: 550px;
+	display: none;
+	padding: 0 10px;
+	border: 2px solid #00ff00;
+	border-radius: 5px;
+	background-color: #e0ffe0;
+}
+div.user-messages.error-messages
+{
+	border: 2px solid red;
+	background-color: #ffe0e0;
+}
+div.user-messages .close-button
+{
+	float: right;
+	padding: 10px 0 10px 10px;
+}
+div.user-messages h3
+{
+	margin-top: 10px;
+	font-size: 100%;
+}
+
+
 /** fullscreen DIV to darken the background because of a pop-up **/
 #darkenPage
 {

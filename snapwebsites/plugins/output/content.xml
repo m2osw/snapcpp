@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <!--param name="layout::theme" force-namespace="no">plugins.content.modified&gt;10?"large_theme":"small_theme";</param-->
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <!-- the home page is marked as "deletable" although it is not while
          being the home page, but it could be swapped out with another page
@@ -47,6 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="sitemapxml::frequency">yearly</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <param name="content::prevent_delete" type="int8" revision="global">0</param>
   </content>
@@ -59,13 +61,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="sitemapxml::frequency">yearly</param>
     <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/page/public</link>
     <link name="permissions::direct::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
+    <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website/info</link>
     <link name="sitemapxml::include" to="sitemapxml::include" mode="1:*">/types/taxonomy/system/sitemapxml/include</link>
     <param name="content::prevent_delete" type="int8" revision="global">0</param>
   </content>
   <content path="/admin">
     <param name="content::title" revision="revision">Admin</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Administration pages are all listed here.</p>]]>
+      <![CDATA[<p>Click on a link below to access Administration pages.</p><div>[list::theme("admin")]</div>]]>
     </param>
     <!-- TODO: add the category to the key (category.title) so that way we can create a two level sort -->
     <!-- get title of the page; we need to have functions that do that with one instruction! -->
@@ -78,16 +81,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[parent(path) == "admin"]]>
     </param>
     <param name="list::selector">children</param>
-    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
     <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::direct::action::edit" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
     <link name="robotstxt::forbidden" to="robotstxt::forbidden" mode="1:*">/types/taxonomy/system/robotstxt/forbidden</link>
   </content>
   <content path="/admin/settings">
-    <param name="content::title" revision="revision">Settings</param>
+    <param name="content::title" revision="revision">Plugin Specific Settings</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Settings of all the currently installed plugins.</p>]]>
+      <![CDATA[<p>Settings specific to installed plugins:</p>[list::theme("admin/settings")]]]>
     </param>
+    <param name="list::original_item_key_script" overwrite="yes">
+      <![CDATA[(branch := int32(cell("content", page, "content::revision_control::current_branch")),
+                key := string(cell("content", page, "content::revision_control::current_revision_key::" + branch + "::en")),
+                key ? string(cell("revision", key, "content::title")) : "no title")]]>
+    </param>
+    <param name="list::original_test_script" overwrite="yes">
+      <![CDATA[parent(path) == "admin/settings"]]>
+    </param>
+    <param name="list::selector">children</param>
+    <link name="list::type" to="list::type" mode="1:*">/types/taxonomy/system/list</link>
+    <link name="content::page_type" to="content::page" mode="1:*">/types/taxonomy/system/content-types/administration-page</link>
     <link name="permissions::direct::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
   </content>
   <content path="/admin/layouts">

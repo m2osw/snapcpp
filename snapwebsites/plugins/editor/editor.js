@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.326
+ * Version: 0.0.3.331
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -1102,7 +1102,7 @@ snapwebsites.EditorBase.prototype.setActiveElement = function(element)
         }
         if(!element.is(".editor-content"))
         {
-            throw new Error("setActiveElement() must be called with a jQuery object of a content-editor object. The class attribute of this object is \"" + element.attr("class") + "\".");
+            throw new Error("setActiveElement() must be called with a jQuery object of a editor-content object. The class attribute of this object is \"" + element.attr("class") + "\".");
         }
     }
 //#endif
@@ -2163,6 +2163,9 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  * };
  * \endcode
  *
+ * \todo
+ * It looks like we are using EditorForm before it gets defined.
+ *
  * @param {snapwebsites.EditorBase} editor_base  A reference to the editor base object.
  * @param {snapwebsites.EditorForm} editor_form  A reference to the editor form object that owns this widget.
  * @param {jQuery} widget  The jQuery object representing this editor toolbar.
@@ -2179,13 +2182,13 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
     this.editorBase_ = editor_base;
     this.editorForm_ = editor_form;
     this.widget_ = widget; // this is the jQuery widget (.snap-editor)
+    this.name_ = snapwebsites.castToString(widget.attr("field_name"), "field_name attribute");
     this.widgetContent_ = widget.children(".editor-content");
     if(this.widgetContent_.length == 0)
     {
-        alert("Widget must define a tag with class \"editor-content\"");
-        throw new Error("Widget must define a tag with class \"editor-content\"");
+        alert("Widget \"" + this.name_ + "\" must define a tag with class \"editor-content\"");
+        throw new Error("Widget \"" + this.name_ + "\" must define a tag with class \"editor-content\"");
     }
-    this.name_ = snapwebsites.castToString(widget.attr("field_name"), "field_name attribute");
     // Moved to AFTER the [pre]initialization
     //this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
     this.widgetType_ = editor_base.getWidgetType(type);
@@ -2906,7 +2909,7 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  * class EditorFormBase extends ServerAccessCallbacks
  * {
  * public:
- *      function EditorFormBase(editor_base, session) : EditorFormBase;
+ *      function EditorFormBase(editor_base: EditorBase, form_widget: jQuery) : EditorFormBase;
  *      function getEditorBase() : EditorBase;
  *      function getFormWidget() : jQuery;
  *      virtual function saveData();
@@ -2914,10 +2917,10 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  *      virtual function serverAccessError(result);
  *      virtual function serverAccessComplete(result);
  *
- *      static SAVE_MODE_PUBLISH: string;
- *      static SAVE_MODE_SAVE: string;
- *      static SAVE_MODE_SAVE_NEW_BRANCH: string;
- *      static SAVE_MODE_SAVE_DRAFT: string;
+ *      static const SAVE_MODE_PUBLISH: string;
+ *      static const SAVE_MODE_SAVE: string;
+ *      static const SAVE_MODE_SAVE_NEW_BRANCH: string;
+ *      static const SAVE_MODE_SAVE_DRAFT: string;
  *
  * private:
  *      editorBase_: EditorBase;
@@ -4092,8 +4095,12 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
 {
     var that = this;
 
-    // retrieve the widgets defined in that form
-    this.widgets_ = this.getFormWidget().find(".snap-editor");
+    // retrieve the widgets defined in this form
+    //
+    // note that we ignore any widgets that appear in a sub-form that would
+    // be included in this form with the .not()
+    this.widgets_ = this.getFormWidget().find(".snap-editor")
+               .not(this.getFormWidget().find(".editor-form .snap-editor"));
 
     // retrieve the field types for all the widgets
     this.widgets_.each(function(idx, w)
@@ -4375,7 +4382,6 @@ snapwebsites.EditorForm.prototype.earlyClose = function(early_close)
  *
  *      toolbar_: EditorToolbar;
  *      editorForms_: Object;
- *      editorFormsByName_: Object;
  *      unloadCalled_: boolean;
  *      linkDialog_: EditorLinkDialog;
  * };
@@ -4395,7 +4401,6 @@ snapwebsites.Editor = function()
     document.execCommand("AutoUrlDetect", false, false);
 
     this.editorForms_ = {};
-    this.editorFormsByName_ = {};
     this.initUnload_();
     this.attachToForms_();
 
@@ -4436,23 +4441,16 @@ snapwebsites.Editor.prototype.toolbar_ = null;
 /** \brief List of EditorForm objects.
  *
  * This variable member holds the map of EditorForm objects indexed by
- * their sessions number (although those numbers are managed as strings).
+ * their name.
+ *
+ * \todo
+ * We need to ensure that all the forms have a unique name before
+ * the JavaScript is used.
  *
  * @type {Object.<snapwebsites.EditorForm>}
  * @private
  */
 snapwebsites.Editor.prototype.editorForms_; // = {}; -- initialized in the constructor to avoid problems
-
-
-/** \brief List of EditorForm objects.
- *
- * This variable member holds the map of EditorForm objects indexed by
- * their name.
- *
- * @type {Object.<snapwebsites.EditorForm>}
- * @private
- */
-snapwebsites.Editor.prototype.editorFormsByName_; // = {} -- initialized in the constructor to avoid problems
 
 
 /** \brief Whether unload is being processed.
@@ -4502,8 +4500,7 @@ snapwebsites.Editor.prototype.attachToForms_ = function()
                 session = snapwebsites.castToString(that_element.attr("session"), "editor form session attribute"),
                 name = snapwebsites.castToString(that_element.attr("form_name"), "editor form name attribute");
 
-            that.editorForms_[session] = new snapwebsites.EditorForm(that, that_element, name, session);
-            that.editorFormsByName_[name] = that.editorForms_[session];
+            that.editorForms_[name] = new snapwebsites.EditorForm(that, that_element, name, session);
         });
 };
 
@@ -4521,7 +4518,7 @@ snapwebsites.Editor.prototype.attachToForms_ = function()
  */
 snapwebsites.Editor.prototype.getFormByName = function(form_name)
 {
-    return this.editorFormsByName_[form_name];
+    return this.editorForms_[form_name];
 };
 
 
@@ -4737,20 +4734,20 @@ snapwebsites.Editor.prototype.getActiveEditorForm = function()
     var active_element = this.getActiveElement(),
         editor_element,
         editor_form = null,
-        session;
+        name;
 
     if(active_element)
     {
         editor_element = active_element.parents(".editor-form");
         if(editor_element)
         {
-            session = editor_element.attr("session");
-            editor_form = this.editorForms_[session];
+            name = editor_element.attr("form_name");
+            editor_form = this.editorForms_[name];
         }
 //#ifdef DEBUG
         if(!editor_form)
         {
-            // should not happen or it means we whacked the session element
+            // should not happen or it means we whacked the form name
             throw new Error("There is an active element but no corresponding editor form.");
         }
 //#endif

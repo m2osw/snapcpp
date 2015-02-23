@@ -1492,18 +1492,25 @@ void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
  * specify the name of the field, and one or two URLs as in:
  *
  * \code
- * snapbackend [--config snapserver.conf] --action deletelink \
+ * snapbackend your-snap.website.ext \
+ *      [--config snapserver.conf]
+ *      --action deletelink \
  *      --param SOURCE_LINK_NAME=users::author \
- *              SOURCE_LINK=http://csnap.example.com/ \
+ *              SOURCE_LINK=/ \
  *              DESTINATION_LINK_NAME=users::authored_pages \
- *              DESTINATION_LINK=http://csnap.example.com/user/1 \
+ *              DESTINATION_LINK=/user/1 \
  *              'LINK_MODE=1,*'
  *
- * snapbackend [--config snapserver.conf] --action deletelink \
+ * snapbackend your-snap.website.ext \
+ *      [--config snapserver.conf]
+ *      --action deletelink \
  *      --param SOURCE_LINK_NAME=users::author \
- *              SOURCE_LINK=http://csnap.example.com/ \
+ *              SOURCE_LINK=/ \
  *              LINK_MODE=1
  * \endcode
+ *
+ * WARNING: If you do not specify the URI of the website you want to work
+ * on, snapback runs the process against all the existing websites.
  *
  * If you have problems with this action (it does not seem to work,)
  * try with --debug and make sure to look in the syslog output.

@@ -368,6 +368,9 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "users::previous_login_on"
          || n == "users::start_date"
          || n == "users::verified_on"
+         || (f_tableName == "users" && n.startsWith("users::website_reference::"))
+         || (f_tableName == "test_results" && n == "test_plugin::end_date")
+         || (f_tableName == "test_results" && n == "test_plugin::start_date")
          || n == "finball::void_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::payment_entered_on" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::correct_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
@@ -380,8 +383,6 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::invoice_end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
-         || (f_tableName == "test_results" && n == "test_plugin::end_date")
-         || (f_tableName == "test_results" && n == "test_plugin::start_date")
          )
     {
         // 64 bit value (microseconds)

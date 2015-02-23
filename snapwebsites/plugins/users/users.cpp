@@ -226,6 +226,9 @@ const char *get_name(name_t name)
     case SNAP_NAME_USERS_VERIFY_EMAIL:
         return "users::verify_email";
 
+    case SNAP_NAME_USERS_WEBSITE_REFERENCE:
+        return "users::website_reference";
+
     default:
         // invalid index
         throw snap_logic_exception("invalid SNAP_NAME_USERS_...");
@@ -2048,7 +2051,7 @@ QString users::login_user(QString const& key, QString const& password, bool& val
 
         // existing users have a unique identifier
         QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
-        if(user_identifier.nullValue())
+        if(user_identifier.size() != sizeof(int64_t))
         {
             messages::messages::instance()->set_error(
                 "Could Not Log You In",
@@ -2073,7 +2076,18 @@ QString users::login_user(QString const& key, QString const& password, bool& val
         }
         user_logged_info_t logged_info;
         logged_info.set_identifier(user_identifier.int64Value());
-        logged_info.user_ipath().set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(logged_info.get_identifier()));
+        logged_info.user_ipath().set_path(QString("%1/%2")
+                .arg(get_name(SNAP_NAME_USERS_PATH))
+                .arg(logged_info.get_identifier()));
+
+        // although the user exists, as in, has an account on this Snap!
+        // website, that account may not be attached to this website so
+        // we need to verify that before moving further.
+        QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+        if(!content_table->exists(logged_info.user_ipath().get_key()))
+        {
+            return "it looks like you have an account on this Snap! system but not this specific website. Please register on this website and try again";
+        }
 
         // before we actually log the user in we must make sure he is
         // not currently blocked or not yet active
@@ -2329,8 +2343,10 @@ void users::process_register_form()
     // normal user would not be able to create two accounts at the
     // same time.) The email is the row key of the user table.
     QString const email(f_snap->postenv("email"));
-    if(register_user(email, f_snap->postenv("password")))
+    status_t const status(register_user(email, f_snap->postenv("password")));
+    switch(status)
     {
+    case status_t::STATUS_NEW:
         verify_email(email);
         messages->set_info(
             "We registered your account",
@@ -2339,15 +2355,36 @@ void users::process_register_form()
         // redirect the user to the verification form
         f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
-    }
-    else
-    {
+        break;
+
+    case status_t::STATUS_VALID:
+        // already exists since we found a valid entry of this user
         messages->set_error(
             "User Already Exists",
             QString("A user with email \"%1\" already exists. If it is you, then try to request a new password if you need a reminder.").arg(email),
             QString("user \"%1\" trying to register a second time.").arg(email),
             true
         );
+        break;
+
+    case status_t::STATUS_BLOCKED:
+        // already exists since we found a valid entry of this user
+        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+                "Access Denied",
+                "You are not allowed to create an account on this website.",
+                "User is blocked and doesnot have permission to create an account here.");
+        NOTREACHED();
+        break;
+
+    default:
+        // ???
+        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+                "Access Denied",
+                "You are not allowed to create an account on this website.",
+                QString("create_user() returned an unexpected status (%1).").arg(static_cast<int>(status)));
+        NOTREACHED();
+        break;
+
     }
 }
 
@@ -3226,9 +3263,15 @@ QString users::get_user_path(QString const& email)
  * \param[in] email  The email of the user. It must be a valid email address.
  * \param[in] password  The password of the user or "!".
  *
- * \return true if the user was newly created, false otherwise
+ * \return STATUS_NEW if the user was just created and a verification email
+ *         is expected to be sent to him or her;
+ *         STATUS_VALID if the user was accepted in this website and already
+ *         verified his email address;
+ *         STATUS_BLOCKED if this email address is blocked on this website
+ *         or entire Snap! environment or the user already exists but was
+ *         blocked by an administrator;
  */
-bool users::register_user(QString const& email, QString const& password)
+users::status_t users::register_user(QString const& email, QString const& password)
 {
     // make sure that the user email is valid
     f_snap->verify_email(email);
@@ -3254,6 +3297,7 @@ bool users::register_user(QString const& email, QString const& password)
         encrypt_password(digest.stringValue(), password, salt, hash);
     }
 
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
 
@@ -3262,8 +3306,12 @@ bool users::register_user(QString const& email, QString const& password)
     value.setStringValue(email);
 
     int64_t identifier(0);
+    status_t status(status_t::STATUS_NEW);
+    bool new_user(false);
     QString const id_key(get_name(SNAP_NAME_USERS_ID_ROW));
     QString const identifier_key(get_name(SNAP_NAME_USERS_IDENTIFIER));
+    QString const email_key(get_name(SNAP_NAME_USERS_ORIGINAL_EMAIL));
+    QString const user_path(get_name(SNAP_NAME_USERS_PATH));
     QtCassandra::QCassandraValue new_identifier;
     new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
@@ -3273,100 +3321,155 @@ bool users::register_user(QString const& email, QString const& password)
         QtCassandra::QCassandraLock lock(f_snap->get_context(), email);
 
         // TODO: we have to look at all the possible email addresses
-        const char *email_key(get_name(SNAP_NAME_USERS_ORIGINAL_EMAIL));
         QtCassandra::QCassandraCell::pointer_t cell(row->cell(email_key));
         cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
         QtCassandra::QCassandraValue const email_data(cell->value());
         if(!email_data.nullValue())
         {
-            // someone else already registered with that email
-            return false;
-        }
-
-        // Note that the email was already checked when coming from the Register
-        // form, however, it was check for validity as an email, not checked
-        // against a black list or verified in other ways; also the password
-        // can this way be checked by another plugin (i.e. password database)
-        content::permission_flag secure;
-        check_user_security(email, password, secure);
-        if(!secure.allowed())
-        {
-            // well... someone said "don't save that user in there"!
-            return false;
-        }
-
-        // we're the first to lock this row, the user is therefore unique
-        // so go on and register him
-
-        // Save the first email the user had when registering
-        row->cell(email_key)->setValue(value);
-
-        // In order to register the user in the contents we want a
-        // unique identifier for each user, for that purpose we use
-        // a special row in the users table and since we have a lock
-        // we can safely do a read-increment-write cycle.
-        if(users_table->exists(id_key))
-        {
-            QtCassandra::QCassandraRow::pointer_t id_row(users_table->row(id_key));
-            QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
-            id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-            QtCassandra::QCassandraValue const current_identifier(id_cell->value());
-            if(current_identifier.nullValue())
+            // TODO: move this case under the locked block since
+            //       the lock is not necessary to do this work
+            //
+            // "someone else" already registered with that email
+            // first check whether that user exists on this website
+            QtCassandra::QCassandraValue const existing_identifier(row->cell(identifier_key)->value());
+            if(existing_identifier.size() != sizeof(int64_t))
             {
                 // this means no user can register until this value gets
                 // fixed somehow!
                 messages::messages::instance()->set_error(
                     "Failed Creating User Account",
-                    "Somehow we could not generate a user identifier for your account. Please try again later.",
-                    "users::register_user() could not load the *id_row* identifier, the row exists but the cell did not make it ("
-                                 + id_key + "/" + identifier_key + ").",
+                    "Somehow we could not determine your user identifier. Please try again later.",
+                    "users::register_user() could not load the identifier of an existing user, the user seems to exist but the users::identifier cell seems wrong ("
+                                 + email + "/" + identifier_key + ").",
                     false
                 );
                 // XXX redirect user to an error page instead?
-                //     if they try again it will fail again anyway...
-                return false;
+                //     if they try again it will fail again until the
+                //     database gets fixed properly...
+                return status_t::STATUS_UNDEFINED;
             }
-            identifier = current_identifier.int64Value();
-        }
-        ++identifier;
-        new_identifier.setInt64Value(identifier);
-        users_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
+            identifier = existing_identifier.int64Value();
 
+            // okay, so the user exists on at least one website
+            // check whether it exists on this website and if not add it
+            //
+            // TBD: should we also check the cell with the website reference
+            //      in the user table? (users::website_reference::<site_key>)
+            content::path_info_t existing_ipath;
+            existing_ipath.set_path(QString("%1/%2").arg(user_path).arg(identifier));
+            if(content_table->exists(existing_ipath.get_key()))
+            {
+                // it exists, just return the current status of that existing user
+                QString ignore_status_key;
+                return user_status(email, ignore_status_key);
+            }
+            // user exists in the Snap! system but not this website
+            // so we want to add it to this website, but we will return
+            // its current status "instead" of STATUS_NEW (note that
+            // the current status could be STATUS_NEW if the user
+            // registered in another website but did not yet verify his
+            // email address.)
+            status = status_t::STATUS_VALID;
+        }
+        else
+        {
+            // Note that the email was already checked when coming from the Register
+            // form, however, it was checked for validity as an email, not checked
+            // against a black list or verified in other ways; also the password
+            // can this way be checked by another plugin (i.e. password database)
+            content::permission_flag secure;
+            check_user_security(email, password, secure);
+            if(!secure.allowed())
+            {
+                // well... someone said "do not save that user in there"!
+                return status_t::STATUS_BLOCKED;
+            }
+
+            // we are the first to lock this row, the user is therefore unique
+            // so go on and register him
+
+            // Save the first email the user had when registering
+            row->cell(email_key)->setValue(value);
+
+            // In order to register the user in the contents we want a
+            // unique identifier for each user, for that purpose we use
+            // a special row in the users table and since we have a lock
+            // we can safely do a read-increment-write cycle.
+            if(users_table->exists(id_key))
+            {
+                QtCassandra::QCassandraRow::pointer_t id_row(users_table->row(id_key));
+                QtCassandra::QCassandraCell::pointer_t id_cell(id_row->cell(identifier_key));
+                id_cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
+                QtCassandra::QCassandraValue const current_identifier(id_cell->value());
+                if(current_identifier.size() != sizeof(int64_t))
+                {
+                    // this means no user can register until this value gets
+                    // fixed somehow!
+                    messages::messages::instance()->set_error(
+                        "Failed Creating User Account",
+                        "Somehow we could not generate a user identifier for your account. Please try again later.",
+                        "users::register_user() could not load the *id_row* identifier, the row exists but the cell did not make it ("
+                                     + id_key + "/" + identifier_key + ").",
+                        false
+                    );
+                    // XXX redirect user to an error page instead?
+                    //     if they try again it will fail again until the
+                    //     database gets fixed properly...
+                    return status_t::STATUS_UNDEFINED;
+                }
+                identifier = current_identifier.int64Value();
+            }
+            ++identifier;
+            new_user = true;
+            new_identifier.setInt64Value(identifier);
+            users_table->row(id_key)->cell(identifier_key)->setValue(new_identifier);
+        }
         // the lock automatically goes away here
     }
 
     // WARNING: if this breaks, someone probably changed the value
     //          content; it should be the user email
-    users_table->row(get_name(SNAP_NAME_USERS_INDEX_ROW))->cell(new_identifier.binaryValue())->setValue(value);
+    uint64_t const created_date(f_snap->get_start_date());
+    if(new_user)
+    {
+        users_table->row(get_name(SNAP_NAME_USERS_INDEX_ROW))->cell(new_identifier.binaryValue())->setValue(value);
 
-    // Save the user identifier in his user account so we can easily find
-    // the content user for that user account/email
-    row->cell(identifier_key)->setValue(new_identifier);
+        // Save the user identifier in his user account so we can easily find
+        // the content user for that user account/email
+        row->cell(identifier_key)->setValue(new_identifier);
 
-    // Save the hashed password (never the original password!)
-    value.setBinaryValue(hash);
-    row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
+        // Save the hashed password (never the original password!)
+        value.setBinaryValue(hash);
+        row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
 
-    // Save the password salt (otherwise we couldn't check whether the user
-    // knows his password!)
-    value.setBinaryValue(salt);
-    row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
+        // Save the password salt (otherwise we couldn't check whether the user
+        // knows his password!)
+        value.setBinaryValue(salt);
+        row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
 
-    // also save the digest since it could change en-route
-    row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
+        // also save the digest since it could change en-route
+        row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
-    // Save the user IP address when registering
-    value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-    row->cell(get_name(SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
+        // Save the user IP address when registering
+        value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
+        row->cell(get_name(SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
 
-    // Date when the user was created (i.e. now)
-    uint64_t created_date(f_snap->get_start_date());
-    row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->setValue(created_date);
+        // Date when the user was created (i.e. now)
+        row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->setValue(created_date);
+    }
+
+    // Add a reference back to the website were the user is being added so
+    // that way we can generate a list of such websites in the user's account
+    // the reference appears in the cell name and the value is the time when
+    // the user registered for that website
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const website_reference(QString("%1::%2")
+            .arg(get_name(SNAP_NAME_USERS_WEBSITE_REFERENCE))
+            .arg(site_key));
+    row->cell(website_reference)->setValue(created_date);
 
     // Now create the user in the contents
     // (nothing else should be create at the path until now)
-    QString user_path(get_name(SNAP_NAME_USERS_PATH));
-    QString const site_key(f_snap->get_site_key_with_slash());
     content::path_info_t user_ipath;
     user_ipath.set_path(QString("%1/%2").arg(user_path).arg(identifier));
     content::content *content_plugin(content::content::instance());
@@ -3392,28 +3495,32 @@ bool users::register_user(QString const& email, QString const& password)
     revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(empty_string);
     revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
 
-    // The "public" user account (i.e. in the content table) is limited
-    // to the identifier at this point
-    //
-    // however, we also want to include a link defined as the status
-    // at first the user is marked as being new
-    // the destination URL is defined in the <link> content
-    QString const link_name(get_name(SNAP_NAME_USERS_STATUS));
-    bool const source_unique(true);
-    // TODO: determine whether "xx" is the correct locale here (we could also
-    //       have "" and a default website language...) -- this is the
-    //       language of the profile, not the language of the website...
-    links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch(true, "xx"));
-    QString const link_to(get_name(SNAP_NAME_USERS_STATUS));
-    bool const destination_unique(false);
-    content::path_info_t dpath;
-    dpath.set_path(get_name(SNAP_NAME_USERS_NEW_PATH));
-    links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
-    links::links::instance()->create_link(source, destination);
+    // if already marked as valid, for sure do not mark this user as new!?
+    if(status != status_t::STATUS_VALID)
+    {
+        // The "public" user account (i.e. in the content table) is limited
+        // to the identifier at this point
+        //
+        // however, we also want to include a link defined as the status
+        // at first the user is marked as being new
+        // the destination URL is defined in the <link> content
+        QString const link_name(get_name(SNAP_NAME_USERS_STATUS));
+        bool const source_unique(true);
+        // TODO: determine whether "xx" is the correct locale here (we could also
+        //       have "" and a default website language...) -- this is the
+        //       language of the profile, not the language of the website...
+        links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch(true, "xx"));
+        QString const link_to(get_name(SNAP_NAME_USERS_STATUS));
+        bool const destination_unique(false);
+        content::path_info_t dpath;
+        dpath.set_path(get_name(SNAP_NAME_USERS_NEW_PATH));
+        links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
+        links::links::instance()->create_link(source, destination);
+    }
 
     user_registered(user_ipath, identifier);
 
-    return true;
+    return status;
 }
 
 
