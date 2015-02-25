@@ -110,4 +110,11 @@ install(
 		share/snapwebsites/dtd
 )
 
+install(
+    FILES
+        editor.js
+    DESTINATION
+        share/javascript/snapwebsites/editor
+)
+
 # vim: ts=4 sw=4 et

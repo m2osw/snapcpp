@@ -16,6 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "../filter/filter.h"
 #include "../layout/layout.h"
 #include "../path/path.h"
 #include "../javascript/javascript.h"
@@ -83,6 +84,7 @@ public:
     virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     virtual void        on_generate_boxes_content(content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
     void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
 
     static QString      phone_to_uri(QString const phone, phone_number_type_t const type);
 

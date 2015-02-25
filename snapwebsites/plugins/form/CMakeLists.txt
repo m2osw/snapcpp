@@ -95,4 +95,11 @@ install(
 		share/snapwebsites/dtd
 )
 
+install(
+    FILES
+        form.js
+    DESTINATION
+        share/javascript/snapwebsites/form
+)
+
 # vim: ts=4 sw=4 et

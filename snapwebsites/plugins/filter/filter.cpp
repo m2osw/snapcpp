@@ -276,7 +276,7 @@ void filter::on_xss_filter(QDomNode& node,
  * \li [select_text("\<xpath>")] -- select content from the XML document using
  *                                  the specified \<xpath>, output as text
  * \li [date(\"format\")] -- date with format as per strftime(); without
- *                           format, use the default which is %m/%d/%Y
+ *                           format, the default depends on the locale
  * \li [version] -- version of the Snap! C++ server
  * \li [year] -- the 4-digit year when the request started
  *
@@ -284,6 +284,9 @@ void filter::on_xss_filter(QDomNode& node,
  * \param[in] plugin_owner  The plugin owning this ipath content.
  * \param[in,out] xml  The XML document where tokens are being replaced.
  * \param[in,out] token  The token object, with the token name and optional parameters.
+ *
+ * \return true if other plugins may work on the replacement, and return
+ *         false if this function already converted the token
  */
 bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token)
 {
@@ -293,6 +296,7 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
     if(token.is_token("test"))
     {
         token.f_replacement = "<span style=\"font-weight: bold;\">The Test Token Worked</span>";
+        return false;
     }
     else if(token.is_token("select") || token.is_token("select_text"))
     {
@@ -334,6 +338,7 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
                 }
             }
         }
+        return false;
     }
     else if(token.is_token("year"))
     {
@@ -342,6 +347,7 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
         struct tm time_info;
         gmtime_r(&now, &time_info);
         token.f_replacement = QString("%1").arg(time_info.tm_year + 1900);
+        return false;
     }
     else if(token.is_token("date"))
     {
@@ -349,47 +355,53 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
         {
             time_t unix_time(f_snap->get_start_time());
             QString date_format;
-            if(token.f_parameters.size() >= 1)
+            if(token.has_arg("format", 0))
             {
                 parameter_t param(token.get_arg("format", 0, TOK_STRING));
                 date_format = param.f_value;
             }
-            // TODO: that >= 2 looks wrong because if the user only
-            //       defines "unixtime => 123" it will fail!
-            if(token.f_parameters.size() >= 2)
+            if(token.has_arg("unixtime", 1))
             {
                 parameter_t param(token.get_arg("unixtime", 1, TOK_STRING));
                 bool ok(false);
                 unix_time = param.f_value.toLongLong(&ok);
+                // TODO: verify ok
             }
-            locale::locale *locale_plugin(locale::locale::instance());
-            locale_plugin->set_timezone();
-            if(date_format.isEmpty())
-            {
-                locale_plugin->set_locale();
-                token.f_replacement = locale_plugin->format_date(unix_time);
-            }
-            else
-            {
-                // TODO: we may want to offer the user to make use of a
-                //       parameter to choose between localtime() and
-                //       gmtime()...
-                struct tm t;
-                localtime_r(&unix_time, &t);
-                char buf[256];
-                strftime(buf, sizeof(buf), date_format.toUtf8().data(), &t);
-                buf[sizeof(buf) / sizeof(buf[0]) - 1] = '\0'; // make sure there is a NUL
-                token.f_replacement = QString::fromUtf8(buf);
-            }
+            token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
         }
+        return false;
+    }
+    else if(token.is_token("gmdate"))
+    {
+        if(token.verify_args(0, 2))
+        {
+            time_t unix_time(f_snap->get_start_time());
+            QString date_format;
+            if(token.has_arg("format", 0))
+            {
+                parameter_t param(token.get_arg("format", 0, TOK_STRING));
+                date_format = param.f_value;
+            }
+            if(token.has_arg("unixtime", 1))
+            {
+                parameter_t param(token.get_arg("unixtime", 1, TOK_STRING));
+                bool ok(false);
+                unix_time = param.f_value.toLongLong(&ok);
+                // TODO: verify ok
+            }
+            token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, false);
+        }
+        return false;
     }
     else if(token.is_token("version"))
     {
         token.f_replacement = SNAPWEBSITES_VERSION_STRING;
+        return false;
     }
 
     return true;
 }
+
 
 
 /** \brief Read all the XML text and replace its tokens.

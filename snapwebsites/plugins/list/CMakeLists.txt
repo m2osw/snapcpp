@@ -88,4 +88,11 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+install(
+    FILES
+        list/list.js
+    DESTINATION
+        share/javascript/snapwebsites/list
+)
+
 # vim: ts=4 sw=4 et

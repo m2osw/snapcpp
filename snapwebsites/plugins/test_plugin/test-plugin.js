@@ -1,6 +1,6 @@
 /** @preserve
  * Name: test-plugin
- * Version: 0.0.1.23
+ * Version: 0.0.1.24
  * Browsers: all
  * Depends: popup (>= 0.1.0.1), server-access (>= 0.0.1.20)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -538,7 +538,7 @@ snapwebsites.inherits(snapwebsites.TestPluginManager, snapwebsites.TestPluginMan
  * This class is a singleton and as such it makes use of a static
  * reference to itself. It gets created on load.
  *
- * \@type {snapwebsites.TestPluginManager}
+ * @type {snapwebsites.TestPluginManager}
  */
 snapwebsites.TestPluginManagerInstance = null; // static
 

@@ -1,6 +1,6 @@
 /*
  * Name: jquery-extensions
- * Version: 1.0.2
+ * Version: 1.0.3
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery (1.10)
@@ -23,4 +23,9 @@ jQuery.prototype.maxZIndex = function() {};
  * @return {boolean}
  */
 jQuery.prototype.exists = function() {};
+
+/**
+ * @return {jQuery}
+ */
+jQuery.prototype.makeButton = function() {};
 

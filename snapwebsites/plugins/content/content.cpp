@@ -8148,7 +8148,12 @@ void content::backend_process_status()
     // a site parameter so the administrator can tweak it...
     int64_t start_date(f_snap->get_start_date() - 10 * 60 * 1000000);
 
+    // only process files for the website currently being processed
     QtCassandra::QCassandraRowPredicate row_predicate;
+    QString const site_key(f_snap->get_site_key_with_slash());
+    // These are not defined in alphabetical order, unfortunately
+    //row_predicate.setStartRowName(site_key);
+    //row_predicate.setEndRowName(site_key + QtCassandra::QCassandraColumnPredicate::last_char);
     // process 100 in a row
     row_predicate.setCount(100);
     for(;;)
@@ -8164,38 +8169,46 @@ void content::backend_process_status()
         for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
                 o != rows.end(); ++o)
         {
-            path_info_t ipath;
-            ipath.set_path(QString::fromUtf8(o.key().data()));
-            if(content_table->exists(ipath.get_key())
-            && content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED)))
+            // TODO: we need to change this algorithm to run ONCE
+            //       and not once per website, that being said, we
+            //       are in a process initialized for site_key only
+            //
+            QString const key(QString::fromUtf8(o.key().data()));
+            if(key.startsWith(site_key)) // filter out other websites... (dead slow since we are reading ALL the rows to only process one website!)
             {
-                int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->value().int64Value());
-                if(last_changed < start_date)
+                path_info_t ipath;
+                ipath.set_path(key);
+                if(content_table->exists(ipath.get_key())
+                && content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED)))
                 {
-                    // we are done with that page since we just reset the
-                    // working status as expected so drop it (we do that first
-                    // so in case it gets re-created in between, we will reset
-                    // again later)
-                    processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-
-                    // it has been more than 10 minutes, reset the state
-                    path_info_t::status_t status(ipath.get_status());
-                    status.set_status(static_cast<path_info_t::status_t::status_type>(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value().uint32Value()));
-                    if(status.get_state() == path_info_t::status_t::state_t::CREATE)
+                    int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->value().int64Value());
+                    if(last_changed < start_date)
                     {
-                        // a create failed, set it to normal...
-                        // (should we instead set it to hidden?)
-                        status.set_state(path_info_t::status_t::state_t::NORMAL);
+                        // we are done with that page since we just reset the
+                        // working status as expected so drop it (we do that first
+                        // so in case it gets re-created in between, we will reset
+                        // again later)
+                        processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+
+                        // it has been more than 10 minutes, reset the state
+                        path_info_t::status_t status(ipath.get_status());
+                        status.set_status(static_cast<path_info_t::status_t::status_type>(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value().uint32Value()));
+                        if(status.get_state() == path_info_t::status_t::state_t::CREATE)
+                        {
+                            // a create failed, set it to normal...
+                            // (should we instead set it to hidden?)
+                            status.set_state(path_info_t::status_t::state_t::NORMAL);
+                        }
+                        status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
+                        ipath.set_status(status);
                     }
-                    status.set_working(path_info_t::status_t::working_t::NOT_WORKING);
-                    ipath.set_status(status);
                 }
-            }
-            else
-            {
-                // the row was deleted in between... or something of
-                // the sort, just ignore that entry altogether
-                processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                else
+                {
+                    // the row was deleted in between... or something of
+                    // the sort, just ignore that entry altogether
+                    processing_table->dropRow(ipath.get_key(), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                }
             }
         }
     }
@@ -8254,6 +8267,15 @@ void content::backend_process_files()
 {
     SNAP_LOG_TRACE() << "backend_process: Content file processing (check for viruses, etc.)";
 
+    // TODO: look into a way to either handle all the files from
+    //       all the sites all at once, or filter in a different
+    //       way (instead of reading all and then only working
+    //       on a few)
+
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QByteArray const site_key_buffer(site_key.toUtf8());
+    char const *site_key_utf8(site_key_buffer.data());
+
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -8276,6 +8298,7 @@ void content::backend_process_files()
             // get the email from the database
             // we expect empty values once in a while because a dropCell() is
             // not exactly instantaneous in Cassandra
+            bool drop_row(true);
             QtCassandra::QCassandraCell::pointer_t new_cell(*nc);
             if(!new_cell->value().nullValue())
             {
@@ -8287,7 +8310,7 @@ void content::backend_process_files()
                 reference_column_predicate.setEndColumnName(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
                 reference_column_predicate.setCount(100);
                 reference_column_predicate.setIndex(); // behave like an index
-                bool first(true); // load the image only once for now
+                bool first(true); // load the files only once each
                 permission_flag secure;
                 for(;;)
                 {
@@ -8312,50 +8335,75 @@ void content::backend_process_files()
                             QByteArray attachment_key(content_cell->columnKey().data() + (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2),
                                      static_cast<int>(content_cell->columnKey().size() - (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2)));
 
-                            if(first)
+                            int8_t const reference_value(content_cell->value().signedCharValue());
+                            if(attachment_key.startsWith(site_key_utf8))
                             {
-                                first = false;
-
-                                attachment_file file(f_snap);
-                                if(!load_attachment(attachment_key, file, true))
+                                // if not 1, then it was already checked
+                                if(reference_value == 1)
                                 {
-                                    signed char const sflag(CONTENT_SECURE_UNDEFINED);
-                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
-                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
-                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString("Attachment could not be loaded."));
-
-                                    // TODO generate an email about the error...
-                                }
-                                else
-                                {
-                                    check_attachment_security(file, secure, false);
-
-                                    // always save the secure flag
-                                    signed char const sflag(secure.allowed() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_INSECURE);
-                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
-                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
-                                    file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(secure.reason());
-
-                                    if(secure.allowed())
+                                    if(first)
                                     {
-                                        // only process the attachment further if it is
-                                        // considered secure
-                                        process_attachment(file_key, file);
+                                        first = false;
+
+                                        attachment_file file(f_snap);
+                                        if(!load_attachment(attachment_key, file, true))
+                                        {
+                                            signed char const sflag(CONTENT_SECURE_UNDEFINED);
+                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
+                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
+                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString("Attachment could not be loaded."));
+
+                                            // TODO generate an email about the error...
+                                        }
+                                        else
+                                        {
+                                            check_attachment_security(file, secure, false);
+
+                                            // always save the secure flag
+                                            signed char const sflag(secure.allowed() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_INSECURE);
+                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
+                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
+                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(secure.reason());
+
+                                            if(secure.allowed())
+                                            {
+                                                // only process the attachment further if it is
+                                                // considered secure
+                                                process_attachment(file_key, file);
+                                            }
+                                        }
                                     }
+                                    if(!secure.allowed())
+                                    {
+                                        // TODO: warn the author that his file was
+                                        //       quanranteened and will not be served
+                                        //...sendmail()...
+                                    }
+
+                                    // mark that reference as checked
+                                    int8_t const reference_checked(2);
+                                    content_cell->setValue(reference_checked);
                                 }
                             }
-                            if(!secure.allowed())
+                            else
                             {
-                                // TODO: warn the author that his file was
-                                //       quanranteened and will not be served
-                                //...sendmail()...
+                                // check whether all references were checked
+                                // because if not we need to not drop that
+                                // row (not yet)
+                                if(reference_value == 1)
+                                {
+                                    drop_row = false;
+                                }
                             }
                         }
                     }
                 }
             }
-            // we're done with that file, remove it from the list of new files
-            new_row->dropCell(new_cell->columnKey());
+            // we are done with that file, remove it from the list of new files
+            if(drop_row)
+            {
+                new_row->dropCell(new_cell->columnKey());
+            }
         }
     }
 }
@@ -8456,7 +8504,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
     //       the whole process fails even if by not using the latest
     //       would have worked
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setCount(10); // small because we are really only interested by the first 1 unless marked as insecure
+    column_predicate.setCount(10); // small because we generally really only are interested by the first 1 unless marked as insecure or not yet updated on that website
     column_predicate.setIndex(); // behave like an index
     column_predicate.setStartColumnName(name + "`"); // start/end keys are reversed
     column_predicate.setEndColumnName(name + "_");
@@ -8540,7 +8588,13 @@ void content::add_javascript(QDomDocument doc, QString const& name)
             QtCassandra::QCassandraCells const ref_cells(row->cells());
             if(ref_cells.isEmpty())
             {
-                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has no reference back to ")(site_key);
+                // this is not an error, it happens that a website is not
+                // 100% fully updated and when that happens, we get this
+                // error; we continue and try to read the next (one before
+                // last) file and see whether that one is satisfactory...
+                // the process continues untill all the versions of
+                // a file were checked
+                SNAP_LOG_WARNING("file referenced as JavaScript \"")(name)("\" has no reference back to ")(site_key)(" (this happens if your website is not 100% up to date)");
                 continue;
             }
             // the key of this cell is the path we want to use to the file

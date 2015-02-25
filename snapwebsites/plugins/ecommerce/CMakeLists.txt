@@ -89,4 +89,12 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+install(
+    FILES
+        ecommerce.js
+        ecommerce-cart.js
+    DESTINATION
+        share/javascript/snapwebsites/ecommerce
+)
+
 # vim: ts=4 sw=4 et

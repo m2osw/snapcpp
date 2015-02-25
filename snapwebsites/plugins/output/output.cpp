@@ -17,6 +17,7 @@
 
 #include "output.h"
 
+#include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 
 #include "not_reached.h"
@@ -92,6 +93,7 @@ void output::on_bootstrap(snap_child *snap)
     f_snap = snap;
 
     SNAP_LISTEN(output, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(output, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 }
 
 
@@ -484,6 +486,74 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         }
 
         content::content::instance()->add_javascript(page.ownerDocument(), "output");
+    }
+}
+
+
+/** \brief Replace a token with a corresponding value.
+ *
+ * This function replaces the content tokens with their value. In some cases
+ * the values were already computed in the XML document, so all we have to
+ * do is query the XML and return the corresponding value.
+ *
+ * The supported tokens are:
+ *
+ * \li content::created -- the date when this page was created
+ *
+ * \param[in,out] ipath  The path to the page being worked on.
+ * \param[in] plugin_owner  The plugin that owns this ipath content.
+ * \param[in,out] xml  The XML document used with the layout.
+ * \param[in,out] token  The token object, with the token name and optional parameters.
+ */
+void output::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+{
+    static_cast<void>(ipath);
+    static_cast<void>(plugin_owner);
+    static_cast<void>(xml);
+
+    if(!token.is_namespace("content::"))
+    {
+        // not a users plugin token
+        return;
+    }
+
+    if(token.is_token("content::created"))
+    {
+        if(token.verify_args(0, 1))
+        {
+            content::content *content(content::content::instance());
+            QtCassandra::QCassandraTable::pointer_t content_table(content->get_content_table());
+            int64_t const created_date(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
+            time_t const unix_time(created_date / 1000000); // transform to seconds
+            QString date_format;
+            if(token.has_arg("format", 0))
+            {
+                filter::filter::parameter_t param(token.get_arg("format", 0, filter::filter::TOK_STRING));
+                date_format = param.f_value;
+            }
+            token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
+        }
+        return;
+    }
+
+    if(token.is_token("content::last_updated"))
+    {
+        if(token.verify_args(0, 1))
+        {
+            // last updated is the date when the last revision was created
+            content::content *content(content::content::instance());
+            QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
+            int64_t const created_date(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
+            time_t const unix_time(created_date / 1000000); // transform to seconds
+            QString date_format;
+            if(token.has_arg("format", 0))
+            {
+                filter::filter::parameter_t param(token.get_arg("format", 0, filter::filter::TOK_STRING));
+                date_format = param.f_value;
+            }
+            token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
+        }
+        return;
     }
 }
 

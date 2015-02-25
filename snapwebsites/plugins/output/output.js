@@ -1,6 +1,6 @@
 /** @preserve
  * Name: output
- * Version: 0.1.5.69
+ * Version: 0.1.5.70
  * Browsers: all
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
  * Depends: jquery-extensions (1.0.1)
@@ -378,7 +378,7 @@ snapwebsites.htmlEscape = function(str) // static
  * As you can see the function doesn't do anything to the parameter,
  * only the closure compiler sees a "string" coming out.
  *
- * @param {Object|string|number} s  Expects a string as input.
+ * @param {Object|string|number|boolean} s  Expects a string as input.
  * @param {string} e  An additional error message in case it fails.
  *
  * @return {string}  The input string after making sure it is a string.
@@ -404,7 +404,7 @@ snapwebsites.castToString = function(s, e) // static
  * As you can see the function doesn't do anything to the parameter,
  * only the closure compiler sees a "number" coming out.
  *
- * @param {Object|string|number} n  Expects a number as input.
+ * @param {Object|string|number|boolean} n  Expects a number as input.
  * @param {string} e  An additional error message in case it fails.
  *
  * @return {number}  The input number after making sure it is a number.

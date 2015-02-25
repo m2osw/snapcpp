@@ -226,7 +226,7 @@ void antivirus::on_check_attachment_security(content::attachment_file const& fil
     p.add_argument("--infected");
     p.add_argument("--log=" + log_path + "/antivirus.log");
     p.add_argument("-");
-    p.set_input(file.get_file().get_data());
+    p.set_input(file.get_file().get_data()); // pipe data in
     p.run();
     QString const output(p.get_output(true));
 

@@ -29,7 +29,7 @@ mailinglist: core content	; @echo $@
 menu: layout content output	; @echo $@
 messages: core	; @echo $@
 mimetype: output	; @echo $@
-output: javascript layout messages path	; @echo $@
+output: filter javascript layout messages path	; @echo $@
 path: content links messages server_access	; @echo $@
 permissions: layout messages output users	; @echo $@
 robotstxt: content layout path	; @echo $@

@@ -1866,7 +1866,11 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
 //#ifdef DEBUG
 //SNAP_LOG_TRACE() << "url decode?! [" << uri << "]";
 //#endif
-                    throw snap_uri_exception_invalid_uri(QString("urldecode(%1, %2) failed because of an invalid %%xx character (digits are %3 / %4)").arg(uri).arg(relax ? "true" : "false").arg(static_cast<int>(u[0])).arg(static_cast<int>(u[1])));
+                    throw snap_uri_exception_invalid_uri(QString("urldecode(\"%1\", %2) failed because of an invalid %%xx character (digits are %3 / %4)")
+                            .arg(uri)
+                            .arg(relax ? "true" : "false")
+                            .arg(static_cast<int>(u[0]))
+                            .arg(static_cast<int>(u[1])));
                 }
                 // use the % as is
                 utf8 += '%';
@@ -1892,7 +1896,11 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
 //#ifdef DEBUG
 //SNAP_LOG_TRACE() << "url decode?! [" << uri << "] (2)";
 //#endif
-                    throw snap_uri_exception_invalid_uri(QString("urldecode(%1, %2) failed because of an invalid %%xx character (digits are %3 / %4)").arg(uri).arg(relax ? "true" : "false").arg(static_cast<int>(u[0])).arg(static_cast<int>(u[1])));
+                    throw snap_uri_exception_invalid_uri(QString("urldecode(\"%1\", %2) failed because of an invalid %%xx character (digits are %3 / %4)")
+                                .arg(uri)
+                                .arg(relax ? "true" : "false")
+                                .arg(static_cast<int>(u[0]))
+                                .arg(static_cast<int>(u[1])));
                 }
                 // use the % as is
                 utf8 += c;
@@ -1919,7 +1927,10 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
 //#ifdef DEBUG
 //SNAP_LOG_TRACE() << "url decode?! found an invalid characters [" << uri << "] (3)";
 //#endif
-            throw snap_uri_exception_invalid_uri(QString("urldecode(%1, %2) failed because of an invalid character (%3)").arg(uri).arg(relax ? "true" : "false").arg(static_cast<int>(*u)));
+            throw snap_uri_exception_invalid_uri(QString("urldecode(\"%1\", %2) failed because of an invalid character (%3)")
+                            .arg(uri)
+                            .arg(relax ? "true" : "false")
+                            .arg(static_cast<int>(*u)));
         }
     }
 

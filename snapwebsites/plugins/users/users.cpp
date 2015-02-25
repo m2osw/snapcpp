@@ -4268,6 +4268,8 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
             // TBD: not sure right now how we'll offer those
             //      probably with a special path that tells us
             //      to go look in the users' table
+            //
+            //      We may also want to use the Avatar instead
             token.f_replacement = QString("<img src=\"...\"/>");
         }
     }

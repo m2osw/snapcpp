@@ -666,6 +666,58 @@ QString locale::format_time(time_t d)
 }
 
 
+/** \brief Format a Unix date.
+ *
+ * This function uses the date_format string to format a unix date and
+ * time in a string.
+ *
+ * If the date_format parameter is empty, then the default locale date
+ * format is used. In that case, the string will not include the time.
+ * You may also call the format_date() function directly if you know
+ * that date_format is always going to be empty, however, this function
+ * will call set_timezone() and set_locale() for you, whereas, the
+ * plain format_date(d) function does not.
+ *
+ * \warning
+ * This function calls the set_timezone() and may call the set_locale()
+ * functions setting up the timezone and locale of the plugin.
+ *
+ * \param[in] date_format  The format to use as defined in strftime().
+ * \param[in] unix_time  The time to convert.
+ * \param[in] use_locale  Whether to use the localtime() or gmtime() function.
+ *
+ * \return The formatted date.
+ */
+QString locale::format_date(time_t d, QString date_format, bool use_locale)
+{
+    // prepare outselves if not yet ready...
+    set_timezone();
+
+    if(date_format.isEmpty())
+    {
+        set_locale();
+        return format_date(d);
+    }
+
+    // TBD: I think we can use a format string with the ICU library
+    //      but right now I'm copy/paste-ing some code...
+    struct tm t;
+    if(use_locale)
+    {
+        localtime_r(&d, &t);
+    }
+    else
+    {
+        gmtime_r(&d, &t);
+    }
+
+    char buf[256];
+    strftime(buf, sizeof(buf), date_format.toUtf8().data(), &t);
+    buf[sizeof(buf) / sizeof(buf[0]) - 1] = '\0'; // make sure there is a NUL
+    return QString::fromUtf8(buf);
+}
+
+
 //
 // A reference of the library ICU library can be found here:
 // /usr/include/x86_64-linux-gnu/unicode/timezone.h

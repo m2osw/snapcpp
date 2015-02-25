@@ -116,6 +116,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(set_timezone, (), (), START_AND_DONE);
 
     QString                     format_date(time_t d);
+    QString                     format_date(time_t d, QString date_format, bool use_locale);
     QString                     format_time(time_t d);
 
 private:

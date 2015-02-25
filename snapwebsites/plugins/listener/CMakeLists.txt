@@ -92,4 +92,11 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+install(
+    FILES
+        listener.js
+    DESTINATION
+        share/javascript/snapwebsites/listener
+)
+
 # vim: ts=4 sw=4 et

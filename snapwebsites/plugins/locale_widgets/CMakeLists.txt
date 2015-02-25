@@ -86,4 +86,11 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+install(
+    FILES
+        locale-timezone.js
+    DESTINATION
+        share/javascript/snapwebsites/locale_widgets
+)
+
 # vim: ts=4 sw=4 et

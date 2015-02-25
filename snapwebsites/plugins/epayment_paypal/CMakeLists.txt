@@ -95,4 +95,11 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+install(
+    FILES
+        epayment-paypal.js
+    DESTINATION
+        share/javascript/snapwebsites/epayment_paypal
+)
+
 # vim: ts=4 sw=4 et

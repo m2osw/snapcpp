@@ -101,4 +101,23 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+install(
+    FILES
+        jquery-extensions.js
+        output.js
+        popup.js
+        jquery-rotate.js
+        rotate-animation.js
+        jquery.js
+    DESTINATION
+        share/javascript/snapwebsites/output
+)
+install(
+    FILES
+        externs/jquery-extensions.js
+        externs/jquery-rotate.js
+    DESTINATION
+        share/javascript/snapwebsites/externs
+)
+
 # vim: ts=4 sw=4 et

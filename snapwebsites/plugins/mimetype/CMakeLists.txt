@@ -172,4 +172,11 @@ install(
 )
 
 
+install(
+    FILES
+        mimetype-basics.js
+    DESTINATION
+        share/javascript/snapwebsites/mimetype
+)
+
 # vim: ts=4 sw=4 et

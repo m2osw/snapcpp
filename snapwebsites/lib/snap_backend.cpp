@@ -425,7 +425,7 @@ void snap_backend::run_backend()
             for(;;)
             {
                 sites_table->clearCache();
-                uint32_t count(sites_table->readRows(row_predicate));
+                uint32_t const count(sites_table->readRows(row_predicate));
                 if(count == 0)
                 {
                     // we reached the end of the whole table
@@ -477,7 +477,7 @@ std::string snap_backend::get_signal_name_from_action(QString const& action)
         NOTREACHED();
     }
 
-    const pid_t p = fork_child();
+    pid_t const p(fork_child());
     if(p != 0)
     {
         // no need for the write side here
@@ -628,7 +628,7 @@ void snap_backend::process_backend_uri(QString const& uri)
         return;
     }
     // same as in normal server process -- should it change for each iteration?
-    // (i.e. we're likely to run the backend process for each website of this
+    // (i.e. we are likely to run the backend process for each website of this
     // Cassandra instance!)
     // TODO: make sure this is not used anywhere anymore and then remove
     //       it; it is a lot faster to use f_snap->get_start_date()
@@ -701,6 +701,9 @@ void snap_backend::process_backend_uri(QString const& uri)
         // thus we do not need a thread here
         p_server->backend_process();
     }
+
+    // the child just dies now, it served its purpose
+    exit(0);
 }
 
 

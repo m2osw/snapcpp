@@ -835,6 +835,7 @@ int64_t images::transform_images()
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
     files_table->clearCache();
     QtCassandra::QCassandraRow::pointer_t images_row(files_table->row(get_name(SNAP_NAME_IMAGES_ROW)));
+    QString const site_key(f_snap->get_site_key_with_slash());
 
     // we use a smaller number (100) instead of a larger number (1000)
     // in case the user makes changes we are more likely to catch the
@@ -886,6 +887,11 @@ int64_t images::transform_images()
             }
 
             QString const image_key(QtCassandra::stringValue(key, sizeof(int64_t)));
+            if(image_key.startsWith(site_key))
+            {
+                // "wrong" site, ignore this entry on this run
+                continue;
+            }
 SNAP_LOG_INFO() << "image path from key [" << image_key << "]";
 
             // print out the row being worked on

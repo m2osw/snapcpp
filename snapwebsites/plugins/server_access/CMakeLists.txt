@@ -83,4 +83,11 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+install(
+    FILES
+        server-access.js
+    DESTINATION
+        share/javascript/snapwebsites/server_access
+)
+
 # vim: ts=4 sw=4 et

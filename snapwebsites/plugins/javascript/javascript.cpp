@@ -619,7 +619,7 @@ SNAP_LOG_TRACE() << "javascript: result = " << engine.hasUncaughtException() << 
  */
 void javascript::on_process_attachment(QByteArray const& file_key, content::attachment_file const& file)
 {
-    // TODO: got to write the minimizer if I cannot find one in C/C++
+    // TODO: got to finish the as2js compiler...
     (void)file_key;
     (void)file;
 }

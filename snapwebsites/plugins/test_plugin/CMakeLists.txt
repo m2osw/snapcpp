@@ -77,4 +77,11 @@ install(
     FILES_MATCHING PATTERN "*.h"
 )
 
+install(
+    FILES
+        test-plugin.js
+    DESTINATION
+        share/javascript/snapwebsites/test_plugin
+)
+
 # vim: ts=4 sw=4 et
