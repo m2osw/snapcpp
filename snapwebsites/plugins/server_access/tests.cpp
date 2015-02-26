@@ -26,10 +26,8 @@
 
 #include "poison.h"
 
-namespace snap
-{
-namespace server_access
-{
+SNAP_PLUGIN_EXTENSION_START(server_access)
+
 
 SNAP_TEST_PLUGIN_SUITE(server_access)
     SNAP_TEST_PLUGIN_TEST(server_access, test_ajax)
@@ -44,7 +42,6 @@ SNAP_TEST_PLUGIN_TEST_IMPL(server_access, test_ajax)
 }
 
 
-} // namespace server_access
-} // namespace snap
+SNAP_PLUGIN_EXTENSION_END()
 
 // vim: ts=4 sw=4 et

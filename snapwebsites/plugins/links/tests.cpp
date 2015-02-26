@@ -28,10 +28,8 @@
 
 #include "poison.h"
 
-namespace snap
-{
-namespace links
-{
+SNAP_PLUGIN_EXTENSION_START(links)
+
 
 SNAP_TEST_PLUGIN_SUITE(links)
     SNAP_TEST_PLUGIN_TEST(links, test_unique_unique_create_delete)
@@ -513,7 +511,6 @@ SNAP_TEST_PLUGIN_TEST_IMPL(links, test_multiple_multiple_create_delete)
 }
 
 
-} // namespace links
-} // namespace snap
+SNAP_PLUGIN_EXTENSION_END()
 
 // vim: ts=4 sw=4 et

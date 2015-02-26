@@ -150,11 +150,11 @@ bool                    verify_plugin_name(QString const& name);
  * level plugins won't do that, they still need resources.)
  *
  * \note
- * If you create multiple source files to implement your plugin
+ * If you create multiple .cpp files to implement your plugin
  * only one can use the SNAP_PLUGIN_START()/SNAP_PLUGIN_END()
  * macros. Otherwise you'd create multiple factories. In the
- * other files, make sure to define your code inside namespace
- * snap and namespace \<name> (like you do in your header file.)
+ * other files, make use of the SNAP_PLUGIN_EXTENSION_START()
+ * and SNAP_PLUGIN_EXTENSION_END() macros instead.
  *
  * \todo
  * Look in a way to avoid the qInitResources_... if the plugin
@@ -182,6 +182,7 @@ bool                    verify_plugin_name(QString const& name);
     private: name *f_plugin; \
     } g_plugin_##name##_factory;
 
+
 /** \brief The counter part of the SNAP_PLUGIN_START() macro.
  *
  * This macro is used to close the namespaces opened by the
@@ -190,6 +191,45 @@ bool                    verify_plugin_name(QString const& name);
  */
 #define SNAP_PLUGIN_END() \
     }} // close namespaces
+
+
+/** \brief Initialize an extension (.cpp) file of a plugin.
+ *
+ * At time a plugin is really large. In order to write the plugin
+ * in multiple .cpp files, you need to have a start and an end in
+ * each file. Only one of the files can define the plugin factory
+ * and use the SNAP_PLUGIN_START() macro. The other files want
+ * to use this macro:
+ *
+ * \code
+ * SNAP_PLUGIN_EXTENSION_START(plugin_name)
+ * \endcode
+ *
+ * Replace \<plugin_name> with the name of your plugin. It has to
+ * be the same in all the files.
+ *
+ * At the end of your implementation extension you have to add the
+ * SNAP_PLUGIN_EXTENSION_END() macro to close the namespaces that the
+ * start macro automatically adds.
+ *
+ * \param[in] name  The name of the plugin.
+ */
+#define SNAP_PLUGIN_EXTENSION_START(name) \
+    namespace snap { namespace name {
+
+
+/** \brief End the extension (.cpp) file of a plugin.
+ *
+ * When you started a .cpp file with the SNAP_PLUGIN_EXTENSION_START()
+ * then you want to end it with the SNAP_PLUGIN_EXTENSION_END() macro.
+ *
+ * \code
+ * SNAP_PLUGIN_EXTENSION_END()
+ * \endcode
+ */
+#define SNAP_PLUGIN_EXTENSION_END() \
+    }} // close namespaces
+
 
 /** \brief Conditionally listen to a signal.
  *
