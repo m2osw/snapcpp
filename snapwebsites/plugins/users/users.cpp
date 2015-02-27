@@ -554,8 +554,16 @@ void users::on_process_cookies()
         }
         if(f_info->get_session_random() != random_key.toInt())
         {
-            SNAP_LOG_INFO("cookie refused because random key ")(random_key)(" does not match ")(f_info->get_session_random());
-            authenticated = false;
+            SNAP_LOG_INFO("cookie would be refused because random key ")(random_key)(" does not match ")(f_info->get_session_random());
+            //authenticated = false; -- this should be a flag because
+            //                          in many cases it kicks someone
+            //                          out even when it should not...
+            //
+            // From what I can tell, this mainly happens if someone uses two
+            // tabs accessing the same site. But I've seen it quite a bit
+            // if the system crashes and thus does not send the new random
+            // number to the user. We could also look into a way to allow
+            // the previous random for a while longer.
         }
         if(f_info->get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
         {
