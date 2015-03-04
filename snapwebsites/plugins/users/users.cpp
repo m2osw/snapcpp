@@ -714,7 +714,7 @@ bool users::authenticated_user(QString const& key, sessions::sessions::session_i
     f_user_logged_in = f_snap->get_start_time() < limit;
     if(!f_user_logged_in)
     {
-        SNAP_LOG_INFO("user authentication timed out");
+        SNAP_LOG_INFO("user authentication timed out by ")(limit - f_snap->get_start_time())(" micro seconds");
     }
 
     // the website may opt out of the long session scheme
