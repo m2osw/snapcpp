@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.23
+ * Version: 0.0.1.25
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -37,6 +37,8 @@
  *      typedef ... ResultData;
  *
  *      function ServerAccessCallbacks();
+ *
+ *      function setRedirect(result: ResultData, url: string, target: string);
  *
  *      abstract function serverAccessSuccess(result : ResultData) : Void;
  *      abstract function serverAccessError(result : ResultData) : Void;
@@ -111,6 +113,71 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  *            userdata: (Object|null|undefined)}}
  */
 snapwebsites.ServerAccessCallbacks.ResultData;
+
+
+/** \brief Set or change the redirect information of this form.
+ *
+ * This function sets the redirect tag in the specified result tag.
+ * If you specify a target, then it gets set in the target attribute
+ * as expected by the other functions.
+ *
+ * The function replaces the URL with the new one, unless the \p url
+ * parameter is the empty string in which case the redirect tag is
+ * removed from the response data.
+ *
+ * \note
+ * Frameset is being deprecated in HTML 5 so the target specification
+ * should be limited to only system names.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The result
+ *                       data that we are to tweak.
+ * @param {string} url  A string with the URL to redirect the user to or "".
+ * @param {string} target  The target (in most cases "", "_top" or "_parent".)
+ */
+snapwebsites.ServerAccessCallbacks.prototype.setRedirect = function(result, url, target)
+{
+    var redirect = result.jqxhr.responseXML.getElementsByTagName("redirect"),
+        text = result.jqxhr.responseXML.createTextNode(url);
+
+    if(redirect.length === 0)
+    {
+        if(url.length == 0)
+        {
+            // user wanted to remove the redirect and there is none to
+            // start with so we are good
+            return;
+        }
+        // does not exist yet, added it
+        redirect = result.jqxhr.responseXML.createElement("redirect");
+        result.jqxhr.responseXML.documentElement.appendChild(redirect);
+    }
+    else
+    {
+        if(url.length == 0)
+        {
+            // remove this redirect info
+            redirect.parent.removeChild(redirect);
+            return;
+        }
+    }
+
+    // take care of the target if defined
+    if(target.length > 0)
+    {
+        redirect.setAttribute("target", target);
+    }
+    else
+    {
+        redirect.removeAttribute("target");
+    }
+
+    // change the content with the new URL
+    while(redirect.lastChild)
+    {
+        redirect.removeChild(redirect.lastChild);
+    }
+    redirect.appendChild(text);
+};
 
 
 /*jslint unparam: true */
@@ -664,6 +731,13 @@ snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
             result.will_redirect = redirect.length === 1;
 
             this.callback_.serverAccessSuccess(result);
+
+            // in case the callback(s) changed/added a redirect tag...
+            // (we may want to look into having some functions instead
+            // of tweaking the XML directly? -- actually ResultData
+            // should be a class with functions...)
+            redirect = result.jqxhr.responseXML.getElementsByTagName("redirect");
+            result.will_redirect = redirect.length === 1;
 
             // test the object flag so the callback could set it to
             // false if applicable

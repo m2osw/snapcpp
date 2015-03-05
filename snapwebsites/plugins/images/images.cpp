@@ -887,12 +887,11 @@ int64_t images::transform_images()
             }
 
             QString const image_key(QtCassandra::stringValue(key, sizeof(int64_t)));
-            if(image_key.startsWith(site_key))
+            if(!image_key.startsWith(site_key))
             {
                 // "wrong" site, ignore this entry on this run
                 continue;
             }
-SNAP_LOG_INFO() << "image path from key [" << image_key << "]";
 
             // print out the row being worked on
             // (if it crashes it is really good to know where)
