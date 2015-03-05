@@ -117,7 +117,7 @@ private:
         size_t          f_min_params;
         size_t          f_max_params;
         size_t          f_min_stack;
-        void            (images::*f_command)(parameters_t& params);
+        bool            (images::*f_command)(parameters_t& params);
     };
 
     virtual_path_t      check_virtual_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
@@ -125,14 +125,14 @@ private:
     int64_t             transform_images();
     bool                do_image_transformations(QString const& image_key);
 
-    void                func_alpha(parameters_t& params);
-    void                func_create(parameters_t& params);
-    void                func_density(parameters_t& params);
-    void                func_pop(parameters_t& params);
-    void                func_read(parameters_t& params);
-    void                func_resize(parameters_t& params);
-    void                func_swap(parameters_t& params);
-    void                func_write(parameters_t& params);
+    bool                func_alpha(parameters_t& params);
+    bool                func_create(parameters_t& params);
+    bool                func_density(parameters_t& params);
+    bool                func_pop(parameters_t& params);
+    bool                func_read(parameters_t& params);
+    bool                func_resize(parameters_t& params);
+    bool                func_swap(parameters_t& params);
+    bool                func_write(parameters_t& params);
 
     zpsnap_child_t                  f_snap;
     snap_backend::zpsnap_backend_t  f_backend;

@@ -1020,6 +1020,9 @@ bool images::do_image_transformations(QString const& image_key)
  *
  * Source: http://www.imagemagick.org/Magick++/Documentation.html
  *
+ * \warning
+ * The returned image may be an empty image in case the script fails.
+ *
  * \param[in] script  The script to process the images.
  * \param[in] image_ipaths  An array of ipaths to images.
  *
@@ -1171,8 +1174,11 @@ SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
         }
 
         // call the command
-        (this->*g_commands[p].f_command)(params);
-
+        if(!(this->*g_commands[p].f_command)(params))
+        {
+            // the command failed, return a default image instead
+            return Magick::Image();
+        }
     }
 
     if(params.f_image_stack.empty())
@@ -1185,7 +1191,7 @@ SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
 }
 
 
-void images::func_alpha(parameters_t& params)
+bool images::func_alpha(parameters_t& params)
 {
     QString const mode(params.f_params[0].toLower());
     if(mode == "off" || mode == "deactivate")
@@ -1205,19 +1211,22 @@ void images::func_alpha(parameters_t& params)
                 QString("Invalid parameter to alpha command \"%1\", expected one of: activate, background, deactivate, copy, extract, opaque, remove, set, shape, transparent)").arg(mode),
                 QString("Invalid parameters in \"%1\"").arg(params.f_command),
                 false);
-        return;
+        return false;
     }
+
+    return true;
 }
 
 
-void images::func_create(parameters_t& params)
+bool images::func_create(parameters_t& params)
 {
     Magick::Image im;
     params.f_image_stack.push_back(im);
+    return true;
 }
 
 
-void images::func_density(parameters_t& params)
+bool images::func_density(parameters_t& params)
 {
     bool valid(false);
     int const x(params.f_params[0].toInt(&valid));
@@ -1240,19 +1249,21 @@ void images::func_density(parameters_t& params)
                 "Invalid parameters for images.density (expected valid integers)",
                 QString("Invalid parameters in \"%1\"").arg(params.f_command),
                 false);
-        return;
+        return false;
     }
     params.f_image_stack.back().density(Magick::Geometry(x, y));
+    return true;
 }
 
 
-void images::func_pop(parameters_t& params)
+bool images::func_pop(parameters_t& params)
 {
     params.f_image_stack.pop_back();
+    return true;
 }
 
 
-void images::func_read(parameters_t& params)
+bool images::func_read(parameters_t& params)
 {
     // param 1 is the ipath (key)
     // param 2 is the name used to load the file from the files table
@@ -1265,6 +1276,16 @@ void images::func_read(parameters_t& params)
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);
     QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
+    if(md5.size() != 16)
+    {
+        // there is no file in this page so we have to skip it
+        messages::messages msg;
+        msg.set_error("Missing Image File",
+                QString("Loading of image in \"%1\" failed (no md5 found).").arg(ipath.get_revision_key()),
+                "Somehow the specified page has no image",
+                false);
+        return false;
+    }
     QString const output_name(params.f_params[1]);
     QString field_name;
     if(output_name == "data")
@@ -1276,26 +1297,40 @@ void images::func_read(parameters_t& params)
         field_name = QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)).arg(output_name);
     }
     QByteArray image_data(files_table->row(md5)->cell(field_name)->value().binaryValue());
+    if(image_data.isEmpty())
+    {
+        // there is no file in this page so we have to skip it
+        messages::messages msg;
+        msg.set_error("Empty Image File",
+                QString("Image in \"%1\" is currently empty.").arg(ipath.get_revision_key()),
+                "Somehow the specified file is empty so not an image",
+                false);
+        return false;
+    }
 
     Magick::Blob blob(image_data.data(), image_data.length());
     params.f_image_stack.back().read(blob);
+
+    return true;
 }
 
 
-void images::func_resize(parameters_t& params)
+bool images::func_resize(parameters_t& params)
 {
     Magick::Geometry size(params.f_params[0].toUtf8().data());
     params.f_image_stack.back().resize(size);
+    return true;
 }
 
 
-void images::func_swap(parameters_t& params)
+bool images::func_swap(parameters_t& params)
 {
     std::iter_swap(params.f_image_stack.end() - 1, params.f_image_stack.end() - 2);
+    return true;
 }
 
 
-void images::func_write(parameters_t& params)
+bool images::func_write(parameters_t& params)
 {
     // param 1 is the ipath (key)
     // param 2 is the name used to save the file in the files table
@@ -1316,7 +1351,7 @@ void images::func_write(parameters_t& params)
                 "Invalid parameters for write(), the output name cannot be \"data\"",
                 QString("Preventing output to the main \"data\" buffer itself").arg(params.f_command),
                 false);
-        return;
+        return false;
     }
     int const ext_pos(output_name.lastIndexOf("."));
     if(ext_pos > 0 && ext_pos + 1 < output_name.length())
@@ -1330,7 +1365,7 @@ void images::func_write(parameters_t& params)
         {
             // TODO: ignore the error...
             //       we may need to force a default format or report the
-            //       error and exit
+            //       error and exit though
         }
     }
     //else -- TBD: should we err in this case?
@@ -1340,6 +1375,8 @@ void images::func_write(parameters_t& params)
     QByteArray array(static_cast<char const *>(blob.data()), static_cast<int>(blob.length()));
 
     files_table->row(md5)->cell(field_name)->setValue(array);
+
+    return true;
 }
 
 
