@@ -328,6 +328,11 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
             );
             if(layout_value.nullValue())
             {
+                // no layout, check the .conf
+                layout_value = f_snap->get_server_parameter(column_name);
+            }
+            if(layout_value.nullValue())
+            {
                 // user did not define any layout, set the value to "default"
                 layout_value = QString("\"default\"");
             }
@@ -375,9 +380,13 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
             }
         }
 
+        // does it look like the script failed? if so get a default
         if(layout_name.isEmpty())
         {
-            // looks like the script failed...
+            layout_name = f_snap->get_server_parameter(column_name);
+        }
+        if(layout_name.isEmpty())
+        {
             layout_name = "default";
         }
     }

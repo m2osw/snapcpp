@@ -327,10 +327,10 @@ snap_layout::snap_layout(int argc, char *argv[])
                     {
                         std::cout << "\t" << *ent << std::endl;
 
-                        const std::string fn( ent->getName() );
+                        std::string const fn( ent->getName() );
                         try
                         {
-                            std::auto_ptr< std::istream > is( zf.getInputStream( ent ) ) ;
+                            std::auto_ptr< std::istream > is( zf.getInputStream( fn ) ) ;
 
                             QByteArray byte_arr;
                             stream_to_bytearray( is.get(), byte_arr );
