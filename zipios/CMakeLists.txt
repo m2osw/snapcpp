@@ -38,6 +38,19 @@ cmake_minimum_required(VERSION 2.8)
 
 project( zipios_project )
 
+## Include support modules
+##
+if( NOT CMAKE_MODULE_PATH )
+    find_path( CMAKE_DIRECTORY_PATH snapCMakeModules
+        PATHS ${CMAKE_SOURCE_DIR}
+        NO_DEFAULT_PATH
+    )
+    set( CMAKE_MODULE_PATH ${CMAKE_DIRECTORY_PATH}/snapCMakeModules/Modules )
+    message( "Found snapCMakeModules in ${CMAKE_MODULE_PATH}" )
+endif()
+
+set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH} )
+
 set( VERSION 0.1.5.10 )
 set( SOVERSION 0 )
 
