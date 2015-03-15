@@ -27,10 +27,12 @@
 #include "qxmlmessagehandler.h"
 #include "qdomhelpers.h"
 #include "qstring_stream.h"
+#include "qdomxpath.h"
 //#include "qdomnodemodel.h" -- at this point the DOM Node Model seems bogus.
 #include "not_reached.h"
 
 #include <iostream>
+#include <fstream>
 
 #include <QXmlQuery>
 #include <QDomDocument>
@@ -1156,10 +1158,34 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
     QDomElement metadata(snap_dom::get_element(doc, "metadata"));
     metadata.setAttribute("theme-name", theme_name);
 
+    QString doc_str(doc.toString(-1));
+    {
+        QDomXPath xpath;
+        xpath.setXPath("/snap/page/body/content");
+        QDomXPath::node_vector_t content_tag(xpath.apply(doc));
+        if(!content_tag.empty())
+        {
+            content_tag[0].parentNode().removeChild(content_tag[0]);
+            //doc_str = doc.toString(-1);
+        }
+    }
+
+    //QDomXPath::node_vector_t output_tag;
+    //if(doc_str.length() > 1024 * 500)
+    //{
+    //    QDomXPath xpath;
+    //    xpath.setXPath("/snap/page/body/output");
+    //    output_tag = xpath.apply(doc);
+    //    if(!output_tag.empty())
+    //    {
+    //        output_tag[0].parentNode().removeChild(output_tag[0]);
+    //        doc_str = doc.toString(-1);
+    //    }
+    //}
+
     // finally apply the theme XSLT to the final XML
     // the output is what we want to return
     QXmlQuery q(QXmlQuery::XSLT20);
-    QString doc_str(doc.toString(-1));
     if(doc_str.isEmpty())
     {
         throw snap_logic_exception("somehow the memory XML document for the theme XSLT is empty");

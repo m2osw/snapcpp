@@ -247,8 +247,8 @@ private:
     controlled_vars::flbool_t   f_disabled;
     controlled_vars::flbool_t   f_debug;
 
-    const QString& get_full_path() const;
-    void handle_status( const int pid, const int status );
+    const QString&              get_full_path() const;
+    void                        handle_status( int const pid, int const status );
 };
 
 
@@ -310,7 +310,7 @@ const QString& process::get_full_path() const
  */
 bool process::exists() const
 {
-    const QString& full_path( get_full_path() );
+    QString const& full_path( get_full_path() );
     return access(full_path.toUtf8().data(), R_OK | X_OK) == 0;
 }
 
@@ -324,7 +324,7 @@ bool process::run()
     {
         // child
         //
-        const QString& full_path( get_full_path() );
+        QString const& full_path( get_full_path() );
         QStringList qargs;
         qargs << full_path;
         if(f_debug)
