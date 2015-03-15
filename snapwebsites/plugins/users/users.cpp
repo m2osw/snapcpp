@@ -4273,11 +4273,13 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
         {
             SNAP_LOG_TRACE() << "second is_token(\"users::picture\")";
 
-            // TBD: not sure right now how we'll offer those
+            // TBD: not sure right now how we will offer those
             //      probably with a special path that tells us
             //      to go look in the users' table
             //
-            //      We may also want to use the Avatar instead
+            //      We may also want to only offer the Avatar for
+            //      user picture(s)
+            //
             token.f_replacement = QString("<img src=\"...\"/>");
         }
     }

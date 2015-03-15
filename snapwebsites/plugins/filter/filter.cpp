@@ -863,6 +863,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                         tok += QChar(c);
                         c = getc();
                     }
+                    // TODO: prevent use of ':' at the end of a token
                     ungetc(c);
                     return TOK_IDENTIFIER;
                 }
