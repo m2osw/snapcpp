@@ -33,6 +33,7 @@
 #include "log.h"
 
 #include <QtCassandra/QCassandraLock.h>
+#include <libtld/tld.h>
 
 #include <iostream>
 
@@ -1820,6 +1821,9 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
         {
             QString re;
 
+            // not an email address by default
+            int email(0);
+
             QString const regex_name(regex_tag.attribute("name"));
             if(!regex_name.isEmpty())
             {
@@ -1835,10 +1839,13 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                 case 'e':
                     if(regex_name == "email")
                     {
-                        // TODO: replace the email test with libtld
-                        // For emails we accept anything except local emails:
-                        //     <name>@[<sub-domain>.]<domain>.<tld>
-                        re = "/^[a-z0-9_\\-\\.\\+\\^!#\\$%&*+\\/\\=\\?\\`\\|\\{\\}~\\']+@(?:[a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])+\\.(?:(?:[a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.?)+$/i";
+                        // one email address
+                        email = 1;
+                    }
+                    else if(regex_name == "emails")
+                    {
+                        // unlimited number of email addresses
+                        email = -1;
                     }
                     break;
 
@@ -1871,52 +1878,83 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
             else
             {
                 // Note:
-                // We don't test whether there is some text here to avoid
+                // We do not test whether there is some text here to avoid
                 // wasting time; we could have such a test in a tool of
                 // ours used to verify that the editor form is well defined.
                 re = regex_tag.text();
             }
 
-            Qt::CaseSensitivity cs(Qt::CaseSensitive);
-            if(!re.isEmpty() && re[0] == '/')
+            if(email != 0)
             {
-                re = re.mid(1);
-            }
-            int p(re.lastIndexOf('/'));
-            if(p >= 0)
-            {
-                QString flags(re.mid(p + 1));
-                re = re.mid(0, p);
-                for(QChar *s(flags.data()); s->unicode() != '\0'; ++s)
+                tld_email_list emails;
+                if(emails.parse(value.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
                 {
-                    switch(s->unicode())
-                    {
-                    case 'i':
-                        cs = Qt::CaseInsensitive;
-                        break;
-
-                    default:
-                        throw editor_exception_invalid_editor_form_xml(QString("\"%1\" is not a supported regex flag").arg(*s));
-
-                    }
+                    messages->set_error(
+                        "Invalid Value",
+                        QString("\"%1\" is not a valid email address for \"%2\".")
+                                .arg(form::form::html_64max(value, is_secret)).arg(label),
+                        QString("failed to check the label value for \"%1\"")
+                                .arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
+                else if(email != -1 && emails.count() != email)
+                {
+                    messages->set_error(
+                        "Invalid Value",
+                        QString("\"%1\" includes more than one email, \"%2\" expected just one address.")
+                                .arg(form::form::html_64max(value, is_secret)).arg(label),
+                        QString("failed because \"%1\" expects only one email address")
+                                .arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                 }
             }
-            QRegExp reg_expr(re, cs, QRegExp::RegExp2);
-            if(!reg_expr.isValid())
+            else
             {
-                throw editor_exception_invalid_editor_form_xml(QString("\"%1\" regular expression is invalid.").arg(re));
-            }
-            if(reg_expr.indexIn(value) == -1)
-            {
-                messages->set_error(
-                    "Invalid Value",
-                    QString("\"%1\" is not valid for \"%2\".")
-                            .arg(form::form::html_64max(value, is_secret)).arg(label),
-                    QString("the value did not match the filter regular expression of \"%1\"")
-                            .arg(widget_name),
-                    false
-                ).set_widget_name(widget_name);
-                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                Qt::CaseSensitivity cs(Qt::CaseSensitive);
+                if(!re.isEmpty() && re[0] == '/')
+                {
+                    re = re.mid(1);
+                }
+                int p(re.lastIndexOf('/'));
+                if(p >= 0)
+                {
+                    QString flags(re.mid(p + 1));
+                    re = re.mid(0, p);
+                    for(QChar *s(flags.data()); s->unicode() != '\0'; ++s)
+                    {
+                        switch(s->unicode())
+                        {
+                        case 'i':
+                            cs = Qt::CaseInsensitive;
+                            break;
+
+                        default:
+                            throw editor_exception_invalid_editor_form_xml(QString("\"%1\" is not a supported regex flag").arg(*s));
+
+                        }
+                    }
+                }
+                QRegExp reg_expr(re, cs, QRegExp::RegExp2);
+                if(!reg_expr.isValid())
+                {
+                    throw editor_exception_invalid_editor_form_xml(QString("\"%1\" regular expression is invalid.").arg(re));
+                }
+                if(reg_expr.indexIn(value) == -1)
+                {
+                    messages->set_error(
+                        "Invalid Value",
+                        QString("\"%1\" is not valid for \"%2\".")
+                                .arg(form::form::html_64max(value, is_secret)).arg(label),
+                        QString("the value did not match the filter regular expression of \"%1\"")
+                                .arg(widget_name),
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                }
             }
         }
 

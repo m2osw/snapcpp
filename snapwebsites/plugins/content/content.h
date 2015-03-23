@@ -592,6 +592,7 @@ public:
         PARAM_TYPE_FLOAT32,
         PARAM_TYPE_FLOAT64,
         PARAM_TYPE_INT8,
+        PARAM_TYPE_INT32,
         PARAM_TYPE_INT64
     };
 

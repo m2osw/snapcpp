@@ -7155,6 +7155,10 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                     {
                         param_type = PARAM_TYPE_INT8;
                     }
+                    else if(type == "int32")
+                    {
+                        param_type = PARAM_TYPE_INT32;
+                    }
                     else if(type == "int64")
                     {
                         param_type = PARAM_TYPE_INT64;
@@ -7832,6 +7836,10 @@ void content::on_save_content()
                             ok = ok && v >= -128 && v <= 127; // verify overflows
                             param_table->row(row_key)->cell(p->f_name)->setValue(static_cast<signed char>(v));
                         }
+                        break;
+
+                    case PARAM_TYPE_INT32:
+                        param_table->row(row_key)->cell(p->f_name)->setValue(static_cast<int32_t>(data->toInt(&ok)));
                         break;
 
                     case PARAM_TYPE_INT64:
