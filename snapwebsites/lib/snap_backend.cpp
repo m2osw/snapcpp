@@ -23,6 +23,7 @@
 
 #include <wait.h>
 #include <fcntl.h>
+#include <sys/prctl.h>
 
 
 namespace snap
@@ -582,6 +583,8 @@ std::string snap_backend::get_signal_name_from_action(QString const& action)
  */
 void snap_backend::process_backend_uri(QString const& uri)
 {
+    pid_t  parent_pid(getpid());
+
     // create a child process so the data between sites does not get
     // shared (also the Cassandra data would remain in memory increasing
     // the foot print each time we run a new website,) but the worst
@@ -606,6 +609,25 @@ void snap_backend::process_backend_uri(QString const& uri)
         wait(&status);
         // TODO: check status?
         return;
+    }
+
+    // auto-kill child if parent dies
+    //
+    // TODO: ameliorate by using a SIGUSR1 or SIGUSR2 and implement
+    //       a way for a possible clean exit (i.e. if child is still
+    //       working, give it a chance, then after X seconds, still
+    //       force a kill)
+    //
+    prctl(PR_SET_PDEATHSIG, SIGHUP);
+
+    // it could be that the prctrl() was made after the true parent died...
+    // so we have to test the PID of our parent
+    //
+    if(getppid() != parent_pid)
+    {
+        SNAP_LOG_FATAL("snap_backend::process_backend_uri() lost parent too soon and did not receive SIGHUP; quit immediately.");
+        exit(1);
+        NOTREACHED();
     }
 
     // set the URI; if user supplied it, then it can fail!

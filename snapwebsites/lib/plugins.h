@@ -121,12 +121,15 @@ bool                    verify_plugin_name(QString const& name);
  *
  * The name of your plugin factory is:
  *
+ * \code
  * plugin_\<name>_factory
+ * \endcode
  *
- * And in order to get an instance, it  defines a global
- * variable named:
+ * And in order to get an instance, it defines a global variable named:
  *
+ * \code
  * g_plugin_\<name>_factory
+ * \endcode
  *
  * The factory has a few public functions you can call:
  * \li name *instance() -- It returns a pointer to your plugin (i.e. the
