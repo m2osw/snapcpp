@@ -1,3 +1,9 @@
+snapwatchdog (0.1.0.140~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 28 Mar 2015 03:01:59 -0700
+
 snapwatchdog (0.1.0.139~trusty) trusty; urgency=high
 
   * Nightly build.
