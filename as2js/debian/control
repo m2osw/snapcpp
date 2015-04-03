@@ -3,8 +3,8 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
     libqt4-dev (>= 4.8.3), doxygen, graphviz, libicu-dev,
-    libqtwebkit-dev, snapcmakemodules (>= 1.0.23.189~trusty),
-    libcontrolledvars-dev (>= 1.4.15.189~trusty), libadvgetopt-dev (>= 1.0.15.189~trusty),
+    libqtwebkit-dev, snapcmakemodules (>= 1.0.23.190~trusty),
+    libcontrolledvars-dev (>= 1.4.15.190~trusty), libadvgetopt-dev (>= 1.0.15.190~trusty),
     libcppunit-dev (>= 1.13), libqxcppunit-dev (>= 0.9.2)
 Standards-Version: 3.9.4
 Section: libs
