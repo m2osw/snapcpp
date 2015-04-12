@@ -56,6 +56,8 @@ enum name_t
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_TOKEN,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_URL,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN_HEADER,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CLIENT_ID,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_AGREEMENT,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_AGREEMENT_HEADER,
@@ -69,6 +71,7 @@ enum name_t
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_PAYMENT_HEADER,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_PAYMENT,
+    SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_NUMBER,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_SECRET_ID,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_ACCESS_TOKEN,
     SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_APP_ID,
@@ -132,6 +135,7 @@ public:
     virtual bool                on_path_execute(content::path_info_t& ipath);
     virtual void                on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate);
     void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                        on_repeat_payment(content::path_info_t& first_invoice_ipath, content::path_info_t& previous_invoice_ipath, content::path_info_t& new_invoice_ipath);
 
 private:
     void                        initial_update(int64_t variables_timestamp);

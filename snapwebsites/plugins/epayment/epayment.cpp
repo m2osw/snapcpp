@@ -19,6 +19,7 @@
 
 #include "../editor/editor.h"
 
+#include "log.h"
 #include "not_reached.h"
 
 #include <iostream>
@@ -105,8 +106,8 @@ char const *get_name(name_t name)
     case SNAP_NAME_EPAYMENT_RECURRING:
         return "epayment::recurring";
 
-    case SNAP_NAME_EPAYMENT_RECURRING_FEE:
-        return "epayment::recurring_fee";
+    case SNAP_NAME_EPAYMENT_RECURRING_SETUP_FEE:
+        return "epayment::recurring_setup_fee";
 
     case SNAP_NAME_EPAYMENT_SKU:
         return "epayment::sku";
@@ -210,13 +211,15 @@ epayment_product::type_t epayment_product::value_t::get_type() const
  * This exception is raised of the type of this value is not
  * type_t::TYPE_STRING.
  *
+ * \param[in] name  The name of the property to retrieve.
+ *
  * \return The string defined in this value.
  */
-QString const& epayment_product::value_t::get_string_value() const
+QString const& epayment_product::value_t::get_string_value(QString const & name) const
 {
     if(f_type != type_t::TYPE_STRING)
     {
-        throw epayment_invalid_type_exception("this epayment::value_t is not a string");
+        throw epayment_invalid_type_exception(QString("epayment::value_t of \"%1\" is not a string").arg(name));
     }
 
     return f_string;
@@ -521,7 +524,7 @@ void epayment_product::unset_property(QString const& name)
  *
  * \return true if the property was defined with a set_property() call.
  */
-bool epayment_product::has_property(QString const& name) const
+bool epayment_product::has_property(QString const & name) const
 {
     if(f_properties.find(name) != f_properties.end())
     {
@@ -542,7 +545,7 @@ bool epayment_product::has_property(QString const& name) const
                 return true;
             }
         }
-        // pretend that it always exists, only by default it is viewed as a null recurring entry
+        // it does not exist, the default is a null recurring entry
         return false;
     }
 
@@ -601,14 +604,14 @@ epayment_product::type_t epayment_product::get_property_type(QString const& name
  *
  * \sa value_t::get_string_value()
  */
-QString const epayment_product::get_string_property(QString const& name) const
+QString const epayment_product::get_string_property(QString const & name) const
 {
     auto const pos(f_properties.find(name));
     if(pos == f_properties.end())
     {
-        throw epayment_cannot_find_exception("specified product property does not exist in this product");
+        throw epayment_cannot_find_exception(QString("specified product property \"%1\" does not exist in this product").arg(name));
     }
-    return pos->second.get_string_value();
+    return pos->second.get_string_value(name);
 }
 
 
@@ -936,19 +939,19 @@ void recurring_t::set(QString const& field)
     int number(0);
     for(; *s >= '0' && *s <= '9'; ++s)
     {
-        number = number * 10 + s->unicode() - '\0';
+        number = number * 10 + s->unicode() - '0';
     }
     if(*s == 'x')
     {
         if(number == 0)
         {
-            throw epayment_invalid_recurring_field_exception("recurring field: found 'x' without a number preceeding it");
+            throw epayment_invalid_recurring_field_exception("recurring field: found 'x' without a number preceeding it (or just one or more zeroes)");
         }
         new_repeat = number;
         new_interval = 0;
         for(++s; *s >= '0' && *s <= '9'; ++s)
         {
-            new_interval = new_interval * 10 + s->unicode() - '\0';
+            new_interval = new_interval * 10 + s->unicode() - '0';
         }
         if(new_interval == 0)
         {
@@ -1670,6 +1673,74 @@ bool epayment::set_invoice_status_impl(content::path_info_t& invoice_ipath, name
     return true;
 }
 
+
+/** \brief Process a recurring payment.
+ *
+ * This function is used to process a recurring payment. The e-Payment
+ * facility is not responsible (so far) in determining when a recurring
+ * payment has to re-occur. This is the responsibility of the client.
+ *
+ * When a new invoice is created, call this signal with:
+ *
+ * \li The first invoice that was processed with a recurring payment
+ *     (also called a subscription).
+ * \li If there is one, provide the last payment that was made for that
+ *     subscription. In most cases this is not required by the various
+ *     payment facility. However, you cannot hope that the users of your
+ *     code will never use a facility that requires that invoice so it
+ *     has to be provided. If there is only one payment, this can be
+ *     the same URL as first_invoice_ipath.
+ * \li The new invoice you just created and want to furfill.
+ *
+ * The signal may fail if the charge happens either too soon or too late.
+ * (Paypal checks the dates and prevents billing a recurring payment too
+ * early on and their deadline date is not documented...)
+ *
+ * \param[in] first_invoice_ipath  The very first payment made for that
+ *                                 recurring payment to be repeated.
+ * \param[in] previous_invoice_ipath  The last invoice that was paid in
+ *                                    this plan, or the same as
+ *                                    first_invoice_ipath if no other
+ *                                    invoices were paid since.
+ * \param[in] new_invoice_ipath  The new invoice you just created.
+ *
+ * \return true if the 3 ipath references are considered valid.
+ */
+bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, content::path_info_t& previous_invoice_ipath, content::path_info_t& new_invoice_ipath)
+{
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+
+    QtCassandra::QCassandraRow::pointer_t status_row(content_table->row(new_invoice_ipath.get_key()));
+    QString const invoice_status(status_row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
+    if(invoice_status == "paid")
+    {
+        // it was already marked as paid so ignore the request
+        SNAP_LOG_WARNING("repeat_payment() called with an invoice which is already marked paid.");
+        return false;
+    }
+
+    QtCassandra::QCassandraRow::pointer_t previous_status_row(content_table->row(previous_invoice_ipath.get_key()));
+    QString const previous_invoice_status(previous_status_row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
+    if(previous_invoice_status != "paid")
+    {
+        // it was already marked as paid so ignore the request
+        SNAP_LOG_WARNING("repeat_payment() called with a previous invoice which is not marked paid.");
+        return false;
+    }
+
+    QtCassandra::QCassandraRow::pointer_t first_status_row(content_table->row(first_invoice_ipath.get_key()));
+    QString const first_invoice_status(first_status_row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
+    if(first_invoice_status != "paid")
+    {
+        // it was already marked as paid so ignore the request
+        SNAP_LOG_WARNING("repeat_payment() called with a first invoice which is not marked paid.");
+        return false;
+    }
+
+    // valid so far, let the other modules take care of this repeat payment
+    return true;
+}
 
 
 // List of bitcoin libraries and software

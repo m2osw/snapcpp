@@ -1367,7 +1367,9 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
     QString const title(QString("Invoice #%1").arg(invoice_number));
     revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     QString const body; // empty for now... will be generated later
-                       // by a backend or on the fly as we decide then
+                        // by a backend or on the fly as we decide then
+                        // (we could also have a tag transformed on the fly
+                        // something like: [ecommerce::invoice(###)])
     revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
     revision_row->cell(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS))->setValue(cart_xml);
 

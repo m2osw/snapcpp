@@ -19,7 +19,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+
 #include <stdexcept>
+#include <memory>
 
 namespace udp_client_server
 {
@@ -40,6 +42,8 @@ public:
 class udp_client
 {
 public:
+    typedef std::shared_ptr<udp_client>     pointer_t;
+
                         udp_client(const std::string& addr, int port);
                         ~udp_client();
 
@@ -60,6 +64,8 @@ private:
 class udp_server
 {
 public:
+    typedef std::shared_ptr<udp_server>     pointer_t;
+
                         udp_server(const std::string& addr, int port);
                         ~udp_server();
 

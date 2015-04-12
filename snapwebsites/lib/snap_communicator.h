@@ -1,4 +1,4 @@
-// TCP Client & Server -- classes to ease handling sockets
+// Snap Communicator -- classes to ease handling communication between processes
 // Copyright (C) 2012-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -16,70 +16,32 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include <stdexcept>
-#include <memory>
+#include <tcp_client_server.h>
 
-#include <arpa/inet.h>
 
-// BIO versions of the TCP client/server
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
-namespace tcp_client_server
+namespace snap
 {
 
-class tcp_client_server_logic_error : public std::logic_error
+class snap_communicator_runtime_error : public std::runtime_error
 {
 public:
-    tcp_client_server_logic_error(std::string const& errmsg) : logic_error(errmsg) {}
+    snap_communicator_runtime_error(std::string const& errmsg) : runtime_error(errmsg) {}
 };
 
-class tcp_client_server_runtime_error : public std::runtime_error
+class snap_communicator_parameter_error : public snap_communicator_runtime_error
 {
 public:
-    tcp_client_server_runtime_error(std::string const& errmsg) : runtime_error(errmsg) {}
+    snap_communicator_parameter_error(std::string const& errmsg) : snap_communicator_runtime_error(errmsg) {}
 };
 
-class tcp_client_server_parameter_error : public tcp_client_server_logic_error
+class snap_communicator_initialization_error : public snap_communicator_runtime_error
 {
 public:
-    tcp_client_server_parameter_error(std::string const& errmsg) : tcp_client_server_logic_error(errmsg) {}
-};
-
-class tcp_client_server_initialization_error : public tcp_client_server_runtime_error
-{
-public:
-    tcp_client_server_initialization_error(std::string const& errmsg) : tcp_client_server_runtime_error(errmsg) {}
+    snap_communicator_initialization_error(std::string const& errmsg) : snap_communicator_runtime_error(errmsg) {}
 };
 
 
 
-// TODO: assuming that bio_client with MODE_PLAIN works the same way
-//       as a basic tcp_client, we should remove this class
-class tcp_client
-{
-public:
-    typedef std::shared_ptr<tcp_client>     pointer_t;
-
-                        tcp_client(std::string const& addr, int port);
-                        ~tcp_client();
-
-    int                 get_socket() const;
-    int                 get_port() const;
-    int                 get_client_port() const;
-    std::string         get_addr() const;
-    std::string         get_client_addr() const;
-
-    int                 read(char *buf, size_t size);
-    int                 read_line(std::string& line);
-    int                 write(char const *buf, size_t size);
-
-private:
-    int                 f_socket;
-    int                 f_port;
-    std::string         f_addr;
-};
 
 
 // TODO: implement a bio_server then like with the client remove
@@ -91,9 +53,7 @@ public:
 
     static int const    MAX_CONNECTIONS = 50;
 
-                        tcp_server(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
-                        tcp_server(tcp_server const & src) = delete;
-    tcp_server &        operator = (tcp_server const & rhs) = delete;
+                        tcp_server(std::string const& addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
                         ~tcp_server();
 
     int                 get_socket() const;

@@ -510,6 +510,7 @@ tcp_server::tcp_server(const std::string& addr, int port, int max_connections, b
     }
 }
 
+
 /** \brief Clean up the server sockets.
  *
  * This function ensures that the server sockets get cleaned up.
@@ -526,6 +527,7 @@ tcp_server::~tcp_server()
     }
 }
 
+
 /** \brief Retrieve the socket descriptor.
  *
  * This function returns the socket descriptor. It can be used to
@@ -538,6 +540,7 @@ int tcp_server::get_socket() const
 {
     return f_socket;
 }
+
 
 /** \brief Retrieve the maximum number of connections.
  *
@@ -552,6 +555,7 @@ int tcp_server::get_max_connections() const
     return f_max_connections;
 }
 
+
 /** \brief Return the server port.
  *
  * This function returns the port the server was created with. This port
@@ -563,6 +567,7 @@ int tcp_server::get_port() const
 {
     return f_port;
 }
+
 
 /** \brief Retrieve the server IP address.
  *
@@ -579,6 +584,7 @@ std::string tcp_server::get_addr() const
 {
     return f_addr;
 }
+
 
 /** \brief Return the current status of the keepalive flag.
  *
@@ -598,6 +604,7 @@ bool tcp_server::get_keepalive() const
     return f_keepalive;
 }
 
+
 /** \brief Set the keepalive flag.
  *
  * This function sets the keepalive flag to either true (i.e. mark connection
@@ -611,6 +618,7 @@ void tcp_server::keepalive(bool yes)
 {
     f_keepalive = yes;
 }
+
 
 /** \brief Accept a connection.
  *
@@ -653,7 +661,7 @@ void tcp_server::keepalive(bool yes)
  *
  * \return A client socket descriptor or -1 if an error occured, -2 if timeout and max_wait is set.
  */
-int tcp_server::accept( const int max_wait_ms )
+int tcp_server::accept( int const max_wait_ms )
 {
     // auto-close?
     if(f_auto_close && f_accepted_socket != -1)
@@ -718,10 +726,14 @@ int tcp_server::accept( const int max_wait_ms )
     return f_accepted_socket;
 }
 
+
 /** \brief Retrieve the last accepted socket descriptor.
  *
  * This function returns the last accepted socket descriptor as retrieved by
  * accept(). If accept() was never called or failed, then this returns -1.
+ *
+ * Note that it is possible that the socket was closed in between in which
+ * case this value is going to be an invalid socket.
  *
  * \return The last accepted socket descriptor.
  */
@@ -751,6 +763,7 @@ int tcp_server::get_last_accepted_socket() const
  * not secure. If a secure connection fails, you may attempt again without
  * TLS or other encryption mechanism.
  */
+
 
 /** \brief Contruct a bio_client object.
  *
@@ -916,6 +929,7 @@ bio_client::bio_client(std::string const& addr, int port, mode_t mode)
     }
 }
 
+
 /** \brief Clean up the BIO client object.
  *
  * This function cleans up the BIO client object by freeing the SSL_CTX
@@ -926,6 +940,7 @@ bio_client::~bio_client()
     // f_bio and f_ssl_ctx are allocated using shared pointers with
     // a deleter so we have nothing to do here.
 }
+
 
 /** \brief Get the socket descriptor.
  *
@@ -950,6 +965,7 @@ int bio_client::get_socket() const
     return c;
 }
 
+
 /** \brief Get the TCP client port.
  *
  * This function returns the port used when creating the TCP client.
@@ -962,6 +978,7 @@ int bio_client::get_port() const
 {
     return BIO_get_conn_int_port(f_bio.get());
 }
+
 
 /** \brief Get the TCP server address.
  *
@@ -978,6 +995,7 @@ std::string bio_client::get_addr() const
 {
     return BIO_get_conn_hostname(f_bio.get());
 }
+
 
 /** \brief Get the TCP client port.
  *
@@ -1014,6 +1032,7 @@ int bio_client::get_client_port() const
     snap::NOTREACHED();
 }
 
+
 /** \brief Get the TCP client address.
  *
  * This function retrieve the IP address of the client (your computer).
@@ -1047,6 +1066,7 @@ std::string bio_client::get_client_addr() const
     }
     return buf;
 }
+
 
 /** \brief Read data from the socket.
  *

@@ -459,6 +459,7 @@ server::pointer_t server::instance()
 {
     if( !g_instance )
     {
+        // plugins registration make use of those two variables
         plugins::g_next_register_name = "server";
         plugins::g_next_register_filename = __FILE__;
 

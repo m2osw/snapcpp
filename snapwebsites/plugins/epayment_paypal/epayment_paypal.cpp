@@ -97,6 +97,12 @@ char const *get_name(name_t name)
     case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_URL:
         return "epayment_paypal::agreement_url";
 
+    case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN:
+        return "epayment_paypal::bill_plan";
+
+    case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN_HEADER:
+        return "epayment_paypal::bill_plan_header";
+
     case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CLIENT_ID:
         return "epayment_paypal::client_id";
 
@@ -135,6 +141,9 @@ char const *get_name(name_t name)
 
     case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_PAYMENT:
         return "epayment_paypal::execute_payment";
+
+    case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_NUMBER:
+        return "epayment_paypal::invoice_number";
 
     case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_SECRET_ID:
         return "epayment_paypal::invoice_secret_id";
@@ -233,6 +242,7 @@ void epayment_paypal::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(epayment_paypal, "server", server, process_post, _1);
     SNAP_LISTEN(epayment_paypal, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(epayment_paypal, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+    SNAP_LISTEN(epayment_paypal, "epayment", epayment::epayment, repeat_payment, _1, _2, _3);
 }
 
 
@@ -517,6 +527,7 @@ std::cerr << "***\n*** epayment_paypal::on_path_execute() cpath = [" << cpath <<
         // the user canceled that invoice...
         //
         // http://www.your-domain.com/epayment/paypal/return?token=EC-123
+        //
         snap_uri const main_uri(f_snap->get_uri());
         if(!main_uri.has_query_option("token"))
         {
@@ -550,6 +561,7 @@ std::cerr << "***\n*** epayment_paypal::on_path_execute() cpath = [" << cpath <<
             // then show the "thank you" page (also called return page)
             //
             // http://www.your-domain.com/epayment/paypal/return?paymentId=PAY-123&token=EC-123&PayerID=123
+            //
             snap_uri const main_uri(f_snap->get_uri());
             if(!main_uri.has_query_option("paymentId"))
             {
@@ -899,6 +911,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             // then show the "thank you" page (also called return page)
             //
             // http://www.your-domain.com/epayment/paypal/return-plan?token=EC-123
+            //
             snap_uri const main_uri(f_snap->get_uri());
             if(!main_uri.has_query_option("token"))
             {
@@ -1461,15 +1474,15 @@ bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, st
  * \param[in] token_type  The OAuth2 token (usually Bearer).
  * \param[in] access_token  The OAuth2 access (a random ID).
  * \param[in] recurring_product  The product marked as a subscription.
- * \param[in] recurring_fee  The recurring fee if any.
+ * \param[in] recurring_setup_fee  The recurring fee if any.
  * \param[out] plan_id  Return the identifier of the PayPal plan.
  *
  * \return The URL to the PayPal plan.
  */
 QString epayment_paypal::get_product_plan(http_client_server::http_client http, std::string const& token_type, std::string const& access_token,
-                                          epayment::epayment_product const& recurring_product, double const recurring_fee, QString& plan_id)
+                                          epayment::epayment_product const& recurring_product, double const recurring_setup_fee, QString& plan_id)
 {
-    // if the product GUID was not defined, then the funciton throws
+    // if the product GUID was not defined, then the function throws
     QString const guid(recurring_product.get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRODUCT)));
     content::path_info_t product_ipath;
     product_ipath.set_path(guid);
@@ -1735,7 +1748,7 @@ QString epayment_paypal::get_product_plan(http_client_server::http_client http, 
         // ID -- set in response
 
         // SETUP FEE
-        if(recurring_fee > 0.0)
+        if(recurring_setup_fee > 0.0)
         {
             as2js::JSON::JSONValue::pointer_t setup_fee(new as2js::JSON::JSONValue(pos, empty_object));
             merchant_preferences->set_member("setup_fee", setup_fee);
@@ -1744,7 +1757,7 @@ QString epayment_paypal::get_product_plan(http_client_server::http_client http, 
             field.reset(new as2js::JSON::JSONValue(pos, temp_str));
             setup_fee->set_member("currency", field);
 
-            temp_str.from_utf8(QString("%1").arg(recurring_fee, 0, 'f', 2).toUtf8().data());
+            temp_str.from_utf8(QString("%1").arg(recurring_setup_fee, 0, 'f', 2).toUtf8().data());
             field.reset(new as2js::JSON::JSONValue(pos, temp_str));
             setup_fee->set_member("value", field);
         }
@@ -1925,7 +1938,7 @@ std::cerr << "***\n*** PLAN JSON BODY: ["
     //
     // activate the plan immediately
     //
-    // curl -v -k -X PATCH 'https://api.sandbox.paypal.com/v1/payments/billing-plans/P-94458432VR012762KRWBZEUA'
+    // curl -v -k -X PATCH 'https://api.sandbox.paypal.com/v1/payments/billing-plans/P-123'
     //      -H "Content-Type: application/json"
     //      -H "Authorization: Bearer <Access-Token>"
     //      -d '[
@@ -2110,15 +2123,15 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         bool recurring_defined(false);
         bool recurring_fee_defined(false);
         epayment::recurring_t recurring;
-        epayment::epayment_product const *recurring_product;
+        epayment::epayment_product const *recurring_product(nullptr);
         bool other_items(false);
-        double recurring_fee(0.0);
+        double recurring_setup_fee(0.0);
         for(size_t idx(0); idx < max_products; ++idx)
         {
             epayment::epayment_product const& product(plist[idx]);
-            if(product.has_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING_FEE)))
+            if(product.has_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING_SETUP_FEE)))
             {
-                recurring_fee += product.get_total();
+                recurring_setup_fee += product.get_total();
                 recurring_fee_defined = true;
             }
             else if(product.has_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)))
@@ -2171,7 +2184,9 @@ void epayment_paypal::on_process_post(QString const& uri_path)
             // of support of allowing someone to add more than
             // one subscription at a time in one cart.
             QString plan_id;
-            QString const plan_url(get_product_plan(http, token_type, access_token, *recurring_product, recurring_fee, plan_id));
+            QString const plan_url(get_product_plan(http, token_type, access_token, *recurring_product, recurring_setup_fee, plan_id));
+
+            // TODO: add a test in case the plan could not be created or loaded
 
             //
             // Create a billing agreement:
@@ -2340,6 +2355,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
 
             secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_AGREEMENT_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
             secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CREATED_AGREEMENT))->setValue(QString::fromUtf8(response->get_response().c_str()));
+            secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_NUMBER))->setValue(invoice_number);
 
             // we need a successful response (it should always be 201)
             if(response->get_response_code() != 200
@@ -2973,7 +2989,7 @@ std::cerr << "***\n*** JSON BODY: ["
     {
         success = false;
         messages::messages::instance()->set_error(
-            "PayPal Missing Unknown Command",
+            "PayPal Unknown Command",
             QString("Your last request sent command \"%1\" which the server does not understand.").arg(click), 
             "Hacker send a weird 'click' value or we did not update the server according to the JavaScript code.",
             false
@@ -3031,6 +3047,236 @@ void epayment_paypal::on_replace_token(content::path_info_t& ipath, QString cons
     }
 }
 
+
+/** \brief Repeat a payment.
+ *
+ * This function captures a Paypal payment and if possible process a
+ * repeat payment. The payment must have been authorized before by the
+ * owner of the account.
+ *
+ * There can be mainly 3 failures although Paypal checks the dates so
+ * there are four at this point:
+ *
+ * \li The user account has never processed such a payment. This should
+ *     not happen if your code is all proper.
+ * \li The user canceled the repeat payment and thus Paypal refuses to
+ *     process any further money transfers.
+ * \li The Paypal website is somehow not currently accessible.
+ * \li The Paypal website decided that the charged appeared too soon or
+ *     too late.
+ *
+ * Any other error is probably in this code.
+ *
+ * \param[in] first_invoice_ipath  The very first payment made for that
+ *                                 recurring payment to be repeated.
+ * \param[in] previous_invoice_ipath  The last invoice that was paid in
+ *                                    this plan, or the same as
+ *                                    first_invoice_ipath if no other
+ *                                    invoices were paid since.
+ * \param[in] new_invoice_ipath  The new invoice you just created.
+ */
+void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipath, content::path_info_t& previous_invoice_ipath, content::path_info_t& new_invoice_ipath)
+{
+    static_cast<void>(previous_invoice_ipath);
+
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+    QtCassandra::QCassandraRow::pointer_t first_secret_row(secret_table->row(first_invoice_ipath.get_key()));
+    QtCassandra::QCassandraValue agreement_id(first_secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID))->value());
+    if(agreement_id.nullValue())
+    {
+        // no Paypal agreement, we cannot repeat this payment in this
+        // plugin, just leave and let other plugins eventually do some work
+        return;
+    }
+
+    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(new_invoice_ipath.get_key()));
+    if(!secret_row)
+    {
+        // we have a bigger problem it looks like!
+        return;
+    }
+
+    // get the client invoice
+    epayment::epayment *epayment_plugin(epayment::epayment::instance());
+    uint64_t invoice_number(0);
+    epayment::epayment_product_list plist;
+    epayment_plugin->retrieve_invoice(new_invoice_ipath, invoice_number, plist);
+    epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
+
+    epayment::epayment_product const *recurring_product(nullptr);
+    {
+        size_t const max_products(plist.size());
+        bool recurring_defined(false);
+        epayment::recurring_t recurring;
+        for(size_t idx(0); idx < max_products; ++idx)
+        {
+            epayment::epayment_product const& product(plist[idx]);
+            if(product.has_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING_SETUP_FEE)))
+            {
+                messages::messages::instance()->set_error(
+                    "Unsupported Recurring Fee",
+                    "The PayPal payment facility does not support a fee when charging a recurring payment.", 
+                    "We just cannot charge the fee when processing a recurring fee second or further payments.",
+                    false
+                );
+                return;
+            }
+            else if(product.has_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)))
+            {
+                // A PayPal recurring payment necessitate a Plan which
+                // may support multiple payment options (not tested), but
+                // really only one single recurring payment product;
+                // it is possible to have a varying setup fee though using
+                // the "override_merchant_preferences" option
+                if(recurring_defined)
+                {
+                    epayment::recurring_t second(product.get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)));
+                    messages::messages::instance()->set_error(
+                        "Unsupported Recurring",
+                        "The PayPal payment facility does not support billing more than one recurring fee at a time.", 
+                        QString("Got recurring \"%1\" and \"%2\" in the same invoice.").arg(recurring.to_string()).arg(second.to_string()),
+                        false
+                    );
+                    return;
+                }
+                recurring.set(product.get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)));
+                if(!recurring.is_null())
+                {
+                    recurring_defined = true;
+                    recurring_product = &product;
+                }
+            }
+            else
+            {
+                messages::messages::instance()->set_error(
+                    "Unsupported Recurring",
+                    "The PayPal payment facility does not support a purchase with a subscription recurring billing.", 
+                    "Invoice includes additional products that are not supported here.",
+                    false
+                );
+                return;
+            }
+        }
+
+        if(!recurring_defined)
+        {
+            messages::messages::instance()->set_error(
+                "Subscription Missing",
+                "A PayPal payment plan requires at least one product or service with a recurring fee.", 
+                "Got recurring and non-recurring items in one invoice.",
+                false
+            );
+            return;
+        }
+    }
+
+    // okay, that looks good, connect to Paypal and then try to process the payment
+
+    //
+    // Paypal example:
+    //
+    // curl -v POST https://api.sandbox.paypal.com/v1/payments/billing-agreements/I-123/bill-balance
+    //      -H 'Content-Type: application/json'
+    //      -H 'Authorization: Bearer <Access-Token>'
+    //      -d '{
+    //              "note": "Billing Balance Amount",
+    //              "amount": {
+    //                  "value": "100",
+    //                  "currency": "USD"
+    //              }
+    //          }'
+    //
+    // The agreement identifier is saved in out secret table as:
+    //
+    //    epayment_paypal::agreement_id  or  get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID)
+    //
+
+    {
+        // keep connection alive as long as possible
+        http_client_server::http_client http;
+        http.set_keep_alive(true);
+
+        // get an access token
+        std::string token_type;
+        std::string access_token;
+        if(!get_oauth2_token(http, token_type, access_token))
+        {
+            // a message was already generated if false
+            //
+            // TODO: add an error in the secret table so we know we tried,
+            //       when, how, etc.
+            //
+            return;
+        }
+
+        as2js::String temp_str;
+        as2js::Position pos;
+        as2js::JSON::JSONValue::object_t empty_object;
+        as2js::JSON::JSONValue::pointer_t field;
+        as2js::JSON::JSONValue::pointer_t body(new as2js::JSON::JSONValue(pos, empty_object));
+
+        // NOTE
+        {
+            // "Reason for changing the state agreement"
+            // ("changing" does not make sense here to me)
+            temp_str = "Billing Balance Amount";
+            field.reset(new as2js::JSON::JSONValue(pos, temp_str));
+            body->set_member("note", field);
+        }
+
+        // AMOUNT
+        {
+            as2js::JSON::JSONValue::pointer_t amount(new as2js::JSON::JSONValue(pos, empty_object));
+            body->set_member("amount", amount);
+
+            // CURRENCY
+            temp_str = "USD";
+            field.reset(new as2js::JSON::JSONValue(pos, temp_str));
+            amount->set_member("currency", field);
+
+            // VALUE (PayPal expects a string for value)
+            // TODO: the number of decimals depends on the currency
+            //       (from what I read it can be 0, 2, or 3)
+            temp_str.from_utf8(QString("%1").arg(recurring_product->get_total(), 0, 'f', 2).toUtf8().data());
+            field.reset(new as2js::JSON::JSONValue(pos, temp_str));
+            amount->set_member("value", field);
+        } // amount
+
+        http_client_server::http_request bill_outstanding_agreement_amounts_request;
+        // In this case the URI has to be built by hand because it was not
+        // provided in any JSON results we got so far
+        //
+        //    https://api.sandbox.paypal.com/v1/payments/billing-agreements/I-123/bill-balance
+        //
+        bill_outstanding_agreement_amounts_request.set_uri(QString("https://api.sandbox.paypal.com/v1/payments/billing-agreements/%1/bill-balance").arg(agreement_id.stringValue()).toUtf8().data());
+        //bill_outstanding_agreement_amounts_request.set_path("...");
+        //bill_outstanding_agreement_amounts_request.set_port(443); // https
+        bill_outstanding_agreement_amounts_request.set_header("Accept", "application/json");
+        bill_outstanding_agreement_amounts_request.set_header("Accept-Language", "en_US");
+        bill_outstanding_agreement_amounts_request.set_header("Content-Type", "application/json");
+        bill_outstanding_agreement_amounts_request.set_header("Authorization", QString("%1 %2").arg(token_type.c_str()).arg(access_token.c_str()).toUtf8().data());
+        // TODO: add "-attempt<number>" at the end of our ID
+        bill_outstanding_agreement_amounts_request.set_header("PayPal-Request-Id", new_invoice_ipath.get_key().toUtf8().data());
+        bill_outstanding_agreement_amounts_request.set_data(body->to_string().to_utf8());
+        http_client_server::http_response::pointer_t response(http.send_request(bill_outstanding_agreement_amounts_request));
+
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN))->setValue(QString::fromUtf8(response->get_response().c_str()));
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_NUMBER))->setValue(invoice_number);
+std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response().c_str()) << "]\n***\n";
+
+        // we need a successful response (according to the documentation,
+        // it should always be 204, but we are getting a 200 answer)
+        if(response->get_response_code() != 200
+        && response->get_response_code() != 201
+        && response->get_response_code() != 204)
+        {
+            SNAP_LOG_ERROR("marking plan as ACTIVE failed");
+            throw epayment_paypal_exception_io_error("marking plan as ACTIVE failed");
+        }
+    }
+}
 
 
 

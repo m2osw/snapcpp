@@ -56,7 +56,7 @@ enum name_t
     SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM,
     SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM,
     SNAP_NAME_EPAYMENT_RECURRING,
-    SNAP_NAME_EPAYMENT_RECURRING_FEE,
+    SNAP_NAME_EPAYMENT_RECURRING_SETUP_FEE,
     SNAP_NAME_EPAYMENT_SKU,
     SNAP_NAME_EPAYMENT_THANK_YOU_PATH,
     SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH
@@ -169,7 +169,7 @@ private:
                         value_t(double const value);
 
         type_t          get_type() const;
-        QString const&  get_string_value() const;
+        QString const&  get_string_value(QString const & name) const;
         int64_t         get_integer_value() const;
         double          get_float_value() const;
 
@@ -255,7 +255,7 @@ public:
     static repeat_t const       MAX_REPEAT = 1000;
 
     typedef int                 interval_t;
-    static interval_t const     MAX_INTERVAL_YEARS = 5; // i.e. 60 montsh, 260 weeks, 1830 days
+    static interval_t const     MAX_INTERVAL_YEARS = 5; // i.e. 60 months, 260 weeks, 1830 days -- note that PayPal, for example, only allows up to 1/YEAR
 
     // ***********
     // WARNING: these values are saved as is in the database DO NOT CHANGE!
@@ -314,7 +314,9 @@ public:
     name_t                      get_invoice_status(content::path_info_t& invoice_ipath);
 
     SNAP_SIGNAL_WITH_MODE(generate_invoice, (content::path_info_t& invoice_ipath, uint64_t& invoice_number, epayment_product_list& plist), (invoice_ipath, invoice_number, plist), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(retrieve_invoice, (content::path_info_t& invoice_ipath, uint64_t& invoice_number, epayment_product_list& plist), (invoice_ipath, invoice_number, plist), NEITHER);
     SNAP_SIGNAL(set_invoice_status, (content::path_info_t& invoice_ipath, name_t const status), (invoice_ipath, status));
+    SNAP_SIGNAL(repeat_payment, (content::path_info_t& first_invoice_url, content::path_info_t& previous_invoice_url, content::path_info_t& new_invoice_url), (first_invoice_url, previous_invoice_url, new_invoice_url));
 
     static recurring_t          parser_recurring_field(QString const& info);
 
