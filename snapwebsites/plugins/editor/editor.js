@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.331
+ * Version: 0.0.3.333
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -2435,6 +2435,8 @@ snapwebsites.EditorWidget.prototype.saving = function()
                                      .replace(/(<br *\/?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$/, ""),
                             "data html trimmed"
                       );
+        data.result = data.result.replace(/<br *>/g, "<br/>")
+                                 .replace(/<hr *>/g, "<hr/>");
 
         this.widgetType_.saving(this, data);
     }

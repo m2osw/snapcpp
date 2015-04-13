@@ -24,6 +24,7 @@
 #include "log.h"
 #include "not_reached.h"
 #include "tcp_client_server.h"
+#include "qdomhelpers.h"
 
 #include <QtCassandra/QCassandraLock.h>
 
@@ -1488,6 +1489,8 @@ QString epayment_paypal::get_product_plan(http_client_server::http_client http, 
     product_ipath.set_path(guid);
 
     content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraRow::pointer_t row(revision_table->row(product_ipath.get_revision_key()));
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
     QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(product_ipath.get_key()));
 
@@ -1637,15 +1640,30 @@ QString epayment_paypal::get_product_plan(http_client_server::http_client http, 
     as2js::JSON::JSONValue::pointer_t body(new as2js::JSON::JSONValue(pos, empty_object));
 
     // NAME
+    QString subscription_name(row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->value().stringValue());
+    if(subscription_name.isEmpty())
     {
-        temp_str = "Snap! Website Subscription";
+        // setup to a default name although all products should have
+        // a title since it is a mandatory field in a page!
+        subscription_name = "Snap! Websites Subscription";
+    }
+    {
+        temp_str = snap_dom::remove_tags(subscription_name).toUtf8().data();
         field.reset(new as2js::JSON::JSONValue(pos, temp_str));
         body->set_member("name", field);
     }
 
     // DESCRIPTION
+    QString const subscription_description(row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->value().stringValue());
     {
-        temp_str = "Snap! Website Subscription";
+        if(subscription_description.isEmpty())
+        {
+            temp_str = subscription_name.toUtf8().data();
+        }
+        else
+        {
+            temp_str = snap_dom::remove_tags(subscription_description).toUtf8().data();
+        }
         field.reset(new as2js::JSON::JSONValue(pos, temp_str));
         body->set_member("description", field);
     }
@@ -2282,15 +2300,36 @@ void epayment_paypal::on_process_post(QString const& uri_path)
             as2js::JSON::JSONValue::pointer_t body(new as2js::JSON::JSONValue(pos, empty_object));
 
             // NAME
+            // if the product GUID was not defined, then the function throws
+            QString const guid(recurring_product->get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRODUCT)));
+            content::path_info_t product_ipath;
+            product_ipath.set_path(guid);
+            QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+            QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(product_ipath.get_revision_key()));
+            QString subscription_name(revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->value().stringValue());
+            if(subscription_name.isEmpty())
             {
-                temp_str = "Snap! Website Subscription";
+                // setup to a default name although all products should have
+                // a title since it is a mandatory field in a page!
+                subscription_name = "Snap! Websites Subscription";
+            }
+            {
+                temp_str = snap_dom::remove_tags(subscription_name).toUtf8().data();
                 field.reset(new as2js::JSON::JSONValue(pos, temp_str));
                 body->set_member("name", field);
             }
 
             // DESCRIPTION
+            QString const subscription_description(revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->value().stringValue());
             {
-                temp_str = "Agreement for Snap! Website Subscription";
+                if(subscription_description.isEmpty())
+                {
+                    temp_str = subscription_name.toUtf8().data();
+                }
+                else
+                {
+                    temp_str = snap_dom::remove_tags(subscription_description).toUtf8().data();
+                }
                 field.reset(new as2js::JSON::JSONValue(pos, temp_str));
                 body->set_member("description", field);
             }

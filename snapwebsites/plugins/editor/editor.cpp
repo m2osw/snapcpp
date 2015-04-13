@@ -177,7 +177,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 2, 23, 14, 16, 45, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 4, 12, 19, 20, 45, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1218,7 +1218,7 @@ QString editor::clean_post_value(QString const& widget_type, QString const& valu
 
     // trim at the start
     {
-        QRegExp start_re("^(<br */>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+", Qt::CaseInsensitive, QRegExp::RegExp2);
+        QRegExp start_re("^(<br */?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+", Qt::CaseInsensitive, QRegExp::RegExp2);
         if(start_re.indexIn(result) != 0)
         {
             result.remove(0, start_re.matchedLength());
@@ -1227,7 +1227,7 @@ QString editor::clean_post_value(QString const& widget_type, QString const& valu
 
     // trim at the end
     {
-        QRegExp end_re("(<br */>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$", Qt::CaseInsensitive, QRegExp::RegExp2);
+        QRegExp end_re("(<br */?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$", Qt::CaseInsensitive, QRegExp::RegExp2);
         int const p(end_re.indexIn(result));
         if(p > 0) // here it cannot be zero or we already removed all the characters
         {
@@ -1239,7 +1239,7 @@ QString editor::clean_post_value(QString const& widget_type, QString const& valu
     if(widget_type == "line-edit")
     {
         result.replace("\n", " ").replace("\r", " ");
-        QRegExp break_line("<br */>", Qt::CaseInsensitive, QRegExp::RegExp2);
+        QRegExp break_line("<br */?>", Qt::CaseInsensitive, QRegExp::RegExp2);
         for(;;)
         {
             int const p(break_line.indexIn(result));
