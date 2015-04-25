@@ -381,6 +381,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::connection_declined_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::invoice_start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::invoice_end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
+         || n == "finball::invoice_paid_on" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::start_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          || n == "finball::end_date" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
@@ -448,6 +449,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     else if(n == "content::final"
          || n == "content::files::compressor"
          || n.startsWith("content::files::reference::")
+         || n == "epayment_paypal::maximum_repeat_failures"
          || n == "favicon::sitewide"
          || n == "sessions::used_up"
          || (f_tableName == "files" && f_rowName == "new")

@@ -76,6 +76,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING:
         return "processing";
 
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN:
+        return "unknown";
+
     case SNAP_NAME_EPAYMENT_LONG_DESCRIPTION:
         return "epayment::long_description";
 
@@ -1571,6 +1574,72 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
 }
 
 
+/** \brief Get an invoice status.
+ *
+ * This function reads the invoice status and returns it.
+ *
+ * A page that was never marked as an invoice will not have a status.
+ * In that case the function returns
+ * SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN.
+ *
+ * When you create a page which represents an invoice, you should set
+ * the invoice status to created as in:
+ *
+ * \code
+ *    epayment::epayment::instance()->set_invoice_status(invoice_ipath,
+ *           epayment::epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED);
+ * \endcode
+ *
+ * It is VERY IMPORTANT to call the function since it is a signal and other
+ * plugins may be listening to that signal and react accordingly.
+ *
+ * The statuses are defined here:
+ *
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED
+ *            -- the invoice was void in some ways; either the customer
+ *               decided to not process the payment at all or the customer
+ *               decided to cancel later in which case he was reimbursed;
+ *               it could also be used when a payment is attempted too
+ *               many times and fails each time (i.e. 3 attempts...)
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED
+ *            -- the invoice was paid and the shipping processed; this
+ *               status is most often not used when there is no shipping
+ *               (i.e. an online service); payment wise, COMPLETED also
+ *               means that the products/services were PAID
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED
+ *            -- the invoice was just created; it is brand new and was
+ *               not yet paid; it also means a payment was not attempted
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED
+ *            -- the customer attempted a payment and it failed; the
+ *               customer is allowed to try again
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID
+ *            -- the payment was received in full (we do not currently
+ *               support partial payments, if you want to offer partial
+ *               payments, you need to create multiple invoices)
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING
+ *            -- the payment request was sent to a processor and we are
+ *               waiting for the reply by the processor; this status is
+ *               not always used; (TBD: we probably should include a way
+ *               to save the date when that started)
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING
+ *            -- the payment is being processed; this is generally used
+ *               by processors that send users to an external website
+ *               where they enter their information before doing their
+ *               payment; this is different from pending because the
+ *               customer has to act on it whereas pending means it is
+ *               all automated
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN
+ *            -- when checking a page with an epayment::status which is
+ *               not one of the accepted statuses, this is returned
+ *
+ * \todo
+ * As we extend functionality, we will add additional statuses. For
+ * example, in order for a customer to get reimbursed, we may need
+ * intermediate states similar to PROCESSING and PENDING, which
+ * represent a state in wait of the reimbursement being worked on.
+ *
+ * \param[in] invoice_ipath  The path to the invoice.
+ */
 name_t epayment::get_invoice_status(content::path_info_t& invoice_ipath)
 {
     content::content *content_plugin(content::content::instance());
@@ -1608,7 +1677,7 @@ name_t epayment::get_invoice_status(content::path_info_t& invoice_ipath)
         return SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING;
     }
 
-    throw snap_logic_exception(QString("invoice \"%1\" has unknown status \"%2\".").arg(invoice_ipath.get_key()).arg(status));
+    return SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN;
 }
 
 
@@ -1623,9 +1692,20 @@ name_t epayment::get_invoice_status(content::path_info_t& invoice_ipath)
  * Another example is about users who purchase software. Once the invoice
  * is marked as PAID, the software becomes downloadable by the user.
  *
+ * The list of invoice statuses is defined in the get_invoice_status()
+ * function.
+ *
+ * \note
+ * Although SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN is considered a
+ * possible status when you do a get_status(), you cannot actually set
+ * an invoice to that status. If an invoice is somehow "lost", use the
+ * canceled status instead: SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED.
+ *
  * \todo
- * We need to see whether we want to enforce the status change in the
- * sense that the status cannot go from PAID back to CANCELED or PENDING.
+ * We need to see whether we want to enforce only legal status changes.
+ * For example, a PAID invoice cannot all of a sudden be marked as
+ * PENDING. At this point we let it go to see whether it should be
+ * allowed to happen in some special situations.
  *
  * \exception snap_logic_exception
  * This exception is raised when the function is called with an invalid
@@ -1636,6 +1716,8 @@ name_t epayment::get_invoice_status(content::path_info_t& invoice_ipath)
  *
  * \return true if the status changed, false if the status does not change
  *         or an error is detected and we can continue.
+ *
+ * \sa get_invoice_status()
  */
 bool epayment::set_invoice_status_impl(content::path_info_t& invoice_ipath, name_t const status)
 {
@@ -1711,31 +1793,43 @@ bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, co
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
 
-    QtCassandra::QCassandraRow::pointer_t status_row(content_table->row(new_invoice_ipath.get_key()));
-    QString const invoice_status(status_row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
-    if(invoice_status == "paid")
+    switch(get_invoice_status(new_invoice_ipath))
     {
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
         // it was already marked as paid so ignore the request
-        SNAP_LOG_WARNING("repeat_payment() called with an invoice which is already marked paid.");
+        SNAP_LOG_WARNING("repeat_payment() called with an invoice which is marked canceled, paid, or completed.");
         return false;
+
+    default:
+        // valid for auto-payment
+        break;
+
     }
 
-    QtCassandra::QCassandraRow::pointer_t previous_status_row(content_table->row(previous_invoice_ipath.get_key()));
-    QString const previous_invoice_status(previous_status_row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
-    if(previous_invoice_status != "paid")
+    switch(get_invoice_status(previous_invoice_ipath))
     {
-        // it was already marked as paid so ignore the request
-        SNAP_LOG_WARNING("repeat_payment() called with a previous invoice which is not marked paid.");
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+        break;
+
+    default:
+        SNAP_LOG_WARNING("repeat_payment() called with a previous invoice not marked as paid or completed.");
         return false;
+
     }
 
-    QtCassandra::QCassandraRow::pointer_t first_status_row(content_table->row(first_invoice_ipath.get_key()));
-    QString const first_invoice_status(first_status_row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
-    if(first_invoice_status != "paid")
+    switch(get_invoice_status(first_invoice_ipath))
     {
-        // it was already marked as paid so ignore the request
-        SNAP_LOG_WARNING("repeat_payment() called with a first invoice which is not marked paid.");
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+        break;
+
+    default:
+        SNAP_LOG_WARNING("repeat_payment() called with a first invoice not marked as paid or completed.");
         return false;
+
     }
 
     // valid so far, let the other modules take care of this repeat payment

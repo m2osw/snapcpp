@@ -55,6 +55,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 							<label for="secret" class="settings-title">Secret (secret)</label>
 							<xsl:copy-of select="page/body/epayment_paypal/secret/node()"/>
 						</div>
+
+						<div class="editor-block">
+							<label for="maximum_repeat_failures" class="settings-title">Maximum Repeat Failures</label>
+							<xsl:copy-of select="page/body/epayment_paypal/maximum-repeat-failures/node()"/>
+						</div>
 					</fieldset>
 
 					<fieldset>

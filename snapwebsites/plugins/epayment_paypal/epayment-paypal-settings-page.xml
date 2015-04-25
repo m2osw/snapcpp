@@ -50,6 +50,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </sizes>
     <background-value>secret</background-value>
   </widget>
+  <widget id="maximum_repeat_failures" type="line-edit" field="epayment_paypal::maximum_repeat_failures" path="epayment_paypal/maximum-repeat-failures" auto-save="int8">
+    <tooltip>The number of times the system will try to pass a recurring fee before it stops trying.</tooltip>
+    <help>Help</help>
+    <sizes>
+      <min>1</min>
+      <max>200</max>
+    </sizes>
+    <value>5</value>
+    <background-value>maximum number of failures</background-value>
+  </widget>
   <widget id="debug" type="checkmark" field="epayment_paypal::debug" path="epayment_paypal/debug" auto-save="int8">
     <label>Run in Debug mode. (WARNING: when Debug is turned on, no real charges are performed.)</label>
     <tooltip>Check this box to run in debug mode. This means you can pass orders without actually passing real payments.</tooltip>

@@ -17,6 +17,7 @@
 
 #include "list.h"
 
+#include "../links/links.h"
 #include "../path/path.h"
 #include "../output/output.h"
 
@@ -75,6 +76,9 @@ char const *get_name(name_t name)
 
     case SNAP_NAME_LIST_PAGELIST: // --action pagelist
         return "pagelist";
+
+    case SNAP_NAME_LIST_PROCESSLIST: // --action processlist
+        return "processlist";
 
     case SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
         return "list::selector";
@@ -220,6 +224,7 @@ void list::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(list, "content", content::content, create_content, _1, _2, _3);
     SNAP_LISTEN(list, "content", content::content, modified_content, _1);
     SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
+    SNAP_LISTEN(list, "links", links::links, modified_link, _1, _2);
     SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3, _4);
 }
 
@@ -475,6 +480,25 @@ void list::on_create_content(content::path_info_t& ipath, QString const& owner, 
         content_table->row(key)->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
     }
 
+    on_modified_content(ipath); // then it is the same as on_modified_content()
+}
+
+
+/** \brief Signal that a page was modified by a new link.
+ *
+ * This function is called whenever the links plugin modifies a page by
+ * adding a link or removing a link. By now the page should be quite
+ * complete, outside of other links still missing.
+ *
+ * \param[in] link  The link that was just created or deleted.
+ * \param[in] created  Whether the link was created (true) or deleted (false).
+ */
+void list::on_modified_link(links::link_info const & link, bool const created)
+{
+    static_cast<void>(created);
+
+    content::path_info_t ipath;
+    ipath.set_path(link.key());
     on_modified_content(ipath); // same as on_modified_content()
 }
 
@@ -713,6 +737,7 @@ list_item_vector_t list::read_list(content::path_info_t const& ipath, int start,
 void list::on_register_backend_action(server::backend_action_map_t& actions)
 {
     actions[get_name(SNAP_NAME_LIST_PAGELIST)] = this;
+    actions[get_name(SNAP_NAME_LIST_PROCESSLIST)] = this;
     actions[get_name(SNAP_NAME_LIST_STANDALONELIST)] = this;
 }
 
@@ -729,7 +754,7 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * \return The name of the list UDP signal.
  */
-char const *list::get_signal_name(QString const& action) const
+char const * list::get_signal_name(QString const & action) const
 {
     if(action == get_name(SNAP_NAME_LIST_PAGELIST))
     {
@@ -918,6 +943,14 @@ void list::on_backend_action(QString const& action)
         QString const site_key(f_snap->get_site_key_with_slash());
         int8_t const standalone(1);
         list_table->row(site_key)->cell(get_name(SNAP_NAME_LIST_STANDALONE))->setValue(standalone);
+    }
+    else if(action == get_name(SNAP_NAME_LIST_PROCESSLIST))
+    {
+        QString const url(f_snap->get_server_parameter("URL"));
+        content::path_info_t ipath;
+        ipath.set_path(url);
+        on_modified_content(ipath);
+        f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_LIST_PAGELIST)));
     }
     else
     {
@@ -1281,6 +1314,8 @@ int list::generate_all_lists(QString const& site_key)
         QByteArray const& key(cell->columnKey());
         if(key.size() < 8)
         {
+            // drop any invalid entries, not need to keep them here
+            list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
             continue;
         }
 
@@ -1374,7 +1409,14 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
         QString const key(child_info.key());
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
-        did_work |= generate_list_for_page(page_ipath, list_ipath);
+        try
+        {
+            did_work |= generate_list_for_page(page_ipath, list_ipath);
+        }
+        catch(...)
+        {
+            did_work |= 1;
+        }
     }
 
     return did_work;

@@ -813,7 +813,7 @@ void server::config(int argc, char *argv[])
         int const max_params(f_opt->size("param"));
         for(int idx(0); idx < max_params; ++idx)
         {
-            QString param(QString::fromUtf8(f_opt->get_string("param", idx).c_str()));
+            QString const param(QString::fromUtf8(f_opt->get_string("param", idx).c_str()));
             int const p(param.indexOf('='));
             if(p == -1)
             {

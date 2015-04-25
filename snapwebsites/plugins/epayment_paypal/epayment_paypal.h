@@ -42,6 +42,7 @@ enum name_t
     SNAP_NAME_EPAYMENT_PAYPAL_CANCEL_URL,
     SNAP_NAME_EPAYMENT_PAYPAL_CLICKED_POST_FIELD,
     SNAP_NAME_EPAYMENT_PAYPAL_DEBUG,
+    SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES,
     SNAP_NAME_EPAYMENT_PAYPAL_RETURN_PLAN_THANK_YOU,
     SNAP_NAME_EPAYMENT_PAYPAL_RETURN_PLAN_URL,
     SNAP_NAME_EPAYMENT_PAYPAL_RETURN_THANK_YOU,
@@ -144,11 +145,14 @@ private:
     bool                        get_oauth2_token(http_client_server::http_client& http, std::string& token_type, std::string& access_token);
     QString                     get_product_plan(http_client_server::http_client http, std::string const& token_type, std::string const& access_token, epayment::epayment_product const& recurring_product, double const recurring_fee, QString& plan_id);
     bool                        get_debug();
+    int8_t                      get_maximum_repeat_failures();
 
     zpsnap_child_t                              f_snap;
     QtCassandra::QCassandraTable::pointer_t     f_epayment_paypal_table;
     controlled_vars::flbool_t                   f_debug_defined;
     controlled_vars::flbool_t                   f_debug;
+    controlled_vars::flbool_t                   f_maximum_repeat_failures_defined;
+    controlled_vars::zint64_t                   f_maximum_repeat_failures;
 };
 
 

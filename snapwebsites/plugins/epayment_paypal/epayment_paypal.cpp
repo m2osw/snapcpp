@@ -64,6 +64,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_EPAYMENT_PAYPAL_DEBUG:
         return "epayment_paypal::debug";
 
+    case SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES:
+        return "epayment_paypal::maximum_repeat_failures";
+
     case SNAP_NAME_EPAYMENT_PAYPAL_RETURN_PLAN_URL:
         return "epayment/paypal/return-plan";
 
@@ -1238,6 +1241,49 @@ bool epayment_paypal::get_debug()
 }
 
 
+/** \brief Get the "maximum repeat failures" the website accepts.
+ *
+ * This function retrieves the current maximum number of failures that
+ * the owner of this website accepts with Paypal recurring fees (plans).
+ * After that many, the system gives up and mark the invoice as failed.
+ *
+ * The function caches the value. Backends have to be careful to either
+ * not use this value, or force a re-read by clearing the
+ * f_maximum_repeat_failures_defined flag (although the Cassandra cache
+ * will also need a reset if we want to really read the current value
+ * from any other computer.)
+ *
+ * \return The maximum number of attempts to run a payment for a
+ *         recurring fee.
+ */
+int8_t epayment_paypal::get_maximum_repeat_failures()
+{
+    if(!f_maximum_repeat_failures_defined)
+    {
+        content::path_info_t settings_ipath;
+        settings_ipath.set_path(get_name(SNAP_NAME_EPAYMENT_PAYPAL_SETTINGS_PATH));
+
+        content::content *content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+        QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
+
+        QtCassandra::QCassandraValue maximum_repeat_failures_value(revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES))->value());
+        if(maximum_repeat_failures_value.size() == sizeof(int8_t))
+        {
+            f_maximum_repeat_failures = maximum_repeat_failures_value.int64Value();
+        }
+        else
+        {
+            f_maximum_repeat_failures = 0;
+        }
+
+        f_maximum_repeat_failures_defined = true;
+    }
+
+    return f_debug;
+}
+
+
 /** \brief Get a current PayPal OAuth2 token.
  *
  * This function returns a currently valid OAuth2 token from the database
@@ -1292,7 +1338,7 @@ bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, st
     {
         QtCassandra::QCassandraValue expires_value(secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_EXPIRES))->value());
         int64_t current_date(f_snap->get_current_date());
-        if(!expires_value.nullValue()
+        if(expires_value.size() == sizeof(int64_t)
         && expires_value.int64Value() > current_date) // we do not use 'start date' here because it could be wrong if the process was really slow
         {
             token_type = secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_TOKEN_TYPE))->value().stringValue().toUtf8().data();
@@ -3119,6 +3165,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     static_cast<void>(previous_invoice_ipath);
 
     content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
     QtCassandra::QCassandraRow::pointer_t first_secret_row(secret_table->row(first_invoice_ipath.get_key()));
     QtCassandra::QCassandraValue agreement_id(first_secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID))->value());
@@ -3141,7 +3188,6 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     uint64_t invoice_number(0);
     epayment::epayment_product_list plist;
     epayment_plugin->retrieve_invoice(new_invoice_ipath, invoice_number, plist);
-    epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
 
     epayment::epayment_product const *recurring_product(nullptr);
     {
@@ -3203,11 +3249,36 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
             messages::messages::instance()->set_error(
                 "Subscription Missing",
                 "A PayPal payment plan requires at least one product or service with a recurring fee.", 
-                "Got recurring and non-recurring items in one invoice.",
+                "No item from the list is a recurring product.",
                 false
             );
             return;
         }
+    }
+
+    int64_t failures(0);
+    QtCassandra::QCassandraRow::pointer_t new_invoice_revision_row(revision_table->row(new_invoice_ipath.get_revision_key()));
+    {
+        QtCassandra::QCassandraValue failures_value(new_invoice_revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES))->value());
+        if(failures_value.size() == sizeof(int8_t))
+        {
+            failures = failures_value.signedCharValue();
+
+            // TODO: the limit needs to be a setting
+            if(failures >= get_maximum_repeat_failures())
+            {
+                // too many attempts, we fail
+                epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
+                messages::messages::instance()->set_error(
+                    "Recurring Fee Failing",
+                    "Somehow we could not process the recurring Paypal payment.", 
+                    "When trying to charge a fee at the wrong time a Paypal plan fails... this may be happening here.",
+                    false
+                );
+                return;
+            }
+        }
+        // else -- we did not try yet so it is zero
     }
 
     // okay, that looks good, connect to Paypal and then try to process the payment
@@ -3230,6 +3301,9 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     //
     //    epayment_paypal::agreement_id  or  get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID)
     //
+
+    // all parameters are go, mark as processing
+    epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
 
     {
         // keep connection alive as long as possible
@@ -3311,6 +3385,12 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
         && response->get_response_code() != 201
         && response->get_response_code() != 204)
         {
+            // Note: We do not change the status in this case. It becomes
+            //       FAILED once the maximum number of failures is reached.
+            //
+            ++failures;
+            new_invoice_revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES))->setValue(failures);
+
             SNAP_LOG_ERROR("marking plan as ACTIVE failed");
             throw epayment_paypal_exception_io_error("marking plan as ACTIVE failed");
         }

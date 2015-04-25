@@ -704,10 +704,12 @@ void snap_backend::process_backend_uri(QString const& uri)
             };
             fake foo;
             actions["list"] = &foo;
+            std::cerr << "Actions available for " << uri << std::endl;
             for(server::backend_action_map_t::const_iterator it(actions.begin()); it != actions.end(); ++it)
             {
-                std::cout << it.key() << std::endl;
+                std::cout << "  " << it.key() << std::endl;
             }
+            std::cerr << std::endl;
         }
         else
         {

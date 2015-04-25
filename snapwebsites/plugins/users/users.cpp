@@ -1971,6 +1971,8 @@ void users::on_process_form_post(content::path_info_t& ipath, sessions::sessions
  */
 void users::process_login_form(login_mode_t login_mode)
 {
+    messages::messages *messages_plugin(messages::messages::instance());
+
     // retrieve the row for that user
     QString const key(f_snap->postenv("email"));
     if(login_mode == LOGIN_MODE_VERIFICATION && f_user_key != key)
@@ -1978,7 +1980,7 @@ void users::process_login_form(login_mode_t login_mode)
         // XXX we could also automatically log the user out and send him
         //     to the log in screen... (we certainly should do so on the
         //     third attempt!)
-        messages::messages::instance()->set_error(
+        messages_plugin->set_error(
             "Wrong Credentials",
             "These are wrong credentials. If you are not sure who you were logged as, please <a href=\"/logout\">log out</a> first and then log back in.",
             QString("users::process_login_form() email mismatched when verifying credentials (got \"%1\", expected \"%2\").").arg(key).arg(f_user_key),
@@ -1994,30 +1996,44 @@ void users::process_login_form(login_mode_t login_mode)
 
     if(!details.isEmpty())
     {
-        // IMPORTANT:
-        //   We have ONE error message because whatever the error we do not
-        //   want to tell the user exactly what went wrong (i.e. wrong email,
-        //   or wrong password.)
-        //
-        //   This is important because if someone is registered with an email
-        //   such as example@snapwebsites.info and a hacker tries that email
-        //   and gets an error message saying "wrong password," now the hacker
-        //   knows that the user is registered on that Snap! C++ system.
+        if(messages_plugin->get_error_count() == 0
+        && messages_plugin->get_warning_count() == 0)
+        {
+            // print an end user message only if the number of
+            // errors/warnings is still zero
 
-        // user not registered yet?
-        // email misspelled?
-        // incorrect password?
-        // email still not validated?
-        //
-        // TODO: Put the messages in the database so they can be translated
-        messages::messages::instance()->set_error(
-            "Could Not Log You In",
-            validation_required
-              ? "Your account was not yet <a href=\"/verify\" title=\"Click here to enter a verification code\">validated</a>. Please make sure to first follow the link we sent in your email. If you did not yet receive that email, we can send you another <a href=\"/verify/resend\">confirmation email</a>."
-              : "Your email or password were incorrect. If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?",
-            details,
-            false // should this one be true?
-        );
+            // IMPORTANT:
+            //   We have ONE error message because whatever the error we do not
+            //   want to tell the user exactly what went wrong (i.e. wrong email,
+            //   or wrong password.)
+            //
+            //   This is important because if someone is registered with an email
+            //   such as example@snapwebsites.info and a hacker tries that email
+            //   and gets an error message saying "wrong password," now the hacker
+            //   knows that the user is registered on that Snap! C++ system.
+
+            // user not registered yet?
+            // email misspelled?
+            // incorrect password?
+            // email still not validated?
+            //
+            // TODO: Put the messages in the database so they can be translated
+            messages_plugin->set_error(
+                "Could Not Log You In",
+                validation_required
+                  ? "Your account was not yet <a href=\"/verify\" title=\"Click here to enter a verification code\">validated</a>. Please make sure to first follow the link we sent in your email. If you did not yet receive that email, we can send you another <a href=\"/verify/resend\">confirmation email</a>."
+                  : "Your email or password were incorrect. If you are not registered, you may want to consider <a href=\"/register\">registering</a> first?",
+                details,
+                false // should this one be true?
+            );
+        }
+        else
+        {
+            // in this case we only want to log the details
+            // the plugin that generated errors/warnings is
+            // considered to otherwise be in charge
+            SNAP_LOG_WARNING("Could not log user in (but another plugin generated an error): ")(details);
+        }
     }
 }
 

@@ -263,6 +263,8 @@ public:
 
     QSharedPointer<link_context> new_link_context(link_info const& info, int const count = DELETE_RECORD_COUNT);
 
+    SNAP_SIGNAL_WITH_MODE(modified_link, (link_info const & link, bool const created), (link, created), NEITHER);
+
     // links test suite
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()
 
