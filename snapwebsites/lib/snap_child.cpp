@@ -3685,7 +3685,7 @@ void snap_child::setup_uri()
         NOTREACHED();
     }
     QString host(f_env["HTTP_HOST"]);
-    int port_pos(host.indexOf(':'));
+    int const port_pos(host.indexOf(':'));
     if(port_pos != -1)
     {
         // remove the port information
@@ -3742,8 +3742,8 @@ void snap_child::setup_uri()
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
-    QString qs_path(server->get_parameter("qs_path"));
-    QString path(f_uri.query_option(qs_path));
+    QString const qs_path(server->get_parameter("qs_path"));
+    QString const path(f_uri.query_option(qs_path));
     QString extension;
     if(path != "." && path != "..")
     {
@@ -3753,7 +3753,7 @@ void snap_child::setup_uri()
         {
             limit = 1;
         }
-        int ext(path.lastIndexOf('.'));
+        int const ext(path.lastIndexOf('.'));
         if(ext >= limit)
         {
             extension = path.mid(ext);
@@ -3770,7 +3770,7 @@ void snap_child::setup_uri()
                 // and make use of the Content-Encoding
                 // TODO: make use of extension instead of Accept-Encoding
                 f_uri.set_option("compression", extension);
-                int real_ext(path.lastIndexOf('.', ext - 1));
+                int const real_ext(path.lastIndexOf('.', ext - 1));
                 if(real_ext >= limit)
                 {
                     // retrieve the extension without the compression
