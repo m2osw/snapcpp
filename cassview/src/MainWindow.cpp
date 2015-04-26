@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *p)
 {
     setupUi(this);
 
-    QSettings settings( this );
+    QSettings const settings( this );
     restoreGeometry( settings.value( "geometry", saveGeometry() ).toByteArray() );
     restoreState   ( settings.value( "state"   , saveState()    ).toByteArray() );
 
@@ -33,7 +33,7 @@ MainWindow::MainWindow(QWidget *p)
 	f_cells->setModel( &f_rowModel );
 
     f_cassandraModel.setCassandra( f_cassandra );
-    const int idx = f_contextCombo->findText( f_context );
+    int const idx = f_contextCombo->findText( f_context );
     if( idx != -1 )
     {
         f_contextCombo->setCurrentIndex( idx );
@@ -45,6 +45,7 @@ MainWindow::MainWindow(QWidget *p)
     f_mainSplitter->setStretchFactor( 1, 1 );
 
     f_cells->setContextMenuPolicy( Qt::CustomContextMenu );
+    f_cells->setWordWrap( true ); // this is true by default anyway, and it does not help when we have a column with a super long string...
 
     action_InsertColumn->setEnabled( false );
     action_DeleteColumns->setEnabled( false );
@@ -57,7 +58,8 @@ MainWindow::MainWindow(QWidget *p)
              this, SLOT(onCellsModelReset()) );
     connect( qApp, SIGNAL(aboutToQuit()), this, SLOT(onAboutToQuit()) );
     connect( f_cells->horizontalHeader(), SIGNAL(sectionClicked(int)),
-             this, SLOT(onSectionClicked(int)));
+             this, SLOT(onSectionClicked(int)) );
+    connect( f_filterEdit, SIGNAL(returnPressed()), this, SLOT(on_f_applyFilter_clicked()) );
 }
 
 
@@ -78,9 +80,9 @@ namespace
 
 void MainWindow::connectCassandra()
 {
-    QSettings settings;
-    const QString host( settings.value( "cassandra_host" ).toString() );
-    const int     port( settings.value( "cassandra_port" ).toInt()    );
+    QSettings const settings;
+    QString const host( settings.value( "cassandra_host" ).toString() );
+    int     const port( settings.value( "cassandra_port" ).toInt()    );
     try
     {
         f_cassandra->connect( host, port );
@@ -88,11 +90,11 @@ void MainWindow::connectCassandra()
         qDebug() << "Working on Cassandra Cluster Named"    << f_cassandra->clusterName();
         qDebug() << "Working on Cassandra Protocol Version" << f_cassandra->protocolVersion();
 
-        const QString hostname( tr("%1:%2").arg(host).arg(port) );
+        QString const hostname( tr("%1:%2").arg(host).arg(port) );
         setWindowTitle( tr("Cassandra View [%1]").arg(hostname) );
         f_connectionBtn->setText( hostname );
     }
-    catch( const std::exception& except )
+    catch( std::exception const & except )
     {
         displayError( except
                     , tr("Connection Error")
@@ -117,7 +119,7 @@ void MainWindow::onAboutToQuit()
 
 void MainWindow::fillTableList()
 {
-    f_tableModel.setTable( QCassandraTable::pointer_t() );
+    f_tableModel.setTable( QCassandraTable::pointer_t(), QRegExp() );
     f_rowModel.setRow( QCassandraRow::pointer_t() );
 
     QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
@@ -175,14 +177,31 @@ void MainWindow::on_action_Settings_triggered()
 }
 
 
-void MainWindow::on_f_tables_currentIndexChanged(const QString &table_name)
+void MainWindow::on_f_tables_currentIndexChanged(QString const & table_name)
 {
     try
     {
         f_rowModel.setRow( QCassandraRow::pointer_t() );
         QCassandraContext::pointer_t qcontext( f_cassandra->findContext(f_context) );
         QCassandraTable::pointer_t table( qcontext->findTable(table_name) );
-        f_tableModel.setTable( table );
+        if(table)
+        {
+            table->clearCache();
+            QString filter_text( f_filterEdit->text( ) );
+            QRegExp filter( filter_text );
+            if(!filter.isValid() && !filter_text.isEmpty())
+            {
+                // reset the filter
+                filter = QRegExp();
+
+                QMessageBox::warning( QApplication::activeWindow()
+                    , tr("Warning!")
+                    , tr("Warning!\nThe filter regular expression is not valid. It will not be used.")
+                    , QMessageBox::Ok
+                    );
+            }
+            f_tableModel.setTable( table, filter );
+        }
     }
     catch( const std::exception& except )
     {
@@ -191,6 +210,13 @@ void MainWindow::on_f_tables_currentIndexChanged(const QString &table_name)
                     , tr("Error connecting to the server!")
                     );
     }
+}
+
+
+void MainWindow::on_f_applyFilter_clicked()
+{
+    QString const table_name( f_tables->currentText( ) );
+    on_f_tables_currentIndexChanged( table_name );
 }
 
 
@@ -320,4 +346,4 @@ void MainWindow::on_f_connectionBtn_clicked()
 }
 
 
-// vim: ts=4 sw=4 et syntax=cpp.doxygen
+// vim: ts=4 sw=4 et

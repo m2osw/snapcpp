@@ -10,7 +10,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2011-2015 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -36,8 +36,8 @@
 #
 
 set(CASSVIEW_VERSION_MAJOR 0)
-set(CASSVIEW_VERSION_MINOR 0)
-set(CASSVIEW_VERSION_PATCH 11)
+set(CASSVIEW_VERSION_MINOR 1)
+set(CASSVIEW_VERSION_PATCH 0)
 
 cmake_minimum_required(VERSION 2.8)
 

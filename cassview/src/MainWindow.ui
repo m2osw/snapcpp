@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>816</width>
+    <width>928</width>
     <height>483</height>
    </rect>
   </property>
@@ -84,6 +84,23 @@
        </layout>
       </item>
       <item>
+       <widget class="QLabel" name="labelFilter">
+        <property name="text">
+         <string>Filter:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="f_filterEdit"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="f_applyFilter">
+        <property name="text">
+         <string>&amp;Apply</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -145,7 +162,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>816</width>
+     <width>928</width>
      <height>25</height>
     </rect>
    </property>
