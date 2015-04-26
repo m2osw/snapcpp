@@ -40,19 +40,19 @@ class table_model
         }
 
         QtCassandra::QCassandraTable::pointer_t getTable() const;
-        void setTable( QtCassandra::QCassandraTable::pointer_t t );
+        void                    setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re );
 
         // Read only access
         //
-        Qt::ItemFlags   flags       ( const QModelIndex & index ) const;
-        QVariant        data        ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
-        QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-        int             rowCount    ( const QModelIndex & parent = QModelIndex() ) const;
+        virtual Qt::ItemFlags   flags       ( QModelIndex const & index ) const;
+        virtual QVariant        data        ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
+        virtual QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
+        virtual int             rowCount    ( QModelIndex const & parent = QModelIndex() ) const;
 
         // Fecth more
         //
-        bool            canFetchMore ( const QModelIndex & /* index */ ) const;
-        void            fetchMore    ( const QModelIndex & /* index */ );
+        virtual bool            canFetchMore ( QModelIndex const & index ) const;
+        virtual void            fetchMore    ( QModelIndex const & index );
 
     private:
         QtCassandra::QCassandraTable::pointer_t f_table;

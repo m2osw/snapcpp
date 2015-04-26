@@ -336,6 +336,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return CT_int64_value;
     }
     else if(n == "ecommerce::invoice_number"
+         || n == "epayment_paypal::invoice_number"
          || n == "shorturl::identifier"
          || n == "users::identifier"
          || n == "finball::invoice_number" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)

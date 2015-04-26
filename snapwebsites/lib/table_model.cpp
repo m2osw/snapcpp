@@ -28,33 +28,39 @@
 
 #include "poison.h"
 
-using namespace QtCassandra;
 
 
 namespace snap
 {
 
-QCassandraTable::pointer_t table_model::getTable() const
+QtCassandra::QCassandraTable::pointer_t table_model::getTable() const
 {
     return f_table;
 }
 
 
-void table_model::setTable( QCassandraTable::pointer_t t )
+void table_model::setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re )
 {
     f_table = t;
 
     if( f_table )
     {
         // add a filter and add the start/end column names (see snapdb with '%')
-        QCassandraColumnRangePredicate::pointer_t columnp( new QCassandraColumnRangePredicate );
+        // this would be important for some rows that have a very large number of columns
+        QtCassandra::QCassandraColumnRangePredicate::pointer_t columnp( new QtCassandra::QCassandraColumnRangePredicate );
         columnp->setCount(f_rowCount); // TODO: define a column count too
 
-        // add a filter capability and add words in start/end here (see snapdb with '%')
+        // we cannot use the start and end row names to filter the rows
+        // because they are not in order in the tables (by default Cassandra
+        // only sorts columns)
+        //
+        // so instead we use the match feature which requires a regex
+        //
         f_rowp.setStartRowName("");
         f_rowp.setEndRowName("");
         f_rowp.setCount(f_rowCount); // 1000 is the default for now
         f_rowp.setColumnPredicate(columnp);
+        f_rowp.setRowNameMatch(re);
         f_rowsRemaining = f_table->readRows( f_rowp );
         f_pos = 0;
     }
@@ -63,7 +69,7 @@ void table_model::setTable( QCassandraTable::pointer_t t )
 }
 
 
-bool table_model::canFetchMore(const QModelIndex & model_index) const
+bool table_model::canFetchMore(QModelIndex const & model_index) const
 {
     static_cast<void>(model_index);
 
@@ -71,7 +77,7 @@ bool table_model::canFetchMore(const QModelIndex & model_index) const
 }
 
 
-void table_model::fetchMore(const QModelIndex & model_index)
+void table_model::fetchMore(QModelIndex const & model_index)
 {
     static_cast<void>(model_index);
 
@@ -87,20 +93,21 @@ void table_model::fetchMore(const QModelIndex & model_index)
 
         int const itemsToFetch( qMin(f_rowCount, f_rowsRemaining) );
 
-        beginInsertRows( QModelIndex(), f_pos, f_pos+itemsToFetch-1 );
+        beginInsertRows( QModelIndex(), f_pos, f_pos + itemsToFetch - 1 );
         endInsertRows();
 
         f_pos += itemsToFetch;
     }
-    catch( const std::exception& x )
+    catch( std::exception const & x )
     {
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
 }
 
 
-Qt::ItemFlags table_model::flags( const QModelIndex & /*idx*/ ) const
+Qt::ItemFlags table_model::flags( QModelIndex const & idx ) const
 {
+    static_cast<void>(idx);
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
@@ -121,7 +128,7 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
     {
         // the rows array is used immediately, so we can keep a temporary
         // reference here
-        auto const& rows( f_table->rows() );
+        auto const & rows( f_table->rows() );
         if( rows.size() <= section )
         {
             return QVariant();
@@ -129,14 +136,14 @@ QVariant table_model::headerData( int section, Qt::Orientation orientation, int 
 
         if( orientation == Qt::Horizontal )
         {
-            auto const& row( *(rows.begin()) );
+            auto const & row( *(rows.begin()) );
             Q_ASSERT(row);
 
-            auto const& cell( *(row->cells().begin() + section) );
+            auto const & cell( *(row->cells().begin() + section) );
             return cell->columnName();
         }
     }
-    catch( std::exception const& x )
+    catch( std::exception const & x )
     {
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
@@ -156,8 +163,8 @@ QVariant table_model::data( QModelIndex const & idx, int role ) const
     {
         if( role == Qt::DisplayRole || role == Qt::EditRole )
         {
-            QCassandraContext::pointer_t context( f_table->parentContext() );
-            auto const& rows = f_table->rows();
+            QtCassandra::QCassandraContext::pointer_t context( f_table->parentContext() );
+            auto const & rows = f_table->rows();
             if( rows.size() <= idx.row() )
             {
                 return QVariant();
@@ -179,7 +186,7 @@ QVariant table_model::data( QModelIndex const & idx, int role ) const
 
         if( role == Qt::UserRole )
         {
-            auto const& rows = f_table->rows();
+            auto const & rows = f_table->rows();
             if( rows.size() <= idx.row() )
             {
                 return QVariant();
@@ -188,7 +195,7 @@ QVariant table_model::data( QModelIndex const & idx, int role ) const
             return row->rowKey();
         }
     }
-    catch( std::exception const& x )
+    catch( std::exception const & x )
     {
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
@@ -197,7 +204,7 @@ QVariant table_model::data( QModelIndex const & idx, int role ) const
 }
 
 
-int table_model::rowCount( const QModelIndex &prnt ) const
+int table_model::rowCount( QModelIndex const & prnt ) const
 {
     if( !f_table )
     {
@@ -211,10 +218,10 @@ int table_model::rowCount( const QModelIndex &prnt ) const
 
     try
     {
-        QCassandraRows const& rows = f_table->rows();
+        auto const & rows = f_table->rows();
         return rows.size();
     }
-    catch( std::exception const& x )
+    catch( std::exception const & x )
     {
         SNAP_LOG_ERROR() << "Exception caught! [" << x.what() << "]";
     }
