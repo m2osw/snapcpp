@@ -55,6 +55,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS:
         return "epayment::invoice_status";
 
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
+        return "abandoned";
+
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
         return "canceled";
 
@@ -1595,6 +1598,10 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
  *
  * The statuses are defined here:
  *
+ * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED
+ *            -- the payment failed too many times and the invoice was
+ *               finally abandoned meaning that no more attempts to make
+ *               a payment against that invoice shall happen
  * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED
  *            -- the invoice was void in some ways; either the customer
  *               decided to not process the payment at all or the customer
@@ -1611,7 +1618,8 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
  *               not yet paid; it also means a payment was not attempted
  * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED
  *            -- the customer attempted a payment and it failed; the
- *               customer is allowed to try again
+ *               customer is allowed to try again; however, auto-repeat
+ *               is now turned off against that invoice
  * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID
  *            -- the payment was received in full (we do not currently
  *               support partial payments, if you want to offer partial
@@ -1648,6 +1656,10 @@ name_t epayment::get_invoice_status(content::path_info_t& invoice_ipath)
     QString const status(row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
 
     // convert string to ID, makes it easier to test the status
+    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED))
+    {
+        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED;
+    }
     if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED))
     {
         return SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED;
@@ -1724,6 +1736,7 @@ bool epayment::set_invoice_status_impl(content::path_info_t& invoice_ipath, name
     // make sure the status is properly defined
     switch(status)
     {
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED:
@@ -1795,11 +1808,13 @@ bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, co
 
     switch(get_invoice_status(new_invoice_ipath))
     {
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
     case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
-        // it was already marked as paid so ignore the request
-        SNAP_LOG_WARNING("repeat_payment() called with an invoice which is marked canceled, paid, or completed.");
+    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
+        // it was marked as paid or failed so ignore the request
+        SNAP_LOG_WARNING("repeat_payment() called with an invoice which is marked abandoned, canceled, paid, completed, or failed.");
         return false;
 
     default:

@@ -64,6 +64,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_EPAYMENT_PAYPAL_DEBUG:
         return "epayment_paypal::debug";
 
+    case SNAP_NAME_EPAYMENT_PAYPAL_LAST_ATTEMPT:
+        return "epayment_paypal::last_attempt";
+
     case SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES:
         return "epayment_paypal::maximum_repeat_failures";
 
@@ -1270,11 +1273,12 @@ int8_t epayment_paypal::get_maximum_repeat_failures()
         QtCassandra::QCassandraValue maximum_repeat_failures_value(revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES))->value());
         if(maximum_repeat_failures_value.size() == sizeof(int8_t))
         {
-            f_maximum_repeat_failures = maximum_repeat_failures_value.int64Value();
+            f_maximum_repeat_failures = maximum_repeat_failures_value.signedCharValue();
         }
         else
         {
-            f_maximum_repeat_failures = 0;
+            // the default is 5
+            f_maximum_repeat_failures = 5;
         }
 
         f_maximum_repeat_failures_defined = true;
@@ -2130,7 +2134,6 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         epayment::epayment *epayment_plugin(epayment::epayment::instance());
         epayment::epayment_product_list plist;
         epayment_plugin->generate_invoice(invoice_ipath, invoice_number, plist);
-        epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
         success = invoice_number != 0;
 
         content::content *content_plugin(content::content::instance());
@@ -2173,8 +2176,15 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         std::string access_token;
         if(!get_oauth2_token(http, token_type, access_token))
         {
+            // if OAuth2 fails, it may be a temporary connection problem
+            // so we do not change the invoice status before or in this case
             return;
         }
+
+        // mark invoice as being processed right now
+        // if we detect a failure, it will be changed to FAILED
+        // if everything works, it becomes PENDING
+        epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
 
         snap_uri const main_uri(f_snap->get_uri());
 
@@ -2207,6 +2217,13 @@ void epayment_paypal::on_process_post(QString const& uri_path)
                 // the "override_merchant_preferences" option
                 if(recurring_defined)
                 {
+                    // TODO: support a list of "incompatible" processors for
+                    //       an invoice; in this case we'd add Paypal; the
+                    //       processing still failed at this point; this
+                    //       should not prevent us from attempting to process
+                    //       the invoice again
+                    epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
+
                     epayment::recurring_t second(product.get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)));
                     messages::messages::instance()->set_error(
                         "Unsupported Recurring",
@@ -2234,6 +2251,13 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         {
             if(other_items)
             {
+                // TODO: support a list of "incompatible" processors for
+                //       an invoice; in this case we'd add Paypal; the
+                //       processing still failed at this point; this
+                //       should not prevent us from attempting to process
+                //       the invoice again
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
+
                 messages::messages::instance()->set_error(
                     "Unsupported Mix of Products",
                     "A PayPal payment does not support regular items and a subscription to be processed together.", 
@@ -2446,6 +2470,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             if(response->get_response_code() != 200
             && response->get_response_code() != 201)
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("creating a plan failed");
                 throw epayment_paypal_exception_io_error("creating a plan failed");
             }
@@ -2454,6 +2479,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             if(!response->has_header("content-type")
             || response->get_header("content-type") != "application/json")
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("plan creation request did not return application/json data");
                 throw epayment_paypal_exception_io_error("plan creation request did not return application/json data");
             }
@@ -2464,6 +2490,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             as2js::JSON::JSONValue::pointer_t value(json->parse(in));
             if(!value)
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("JSON parser failed parsing plan creation response");
                 throw epayment_paypal_exception_io_error("JSON parser failed parsing plan creation response");
             }
@@ -2475,12 +2502,14 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             // the plan object
             if(object.find("plan") == object.end())
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("plan object missing in agreement");
                 throw epayment_paypal_exception_io_error("plan object missing in agreement");
             }
             as2js::JSON::JSONValue::object_t const& plan(object.at("plan")->get_object());
             if(plan.find("state") == plan.end())
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("plan status missing in agreement");
                 throw epayment_paypal_exception_io_error("plan status missing in agreement");
             }
@@ -2488,6 +2517,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             //       statuses in a case insensitive manner
             if(plan.at("state")->get_string() != "ACTIVE")
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("PayPal plan status is not \"ACTIVE\" as expected when creating an agreement");
                 throw epayment_paypal_exception_io_error("PayPal plan status is not \"ACTIVE\" as expected when creating an agreement");
             }
@@ -2497,6 +2527,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             // get the "links"
             if(object.find("links") == object.end())
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("agreement links missing");
                 throw epayment_paypal_exception_io_error("agreement links missing");
             }
@@ -2514,16 +2545,19 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
                         // the method has to be REDIRECT
                         if(link_object.find("method") == link_object.end())
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"approval_url\" has no \"method\" parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"approval_url\" has no \"method\" parameter");
                         }
                         if(link_object.at("method")->get_string() != "REDIRECT")
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"approval_url\" has a \"method\" other than \"REDIRECT\"");
                             throw epayment_paypal_exception_io_error("PayPal link \"approval_url\" has a \"method\" other than \"REDIRECT\"");
                         }
                         if(link_object.find("href") == link_object.end())
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"approval_url\" has no \"href\" parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"approval_url\" has no \"href\" parameter");
                         }
@@ -2536,6 +2570,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
                         snap_uri const redirect_uri(redirect_url);
                         if(!redirect_uri.has_query_option("token"))
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"approval_url\" has no \"token\" query string parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"approval_url\" has no \"token\" query string parameter");
                         }
@@ -2552,16 +2587,19 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
                         // the return page! it must use a POST
                         if(link_object.find("method") == link_object.end())
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"execute\" has no \"method\" parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"execute\" has no \"method\" parameter");
                         }
                         if(link_object.at("method")->get_string() != "POST")
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"execute\" has a \"method\" other than \"POST\"");
                             throw epayment_paypal_exception_io_error("PayPal link \"execute\" has a \"method\" other than \"POST\"");
                         }
                         if(link_object.find("href") == link_object.end())
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"execute\" has no \"href\" parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"execute\" has no \"href\" parameter");
                         }
@@ -2576,6 +2614,13 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
         {
             if(recurring_fee_defined)
             {
+                // TODO: support a list of "incompatible" processors for
+                //       an invoice; in this case we'd add Paypal; the
+                //       processing still failed at this point; this
+                //       should not prevent us from attempting to process
+                //       the invoice again
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
+
                 messages::messages::instance()->set_error(
                     "Unsupported Mix of Products",
                     "A standard PayPal payment cannot include a recurring fee.", 
@@ -2584,6 +2629,11 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
                 );
                 return;
             }
+
+            // mark invoice as being processed right now
+            // if we detect a failure, it will be changed to FAILED
+            // if everything works, it becomes PENDING
+            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
 
             // create a sales payment
             //
@@ -2907,6 +2957,7 @@ std::cerr << "***\n*** JSON BODY: ["
             if(!response->has_header("content-type")
             || response->get_header("content-type") != "application/json")
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("sale request did not return application/json data");
                 throw epayment_paypal_exception_io_error("sale request did not return application/json data");
             }
@@ -2917,6 +2968,7 @@ std::cerr << "***\n*** JSON BODY: ["
             as2js::JSON::JSONValue::pointer_t value(json->parse(in));
             if(!value)
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("JSON parser failed parsing sale response");
                 throw epayment_paypal_exception_io_error("JSON parser failed parsing sale response");
             }
@@ -2927,6 +2979,7 @@ std::cerr << "***\n*** JSON BODY: ["
             // the state should be "created" at this point
             if(object.find("state") == object.end())
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("payment state missing");
                 throw epayment_paypal_exception_io_error("payment state missing");
             }
@@ -2934,6 +2987,7 @@ std::cerr << "***\n*** JSON BODY: ["
             //       statuses in a case insensitive manner
             if(object.at("state")->get_string() != "created")
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("PayPal payment status is not \"created\" as expected");
                 throw epayment_paypal_exception_io_error("PayPal payment status is not \"created\" as expected");
             }
@@ -2946,6 +3000,7 @@ std::cerr << "***\n*** JSON BODY: ["
                 // "intent" should always be defined, we expect it to be "sale"
                 if(object.at("intent")->get_string() != "sale")
                 {
+                    epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                     SNAP_LOG_ERROR("PayPal payment status is not \"created\" as expected");
                     throw epayment_paypal_exception_io_error("PayPal payment status is not \"created\" as expected");
                 }
@@ -2956,6 +3011,7 @@ std::cerr << "***\n*** JSON BODY: ["
             // get the "id" (also called "paymentId" in the future GET)
             if(object.find("id") == object.end())
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("payment identifier missing");
                 throw epayment_paypal_exception_io_error("payment identifier missing");
             }
@@ -2983,6 +3039,7 @@ std::cerr << "***\n*** JSON BODY: ["
             // get the "links"
             if(object.find("links") == object.end())
             {
+                epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 SNAP_LOG_ERROR("payment links missing");
                 throw epayment_paypal_exception_io_error("payment links missing");
             }
@@ -3000,16 +3057,19 @@ std::cerr << "***\n*** JSON BODY: ["
                         // the method has to be REDIRECT
                         if(link_object.find("method") == link_object.end())
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"approval_url\" has no \"method\" parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"approval_url\" has no \"method\" parameter");
                         }
                         if(link_object.at("method")->get_string() != "REDIRECT")
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"approval_url\" has a \"method\" other than \"REDIRECT\"");
                             throw epayment_paypal_exception_io_error("PayPal link \"approval_url\" has a \"method\" other than \"REDIRECT\"");
                         }
                         if(link_object.find("href") == link_object.end())
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"approval_url\" has no \"href\" parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"approval_url\" has no \"href\" parameter");
                         }
@@ -3022,6 +3082,7 @@ std::cerr << "***\n*** JSON BODY: ["
                         snap_uri const redirect_uri(redirect_url);
                         if(!redirect_uri.has_query_option("token"))
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"approval_url\" has no \"token\" query string parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"approval_url\" has no \"token\" query string parameter");
                         }
@@ -3037,16 +3098,19 @@ std::cerr << "***\n*** JSON BODY: ["
                         // the method has to be POST
                         if(link_object.find("method") == link_object.end())
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"execute\" has no \"method\" parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"execute\" has no \"method\" parameter");
                         }
                         if(link_object.at("method")->get_string() != "POST")
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"execute\" has a \"method\" other than \"POST\"");
                             throw epayment_paypal_exception_io_error("PayPal link \"execute\" has a \"method\" other than \"POST\"");
                         }
                         if(link_object.find("href") == link_object.end())
                         {
+                            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                             SNAP_LOG_ERROR("PayPal link \"execute\" has no \"href\" parameter");
                             throw epayment_paypal_exception_io_error("PayPal link \"execute\" has no \"href\" parameter");
                         }
@@ -3060,10 +3124,12 @@ std::cerr << "***\n*** JSON BODY: ["
 
         if(redirect_url.isEmpty())
         {
+            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
             throw epayment_paypal_exception_io_error("PayPal redirect URL (\"approval_url\") was not found");
         }
         if(!found_execute)
         {
+            epayment_plugin->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
             throw epayment_paypal_exception_io_error("PayPal execute URL (\"execute\") was not found");
         }
 
@@ -3076,7 +3142,7 @@ std::cerr << "***\n*** JSON BODY: ["
         messages::messages::instance()->set_error(
             "PayPal Unknown Command",
             QString("Your last request sent command \"%1\" which the server does not understand.").arg(click), 
-            "Hacker send a weird 'click' value or we did not update the server according to the JavaScript code.",
+            "Hacker sent a weird 'click' value or we did not update the server according to the JavaScript code.",
             false
         );
     }
@@ -3164,6 +3230,14 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
 {
     static_cast<void>(previous_invoice_ipath);
 
+    epayment::epayment *epayment_plugin(epayment::epayment::instance());
+    epayment::name_t status(epayment_plugin->get_invoice_status(new_invoice_ipath));
+    if(status == epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN)
+    {
+        // in case the programmer missed specifying the status... use CREATED
+        status = epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED;
+    }
+
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
@@ -3176,15 +3250,38 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
         return;
     }
 
+    QtCassandra::QCassandraRow::pointer_t new_invoice_revision_row(revision_table->row(new_invoice_ipath.get_revision_key()));
+    if(!new_invoice_revision_row)
+    {
+        // we have a big problem it looks like!
+        return;
+    }
+
+    // make sure we do not try too many times in a row
+    int64_t const last_attempt(new_invoice_revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_LAST_ATTEMPT))->value().safeInt64Value());
+    int64_t const start_date(f_snap->get_start_date());
+    if(last_attempt + 24LL * 60LL * 60LL * 1000000LL > start_date)
+    {
+        // the last attempt was less than 24h, skip this auto-repeat payment
+        // (i.e. in effect try at most once per day)
+        messages::messages::instance()->set_error(
+            "Recurring Fee already processed today",
+            "The PayPal recurring payment facility will not attempt plan processing of the same invoice more than once a day.", 
+            "To avoid losing all of our attempts all at once, we process invoices with recurring payments only once a day.",
+            false
+        );
+        return;
+    }
+    new_invoice_revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_LAST_ATTEMPT))->setValue(start_date);
+
     QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(new_invoice_ipath.get_key()));
     if(!secret_row)
     {
-        // we have a bigger problem it looks like!
+        // we have a big problem it looks like!
         return;
     }
 
     // get the client invoice
-    epayment::epayment *epayment_plugin(epayment::epayment::instance());
     uint64_t invoice_number(0);
     epayment::epayment_product_list plist;
     epayment_plugin->retrieve_invoice(new_invoice_ipath, invoice_number, plist);
@@ -3257,17 +3354,18 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     }
 
     int64_t failures(0);
-    QtCassandra::QCassandraRow::pointer_t new_invoice_revision_row(revision_table->row(new_invoice_ipath.get_revision_key()));
     {
         QtCassandra::QCassandraValue failures_value(new_invoice_revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES))->value());
         if(failures_value.size() == sizeof(int8_t))
         {
             failures = failures_value.signedCharValue();
 
-            // TODO: the limit needs to be a setting
+            // the limit is a setting
             if(failures >= get_maximum_repeat_failures())
             {
                 // too many attempts, we fail
+                // the FAILED status does not prohibit a manual payment,
+                // it will prevent an auto-repeat payment though
                 epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 messages::messages::instance()->set_error(
                     "Recurring Fee Failing",
@@ -3302,9 +3400,6 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     //    epayment_paypal::agreement_id  or  get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID)
     //
 
-    // all parameters are go, mark as processing
-    epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
-
     {
         // keep connection alive as long as possible
         http_client_server::http_client http;
@@ -3322,6 +3417,9 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
             //
             return;
         }
+
+        // all parameters are go, mark as processing
+        epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
 
         as2js::String temp_str;
         as2js::Position pos;
@@ -3379,6 +3477,11 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
         secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_NUMBER))->setValue(invoice_number);
 std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response().c_str()) << "]\n***\n";
 
+        // parse the response which is always JSON even on errors
+        as2js::JSON::pointer_t json(new as2js::JSON);
+        as2js::StringInput::pointer_t in(new as2js::StringInput(response->get_response()));
+        as2js::JSON::JSONValue::pointer_t value(json->parse(in));
+
         // we need a successful response (according to the documentation,
         // it should always be 204, but we are getting a 200 answer)
         if(response->get_response_code() != 200
@@ -3391,9 +3494,50 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
             ++failures;
             new_invoice_revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_MAXIMUM_REPEAT_FAILURES))->setValue(failures);
 
-            SNAP_LOG_ERROR("marking plan as ACTIVE failed");
-            throw epayment_paypal_exception_io_error("marking plan as ACTIVE failed");
+            // in this case we mark the invoice paymnet as failed unless
+            // we recognize the error and can use a different status
+            epayment::name_t new_status(epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
+            if(value)
+            {
+                as2js::JSON::JSONValue::object_t const& object(value->get_object());
+
+                // NAME
+                // check the error name if defined
+                if(object.find("name") != object.end())
+                {
+                    if(object.at("name")->get_string() == "INVALID_OUTSTANDING_BALANCE")
+                    {
+                        // restore the status to what it was on entry
+                        // (i.e. we just failed a payment attempted)
+                        new_status = status;
+                    }
+                }
+            }
+
+            // restore the status, we are not processing anymore; this may
+            // put the invoice back to CREATED (i.e. "new") -- at this time
+            // we only allow CREATED invoices here so it will be that.
+            //
+            // TODO: we may have cases where the status should be set to
+            //       FAILED instead of back to CREATED (i.e. when the
+            //       error says the user canceled that plan)
+            epayment_plugin->set_invoice_status(new_invoice_ipath, new_status);
+
+            SNAP_LOG_ERROR("processing recurring payment failed");
+            throw epayment_paypal_exception_io_error("processing recurring payment failed");
         }
+
+        if(!value)
+        {
+            // this is double bad, completely failed
+            epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
+            SNAP_LOG_ERROR("JSON parser failed parsing auto-payment response");
+            throw epayment_paypal_exception_io_error("JSON parser failed parsing auto-payment response");
+        }
+
+        // TODO: make sure the payment was accepted and processed as expected
+
+        epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID);
     }
 }
 
