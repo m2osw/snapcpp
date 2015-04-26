@@ -10,7 +10,7 @@
  *      See the corresponding .cpp file.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2015 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -38,6 +38,7 @@
 #define QCASSANDRA_ROW_PREDICATE_H
 
 #include "QCassandraColumnPredicate.h"
+#include <QRegExp>
 #include <memory>
 
 namespace QtCassandra
@@ -63,6 +64,9 @@ public:
     const QByteArray& endRowKey() const;
     void setEndRowKey(const QByteArray& row_key);
 
+    QRegExp rowNameMatch() const;
+    void setRowNameMatch(QRegExp const& re);
+
     int32_t count() const;
     void setCount(int32_t count = 100);
 
@@ -81,6 +85,7 @@ private:
 
     QByteArray                              f_start_row;
     QByteArray                              f_end_row;
+    QRegExp                                 f_row_name_match;
     cassandra_count_t                       f_count;
     controlled_vars::flbool_t               f_wrap; // i.e. KeyRange tokens versus keys
     controlled_vars::flbool_t               f_exclude; // whether f_start_row is excluded

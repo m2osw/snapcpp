@@ -10,7 +10,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2014 Made to Order Software Corp.
+ *      Copyright (c) 2011-2015 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -37,6 +37,8 @@
 
 #include "QCassandraPrivate.h"
 #include "QThriftHeaders.h"
+
+#include <iostream>
 
 namespace QtCassandra
 {
@@ -1150,7 +1152,8 @@ void QCassandraPrivate::remove(const QString& table_name, const QByteArray& row_
  * \param[in,out] table  The table requesting the row slices.
  * \param[in] row_predicate  The predicate to select rows and columns.
  *
- * \return The number of rows read from the Cassandra server.
+ * \return The number of rows read from the Cassandra server and added to
+ *         the table.
  */
 uint32_t QCassandraPrivate::getRowSlices(QCassandraTable& table, QCassandraRowPredicate& row_predicate)
 {
@@ -1164,9 +1167,6 @@ uint32_t QCassandraPrivate::getRowSlices(QCassandraTable& table, QCassandraRowPr
     org::apache::cassandra::SlicePredicate slice_predicate;
     column_predicate->toPredicate(&slice_predicate);
 
-    org::apache::cassandra::KeyRange key_range;
-    row_predicate.toPredicate(&key_range);
-
     typedef std::vector<org::apache::cassandra::KeySlice> key_slice_vector_t;
     key_slice_vector_t results;
 
@@ -1179,66 +1179,109 @@ uint32_t QCassandraPrivate::getRowSlices(QCassandraTable& table, QCassandraRowPr
         consistency_level = f_parent->defaultConsistencyLevel();
     }
 
-    try {
+    // get a copy of the row predicate name match regular expression
+    auto re(row_predicate.rowNameMatch());
+
+    uint32_t size(0);
+    int32_t max(row_predicate.count());
+    while(max > 0)
+    {
+        QCassandraRowPredicate current_row_predicate(row_predicate);
+        if(re.isEmpty())
+        {
+            current_row_predicate.setCount(max);
+        }
+        else
+        {
+            // the regular expression may remove many (most, all) of the
+            // entries so if max is very small, we will be going at a real
+            // snail pace here... so instead use 100 as the minimum number
+            // of rows to fetch
+            current_row_predicate.setCount(std::min(max, 100));
+        }
+        org::apache::cassandra::KeyRange key_range;
+        current_row_predicate.toPredicate(&key_range);
+
+        try {
 //std::cerr << "start/end ["<< key_range.start_key<< "]/[" << key_range.end_key<< "] OR ["<< key_range.start_token<<"]/[" << key_range.end_token<< "]\n";
-        f_client->get_range_slices(results, column_parent, slice_predicate, key_range, static_cast<org::apache::cassandra::ConsistencyLevel::type>(static_cast<cassandra_consistency_level_t>(consistency_level)));
-    }
-    // Wondering whether the invalid request exception is what 0.8.0 was
-    // returning instead of the transport exception.
-    //catch(const org::apache::cassandra::InvalidRequestException& /*e*/) {
-    //    // this happens when the predicate is not liked by Cassandra
-    //    // (it's probably some form of a bug though)
-    //    return 0;
-    //}
-    catch(const apache::thrift::transport::TTransportException& e) {
-        if(e.what() == std::string("No more data to read.")) {
-            return 0;
+            f_client->get_range_slices(results, column_parent, slice_predicate, key_range, static_cast<org::apache::cassandra::ConsistencyLevel::type>(static_cast<cassandra_consistency_level_t>(consistency_level)));
         }
-        throw;
-    }
-    // Too many nodes are down to continue processing.
-    // This can also happen if the initialization of a context includes a
-    // data center name which is invalid (because if Cassandra cannot find
-    // that data center it will not be happy about it!)
-    // It can also happen if the replication factor is larger than the
-    // number of nodes available.
-    //catch(const org::apache::cassandra::UnavailableException& e)
-    //{
-    //    throw;
-    //}
-
-    // we got results, copy the data to the table cache
-    int adjust(0);
-    for(key_slice_vector_t::iterator it = results.begin(); it != results.end(); ++it) {
-        if(it == results.begin() && row_predicate.excludeFirst()) {
-            adjust = -1;
-            continue;
-        }
-        QByteArray row_key(it->key.c_str(), it->key.size());
-        typedef std::vector<org::apache::cassandra::ColumnOrSuperColumn> column_vector_t;
-        for(column_vector_t::iterator jt = it->columns.begin(); jt != it->columns.end(); ++jt) {
-            // transform the value of the cell to a QCassandraValue
-            QCassandraValue value;
-            if(jt->column.__isset.value) {
-                value.setBinaryValue(QByteArray(jt->column.value.c_str(), jt->column.value.length()));
+        // Wondering whether the invalid request exception is what 0.8.0 was
+        // returning instead of the transport exception.
+        //catch(const org::apache::cassandra::InvalidRequestException& /*e*/) {
+        //    // this happens when the predicate is not liked by Cassandra
+        //    // (it's probably some form of a bug though)
+        //    return size;
+        //}
+        catch(apache::thrift::transport::TTransportException const & e) {
+            if(e.what() == std::string("No more data to read.")) {
+                return size;
             }
-            if(jt->column.__isset.timestamp) {
-                value.assignTimestamp(jt->column.timestamp);
-            }
-            if(jt->column.__isset.ttl) {
-                value.setTtl(jt->column.ttl);
-            }
-
-            // save the cell in the corresponding table, row, cell
-            QByteArray cell_key(jt->column.name.c_str(), jt->column.name.size());
-            table.assignRow(row_key, cell_key, value);
+            throw;
         }
-        if(it + 1 == results.end()) {
-            row_predicate.setLastKey(row_key);
+        // Too many nodes are down to continue processing.
+        // This can also happen if the initialization of a context includes a
+        // data center name which is invalid (because if Cassandra cannot find
+        // that data center it will not be happy about it!)
+        // It can also happen if the replication factor is larger than the
+        // number of nodes available.
+        //catch(const org::apache::cassandra::UnavailableException& e)
+        //{
+        //    throw;
+        //}
+
+        // if no results, exit the loop immediately
+        // (in case of a long list that uses excludeFirst(), we may end up
+        // with 1 entry which is going to be ignored and thus that's an
+        // equivalent to emptiness)
+        if(results.empty()
+        || (row_predicate.excludeFirst() && results.size() == 1))
+        {
+            break;
+        }
+
+        // we got results, copy the data to the table cache
+        QByteArray last_key;
+        for(key_slice_vector_t::iterator it = results.begin(); it != results.end(); ++it) {
+            if(it == results.begin() && row_predicate.excludeFirst()) {
+                continue;
+            }
+            QByteArray row_key(it->key.c_str(), it->key.size());
+            last_key = row_key;
+            if(!re.isEmpty()) {
+                QString row_name(QString::fromUtf8(row_key.data()));
+                if(re.indexIn(row_name) == -1) {
+                    continue;
+                }
+            }
+            typedef std::vector<org::apache::cassandra::ColumnOrSuperColumn> column_vector_t;
+            for(column_vector_t::iterator jt = it->columns.begin(); jt != it->columns.end(); ++jt) {
+                // transform the value of the cell to a QCassandraValue
+                QCassandraValue value;
+                if(jt->column.__isset.value) {
+                    value.setBinaryValue(QByteArray(jt->column.value.c_str(), jt->column.value.length()));
+                }
+                if(jt->column.__isset.timestamp) {
+                    value.assignTimestamp(jt->column.timestamp);
+                }
+                if(jt->column.__isset.ttl) {
+                    value.setTtl(jt->column.ttl);
+                }
+
+                // save the cell in the corresponding table, row, cell
+                QByteArray cell_key(jt->column.name.c_str(), jt->column.name.size());
+                table.assignRow(row_key, cell_key, value);
+            }
+            ++size;
+            --max;
+        }
+
+        if(!last_key.isNull()) {
+            row_predicate.setLastKey(last_key);
         }
     }
 
-    return results.size() + adjust;
+    return size;
 }
 
 } // namespace QtCassandra

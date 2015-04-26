@@ -9,7 +9,7 @@
  *      See each function below.
  *
  * License:
- *      Copyright (c) 2011-2013 Made to Order Software Corp.
+ *      Copyright (c) 2011-2015 Made to Order Software Corp.
  * 
  *      http://snapwebsites.org/
  *      contact@m2osw.com
@@ -430,6 +430,56 @@ void QCassandraRowPredicate::setLastKey(const QByteArray& row_key)
 bool QCassandraRowPredicate::excludeFirst() const
 {
     return f_exclude;
+}
+
+/** \brief Return the regular expression used to match row names.
+ *
+ * On a table with row names that can be matched using a regular
+ * expression (i.e. generally without zero bytes) this regular
+ * expression is used against the row names. If they match, they
+ * are returned as part of a featch.
+ *
+ * By default the regular expression is empty and all rows are
+ * considered to match.
+ *
+ * \return A regular expression object.
+ */
+QRegExp QCassandraRowPredicate::rowNameMatch() const
+{
+    return f_row_name_match;
+}
+
+/** \brief Define a regular expression to use against row names.
+ *
+ * When reading the rows of a Cassandra database, it is not always
+ * possible to use a start and end name because these parameters
+ * cannot be used if your rows are not sorted (which should be
+ * the majority of cassandra clusters running out there.)
+ *
+ * You thus have two solutions: one is to create a row with a list
+ * of columns representing the name of each row. You can then
+ * use the predicate against these columns and then read the
+ * rows from that list of columns (in other words, create an
+ * index.) The concept is very simple. However, there are times
+ * when you want to do a query with a pattern applied against
+ * your rows and the query is rare enough or just exceptional
+ * that creating an index would be a big waste of time.
+ *
+ * Note that you can make use of any type of syntax as offered
+ * by the QRegExp object.
+ *
+ * \warning
+ * This feature is SLOW. Actually, you may end up reading ALL
+ * the rows of your table with such a predicate. It should
+ * really only be used in special occasions and not in a
+ * regular basis in your software unless you are working with
+ * a table that you know will not grow to thousands or more rows.
+ *
+ * \param[in] re  The regular expression to use.
+ */
+void QCassandraRowPredicate::setRowNameMatch(QRegExp const& re)
+{
+    f_row_name_match = re;
 }
 
 /** \brief Return the maximum number of rows that will be returned.
