@@ -1541,11 +1541,15 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
         did_work = 1;
     }
 
-    if(did_work != 0)
-    {
-        int64_t const start_date(f_snap->get_start_date());
-        list_row->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->setValue(start_date);
-    }
+    // if a new list failed in some way, we still get this value because
+    // trying again will probably not help; also empty lists would otherwise
+    // not get this date
+    //
+    // TODO: make sure we do not set this flag if we are quitting early
+    //       (i.e. child receives a STOP signal)
+    //
+    int64_t const start_date(f_snap->get_start_date());
+    list_row->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->setValue(start_date);
 
     return did_work;
 }
