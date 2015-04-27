@@ -1925,7 +1925,7 @@ QString snap_uri::urldecode(QString const& uri, bool relax)
         else
         {
 //#ifdef DEBUG
-//SNAP_LOG_TRACE() << "url decode?! found an invalid characters [" << uri << "] (3)";
+//SNAP_LOG_TRACE() << "url decode?! found an invalid character [" << uri << "] (3)";
 //#endif
             throw snap_uri_exception_invalid_uri(QString("urldecode(\"%1\", %2) failed because of an invalid character (%3)")
                             .arg(uri)

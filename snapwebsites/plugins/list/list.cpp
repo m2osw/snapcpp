@@ -470,14 +470,12 @@ void list::on_create_content(content::path_info_t& ipath, QString const& owner, 
     QString const branch_key(ipath.get_branch_key());
     if(branch_table->row(branch_key)->exists(get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)))
     {
-        QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-
         // zero marks the list as brand new so we use a different
         // algorithm to check the data in that case (i.e. the list of
         // rows in the list table is NOT complete!)
         QString const key(ipath.get_key());
         int64_t const zero(0);
-        content_table->row(key)->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
+        branch_table->row(key)->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
     }
 
     on_modified_content(ipath); // then it is the same as on_modified_content()
@@ -828,6 +826,7 @@ void list::on_backend_action(QString const& action)
 //links::links::instance()->create_link(source, destination);
 //return;
 
+        QString const site_key(f_snap->get_site_key_with_slash());
         QString const core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
         // loop until stopped
         for(;;)
@@ -836,7 +835,7 @@ void list::on_backend_action(QString const& action)
             QtCassandra::QCassandraValue threshold(f_snap->get_site_parameter(core_plugin_threshold));
             if(!threshold.nullValue())
             {
-                list_table->clearCache();
+                //list_table->clearCache(); -- we do that below in the loop no need here
                 content_table->clearCache();
                 branch_table->clearCache();
                 revision_table->clearCache();
@@ -851,7 +850,7 @@ void list::on_backend_action(QString const& action)
                     for(;;)
                     {
                         list_table->clearCache();
-                        uint32_t count(list_table->readRows(row_predicate));
+                        uint32_t const count(list_table->readRows(row_predicate));
                         if(count == 0)
                         {
                             // no more lists to process
@@ -866,9 +865,11 @@ void list::on_backend_action(QString const& action)
                             {
                                 f_snap->init_start_date();
                                 QString const key(QString::fromUtf8(o.key().data()));
-                                did_work |= generate_new_lists(key);
-                                did_work |= generate_all_lists(key);
-                                // else -- website is not ready yet (still being initialized)
+                                if(key.startsWith(site_key))
+                                {
+                                    did_work |= generate_new_lists(key);
+                                    did_work |= generate_all_lists(key);
+                                }
                             }
 
                             // quickly end this process if the user requested a stop
@@ -1409,14 +1410,7 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
         QString const key(child_info.key());
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
-        try
-        {
-            did_work |= generate_list_for_page(page_ipath, list_ipath);
-        }
-        catch(...)
-        {
-            did_work |= 1;
-        }
+        did_work |= generate_list_for_page(page_ipath, list_ipath);
     }
 
     return did_work;
@@ -1435,107 +1429,116 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
  */
 int list::generate_list_for_page(content::path_info_t& page_ipath, content::path_info_t& list_ipath)
 {
-    content::content *content_plugin(content::content::instance());
-    QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
-    if(!content_table->exists(page_ipath.get_key())
-    || !content_table->row(page_ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
-    {
-        // the page is not ready yet, let it be for a little longer, it will
-        // be taken in account by the standard process
-        // (at this point we may not even have the branch/revision data)
-        return 0;
-    }
-
-    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-    // TODO testing just the row is not enough to know whether it was deleted
-    if(!branch_table->exists(page_ipath.get_branch_key()))
-    {
-        // branch disappeared... ignore
-        // (it could have been deleted or moved--i.e. renamed)
-        return 0;
-    }
-    QtCassandra::QCassandraRow::pointer_t page_branch_row(branch_table->row(page_ipath.get_branch_key()));
-
     // whether the function did change something: 0 no, 1 yes
     int did_work(0);
 
-    QString const link_name(get_name(SNAP_NAME_LIST_LINK));
-
-    QString const list_key_in_page(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_KEY)).arg(list_ipath.get_key()));
+    content::content *content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
-    bool const included(run_list_check(list_ipath, page_ipath));
-    QString const new_item_key(run_list_item_key(list_ipath, page_ipath));
-    QString const new_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
-    if(included)
+
+    try
     {
-        // the check script says to include this item in this list;
-        // first we need to check to find under which key it was
-        // included if it is already there because it may have
-        // changed
-        if(page_branch_row->exists(list_key_in_page))
+        QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
+        if(!content_table->exists(page_ipath.get_key())
+        || !content_table->row(page_ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
         {
-            // check to see whether the current key changed
-            // note that if the destination does not exist, we still attempt
-            // the drop + create (that happens when there is a change that
-            // affects the key and you get a duplicate which is corrected
-            // later--but we probably need to fix duplicates at some point)
-            QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
-            QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
-            if(current_item_key_full != new_item_key_full
-            || !page_branch_row->exists(new_item_key_full))
+            // the page is not ready yet, let it be for a little longer, it will
+            // be taken in account by the standard process
+            // (at this point we may not even have the branch/revision data)
+            return 0;
+        }
+
+        // TODO testing just the row is not enough to know whether it was deleted
+        if(!branch_table->exists(page_ipath.get_branch_key()))
+        {
+            // branch disappeared... ignore
+            // (it could have been deleted or moved--i.e. renamed)
+            return 0;
+        }
+        QtCassandra::QCassandraRow::pointer_t page_branch_row(branch_table->row(page_ipath.get_branch_key()));
+
+        QString const link_name(get_name(SNAP_NAME_LIST_LINK));
+
+        QString const list_key_in_page(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_KEY)).arg(list_ipath.get_key()));
+        bool const included(run_list_check(list_ipath, page_ipath));
+        QString const new_item_key(run_list_item_key(list_ipath, page_ipath));
+        QString const new_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
+        if(included)
+        {
+            // the check script says to include this item in this list;
+            // first we need to check to find under which key it was
+            // included if it is already there because it may have
+            // changed
+            if(page_branch_row->exists(list_key_in_page))
             {
-                // it changed, we have to delete the old one and
-                // create a new one
-                list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                // check to see whether the current key changed
+                // note that if the destination does not exist, we still attempt
+                // the drop + create (that happens when there is a change that
+                // affects the key and you get a duplicate which is corrected
+                // later--but we probably need to fix duplicates at some point)
+                QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
+                QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
+                if(current_item_key_full != new_item_key_full
+                || !page_branch_row->exists(new_item_key_full))
+                {
+                    // it changed, we have to delete the old one and
+                    // create a new one
+                    list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                    list_row->cell(new_item_key_full)->setValue(page_ipath.get_key());
+                    page_branch_row->cell(list_key_in_page)->setValue(new_item_key);
+
+                    did_work = 1;
+                }
+                // else -- nothing changed, we are done
+            }
+            else
+            {
+                // it does not exist yet, add it
+
+                // create a standard link between the list and the page item
+                bool const source_unique(false);
+                bool const destination_unique(false);
+                links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
+                links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
+                links::links::instance()->create_link(source, destination);
+
+                // create the ordered list
                 list_row->cell(new_item_key_full)->setValue(page_ipath.get_key());
+
+                // save a back reference to the ordered list so we can
+                // quickly find it
                 page_branch_row->cell(list_key_in_page)->setValue(new_item_key);
 
                 did_work = 1;
             }
-            // else -- nothing changed, we are done
         }
         else
         {
-            // it does not exist yet, add it
+            // the check script says that this path is not included in this
+            // list; the item may have been included earlier so we have to
+            // make sure it gets removed if still there
+            if(page_branch_row->exists(list_key_in_page))
+            {
+                QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
+                QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
 
-            // create a standard link between the list and the page item
-            bool const source_unique(false);
-            bool const destination_unique(false);
-            links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
-            links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
-            links::links::instance()->create_link(source, destination);
+                list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                page_branch_row->dropCell(list_key_in_page, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
 
-            // create the ordered list
-            list_row->cell(new_item_key_full)->setValue(page_ipath.get_key());
+                bool const source_unique(false);
+                bool const destination_unique(false);
+                links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
+                links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
+                links::links::instance()->delete_this_link(source, destination);
 
-            // save a back reference to the ordered list so we can
-            // quickly find it
-            page_branch_row->cell(list_key_in_page)->setValue(new_item_key);
-
-            did_work = 1;
+                did_work = 1;
+            }
         }
+
     }
-    else
+    catch(...)
     {
-        // the check script says that this path is not included in this
-        // list; the item may have been included earlier so we have to
-        // make sure it gets removed if still there
-        if(page_branch_row->exists(list_key_in_page))
-        {
-            QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
-            QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
-
-            list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-            page_branch_row->dropCell(list_key_in_page, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
-
-            bool const source_unique(false);
-            bool const destination_unique(false);
-            links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
-            links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
-            links::links::instance()->delete_this_link(source, destination);
-
-            did_work = 1;
-        }
+        did_work = 1;
     }
 
     if(did_work != 0)

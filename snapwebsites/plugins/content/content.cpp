@@ -3541,11 +3541,21 @@ void path_info_t::set_path(QString const& path)
         // retrieve the action from this path
         // (note that in case of the main page the action is NOT included)
         // f_action will be an empty string if no action was specified
-        snap_uri const uri(f_key);
-        QString const action(uri.query_option(server::server::instance()->get_parameter("qs_action")));
-        if(!action.isEmpty())
+        try
         {
-            set_parameter("action", action);
+            snap_uri const uri(f_key);
+            QString const action(uri.query_option(server::server::instance()->get_parameter("qs_action")));
+            if(!action.isEmpty())
+            {
+                set_parameter("action", action);
+            }
+        }
+        catch(snap_uri_exception_invalid_uri const &)
+        {
+            // add an error so we can get more information about the full key
+            // that created an exception
+            SNAP_LOG_ERROR("error: URI \"")(f_key)("\" was no accepted.");
+            throw;
         }
 
         // the other info becomes invalid

@@ -357,7 +357,7 @@ void snap_backend::run_backend()
                 {
                     // this applies to all the backends so we can as well exit
                     // immediately instead of testing again and again
-                    SNAP_LOG_FATAL("snap_backend::run_backend(): The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend immediate!");
+                    SNAP_LOG_FATAL("snap_backend::run_backend(): The 'sites' table is still empty or nonexistent! Likely you have not set up the domains and websites tables, either. Exiting this backend immediately!");
                     exit(1);
                     NOTREACHED();
                 }
