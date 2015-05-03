@@ -1,8 +1,8 @@
-/* test_as2js_position.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_position.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -174,39 +174,75 @@ void As2JsPositionUnitTests::test_counters()
 
 void As2JsPositionUnitTests::test_output()
 {
-    as2js::Position pos;
-    pos.set_filename("file.js");
-    int total_line(1);
-    for(int page(1); page < 100; ++page)
+    // no filename
     {
-        int paragraphs(rand() % 10 + 10);
-        int page_line(1);
-        int paragraph(1);
-        for(int line(1); line < 1000; ++line)
+        as2js::Position pos;
+        int total_line(1);
+        for(int page(1); page < 100; ++page)
         {
-            CPPUNIT_ASSERT(pos.get_page() == page);
-            CPPUNIT_ASSERT(pos.get_page_line() == page_line);
-            CPPUNIT_ASSERT(pos.get_paragraph() == paragraph);
-            CPPUNIT_ASSERT(pos.get_line() == total_line);
-
-            std::stringstream pos_str;
-            pos_str << pos;
-            std::stringstream test_str;
-            test_str << "file.js:" << total_line << ":";
-            CPPUNIT_ASSERT(pos_str.str() == test_str.str());
-
-            if(line % paragraphs == 0)
+            int paragraphs(rand() % 10 + 10);
+            int page_line(1);
+            int paragraph(1);
+            for(int line(1); line < 1000; ++line)
             {
-                pos.new_paragraph();
-                ++paragraph;
+                CPPUNIT_ASSERT(pos.get_page() == page);
+                CPPUNIT_ASSERT(pos.get_page_line() == page_line);
+                CPPUNIT_ASSERT(pos.get_paragraph() == paragraph);
+                CPPUNIT_ASSERT(pos.get_line() == total_line);
+
+                std::stringstream pos_str;
+                pos_str << pos;
+                std::stringstream test_str;
+                test_str << "line " << total_line << ":";
+                CPPUNIT_ASSERT(pos_str.str() == test_str.str());
+
+                if(line % paragraphs == 0)
+                {
+                    pos.new_paragraph();
+                    ++paragraph;
+                }
+                pos.new_line();
+                ++total_line;
+                ++page_line;
             }
-            pos.new_line();
-            ++total_line;
-            ++page_line;
+            pos.new_page();
         }
-        pos.new_page();
     }
 
+    {
+        as2js::Position pos;
+        pos.set_filename("file.js");
+        int total_line(1);
+        for(int page(1); page < 100; ++page)
+        {
+            int paragraphs(rand() % 10 + 10);
+            int page_line(1);
+            int paragraph(1);
+            for(int line(1); line < 1000; ++line)
+            {
+                CPPUNIT_ASSERT(pos.get_page() == page);
+                CPPUNIT_ASSERT(pos.get_page_line() == page_line);
+                CPPUNIT_ASSERT(pos.get_paragraph() == paragraph);
+                CPPUNIT_ASSERT(pos.get_line() == total_line);
+
+                std::stringstream pos_str;
+                pos_str << pos;
+                std::stringstream test_str;
+                test_str << "file.js:" << total_line << ":";
+                CPPUNIT_ASSERT(pos_str.str() == test_str.str());
+
+                if(line % paragraphs == 0)
+                {
+                    pos.new_paragraph();
+                    ++paragraph;
+                }
+                pos.new_line();
+                ++total_line;
+                ++page_line;
+            }
+            pos.new_page();
+        }
+    }
 }
 
 

@@ -260,6 +260,7 @@ void Node::verify_flag(flag_t f) const
         break;
 
     case flag_t::NODE_VARIABLE_FLAG_CONST:
+    case flag_t::NODE_VARIABLE_FLAG_FINAL:
     case flag_t::NODE_VARIABLE_FLAG_LOCAL:
     case flag_t::NODE_VARIABLE_FLAG_MEMBER:
     case flag_t::NODE_VARIABLE_FLAG_ATTRIBUTES:

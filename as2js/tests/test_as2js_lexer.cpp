@@ -3173,8 +3173,6 @@ void As2JsLexerUnitTests::test_tokens()
         }
 
         // this represents 2^(# of options) which right now is 2048
-        // we also check with entry 2048 to allow a test with the default
-        // (i.e. a nullptr as the Options pointer)
         for(size_t opt(0); opt < (1 << g_options_size); ++opt)
         {
             as2js::String str;
@@ -3276,7 +3274,113 @@ void As2JsLexerUnitTests::test_tokens()
                                         attr < as2js::Node::attribute_t::NODE_ATTR_max;
                                         attr = static_cast<as2js::Node::attribute_t>(static_cast<int>(attr) + 1))
                         {
-                            CPPUNIT_ASSERT(!token->get_attribute(attr));
+                            switch(attr)
+                            {
+                            case as2js::Node::attribute_t::NODE_ATTR_TYPE:
+                                switch(token->get_type())
+                                {
+                                case as2js::Node::node_t::NODE_ADD:
+                                case as2js::Node::node_t::NODE_ARRAY:
+                                case as2js::Node::node_t::NODE_ARRAY_LITERAL:
+                                case as2js::Node::node_t::NODE_AS:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_ADD:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_AND:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_DIVIDE:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_MODULO:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_POWER:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+                                case as2js::Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+                                case as2js::Node::node_t::NODE_BITWISE_AND:
+                                case as2js::Node::node_t::NODE_BITWISE_NOT:
+                                case as2js::Node::node_t::NODE_BITWISE_OR:
+                                case as2js::Node::node_t::NODE_BITWISE_XOR:
+                                case as2js::Node::node_t::NODE_CALL:
+                                case as2js::Node::node_t::NODE_CONDITIONAL:
+                                case as2js::Node::node_t::NODE_DECREMENT:
+                                case as2js::Node::node_t::NODE_DELETE:
+                                case as2js::Node::node_t::NODE_DIVIDE:
+                                case as2js::Node::node_t::NODE_EQUAL:
+                                case as2js::Node::node_t::NODE_FALSE:
+                                case as2js::Node::node_t::NODE_FLOAT64:
+                                case as2js::Node::node_t::NODE_FUNCTION:
+                                case as2js::Node::node_t::NODE_GREATER:
+                                case as2js::Node::node_t::NODE_GREATER_EQUAL:
+                                case as2js::Node::node_t::NODE_IDENTIFIER:
+                                case as2js::Node::node_t::NODE_IN:
+                                case as2js::Node::node_t::NODE_INCREMENT:
+                                case as2js::Node::node_t::NODE_INSTANCEOF:
+                                case as2js::Node::node_t::NODE_INT64:
+                                case as2js::Node::node_t::NODE_IS:
+                                case as2js::Node::node_t::NODE_LESS:
+                                case as2js::Node::node_t::NODE_LESS_EQUAL:
+                                case as2js::Node::node_t::NODE_LIST:
+                                case as2js::Node::node_t::NODE_LOGICAL_AND:
+                                case as2js::Node::node_t::NODE_LOGICAL_NOT:
+                                case as2js::Node::node_t::NODE_LOGICAL_OR:
+                                case as2js::Node::node_t::NODE_LOGICAL_XOR:
+                                case as2js::Node::node_t::NODE_MATCH:
+                                case as2js::Node::node_t::NODE_MAXIMUM:
+                                case as2js::Node::node_t::NODE_MEMBER:
+                                case as2js::Node::node_t::NODE_MINIMUM:
+                                case as2js::Node::node_t::NODE_MODULO:
+                                case as2js::Node::node_t::NODE_MULTIPLY:
+                                case as2js::Node::node_t::NODE_NAME:
+                                case as2js::Node::node_t::NODE_NEW:
+                                case as2js::Node::node_t::NODE_NOT_EQUAL:
+                                case as2js::Node::node_t::NODE_NULL:
+                                case as2js::Node::node_t::NODE_OBJECT_LITERAL:
+                                case as2js::Node::node_t::NODE_POST_DECREMENT:
+                                case as2js::Node::node_t::NODE_POST_INCREMENT:
+                                case as2js::Node::node_t::NODE_POWER:
+                                case as2js::Node::node_t::NODE_PRIVATE:
+                                case as2js::Node::node_t::NODE_PUBLIC:
+                                case as2js::Node::node_t::NODE_RANGE:
+                                case as2js::Node::node_t::NODE_ROTATE_LEFT:
+                                case as2js::Node::node_t::NODE_ROTATE_RIGHT:
+                                case as2js::Node::node_t::NODE_SCOPE:
+                                case as2js::Node::node_t::NODE_SHIFT_LEFT:
+                                case as2js::Node::node_t::NODE_SHIFT_RIGHT:
+                                case as2js::Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
+                                case as2js::Node::node_t::NODE_STRICTLY_EQUAL:
+                                case as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL:
+                                case as2js::Node::node_t::NODE_STRING:
+                                case as2js::Node::node_t::NODE_SUBTRACT:
+                                case as2js::Node::node_t::NODE_SUPER:
+                                case as2js::Node::node_t::NODE_THIS:
+                                case as2js::Node::node_t::NODE_TRUE:
+                                case as2js::Node::node_t::NODE_TYPEOF:
+                                case as2js::Node::node_t::NODE_UNDEFINED:
+                                case as2js::Node::node_t::NODE_VIDENTIFIER:
+                                case as2js::Node::node_t::NODE_VOID:
+                                    CPPUNIT_ASSERT(!token->get_attribute(attr));
+                                    break;
+
+                                default:
+                                    // any other type and you get an exception
+                                    CPPUNIT_ASSERT_THROW(!token->get_attribute(attr), as2js::exception_internal_error);
+                                    break;
+
+                                }
+                                break;
+
+                            default:
+                                CPPUNIT_ASSERT(!token->get_attribute(attr));
+                                break;
+
+                            }
                         }
                     }
 
@@ -6820,7 +6924,113 @@ void As2JsLexerUnitTests::test_mixed_tokens()
                                 attr < as2js::Node::attribute_t::NODE_ATTR_max;
                                 attr = static_cast<as2js::Node::attribute_t>(static_cast<int>(attr) + 1))
                 {
-                    CPPUNIT_ASSERT(!token->get_attribute(attr));
+                    switch(attr)
+                    {
+                    case as2js::Node::attribute_t::NODE_ATTR_TYPE:
+                        switch(token->get_type())
+                        {
+                        case as2js::Node::node_t::NODE_ADD:
+                        case as2js::Node::node_t::NODE_ARRAY:
+                        case as2js::Node::node_t::NODE_ARRAY_LITERAL:
+                        case as2js::Node::node_t::NODE_AS:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_ADD:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_AND:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_DIVIDE:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_MODULO:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_POWER:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+                        case as2js::Node::node_t::NODE_BITWISE_AND:
+                        case as2js::Node::node_t::NODE_BITWISE_NOT:
+                        case as2js::Node::node_t::NODE_BITWISE_OR:
+                        case as2js::Node::node_t::NODE_BITWISE_XOR:
+                        case as2js::Node::node_t::NODE_CALL:
+                        case as2js::Node::node_t::NODE_CONDITIONAL:
+                        case as2js::Node::node_t::NODE_DECREMENT:
+                        case as2js::Node::node_t::NODE_DELETE:
+                        case as2js::Node::node_t::NODE_DIVIDE:
+                        case as2js::Node::node_t::NODE_EQUAL:
+                        case as2js::Node::node_t::NODE_FALSE:
+                        case as2js::Node::node_t::NODE_FLOAT64:
+                        case as2js::Node::node_t::NODE_FUNCTION:
+                        case as2js::Node::node_t::NODE_GREATER:
+                        case as2js::Node::node_t::NODE_GREATER_EQUAL:
+                        case as2js::Node::node_t::NODE_IDENTIFIER:
+                        case as2js::Node::node_t::NODE_IN:
+                        case as2js::Node::node_t::NODE_INCREMENT:
+                        case as2js::Node::node_t::NODE_INSTANCEOF:
+                        case as2js::Node::node_t::NODE_INT64:
+                        case as2js::Node::node_t::NODE_IS:
+                        case as2js::Node::node_t::NODE_LESS:
+                        case as2js::Node::node_t::NODE_LESS_EQUAL:
+                        case as2js::Node::node_t::NODE_LIST:
+                        case as2js::Node::node_t::NODE_LOGICAL_AND:
+                        case as2js::Node::node_t::NODE_LOGICAL_NOT:
+                        case as2js::Node::node_t::NODE_LOGICAL_OR:
+                        case as2js::Node::node_t::NODE_LOGICAL_XOR:
+                        case as2js::Node::node_t::NODE_MATCH:
+                        case as2js::Node::node_t::NODE_MAXIMUM:
+                        case as2js::Node::node_t::NODE_MEMBER:
+                        case as2js::Node::node_t::NODE_MINIMUM:
+                        case as2js::Node::node_t::NODE_MODULO:
+                        case as2js::Node::node_t::NODE_MULTIPLY:
+                        case as2js::Node::node_t::NODE_NAME:
+                        case as2js::Node::node_t::NODE_NEW:
+                        case as2js::Node::node_t::NODE_NOT_EQUAL:
+                        case as2js::Node::node_t::NODE_NULL:
+                        case as2js::Node::node_t::NODE_OBJECT_LITERAL:
+                        case as2js::Node::node_t::NODE_POST_DECREMENT:
+                        case as2js::Node::node_t::NODE_POST_INCREMENT:
+                        case as2js::Node::node_t::NODE_POWER:
+                        case as2js::Node::node_t::NODE_PRIVATE:
+                        case as2js::Node::node_t::NODE_PUBLIC:
+                        case as2js::Node::node_t::NODE_RANGE:
+                        case as2js::Node::node_t::NODE_ROTATE_LEFT:
+                        case as2js::Node::node_t::NODE_ROTATE_RIGHT:
+                        case as2js::Node::node_t::NODE_SCOPE:
+                        case as2js::Node::node_t::NODE_SHIFT_LEFT:
+                        case as2js::Node::node_t::NODE_SHIFT_RIGHT:
+                        case as2js::Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
+                        case as2js::Node::node_t::NODE_STRICTLY_EQUAL:
+                        case as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL:
+                        case as2js::Node::node_t::NODE_STRING:
+                        case as2js::Node::node_t::NODE_SUBTRACT:
+                        case as2js::Node::node_t::NODE_SUPER:
+                        case as2js::Node::node_t::NODE_THIS:
+                        case as2js::Node::node_t::NODE_TRUE:
+                        case as2js::Node::node_t::NODE_TYPEOF:
+                        case as2js::Node::node_t::NODE_UNDEFINED:
+                        case as2js::Node::node_t::NODE_VIDENTIFIER:
+                        case as2js::Node::node_t::NODE_VOID:
+                            CPPUNIT_ASSERT(!token->get_attribute(attr));
+                            break;
+
+                        default:
+                            // any other type and you get an exception
+                            CPPUNIT_ASSERT_THROW(!token->get_attribute(attr), as2js::exception_internal_error);
+                            break;
+
+                        }
+                        break;
+
+                    default:
+                        CPPUNIT_ASSERT(!token->get_attribute(attr));
+                        break;
+
+                    }
                 }
             }
 

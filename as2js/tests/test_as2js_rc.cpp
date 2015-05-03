@@ -665,7 +665,14 @@ void As2JsRCUnitTests::test_load_from_user_config()
     // not reach here if the .rc already existed!)
     as2js::String config(home);
     config += "/.config";
-    CPPUNIT_ASSERT(mkdir(config.to_utf8().c_str(), 0700) == 0); // usually this is 0755, but for security we cannot take that risk...
+    std::cout << " --- config path \"" << config << "\" --- ";
+    bool del_config(true);
+    if(mkdir(config.to_utf8().c_str(), 0700) != 0) // usually this is 0755, but for security we cannot take that risk...
+    {
+        // if this mkdir() fails, it is because it exists
+        CPPUNIT_ASSERT(errno == EEXIST);
+        del_config = false;
+    }
     as2js::String as2js_conf(config);
     as2js_conf += "/as2js";
     CPPUNIT_ASSERT(mkdir(as2js_conf.to_utf8().c_str(), 0700) == 0);
@@ -826,7 +833,10 @@ void As2JsRCUnitTests::test_load_from_user_config()
 
     // if possible get rid of the directories (don't check for errors)
     rmdir(as2js_conf.to_utf8().c_str());
-    rmdir(config.to_utf8().c_str());
+    if(del_config)
+    {
+        rmdir(config.to_utf8().c_str());
+    }
 }
 
 
@@ -1038,7 +1048,14 @@ void As2JsRCUnitTests::test_empty_home()
 
     as2js::String config(home);
     config += "/.config";
-    CPPUNIT_ASSERT(mkdir(config.to_utf8().c_str(), 0700) == 0);
+    std::cout << " --- config path \"" << config << "\" --- ";
+    bool del_config(true);
+    if(mkdir(config.to_utf8().c_str(), 0700) != 0) // usually this is 0755, but for security we cannot take that risk...
+    {
+        // if this mkdir() fails, it is because it exists
+        CPPUNIT_ASSERT(errno == EEXIST);
+        del_config = false;
+    }
 
     as2js::String rc_path(config);
     rc_path += "/as2js";

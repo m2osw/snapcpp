@@ -1,8 +1,8 @@
-/* test_as2js_json.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_json.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -131,7 +131,8 @@ int32_t generate_string(as2js::String& str, as2js::String& stringified)
             break;
 
         case '\'':
-            stringified += '\\';
+            // JSON does not expect the apostrophe (') to be escaped
+            //stringified += '\\';
             stringified += '\'';
             used |= 0x40;
             break;
@@ -199,7 +200,8 @@ void stringify_string(as2js::String const& str, as2js::String& stringified)
             break;
 
         case '\'':
-            stringified += '\\';
+            // JSON does not escape apostrophes (')
+            //stringified += '\\';
             stringified += '\'';
             break;
 
@@ -893,35 +895,37 @@ void As2JsJSONUnitTests::test_basic_values()
         CPPUNIT_ASSERT(p.get_filename() == pos.get_filename());
         CPPUNIT_ASSERT(p.get_function() == pos.get_function());
         CPPUNIT_ASSERT(p.get_line() == 89);
-//as2js::String r(value->to_string());
-//std::cerr << std::hex << " lengths " << r.length() << " / " << stringified.length() << "\n";
-//size_t max_chrs(std::min(r.length(), stringified.length()));
-//for(size_t g(0); g < max_chrs; ++g)
-//{
-//    if(static_cast<int>(r[g]) != static_cast<int>(stringified[g]))
-//    {
-//        std::cerr << " --- " << static_cast<int>(r[g]) << " / " << static_cast<int>(stringified[g]) << "\n";
-//    }
-//    else
-//    {
-//        std::cerr << " " << static_cast<int>(r[g]) << " / " << static_cast<int>(stringified[g]) << "\n";
-//    }
-//}
-//if(r.length() > stringified.length())
-//{
-//    for(size_t g(stringified.length()); g < r.length(); ++g)
-//    {
-//        std::cerr << " *** " << static_cast<int>(r[g]) << "\n";
-//    }
-//}
-//else
-//{
-//    for(size_t g(r.length()); g < stringified.length(); ++g)
-//    {
-//        std::cerr << " +++ " << static_cast<int>(stringified[g]) << "\n";
-//    }
-//}
-//std::cerr << std::dec;
+#if 0
+as2js::String r(value->to_string());
+std::cerr << std::hex << " lengths " << r.length() << " / " << stringified.length() << "\n";
+size_t max_chrs(std::min(r.length(), stringified.length()));
+for(size_t g(0); g < max_chrs; ++g)
+{
+    if(static_cast<int>(r[g]) != static_cast<int>(stringified[g]))
+    {
+        std::cerr << " --- " << static_cast<int>(r[g]) << " / " << static_cast<int>(stringified[g]) << "\n";
+    }
+    else
+    {
+        std::cerr << " " << static_cast<int>(r[g]) << " / " << static_cast<int>(stringified[g]) << "\n";
+    }
+}
+if(r.length() > stringified.length())
+{
+    for(size_t g(stringified.length()); g < r.length(); ++g)
+    {
+        std::cerr << " *** " << static_cast<int>(r[g]) << "\n";
+    }
+}
+else
+{
+    for(size_t g(r.length()); g < stringified.length(); ++g)
+    {
+        std::cerr << " +++ " << static_cast<int>(stringified[g]) << "\n";
+    }
+}
+std::cerr << std::dec;
+#endif
         CPPUNIT_ASSERT(value->to_string() == stringified);
         // copy operator
         as2js::JSON::JSONValue copy(*value);
@@ -1586,36 +1590,38 @@ void As2JsJSONUnitTests::test_json()
         as2js::StringOutput::pointer_t out(new as2js::StringOutput);
         json->output(out, header);
         as2js::String const& result(out->get_string());
-//{
-//std::cerr << std::hex << " lengths " << expected.length() << " / " << result.length() << "\n";
-//size_t max_chrs(std::min(expected.length(), result.length()));
-//for(size_t g(0); g < max_chrs; ++g)
-//{
-//    if(static_cast<int>(expected[g]) != static_cast<int>(result[g]))
-//    {
-//        std::cerr << " --- " << static_cast<int>(expected[g]) << " / " << static_cast<int>(result[g]) << "\n";
-//    }
-//    else
-//    {
-//        std::cerr << " " << static_cast<int>(expected[g]) << " / " << static_cast<int>(result[g]) << "\n";
-//    }
-//}
-//if(expected.length() > result.length())
-//{
-//    for(size_t g(result.length()); g < expected.length(); ++g)
-//    {
-//        std::cerr << " *** " << static_cast<int>(expected[g]) << "\n";
-//    }
-//}
-//else
-//{
-//    for(size_t g(expected.length()); g < result.length(); ++g)
-//    {
-//        std::cerr << " +++ " << static_cast<int>(result[g]) << "\n";
-//    }
-//}
-//std::cerr << std::dec;
-//}
+#if 0
+{
+std::cerr << std::hex << " lengths " << expected.length() << " / " << result.length() << "\n";
+size_t max_chrs(std::min(expected.length(), result.length()));
+for(size_t g(0); g < max_chrs; ++g)
+{
+    if(static_cast<int>(expected[g]) != static_cast<int>(result[g]))
+    {
+        std::cerr << " --- " << static_cast<int>(expected[g]) << " / " << static_cast<int>(result[g]) << "\n";
+    }
+    else
+    {
+        std::cerr << " " << static_cast<int>(expected[g]) << " / " << static_cast<int>(result[g]) << "\n";
+    }
+}
+if(expected.length() > result.length())
+{
+    for(size_t g(result.length()); g < expected.length(); ++g)
+    {
+        std::cerr << " *** " << static_cast<int>(expected[g]) << "\n";
+    }
+}
+else
+{
+    for(size_t g(expected.length()); g < result.length(); ++g)
+    {
+        std::cerr << " +++ " << static_cast<int>(result[g]) << "\n";
+    }
+}
+std::cerr << std::dec;
+}
+#endif
         CPPUNIT_ASSERT(result == expected);
 
         CPPUNIT_ASSERT(json->get_value() == data.f_value);

@@ -57,7 +57,6 @@ cmake -DCMAKE_INSTALL_PREFIX:PATH=$dist \
     -DCMAKE_MODULE_PATH:PATH=$modules \
     -DCMAKE_BUILD_TYPE=Debug \
     -Das2js_compiler_COVERAGE:BOOL=ON \
-    -DCMAKE_BUILD_TYPE:BOOL=Debug \
     -DCONTROLLEDVARS_INCLUDE_DIR=$dist/include \
     ../../..
 cd ..
@@ -65,7 +64,7 @@ echo
 echo "***"
 echo "*** compile (`date`)"
 echo "***"
-VERBOSE=1 make -C BUILD
+VERBOSE=1 make -j 8 -C BUILD
 echo
 echo "***"
 echo "*** run (`date`)"

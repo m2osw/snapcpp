@@ -1038,7 +1038,6 @@ use debug() extended_operators();\n",
         "name": "invalid list of stand alone attributes",
         "program": "private abstract;\n\
 private false;\n\
-private final;\n\
 private native;\n\
 private private;\n\
 private protected;\n\
@@ -1064,57 +1063,51 @@ private volatile;\n",
                 "message level": 2,
                 "error code": "INVALID_ATTRIBUTES",
                 "line #": 3,
-                "message": "a statement with only attributes (FINAL) is not allowed."
-            },
-            {
-                "message level": 2,
-                "error code": "INVALID_ATTRIBUTES",
-                "line #": 4,
                 "message": "a statement with only attributes (NATIVE) is not allowed."
             },
             {
                 "options": "extended_operators|extended_operators_safe",
                 "message level": 2,
                 "error code": "NOT_ALLOWED",
-                "line #": 5,
+                "line #": 4,
                 "message": "the 'PRIVATE' operator is only available when extended operators are authorized (use extended_operators;)."
             },
             {
                 "options": "extended_operators|extended_operators_safe",
                 "message level": 2,
                 "error code": "NOT_ALLOWED",
-                "line #": 6,
+                "line #": 5,
                 "message": "the 'PROTECTED' operator is only available when extended operators are authorized (use extended_operators;)."
             },
             {
                 "options": "extended_operators|extended_operators_safe",
                 "message level": 2,
                 "error code": "NOT_ALLOWED",
-                "line #": 7,
+                "line #": 6,
                 "message": "the 'PUBLIC' operator is only available when extended operators are authorized (use extended_operators;)."
             },
             {
                 "message level": 2,
                 "error code": "INVALID_ATTRIBUTES",
-                "line #": 8,
+                "line #": 7,
                 "message": "a statement with only attributes (STATIC) is not allowed."
             },
             {
                 "message level": 2,
                 "error code": "INVALID_ATTRIBUTES",
-                "line #": 9,
+                "line #": 8,
                 "message": "a statement with only attributes (TRANSIENT) is not allowed."
             },
             {
                 "message level": 2,
                 "error code": "INVALID_ATTRIBUTES",
-                "line #": 10,
+                "line #": 9,
                 "message": "no attributes were expected here (statements, expressions and pragmas cannot be annotated)."
             },
             {
                 "message level": 2,
                 "error code": "INVALID_ATTRIBUTES",
-                "line #": 11,
+                "line #": 10,
                 "message": "a statement with only attributes (VOLATILE) is not allowed."
             }
         ],

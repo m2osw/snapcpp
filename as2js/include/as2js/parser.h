@@ -130,11 +130,11 @@ private:
     void                switch_directive(Node::pointer_t& node);
     void                synchronized(Node::pointer_t& node);
     void                throw_directive(Node::pointer_t& node);
-    void                try_finally(Node::pointer_t& node, Node::node_t type);
+    void                try_finally(Node::pointer_t& node, Node::node_t const type);
     void                unary_expression(Node::pointer_t& node);
     void                use_namespace(Node::pointer_t& node);
-    void                variable(Node::pointer_t& node, bool const constant);
-    void                with_while(Node::pointer_t& node, Node::node_t type);
+    void                variable(Node::pointer_t& node, Node::node_t const type);
+    void                with_while(Node::pointer_t& node, Node::node_t const type);
     void                yield(Node::pointer_t& node);
 
     Lexer::pointer_t            f_lexer;

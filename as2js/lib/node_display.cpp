@@ -149,7 +149,6 @@ void Node::display_data(std::ostream& out) const
     switch(f_type)
     {
     case node_t::NODE_BREAK:
-    case node_t::NODE_CLASS:
     case node_t::NODE_CONTINUE:
     case node_t::NODE_GOTO:
     case node_t::NODE_INTERFACE:
@@ -199,6 +198,7 @@ void Node::display_data(std::ostream& out) const
         }
         break;
 
+    case node_t::NODE_CLASS:
     case node_t::NODE_IDENTIFIER:
     case node_t::NODE_STRING:
     case node_t::NODE_VIDENTIFIER:
@@ -353,6 +353,10 @@ void Node::display_data(std::ostream& out) const
         {
             out << " CONST";
         }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_FINAL)])
+        {
+            out << " FINAL";
+        }
         if(f_flags[static_cast<size_t>(flag_t::NODE_VARIABLE_FLAG_LOCAL)])
         {
             out << " LOCAL";
@@ -491,6 +495,8 @@ void Node::display(std::ostream& out, int indent, char c) const
             display_attribute(attribute_t::NODE_ATTR_FOREACH);
             display_attribute(attribute_t::NODE_ATTR_NOBREAK);
             display_attribute(attribute_t::NODE_ATTR_AUTOBREAK);
+
+            display_attribute(attribute_t::NODE_ATTR_TYPE);
 
             display_attribute(attribute_t::NODE_ATTR_DEFINED);
         }

@@ -1,8 +1,8 @@
-/* parser_variable.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* parser_variable.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -47,15 +47,52 @@ namespace as2js
 /**********************************************************************/
 /**********************************************************************/
 
-void Parser::variable(Node::pointer_t& node, bool const constant)
+/** \brief Parse a variable definition.
+ *
+ * Variables can be introduce with the VAR keyword:
+ *
+ * \code
+ *      VAR name;
+ *      VAR name = expression;
+ * \endcode
+ *
+ * Variables can also be marked constant with the CONST keyword, in that
+ * case the VAR keyword is optional. In this case, the value of the
+ * variable must be defined:
+ *
+ * \code
+ *      CONST VAR name = expression;
+ *      CONST name = expression;
+ * \endcode
+ *
+ * Variables can also be marked final with the FINAL keyword, in that case
+ * the VAR keyword is optional. A final variable can be initialized once
+ * only, but it does not need to happen at the time the variable is declared:
+ *
+ * \code
+ *      FINAL VAR name;
+ *      FINAL VAR name = expresion;
+ *      FINAL name;
+ *      FINAL name = expression;
+ * \endcode
+ *
+ * \param[out] node  The node where the variable (NODE_VAR) is saved.
+ * \param[in] variable_type  The type of variable (NODE_VAR, NODE_CONST, or
+ *                           NODE_FINAL).
+ */
+void Parser::variable(Node::pointer_t& node, Node::node_t const variable_type)
 {
     node = f_lexer->get_new_node(Node::node_t::NODE_VAR);
     for(;;)
     {
         Node::pointer_t variable_node(f_lexer->get_new_node(Node::node_t::NODE_VARIABLE));
-        if(constant)
+        if(variable_type == Node::node_t::NODE_CONST)
         {
             variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_CONST, true);
+        }
+        else if(variable_type == Node::node_t::NODE_FINAL)
+        {
+            variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_FINAL, true);
         }
         node->append_child(variable_node);
 
@@ -67,7 +104,14 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
         else
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_VARIABLE, f_lexer->get_input()->get_position());
-            msg << "expected an identifier as the " << (constant ? "const" : "variable") << " name.";
+            std::string type_name(
+                    variable_type == Node::node_t::NODE_CONST
+                        ? "CONST"
+                        : variable_type == Node::node_t::NODE_FINAL
+                            ? "FINAL"
+                            : "VAR"
+                );
+            msg << "expected an identifier as the " << type_name << " name.";
         }
 
         if(f_node->get_type() == Node::node_t::NODE_COLON)
@@ -106,7 +150,7 @@ void Parser::variable(Node::pointer_t& node, bool const constant)
                 // later once we know where the variable is being
                 // used.
             }
-            while(constant
+            while(variable_type != Node::node_t::NODE_VAR
                 && f_node->get_type() != Node::node_t::NODE_COMMA
                 && f_node->get_type() != Node::node_t::NODE_SEMICOLON
                 && f_node->get_type() != Node::node_t::NODE_OPEN_CURVLY_BRACKET

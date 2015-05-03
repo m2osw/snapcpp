@@ -279,6 +279,10 @@ flags_per_node_t const g_flags_variable[] =
         "CONST"
     },
     {
+        as2js::Node::flag_t::NODE_VARIABLE_FLAG_FINAL,
+        "FINAL"
+    },
+    {
         as2js::Node::flag_t::NODE_VARIABLE_FLAG_LOCAL,
         "LOCAL"
     },
@@ -771,7 +775,7 @@ node_type_info_t const g_node_types[] =
         .f_name = "CLASS",
         .f_operator = nullptr,
         .f_flags = TEST_NODE_IS_NAN | TEST_NODE_ACCEPT_STRING,
-        .f_node_flags = g_flags_none
+        .f_node_flags = g_flags_identifier
     },
     {
         .f_type = as2js::Node::node_t::NODE_COMPARE,
@@ -1584,6 +1588,7 @@ char const *g_attribute_names[static_cast<int>(as2js::Node::attribute_t::NODE_AT
     "FOREACH",
     "NOBREAK",
     "AUTOBREAK",
+    "TYPE",
     "DEFINED"
 };
 

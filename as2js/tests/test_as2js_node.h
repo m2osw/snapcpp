@@ -1,10 +1,10 @@
 #ifndef TEST_AS2JS_NODE_H
 #define TEST_AS2JS_NODE_H
-/* test_as2hs_node.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2hs_node.h -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -55,6 +55,7 @@ class As2JsNodeUnitTests : public CPPUNIT_NS::TestFixture
         CPPUNIT_TEST( test_variables );
         CPPUNIT_TEST( test_labels );
         CPPUNIT_TEST( test_attributes );
+        CPPUNIT_TEST( test_attribute_tree );
 
         // the display capability is for debug purposes but
         // we test it to make sure that we display the right
@@ -80,6 +81,7 @@ protected:
     void test_variables();
     void test_labels();
     void test_attributes();
+    void test_attribute_tree();
     void test_display_all_types();
     void test_display_unicode_string();
     void test_display_flags();

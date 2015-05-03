@@ -281,13 +281,31 @@ void Parser::directive(Node::pointer_t& node)
     {
         switch(type)
         {
-        case Node::node_t::NODE_USE:
-            if(f_node->get_type() == Node::node_t::NODE_NAMESPACE)
+        case Node::node_t::NODE_IDENTIFIER:
             {
-                break;
+                // "final identifier [= expression]" is legal but needs
+                // to be transformed here to work properly
+                Node::pointer_t child(attr_list->get_child(0));
+                if(attr_count == 1 && child->get_type() == Node::node_t::NODE_FINAL)
+                {
+                    attr_list.reset();
+                    type = Node::node_t::NODE_FINAL;
+                }
+                else
+                {
+                    attr_count = 0;
+                }
             }
-            /*FALLTHROUGH*/
+            break;
+
+        case Node::node_t::NODE_USE:
             // pragma cannot be annotated
+            if(f_node->get_type() != Node::node_t::NODE_NAMESPACE)
+            {
+                attr_count = 0;
+            }
+            break;
+
         case Node::node_t::NODE_ADD:
         case Node::node_t::NODE_ARRAY_LITERAL:
         case Node::node_t::NODE_BITWISE_NOT:
@@ -305,7 +323,6 @@ void Parser::directive(Node::pointer_t& node)
         case Node::node_t::NODE_FOR:
         case Node::node_t::NODE_FINALLY:
         case Node::node_t::NODE_GOTO:
-        case Node::node_t::NODE_IDENTIFIER:
         case Node::node_t::NODE_IF:
         case Node::node_t::NODE_INCREMENT:
         case Node::node_t::NODE_INT64:
@@ -334,9 +351,6 @@ void Parser::directive(Node::pointer_t& node)
         case Node::node_t::NODE_WITH:
         case Node::node_t::NODE_WHILE:
         {
-            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, f_lexer->get_input()->get_position());
-            msg << "no attributes were expected here (statements, expressions and pragmas cannot be annotated).";
-            attr_list.reset();
             attr_count = 0;
         }
             break;
@@ -345,6 +359,16 @@ void Parser::directive(Node::pointer_t& node)
         default:
             break;
 
+        }
+        if(attr_count == 0)
+        {
+            Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_ATTRIBUTES, f_lexer->get_input()->get_position());
+            msg << "no attributes were expected here (statements, expressions and pragmas cannot be annotated).";
+            attr_list.reset();
+        }
+        if(!attr_list)
+        {
+            attr_count = 0;
         }
     }
 
@@ -428,12 +452,52 @@ void Parser::directive(Node::pointer_t& node)
         {
             get_token();
         }
-        variable(directive_node, true);
+        variable(directive_node, Node::node_t::NODE_CONST);
+        break;
+
+    case Node::node_t::NODE_FINAL:
+        // this special case happens when the user forgets to put
+        // a variable name (final = 5) or the var keyword is not
+        // used; the variable() function generates the correct
+        // error and skips the entry as required if necessary
+        if(f_node->get_type() == Node::node_t::NODE_FINAL)
+        {
+            // skip the FINAL keyword
+            // otherwise we are already on the IDENTIFIER keyword
+            get_token();
+        }
+        variable(directive_node, Node::node_t::NODE_FINAL);
         break;
 
     case Node::node_t::NODE_VAR:
-        get_token();
-        variable(directive_node, false);
+        {
+            get_token();
+
+            // in this case the VAR keyword may be preceeded by
+            // the FINAL keywoard which this far is viewed as an
+            // attribute; so make it a keyword again
+            bool found(false);
+            for(size_t idx(0); idx < attr_count; ++idx)
+            {
+                Node::pointer_t child(attr_list->get_child(idx));
+                if(child->get_type() == Node::node_t::NODE_FINAL)
+                {
+                    // got it, remove it from the list
+                    found = true;
+                    attr_list->delete_child(idx);
+                    --attr_count;
+                    break;
+                }
+            }
+            if(found)
+            {
+                variable(directive_node, Node::node_t::NODE_FINAL);
+            }
+            else
+            {
+                variable(directive_node, Node::node_t::NODE_VAR);
+            }
+        }
         break;
 
     // *** STATEMENT ***
@@ -689,7 +753,6 @@ void Parser::directive(Node::pointer_t& node)
 
     case Node::node_t::NODE_ABSTRACT:
     //case Node::node_t::NODE_FALSE:
-    case Node::node_t::NODE_FINAL:
     case Node::node_t::NODE_INLINE:
     case Node::node_t::NODE_NATIVE:
     //case Node::node_t::NODE_PRIVATE:

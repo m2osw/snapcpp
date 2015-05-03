@@ -1,8 +1,8 @@
-/* parser_statement.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* parser_statement.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -445,7 +445,8 @@ void Parser::for_directive(Node::pointer_t& node)
                 get_token(); // skip the 'var'
             }
             Node::pointer_t variables;
-            variable(variables, constant);
+            // TODO: add support for NODE_FINAL if possible here?
+            variable(variables, constant ? Node::node_t::NODE_CONST : Node::node_t::NODE_VAR);
             node->append_child(variables);
 
             // This can happen when we return from the
@@ -698,7 +699,7 @@ void Parser::return_directive(Node::pointer_t& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void Parser::try_finally(Node::pointer_t& node, Node::node_t type)
+void Parser::try_finally(Node::pointer_t& node, Node::node_t const type)
 {
     if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
     {
@@ -913,7 +914,7 @@ void Parser::throw_directive(Node::pointer_t& node)
 /**********************************************************************/
 /**********************************************************************/
 
-void Parser::with_while(Node::pointer_t& node, Node::node_t type)
+void Parser::with_while(Node::pointer_t& node, Node::node_t const type)
 {
     char const *inst = type == Node::node_t::NODE_WITH ? "with" : "while";
 

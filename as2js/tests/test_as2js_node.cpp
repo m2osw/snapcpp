@@ -313,8 +313,111 @@ void As2JsNodeUnitTests::test_type()
         // which only accepts NODE_DEFINED
         for(int j(0); j < static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_max); ++j)
         {
-            if(node_type == as2js::Node::node_t::NODE_PROGRAM
-            && j != static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_DEFINED))
+            bool valid(true);
+            switch(node_type)
+            {
+            case as2js::Node::node_t::NODE_PROGRAM:
+                valid = j == static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_DEFINED);
+                break;
+
+            case as2js::Node::node_t::NODE_ADD:
+            case as2js::Node::node_t::NODE_ARRAY:
+            case as2js::Node::node_t::NODE_ARRAY_LITERAL:
+            case as2js::Node::node_t::NODE_AS:
+            case as2js::Node::node_t::NODE_ASSIGNMENT:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_ADD:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_AND:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_DIVIDE:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_MODULO:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_POWER:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+            case as2js::Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+            case as2js::Node::node_t::NODE_BITWISE_AND:
+            case as2js::Node::node_t::NODE_BITWISE_NOT:
+            case as2js::Node::node_t::NODE_BITWISE_OR:
+            case as2js::Node::node_t::NODE_BITWISE_XOR:
+            case as2js::Node::node_t::NODE_CALL:
+            case as2js::Node::node_t::NODE_CONDITIONAL:
+            case as2js::Node::node_t::NODE_DECREMENT:
+            case as2js::Node::node_t::NODE_DELETE:
+            case as2js::Node::node_t::NODE_DIVIDE:
+            case as2js::Node::node_t::NODE_EQUAL:
+            case as2js::Node::node_t::NODE_FALSE:
+            case as2js::Node::node_t::NODE_FLOAT64:
+            case as2js::Node::node_t::NODE_FUNCTION:
+            case as2js::Node::node_t::NODE_GREATER:
+            case as2js::Node::node_t::NODE_GREATER_EQUAL:
+            case as2js::Node::node_t::NODE_IDENTIFIER:
+            case as2js::Node::node_t::NODE_IN:
+            case as2js::Node::node_t::NODE_INCREMENT:
+            case as2js::Node::node_t::NODE_INSTANCEOF:
+            case as2js::Node::node_t::NODE_INT64:
+            case as2js::Node::node_t::NODE_IS:
+            case as2js::Node::node_t::NODE_LESS:
+            case as2js::Node::node_t::NODE_LESS_EQUAL:
+            case as2js::Node::node_t::NODE_LIST:
+            case as2js::Node::node_t::NODE_LOGICAL_AND:
+            case as2js::Node::node_t::NODE_LOGICAL_NOT:
+            case as2js::Node::node_t::NODE_LOGICAL_OR:
+            case as2js::Node::node_t::NODE_LOGICAL_XOR:
+            case as2js::Node::node_t::NODE_MATCH:
+            case as2js::Node::node_t::NODE_MAXIMUM:
+            case as2js::Node::node_t::NODE_MEMBER:
+            case as2js::Node::node_t::NODE_MINIMUM:
+            case as2js::Node::node_t::NODE_MODULO:
+            case as2js::Node::node_t::NODE_MULTIPLY:
+            case as2js::Node::node_t::NODE_NAME:
+            case as2js::Node::node_t::NODE_NEW:
+            case as2js::Node::node_t::NODE_NOT_EQUAL:
+            case as2js::Node::node_t::NODE_NULL:
+            case as2js::Node::node_t::NODE_OBJECT_LITERAL:
+            case as2js::Node::node_t::NODE_POST_DECREMENT:
+            case as2js::Node::node_t::NODE_POST_INCREMENT:
+            case as2js::Node::node_t::NODE_POWER:
+            case as2js::Node::node_t::NODE_PRIVATE:
+            case as2js::Node::node_t::NODE_PUBLIC:
+            case as2js::Node::node_t::NODE_RANGE:
+            case as2js::Node::node_t::NODE_ROTATE_LEFT:
+            case as2js::Node::node_t::NODE_ROTATE_RIGHT:
+            case as2js::Node::node_t::NODE_SCOPE:
+            case as2js::Node::node_t::NODE_SHIFT_LEFT:
+            case as2js::Node::node_t::NODE_SHIFT_RIGHT:
+            case as2js::Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
+            case as2js::Node::node_t::NODE_STRICTLY_EQUAL:
+            case as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL:
+            case as2js::Node::node_t::NODE_STRING:
+            case as2js::Node::node_t::NODE_SUBTRACT:
+            case as2js::Node::node_t::NODE_SUPER:
+            case as2js::Node::node_t::NODE_THIS:
+            case as2js::Node::node_t::NODE_TRUE:
+            case as2js::Node::node_t::NODE_TYPEOF:
+            case as2js::Node::node_t::NODE_UNDEFINED:
+            case as2js::Node::node_t::NODE_VIDENTIFIER:
+            case as2js::Node::node_t::NODE_VOID:
+                break;
+
+            default:
+                // any other type and you get an exception
+                valid = j != static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_TYPE);
+                break;
+
+            }
+
+            //if(node_type == as2js::Node::node_t::NODE_PROGRAM
+            //&& j != static_cast<int>(as2js::Node::attribute_t::NODE_ATTR_DEFINED))
+            if(!valid)
             {
                 CPPUNIT_ASSERT_THROW(node->get_attribute(static_cast<as2js::Node::attribute_t>(j)), as2js::exception_internal_error);
                 CPPUNIT_ASSERT_THROW(node->set_attribute(static_cast<as2js::Node::attribute_t>(j), true), as2js::exception_internal_error);
@@ -2275,6 +2378,105 @@ void As2JsNodeUnitTests::test_attributes()
                                          *attr_list != as2js::Node::attribute_t::NODE_ATTR_max;
                                          ++attr_list)
             {
+                if(*attr_list == as2js::Node::attribute_t::NODE_ATTR_TYPE)
+                {
+                    switch(node->get_type())
+                    {
+                    case as2js::Node::node_t::NODE_ADD:
+                    case as2js::Node::node_t::NODE_ARRAY:
+                    case as2js::Node::node_t::NODE_ARRAY_LITERAL:
+                    case as2js::Node::node_t::NODE_AS:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_ADD:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_AND:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_DIVIDE:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_MODULO:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_POWER:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+                    case as2js::Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+                    case as2js::Node::node_t::NODE_BITWISE_AND:
+                    case as2js::Node::node_t::NODE_BITWISE_NOT:
+                    case as2js::Node::node_t::NODE_BITWISE_OR:
+                    case as2js::Node::node_t::NODE_BITWISE_XOR:
+                    case as2js::Node::node_t::NODE_CALL:
+                    case as2js::Node::node_t::NODE_CONDITIONAL:
+                    case as2js::Node::node_t::NODE_DECREMENT:
+                    case as2js::Node::node_t::NODE_DELETE:
+                    case as2js::Node::node_t::NODE_DIVIDE:
+                    case as2js::Node::node_t::NODE_EQUAL:
+                    case as2js::Node::node_t::NODE_FALSE:
+                    case as2js::Node::node_t::NODE_FLOAT64:
+                    case as2js::Node::node_t::NODE_FUNCTION:
+                    case as2js::Node::node_t::NODE_GREATER:
+                    case as2js::Node::node_t::NODE_GREATER_EQUAL:
+                    case as2js::Node::node_t::NODE_IDENTIFIER:
+                    case as2js::Node::node_t::NODE_IN:
+                    case as2js::Node::node_t::NODE_INCREMENT:
+                    case as2js::Node::node_t::NODE_INSTANCEOF:
+                    case as2js::Node::node_t::NODE_INT64:
+                    case as2js::Node::node_t::NODE_IS:
+                    case as2js::Node::node_t::NODE_LESS:
+                    case as2js::Node::node_t::NODE_LESS_EQUAL:
+                    case as2js::Node::node_t::NODE_LIST:
+                    case as2js::Node::node_t::NODE_LOGICAL_AND:
+                    case as2js::Node::node_t::NODE_LOGICAL_NOT:
+                    case as2js::Node::node_t::NODE_LOGICAL_OR:
+                    case as2js::Node::node_t::NODE_LOGICAL_XOR:
+                    case as2js::Node::node_t::NODE_MATCH:
+                    case as2js::Node::node_t::NODE_MAXIMUM:
+                    case as2js::Node::node_t::NODE_MEMBER:
+                    case as2js::Node::node_t::NODE_MINIMUM:
+                    case as2js::Node::node_t::NODE_MODULO:
+                    case as2js::Node::node_t::NODE_MULTIPLY:
+                    case as2js::Node::node_t::NODE_NAME:
+                    case as2js::Node::node_t::NODE_NEW:
+                    case as2js::Node::node_t::NODE_NOT_EQUAL:
+                    case as2js::Node::node_t::NODE_NULL:
+                    case as2js::Node::node_t::NODE_OBJECT_LITERAL:
+                    case as2js::Node::node_t::NODE_POST_DECREMENT:
+                    case as2js::Node::node_t::NODE_POST_INCREMENT:
+                    case as2js::Node::node_t::NODE_POWER:
+                    case as2js::Node::node_t::NODE_PRIVATE:
+                    case as2js::Node::node_t::NODE_PUBLIC:
+                    case as2js::Node::node_t::NODE_RANGE:
+                    case as2js::Node::node_t::NODE_ROTATE_LEFT:
+                    case as2js::Node::node_t::NODE_ROTATE_RIGHT:
+                    case as2js::Node::node_t::NODE_SCOPE:
+                    case as2js::Node::node_t::NODE_SHIFT_LEFT:
+                    case as2js::Node::node_t::NODE_SHIFT_RIGHT:
+                    case as2js::Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
+                    case as2js::Node::node_t::NODE_STRICTLY_EQUAL:
+                    case as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL:
+                    case as2js::Node::node_t::NODE_STRING:
+                    case as2js::Node::node_t::NODE_SUBTRACT:
+                    case as2js::Node::node_t::NODE_SUPER:
+                    case as2js::Node::node_t::NODE_THIS:
+                    case as2js::Node::node_t::NODE_TRUE:
+                    case as2js::Node::node_t::NODE_TYPEOF:
+                    case as2js::Node::node_t::NODE_UNDEFINED:
+                    case as2js::Node::node_t::NODE_VIDENTIFIER:
+                    case as2js::Node::node_t::NODE_VOID:
+                        break;;
+
+                    default:
+                        // with any other types we would get an error
+                        continue;
+
+                    }
+                }
+
                 as2js::Node::attribute_set_t set;
                 CPPUNIT_ASSERT(node->compare_all_attributes(set));
 
@@ -2294,6 +2496,105 @@ void As2JsNodeUnitTests::test_attributes()
                     if(static_cast<as2js::Node::attribute_t>(a) == *attr_list)
                     {
                         continue;
+                    }
+
+                    if(static_cast<as2js::Node::attribute_t>(a) == as2js::Node::attribute_t::NODE_ATTR_TYPE)
+                    {
+                        switch(node->get_type())
+                        {
+                        case as2js::Node::node_t::NODE_ADD:
+                        case as2js::Node::node_t::NODE_ARRAY:
+                        case as2js::Node::node_t::NODE_ARRAY_LITERAL:
+                        case as2js::Node::node_t::NODE_AS:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_ADD:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_AND:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_OR:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_BITWISE_XOR:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_DIVIDE:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_AND:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_OR:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_LOGICAL_XOR:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_MAXIMUM:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_MINIMUM:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_MODULO:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_MULTIPLY:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_POWER:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_LEFT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_ROTATE_RIGHT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_LEFT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_SHIFT_RIGHT_UNSIGNED:
+                        case as2js::Node::node_t::NODE_ASSIGNMENT_SUBTRACT:
+                        case as2js::Node::node_t::NODE_BITWISE_AND:
+                        case as2js::Node::node_t::NODE_BITWISE_NOT:
+                        case as2js::Node::node_t::NODE_BITWISE_OR:
+                        case as2js::Node::node_t::NODE_BITWISE_XOR:
+                        case as2js::Node::node_t::NODE_CALL:
+                        case as2js::Node::node_t::NODE_CONDITIONAL:
+                        case as2js::Node::node_t::NODE_DECREMENT:
+                        case as2js::Node::node_t::NODE_DELETE:
+                        case as2js::Node::node_t::NODE_DIVIDE:
+                        case as2js::Node::node_t::NODE_EQUAL:
+                        case as2js::Node::node_t::NODE_FALSE:
+                        case as2js::Node::node_t::NODE_FLOAT64:
+                        case as2js::Node::node_t::NODE_FUNCTION:
+                        case as2js::Node::node_t::NODE_GREATER:
+                        case as2js::Node::node_t::NODE_GREATER_EQUAL:
+                        case as2js::Node::node_t::NODE_IDENTIFIER:
+                        case as2js::Node::node_t::NODE_IN:
+                        case as2js::Node::node_t::NODE_INCREMENT:
+                        case as2js::Node::node_t::NODE_INSTANCEOF:
+                        case as2js::Node::node_t::NODE_INT64:
+                        case as2js::Node::node_t::NODE_IS:
+                        case as2js::Node::node_t::NODE_LESS:
+                        case as2js::Node::node_t::NODE_LESS_EQUAL:
+                        case as2js::Node::node_t::NODE_LIST:
+                        case as2js::Node::node_t::NODE_LOGICAL_AND:
+                        case as2js::Node::node_t::NODE_LOGICAL_NOT:
+                        case as2js::Node::node_t::NODE_LOGICAL_OR:
+                        case as2js::Node::node_t::NODE_LOGICAL_XOR:
+                        case as2js::Node::node_t::NODE_MATCH:
+                        case as2js::Node::node_t::NODE_MAXIMUM:
+                        case as2js::Node::node_t::NODE_MEMBER:
+                        case as2js::Node::node_t::NODE_MINIMUM:
+                        case as2js::Node::node_t::NODE_MODULO:
+                        case as2js::Node::node_t::NODE_MULTIPLY:
+                        case as2js::Node::node_t::NODE_NAME:
+                        case as2js::Node::node_t::NODE_NEW:
+                        case as2js::Node::node_t::NODE_NOT_EQUAL:
+                        case as2js::Node::node_t::NODE_NULL:
+                        case as2js::Node::node_t::NODE_OBJECT_LITERAL:
+                        case as2js::Node::node_t::NODE_POST_DECREMENT:
+                        case as2js::Node::node_t::NODE_POST_INCREMENT:
+                        case as2js::Node::node_t::NODE_POWER:
+                        case as2js::Node::node_t::NODE_PRIVATE:
+                        case as2js::Node::node_t::NODE_PUBLIC:
+                        case as2js::Node::node_t::NODE_RANGE:
+                        case as2js::Node::node_t::NODE_ROTATE_LEFT:
+                        case as2js::Node::node_t::NODE_ROTATE_RIGHT:
+                        case as2js::Node::node_t::NODE_SCOPE:
+                        case as2js::Node::node_t::NODE_SHIFT_LEFT:
+                        case as2js::Node::node_t::NODE_SHIFT_RIGHT:
+                        case as2js::Node::node_t::NODE_SHIFT_RIGHT_UNSIGNED:
+                        case as2js::Node::node_t::NODE_STRICTLY_EQUAL:
+                        case as2js::Node::node_t::NODE_STRICTLY_NOT_EQUAL:
+                        case as2js::Node::node_t::NODE_STRING:
+                        case as2js::Node::node_t::NODE_SUBTRACT:
+                        case as2js::Node::node_t::NODE_SUPER:
+                        case as2js::Node::node_t::NODE_THIS:
+                        case as2js::Node::node_t::NODE_TRUE:
+                        case as2js::Node::node_t::NODE_TYPEOF:
+                        case as2js::Node::node_t::NODE_UNDEFINED:
+                        case as2js::Node::node_t::NODE_VIDENTIFIER:
+                        case as2js::Node::node_t::NODE_VOID:
+                            break;;
+
+                        default:
+                            // with any other types we would get an error
+                            continue;
+
+                        }
                     }
 
                     // is attribute 'a' in conflict with attribute '*attr_list'?
@@ -2332,6 +2633,212 @@ void As2JsNodeUnitTests::test_attributes()
             }
         }
     }
+}
+
+
+void As2JsNodeUnitTests::test_attribute_tree()
+{
+    // here we create a tree of nodes that we can then test with various
+    // attributes using the set_attribute_tree() function
+    //
+    // the tree is very specific to make it easier to handle the test; there
+    // is no need to test every single case (every attribute) since we do that
+    // in other tests; this test is to make sure the tree is followed as
+    // expected (all leaves are hit)
+    //
+    as2js::Node::pointer_t root(new as2js::Node(as2js::Node::node_t::NODE_ROOT));
+
+    // block
+    as2js::Node::pointer_t directive_list(new as2js::Node(as2js::Node::node_t::NODE_DIRECTIVE_LIST));
+    root->append_child(directive_list);
+
+    // { for( ...
+    as2js::Node::pointer_t for_loop(new as2js::Node(as2js::Node::node_t::NODE_FOR));
+    directive_list->append_child(for_loop);
+
+    // { for( ... , ...
+    as2js::Node::pointer_t init(new as2js::Node(as2js::Node::node_t::NODE_LIST));
+    for_loop->append_child(init);
+
+    as2js::Node::pointer_t var1(new as2js::Node(as2js::Node::node_t::NODE_VAR));
+    init->append_child(var1);
+
+    as2js::Node::pointer_t variable1(new as2js::Node(as2js::Node::node_t::NODE_VARIABLE));
+    var1->append_child(variable1);
+
+    // { for(i
+    as2js::Node::pointer_t variable_name1(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    variable_name1->set_string("i");
+    variable1->append_child(variable_name1);
+
+    // { for(i := 
+    as2js::Node::pointer_t value1(new as2js::Node(as2js::Node::node_t::NODE_SET));
+    variable1->append_child(value1);
+
+    // { for(i := ... + ...
+    as2js::Node::pointer_t add1(new as2js::Node(as2js::Node::node_t::NODE_ADD));
+    value1->append_child(add1);
+
+    // { for(i := a + ...
+    as2js::Node::pointer_t var_a1(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_a1->set_string("a");
+    add1->append_child(var_a1);
+
+    // { for(i := a + b
+    as2js::Node::pointer_t var_b1(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_b1->set_string("b");
+    add1->append_child(var_b1);
+
+    // { for(i := a + b, 
+    as2js::Node::pointer_t var2(new as2js::Node(as2js::Node::node_t::NODE_VAR));
+    init->append_child(var2);
+
+    as2js::Node::pointer_t variable2(new as2js::Node(as2js::Node::node_t::NODE_VARIABLE));
+    var2->append_child(variable2);
+
+    // { for(i := a + b, j
+    as2js::Node::pointer_t variable_name2(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    variable_name2->set_string("j");
+    variable2->append_child(variable_name2);
+
+    // { for(i := a + b, j := 
+    as2js::Node::pointer_t value2(new as2js::Node(as2js::Node::node_t::NODE_SET));
+    variable2->append_child(value2);
+
+    // { for(i := a + b, j := ... / ...
+    as2js::Node::pointer_t divide2(new as2js::Node(as2js::Node::node_t::NODE_DIVIDE));
+    value2->append_child(divide2);
+
+    // { for(i := a + b, j := c / ...
+    as2js::Node::pointer_t var_a2(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_a2->set_string("c");
+    divide2->append_child(var_a2);
+
+    // { for(i := a + b, j := c / d
+    as2js::Node::pointer_t var_b2(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_b2->set_string("d");
+    divide2->append_child(var_b2);
+
+    // { for(i := a + b, j := c / d; ... < ...
+    as2js::Node::pointer_t less(new as2js::Node(as2js::Node::node_t::NODE_LESS));
+    for_loop->append_child(less);
+
+    // { for(i := a + b, j := c / d; i < ...
+    as2js::Node::pointer_t var_i2(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_i2->set_string("i");
+    less->append_child(var_i2);
+
+    // { for(i := a + b, j := c / d; i < 100;
+    as2js::Node::pointer_t one_hunder(new as2js::Node(as2js::Node::node_t::NODE_INT64));
+    one_hunder->set_int64(100);
+    less->append_child(one_hunder);
+
+    // { for(i := a + b, j := c / d; i < 100; ++...)
+    as2js::Node::pointer_t increment(new as2js::Node(as2js::Node::node_t::NODE_INCREMENT));
+    for_loop->append_child(increment);
+
+    // { for(i := a + b, j := c / d; i < 100; ++i)
+    as2js::Node::pointer_t var_i3(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_i3->set_string("i");
+    increment->append_child(var_i3);
+
+    // { for(i := a + b, j := c / d; i < 100; ++i) { ... } }
+    as2js::Node::pointer_t block_list(new as2js::Node(as2js::Node::node_t::NODE_DIRECTIVE_LIST));
+    for_loop->append_child(block_list);
+
+    // { for(i := a + b, j := c / d; i < 100; ++i) { ...(...); } }
+    as2js::Node::pointer_t func(new as2js::Node(as2js::Node::node_t::NODE_CALL));
+    block_list->append_child(func);
+
+    // { for(i := a + b, j := c / d; i < 100; ++i) { func(...); } }
+    as2js::Node::pointer_t var_i4(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_i4->set_string("func");
+    func->append_child(var_i4);
+
+    // { for(i := a + b, j := c / d; i < 100; ++i) { func(...); } }
+    as2js::Node::pointer_t param_list(new as2js::Node(as2js::Node::node_t::NODE_LIST));
+    func->append_child(param_list);
+
+    // { for(i := a + b, j := c / d; i < 100; ++i) { func(i, ...); } }
+    as2js::Node::pointer_t var_i5(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_i5->set_string("i");
+    param_list->append_child(var_i5);
+
+    // { for(i := a + b, j := c / d; i < 100; ++i) { func(i, j); } }
+    as2js::Node::pointer_t var_i6(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+    var_i6->set_string("j");
+    param_list->append_child(var_i6);
+
+    // since we have a tree with parents we can test an invalid parent
+    // which itself has a parent and get an error including the parent
+    // information
+    as2js::Node::pointer_t test_list(new as2js::Node(as2js::Node::node_t::NODE_DIRECTIVE_LIST));
+    CPPUNIT_ASSERT_THROW(test_list->set_parent(var_i5, 0), as2js::exception_incompatible_node_type);
+
+    // the DEFINED attribute applies to all types of nodes so it is easy to
+    // use... (would the test benefit from testing other attributes?)
+    root->set_attribute_tree(as2js::Node::attribute_t::NODE_ATTR_DEFINED, true);
+    CPPUNIT_ASSERT(root->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(directive_list->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(for_loop->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(init->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(variable1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(variable_name1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(value1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(add1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_a1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_b1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(variable2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(variable_name2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(value2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(divide2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_a2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_b2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(less->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_i2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(one_hunder->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(increment->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_i3->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(block_list->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(func->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_i4->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(param_list->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_i5->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(var_i6->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+
+    // now test the clearing of the attribute
+    root->set_attribute_tree(as2js::Node::attribute_t::NODE_ATTR_DEFINED, false);
+    CPPUNIT_ASSERT(!root->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!directive_list->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!for_loop->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!init->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!variable1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!variable_name1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!value1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!add1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_a1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_b1->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!variable2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!variable_name2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!value2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!divide2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_a2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_b2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!less->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_i2->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!one_hunder->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!increment->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_i3->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!block_list->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!func->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_i4->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!param_list->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_i5->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
+    CPPUNIT_ASSERT(!var_i6->get_attribute(as2js::Node::attribute_t::NODE_ATTR_DEFINED));
 }
 
 

@@ -1,8 +1,8 @@
-/* test_as2js_parser.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2014 */
+/* test_as2js_parser.cpp -- written by Alexis WILKE for Made to Order Software Corp. (c) 2005-2015 */
 
 /*
 
-Copyright (c) 2005-2014 Made to Order Software Corp.
+Copyright (c) 2005-2015 Made to Order Software Corp.
 
 http://snapwebsites.org/project/as2js
 
@@ -532,6 +532,7 @@ flg_to_string_t const g_flag_table[] =
     FLAG_NAME(SWITCH_FLAG_DEFAULT),
     FLAG_NAME(TYPE_FLAG_MODULO),
     FLAG_NAME(VARIABLE_FLAG_CONST),
+    FLAG_NAME(VARIABLE_FLAG_FINAL),
     FLAG_NAME(VARIABLE_FLAG_LOCAL),
     FLAG_NAME(VARIABLE_FLAG_MEMBER),
     FLAG_NAME(VARIABLE_FLAG_ATTRIBUTES),
@@ -686,6 +687,7 @@ void verify_flags(as2js::Node::pointer_t node, as2js::String const& flags_set, b
     case as2js::Node::node_t::NODE_VARIABLE:
     case as2js::Node::node_t::NODE_VAR_ATTRIBUTES:
         flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_CONST);
+        flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_FINAL);
         flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_LOCAL);
         flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_MEMBER);
         flgs_to_check.push_back(as2js::Node::flag_t::NODE_VARIABLE_FLAG_ATTRIBUTES);

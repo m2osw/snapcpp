@@ -1347,21 +1347,8 @@ void As2JsStringUnitTests::test_utf32()
     }
 
     // check all the characters (Except '\0' and surrogates)
-    for(int i(1); i < 0x110000; ++i)
+    for(int i(1); i < 0x120000; ++i)
     {
-        // skip the surrogate which we want to encode from other characters
-        // rather than use as is...
-        if(i == 0x00D800)
-        {
-            i = 0x00DFFF;
-            continue;
-        }
-
-        if(!as2js_test::g_gui && (i & 0x00FFFF) == 0)
-        {
-            std::cout << "." << std::flush;
-        }
-
         // Note: although wchar_t is 32 bits under Linux, we manage these
         //       strings as if they were 16 bits... (although we'll
         //       accept characters larger than 0x00FFFF as a UTF-32
@@ -1369,6 +1356,29 @@ void As2JsStringUnitTests::test_utf32()
         as2js::as_char_t buf[2];
         buf[0] = i;
         buf[1] = '\0';
+
+        // skip the surrogate which we want to encode from other characters
+        // rather than use as is...
+        if((i >= 0x00D800 && i <= 0x00DFFF)
+        || i >= 0x110000)
+        {
+            // creating a string with a surrogate will generate an exception
+            try
+            {
+                as2js::String str(buf);
+                CPPUNIT_ASSERT(!"we wanted the exception and did not get it");
+            }
+            catch(as2js::exception_internal_error const &)
+            {
+                // it worked as expected
+            }
+            continue;
+        }
+
+        if(!as2js_test::g_gui && (i & 0x00FFFF) == 0)
+        {
+            std::cout << "." << std::flush;
+        }
 
         {
             as2js::String str1;
