@@ -110,6 +110,12 @@ char const *get_name(name_t name)
     case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN_HEADER:
         return "epayment_paypal::bill_plan_header";
 
+    case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CHECK_BILL_PLAN:
+        return "epayment_paypal::check_bill_plan";
+
+    case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CHECK_BILL_PLAN_HEADER:
+        return "epayment_paypal::check_bill_plan_header";
+
     case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CLIENT_ID:
         return "epayment_paypal::client_id";
 
@@ -540,7 +546,7 @@ std::cerr << "***\n*** epayment_paypal::on_path_execute() cpath = [" << cpath <<
         {
             messages::messages::instance()->set_error(
                 "PayPal Missing Option",
-                "PayPal returned to \"cancel\" invoice without a \"token\" parameter", 
+                "PayPal returned to \"cancel\" invoice without a \"token\" parameter",
                 "Without the \"token\" parameter we cannot know which invoice this is linked with.",
                 false
             );
@@ -574,7 +580,7 @@ std::cerr << "***\n*** epayment_paypal::on_path_execute() cpath = [" << cpath <<
             {
                 messages::messages::instance()->set_error(
                     "PayPal Missing Option",
-                    "PayPal replied without a paymentId parameter", 
+                    "PayPal replied without a paymentId parameter",
                     "Without the \"paymentId\" parameter we cannot know which invoice this is linked with.",
                     false
                 );
@@ -589,7 +595,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             {
                 messages::messages::instance()->set_error(
                     "PayPal Invalid Token",
-                    "Agreement token is missing the date of creation", 
+                    "Agreement token is missing the date of creation",
                     "Somehow the agreement token does not include a comma and thus a \"date,invoice\".",
                     false
                 );
@@ -602,7 +608,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             {
                 messages::messages::instance()->set_error(
                     "PayPal Missing Option",
-                    "PayPal replied without a \"token\" parameter", 
+                    "PayPal replied without a \"token\" parameter",
                     "Without the \"token\" parameter we cannot know which invoice this is linked with.",
                     false
                 );
@@ -626,7 +632,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
                 //       reload, so no big deal right now)
                 messages::messages::instance()->set_error(
                     "PayPal Processed",
-                    "PayPal invoice was already processed. Please go to your account to view your existing invoices.", 
+                    "PayPal invoice was already processed. Please go to your account to view your existing invoices.",
                     QString("Found the invoice, but somehow it is not marked \"pending\" (it is \"%1\" instead).").arg(epayment::get_name(status)),
                     false
                 );
@@ -638,7 +644,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             {
                 messages::messages::instance()->set_error(
                     "PayPal Missing Option",
-                    "PayPal replied without a paymentId parameter", 
+                    "PayPal replied without a paymentId parameter",
                     "Without the \"paymentId\" parameter we cannot know which invoice this is linked with.",
                     false
                 );
@@ -665,7 +671,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
                 {
                     messages::messages::instance()->set_error(
                         "Invalid Token",
-                        "Somehow the token identifier returned by PayPal was not the same as the one saved in your purchase. We cannot proceed with your payment.", 
+                        "Somehow the token identifier returned by PayPal was not the same as the one saved in your purchase. We cannot proceed with your payment.",
                         QString("The payment token did not match (expected \"%1\", got \"%2\").").arg(expected_token).arg(token),
                         false
                     );
@@ -681,7 +687,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             {
                 messages::messages::instance()->set_error(
                     "Invalid Identifier",
-                    "Somehow the payment identifier returned by PayPal was not the same as the one saved in your session.", 
+                    "Somehow the payment identifier returned by PayPal was not the same as the one saved in your session.",
                     "If the identifiers do not match, we cannot show that user the corresponding cart if the user is not logged in.",
                     false
                 );
@@ -695,7 +701,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             {
                 messages::messages::instance()->set_error(
                     "Session Timedout",
-                    "You generated this payment more than a day ago. It timed out. Sorry about the trouble, but you have to start your order over.", 
+                    "You generated this payment more than a day ago. It timed out. Sorry about the trouble, but you have to start your order over.",
                     "The invoice was created 1 day ago so this could be a hacker trying to get this invoice validated.",
                     false
                 );
@@ -924,7 +930,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             {
                 messages::messages::instance()->set_error(
                     "PayPal Missing Option",
-                    "PayPal replied without a \"token\" parameter", 
+                    "PayPal replied without a \"token\" parameter",
                     "Without the \"token\" parameter we cannot know which invoice this is linked with.",
                     false
                 );
@@ -941,7 +947,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             {
                 messages::messages::instance()->set_error(
                     "PayPal Invalid Token",
-                    "Agreement token is missing the date of creation", 
+                    "Agreement token is missing the date of creation",
                     "Somehow the agreement token does not include a comma and thus a \"date,invoice\".",
                     false
                 );
@@ -954,7 +960,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             {
                 messages::messages::instance()->set_error(
                     "PayPal Missing Option",
-                    "PayPal replied without a \"token\" parameter", 
+                    "PayPal replied without a \"token\" parameter",
                     "Without the \"token\" parameter we cannot know which invoice this is linked with.",
                     false
                 );
@@ -979,7 +985,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
                 //       reload, so no big deal right now)
                 messages::messages::instance()->set_error(
                     "PayPal Processed",
-                    "PayPal invoice was already processed. Please go to your account to view your existing invoices.", 
+                    "PayPal invoice was already processed. Please go to your account to view your existing invoices.",
                     QString("Found the invoice, but somehow it is not marked \"pending\" (it is \"%1\" instead).").arg(epayment::get_name(status)),
                     false
                 );
@@ -1003,7 +1009,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             //{
             //    messages::messages::instance()->set_error(
             //        "Invalid Identifier",
-            //        "Somehow the payment identifier returned by PayPal was not the same as the one saved in your session.", 
+            //        "Somehow the payment identifier returned by PayPal was not the same as the one saved in your session.",
             //        "If the identifiers do not match, we cannot show that user the corresponding cart if the user is not logged in.",
             //        false
             //    );
@@ -1017,7 +1023,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             {
                 messages::messages::instance()->set_error(
                     "Session Timedout",
-                    "You generated this payment more than a day ago. It timed out. Sorry about the trouble, but you have to start your order over.", 
+                    "You generated this payment more than a day ago. It timed out. Sorry about the trouble, but you have to start your order over.",
                     "The invoice was created 1 day ago so this could be a hacker trying to get this invoice validated.",
                     false
                 );
@@ -1194,7 +1200,7 @@ void epayment_paypal::cancel_invoice(QString const& token)
         //       reload, so no big deal right now)
         messages::messages::instance()->set_error(
             "PayPal Processed",
-            "PayPal invoice was already processed. Please go to your account to view your existing invoices.", 
+            "PayPal invoice was already processed. Please go to your account to view your existing invoices.",
             QString("Found the invoice, but somehow it is not marked \"pending\" (it is \"%1\" instead).").arg(epayment::get_name(status)),
             false
         );
@@ -2227,7 +2233,7 @@ void epayment_paypal::on_process_post(QString const& uri_path)
                     epayment::recurring_t second(product.get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)));
                     messages::messages::instance()->set_error(
                         "Unsupported Recurring",
-                        "The PayPal payment facility does not support a purchase with more than one subscription.", 
+                        "The PayPal payment facility does not support a purchase with more than one subscription.",
                         QString("Got recurring \"%1\" and \"%2\".").arg(recurring.to_string()).arg(second.to_string()),
                         false
                     );
@@ -2260,7 +2266,7 @@ void epayment_paypal::on_process_post(QString const& uri_path)
 
                 messages::messages::instance()->set_error(
                     "Unsupported Mix of Products",
-                    "A PayPal payment does not support regular items and a subscription to be processed together.", 
+                    "A PayPal payment does not support regular items and a subscription to be processed together.",
                     "Got recurring and non-recurring items in one invoice.",
                     false
                 );
@@ -2623,7 +2629,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
 
                 messages::messages::instance()->set_error(
                     "Unsupported Mix of Products",
-                    "A standard PayPal payment cannot include a recurring fee.", 
+                    "A standard PayPal payment cannot include a recurring fee.",
                     "Got recurring and non-recurring items in one invoice.",
                     false
                 );
@@ -2710,7 +2716,7 @@ std::cerr << "***\n*** AGREEMENT JSON BODY: ["
             //              ]
             //          }
             //      ]
-            //    
+            //
 
             // create the body
             as2js::String temp_str;
@@ -3141,7 +3147,7 @@ std::cerr << "***\n*** JSON BODY: ["
         success = false;
         messages::messages::instance()->set_error(
             "PayPal Unknown Command",
-            QString("Your last request sent command \"%1\" which the server does not understand.").arg(click), 
+            QString("Your last request sent command \"%1\" which the server does not understand.").arg(click),
             "Hacker sent a weird 'click' value or we did not update the server according to the JavaScript code.",
             false
         );
@@ -3264,12 +3270,10 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     {
         // the last attempt was less than 24h, skip this auto-repeat payment
         // (i.e. in effect try at most once per day)
-        messages::messages::instance()->set_error(
-            "Recurring Fee already processed today",
-            "The PayPal recurring payment facility will not attempt plan processing of the same invoice more than once a day.", 
-            "To avoid losing all of our attempts all at once, we process invoices with recurring payments only once a day.",
-            false
-        );
+        // since this code is likely to run once every 5 min. and we could
+        // have thousands of invoices, we do not print out an error message
+        // nor an INFO log; still emit a DEBUG message, just in case
+        SNAP_LOG_DEBUG("The PayPal recurring payment facility will not attempt plan processing of the same invoice (")(new_invoice_ipath.get_key())(") more than once a day.");
         return;
     }
     new_invoice_revision_row->cell(get_name(SNAP_NAME_EPAYMENT_PAYPAL_LAST_ATTEMPT))->setValue(start_date);
@@ -3279,6 +3283,158 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     {
         // we have a big problem it looks like!
         return;
+    }
+
+    // keep connection alive as long as possible
+    http_client_server::http_client http;
+    http.set_keep_alive(true);
+
+    // get an access token
+    std::string token_type;
+    std::string access_token;
+    if(!get_oauth2_token(http, token_type, access_token))
+    {
+        // a message was already generated if false
+        //
+        // TODO: add an error in the secret table so we know we tried,
+        //       when, how, etc.
+        //
+        return;
+    }
+
+    // check this agreement; if payment owed is still zero, just return
+    // and try again tomorrow
+    {
+        http_client_server::http_request paypal_agreement_request;
+        // In this case the URI has to be built by hand because it was not
+        // provided in any JSON results we got so far
+        //
+        //    https://api.sandbox.paypal.com/v1/payments/billing-agreements/I-123
+        //
+        QString const agreement_url(first_secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_URL))->value().stringValue());
+std::cerr << "***\n*** agreement URL is [" << agreement_url << "]\n***\n";
+        paypal_agreement_request.set_uri(agreement_url.toUtf8().data());
+        //paypal_agreement_request.set_path("...");
+        //paypal_agreement_request.set_port(443); // https
+        paypal_agreement_request.set_header("Accept", "application/json");
+        paypal_agreement_request.set_header("Accept-Language", "en_US");
+        paypal_agreement_request.set_header("Content-Type", "application/json");
+        paypal_agreement_request.set_header("Authorization", QString("%1 %2").arg(token_type.c_str()).arg(access_token.c_str()).toUtf8().data());
+        // TODO: add "-attempt<number>" at the end of our ID
+        //paypal_agreement_request.set_header("PayPal-Request-Id", new_invoice_ipath.get_key().toUtf8().data());
+        http_client_server::http_response::pointer_t response(http.send_request(paypal_agreement_request));
+
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CHECK_BILL_PLAN_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_CHECK_BILL_PLAN))->setValue(QString::fromUtf8(response->get_response().c_str()));
+std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response().c_str()) << "]\n***\n";
+
+        // we need a successful response (according to the documentation,
+        // it should always be 204, but we are getting a 200 answer)
+        if(response->get_response_code() != 200
+        && response->get_response_code() != 201
+        && response->get_response_code() != 204)
+        {
+            messages::messages::instance()->set_error(
+                "Plan Not Accessible",
+                "This Paypal Plan is not currently accessible.",
+                QString("Tried to check plan %1 on this user's account and it was not accessible.").arg(agreement_id.stringValue()),
+                false
+            );
+            return;
+        }
+
+        // the agreement is available, check that there is a pending balance
+        //
+        //    agreement.agreement_details.outstanding_balance.value
+        //
+        as2js::JSON::pointer_t json(new as2js::JSON);
+        as2js::StringInput::pointer_t in(new as2js::StringInput(response->get_response()));
+        as2js::JSON::JSONValue::pointer_t value(json->parse(in));
+        if(!value)
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("JSON parser failed parsing 'agreement' response");
+            return;
+        }
+        as2js::JSON::JSONValue::object_t const& object(value->get_object());
+
+        // ID
+        // verify that the agreement identifier corresponds to what we expect
+        if(object.find("id") == object.end())
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("'id' missing in 'agreement' response");
+            return;
+        }
+        QString const agreement_identifier(QString::fromUtf8(object.at("id")->get_string().to_utf8().c_str()));
+        if(agreement_identifier != agreement_id.stringValue())
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("'id' in 'agreement' response is not the same as the invoice 'id'");
+            return;
+        }
+
+        // STATE
+        // verify that the agreement state is "Active"
+        if(object.find("state") == object.end())
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("'state' missing in 'agreement' response");
+            return;
+        }
+        QString const agreement_state(QString::fromUtf8(object.at("id")->get_string().to_utf8().c_str()));
+        if(agreement_state.compare("Active", Qt::CaseInsensitive) == 0)
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("'state' in 'agreement' response is not 'Active'");
+            return;
+        }
+
+        // AGREEMENT_DETAILS
+        // retrieve the agreement details
+        if(object.find("agreement_details") == object.end())
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("'agreement_details' missing in 'agreement' response");
+            return;
+        }
+        as2js::JSON::JSONValue::object_t const& agreement_details(object.at("agreement_details")->get_object());
+
+        // OUSTANDING_BALANCE
+        // retrieve the outstanding balance which is a currency object
+        if(agreement_details.find("outstanding_balance") == object.end())
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("'outstanding_balance' missing in 'agreement.agreement_details' response");
+            return;
+        }
+        as2js::JSON::JSONValue::object_t const& outstanding_balance(agreement_details.at("outstanding_balance")->get_object());
+
+        // VALUE
+        // retrieve the amount of the outstanding balance
+        if(outstanding_balance.find("value") == object.end())
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("'value' missing in 'agreement.agreement_details.outstand_balance' response");
+            return;
+        }
+        // returned as a string even though it is a number
+        QString const balance_value(QString::fromUtf8(outstanding_balance.at("value")->get_string().to_utf8().c_str()));
+        bool ok(false);
+        double const bv(balance_value.toDouble(&ok));
+        if(!ok)
+        {
+            // TODO: change status of invoice to CANCELED?
+            SNAP_LOG_ERROR("'agreement.agreement_details.outstand_balance.value' is not a valid double");
+            return;
+        }
+
+        if(bv <= 0.0)
+        {
+            // TODO: show invoice number
+            SNAP_LOG_INFO("No outstanding balance according to Paypal. Try again later.");
+            return;
+        }
     }
 
     // get the client invoice
@@ -3298,7 +3454,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
             {
                 messages::messages::instance()->set_error(
                     "Unsupported Recurring Fee",
-                    "The PayPal payment facility does not support a fee when charging a recurring payment.", 
+                    "The PayPal payment facility does not support a fee when charging a recurring payment.",
                     "We just cannot charge the fee when processing a recurring fee second or further payments.",
                     false
                 );
@@ -3316,7 +3472,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
                     epayment::recurring_t second(product.get_string_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_RECURRING)));
                     messages::messages::instance()->set_error(
                         "Unsupported Recurring",
-                        "The PayPal payment facility does not support billing more than one recurring fee at a time.", 
+                        "The PayPal payment facility does not support billing more than one recurring fee at a time.",
                         QString("Got recurring \"%1\" and \"%2\" in the same invoice.").arg(recurring.to_string()).arg(second.to_string()),
                         false
                     );
@@ -3333,7 +3489,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
             {
                 messages::messages::instance()->set_error(
                     "Unsupported Recurring",
-                    "The PayPal payment facility does not support a purchase with a subscription recurring billing.", 
+                    "The PayPal payment facility does not support a purchase with a subscription recurring billing.",
                     "Invoice includes additional products that are not supported here.",
                     false
                 );
@@ -3345,7 +3501,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
         {
             messages::messages::instance()->set_error(
                 "Subscription Missing",
-                "A PayPal payment plan requires at least one product or service with a recurring fee.", 
+                "A PayPal payment plan requires at least one product or service with a recurring fee.",
                 "No item from the list is a recurring product.",
                 false
             );
@@ -3369,7 +3525,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
                 epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED);
                 messages::messages::instance()->set_error(
                     "Recurring Fee Failing",
-                    "Somehow we could not process the recurring Paypal payment.", 
+                    "Somehow we could not process the recurring Paypal payment.",
                     "When trying to charge a fee at the wrong time a Paypal plan fails... this may be happening here.",
                     false
                 );
@@ -3401,23 +3557,6 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
     //
 
     {
-        // keep connection alive as long as possible
-        http_client_server::http_client http;
-        http.set_keep_alive(true);
-
-        // get an access token
-        std::string token_type;
-        std::string access_token;
-        if(!get_oauth2_token(http, token_type, access_token))
-        {
-            // a message was already generated if false
-            //
-            // TODO: add an error in the secret table so we know we tried,
-            //       when, how, etc.
-            //
-            return;
-        }
-
         // all parameters are go, mark as processing
         epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING);
 

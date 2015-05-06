@@ -357,6 +357,7 @@ void setLogOutputLevel( log_level_t level )
     case LOG_LEVEL_TRACE:
         new_level = log4cplus::TRACE_LOG_LEVEL;
         break;
+
     }
 
     log4cplus::Logger::getRoot().setLogLevel( new_level );
@@ -589,6 +590,15 @@ logger& logger::operator () (std::string const& s)
 }
 
 
+logger& logger::operator () (std::wstring const& s)
+{
+    // we assume UTF-8 because in our Snap environment most everything is
+    // TODO: change control characters to \xXX
+    f_message += QString::fromWCharArray(s.c_str());
+    return *this;
+}
+
+
 logger& logger::operator () (QString const& s)
 {
     // TODO: change control characters to \xXX
@@ -625,7 +635,7 @@ logger& logger::operator () (signed short const v)
 }
 
 
-logger& logger::operator () (const unsigned short v)
+logger& logger::operator () (unsigned short const v)
 {
     f_message += QString("%1").arg(static_cast<int>(v));
     return *this;
@@ -703,13 +713,13 @@ logger& operator << ( logger& l, QString const& msg )
 
 logger& operator << ( logger& l, std::basic_string<char> const& msg )
 {
-    return l( msg.c_str() );
+    return l( msg );
 }
 
 
 logger& operator << ( logger& l, std::basic_string<wchar_t> const& msg )
 {
-    return l( msg.c_str() );
+    return l( msg );
 }
 
 

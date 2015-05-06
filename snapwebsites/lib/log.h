@@ -49,19 +49,20 @@ enum log_security_t
 class logger
 {
 public:
-    logger(log_level_t log_level, char const *file = nullptr, char const *func = nullptr, int line = -1);
-    logger(logger const& l);
+    logger(log_level_t log_level, char const * file = nullptr, char const * func = nullptr, int line = -1);
+    logger(logger const & l);
     ~logger();
 
     // avoid assignments
-    logger& operator = (logger const&) = delete;
+    logger& operator = (logger const &) = delete;
 
     logger& operator () ();
     logger& operator () (log_security_t const v);
-    logger& operator () (char const *s);
+    logger& operator () (char const * s);
     logger& operator () (wchar_t const *s);
-    logger& operator () (std::string const& s);
-    logger& operator () (QString const& s);
+    logger& operator () (std::string const & s);
+    logger& operator () (std::wstring const & s);
+    logger& operator () (QString const & s);
     logger& operator () (char const v);
     logger& operator () (signed char const v);
     logger& operator () (unsigned char const v);
@@ -92,21 +93,21 @@ private:
 };
 
 void configureConsole  ();
-void configureLogfile  ( const QString& logfile  );
-void configureConffile ( const QString& filename );
+void configureLogfile  ( QString const & logfile  );
+void configureConffile ( QString const & filename );
 void configureSysLog   ();
-void reconfigure();
-bool is_configured();
-void setLogOutputLevel( log_level_t level );
+void reconfigure       ();
+bool is_configured     ();
+void setLogOutputLevel ( log_level_t level );
 
-logger& operator << ( logger& l, const QString&                    msg );
-logger& operator << ( logger& l, const std::basic_string<char>&    msg );
-logger& operator << ( logger& l, const std::basic_string<wchar_t>& msg );
-logger& operator << ( logger& l, const char*                       msg );
-logger& operator << ( logger& l, const wchar_t*                    msg );
+logger& operator << ( logger & l, QString const &                    msg );
+logger& operator << ( logger & l, std::basic_string<char> const &    msg );
+logger& operator << ( logger & l, std::basic_string<wchar_t> const & msg );
+logger& operator << ( logger & l, char const *                       msg );
+logger& operator << ( logger & l, wchar_t const *                    msg );
 
 template <class T>
-logger& operator << ( logger& l, const T& msg )
+logger& operator << ( logger & l, T const & msg )
 {
     l( msg );
     return l;
