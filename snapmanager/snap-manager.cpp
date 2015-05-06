@@ -1,5 +1,5 @@
 // Snap Manager -- snap database manager to work on Cassandra's tables
-// Copyright (C) 2011-2013  Made to Order Software Corp.
+// Copyright (C) 2011-2015  Made to Order Software Corp.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1792,7 +1792,8 @@ void snap_manager::loadSites()
 
     QString const table_name(snap::get_name(snap::SNAP_NAME_SITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    f_table_model.setTable( table ); // Can be null, in which case it will blank out the view
+    QRegExp re; // no filter at this point
+    f_table_model.setTable( table, re ); // Can be null, in which case it will blank out the view
 
     // at first some of the entries are disabled
     // until a select is made or New is clicked
