@@ -197,6 +197,9 @@ char const *get_name(name_t name)
     case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_PLAN_URL:
         return "epayment_paypal::plan_url";
 
+    case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_REPEAT_PAYMENT:
+        return "epayment_paypal::repeat_payment";
+
     case SNAP_SECURE_NAME_EPAYMENT_PAYPAL_SANDBOX_CLIENT_ID:
         return "epayment_paypal::sandbox_client_id";
 
@@ -3302,6 +3305,8 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
         return;
     }
 
+    QString const agreement_url(first_secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_URL))->value().stringValue());
+
     // check this agreement; if payment owed is still zero, just return
     // and try again tomorrow
     {
@@ -3311,7 +3316,6 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
         //
         //    https://api.sandbox.paypal.com/v1/payments/billing-agreements/I-123
         //
-        QString const agreement_url(first_secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_URL))->value().stringValue());
 std::cerr << "***\n*** agreement URL is [" << agreement_url << "]\n***\n";
         paypal_agreement_request.set_uri(agreement_url.toUtf8().data());
         //paypal_agreement_request.set_path("...");
@@ -3596,6 +3600,7 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
         http_client_server::http_request bill_outstanding_agreement_amounts_request;
         // In this case the URI has to be built by hand because it was not
         // provided in any JSON results we got so far
+        // (although we should probably use the agreement URI + "/bill-balance")
         //
         //    https://api.sandbox.paypal.com/v1/payments/billing-agreements/I-123/bill-balance
         //
@@ -3611,6 +3616,11 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
         bill_outstanding_agreement_amounts_request.set_data(body->to_string().to_utf8());
         http_client_server::http_response::pointer_t response(http.send_request(bill_outstanding_agreement_amounts_request));
 
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_ID))->setValue(agreement_id);
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_AGREEMENT_URL))->setValue(agreement_url);
+        uint8_t const true_value(1);
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_REPEAT_PAYMENT))->setValue(true_value);
+        secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
         secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
         secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_BILL_PLAN))->setValue(QString::fromUtf8(response->get_response().c_str()));
         secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_INVOICE_NUMBER))->setValue(invoice_number);
