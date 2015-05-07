@@ -221,9 +221,11 @@ void locale_settings::on_set_timezone()
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
         QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
         QString const timezone_name(revision_row->cell(get_name(SNAP_NAME_LOCALE_SETTINGS_TIMEZONE))->value().stringValue());
-        locale_plugin->set_current_timezone(timezone_name);
-
-std::cerr << "*** Set LOCALE timezone [" << timezone_name << "]\n";
+        if(!timezone_name.isEmpty())
+        {
+            locale_plugin->set_current_timezone(timezone_name);
+std::cerr << "*** Set locale_settings/LOCALE timezone [" << timezone_name << "]\n";
+        }
     }
 }
 
