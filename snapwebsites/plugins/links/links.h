@@ -256,7 +256,7 @@ public:
     void                adjust_links_after_cloning(QString const& source_key, QString const& destination_key);
     void                fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch_number);
 
-    // TBD should those be events? (or trigger events?)
+    // TBD should those be events? (they do trigger the modified_link() event already...)
     void                create_link(link_info const& src, link_info const& dst);
     void                delete_link(link_info const& info, int const delete_record_count = DELETE_RECORD_COUNT);
     void                delete_this_link(link_info const& source, link_info const& destination);

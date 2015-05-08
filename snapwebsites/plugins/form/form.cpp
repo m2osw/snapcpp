@@ -1402,7 +1402,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
 {
     messages::messages *messages(messages::messages::instance());
 
-    // get the value we're going to validate
+    // get the value we are going to validate
     QString const value(f_snap->postenv(widget_name));
     bool has_minimum(false);
 
