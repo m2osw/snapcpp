@@ -120,14 +120,14 @@ void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
         break;
 
     case 'd':
-        if(identifier == "dynamic")
-        {
-            node->set_attribute(Node::attribute_t::NODE_ATTR_DYNAMIC, true);
-            return;
-        }
         if(identifier == "deprecated")
         {
             node->set_attribute(Node::attribute_t::NODE_ATTR_DEPRECATED, true);
+            return;
+        }
+        if(identifier == "dynamic")
+        {
+            node->set_attribute(Node::attribute_t::NODE_ATTR_DYNAMIC, true);
             return;
         }
         break;

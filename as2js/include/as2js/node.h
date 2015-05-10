@@ -164,8 +164,8 @@ public:
         NODE_FALSE,
         NODE_FINAL,
         NODE_FINALLY,
-        NODE_FLOAT,     // "float" keyword
-        NODE_FLOAT64,   // a literal float (i.e. 3.14159)
+        NODE_FLOAT,         // "float" keyword
+        NODE_FLOAT64,       // a literal float (i.e. 3.14159)
         NODE_FOR,
         NODE_FUNCTION,
         NODE_GOTO,
@@ -179,7 +179,7 @@ public:
         NODE_INCREMENT,
         NODE_INLINE,
         NODE_INSTANCEOF,
-        NODE_INT64,
+        NODE_INT64,         // a literal integer (i.e. 123)
         NODE_INTERFACE,
         NODE_INVARIANT,
         NODE_IS,
