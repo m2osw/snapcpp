@@ -3233,12 +3233,11 @@ void As2JsLexerUnitTests::test_tokens()
                     CPPUNIT_ASSERT(token->get_children_size() == 0);
 
                     // no links
-                    for(as2js::Node::link_t link(as2js::Node::link_t::LINK_INSTANCE);
-                               link < as2js::Node::link_t::LINK_max;
-                               link = static_cast<as2js::Node::link_t>(static_cast<int>(link) + 1))
-                    {
-                        CPPUNIT_ASSERT(!token->get_link(link));
-                    }
+                    CPPUNIT_ASSERT(!token->get_instance());
+                    CPPUNIT_ASSERT(!token->get_type_node());
+                    CPPUNIT_ASSERT(!token->get_attribute_node());
+                    CPPUNIT_ASSERT(!token->get_goto_exit());
+                    CPPUNIT_ASSERT(!token->get_goto_enter());
 
                     // no variables
                     CPPUNIT_ASSERT(token->get_variable_size() == 0);
@@ -6890,12 +6889,11 @@ void As2JsLexerUnitTests::test_mixed_tokens()
             CPPUNIT_ASSERT(token->get_children_size() == 0);
 
             // no links
-            for(as2js::Node::link_t link(as2js::Node::link_t::LINK_INSTANCE);
-                       link < as2js::Node::link_t::LINK_max;
-                       link = static_cast<as2js::Node::link_t>(static_cast<int>(link) + 1))
-            {
-                CPPUNIT_ASSERT(!token->get_link(link));
-            }
+            CPPUNIT_ASSERT(!token->get_instance());
+            CPPUNIT_ASSERT(!token->get_type_node());
+            CPPUNIT_ASSERT(!token->get_attribute_node());
+            CPPUNIT_ASSERT(!token->get_goto_exit());
+            CPPUNIT_ASSERT(!token->get_goto_enter());
 
             // no variables
             CPPUNIT_ASSERT(token->get_variable_size() == 0);

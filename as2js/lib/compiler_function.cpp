@@ -100,13 +100,13 @@ void Compiler::parameters(Node::pointer_t parameters_node)
 //std::cerr << "Parameter type = ...\n";
                     Node::pointer_t expr(child->get_child(0));
                     expression(expr);
-                    Node::pointer_t type(child->get_link(Node::link_t::LINK_INSTANCE));
+                    Node::pointer_t type(child->get_instance());
                     if(type)
                     {
-                        Node::pointer_t existing_type(param->get_link(Node::link_t::LINK_TYPE));
+                        Node::pointer_t existing_type(param->get_type_node());
                         if(!existing_type)
                         {
-                            param->set_link(Node::link_t::LINK_TYPE, type);
+                            param->set_type_node(type);
                         }
                         else if(existing_type != type)
                         {
@@ -371,7 +371,7 @@ void Compiler::function(Node::pointer_t function_node)
 bool Compiler::define_function_type(Node::pointer_t function_node)
 {
     // define the type of the function when not available yet
-    if(function_node->get_link(Node::link_t::LINK_TYPE))
+    if(function_node->get_type_node())
     {
         return true;
     }
@@ -439,7 +439,7 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
 //std::cerr << "  final function type is:\n" << *resolution << "\n";
 
                     ln.unlock();
-                    function_node->set_link(Node::link_t::LINK_TYPE, resolution);
+                    function_node->set_type_node(resolution);
 //std::cerr << "  -- type saved!!!\n";
                 }
                 break;
@@ -454,14 +454,14 @@ bool Compiler::define_function_type(Node::pointer_t function_node)
         {
             // With constructors we want a Void type
             Node::pointer_t void_type(new Node(Node::node_t::NODE_VOID));
-            function_node->set_link(Node::link_t::LINK_TYPE, void_type);
+            function_node->set_type_node(void_type);
         }
         else
         {
             // if no type defined, put a default of Object
             Node::pointer_t object;
             resolve_internal_type(function_node, "Object", object);
-            function_node->set_link(Node::link_t::LINK_TYPE, object);
+            function_node->set_type_node(object);
         }
     }
 
@@ -541,25 +541,25 @@ Node::depth_t Compiler::match_type(Node::pointer_t t1, Node::pointer_t t2)
         {
             return Node::MATCH_LOWEST_DEPTH;
         }
-        Node::pointer_t resolution(id->get_link(Node::link_t::LINK_TYPE));
+        Node::pointer_t resolution(id->get_type_node());
         if(!resolution)
         {
             if(!resolve_name(t2, id, resolution, Node::pointer_t(), 0))
             {
                 return Node::MATCH_NOT_FOUND;
             }
-            id->set_link(Node::link_t::LINK_TYPE, resolution);
+            id->set_type_node(resolution);
         }
         t2 = id;
     }
 
-    Node::pointer_t tp1(t1->get_link(Node::link_t::LINK_TYPE));
-    Node::pointer_t tp2(t2->get_link(Node::link_t::LINK_TYPE));
+    Node::pointer_t tp1(t1->get_type_node());
+    Node::pointer_t tp2(t2->get_type_node());
 
     if(!tp1)
     {
         type_expr(t1);
-        tp1 = t1->get_link(Node::link_t::LINK_TYPE);
+        tp1 = t1->get_type_node();
         if(!tp1)
         {
             return Node::MATCH_HIGHEST_DEPTH;
@@ -680,7 +680,7 @@ int Compiler::check_function_with_params(Node::pointer_t function_node, Node::po
     }
 
     Node::pointer_t match(function_node->create_replacement(Node::node_t::NODE_PARAM_MATCH));
-    match->set_link(Node::link_t::LINK_INSTANCE, function_node);
+    match->set_instance(function_node);
 
     // define the type of the function when not available yet
     if(!define_function_type(function_node))
@@ -1089,7 +1089,7 @@ bool Compiler::select_best_func(Node::pointer_t params, Node::pointer_t& resolut
     if(found)
     {
         // we found a better one! and no error occured
-        resolution = best->get_link(Node::link_t::LINK_INSTANCE);
+        resolution = best->get_instance();
     }
 
     return found;
@@ -1160,7 +1160,7 @@ void Compiler::call_add_missing_params(Node::pointer_t call, Node::pointer_t par
     if(idx < size)
     {
         // get the list of parameters of the function
-        Node::pointer_t function_node(call->get_link(Node::link_t::LINK_INSTANCE));
+        Node::pointer_t function_node(call->get_instance());
         if(!function_node)
         {
             // should never happen
@@ -1193,7 +1193,7 @@ void Compiler::call_add_missing_params(Node::pointer_t call, Node::pointer_t par
                 {
                     has_set = true;
                     Node::pointer_t auto_param(call->create_replacement(Node::node_t::NODE_AUTO));
-                    auto_param->set_link(Node::link_t::LINK_INSTANCE, set->get_child(0));
+                    auto_param->set_instance(set->get_child(0));
                     params->append_child(auto_param);
                     break;
                 }
@@ -1258,8 +1258,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
             }
         }
 
-        Node::pointer_t type(id->get_link(Node::link_t::LINK_TYPE));
-        call->set_link(Node::link_t::LINK_TYPE, type);
+        call->set_type_node(id->get_type_node());
 
         return false;
     }
@@ -1285,7 +1284,7 @@ bool Compiler::resolve_call(Node::pointer_t call)
             call->delete_child(0);    // 1 is now 0
             call->append_child(expr);
             call->append_child(type);
-            type->set_link(Node::link_t::LINK_INSTANCE, resolution);
+            type->set_instance(resolution);
             call->to_as();
             return true;
         }
@@ -1293,10 +1292,10 @@ bool Compiler::resolve_call(Node::pointer_t call)
         {
             // if it is a variable, we need to test
             // the type for a "()" operator
-            Node::pointer_t var_class(resolution->get_link(Node::link_t::LINK_TYPE));
+            Node::pointer_t var_class(resolution->get_type_node());
             if(var_class)
             {
-                id->set_link(Node::link_t::LINK_INSTANCE, var_class);
+                id->set_instance(var_class);
                 // search for a function named "()"
                 //NodePtr l;
                 //l.CreateNode(NODE_IDENTIFIER);
@@ -1375,11 +1374,11 @@ bool Compiler::resolve_call(Node::pointer_t call)
             member->append_child(this_expr);
             member->append_child(identifier);
         }
-        call->set_link(Node::link_t::LINK_INSTANCE, resolution);
-        Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
+        call->set_instance(resolution);
+        Node::pointer_t type(resolution->get_type_node());
         if(type)
         {
-            call->set_link(Node::link_t::LINK_TYPE, type);
+            call->set_type_node(type);
         }
         call_add_missing_params(call, params);
         return true;
@@ -1409,7 +1408,7 @@ bool Compiler::find_final_functions(Node::pointer_t& function_node, Node::pointe
         {
         case Node::node_t::NODE_EXTENDS:
         {
-            Node::pointer_t next_super(child->get_link(Node::link_t::LINK_INSTANCE));
+            Node::pointer_t next_super(child->get_instance());
             if(next_super)
             {
                 if(find_final_functions(function_node, next_super)) // recursive
@@ -1481,7 +1480,7 @@ bool Compiler::check_final_functions(Node::pointer_t& function_node, Node::point
             // this points to another class which may define
             // the same function as final
             Node::pointer_t name(child->get_child(0));
-            Node::pointer_t super(name->get_link(Node::link_t::LINK_INSTANCE));
+            Node::pointer_t super(name->get_instance());
             if(super
             && find_final_functions(function_node, super))
             {
@@ -1537,21 +1536,26 @@ bool Compiler::compare_parameters(Node::pointer_t& lfunction, Node::pointer_t& r
         Node::pointer_t lt(lp->find_first_child(Node::node_t::NODE_TYPE));
         Node::pointer_t rt(rp->find_first_child(Node::node_t::NODE_TYPE));
 
-// TODO: actually we want to see that both NODE_TYPE are defined (have a "link_type")
-//       and compare those two pointers because it is really equal only if it represents
-//       the exact same type and not if one is a.b and the other is also a.b but from
-//       with a different class...
-
-        // if no type was defined, use "" as the type definition (i.e. somewhat equivalent to "undefined")
-        String const l(lt ? lt->type_node_to_string() : "");
-        String const r(rt ? rt->type_node_to_string() : "");
-        if(l == "*" || r == "*")
+        if(lt->get_children_size() != 1
+        || rt->get_children_size() != 1)
         {
-            continue;
+            throw exception_internal_error("compiler_function.cpp: Compiler::compare_parameters(): unexpected number of children in NODE_TYPE.");
         }
 
-        if(l != r)
+        Node::pointer_t ltype(lt->get_child(0));
+        Node::pointer_t rtype(rt->get_child(0));
+
+        if(ltype->get_type() != rtype->get_type())
         {
+            // they need to be the exact same type
+            return false;
+        }
+
+        Node::pointer_t link_ltype(ltype->get_type_node());
+        Node::pointer_t link_rtype(rtype->get_type_node());
+        if(link_ltype != link_rtype)
+        {
+            // the types are not equal
             return false;
         }
     }

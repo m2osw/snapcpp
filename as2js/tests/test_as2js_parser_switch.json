@@ -72,7 +72,7 @@
                     "children": [
                         {
                             "node type": "SWITCH",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "IDENTIFIER",
                                     "label": "autobreak"

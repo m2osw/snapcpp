@@ -65,7 +65,6 @@ optimization_match_t const g_optimizer_assignment_match_a_equal_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -75,7 +74,6 @@ optimization_match_t const g_optimizer_assignment_match_a_equal_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -85,7 +83,6 @@ optimization_match_t const g_optimizer_assignment_match_a_equal_a[] =
             /* f_with_value */          g_optimizer_value_identifier_equal_1,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -104,7 +101,6 @@ optimization_match_t const g_optimizer_assignment_match_a_arithmetic_equal_nan[]
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -114,7 +110,6 @@ optimization_match_t const g_optimizer_assignment_match_a_arithmetic_equal_nan[]
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -124,7 +119,6 @@ optimization_match_t const g_optimizer_assignment_match_a_arithmetic_equal_nan[]
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -143,7 +137,6 @@ optimization_match_t const g_optimizer_assignment_match_a_minmax_equal_nan[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -153,7 +146,6 @@ optimization_match_t const g_optimizer_assignment_match_a_minmax_equal_nan[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -163,7 +155,6 @@ optimization_match_t const g_optimizer_assignment_match_a_minmax_equal_nan[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -182,7 +173,6 @@ optimization_match_t const g_optimizer_assignment_match_a_bitwise_equal_nan[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -192,7 +182,6 @@ optimization_match_t const g_optimizer_assignment_match_a_bitwise_equal_nan[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -202,7 +191,6 @@ optimization_match_t const g_optimizer_assignment_match_a_bitwise_equal_nan[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 

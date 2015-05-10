@@ -672,7 +672,7 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
 
 void Compiler::internal_imports()
 {
-    if(!g_global_import)
+    if(!g_native_import)
     {
         // read the resource file
         g_rc.init_rc(static_cast<bool>(f_input_retriever));
@@ -820,13 +820,13 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
         {
             // That is a class name! (good for a typedef, etc.)
             resolution = child;
-            Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
+            Node::pointer_t type(resolution->get_type_node());
 //std::cerr << "  +--> so we got a type of CLASS or INTERFACE for " << id->get_string()
 //          << " ... [" << (type ? "has a current type ptr" : "no current type ptr") << "]\n";
             if(!type)
             {
                 // A class (interface) represents itself as far as type goes (TBD)
-                resolution->set_link(Node::link_t::LINK_TYPE, child);
+                resolution->set_type_node(child);
             }
             resolution->set_flag(Node::flag_t::NODE_IDENTIFIER_FLAG_TYPED, true);
             result = true;
@@ -1089,7 +1089,7 @@ bool Compiler::resolve_name(
 
     // already typed?
     {
-        Node::pointer_t type(id->get_link(Node::link_t::LINK_TYPE));
+        Node::pointer_t type(id->get_type_node());
         if(type)
         {
             resolution = type;
@@ -1325,7 +1325,7 @@ bool Compiler::resolve_name(
             Node::pointer_t type(list->get_child(0));
             if(type)
             {
-                Node::pointer_t link(type->get_link(Node::link_t::LINK_INSTANCE));
+                Node::pointer_t link(type->get_instance());
                 if(link)
                 {
                     if(resolve_field(link, id, resolution, params, search_flags))

@@ -61,7 +61,6 @@ optimization_match_t const g_optimizer_bitwise_match_not_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -71,7 +70,6 @@ optimization_match_t const g_optimizer_bitwise_match_not_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -90,7 +88,6 @@ optimization_match_t const g_optimizer_bitwise_match_not_not_not_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -100,7 +97,6 @@ optimization_match_t const g_optimizer_bitwise_match_not_not_not_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
             {
@@ -110,7 +106,6 @@ optimization_match_t const g_optimizer_bitwise_match_not_not_not_a[] =
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
             },
 
                 {
@@ -120,7 +115,6 @@ optimization_match_t const g_optimizer_bitwise_match_not_not_not_a[] =
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                     /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
                 }
 };
 
@@ -139,7 +133,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_and_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -149,7 +142,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_and_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -159,7 +151,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_and_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -177,7 +168,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_and_max32bit[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -187,7 +177,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_and_max32bit[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -197,7 +186,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_and_max32bit[] =
             /* f_with_value */          g_optimizer_value_max32bit,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -215,7 +203,6 @@ optimization_match_t const g_optimizer_bitwise_match_max32bit_and_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -225,7 +212,6 @@ optimization_match_t const g_optimizer_bitwise_match_max32bit_and_a[] =
             /* f_with_value */          g_optimizer_value_max32bit,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -235,7 +221,6 @@ optimization_match_t const g_optimizer_bitwise_match_max32bit_and_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -254,7 +239,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_or_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -264,7 +248,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_or_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -274,7 +257,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_or_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -293,7 +275,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_xor_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -303,7 +284,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_xor_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -313,7 +293,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_xor_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -332,7 +311,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_xor_max32bit[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -342,7 +320,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_xor_max32bit[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -352,7 +329,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_xor_max32bit[] =
             /* f_with_value */          g_optimizer_value_max32bit,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -371,7 +347,6 @@ optimization_match_t const g_optimizer_bitwise_match_max32bit_xor_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -381,7 +356,6 @@ optimization_match_t const g_optimizer_bitwise_match_max32bit_xor_a[] =
             /* f_with_value */          g_optimizer_value_max32bit,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -391,7 +365,6 @@ optimization_match_t const g_optimizer_bitwise_match_max32bit_xor_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -410,7 +383,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_left_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -420,7 +392,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_left_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -430,7 +401,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_left_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -449,7 +419,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_right_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -459,7 +428,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_right_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -469,7 +437,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_right_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -488,7 +455,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_right_unsigned_b[] 
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -498,7 +464,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_right_unsigned_b[] 
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -508,7 +473,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_shift_right_unsigned_b[] 
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -527,7 +491,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_rotate_left_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -537,7 +500,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_rotate_left_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -547,7 +509,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_rotate_left_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -566,7 +527,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_rotate_right_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -576,7 +536,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_rotate_right_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -586,7 +545,6 @@ optimization_match_t const g_optimizer_bitwise_match_a_rotate_right_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 

@@ -318,7 +318,7 @@ void Compiler::prepare_attributes(Node::pointer_t node)
         return;
     }
 
-    Node::pointer_t attr(node->get_link(Node::link_t::LINK_ATTRIBUTES));
+    Node::pointer_t attr(node->get_attribute_node());
     if(attr)
     {
         NodeLock ln(attr);

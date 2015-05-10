@@ -142,7 +142,7 @@
                                                 {
                                                     "node type": "INT64",
                                                     "integer": 3,
-                                                    "link type": [
+                                                    "type node": [
                                                         {
                                                             "node type": "CLASS",
                                                             "label": "Integer",
@@ -165,7 +165,7 @@
                                                 {
                                                     "node type": "INT64",
                                                     "integer": 8,
-                                                    "link type": [
+                                                    "type node": [
                                                         {
                                                             "node type": "CLASS",
                                                             "label": "Integer",
@@ -188,7 +188,7 @@
                                                 {
                                                     "node type": "INT64",
                                                     "integer": 5,
-                                                    "link type": [
+                                                    "type node": [
                                                         {
                                                             "node type": "CLASS",
                                                             "label": "Integer",

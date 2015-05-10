@@ -822,7 +822,7 @@ void Parser::directive(Node::pointer_t& node)
         // if there are attributes link them to the directive
         if(attr_list && attr_list->get_children_size() > 0)
         {
-            directive_node->set_link(Node::link_t::LINK_ATTRIBUTES, attr_list);
+            directive_node->set_attribute_node(attr_list);
         }
         node->append_child(directive_node);
     }

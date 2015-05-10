@@ -1137,7 +1137,7 @@ attrs use namespace extra;\n",
                         },
                         {
                             "node type": "USE",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "IDENTIFIER",
                                     "label": "attrs"
@@ -1328,7 +1328,7 @@ attrs use namespace extra;\n",
                         {
                             "node type": "NAMESPACE",
                             "label": "",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "PRIVATE"
                                 }
@@ -1550,7 +1550,7 @@ attrs use namespace extra;\n",
                         {
                             "node type": "NAMESPACE",
                             "label": "",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "NATIVE"
                                 },
@@ -1689,7 +1689,7 @@ attrs use namespace extra;\n",
                         {
                             "node type": "NAMESPACE",
                             "label": "",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "NATIVE"
                                 },

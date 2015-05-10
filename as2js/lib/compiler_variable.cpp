@@ -216,10 +216,10 @@ void Compiler::variable(Node::pointer_t variable_node, bool const side_effects_o
 
                 Node::pointer_t expr(child->get_child(0));
                 expression(expr);
-                if(!variable_node->get_link(Node::link_t::LINK_TYPE))
+                if(!variable_node->get_type_node())
                 {
                     ln.unlock();
-                    variable_node->set_link(Node::link_t::LINK_TYPE, child->get_link(Node::link_t::LINK_INSTANCE));
+                    variable_node->set_type_node(child->get_instance());
                 }
             }
             break;

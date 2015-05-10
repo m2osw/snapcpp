@@ -64,9 +64,10 @@ bool Compiler::is_dynamic_class(Node::pointer_t class_node)
         if(child->get_type() == Node::node_t::NODE_EXTENDS)
         {
             // TODO: once we support multiple extends, work on
-            //       the list of them
+            //       the list of them, in which case one instance
+            //       is not going to be too good
             Node::pointer_t name(child->get_child(0));
-            Node::pointer_t extends(name ? name->get_link(Node::link_t::LINK_INSTANCE) : name);
+            Node::pointer_t extends(name ? name->get_instance() : name);
             if(extends)
             {
                 if(extends->get_string() == "Object")
@@ -90,7 +91,7 @@ void Compiler::check_member(Node::pointer_t ref, Node::pointer_t field, Node::po
 {
     if(!field)
     {
-        Node::pointer_t type(ref->get_link(Node::link_t::LINK_TYPE));
+        Node::pointer_t type(ref->get_type_node());
         if(!is_dynamic_class(type))
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_STATIC, ref->get_position());
@@ -102,7 +103,7 @@ void Compiler::check_member(Node::pointer_t ref, Node::pointer_t field, Node::po
         return;
     }
 
-    Node::pointer_t obj(ref->get_link(Node::link_t::LINK_INSTANCE));
+    Node::pointer_t obj(ref->get_instance());
     if(!obj)
     {
         return;
@@ -334,7 +335,7 @@ void Compiler::link_type(Node::pointer_t type)
 {
 //std::cerr << "find_type()\n";
     // already linked?
-    Node::pointer_t link(type->get_link(Node::link_t::LINK_INSTANCE));
+    Node::pointer_t link(type->get_instance());
     if(link)
     {
         return;
@@ -374,7 +375,7 @@ void Compiler::link_type(Node::pointer_t type)
     }
 
     // it worked.
-    type->set_link(Node::link_t::LINK_INSTANCE, object);
+    type->set_instance(object);
 }
 
 
@@ -394,7 +395,7 @@ bool Compiler::find_in_extends(Node::pointer_t link, Node::pointer_t field, int&
             {
                 Node::pointer_t type(extends->get_child(0));
                 link_type(type);
-                Node::pointer_t sub_link(type->get_link(Node::link_t::LINK_INSTANCE));
+                Node::pointer_t sub_link(type->get_instance());
                 if(!sub_link)
                 {
                     // we cannot search a field in nothing...
@@ -420,7 +421,7 @@ bool Compiler::find_in_extends(Node::pointer_t link, Node::pointer_t field, int&
                     {
                         Node::pointer_t child(type->get_child(j));
                         link_type(child);
-                        Node::pointer_t sub_link(child->get_link(Node::link_t::LINK_INSTANCE));
+                        Node::pointer_t sub_link(child->get_instance());
                         if(!sub_link)
                         {
                             // we cannot search a field in nothing...
@@ -436,7 +437,7 @@ bool Compiler::find_in_extends(Node::pointer_t link, Node::pointer_t field, int&
                 else
                 {
                     link_type(type);
-                    Node::pointer_t sub_link(type->get_link(Node::link_t::LINK_INSTANCE));
+                    Node::pointer_t sub_link(type->get_instance());
                     if(!sub_link)
                     {
                         // we can't search a field in nothing...
@@ -516,16 +517,16 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
 //std::cerr << "  +++ compiler_class.cpp: check_field(): funcs_name() called too +++\n";
                     if(funcs_name(funcs, resolution))
                     {
-                        Node::pointer_t inst(field->get_link(Node::link_t::LINK_INSTANCE));
+                        Node::pointer_t inst(field->get_instance());
                         if(!inst)
                         {
-                            field->set_link(Node::link_t::LINK_INSTANCE, resolution);
+                            field->set_instance(resolution);
                         }
                         else if(inst != resolution)
                         {
                             // if already defined, it should be the same or
                             // we have a real problem
-                            throw exception_internal_error("found a LINK_INSTANCE twice, but it was different each time");
+                            throw exception_internal_error("found an instance twice, but it was different each time");
                         }
 //std::cerr << "  +++ compiler_class.cpp: check_field(): accept this resolution as the answer! +++\n";
                         return true;
@@ -621,7 +622,7 @@ bool Compiler::resolve_field(Node::pointer_t object, Node::pointer_t field, Node
 
         // we need to have a link to the class
         link_type(type);
-        link = type->get_link(Node::link_t::LINK_INSTANCE);
+        link = type->get_instance();
         if(!link)
         {
             // NOTE: we can't search a field in nothing...
@@ -768,7 +769,7 @@ bool Compiler::find_member(Node::pointer_t member, Node::pointer_t& resolution, 
                         if(child->get_children_size() == 1)
                         {
                             Node::pointer_t child_name(child->get_child(0));
-                            object = child_name->get_link(Node::link_t::LINK_INSTANCE);
+                            object = child_name->get_instance();
                         }
                         if(!object)
                         {
@@ -883,11 +884,11 @@ fprintf(stderr, "WARNING: cannot find field member.\n");
     }
 
     // copy the type whenever available
-    expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
-    Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
+    expr->set_instance(resolution);
+    Node::pointer_t type(resolution->get_type_node());
     if(type)
     {
-        expr->set_link(Node::link_t::LINK_TYPE, type);
+        expr->set_type_node(type);
     }
 
     // if we have a Getter, transform the MEMBER into a CALL
@@ -906,8 +907,8 @@ fprintf(stderr, "WARNING: cannot find field member.\n");
         // create a new node since we do not want to move the
         // call (expr) node from its parent.
         Node::pointer_t member(expr->create_replacement(Node::node_t::NODE_MEMBER));
-        member->set_link(Node::link_t::LINK_INSTANCE, resolution);
-        member->set_link(Node::link_t::LINK_TYPE, type);
+        member->set_instance(resolution);
+        member->set_type_node(type);
         member->append_child(left);
         member->append_child(right);
 
@@ -949,11 +950,11 @@ Node::depth_t Compiler::find_class(Node::pointer_t class_type, Node::pointer_t t
             }
             NodeLock child_ln(child);
             Node::pointer_t super_name(child->get_child(0));
-            Node::pointer_t super(super_name->get_link(Node::link_t::LINK_INSTANCE));
+            Node::pointer_t super(super_name->get_instance());
             if(!super)
             {
                 expression(super_name);
-                super = super_name->get_link(Node::link_t::LINK_INSTANCE);
+                super = super_name->get_instance();
             }
             if(!super)
             {
@@ -984,7 +985,7 @@ Node::depth_t Compiler::find_class(Node::pointer_t class_type, Node::pointer_t t
             }
             NodeLock child_ln(child);
             Node::pointer_t super_name(child->get_child(0));
-            Node::pointer_t super(super_name->get_link(Node::link_t::LINK_INSTANCE));
+            Node::pointer_t super(super_name->get_instance());
             if(!super)
             {
                 continue;
@@ -1038,12 +1039,12 @@ bool Compiler::is_derived_from(Node::pointer_t derived_class, Node::pointer_t su
             {
                 Node::pointer_t sub_type(type->get_child(j));
                 link_type(sub_type);
-                Node::pointer_t link(sub_type->get_link(Node::link_t::LINK_INSTANCE));
-                if(!link)
+                Node::pointer_t instance(sub_type->get_instance());
+                if(!instance)
                 {
                     continue;
                 }
-                if(is_derived_from(link, super_class))
+                if(is_derived_from(instance, super_class))
                 {
                     return true;
                 }
@@ -1054,12 +1055,12 @@ bool Compiler::is_derived_from(Node::pointer_t derived_class, Node::pointer_t su
             // TODO: review the "extends ..." implementation so it supports
             //       lists in the parser and then here
             link_type(type);
-            Node::pointer_t link(type->get_link(Node::link_t::LINK_INSTANCE));
-            if(!link)
+            Node::pointer_t instance(type->get_instance());
+            if(!instance)
             {
                 continue;
             }
-            if(is_derived_from(link, super_class))
+            if(is_derived_from(instance, super_class))
             {
                 return true;
             }
@@ -1192,7 +1193,7 @@ void Compiler::extend_class(Node::pointer_t class_node, bool const extend, Node:
 {
     expression(extend_name);
 
-    Node::pointer_t super(extend_name->get_link(Node::link_t::LINK_INSTANCE));
+    Node::pointer_t super(extend_name->get_instance());
     if(super)
     {
         switch(super->get_type())

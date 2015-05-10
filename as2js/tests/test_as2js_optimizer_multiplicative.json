@@ -355,7 +355,7 @@
 
     // a() * NaN -> a() * NaN
     {
-        "verbose": true,
+        //"verbose": true,
         "name": "a() * NaN -> a() * NaN",
         "program": "a() * NaN;",
         "parser result": {
@@ -424,7 +424,7 @@
 
     // NaN * a() -> NaN * a()
     {
-        "verbose": true,
+        //"verbose": true,
         "name": "NaN * a() -> NaN * a()",
         "program": "NaN * a();",
         "parser result": {
@@ -1771,7 +1771,7 @@
 
     // a() * 3.5 -> a() * 3.5
     {
-        "verbose": true,
+        //"verbose": true,
         "name": "a() * 3.5 -> a() * 3.5",
         "program": "a() * 3.5;",
         "parser result": {
@@ -1840,7 +1840,7 @@
 
     // 3.5 * a() -> 3.5 * a()
     {
-        "verbose": true,
+        //"verbose": true,
         "name": "3.5 * a() -> 3.5 * a()",
         "program": "3.5 * a();",
         "parser result": {

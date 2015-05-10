@@ -558,123 +558,155 @@ Position const& Node::get_position() const
 }
 
 
+// /**********************************************************************/
+// /**********************************************************************/
+// /***  NODE LINK  ******************************************************/
+// /**********************************************************************/
+// /**********************************************************************/
+// 
+// 
+// /** \brief Save a link in this node.
+//  *
+//  * This function saves a link pointer in this node. It can later be
+//  * retrieved using the get_link() function.
+//  *
+//  * If a link was already defined at that offset, the function raises
+//  * an exception and the existing offset is not modified.
+//  *
+//  * It is possible to clear a link by passing an empty smart pointer
+//  * down (i.e. pass nullptr.) If you first clear a link in this way,
+//  * you can then replace it with another pointer.
+//  *
+//  * \code
+//  *     // do not throw because we reset the link first:
+//  *     node->set_link(Node::link_t::LINK_TYPE, nullptr);
+//  *     node->set_link(Node::link_t::LINK_TYPE, link);
+//  * \endcode
+//  *
+//  * Links are used to save information about a node such as its
+//  * type and attributes.
+//  *
+//  * \note
+//  * Links are saved as full smart pointers, not weak pointers. This means
+//  * a node that references another in this way may generate loops that
+//  * will not easily break when trying to release the whole tree.
+//  *
+//  * \note
+//  * The Node must not be locked.
+//  *
+//  * \exception exception_index_out_of_range
+//  * The index is out of range. Links make use of a very few predefined
+//  * indexes such as Node::link_t::LINK_ATTRIBUTES. However,
+//  * Node::link_t::LINK_max cannot be used as an index.
+//  *
+//  * \exception exception_already_defined
+//  * The link at that index is already defined and the function was called
+//  * anyway. This is an internal error because you should check whether the
+//  * value was already defined and if so use that value.
+//  *
+//  * \param[in] index  The index of the link to save.
+//  * \param[in] link  A smart pointer to the link.
+//  *
+//  * \sa get_link()
+//  */
+// void Node::set_link(link_t index, pointer_t link)
+// {
+//     modifying();
+// 
+//     if(index >= link_t::LINK_max)
+//     {
+//         throw exception_index_out_of_range("set_link() called with an index out of bounds.");
+//     }
+// 
+//     // make sure the size is reserved on first set
+//     if(f_link.empty())
+//     {
+//         f_link.resize(static_cast<vector_of_pointers_t::size_type>(link_t::LINK_max));
+//     }
+// 
+//     if(link)
+//     {
+//         // link already set?
+//         if(f_link[static_cast<size_t>(index)].lock())
+//         {
+//             throw exception_already_defined("a link was set twice at the same offset");
+//         }
+// 
+//         f_link[static_cast<size_t>(index)] = link;
+//     }
+//     else
+//     {
+//         f_link[static_cast<size_t>(index)].reset();
+//     }
+// }
+// 
+// 
+// /** \brief Retrieve a link previously saved with set_link().
+//  *
+//  * This function returns a pointer to a link that was previously
+//  * saved in this node using the set_link() function.
+//  *
+//  * Links are used to save information about a node such as its
+//  * type and attributes.
+//  *
+//  * The function may return a null pointer. You are responsible
+//  * for checking the validity of the link.
+//  *
+//  * \exception exception_index_out_of_range
+//  * The index is out of range. Links make use of a very few predefined
+//  * indexes such as Node::link_t::LINK_ATTRIBUTES. However,
+//  * Node::link_t::LINK_max cannot be used as an index.
+//  *
+//  * \param[in] index  The index of the link to retrieve.
+//  *
+//  * \return A smart pointer to this link node.
+//  */
+// Node::pointer_t Node::get_link(link_t index)
+// {
+//     if(index >= link_t::LINK_max)
+//     {
+//         throw exception_index_out_of_range("get_link() called with an index out of bounds.");
+//     }
+// 
+//     if(f_link.empty())
+//     {
+//         return Node::pointer_t();
+//     }
+// 
+//     return f_link[static_cast<size_t>(index)].lock();
+// }
+// 
+
 /**********************************************************************/
 /**********************************************************************/
-/***  NODE LINK  ******************************************************/
+/***  NODE GOTO  ******************************************************/
 /**********************************************************************/
 /**********************************************************************/
 
-
-/** \brief Save a link in this node.
- *
- * This function saves a link pointer in this node. It can later be
- * retrieved using the get_link() function.
- *
- * If a link was already defined at that offset, the function raises
- * an exception and the existing offset is not modified.
- *
- * It is possible to clear a link by passing an empty smart pointer
- * down (i.e. pass nullptr.) If you first clear a link in this way,
- * you can then replace it with another pointer.
- *
- * \code
- *     // do not throw because we reset the link first:
- *     node->set_link(Node::link_t::LINK_TYPE, nullptr);
- *     node->set_link(Node::link_t::LINK_TYPE, link);
- * \endcode
- *
- * Links are used to save information about a node such as its
- * type and attributes.
- *
- * \note
- * Links are saved as full smart pointers, not weak pointers. This means
- * a node that references another in this way may generate loops that
- * will not easily break when trying to release the whole tree.
- *
- * \note
- * The Node must not be locked.
- *
- * \exception exception_index_out_of_range
- * The index is out of range. Links make use of a very few predefined
- * indexes such as Node::link_t::LINK_ATTRIBUTES. However,
- * Node::link_t::LINK_max cannot be used as an index.
- *
- * \exception exception_already_defined
- * The link at that index is already defined and the function was called
- * anyway. This is an internal error because you should check whether the
- * value was already defined and if so use that value.
- *
- * \param[in] index  The index of the link to save.
- * \param[in] link  A smart pointer to the link.
- *
- * \sa get_link()
- */
-void Node::set_link(link_t index, pointer_t link)
+Node::pointer_t Node::get_goto_enter() const
 {
-    modifying();
-
-    if(index >= link_t::LINK_max)
-    {
-        throw exception_index_out_of_range("set_link() called with an index out of bounds.");
-    }
-
-    // make sure the size is reserved on first set
-    if(f_link.empty())
-    {
-        f_link.resize(static_cast<vector_of_pointers_t::size_type>(link_t::LINK_max));
-    }
-
-    if(link)
-    {
-        // link already set?
-        if(f_link[static_cast<size_t>(index)])
-        {
-            throw exception_already_defined("a link was set twice at the same offset");
-        }
-
-        f_link[static_cast<size_t>(index)] = link;
-    }
-    else
-    {
-        f_link[static_cast<size_t>(index)].reset();
-    }
+    return f_goto_enter.lock();
 }
 
 
-/** \brief Retrieve a link previously saved with set_link().
- *
- * This function returns a pointer to a link that was previously
- * saved in this node using the set_link() function.
- *
- * Links are used to save information about a node such as its
- * type and attributes.
- *
- * The function may return a null pointer. You are responsible
- * for checking the validity of the link.
- *
- * \exception exception_index_out_of_range
- * The index is out of range. Links make use of a very few predefined
- * indexes such as Node::link_t::LINK_ATTRIBUTES. However,
- * Node::link_t::LINK_max cannot be used as an index.
- *
- * \param[in] index  The index of the link to retrieve.
- *
- * \return A smart pointer to this link node.
- */
-Node::pointer_t Node::get_link(link_t index)
+Node::pointer_t Node::get_goto_exit() const
 {
-    if(index >= link_t::LINK_max)
-    {
-        throw exception_index_out_of_range("get_link() called with an index out of bounds.");
-    }
-
-    if(f_link.empty())
-    {
-        return nullptr;
-    }
-
-    return f_link[static_cast<size_t>(index)];
+    return f_goto_exit.lock();
 }
+
+
+void Node::set_goto_enter(pointer_t node)
+{
+    f_goto_enter = node;
+}
+
+
+void Node::set_goto_exit(pointer_t node)
+{
+    f_goto_exit = node;
+}
+
+
 
 
 /**********************************************************************/
@@ -759,16 +791,20 @@ size_t Node::get_variable_size() const
  * Add a test of the node type so we can make sure we do not call this
  * function on nodes that cannot have variables.
  *
+ * \todo
+ * The returned pointer may be a null pointer since we use a weak
+ * pointer for variables.
+ *
  * \param[in] index  The index of the variable to retrieve.
  *
- * \return A pointer to the specified variable.
+ * \return A pointer to the specified variable or a null pointer.
  *
  * \sa add_variable()
  * \sa get_variable_size()
  */
 Node::pointer_t Node::get_variable(int index) const
 {
-    return f_variables.at(index);
+    return f_variables.at(index).lock();
 }
 
 
@@ -844,8 +880,8 @@ void Node::add_label(pointer_t label)
  */
 Node::pointer_t Node::find_label(String const& name) const
 {
-    map_of_pointers_t::const_iterator it(f_labels.find(name));
-    return it == f_labels.end() ? pointer_t() : it->second;
+    map_of_weak_pointers_t::const_iterator it(f_labels.find(name));
+    return it == f_labels.end() ? pointer_t() : it->second.lock();
 }
 
 

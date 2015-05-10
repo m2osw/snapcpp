@@ -289,29 +289,7 @@ bool match_node(node_pointer_vector_t& node_array, Node::pointer_t node, optimiz
         }
     }
 
-    // match node links
-    if(match->f_links_count > 0)
-    {
-        for(size_t idx(0); idx < match->f_links_count; ++idx)
-        {
-            optimization_match_t::optimization_link_t const *lk(match->f_links + idx);
-            Node::pointer_t link(node->get_link(lk->f_link));
-            for(size_t j(0);; ++j)
-            {
-                if(j >= lk->f_links_count)
-                {
-                    return false;
-                }
-                // when matching links, we do not optimize those thus
-                // we put their nodes in a temporary array
-                node_pointer_vector_t temp_node_array;
-                if(match_tree(temp_node_array, link, lk->f_links[j].f_match, lk->f_links[j].f_match_count, 0))
-                {
-                    break;
-                }
-            }
-        }
-    }
+	// TODO: we may want to add tests for the instance, type node, goto exit, goto enter links
 
     // everything matched
     return true;

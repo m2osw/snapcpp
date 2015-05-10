@@ -97,7 +97,7 @@
                                                             "node type": "FUNCTION",
                                                             "label": "save_data",
                                                             "flags": "FUNCTION_FLAG_VOID",
-                                                            "link attributes": [
+                                                            "attribute node": [
                                                                 {
                                                                     "node type": "PUBLIC"
                                                                 },
@@ -363,7 +363,7 @@
                                                             "node type": "FUNCTION",
                                                             "label": "save_data",
                                                             "flags": "FUNCTION_FLAG_VOID",
-                                                            "link attributes": [
+                                                            "attribute node": [
                                                                 {
                                                                     "node type": "PUBLIC"
                                                                 },
@@ -629,7 +629,7 @@
                                                             "node type": "FUNCTION",
                                                             "label": "save_data",
                                                             "flags": "FUNCTION_FLAG_VOID",
-                                                            "link attributes": [
+                                                            "attribute node": [
                                                                 {
                                                                     "node type": "PUBLIC"
                                                                 },
@@ -872,7 +872,7 @@
                                                             "node type": "FUNCTION",
                                                             "label": "save_data",
                                                             "flags": "FUNCTION_FLAG_VOID",
-                                                            "link attributes": [
+                                                            "attribute node": [
                                                                 {
                                                                     "node type": "PUBLIC"
                                                                 },
@@ -1132,7 +1132,7 @@
                                                             "node type": "FUNCTION",
                                                             "label": "save_data",
                                                             "flags": "FUNCTION_FLAG_VOID",
-                                                            "link attributes": [
+                                                            "attribute node": [
                                                                 {
                                                                     "node type": "PUBLIC"
                                                                 },
@@ -1708,7 +1708,7 @@
                         {
                             "node type": "PACKAGE",
                             "label": "Global",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "NATIVE"
                                 }
@@ -1792,7 +1792,7 @@
                                                         },
                                                         {
                                                             "node type": "VAR",
-                                                            "link attributes": [
+                                                            "attribute node": [
                                                                 {
                                                                     "node type": "PRIVATE"
                                                                 }
@@ -1857,7 +1857,7 @@
                                         {
                                             "node type": "CLASS",
                                             "label": "Test",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "NATIVE"
                                                 }
@@ -2036,7 +2036,7 @@
                                                         },
                                                         {
                                                             "node type": "VAR",
-                                                            "link attributes": [
+                                                            "attribute node": [
                                                                 {
                                                                     "node type": "PRIVATE"
                                                                 }
@@ -2084,7 +2084,7 @@
                         {
                             "node type": "CLASS",
                             "label": "DoubleExtend",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "PRIVATE"
                                 }
@@ -2241,7 +2241,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -2358,7 +2358,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -2475,7 +2475,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -2592,7 +2592,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -2709,7 +2709,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -2826,7 +2826,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -2943,7 +2943,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -3060,7 +3060,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -3108,7 +3108,7 @@
                         },
                         {
                             "node type": "DIRECTIVE_LIST",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "IDENTIFIER",
                                     "label": "Object"
@@ -3117,7 +3117,7 @@
                             "children": [
                                 {
                                     "node type": "VAR",
-                                    "link attributes": [
+                                    "attribute node": [
                                         {
                                             "node type": "PRIVATE"
                                         }
@@ -3166,7 +3166,7 @@
                                     "children": [
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -3234,7 +3234,7 @@
                                     "children": [
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }

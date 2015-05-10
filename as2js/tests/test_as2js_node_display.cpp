@@ -274,6 +274,11 @@ void As2JsNodeUnitTests::test_display_flags()
                 expected << ": " << node->get_float64().get();
                 break;
 
+            case as2js::Node::node_t::NODE_PARAM:
+                output_str(expected, node->get_string());
+                expected << ":";
+                break;
+
             //case as2js::Node::node_t::NODE_PARAM_MATCH:
             default:
                 expected << ":";
@@ -661,16 +666,16 @@ void As2JsNodeUnitTests::test_display_tree()
     identifier_math->set_attribute(as2js::Node::attribute_t::NODE_ATTR_NATIVE, true);
     as2js::Node::pointer_t math_type(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
     math_type->set_string("Math");
-    identifier_math->set_link(as2js::Node::link_t::LINK_TYPE, math_type);
+    identifier_math->set_type_node(math_type);
     as2js::Node::pointer_t math_instance(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
     math_instance->set_string("m");
-    identifier_math->set_link(as2js::Node::link_t::LINK_INSTANCE, math_instance);
+    identifier_math->set_instance(math_instance);
     as2js::Node::pointer_t identifier_e(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
     identifier_e->set_string("e");
     identifier_e->set_flag(as2js::Node::flag_t::NODE_IDENTIFIER_FLAG_TYPED, true);
     as2js::Node::pointer_t e_type(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
     e_type->set_string("Float");
-    identifier_e->set_link(as2js::Node::link_t::LINK_TYPE, e_type);
+    identifier_e->set_type_node(e_type);
     as2js::Node::pointer_t literal(new as2js::Node(as2js::Node::node_t::NODE_FLOAT64));
     as2js::Float64 f;
     f.set(1.424);
@@ -746,13 +751,13 @@ void As2JsNodeUnitTests::test_display_tree()
     // IDENTIFIER MATH
     expected << identifier_math << ": " << std::setfill('0') << std::setw(2) << 7 << std::setfill(' ') << '-' << std::setw(7) << ""
              << std::setw(4) << std::setfill('0') << static_cast<int>(static_cast<as2js::Node::node_t>(as2js::Node::node_t::NODE_IDENTIFIER))
-             << std::setfill('\0') << ": IDENTIFIER: 'Math' Lnk: [0]=" << math_instance << " [1]=" << math_type << " attrs: NATIVE"
+             << std::setfill('\0') << ": IDENTIFIER: 'Math' Instance: " << math_instance << " Type Node: " << math_type << " attrs: NATIVE"
              << " (" << identifier_math->get_position() << ")" << std::endl;
 
     // IDENTIFIER E
     expected << identifier_e << ": " << std::setfill('0') << std::setw(2) << 7 << std::setfill(' ') << '-' << std::setw(7) << ""
              << std::setw(4) << std::setfill('0') << static_cast<int>(static_cast<as2js::Node::node_t>(as2js::Node::node_t::NODE_IDENTIFIER))
-             << std::setfill('\0') << ": IDENTIFIER: 'e' TYPED Lnk: [1]=" << e_type
+             << std::setfill('\0') << ": IDENTIFIER: 'e' TYPED Type Node: " << e_type
              << " (" << identifier_e->get_position() << ")" << std::endl;
 
     // FLOAT64

@@ -845,6 +845,17 @@ size_t Node::get_offset() const
 }
 
 
+void Node::set_instance(pointer_t node)
+{
+    f_instance = node;
+}
+
+
+Node::pointer_t Node::get_instance() const
+{
+    return f_instance.lock();
+}
+
 
 }
 // namespace as2js

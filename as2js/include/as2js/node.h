@@ -62,8 +62,9 @@ class Node : public std::enable_shared_from_this<Node>
 public:
     typedef std::shared_ptr<Node>               pointer_t;
     typedef std::weak_ptr<Node>                 weak_pointer_t;
-    typedef std::map<String, pointer_t>         map_of_pointers_t;
+    typedef std::map<String, weak_pointer_t>    map_of_weak_pointers_t;
     typedef std::vector<pointer_t>              vector_of_pointers_t;
+    typedef std::vector<weak_pointer_t>         vector_of_weak_pointers_t;
 
     // member related depth parameter
     typedef ssize_t             depth_t;
@@ -416,16 +417,15 @@ public:
 
     typedef std::bitset<static_cast<int>(attribute_t::NODE_ATTR_max)>     attribute_set_t;
 
-    enum class link_t : uint32_t
-    {
-        LINK_INSTANCE = 0,
-        LINK_TYPE,
-        LINK_ATTRIBUTES,    // this is the list of identifiers
-        LINK_GOTO_EXIT,
-        LINK_GOTO_ENTER,
-
-        LINK_max
-    };
+    //enum class link_t : uint32_t
+    //{
+    //    LINK_INSTANCE = 0,
+    //    LINK_TYPE,
+    //    LINK_ATTRIBUTES,    // this is the list of identifiers
+    //    LINK_GOTO_EXIT,
+    //    LINK_GOTO_ENTER,
+    //    LINK_max
+    //};
 
     enum class compare_mode_t
     {
@@ -454,6 +454,8 @@ public:
     node_t                      get_type() const;
     char const *                get_type_name() const;
     static char const *         type_to_string(node_t type);
+    void                        set_type_node(Node::pointer_t node);
+    pointer_t                   get_type_node() const;
 
     bool                        is_number() const;
     bool                        is_nan() const;
@@ -503,15 +505,27 @@ public:
     bool                        compare_all_flags(flag_set_t const& s) const;
 
     // check attributes
+    void                        set_attribute_node(pointer_t node);
+    pointer_t                   get_attribute_node() const;
     bool                        get_attribute(attribute_t const a) const;
     void                        set_attribute(attribute_t const a, bool const v);
     void                        set_attribute_tree(attribute_t const a, bool const v);
     bool                        compare_all_attributes(attribute_set_t const& s) const;
     static char const *         attribute_to_string(attribute_t const attr);
 
+    // various nodes are assigned an "instance" (direct link to actual declaration)
+    void                        set_instance(pointer_t node);
+    pointer_t                   get_instance() const;
+
     // switch operator: switch(...) with(<operator>)
     node_t                      get_switch_operator() const;
     void                        set_switch_operator(node_t op);
+
+    // goto / label
+    void                        set_goto_enter(pointer_t node);
+    void                        set_goto_exit(pointer_t node);
+    pointer_t                   get_goto_enter() const;
+    pointer_t                   get_goto_exit() const;
 
     // handle function parameters (reorder and depth)
     void                        set_param_size(size_t size);
@@ -546,9 +560,6 @@ public:
     pointer_t                   find_next_child(pointer_t start, node_t type) const;
     void                        clean_tree();
 
-    void                        set_link(link_t index, pointer_t link);
-    pointer_t                   get_link(link_t index);
-
     void                        add_variable(pointer_t variable);
     size_t                      get_variable_size() const;
     pointer_t                   get_variable(int index) const;
@@ -560,7 +571,7 @@ public:
     static node_t               string_to_operator(String const& str);
 
     void                        display(std::ostream& out, int indent, char c) const;
-    String                      type_node_to_string() const;
+    //String                      type_node_to_string() const;
 
 private:
     typedef std::vector<controlled_vars::zint32_t>  param_depth_t;
@@ -577,7 +588,9 @@ private:
 
     // define the node type
     safe_node_t                     f_type;
+    weak_pointer_t                  f_type_node;
     flag_set_t                      f_flags;
+    pointer_t                       f_attribute_node;
     attribute_set_t                 f_attributes;
     safe_node_t                     f_switch_operator;
 
@@ -600,11 +613,15 @@ private:
     weak_pointer_t                  f_parent;
     controlled_vars::zint32_t       f_offset;        // offset (index) in parent array of children -- set by compiler, should probably be removed...
     vector_of_pointers_t            f_children;
+    weak_pointer_t                  f_instance;
+
+    // goto nodes
+    weak_pointer_t                  f_goto_enter;
+    weak_pointer_t                  f_goto_exit;
 
     // other connections between nodes
-    vector_of_pointers_t            f_link;
-    vector_of_pointers_t            f_variables;
-    map_of_pointers_t               f_labels;
+    vector_of_weak_pointers_t       f_variables;
+    map_of_weak_pointers_t          f_labels;
 };
 
 typedef std::vector<Node::pointer_t>    node_pointer_vector_t;

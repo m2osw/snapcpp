@@ -61,7 +61,6 @@ optimization_match_t const g_optimizer_logical_match_not_literal[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -71,7 +70,6 @@ optimization_match_t const g_optimizer_logical_match_not_literal[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -89,7 +87,6 @@ optimization_match_t const g_optimizer_logical_match_true_and_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -99,7 +96,6 @@ optimization_match_t const g_optimizer_logical_match_true_and_a[] =
             /* f_with_value */          g_optimizer_value_true,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -109,7 +105,6 @@ optimization_match_t const g_optimizer_logical_match_true_and_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -127,7 +122,6 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -137,7 +131,6 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
             /* f_with_value */          g_optimizer_value_false,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -147,7 +140,6 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -170,7 +162,6 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 //        /* f_with_value */          nullptr,
 //        /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
 //        /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-//        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
 //    },
 //
 //        {
@@ -180,7 +171,6 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 //            /* f_with_value */          g_optimizer_value_no_side_effects,
 //            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
 //            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-//            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
 //        },
 //
 //        {
@@ -190,7 +180,6 @@ optimization_match_t const g_optimizer_logical_match_false_and_a[] =
 //            /* f_with_value */          g_optimizer_value_false,
 //            /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
 //            /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-//            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
 //        }
 //};
 
@@ -208,7 +197,6 @@ optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -218,7 +206,6 @@ optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
             {
@@ -228,7 +215,6 @@ optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
             },
 
             {
@@ -238,7 +224,6 @@ optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
             },
 
         {
@@ -248,7 +233,6 @@ optimization_match_t const g_optimizer_logical_match_a_and_b_or_c[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -266,7 +250,6 @@ optimization_match_t const g_optimizer_logical_match_true_or_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -276,7 +259,6 @@ optimization_match_t const g_optimizer_logical_match_true_or_a[] =
             /* f_with_value */          g_optimizer_value_true,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -286,7 +268,6 @@ optimization_match_t const g_optimizer_logical_match_true_or_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -304,7 +285,6 @@ optimization_match_t const g_optimizer_logical_match_false_or_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -314,7 +294,6 @@ optimization_match_t const g_optimizer_logical_match_false_or_a[] =
             /* f_with_value */          g_optimizer_value_false,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -324,7 +303,6 @@ optimization_match_t const g_optimizer_logical_match_false_or_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -342,7 +320,6 @@ optimization_match_t const g_optimizer_logical_match_boolean_literal_or_boolean_
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -352,7 +329,6 @@ optimization_match_t const g_optimizer_logical_match_boolean_literal_or_boolean_
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -362,7 +338,6 @@ optimization_match_t const g_optimizer_logical_match_boolean_literal_or_boolean_
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -380,7 +355,6 @@ optimization_match_t const g_optimizer_logical_match_if_while_not_not_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -390,7 +364,6 @@ optimization_match_t const g_optimizer_logical_match_if_while_not_not_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
             {
@@ -400,7 +373,6 @@ optimization_match_t const g_optimizer_logical_match_if_while_not_not_a[] =
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
             },
 
                 {
@@ -410,7 +382,6 @@ optimization_match_t const g_optimizer_logical_match_if_while_not_not_a[] =
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                     /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
                 },
 
         {
@@ -420,7 +391,6 @@ optimization_match_t const g_optimizer_logical_match_if_while_not_not_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -438,7 +408,6 @@ optimization_match_t const g_optimizer_logical_match_if_logical_not_else[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         { // !a
@@ -448,7 +417,6 @@ optimization_match_t const g_optimizer_logical_match_if_logical_not_else[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
             {
@@ -458,7 +426,6 @@ optimization_match_t const g_optimizer_logical_match_if_logical_not_else[] =
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
             },
 
         { // b
@@ -468,7 +435,6 @@ optimization_match_t const g_optimizer_logical_match_if_logical_not_else[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         { // c
@@ -478,7 +444,6 @@ optimization_match_t const g_optimizer_logical_match_if_logical_not_else[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -497,7 +462,6 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         { // a
@@ -507,7 +471,6 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         { // !!b
@@ -517,7 +480,6 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
             {
@@ -527,7 +489,6 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
             },
 
                 {
@@ -537,7 +498,6 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                     /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
                 },
 
         { // c
@@ -547,7 +507,6 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         { // d
@@ -557,7 +516,6 @@ optimization_match_t const g_optimizer_logical_match_for_not_not_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -575,7 +533,6 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         { // !!a
@@ -585,7 +542,6 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
             {
@@ -595,7 +551,6 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
             },
 
                 {
@@ -605,7 +560,6 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                     /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
                 },
 
         { // b
@@ -615,7 +569,6 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         { // c
@@ -625,7 +578,6 @@ optimization_match_t const g_optimizer_logical_match_conditional_not_not_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -644,7 +596,6 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -654,7 +605,6 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
             {
@@ -664,7 +614,6 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
                 /* f_with_value */          nullptr,
                 /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                 /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                /* f_links[_count] */       NULL_POINTER_AND_COUNT()
             },
 
                 {
@@ -674,7 +623,6 @@ optimization_match_t const g_optimizer_logical_match_not_not_not_a[] =
                     /* f_with_value */          nullptr,
                     /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
                     /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-                    /* f_links[_count] */       NULL_POINTER_AND_COUNT()
                 }
 };
 

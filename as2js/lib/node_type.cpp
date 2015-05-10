@@ -448,6 +448,18 @@ char const *Node::type_to_string(node_t type)
 }
 
 
+void Node::set_type_node(Node::pointer_t node)
+{
+    f_type_node = node;
+}
+
+
+Node::pointer_t Node::get_type_node() const
+{
+    return f_type_node.lock();
+}
+
+
 /** \brief Retrieve the type of this node.
  *
  * This function retrieves the type of this node.
@@ -939,83 +951,88 @@ bool Node::has_side_effects() const
 }
 
 
-/** \brief Transform a node of type NODE_TYPE to a string.
- *
- * This function transforms a type definition into a string. This can be
- * used to determine whether two different types are equal without having
- * to test a complicated set of nodes.
- *
- * \note
- * The definition of this function may need to be in a different
- * file instead of the node_type.cpp file. It is not linked to
- * the type of a node, it concerns a high level type definition.
- *
- * \exception exception_internal_error
- * This exception is raised if the input node is not a NODE_TYPE or
- * the node does not have 0 or 1 child.
- *
- * \return A string representing the type of "*" if it cannot be converted.
- */
-String Node::type_node_to_string() const
-{
-    if(f_type != Node::node_t::NODE_TYPE)
-    {
-        throw exception_internal_error("node_type.cpp: Node::type_node_to_string(): called with a node which is not a NODE_TYPE.");
-    }
-
-    // any children? (we should have exactly one)
-    switch(get_children_size())
-    {
-    case 0:
-        return "";
-
-    case 1:
-        break;
-
-    default:
-        throw exception_internal_error("node_type.cpp: Node::type_node_to_string(): called with a NODE_TYPE that has more than one child.");
-
-    }
-
-    // we want to use a recursive function
-    class t2s
-    {
-    public:
-        static String convert(Node::pointer_t node, bool & unknown)
-        {
-            switch(node->get_type())
-            {
-            case Node::node_t::NODE_IDENTIFIER:
-            case Node::node_t::NODE_VIDENTIFIER:
-            case Node::node_t::NODE_STRING:
-                return node->get_string();
-
-            case Node::node_t::NODE_MEMBER:
-                if(node->get_children_size() != 2)
-                {
-                    unknown = true;
-                    return "";
-                }
-                return convert(node->get_child(0), unknown) + "." + convert(node->get_child(1), unknown);
-
-            default:
-                unknown = true;
-                return "";
-
-            }
-            /*NOTREACHED*/
-        }
-    };
-
-    bool unknown(false);
-    String const result(t2s::convert(get_child(0), unknown));
-    if(unknown)
-    {
-        return "*";
-    }
-
-    return result;
-}
+//
+// This is not needed, plus it is wrong. We instead use the get_type_node()
+// and compare those pointers. I keep the function for now, but ti is most
+// certainly totally useless.
+//
+// /** \brief Transform a node of type NODE_TYPE to a string.
+//  *
+//  * This function transforms a type definition into a string. This can be
+//  * used to determine whether two different types are equal without having
+//  * to test a complicated set of nodes.
+//  *
+//  * \note
+//  * The definition of this function may need to be in a different
+//  * file instead of the node_type.cpp file. It is not linked to
+//  * the type of a node, it concerns a high level type definition.
+//  *
+//  * \exception exception_internal_error
+//  * This exception is raised if the input node is not a NODE_TYPE or
+//  * the node does not have 0 or 1 child.
+//  *
+//  * \return A string representing the type of "*" if it cannot be converted.
+//  */
+// String Node::type_node_to_string() const
+// {
+//     if(f_type != Node::node_t::NODE_TYPE)
+//     {
+//         throw exception_internal_error("node_type.cpp: Node::type_node_to_string(): called with a node which is not a NODE_TYPE.");
+//     }
+// 
+//     // any children? (we should have exactly one)
+//     switch(get_children_size())
+//     {
+//     case 0:
+//         return "";
+// 
+//     case 1:
+//         break;
+// 
+//     default:
+//         throw exception_internal_error("node_type.cpp: Node::type_node_to_string(): called with a NODE_TYPE that has more than one child.");
+// 
+//     }
+// 
+//     // we want to use a recursive function
+//     class t2s
+//     {
+//     public:
+//         static String convert(Node::pointer_t node, bool & unknown)
+//         {
+//             switch(node->get_type())
+//             {
+//             case Node::node_t::NODE_IDENTIFIER:
+//             case Node::node_t::NODE_VIDENTIFIER:
+//             case Node::node_t::NODE_STRING:
+//                 return node->get_string();
+// 
+//             case Node::node_t::NODE_MEMBER:
+//                 if(node->get_children_size() != 2)
+//                 {
+//                     unknown = true;
+//                     return "";
+//                 }
+//                 return convert(node->get_child(0), unknown) + "." + convert(node->get_child(1), unknown);
+// 
+//             default:
+//                 unknown = true;
+//                 return "";
+// 
+//             }
+//             /*NOTREACHED*/
+//         }
+//     };
+// 
+//     bool unknown(false);
+//     String const result(t2s::convert(get_child(0), unknown));
+//     if(unknown)
+//     {
+//         return "*";
+//     }
+// 
+//     return result;
+// }
 
 
 }

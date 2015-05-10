@@ -67,7 +67,7 @@ void As2JsNodeUnitTests::test_type()
             {
                 std::cerr << "Somehow a node type (" << static_cast<int>(node_type)
                           << ") is larger than the maximum allowed ("
-                          << static_cast<int>(as2js::Node::node_t::NODE_max) << ")" << std::endl;
+                          << (static_cast<int>(as2js::Node::node_t::NODE_max) - 1) << ")" << std::endl;
             }
         }
         else
@@ -2194,64 +2194,62 @@ void As2JsNodeUnitTests::test_links()
         size_t const idx_bad_link(rand() % g_node_types_size);
         as2js::Node::pointer_t bad_link(new as2js::Node(g_node_types[idx_bad_link].f_type));
 
-        // try with offsets that are too small
-        for(int j(-5); j < 0; ++j)
-        {
-            CPPUNIT_ASSERT_THROW(node->set_link(static_cast<as2js::Node::link_t>(j), bad_link), std::out_of_range);
+        // check various links
+
+        { // instance
+            as2js::Node::pointer_t link(new as2js::Node(as2js::Node::node_t::NODE_CLASS));
+            node->set_instance(link);
+            CPPUNIT_ASSERT(node->get_instance() == link);
+
+            as2js::Node::pointer_t other_link(new as2js::Node(as2js::Node::node_t::NODE_CLASS));
+            node->set_instance(other_link);
+            CPPUNIT_ASSERT(node->get_instance() == other_link);
         }
+        CPPUNIT_ASSERT(!node->get_instance()); // weak pointer, reset to null
 
-        // do it with valid offsets
-        as2js::Node::pointer_t links[static_cast<int>(as2js::Node::link_t::LINK_max)];
-        for(int j(0); j < static_cast<int>(as2js::Node::link_t::LINK_max); ++j)
-        {
-            // before setting anything we expect nullptr in a link
-            CPPUNIT_ASSERT(node->get_link(static_cast<as2js::Node::link_t>(j)) == as2js::Node::pointer_t());
+        { // type
+            as2js::Node::pointer_t link(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+            node->set_type_node(link);
+            CPPUNIT_ASSERT(node->get_type_node() == link);
 
-            size_t const idx_link(rand() % g_node_types_size);
-            links[j].reset(new as2js::Node(g_node_types[idx_link].f_type));
-            node->set_link(static_cast<as2js::Node::link_t>(j), links[j]);
-
-            // if already set, setting again fails
-            CPPUNIT_ASSERT_THROW(node->set_link(static_cast<as2js::Node::link_t>(j), bad_link), as2js::exception_already_defined);
+            as2js::Node::pointer_t other_link(new as2js::Node(as2js::Node::node_t::NODE_IDENTIFIER));
+            node->set_type_node(other_link);
+            CPPUNIT_ASSERT(node->get_type_node() == other_link);
         }
+        CPPUNIT_ASSERT(!node->get_type_node()); // weak pointer, reset to null
 
-        // try with offsets that are too large
-        for(int j(static_cast<int>(as2js::Node::link_t::LINK_max)); j < static_cast<int>(as2js::Node::link_t::LINK_max) + 10; ++j)
-        {
-            CPPUNIT_ASSERT_THROW(node->set_link(static_cast<as2js::Node::link_t>(j), bad_link), std::out_of_range);
+        { // attributes
+            as2js::Node::pointer_t link(new as2js::Node(as2js::Node::node_t::NODE_ATTRIBUTES));
+            node->set_attribute_node(link);
+            CPPUNIT_ASSERT(node->get_attribute_node() == link);
+
+            as2js::Node::pointer_t other_link(new as2js::Node(as2js::Node::node_t::NODE_ATTRIBUTES));
+            node->set_attribute_node(other_link);
+            CPPUNIT_ASSERT(node->get_attribute_node() == other_link);
         }
+        CPPUNIT_ASSERT(node->get_attribute_node()); // NOT a weak pointer for attributes
 
-        // try with offsets that are too small
-        for(int j(-5); j < 0; ++j)
-        {
-            CPPUNIT_ASSERT_THROW(node->get_link(static_cast<as2js::Node::link_t>(j)), std::out_of_range);
+        { // goto exit
+            as2js::Node::pointer_t link(new as2js::Node(as2js::Node::node_t::NODE_LABEL));
+            node->set_goto_exit(link);
+            CPPUNIT_ASSERT(node->get_goto_exit() == link);
+
+            as2js::Node::pointer_t other_link(new as2js::Node(as2js::Node::node_t::NODE_LABEL));
+            node->set_goto_exit(other_link);
+            CPPUNIT_ASSERT(node->get_goto_exit() == other_link);
         }
+        CPPUNIT_ASSERT(!node->get_goto_exit()); // weak pointer, reset to null
 
-        // then verify that the links are indeed valid
-        for(int j(0); j < static_cast<int>(as2js::Node::link_t::LINK_max); ++j)
-        {
-            CPPUNIT_ASSERT(node->get_link(static_cast<as2js::Node::link_t>(j)) == links[j]);
+        { // goto enter
+            as2js::Node::pointer_t link(new as2js::Node(as2js::Node::node_t::NODE_LABEL));
+            node->set_goto_enter(link);
+            CPPUNIT_ASSERT(node->get_goto_enter() == link);
+
+            as2js::Node::pointer_t other_link(new as2js::Node(as2js::Node::node_t::NODE_LABEL));
+            node->set_goto_enter(other_link);
+            CPPUNIT_ASSERT(node->get_goto_enter() == other_link);
         }
-
-        // try with offsets that are too large
-        for(int j(static_cast<int>(as2js::Node::link_t::LINK_max)); j < static_cast<int>(as2js::Node::link_t::LINK_max) + 10; ++j)
-        {
-            CPPUNIT_ASSERT_THROW(node->get_link(static_cast<as2js::Node::link_t>(j)), std::out_of_range);
-        }
-
-        // we can reset a link to set it to another pointer
-        for(int j(0); j < static_cast<int>(as2js::Node::link_t::LINK_max); ++j)
-        {
-            size_t const idx_link(rand() % g_node_types_size);
-            links[j].reset(new as2js::Node(g_node_types[idx_link].f_type));
-            // reset
-            node->set_link(static_cast<as2js::Node::link_t>(j), as2js::Node::pointer_t());
-            // set again
-            node->set_link(static_cast<as2js::Node::link_t>(j), links[j]);
-
-            // and again, if set, it fails
-            CPPUNIT_ASSERT_THROW(node->set_link(static_cast<as2js::Node::link_t>(j), bad_link), as2js::exception_already_defined);
-        }
+        CPPUNIT_ASSERT(!node->get_goto_enter()); // weak pointer, reset to null
     }
 }
 
@@ -2286,19 +2284,19 @@ void As2JsNodeUnitTests::test_variables()
         CPPUNIT_ASSERT(node->get_variable_size() == 10);
 
         // try with offsets that are too small
-        for(int j(-5); j < 0; ++j)
+        for(int j(-10); j < 0; ++j)
         {
             CPPUNIT_ASSERT_THROW(node->get_variable(j), std::out_of_range);
         }
 
-        // then verify that the links are indeed valid
-        for(int j(0); j < static_cast<int>(as2js::Node::link_t::LINK_max); ++j)
+        // then verify that the variables are indeed valid
+        for(int j(0); j < 10; ++j)
         {
             CPPUNIT_ASSERT(node->get_variable(j) == variables[j]);
         }
 
         // try with offsets that are too large
-        for(int j(10); j < 20; ++j)
+        for(int j(10); j <= 20; ++j)
         {
             CPPUNIT_ASSERT_THROW(node->get_variable(j), std::out_of_range);
         }

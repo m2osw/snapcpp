@@ -63,7 +63,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_multiply_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -73,7 +72,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_multiply_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -83,7 +81,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_multiply_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -102,7 +99,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_multiply_NaN[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -112,7 +108,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_multiply_NaN[] =
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -122,7 +117,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_multiply_NaN[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -141,7 +135,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_multiply_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -151,7 +144,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_multiply_a[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -161,7 +153,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_multiply_a[] =
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -180,7 +171,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_divide_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -190,7 +180,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_divide_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -200,7 +189,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_divide_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -219,7 +207,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_divide_NaN[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -229,7 +216,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_divide_NaN[] =
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -239,7 +225,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_divide_NaN[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -258,7 +243,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_divide_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -268,7 +252,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_divide_a[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -278,7 +261,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_divide_a[] =
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -297,7 +279,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_modulo_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -307,7 +288,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_modulo_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -317,7 +297,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_modulo_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -336,7 +315,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_modulo_NaN[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -346,7 +324,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_modulo_NaN[] =
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -356,7 +333,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_modulo_NaN[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -375,7 +351,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_modulo_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -385,7 +360,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_modulo_a[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -395,7 +369,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_modulo_a[] =
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -414,7 +387,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_power_b[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -424,7 +396,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_power_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -434,7 +405,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_power_b[] =
             /* f_with_value */          nullptr,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -453,7 +423,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_power_NaN[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -463,7 +432,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_power_NaN[] =
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -473,7 +441,6 @@ optimization_match_t const g_optimizer_multiplicative_match_a_power_NaN[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 
@@ -492,7 +459,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_power_a[] =
         /* f_with_value */          nullptr,
         /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
         /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-        /* f_links[_count] */       NULL_POINTER_AND_COUNT()
     },
 
         {
@@ -502,7 +468,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_power_a[] =
             /* f_with_value */          g_optimizer_value_nan,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         },
 
         {
@@ -512,7 +477,6 @@ optimization_match_t const g_optimizer_multiplicative_match_NaN_power_a[] =
             /* f_with_value */          g_optimizer_value_no_side_effects,
             /* f_attributes[_count] */  NULL_POINTER_AND_COUNT(),
             /* f_flags[_count] */       NULL_POINTER_AND_COUNT(),
-            /* f_links[_count] */       NULL_POINTER_AND_COUNT()
         }
 };
 

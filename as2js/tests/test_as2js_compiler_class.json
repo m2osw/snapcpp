@@ -146,7 +146,7 @@
                                             "node type": "FUNCTION",
                                             "label": "test",
                                             "flags": "FUNCTION_FLAG_OUT",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PUBLIC"
                                                 }
@@ -236,7 +236,7 @@
                                         },
                                         {
                                             "node type": "VAR",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -288,12 +288,12 @@
                                             "attributes": "DEFINED,PUBLIC",
                                             "label": "test",
                                             "flags": "FUNCTION_FLAG_OUT",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PUBLIC"
                                                 }
                                             ],
-                                            "link type": [
+                                            "type node": [
                                                 {
                                                     "node type": "CLASS",
                                                     "label": "Boolean",
@@ -315,14 +315,14 @@
                                                                         {
                                                                             "node type": "IDENTIFIER",
                                                                             "label": "String",
-                                                                            "link instance": [
+                                                                            "instance": [
                                                                                 {
                                                                                     "node type": "CLASS",
                                                                                     "label": "String",
                                                                                     "attributes": "DEFINED"
                                                                                 }
                                                                             ],
-                                                                            "link type": [
+                                                                            "type node": [
                                                                                 {
                                                                                     "node type": "CLASS",
                                                                                     "label": "String",
@@ -347,14 +347,14 @@
                                                         {
                                                             "node type": "IDENTIFIER",
                                                             "label": "Boolean",
-                                                            "link instance": [
+                                                            "instance": [
                                                                 {
                                                                     "node type": "CLASS",
                                                                     "label": "Boolean",
                                                                     "attributes": "DEFINED"
                                                                 }
                                                             ],
-                                                            "link type": [
+                                                            "type node": [
                                                                 {
                                                                     "node type": "CLASS",
                                                                     "label": "Boolean",
@@ -375,7 +375,7 @@
                                                                 {
                                                                     "node type": "IDENTIFIER",
                                                                     "label": "name",
-                                                                    "link instance": [
+                                                                    "instance": [
                                                                         {
                                                                             "node type": "PARAM",
                                                                             "label": "name",
@@ -390,7 +390,7 @@
                                                                         {
                                                                             "node type": "IDENTIFIER",
                                                                             "label": "data",
-                                                                            "link instance": [
+                                                                            "instance": [
                                                                                 {
                                                                                     "node type": "VARIABLE",
                                                                                     "label": "data",
@@ -417,7 +417,7 @@
                                                                         {
                                                                             "node type": "IDENTIFIER",
                                                                             "label": "data",
-                                                                            "link instance": [
+                                                                            "instance": [
                                                                                 {
                                                                                     "node type": "VARIABLE",
                                                                                     "label": "data",
@@ -441,7 +441,7 @@
                                         {
                                             "node type": "VAR",
                                             "attributes": "PRIVATE,DEFINED",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
@@ -459,14 +459,14 @@
                                                                 {
                                                                     "node type": "IDENTIFIER",
                                                                     "label": "Object",
-                                                                    "link instance": [
+                                                                    "instance": [
                                                                         {
                                                                             "node type": "CLASS",
                                                                             "label": "Object",
                                                                             "attributes": "DEFINED"
                                                                         }
                                                                     ],
-                                                                    "link type": [
+                                                                    "type node": [
                                                                         {
                                                                             "node type": "CLASS",
                                                                             "label": "Object",

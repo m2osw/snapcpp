@@ -1122,7 +1122,7 @@ private volatile;\n",
                         },
                         {
                             "node type": "PRIVATE",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "PRIVATE"
                                 }
@@ -1130,7 +1130,7 @@ private volatile;\n",
                         },
                         {
                             "node type": "PROTECTED",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "PRIVATE"
                                 }
@@ -1138,7 +1138,7 @@ private volatile;\n",
                         },
                         {
                             "node type": "PUBLIC",
-                            "link attributes": [
+                            "attribute node": [
                                 {
                                     "node type": "PRIVATE"
                                 }

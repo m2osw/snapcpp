@@ -815,7 +815,7 @@ void Parser::switch_directive(Node::pointer_t& node)
         attributes(attr_list);
         if(attr_list && attr_list->get_children_size() > 0)
         {
-            node->set_link(Node::link_t::LINK_ATTRIBUTES, attr_list);
+            node->set_attribute_node(attr_list);
         }
         if(f_node->get_type() == Node::node_t::NODE_OPEN_CURVLY_BRACKET)
         {

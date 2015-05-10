@@ -83,6 +83,10 @@ flags_per_node_t const g_flags_enum[] =
         "CLASS"
     },
     {
+        as2js::Node::flag_t::NODE_ENUM_FLAG_INUSE,
+        "INUSE"
+    },
+    {
         as2js::Node::flag_t::NODE_FLAG_max,
         nullptr
     }

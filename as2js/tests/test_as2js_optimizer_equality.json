@@ -3613,7 +3613,7 @@
 
     // a ~~ b
     {
-        "verbose": true,
+        //"verbose": true,
         "name": "\"ABC\" ~~ \"XYZ\" -> false",
         "program": "use extended_operators; \"ABC\" ~~ \"XYZ\";",
         "parser result": {

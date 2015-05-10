@@ -155,7 +155,7 @@ void Compiler::goto_directive(Node::pointer_t& goto_node)
         parents.push_back(parent);
     }
     while(!label);
-    goto_node->set_link(Node::link_t::LINK_GOTO_ENTER, label);
+    goto_node->set_goto_enter(label);
 
     // Now we have to do the hardest part:
     //    find the common parent frame where both, the goto
@@ -180,7 +180,7 @@ void Compiler::goto_directive(Node::pointer_t& goto_node)
             if(parents[idx] == parent)
             {
                 // found the first common parent
-                goto_node->set_link(Node::link_t::LINK_GOTO_EXIT, parent);
+                goto_node->set_goto_exit(parent);
                 return;
             }
         }
@@ -489,7 +489,7 @@ void Compiler::break_continue(Node::pointer_t& break_node)
     // data in a way specific to the break/continue).
     //
     // Also in browsers, JavaScript does not offer a goto.
-    break_node->set_link(Node::link_t::LINK_GOTO_EXIT, parent);
+    break_node->set_goto_exit(parent);
 }
 
 

@@ -835,12 +835,12 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     node_type_string.from_utf8("node type");
     as2js::String children_string;
     children_string.from_utf8("children");
-    as2js::String link_strings[static_cast<int>(as2js::Node::link_t::LINK_max)];
-    link_strings[0].from_utf8("link instance");
-    link_strings[1].from_utf8("link type");
-    link_strings[2].from_utf8("link attributes");
-    link_strings[3].from_utf8("link goto exit");
-    link_strings[4].from_utf8("link goto enter");
+    //as2js::String link_strings[static_cast<int>(as2js::Node::link_t::LINK_max)];
+    //link_strings[0].from_utf8("link instance");
+    //link_strings[1].from_utf8("link type");
+    //link_strings[2].from_utf8("link attributes");
+    //link_strings[3].from_utf8("link goto exit");
+    //link_strings[4].from_utf8("link goto enter");
     as2js::String label_string;
     label_string.from_utf8("label");
     as2js::String flags_string;
@@ -970,106 +970,106 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     }
 
     // List of links are tested just like children, only the list starts somewhere else
-    for(int link_idx(0); link_idx < static_cast<int>(as2js::Node::link_t::LINK_max); ++link_idx)
-    {
-        as2js::String link_name;
-        switch(static_cast<as2js::Node::link_t>(link_idx))
-        {
-        case as2js::Node::link_t::LINK_INSTANCE:
-            link_name = "instance";
-            break;
+    //for(int link_idx(0); link_idx < static_cast<int>(as2js::Node::link_t::LINK_max); ++link_idx)
+    //{
+    //    as2js::String link_name;
+    //    switch(static_cast<as2js::Node::link_t>(link_idx))
+    //    {
+    //    case as2js::Node::link_t::LINK_INSTANCE:
+    //        link_name = "instance";
+    //        break;
 
-        case as2js::Node::link_t::LINK_TYPE:
-            link_name = "type";
-            break;
+    //    case as2js::Node::link_t::LINK_TYPE:
+    //        link_name = "type";
+    //        break;
 
-        case as2js::Node::link_t::LINK_ATTRIBUTES:
-            link_name = "attributes";
-            break;
+    //    case as2js::Node::link_t::LINK_ATTRIBUTES:
+    //        link_name = "attributes";
+    //        break;
 
-        case as2js::Node::link_t::LINK_GOTO_EXIT:
-            link_name = "goto-exit";
-            break;
+    //    case as2js::Node::link_t::LINK_GOTO_EXIT:
+    //        link_name = "goto-exit";
+    //        break;
 
-        case as2js::Node::link_t::LINK_GOTO_ENTER:
-            link_name = "goto-enter";
-            break;
+    //    case as2js::Node::link_t::LINK_GOTO_ENTER:
+    //        link_name = "goto-enter";
+    //        break;
 
-        case as2js::Node::link_t::LINK_max:
-            CPPUNIT_ASSERT(!"LINK_max reached when getting the link type");
-            break;
+    //    case as2js::Node::link_t::LINK_max:
+    //        CPPUNIT_ASSERT(!"LINK_max reached when getting the link type");
+    //        break;
 
-        }
-        as2js::JSON::JSONValue::object_t::const_iterator it_link(child_object.find(link_strings[link_idx]));
-        as2js::Node::pointer_t link_node(node->get_link(static_cast<as2js::Node::link_t>(link_idx)));
-        if(link_node)
-        {
-            // make sure root node is of the right type
-            switch(static_cast<as2js::Node::link_t>(link_idx))
-            {
-            case as2js::Node::link_t::LINK_INSTANCE:
-                CPPUNIT_ASSERT(!"optimizer does not use LINK_INSTANCE");
-                break;
+    //    }
+    //    as2js::JSON::JSONValue::object_t::const_iterator it_link(child_object.find(link_strings[link_idx]));
+    //    as2js::Node::pointer_t link_node(node->get_link(static_cast<as2js::Node::link_t>(link_idx)));
+    //    if(link_node)
+    //    {
+    //        // make sure root node is of the right type
+    //        switch(static_cast<as2js::Node::link_t>(link_idx))
+    //        {
+    //        case as2js::Node::link_t::LINK_INSTANCE:
+    //            CPPUNIT_ASSERT(!"optimizer does not use LINK_INSTANCE");
+    //            break;
 
-            case as2js::Node::link_t::LINK_TYPE:
-                CPPUNIT_ASSERT(!"optimizer does not use LINK_TYPE");
-                break;
+    //        case as2js::Node::link_t::LINK_TYPE:
+    //            CPPUNIT_ASSERT(!"optimizer does not use LINK_TYPE");
+    //            break;
 
-            case as2js::Node::link_t::LINK_ATTRIBUTES:
-                CPPUNIT_ASSERT(link_node->get_type() == as2js::Node::node_t::NODE_ATTRIBUTES);
-                break;
+    //        case as2js::Node::link_t::LINK_ATTRIBUTES:
+    //            CPPUNIT_ASSERT(link_node->get_type() == as2js::Node::node_t::NODE_ATTRIBUTES);
+    //            break;
 
-            case as2js::Node::link_t::LINK_GOTO_EXIT:
-                CPPUNIT_ASSERT(!"optimizer does not use LINK_GOTO_EXIT");
-                break;
+    //        case as2js::Node::link_t::LINK_GOTO_EXIT:
+    //            CPPUNIT_ASSERT(!"optimizer does not use LINK_GOTO_EXIT");
+    //            break;
 
-            case as2js::Node::link_t::LINK_GOTO_ENTER:
-                CPPUNIT_ASSERT(!"optimizer does not use LINK_GOTO_ENTER");
-                break;
+    //        case as2js::Node::link_t::LINK_GOTO_ENTER:
+    //            CPPUNIT_ASSERT(!"optimizer does not use LINK_GOTO_ENTER");
+    //            break;
 
-            case as2js::Node::link_t::LINK_max:
-                CPPUNIT_ASSERT(!"LINK_max reached when testing the link_node type");
-                break;
+    //        case as2js::Node::link_t::LINK_max:
+    //            CPPUNIT_ASSERT(!"LINK_max reached when testing the link_node type");
+    //            break;
 
-            }
-        }
-        if(it_link != child_object.end())
-        {
-            // the children value must be an array
-            as2js::JSON::JSONValue::array_t const& array(it_link->second->get_array());
-            size_t const max_links(array.size());
-            if(link_node)
-            {
-                if(verbose && max_links != link_node->get_children_size())
-                {
-                    std::cerr << "   Expecting " << max_links << " " << link_name << ", we have " << link_node->get_children_size() << " in the node\n";
-                }
-                CPPUNIT_ASSERT(max_links == link_node->get_children_size());
-                for(size_t idx(0); idx < max_links; ++idx)
-                {
-                    as2js::JSON::JSONValue::pointer_t link_value(array[idx]);
-                    verify_result(link_value, link_node->get_child(idx), verbose); // recursive
-                }
-            }
-            else
-            {
-                if(verbose && max_links != 0)
-                {
-                    std::cerr << "   Expecting " << max_links << " " << link_name << ", we have no " << link_name << " at all in the node\n";
-                }
-                CPPUNIT_ASSERT(max_links == 0);
-            }
-        }
-        else
-        {
-            // no children defined in the JSON, no children expected in the node
-            if(verbose && link_node && link_node->get_children_size() != 0)
-            {
-                std::cerr << "   Expecting no " << link_name << " list, we have " << link_node->get_children_size() << " " << link_name << " in the node\n";
-            }
-            CPPUNIT_ASSERT(!link_node || link_node->get_children_size() == 0);
-        }
-    }
+    //        }
+    //    }
+    //    if(it_link != child_object.end())
+    //    {
+    //        // the children value must be an array
+    //        as2js::JSON::JSONValue::array_t const& array(it_link->second->get_array());
+    //        size_t const max_links(array.size());
+    //        if(link_node)
+    //        {
+    //            if(verbose && max_links != link_node->get_children_size())
+    //            {
+    //                std::cerr << "   Expecting " << max_links << " " << link_name << ", we have " << link_node->get_children_size() << " in the node\n";
+    //            }
+    //            CPPUNIT_ASSERT(max_links == link_node->get_children_size());
+    //            for(size_t idx(0); idx < max_links; ++idx)
+    //            {
+    //                as2js::JSON::JSONValue::pointer_t link_value(array[idx]);
+    //                verify_result(link_value, link_node->get_child(idx), verbose); // recursive
+    //            }
+    //        }
+    //        else
+    //        {
+    //            if(verbose && max_links != 0)
+    //            {
+    //                std::cerr << "   Expecting " << max_links << " " << link_name << ", we have no " << link_name << " at all in the node\n";
+    //            }
+    //            CPPUNIT_ASSERT(max_links == 0);
+    //        }
+    //    }
+    //    else
+    //    {
+    //        // no children defined in the JSON, no children expected in the node
+    //        if(verbose && link_node && link_node->get_children_size() != 0)
+    //        {
+    //            std::cerr << "   Expecting no " << link_name << " list, we have " << link_node->get_children_size() << " " << link_name << " in the node\n";
+    //        }
+    //        CPPUNIT_ASSERT(!link_node || link_node->get_children_size() == 0);
+    //    }
+    //}
 
     as2js::JSON::JSONValue::object_t::const_iterator it_children(child_object.find(children_string));
     if(it_children != child_object.end())

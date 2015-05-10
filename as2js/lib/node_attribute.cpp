@@ -204,6 +204,18 @@ char const *g_attribute_groups[] =
 // no name namesoace
 
 
+void Node::set_attribute_node(pointer_t node)
+{
+    f_attribute_node = node;
+}
+
+
+Node::pointer_t Node::get_attribute_node() const
+{
+    return f_attribute_node;
+}
+
+
 /** \brief Get the current status of an attribute.
  *
  * This function returns true or false depending on the current status

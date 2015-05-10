@@ -153,7 +153,7 @@ bool Compiler::find_overloaded_function(Node::pointer_t class_node, Node::pointe
             size_t const max_names(names->get_children_size());
             for(size_t j(0); j < max_names; ++j)
             {
-                Node::pointer_t super(names->get_child(j)->get_link(Node::link_t::LINK_INSTANCE));
+                Node::pointer_t super(names->get_child(j)->get_instance());
                 if(super)
                 {
                     if(is_function_overloaded(super, function_node))
@@ -234,7 +234,7 @@ bool Compiler::has_abstract_functions(Node::pointer_t class_node, Node::pointer_
             size_t const max_names(names->get_children_size());
             for(size_t j(0); j < max_names; ++j)
             {
-                Node::pointer_t super(names->get_child(j)->get_link(Node::link_t::LINK_INSTANCE));
+                Node::pointer_t super(names->get_child(j)->get_instance());
                 if(super)
                 {
                     if(has_abstract_functions(class_node, super, func))
@@ -285,7 +285,7 @@ void Compiler::can_instantiate_type(Node::pointer_t expr)
         return;
     }
 
-    Node::pointer_t inst(expr->get_link(Node::link_t::LINK_INSTANCE));
+    Node::pointer_t inst(expr->get_instance());
     if(inst->get_type() == Node::node_t::NODE_INTERFACE)
     {
         Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, expr->get_position());
@@ -379,7 +379,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
     }
 
     Node::pointer_t left(expr->get_child(0));
-    Node::pointer_t type(left->get_link(Node::link_t::LINK_TYPE));
+    Node::pointer_t type(left->get_type_node());
     if(!type)
     {
 //std::cerr << "WARNING: operand of unary operator is not typed.\n";
@@ -421,7 +421,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
 
 //std::cerr << "Found operator!!!\n";
 
-    Node::pointer_t op_type(resolution->get_link(Node::link_t::LINK_TYPE));
+    Node::pointer_t op_type(resolution->get_type_node());
 
     if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_NATIVE))
     {
@@ -432,7 +432,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
         case Node::node_t::NODE_POST_INCREMENT:
         case Node::node_t::NODE_POST_DECREMENT:
             {
-                Node::pointer_t var_node(left->get_link(Node::link_t::LINK_INSTANCE));
+                Node::pointer_t var_node(left->get_instance());
                 if(var_node)
                 {
                     if((var_node->get_type() == Node::node_t::NODE_PARAM || var_node->get_type() == Node::node_t::NODE_VARIABLE)
@@ -451,19 +451,19 @@ void Compiler::unary_operator(Node::pointer_t expr)
         }
         // we keep intrinsic operators as is
 //std::cerr << "It is intrinsic...\n";
-        expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
-        expr->set_link(Node::link_t::LINK_TYPE, op_type);
+        expr->set_instance(resolution);
+        expr->set_type_node(op_type);
         return;
     }
 //std::cerr << "Not intrinsic...\n";
 
-    id->set_link(Node::link_t::LINK_INSTANCE, resolution);
+    id->set_instance(resolution);
 
     // if not intrinsic, we need to transform the code
     // to a CALL instead because the lower layer won't
     // otherwise understand this operator!
     id->delete_child(0);
-    id->set_link(Node::link_t::LINK_TYPE, op_type);
+    id->set_type_node(op_type);
 
     // move operand in the new expression
     expr->delete_child(0);
@@ -482,7 +482,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
     {
         post_list = expr->create_replacement(Node::node_t::NODE_LIST);
         // TODO: should the list get the input type instead?
-        post_list->set_link(Node::link_t::LINK_TYPE, op_type);
+        post_list->set_type_node(op_type);
 
         Node::pointer_t temp_var(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
         temp_var->set_string("#temp_var#");
@@ -499,11 +499,11 @@ void Compiler::unary_operator(Node::pointer_t expr)
     }
 
     Node::pointer_t call(expr->create_replacement(Node::node_t::NODE_CALL));
-    call->set_link(Node::link_t::LINK_TYPE, op_type);
+    call->set_type_node(op_type);
     Node::pointer_t member(expr->create_replacement(Node::node_t::NODE_MEMBER));
     Node::pointer_t function_node;
     resolve_internal_type(expr, "Function", function_node);
-    member->set_link(Node::link_t::LINK_TYPE, function_node);
+    member->set_type_node(function_node);
 //std::cerr << "call member?!\n";
     call->append_child(member);
 
@@ -546,7 +546,7 @@ void Compiler::unary_operator(Node::pointer_t expr)
 
 //std::cerr << "NOTE: add a list (no params)\n";
     Node::pointer_t list(expr->create_replacement(Node::node_t::NODE_LIST));
-    list->set_link(Node::link_t::LINK_TYPE, op_type);
+    list->set_type_node(op_type);
 //std::cerr << "call and list?!\n";
     call->append_child(list);
 
@@ -588,14 +588,14 @@ void Compiler::binary_operator(Node::pointer_t& expr)
     }
 
     Node::pointer_t left(expr->get_child(0));
-    Node::pointer_t ltype(left->get_link(Node::link_t::LINK_TYPE));
+    Node::pointer_t ltype(left->get_type_node());
     if(!ltype)
     {
         return;
     }
 
     Node::pointer_t right(expr->get_child(1));
-    Node::pointer_t rtype(right->get_link(Node::link_t::LINK_TYPE));
+    Node::pointer_t rtype(right->get_type_node());
     if(!rtype)
     {
         return;
@@ -606,8 +606,8 @@ void Compiler::binary_operator(Node::pointer_t& expr)
     Node::pointer_t r(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
     r->set_string("right");
 
-    l->set_link(Node::link_t::LINK_TYPE, ltype);
-    r->set_link(Node::link_t::LINK_TYPE, rtype);
+    l->set_type_node(ltype);
+    r->set_type_node(rtype);
 
     Node::pointer_t params(expr->create_replacement(Node::node_t::NODE_LIST));
     params->append_child(l);
@@ -641,35 +641,35 @@ void Compiler::binary_operator(Node::pointer_t& expr)
         return;
     }
 
-    Node::pointer_t op_type(resolution->get_link(Node::link_t::LINK_TYPE));
+    Node::pointer_t op_type(resolution->get_type_node());
 
     if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_NATIVE))
     {
         // we keep intrinsic operators as is
-        expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
-        expr->set_link(Node::link_t::LINK_TYPE, op_type);
+        expr->set_instance(resolution);
+        expr->set_type_node(op_type);
         return;
     }
 
-    id->set_link(Node::link_t::LINK_INSTANCE, resolution);
+    id->set_instance(resolution);
 
     // if not intrinsic, we need to transform the code
     // to a CALL instead because the lower layer won't
     // otherwise understand this operator!
 //fprintf(stderr, "Not intrinsic...\n");
     id->delete_child(0);
-    id->set_link(Node::link_t::LINK_TYPE, op_type);
+    id->set_type_node(op_type);
 
     // move left and right in the new expression
     expr->delete_child(1);
     expr->delete_child(0);
 
     Node::pointer_t call(expr->create_replacement(Node::node_t::NODE_CALL));
-    call->set_link(Node::link_t::LINK_TYPE, op_type);
+    call->set_type_node(op_type);
     Node::pointer_t member(expr->create_replacement(Node::node_t::NODE_MEMBER));;
     Node::pointer_t function_node;
     resolve_internal_type(expr, "Function", function_node);
-    member->set_link(Node::link_t::LINK_TYPE, function_node);
+    member->set_type_node(function_node);
     call->append_child(member);
 
     // we need a function to get the name of 'type'
@@ -684,7 +684,7 @@ void Compiler::binary_operator(Node::pointer_t& expr)
 //fprintf(stderr, "NOTE: add list (right param)\n");
     Node::pointer_t list;
     list->create_replacement(Node::node_t::NODE_LIST);
-    list->set_link(Node::link_t::LINK_TYPE, op_type);
+    list->set_type_node(op_type);
     list->append_child(right);
     call->append_child(list);
 
@@ -961,7 +961,7 @@ bool Compiler::special_identifier(Node::pointer_t expr)
 void Compiler::type_expr(Node::pointer_t expr)
 {
     // already typed?
-    if(expr->get_link(Node::link_t::LINK_TYPE))
+    if(expr->get_type_node())
     {
         return;
     }
@@ -972,38 +972,38 @@ void Compiler::type_expr(Node::pointer_t expr)
     {
     case Node::node_t::NODE_STRING:
         resolve_internal_type(expr, "String", resolution);
-        expr->set_link(Node::link_t::LINK_TYPE, resolution);
+        expr->set_type_node(resolution);
         break;
 
     case Node::node_t::NODE_INT64:
         resolve_internal_type(expr, "Integer", resolution);
-        expr->set_link(Node::link_t::LINK_TYPE, resolution);
+        expr->set_type_node(resolution);
         break;
 
     case Node::node_t::NODE_FLOAT64:
         resolve_internal_type(expr, "Double", resolution);
-        expr->set_link(Node::link_t::LINK_TYPE, resolution);
+        expr->set_type_node(resolution);
         break;
 
     case Node::node_t::NODE_TRUE:
     case Node::node_t::NODE_FALSE:
         resolve_internal_type(expr, "Boolean", resolution);
-        expr->set_link(Node::link_t::LINK_TYPE, resolution);
+        expr->set_type_node(resolution);
         break;
 
     case Node::node_t::NODE_OBJECT_LITERAL:
         resolve_internal_type(expr, "Object", resolution);
-        expr->set_link(Node::link_t::LINK_TYPE, resolution);
+        expr->set_type_node(resolution);
         break;
 
     case Node::node_t::NODE_ARRAY_LITERAL:
         resolve_internal_type(expr, "Array", resolution);
-        expr->set_link(Node::link_t::LINK_TYPE, resolution);
+        expr->set_type_node(resolution);
         break;
 
     default:
     {
-        Node::pointer_t node(expr->get_link(Node::link_t::LINK_INSTANCE));
+        Node::pointer_t node(expr->get_instance());
         if(!node)
         {
             break;
@@ -1018,7 +1018,7 @@ void Compiler::type_expr(Node::pointer_t expr)
         {
             break;
         }
-        Node::pointer_t instance(type->get_link(Node::link_t::LINK_INSTANCE));
+        Node::pointer_t instance(type->get_instance());
         if(!instance)
         {
             // TODO: resolve that if not done yet (it should
@@ -1027,7 +1027,7 @@ void Compiler::type_expr(Node::pointer_t expr)
             msg << "type is missing when it should not.";
             throw exception_exit(1, "missing a required type.");
         }
-        expr->set_link(Node::link_t::LINK_TYPE, instance);
+        expr->set_type_node(instance);
     }
         break;
 
@@ -1134,8 +1134,8 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             }
             if(valid)
             {
-                left->set_link(Node::link_t::LINK_INSTANCE, resolution);
-                left->set_link(Node::link_t::LINK_TYPE, resolution->get_link(Node::link_t::LINK_TYPE));
+                left->set_instance(resolution);
+                left->set_type_node(resolution->get_type_node());
             }
         }
         else
@@ -1179,7 +1179,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
                     break;
                 }
             }
-            left->set_link(Node::link_t::LINK_INSTANCE, variable_node);
+            left->set_instance(variable_node);
 
             // We cannot call InsertChild()
             // here since it would be in our
@@ -1199,7 +1199,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
     else if(left->get_type() == Node::node_t::NODE_MEMBER)
     {
         // we parsed?
-        if(!left->get_link(Node::link_t::LINK_TYPE))
+        if(!left->get_type_node())
         {
             // try to optimize the expression before to compile it
             // (it can make a huge difference!)
@@ -1211,7 +1211,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
             // setters have to be treated here because within ResolveMember()
             // we do not have access to the assignment and that's what needs
             // to change to a call.
-            Node::pointer_t resolution(left->get_link(Node::link_t::LINK_INSTANCE));
+            Node::pointer_t resolution(left->get_instance());
             if(resolution)
             {
                 if(resolution->get_type() == Node::node_t::NODE_FUNCTION
@@ -1284,10 +1284,10 @@ void Compiler::assignment_operator(Node::pointer_t expr)
         var_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_DEFINING, false);
     }
 
-    Node::pointer_t type(left->get_link(Node::link_t::LINK_TYPE));
+    Node::pointer_t type(left->get_type_node());
     if(type)
     {
-        expr->set_link(Node::link_t::LINK_TYPE, type);
+        expr->set_type_node(type);
         return;
     }
 
@@ -1295,7 +1295,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
     {
         // if left not typed, use right type!
         // (the assignment is this type of special case...)
-        expr->set_link(Node::link_t::LINK_TYPE, right->get_link(Node::link_t::LINK_TYPE));
+        expr->set_type_node(right->get_type_node());
     }
 }
 
@@ -1303,7 +1303,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
 void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
 {
     // we already came here on that one?
-    if(expr->get_link(Node::link_t::LINK_TYPE))
+    if(expr->get_type_node())
     {
         return;
     }
@@ -1469,7 +1469,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
 //std::cerr << "  +--> returned from resolve_name() with resolution\n";
                 if(!replace_constant_variable(expr, resolution))
                 {
-                    Node::pointer_t current(expr->get_link(Node::link_t::LINK_INSTANCE));
+                    Node::pointer_t current(expr->get_instance());
 //std::cerr << "  +--> not constant var... [" << (current ? "has a current ptr" : "no current ptr") << "]\n";
                     if(current)
                     {
@@ -1485,15 +1485,13 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
                     }
                     else
                     {
-                        expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
-                        Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
+                        expr->set_instance(resolution);
+                        Node::pointer_t type(resolution->get_type_node());
 //std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type ptr" : "no current type ptr") << "]\n";
-                        if(type)
+                        if(type
+                        && !expr->get_type_node())
                         {
-                            if(!expr->get_link(Node::link_t::LINK_TYPE))
-                            {
-                                expr->set_link(Node::link_t::LINK_TYPE, type);
-                            }
+                            expr->set_type_node(type);
                         }
                     }
                 }
@@ -1621,7 +1619,7 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
         {
             // this is the type of the last entry
             Node::pointer_t child(expr->get_child(max_children - 1));
-            expr->set_link(Node::link_t::LINK_TYPE, child->get_link(Node::link_t::LINK_TYPE));
+            expr->set_type_node(child->get_type_node());
         }
         break;
 

@@ -100,11 +100,11 @@ public:
     String &                operator += (char const c);
     String &                operator += (wchar_t const c);
 
-    String                  operator + (char const * str);
-    String                  operator + (wchar_t const * str);
-    String                  operator + (as_char_t const * str);
-    String                  operator + (std::string const & str);
-    String                  operator + (std::wstring const & str);
+    //String                  operator + (char const * str);
+    //String                  operator + (wchar_t const * str);
+    //String                  operator + (as_char_t const * str);
+    //String                  operator + (std::string const & str);
+    //String                  operator + (std::wstring const & str);
 
     bool                    valid() const;
     static bool             valid_character(as_char_t c);

@@ -85,20 +85,6 @@ struct optimization_match_t
         Float64::float64_type               f_float64;
     };
 
-    struct optimization_link_match_t
-    {
-        optimization_match_t const *        f_match;
-        size_t                              f_match_count;
-    };
-
-    struct optimization_link_t
-    {
-        Node::link_t                        f_link;
-
-        optimization_link_match_t const *   f_links;
-        size_t                              f_links_count;
-    };
-
     uint8_t                         f_depth;        // to build a tree
     uint8_t                         f_match_flags;  // zero by default
 
@@ -112,9 +98,6 @@ struct optimization_match_t
 
     Node::flag_t const *            f_flags;        // list of flags, NODE_FLAG_max is used to seperate each list
     size_t                          f_flags_count;
-
-    optimization_link_t const *     f_links;
-    size_t                          f_links_count;
 };
 
 

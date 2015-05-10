@@ -180,6 +180,10 @@ void Node::display_data(std::ostream& out) const
         {
             out << " CLASS";
         }
+        if(f_flags[static_cast<size_t>(flag_t::NODE_ENUM_FLAG_INUSE)])
+        {
+            out << " INUSE";
+        }
         break;
 
     case node_t::NODE_FOR:
@@ -434,17 +438,38 @@ void Node::display(std::ostream& out, int indent, char c) const
     display_data(out);
 
     // display information about the links
-    bool first = true;
-    for(size_t lnk(0); lnk < f_link.size(); ++lnk)
     {
-        if(f_link[lnk])
+        pointer_t node(f_instance.lock());
+        if(node)
         {
-            if(first)
-            {
-                first = false;
-                out << " Lnk:";
-            }
-            out << " [" << lnk << "]=" << f_link[lnk].get();
+            out << " Instance: " << node.get();
+        }
+    }
+    {
+        pointer_t node(f_type_node.lock());
+        if(node)
+        {
+            out << " Type Node: " << node.get();
+        }
+    }
+    {
+        if(f_attribute_node)
+        {
+            out << " Attribute Node: " << f_attribute_node.get();
+        }
+    }
+    {
+        pointer_t node(f_goto_exit.lock());
+        if(node)
+        {
+            out << " Goto Exit: " << node.get();
+        }
+    }
+    {
+        pointer_t node(f_goto_enter.lock());
+        if(node)
+        {
+            out << " Goto Enter: " << node.get();
         }
     }
 
@@ -527,15 +552,21 @@ void Node::display(std::ostream& out, int indent, char c) const
     // now print variables
     for(size_t idx(0); idx < f_variables.size(); ++idx)
     {
-        f_variables[idx]->display(out, indent + 1, '=');
+        pointer_t variable(f_variables[idx].lock());
+        if(variable)
+        {
+            variable->display(out, indent + 1, '=');
+        }
     }
 
     // now print labels
-    for(map_of_pointers_t::const_iterator it(f_labels.begin());
-                                          it != f_labels.end();
-                                          ++it)
+    for(auto const & it : f_labels)
     {
-        it->second->display(out, indent + 1, ':');
+        pointer_t label(it.second.lock());
+        if(label)
+        {
+            label->display(out, indent + 1, ':');
+        }
     }
 }
 

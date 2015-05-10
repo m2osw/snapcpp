@@ -130,7 +130,7 @@ catch(...) { dom.setAttr('title', 'Click here'); }",
                                         {
                                             "node type": "SWITCH",
                                             "switch operator": "EQUAL",
-                                            "link attributes": [
+                                            "attribute node": [
                                                 {
                                                     "node type": "PRIVATE"
                                                 }
