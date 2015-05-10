@@ -94,7 +94,7 @@ void Compiler::variable_to_attrs(Node::pointer_t node, Node::pointer_t var_node)
 
 void Compiler::identifier_to_attrs(Node::pointer_t node, Node::pointer_t a)
 {
-    // an identifier can't be an empty string
+    // an identifier cannot be an empty string
     String const identifier(a->get_string());
     switch(identifier[0])
     {

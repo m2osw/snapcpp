@@ -39,7 +39,9 @@ native package Native
 
 class Number extends Object
 {
-    function Number(var in value: Number := 0.0) : Number;
+    use extended_operators(2);
+
+    function Number(var in value: Number := 0.0);
 
     function toString(var in base: Number := undefined) : String;
     function toLocaleString(Void) : String;
@@ -86,7 +88,7 @@ class Number extends Object
     function !=  (var in value: Number) : Boolean;
     function === (var in value: Number) : Boolean;
     function !== (var in value: Number) : Boolean;
-    function <=> (var in value: Number) : CompareResult;
+    function <=> (var in value: Number) : Object.CompareResult;
     function ~~  (var in value: Number) : Boolean;
 
     function &   (var in value: Number) : Number;
@@ -142,7 +144,7 @@ class Number extends Object
     // constants
     const var MIN_VALUE;
     const var MAX_VALUE;
-    //const var NaN; -- this is 100% internal in as2js
+    //const var NaN; -- NaN is 100% internal in as2js
     const var NEGATIVE_INFINITY;
     const var POSITIVE_INFINITY;
 };
@@ -151,7 +153,7 @@ class Number extends Object
 // snap extension
 class Integer extends Number
 {
-    function Integer(var in value: Number := 0.0) : Integer;
+    function Integer(var in value: Number := 0.0) : Void;
 
     // constants
     const var MIN_VALUE;
@@ -162,7 +164,7 @@ class Integer extends Number
 // snap extension
 class Double extends Number
 {
-    function Double(var in value: Number := 0.0) : Double;
+    function Double(var in value: Number := 0.0) : Void;
 };
 
 

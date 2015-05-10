@@ -59,7 +59,7 @@ class Boolean extends Object
     function !=  (var in value: Boolean) : Boolean;
     function === (var in value: Boolean) : Boolean;
     function !== (var in value: Boolean) : Boolean;
-    function <=> (var in value: Boolean) : CompareResult;
+    function <=> (var in value: Boolean) : Object.CompareResult;
     function ~~  (var in value: Boolean) : Boolean;
 
     function &&  (var in value: Boolean) : Boolean;

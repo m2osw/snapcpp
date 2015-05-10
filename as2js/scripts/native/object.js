@@ -47,8 +47,8 @@ enum CompareResult
 
 class Object
 {
-    function Object() : Object;
-    function Object(var in value: Object) : Object;
+    function Object();
+    function Object(var in value: Object);
 
     static function getPrototypeOf(var in O: Object) : Object;
     static function getOwnPropertyDescriptor(var in O: Object, var in P: String) : Object;

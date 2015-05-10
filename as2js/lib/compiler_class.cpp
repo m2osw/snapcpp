@@ -332,7 +332,7 @@ fprintf(stderr, "WARNING: 'super.member()' should only be used in a class functi
 
 void Compiler::link_type(Node::pointer_t type)
 {
-std::cerr << "find_type()\n";
+//std::cerr << "find_type()\n";
     // already linked?
     Node::pointer_t link(type->get_link(Node::link_t::LINK_INSTANCE));
     if(link)
@@ -481,7 +481,7 @@ bool Compiler::check_field(Node::pointer_t link, Node::pointer_t field, int& fun
 {
     NodeLock link_ln(link);
     size_t const max_children(link->get_children_size());
-std::cerr << "  +++ check_field() " << max_children << " +++\n";
+//std::cerr << "  +++ compiler_class.cpp: check_field() " << max_children << " +++\n";
     for(size_t idx(0); idx < max_children; ++idx)
     {
         Node::pointer_t list(link->get_child(idx));
@@ -510,10 +510,10 @@ std::cerr << "  +++ check_field() " << max_children << " +++\n";
             }
             else if(child->get_type() != Node::node_t::NODE_EMPTY)
             {
-std::cerr << "  +++ check_field(): check_name() from compiler class +++\n";
+//std::cerr << "  +--> compiler_class.cpp: check_field(): call check_name() as we are searching for a \"class\" field named \"" << field->get_string() << "\" (actually this may be any object that can be given a name, we may be in a package too)\n";
                 if(check_name(list, j, resolution, field, params, search_flags))
                 {
-std::cerr << "  +++ check_field(): funcs_name() called too +++\n";
+//std::cerr << "  +++ compiler_class.cpp: check_field(): funcs_name() called too +++\n";
                     if(funcs_name(funcs, resolution))
                     {
                         Node::pointer_t inst(field->get_link(Node::link_t::LINK_INSTANCE));
@@ -527,7 +527,7 @@ std::cerr << "  +++ check_field(): funcs_name() called too +++\n";
                             // we have a real problem
                             throw exception_internal_error("found a LINK_INSTANCE twice, but it was different each time");
                         }
-std::cerr << "  +++ check_field(): and return true +++\n";
+//std::cerr << "  +++ compiler_class.cpp: check_field(): accept this resolution as the answer! +++\n";
                         return true;
                     }
                 }
@@ -535,14 +535,14 @@ std::cerr << "  +++ check_field(): and return true +++\n";
         }
     }
 
-std::cerr << "  +++ check_field(): but return true +++\n";
+//std::cerr << "  +++ compiler_class.cpp: check_field(): failed -- no resolution yet +++\n";
     return false;
 }
 
 
 bool Compiler::find_any_field(Node::pointer_t link, Node::pointer_t field, int& funcs, Node::pointer_t& resolution, Node::pointer_t params, int const search_flags)
 {
-std::cerr << "  *** find_any_field()\n";
+//std::cerr << "  *** find_any_field()\n";
     if(check_field(link, field, funcs, resolution, params, search_flags))
     {
 //std::cerr << "Check Field true...\n";
@@ -565,6 +565,7 @@ std::cerr << "  *** find_any_field()\n";
 
 bool Compiler::find_field(Node::pointer_t link, Node::pointer_t field, int& funcs, Node::pointer_t& resolution, Node::pointer_t params, int const search_flags)
 {
+    // protect current compiler error flags while searching
     RestoreFlags restore_flags(this);
 
     bool const r(find_any_field(link, field, funcs, resolution, params, search_flags));
@@ -690,7 +691,7 @@ fprintf(stderr, " is a function.\n");
 
 bool Compiler::find_member(Node::pointer_t member, Node::pointer_t& resolution, Node::pointer_t params, int search_flags)
 {
-std::cerr << "find_member()\n";
+//std::cerr << "find_member()\n";
     // Just in case the caller is re-using the same node
     resolution.reset();
 
@@ -703,7 +704,7 @@ std::cerr << "find_member()\n";
     }
     NodeLock ln(member);
 
-//fprintf(stderr, "Searching for Member...\n");
+//std::cerr << "Searching for Member...\n";
 
     bool must_find = false;
     Node::pointer_t object; // our sub-resolution
@@ -725,18 +726,28 @@ std::cerr << "find_member()\n";
 
     case Node::node_t::NODE_SUPER:
     {
+        // SUPER cannot be used on the right side of a NODE_MEMBER
+        // -- this is not correct, we could access the super of a
+        //    child member (a.super.blah represents field blah in
+        //    the class a is derived from)
+        //Node::pointer_t parent(name->get_parent());
+        //if(parent->get_type() == Node::node_t::NODE_MEMBER
+        //&& name->get_offset() != 0)
+        //{
+        //    Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, member->get_position());
+        //    msg << "you cannot use 'super' after a period (.), it has to be first.";
+        //}
+
         // super should only be used in classes, but we can
-        // find standalone functions using that keyword too...
+        // find standalone functions using this keyword too...
         // here we search for the class and if we find it then
         // we try to get access to the extends. If the object
         // is Object, then we generate an error (i.e. there is
-        // no super of Object).
-//fprintf(stderr, "Handling super member\n");
+        // no super to Object).
         check_super_validity(name);
         Node::pointer_t class_node(class_of_member(member));
-        // NOTE: Interfaces can use super but we can't
-        //     know what it is at compile time.
-//fprintf(stderr, "Parent is %s\n", parent_data->GetTypeName());
+        // NOTE: Interfaces can use super but we cannot
+        //       know what it is at compile time.
         if(class_node
         && class_node->get_type() == Node::node_t::NODE_CLASS)
         {
@@ -749,7 +760,6 @@ std::cerr << "find_member()\n";
             else
             {
                 size_t const max_children(class_node->get_children_size());
-//fprintf(stderr, "Search corresponding class (%d members)\n", max);
                 for(size_t idx(0); idx < max_children; ++idx)
                 {
                     Node::pointer_t child(class_node->get_child(idx));
@@ -759,7 +769,6 @@ std::cerr << "find_member()\n";
                         {
                             Node::pointer_t child_name(child->get_child(0));
                             object = child_name->get_link(Node::link_t::LINK_INSTANCE);
-//fprintf(stderr, "Got the object! (%d)\n", idx);
                         }
                         if(!object)
                         {
@@ -813,8 +822,8 @@ std::cerr << "find_member()\n";
 
         if(!resolve_name(name, name, object, params, search_flags))
         {
-            // we can't even find the first name!
-            // we won't search for fields since we need to have
+            // we cannot even find the first name!
+            // we will not search for fields since we need to have
             // an object for that purpose!
             return false;
         }
@@ -824,9 +833,6 @@ std::cerr << "find_member()\n";
     if(object)
     {
         bool const result(resolve_field(object, field, resolution, params, search_flags));
-
-//fprintf(stderr, "ResolveField() returned %d\n", result);
-
         if(!result && must_find)
         {
             Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_INVALID_EXPRESSION, member->get_position());
@@ -845,7 +851,7 @@ std::cerr << "find_member()\n";
 
 void Compiler::resolve_member(Node::pointer_t expr, Node::pointer_t params, int const search_flags)
 {
-std::cerr << "Compiler::resolve_member()\n";
+//std::cerr << "Compiler::resolve_member()\n";
     Node::pointer_t resolution;
     if(!find_member(expr, resolution, params, search_flags))
     {
@@ -889,7 +895,7 @@ fprintf(stderr, "WARNING: cannot find field member.\n");
     if(resolution->get_type() == Node::node_t::NODE_FUNCTION
     && resolution->get_flag(Node::flag_t::NODE_FUNCTION_FLAG_GETTER))
     {
-std::cerr << "CAUGHT! getter...\n";
+//std::cerr << "CAUGHT! getter...\n";
         // so expr is a MEMBER at this time
         // it has two children
         Node::pointer_t left(expr->get_child(0));
@@ -1162,7 +1168,7 @@ void Compiler::declare_class(Node::pointer_t class_node)
             break;
 
         case Node::node_t::NODE_FUNCTION:
-std::cerr << "Got a function member in that class...\n";
+//std::cerr << "Got a function member in that class...\n";
             function(child);
             break;
 

@@ -390,18 +390,18 @@ void Compiler::unary_operator(Node::pointer_t expr)
     l->set_string("left");
 
     Node::pointer_t params(expr->create_replacement(Node::node_t::NODE_LIST));
-std::cerr << "Unary operator trouble?!\n";
+//std::cerr << "Unary operator trouble?!\n";
     params->append_child(l);
-std::cerr << "Not this one...\n";
+//std::cerr << "Not this one...\n";
 
     Node::pointer_t id(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
     id->set_string(op);
     id->append_child(params);
-std::cerr << "Not that one either...\n";
+//std::cerr << "Not that one either...\n";
 
     size_t const del(expr->get_children_size());
     expr->append_child(id);
-std::cerr << "What about append of the ID?...\n";
+//std::cerr << "What about append of the ID?...\n";
 
     Node::pointer_t resolution;
     int funcs = 0;
@@ -489,12 +489,12 @@ std::cerr << "What about append of the ID?...\n";
 
         // Save that name for next reference!
         assignment = expr->create_replacement(Node::node_t::NODE_ASSIGNMENT);
-std::cerr << "assignment temp_var?!\n";
+//std::cerr << "assignment temp_var?!\n";
         assignment->append_child(temp_var);
-std::cerr << "assignment left?!\n";
+//std::cerr << "assignment left?!\n";
         assignment->append_child(left);
 
-std::cerr << "post list assignment?!\n";
+//std::cerr << "post list assignment?!\n";
         post_list->append_child(assignment);
     }
 
@@ -504,7 +504,7 @@ std::cerr << "post list assignment?!\n";
     Node::pointer_t function_node;
     resolve_internal_type(expr, "Function", function_node);
     member->set_link(Node::link_t::LINK_TYPE, function_node);
-std::cerr << "call member?!\n";
+//std::cerr << "call member?!\n";
     call->append_child(member);
 
     // we need a function to get the name of 'type'
@@ -533,32 +533,32 @@ std::cerr << "call member?!\n";
             r->set_string("#temp_var#");
         }
 
-std::cerr << "member r?!\n";
+//std::cerr << "member r?!\n";
         member->append_child(r);
     }
     else
     {
-std::cerr << "member left?!\n";
+//std::cerr << "member left?!\n";
         member->append_child(left);
     }
-std::cerr << "member id?!\n";
+//std::cerr << "member id?!\n";
     member->append_child(id);
 
 //std::cerr << "NOTE: add a list (no params)\n";
     Node::pointer_t list(expr->create_replacement(Node::node_t::NODE_LIST));
     list->set_link(Node::link_t::LINK_TYPE, op_type);
-std::cerr << "call and list?!\n";
+//std::cerr << "call and list?!\n";
     call->append_child(list);
 
     if(is_post)
     {
-std::cerr << "post stuff?!\n";
+//std::cerr << "post stuff?!\n";
         post_list->append_child(call);
 
         Node::pointer_t temp_var(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
         // TODO: use the same name as used in the 1st temp_var#
         temp_var->set_string("#temp_var#");
-std::cerr << "temp var stuff?!\n";
+//std::cerr << "temp var stuff?!\n";
         post_list->append_child(temp_var);
 
         expr->get_parent()->set_child(expr->get_offset(), post_list);
@@ -987,9 +987,7 @@ void Compiler::type_expr(Node::pointer_t expr)
 
     case Node::node_t::NODE_TRUE:
     case Node::node_t::NODE_FALSE:
-std::cerr << "Got to (re-)resolve the Boolean type here...\n";
         resolve_internal_type(expr, "Boolean", resolution);
-std::cerr << "Then save that as this FALSE (TRUE?) Boolean...\n";
         expr->set_link(Node::link_t::LINK_TYPE, resolution);
         break;
 
@@ -1223,7 +1221,7 @@ void Compiler::assignment_operator(Node::pointer_t expr)
                     //       maybe it was not deleted? I do not think
                     //       that these work properly yet, but it looks
                     //       like I already started work on those.
-std::cerr << "CAUGHT! setter...\n";
+//std::cerr << "CAUGHT! setter...\n";
                     // so expr is a MEMBER at this time
                     // it has two children
                     //NodePtr left = expr.GetChild(0);
@@ -1465,19 +1463,19 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
         if(!special_identifier(expr))
         {
             Node::pointer_t resolution;
-std::cerr << "Not a special identifier so resolve name... [" << *expr << "]\n";
+//std::cerr << "Not a special identifier so resolve name... [" << *expr << "]\n";
             if(resolve_name(expr, expr, resolution, params, SEARCH_FLAG_GETTER))
             {
-std::cerr << "  +--> returned from resolve_name() with resolution\n";
+//std::cerr << "  +--> returned from resolve_name() with resolution\n";
                 if(!replace_constant_variable(expr, resolution))
                 {
                     Node::pointer_t current(expr->get_link(Node::link_t::LINK_INSTANCE));
-std::cerr << "  +--> not constant var... [" << (current ? "has a current ptr" : "no current ptr") << "]\n";
+//std::cerr << "  +--> not constant var... [" << (current ? "has a current ptr" : "no current ptr") << "]\n";
                     if(current)
                     {
                         if(current != resolution)
                         {
-std::cerr << "Expression already typed is (starting from parent): [" << *expr->get_parent() << "]\n";
+//std::cerr << "Expression already typed is (starting from parent): [" << *expr->get_parent() << "]\n";
                             // TBD: I am not exactly sure what this does right now, we
                             //      probably can ameliorate the error message, although
                             //      we should actually never get it!
@@ -1489,7 +1487,7 @@ std::cerr << "Expression already typed is (starting from parent): [" << *expr->g
                     {
                         expr->set_link(Node::link_t::LINK_INSTANCE, resolution);
                         Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
-std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type ptr" : "no current type ptr") << "]\n";
+//std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type ptr" : "no current type ptr") << "]\n";
                         if(type)
                         {
                             if(!expr->get_link(Node::link_t::LINK_TYPE))
@@ -1505,7 +1503,7 @@ std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type 
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_NOT_FOUND, expr->get_position());
                 msg << "cannot find any variable or class declaration for: '" << expr->get_string() << "'.";
             }
-std::cerr << "---------- got type? ----------\n";
+//std::cerr << "---------- got type? ----------\n";
         }
         return;
 

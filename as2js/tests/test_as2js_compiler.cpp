@@ -841,7 +841,7 @@ void verify_attributes(as2js::Node::pointer_t node, as2js::String const& attribu
 
 
 
-void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::pointer_t node, bool verbose)
+void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::pointer_t node, bool verbose, bool ignore_children)
 {
     as2js::String node_type_string;
     node_type_string.from_utf8("node type");
@@ -876,7 +876,19 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
     as2js::JSON::JSONValue::pointer_t node_type_value(it_node_type->second);
     if(verbose || node->get_type_name() != node_type_value->get_string())
     {
-        std::cerr << "*** Comparing " << node->get_type_name() << " (node) vs " << node_type_value->get_string() << " (JSON)\n";
+        std::cerr << "*** Comparing " << node->get_type_name() << " (node) vs " << node_type_value->get_string() << " (JSON)";
+        switch(node->get_type())
+        {
+        case as2js::Node::node_t::NODE_IDENTIFIER:
+            std::cerr << " \"" << node->get_string() << "\"";
+            break;
+
+        default:
+            // no details for this node type
+            break;
+
+        }
+        std::cerr << "\n";
     }
     CPPUNIT_ASSERT(node->get_type_name() == node_type_value->get_string());
 
@@ -981,133 +993,161 @@ void verify_result(as2js::JSON::JSONValue::pointer_t expected, as2js::Node::poin
         CPPUNIT_ASSERT_THROW(node->get_float64(), as2js::exception_internal_error);
     }
 
-    // List of links are tested just like children, only the list starts somewhere else
-    for(int link_idx(0); link_idx < static_cast<int>(as2js::Node::link_t::LINK_max); ++link_idx)
+    // certain links asks us to ignore the links and children because
+    // we do not want to duplicate the whole type classes a hundred times...
+    if(!ignore_children)
     {
-        as2js::String link_name;
-        switch(static_cast<as2js::Node::link_t>(link_idx))
+//std::cerr << "Node is [" << *node << "]\n";
+
+        // List of links are tested just like children, only the list starts somewhere else
+        for(int link_idx(0); link_idx < static_cast<int>(as2js::Node::link_t::LINK_max); ++link_idx)
         {
-        case as2js::Node::link_t::LINK_INSTANCE:
-            link_name = "instance";
-            break;
-
-        case as2js::Node::link_t::LINK_TYPE:
-            link_name = "type";
-            break;
-
-        case as2js::Node::link_t::LINK_ATTRIBUTES:
-            link_name = "attributes";
-            break;
-
-        case as2js::Node::link_t::LINK_GOTO_EXIT:
-            link_name = "goto-exit";
-            break;
-
-        case as2js::Node::link_t::LINK_GOTO_ENTER:
-            link_name = "goto-enter";
-            break;
-
-        case as2js::Node::link_t::LINK_max:
-            CPPUNIT_ASSERT(!"LINK_max reached when getting the link type");
-            break;
-
-        }
-        as2js::JSON::JSONValue::object_t::const_iterator it_link(child_object.find(link_strings[link_idx]));
-        as2js::Node::pointer_t link_node(node->get_link(static_cast<as2js::Node::link_t>(link_idx)));
-        if(link_node)
-        {
-            // make sure root node is of the right type
+            as2js::String link_name;
             switch(static_cast<as2js::Node::link_t>(link_idx))
             {
             case as2js::Node::link_t::LINK_INSTANCE:
-                CPPUNIT_ASSERT(!"compiler does not use LINK_INSTANCE");
+                link_name = "instance";
                 break;
 
             case as2js::Node::link_t::LINK_TYPE:
-                CPPUNIT_ASSERT(!"compiler does not use LINK_TYPE");
+                link_name = "type";
                 break;
 
             case as2js::Node::link_t::LINK_ATTRIBUTES:
-                CPPUNIT_ASSERT(link_node->get_type() == as2js::Node::node_t::NODE_ATTRIBUTES);
+                link_name = "attributes";
                 break;
 
             case as2js::Node::link_t::LINK_GOTO_EXIT:
-                CPPUNIT_ASSERT(!"compiler does not use LINK_GOTO_EXIT");
+                link_name = "goto-exit";
                 break;
 
             case as2js::Node::link_t::LINK_GOTO_ENTER:
-                CPPUNIT_ASSERT(!"compiler does not use LINK_GOTO_ENTER");
+                link_name = "goto-enter";
                 break;
 
             case as2js::Node::link_t::LINK_max:
-                CPPUNIT_ASSERT(!"LINK_max reached when testing the link_node type");
+                CPPUNIT_ASSERT(!"LINK_max reached when getting the link type");
                 break;
 
             }
-        }
-        if(it_link != child_object.end())
-        {
-            // the children value must be an array
-            as2js::JSON::JSONValue::array_t const& array(it_link->second->get_array());
-            size_t const max_links(array.size());
+            bool direct(false);
+            as2js::JSON::JSONValue::object_t::const_iterator it_link(child_object.find(link_strings[link_idx]));
+            as2js::Node::pointer_t link_node(node->get_link(static_cast<as2js::Node::link_t>(link_idx)));
             if(link_node)
             {
-                if(verbose && max_links != link_node->get_children_size())
+                // make sure root node is of the right type
+                // Why did I write this that way? The types from the time
+                // we created the tree in the parser are still around...
+                switch(static_cast<as2js::Node::link_t>(link_idx))
                 {
-                    std::cerr << "   Expecting " << max_links << " " << link_name << ", we have " << link_node->get_children_size() << " in the node\n";
+                case as2js::Node::link_t::LINK_INSTANCE:
+                    direct = true;
+//std::cerr << "Instance [" << *link_node << "]\n";
+                    //CPPUNIT_ASSERT(!"compiler does not use LINK_INSTANCE");
+                    break;
+
+                case as2js::Node::link_t::LINK_TYPE:
+                    direct = true;
+//std::cerr << "Type [" << *link_node << "]\n";
+                    //CPPUNIT_ASSERT(!"compiler does not use LINK_TYPE");
+                    break;
+
+                case as2js::Node::link_t::LINK_ATTRIBUTES:
+                    direct = false;
+                    CPPUNIT_ASSERT(link_node->get_type() == as2js::Node::node_t::NODE_ATTRIBUTES);
+                    break;
+
+                case as2js::Node::link_t::LINK_GOTO_EXIT:
+                    CPPUNIT_ASSERT(!"compiler does not use LINK_GOTO_EXIT");
+                    break;
+
+                case as2js::Node::link_t::LINK_GOTO_ENTER:
+                    CPPUNIT_ASSERT(!"compiler does not use LINK_GOTO_ENTER");
+                    break;
+
+                case as2js::Node::link_t::LINK_max:
+                    CPPUNIT_ASSERT(!"LINK_max reached when testing the link_node type");
+                    break;
+
                 }
-                CPPUNIT_ASSERT(max_links == link_node->get_children_size());
-                for(size_t idx(0); idx < max_links; ++idx)
+            }
+            if(it_link != child_object.end())
+            {
+                // the children value must be an array
+                as2js::JSON::JSONValue::array_t const& array(it_link->second->get_array());
+                size_t const max_links(array.size());
+                if(link_node)
                 {
-                    as2js::JSON::JSONValue::pointer_t link_value(array[idx]);
-                    verify_result(link_value, link_node->get_child(idx), verbose); // recursive
+                    if(direct)
+                    {
+                        if(verbose && max_links != 1)
+                        {
+                            std::cerr << "   Expecting " << max_links << " " << link_name << ", we always have 1 in the node (direct)\n";
+                        }
+                        CPPUNIT_ASSERT(max_links == 1);
+                        as2js::JSON::JSONValue::pointer_t link_value(array[0]);
+                        verify_result(link_value, link_node, verbose, true); // recursive
+                    }
+                    else
+                    {
+                        if(verbose && max_links != link_node->get_children_size())
+                        {
+                            std::cerr << "   Expecting " << max_links << " " << link_name << ", we have " << link_node->get_children_size() << " in the node\n";
+                        }
+                        CPPUNIT_ASSERT(max_links == link_node->get_children_size());
+                        for(size_t idx(0); idx < max_links; ++idx)
+                        {
+                            as2js::JSON::JSONValue::pointer_t link_value(array[idx]);
+                            verify_result(link_value, link_node->get_child(idx), verbose, false); // recursive
+                        }
+                    }
+                }
+                else
+                {
+                    if(verbose && max_links != 0)
+                    {
+                        std::cerr << "   Expecting " << max_links << " " << link_name << ", we have no " << link_name << " at all in the node\n";
+                    }
+                    CPPUNIT_ASSERT(max_links == 0);
                 }
             }
             else
             {
-                if(verbose && max_links != 0)
+                // no children defined in the JSON, no children expected in the node
+                if(verbose && link_node && link_node->get_children_size() != 0)
                 {
-                    std::cerr << "   Expecting " << max_links << " " << link_name << ", we have no " << link_name << " at all in the node\n";
+                    std::cerr << "   Expecting no " << link_name << " list, we have " << link_node->get_children_size() << " " << link_name << " in the node\n";
                 }
-                CPPUNIT_ASSERT(max_links == 0);
+                CPPUNIT_ASSERT(!link_node || link_node->get_children_size() == 0);
+            }
+        }
+
+        as2js::JSON::JSONValue::object_t::const_iterator it_children(child_object.find(children_string));
+        if(it_children != child_object.end())
+        {
+            // the children value must be an array
+            as2js::JSON::JSONValue::array_t const& array(it_children->second->get_array());
+            size_t const max_children(array.size());
+            if(verbose && max_children != node->get_children_size())
+            {
+                std::cerr << "   Expecting " << max_children << " children, we have " << node->get_children_size() << " in the node\n";
+            }
+            CPPUNIT_ASSERT(max_children == node->get_children_size());
+            for(size_t idx(0); idx < max_children; ++idx)
+            {
+                as2js::JSON::JSONValue::pointer_t children_value(array[idx]);
+                verify_result(children_value, node->get_child(idx), verbose, false); // recursive
             }
         }
         else
         {
             // no children defined in the JSON, no children expected in the node
-            if(verbose && link_node && link_node->get_children_size() != 0)
+            if(verbose && node->get_children_size() != 0)
             {
-                std::cerr << "   Expecting no " << link_name << " list, we have " << link_node->get_children_size() << " " << link_name << " in the node\n";
+                std::cerr << "   Expecting no children, we have " << node->get_children_size() << " in the node\n";
             }
-            CPPUNIT_ASSERT(!link_node || link_node->get_children_size() == 0);
+            CPPUNIT_ASSERT(node->get_children_size() == 0);
         }
-    }
-
-    as2js::JSON::JSONValue::object_t::const_iterator it_children(child_object.find(children_string));
-    if(it_children != child_object.end())
-    {
-        // the children value must be an array
-        as2js::JSON::JSONValue::array_t const& array(it_children->second->get_array());
-        size_t const max_children(array.size());
-        if(verbose && max_children != node->get_children_size())
-        {
-            std::cerr << "   Expecting " << max_children << " children, we have " << node->get_children_size() << " in the node\n";
-        }
-        CPPUNIT_ASSERT(max_children == node->get_children_size());
-        for(size_t idx(0); idx < max_children; ++idx)
-        {
-            as2js::JSON::JSONValue::pointer_t children_value(array[idx]);
-            verify_result(children_value, node->get_child(idx), verbose); // recursive
-        }
-    }
-    else
-    {
-        // no children defined in the JSON, no children expected in the node
-        if(verbose && node->get_children_size() != 0)
-        {
-            std::cerr << "   Expecting no children, we have " << node->get_children_size() << " in the node\n";
-        }
-        CPPUNIT_ASSERT(node->get_children_size() == 0);
     }
 }
 
@@ -1166,7 +1206,14 @@ void init_rc(bool bad_script = false)
           "  'temporary_variable_name': '@temp$'\n"
           "}\n";
 
-    CPPUNIT_ASSERT(mkdir("as2js", 0700) == 0);
+    if(mkdir("as2js", 0700) != 0)
+    {
+        if(errno != EEXIST)
+        {
+            CPPUNIT_ASSERT(!"could not create directory as2js");
+        }
+        // else -- we already created it, that's fine
+    }
     as2js::FileOutput output;
     CPPUNIT_ASSERT(output.open("as2js/as2js.rc"));
     output.write(rc);
@@ -1334,7 +1381,11 @@ void run_tests(char const *data, char const *filename)
 
             // verify the parser result, that way we can make sure we are
             // testing the tree we want to test with the compiler
-            verify_result(prog.find(parser_result_string)->second, root, verbose);
+            if(verbose)
+            {
+                std::cerr << "\n";
+            }
+            verify_result(prog.find(parser_result_string)->second, root, verbose, false);
 
             test_callback tc(verbose, false);
 
@@ -1451,16 +1502,17 @@ found_option:
                 }
             }
 
-std::cerr << "Now compile...\n";
+//std::cerr << "Now compile...\n";
             // run the compiler
             as2js::Compiler compiler(options);
             compiler.compile(root);
+//std::cerr << "Compiler returned!...\n" << *root;
 
             tc.got_called();
 
             // the result is object which can have children
             // which are represented by an array of objects
-            verify_result(prog.find(compiler_result_string)->second, root, verbose);
+            verify_result(prog.find(compiler_result_string)->second, root, verbose, false);
         }
 
         std::cout << " OK\n";

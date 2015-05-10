@@ -201,22 +201,33 @@ void Compiler::variable(Node::pointer_t variable_node, bool const side_effects_o
                 else if(set == 0
                      && (!side_effects_only || expr->has_side_effects()))
                 {
-                    expression(expr);
                     variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_COMPILED, true);
                     variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
+                    expression(expr);
                 }
                 ++set;
             }
             break;
 
-        default:
+        case Node::node_t::NODE_TYPE:
             // define the variable type in this case
-            expression(child);
-            if(!variable_node->get_link(Node::link_t::LINK_TYPE))
             {
-                variable_node->set_link(Node::link_t::LINK_TYPE, child->get_link(Node::link_t::LINK_INSTANCE));
+                variable_node->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_COMPILED, true);
+
+                Node::pointer_t expr(child->get_child(0));
+                expression(expr);
+                if(!variable_node->get_link(Node::link_t::LINK_TYPE))
+                {
+                    ln.unlock();
+                    variable_node->set_link(Node::link_t::LINK_TYPE, child->get_link(Node::link_t::LINK_INSTANCE));
+                }
             }
             break;
+
+        default:
+            Message msg(message_level_t::MESSAGE_LEVEL_FATAL, err_code_t::AS_ERR_INTERNAL_ERROR, variable_node->get_position());
+            msg << "variable has a child node of an unknown type.";
+            throw exception_exit(1, "variable has a child node of an unknown type.");
 
         }
     }

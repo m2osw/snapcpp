@@ -221,7 +221,8 @@ bool Compiler::find_module(String const& filename, Node::pointer_t& result)
     parser.reset();
 
 #if 0
-std::cerr << "+++++\n \"" << filename << "\" module:\n" << *result << "\n+++++\n";
+//std::cerr << "+++++\n \"" << filename << "\" module:\n" << *result << "\n+++++\n";
+std::cerr << "+++++++++++++++++++++++++++ Loading \"" << filename << "\" +++++++++++++++++++++++++++++++\n";
 #endif
 
     if(!result)
@@ -488,7 +489,7 @@ void Compiler::import(Node::pointer_t& import_node)
     // make sure it is compiled (once)
     bool const was_referenced(package->get_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED));
     package->set_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED, true);
-    if(was_referenced)
+    if(!was_referenced)
     {
         directive_list(package);
     }
@@ -540,7 +541,7 @@ bool Compiler::find_external_package(Node::pointer_t import_node, String const& 
         return false;
     }
 
-    String filename(e->get_filename());
+    String const filename(e->get_filename());
 
     // found it, lets get a node for it
     find_module(filename, program_node);
@@ -558,16 +559,14 @@ bool Compiler::find_external_package(Node::pointer_t import_node, String const& 
 
 bool Compiler::check_import(Node::pointer_t& import_node, Node::pointer_t& resolution, String const& name, Node::pointer_t params, int search_flags)
 {
-//fprintf(stderr, "CheckImport(... [%.*S] ..., %d)\n", name.GetLength(), name.Get(), search_flags);
     // search for a package within this program
-    // (I'm not too sure, but according to the spec. you can very well
+    // (I am not too sure, but according to the spec. you can very well
     // have a package within any script file)
     if(find_package_item(f_program, import_node, resolution, name, params, search_flags))
     {
         return true;
     }
 
-//fprintf(stderr, "Search for an external package instead.\n");
     Node::pointer_t program_node;
     if(!find_external_package(import_node, name, program_node))
     {
@@ -660,9 +659,9 @@ bool Compiler::find_package_item(Node::pointer_t program_node, Node::pointer_t i
     }
 
     // make sure it is compiled (once)
-    bool was_referenced(package_node->get_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED));
+    bool const was_referenced(package_node->get_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED));
     package_node->set_flag(Node::flag_t::NODE_PACKAGE_FLAG_REFERENCED, true);
-    if(was_referenced)
+    if(!was_referenced)
     {
         directive_list(package_node);
     }
@@ -736,16 +735,16 @@ bool Compiler::check_name(Node::pointer_t list, int idx, Node::pointer_t& resolu
     //}
 
     bool result = false;
-std::cerr << "compiler_package.cpp: check_name() \"function\" child node = " << child.get() << " -> " << child->get_type_name();
-if(child->get_type() == Node::node_t::NODE_CLASS
-|| child->get_type() == Node::node_t::NODE_PACKAGE
-|| child->get_type() == Node::node_t::NODE_IMPORT
-|| child->get_type() == Node::node_t::NODE_ENUM
-|| child->get_type() == Node::node_t::NODE_FUNCTION)
-{
-    std::cerr << " \"" << child->get_string() << "\"";
-}
-std::cerr << "\n";
+//std::cerr << "  +--> compiler_package.cpp: check_name() processing a child node type: \"" << child->get_type_name() << "\" ";
+//if(child->get_type() == Node::node_t::NODE_CLASS
+//|| child->get_type() == Node::node_t::NODE_PACKAGE
+//|| child->get_type() == Node::node_t::NODE_IMPORT
+//|| child->get_type() == Node::node_t::NODE_ENUM
+//|| child->get_type() == Node::node_t::NODE_FUNCTION)
+//{
+//    std::cerr << " \"" << child->get_string() << "\"";
+//}
+//std::cerr << "\n";
     switch(child->get_type())
     {
     case Node::node_t::NODE_VAR:    // a VAR is composed of VARIABLEs
@@ -757,7 +756,7 @@ std::cerr << "\n";
                 Node::pointer_t variable_node(child->get_child(j));
                 if(variable_node->get_string() == id->get_string())
                 {
-                    // that's a variable!
+                    // that is a variable!
                     // make sure it was parsed
                     if((search_flags & SEARCH_FLAG_NO_PARSING) == 0)
                     {
@@ -778,7 +777,7 @@ std::cerr << "\n";
         break;
 
     case Node::node_t::NODE_PARAM:
-std::cerr << "  +--> param = " << child->get_string() << " against " << id->get_string() << "\n";
+//std::cerr << "  +--> param = " << child->get_string() << " against " << id->get_string() << "\n";
         if(child->get_string() == id->get_string())
         {
             resolution = child;
@@ -788,7 +787,7 @@ std::cerr << "  +--> param = " << child->get_string() << " against " << id->get_
         break;
 
     case Node::node_t::NODE_FUNCTION:
-std::cerr << "  +--> name = " << child->get_string() << "\n";
+//std::cerr << "  +--> name = " << child->get_string() << "\n";
         {
             Node::pointer_t the_class;
             if(is_constructor(child, the_class))
@@ -805,7 +804,7 @@ std::cerr << "  +--> name = " << child->get_string() << "\n";
                     child = the_class;
                     resolution = the_class;
                     result = true;
-std::cerr << "  +--> this was a class! = " << child->get_string() << "\n";
+//std::cerr << "  +--> this was a class! => " << child->get_string() << "\n";
                 }
             }
             else
@@ -822,9 +821,11 @@ std::cerr << "  +--> this was a class! = " << child->get_string() << "\n";
             // That is a class name! (good for a typedef, etc.)
             resolution = child;
             Node::pointer_t type(resolution->get_link(Node::link_t::LINK_TYPE));
-std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type ptr" : "no current type ptr") << "]\n";
+//std::cerr << "  +--> so we got a type of CLASS or INTERFACE for " << id->get_string()
+//          << " ... [" << (type ? "has a current type ptr" : "no current type ptr") << "]\n";
             if(!type)
             {
+                // A class (interface) represents itself as far as type goes (TBD)
                 resolution->set_link(Node::link_t::LINK_TYPE, child);
             }
             resolution->set_flag(Node::flag_t::NODE_IDENTIFIER_FLAG_TYPED, true);
@@ -838,8 +839,8 @@ std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type 
         // is being referenced (i.e. the type)
         if(child->get_string() == id->get_string())
         {
-            resolution = list;
-            resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
+            resolution = child;
+            resolution->set_flag(Node::flag_t::NODE_ENUM_FLAG_INUSE, true);
             return true;
         }
 
@@ -850,12 +851,16 @@ std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type 
         for(size_t j(0); j < max; ++j)
         {
             Node::pointer_t entry(child->get_child(j));
-            if(entry->get_string() == id->get_string())
+            if(entry->get_type() == Node::node_t::NODE_VARIABLE)
             {
-                // this can't be a function, right?
-                resolution = entry;
-                resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
-                return true;
+                if(entry->get_string() == id->get_string())
+                {
+                    // this cannot be a function, right? so the following
+                    // call is probably not really useful
+                    resolution = entry;
+                    resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
+                    return true;
+                }
             }
         }
     }
@@ -921,10 +926,11 @@ std::cerr << "  +--> so we got an instance... [" << (type ? "has a current type 
         return true;
     }
 
-std::cerr << "  +--> yeah! resolved ID " << reinterpret_cast<long *>(resolution.get()) << "\n";
+//std::cerr << "  +--> yeah! resolved ID " << reinterpret_cast<long *>(resolution.get()) << "\n";
+//std::cerr << "  +--> check_name(): private?\n";
     if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_PRIVATE))
     {
-std::cerr << "  +--> resolved private...\n";
+//std::cerr << "  +--> check_name(): resolved private...\n";
         // Note that an interface and a package
         // can also have private members
         Node::pointer_t the_resolution_class(class_of_member(resolution));
@@ -964,7 +970,7 @@ std::cerr << "  +--> resolved private...\n";
 
     if(get_attribute(resolution, Node::attribute_t::NODE_ATTR_PROTECTED))
     {
-std::cerr << "  +--> resolved protected...\n";
+//std::cerr << "  +--> check_name(): resolved protected...\n";
         // Note that an interface can also have protected members
         Node::pointer_t the_super_class;
         if(!are_objects_derived_from_one_another(id, resolution, the_super_class))
@@ -986,7 +992,7 @@ std::cerr << "  +--> resolved protected...\n";
 
     if(child->get_type() == Node::node_t::NODE_FUNCTION && params)
     {
-std::cerr << "  +--> resolved function...\n";
+//std::cerr << "  +--> check_name(): resolved function...\n";
         if(check_function_with_params(child, params) < 0)
         {
             resolution.reset();
@@ -1017,14 +1023,12 @@ void Compiler::resolve_internal_type(Node::pointer_t parent, char const *type, N
         //       definitions since this is only used for native types
         //       (i.e. Object, Boolean, etc.)
         NodeLock ln(parent);
-std::cerr << "Resolve internal name [" << type << "]\n";
         r = resolve_name(parent, id, resolution, Node::pointer_t(), 0);
     }
 
     // get rid of the temporary identifier
     //parent->delete_child(idx);
 
-std::cerr << "  +--> internal name resolution [" << r << "]\n";
     if(!r)
     {
         // if the compiler cannot find an internal type, that is really bad!
@@ -1045,19 +1049,42 @@ bool Compiler::resolve_name(
             int const search_flags
         )
 {
-std::cerr << "resolve_name(..." << id->get_string() << "...);\n";
+//std::cerr << " +++ resolve_name()\n";
     RestoreFlags restore_flags(this);
 
     // just in case the caller is reusing the same node
     resolution.reset();
 
+    // resolution may includes a member (a.b) and the resolution is the
+    // last field name
+    Node::node_t id_type(id->get_type());
+    if(id_type == Node::node_t::NODE_MEMBER)
+    {
+        if(id->get_children_size() != 2)
+        {
+            throw exception_internal_error(std::string("compiler_package:Compiler::resolve_name() called with a MEMBER which does not have exactly two children."));
+        }
+        // child 0 is the variable name, child 1 is the field name
+        Node::pointer_t name(id->get_child(0));
+        if(!resolve_name(list, name, resolution, params, search_flags))  // recursive
+        {
+            // we could not find 'name' so we are hosed anyway
+            // the callee should already have generated an error
+            return false;
+        }
+        list = resolution;
+        resolution.reset();
+        id = id->get_child(1);
+        id_type = id->get_type();
+    }
+
     // in some cases we may want to resolve a name specified in a string
     // (i.e. test["me"])
-    if(id->get_type() != Node::node_t::NODE_IDENTIFIER
-    && id->get_type() != Node::node_t::NODE_VIDENTIFIER
-    && id->get_type() != Node::node_t::NODE_STRING)
+    if(id_type != Node::node_t::NODE_IDENTIFIER
+    && id_type != Node::node_t::NODE_VIDENTIFIER
+    && id_type != Node::node_t::NODE_STRING)
     {
-        throw exception_internal_error(std::string("Compiler::resolve_name() was called with an 'identifier node' which is not a NODE_[V]IDENTIFIER or NODE_STRING, it is ") + id->get_type_name());
+        throw exception_internal_error(std::string("compiler_package:Compiler::resolve_name() was called with an 'identifier node' which is not a NODE_[V]IDENTIFIER or NODE_STRING, it is ") + id->get_type_name());
     }
 
     // already typed?
@@ -1065,7 +1092,6 @@ std::cerr << "resolve_name(..." << id->get_string() << "...);\n";
         Node::pointer_t type(id->get_link(Node::link_t::LINK_TYPE));
         if(type)
         {
-std::cerr << "resolve_name() It already had a type...\n";
             resolution = type;
             return true;
         }
@@ -1106,7 +1132,6 @@ std::cerr << "resolve_name() It already had a type...\n";
         // For these reasons, we can start the following loop with
         // a get_parent() in all cases.
         //
-std::cerr << "Compiler::resolve_name(): Testing with module = " << module << "\n";
         if(module == 0)
         {
             // when we were inside the function parameter
@@ -1116,34 +1141,32 @@ std::cerr << "Compiler::resolve_name(): Testing with module = " << module << "\n
             // search is allowed in that list)
             if(list->get_type() == Node::node_t::NODE_PARAMETERS)
             {
-//std::cerr << "Skipping parameters?!\n";
                 list = list->get_parent();
                 if(!list)
                 {
-                    throw exception_internal_error("Compiler::resolve_name() got a NULL parent without finding NODE_ROOT first (NODE_PARAMETERS).");
+                    throw exception_internal_error("compiler_package:Compiler::resolve_name() got a NULL parent without finding NODE_ROOT first (NODE_PARAMETERS).");
                 }
             }
 
-std::cerr << "  +--> get parent we like...\n";
             for(bool more(true); more; )
             {
                 offset = list->get_offset();
                 list = list->get_parent();
                 if(!list)
                 {
-                    throw exception_internal_error("Compiler::resolve_name() got a NULL parent without finding NODE_ROOT first.");
+                    throw exception_internal_error("compiler_package:Compiler::resolve_name() got a nullptr parent without finding NODE_ROOT first.");
                 }
                 switch(list->get_type())
                 {
                 case Node::node_t::NODE_ROOT:
-                    throw exception_internal_error("Compiler::resolve_name() found the NODE_ROOT while searching for a parent.");
+                    throw exception_internal_error("compiler_package:Compiler::resolve_name() found the NODE_ROOT while searching for a parent.");
 
                 case Node::node_t::NODE_EXTENDS:
                 case Node::node_t::NODE_IMPLEMENTS:
                     list = list->get_parent();
                     if(!list)
                     {
-                        throw exception_internal_error("Compiler::resolve_name() got a NULL parent without finding NODE_ROOT first (NODE_EXTENDS/NODE_IMPLEMENTS).");
+                        throw exception_internal_error("compiler_package:Compiler::resolve_name() got a nullptr parent without finding NODE_ROOT first (NODE_EXTENDS/NODE_IMPLEMENTS).");
                     }
                     break;
 
@@ -1176,7 +1199,6 @@ std::cerr << "  +--> get parent we like...\n";
             {
             case 0:
                 module = 1;
-if(list) std::cerr << "  +--> check global modules\n";
                 if(g_global_import
                 && g_global_import->get_children_size() > 0)
                 {
@@ -1186,7 +1208,6 @@ if(list) std::cerr << "  +--> check global modules\n";
                 /*FALLTHROUGH*/
             case 1:
                 module = 2;
-if(list) std::cerr << "  +--> check import modules\n";
                 if(g_system_import
                 && g_system_import->get_children_size() > 0)
                 {
@@ -1196,7 +1217,6 @@ if(list) std::cerr << "  +--> check import modules\n";
                 /*FALLTHROUGH*/
             case 2:
                 module = 3;
-if(list) std::cerr << "  +--> check native modules\n";
                 if(g_native_import
                 && g_native_import->get_children_size() > 0)
                 {
@@ -1207,14 +1227,10 @@ if(list) std::cerr << "  +--> check native modules\n";
             case 3:
                 // no more default list of directives...
                 module = 4;
-if(list) std::cerr << "  +--> no more modules\n";
                 break;
 
             }
-            // TODO: here somehow we change the list parameter, but
-            //       not the offset; I am now thinking it should be
-            //       reset to zero:
-            //offset = 0;
+            offset = 0;
         }
         if(module == 4)
         {
@@ -1230,7 +1246,7 @@ if(list) std::cerr << "  +--> no more modules\n";
         {
         case Node::node_t::NODE_DIRECTIVE_LIST:
         {
-            // okay! we've got a list of directives
+            // okay! we have got a list of directives
             // backward loop up first since in 99% of cases that
             // will be enough...
             if(offset >= max_children)
@@ -1241,7 +1257,6 @@ if(list) std::cerr << "  +--> no more modules\n";
             while(idx > 0)
             {
                 idx--;
-std::cerr << "Compiler::resolve_name(): checking directive list " << idx << "\n";
                 if(check_name(list, idx, resolution, id, params, search_flags))
                 {
                     if(funcs_name(funcs, resolution))
@@ -1259,7 +1274,7 @@ std::cerr << "Compiler::resolve_name(): checking directive list " << idx << "\n"
                 if(check_name(list, idx, resolution, id, params, search_flags))
                 {
                     // TODO: if it is a variable it needs
-                    //     to be a constant...
+                    //       to be a constant...
                     if(funcs_name(funcs, resolution))
                     {
                         return true;
@@ -1342,7 +1357,6 @@ std::cerr << "Compiler::resolve_name(): checking directive list " << idx << "\n"
             // declarations
             if(!id->get_attribute(Node::attribute_t::NODE_ATTR_TYPE))
             {
-std::cerr << "Compiler::resolve_name(): ---->>> Search list of function children (" << max_children << ") when resolving return type?!\n";
                 // search the list of parameters for a corresponding name
                 for(size_t idx(0); idx < max_children; ++idx)
                 {
@@ -1357,11 +1371,6 @@ std::cerr << "Compiler::resolve_name(): ---->>> Search list of function children
                             {
                                 if(funcs_name(funcs, resolution))
                                 {
-#if 0
-fprintf(stderr, "DEBUG: in a FUNCTION resolution is = ");
-resolution.DisplayPtr(stderr);
-fprintf(stderr, "\n");
-#endif
                                     return true;
                                 }
                             }
@@ -1424,7 +1433,7 @@ fprintf(stderr, "\n");
             if(id->get_string() == list->get_string())
             {
                 resolution = list;
-                resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
+                resolution->set_flag(Node::flag_t::NODE_ENUM_FLAG_INUSE, true);
                 return true;
             }
 
@@ -1437,22 +1446,26 @@ fprintf(stderr, "\n");
             for(size_t idx(0); idx < max_children; ++idx)
             {
                 Node::pointer_t entry(list->get_child(idx));
-                if(id->get_string() == entry->get_string())
+                if(entry->get_type() == Node::node_t::NODE_VARIABLE)
                 {
-                    // this can't be a function, right?
-                    resolution = entry;
-                    if(funcs_name(funcs, resolution))
+                    if(id->get_string() == entry->get_string())
                     {
-                        resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
-                        return true;
+                        // this cannot be a function, right? so the following
+                        // call is probably not really useful
+                        resolution = entry;
+                        if(funcs_name(funcs, resolution))
+                        {
+                            resolution->set_flag(Node::flag_t::NODE_VARIABLE_FLAG_INUSE, true);
+                            return true;
+                        }
                     }
                 }
+                // else -- probably a NODE_TYPE
             }
             break;
 
         case Node::node_t::NODE_CLASS:
         case Node::node_t::NODE_INTERFACE:
-std::cerr << "Compiler::resolve_name(): What about returning a class as the type?! " << list->get_string() << "\n";
             // // if the ID is a type and the name is the same as the
             // // class name, then we are found what we were looking for
             // if(id->get_attribute(Node::attribute_t::NODE_ATTR_TYPE)
@@ -1474,7 +1487,7 @@ std::cerr << "Compiler::resolve_name(): What about returning a class as the type
         default:
             // this could happen if our tree was to change and we do not
             // properly update this function
-            throw exception_internal_error("unhandled type in Compiler::resolve_name()");
+            throw exception_internal_error("compiler_package: unhandled type in Compiler::resolve_name()");
 
         }
     }

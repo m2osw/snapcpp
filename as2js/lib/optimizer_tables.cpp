@@ -171,9 +171,9 @@ bool apply_optimization(Node::pointer_t& node, optimization_entry_t const *entry
     node_pointer_vector_t node_array;
     if(match_tree(node_array, node, entry->f_match, entry->f_match_count, 0))
     {
-#if defined(_DEBUG) || defined(DEBUG)
-        std::cout << "Optimize with: " << entry->f_name << "\n";
-#endif
+//#if defined(_DEBUG) || defined(DEBUG)
+//        std::cout << "Optimize with: " << entry->f_name << "\n";
+//#endif
         Node::pointer_t parent(node->get_parent());
         if(!parent)
         {

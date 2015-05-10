@@ -66,8 +66,6 @@ void Compiler::with(Node::pointer_t& with_node)
         msg << "'with' cannot use 'this' as an object.";
     }
 
-//fprintf(stderr, "Resolving WITH object...\n");
-
     expression(object);
 
     // we create two nodes; one so we know we have a WITH instruction
@@ -365,7 +363,7 @@ void Compiler::if_directive(Node::pointer_t& if_node)
     // TBD: check whether the first expression
     //      is a valid boolean? (for strict mode
     //      maybe, but JavaScript is very lax on
-    //      just like C/C++)
+    //      that just like C/C++)
     expression(if_node->get_child(0));
     directive_list(if_node->get_child(1));
     if(max_children == 3)
@@ -463,18 +461,18 @@ void Compiler::break_continue(Node::pointer_t& break_node)
                 if(found_switch)
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_IMPROPER_STATEMENT, break_node->get_position());
-                    msg << "you cannot use a continue statement outside a loop (and you need a label to make it work with a switch statement).";
+                    msg << "you cannot use a 'continue' statement outside a loop (and you need a label to make it work with a 'switch' statement).";
                 }
                 else
                 {
                     Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_IMPROPER_STATEMENT, break_node->get_position());
-                    msg << "you cannot use a break or continue instruction outside a loop or switch statement.";
+                    msg << "you cannot use a 'break' or 'continue' instruction outside a loop or 'switch' statement.";
                 }
             }
             else
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_LABEL_NOT_FOUND, break_node->get_position());
-                msg << "could not find a loop or switch statement labelled '" << break_node->get_string() << "' for this break or continue.";
+                msg << "could not find a loop or 'switch' statement labelled '" << break_node->get_string() << "' for this 'break' or 'continue'.";
             }
             return;
         }
@@ -516,18 +514,15 @@ void Compiler::try_directive(Node::pointer_t& try_node)
 
     // we want to make sure that we are followed
     // by a catch or a finally
-    Node::pointer_t parent(try_node->get_parent());
     bool correct(false);
+    Node::pointer_t parent(try_node->get_parent());
     size_t const max_parent_children(parent->get_children_size());
     size_t const offset(static_cast<size_t>(try_node->get_offset()) + 1);
     if(offset < max_parent_children)
     {
         Node::pointer_t next(parent->get_child(offset));
-        if(next->get_type() == Node::node_t::NODE_CATCH
-        || next->get_type() == Node::node_t::NODE_FINALLY)
-        {
-            correct = true;
-        }
+        correct = next->get_type() == Node::node_t::NODE_CATCH
+               || next->get_type() == Node::node_t::NODE_FINALLY;
     }
     if(!correct)
     {
@@ -547,8 +542,8 @@ void Compiler::catch_directive(Node::pointer_t& catch_node)
     }
 
     // we want to make sure that we are preceded by a try
-    Node::pointer_t parent(catch_node->get_parent());
     bool correct(false);
+    Node::pointer_t parent(catch_node->get_parent());
     int32_t const offset(catch_node->get_offset());
     if(offset > 0)
     {
@@ -595,18 +590,15 @@ void Compiler::finally(Node::pointer_t& finally_node)
         return;
     }
 
-    // we want to make sure that we are preceded by a try or a catch
-    Node::pointer_t parent(finally_node->get_parent());
+    // we want to make sure that we are preceeded by a try or a catch
     bool correct(false);
+    Node::pointer_t parent(finally_node->get_parent());
     int32_t const offset(finally_node->get_offset());
     if(offset > 0)
     {
         Node::pointer_t prev(parent->get_child(offset - 1));
-        if(prev->get_type() == Node::node_t::NODE_TRY
-        || prev->get_type() == Node::node_t::NODE_CATCH)
-        {
-            correct = true;
-        }
+        correct = prev->get_type() == Node::node_t::NODE_TRY
+               || prev->get_type() == Node::node_t::NODE_CATCH;
     }
     if(!correct)
     {
@@ -683,7 +675,7 @@ Node::pointer_t Compiler::return_directive(Node::pointer_t return_node)
             || is_constructor(function_node, the_class))
             {
                 Message msg(message_level_t::MESSAGE_LEVEL_ERROR, err_code_t::AS_ERR_IMPROPER_STATEMENT, return_node->get_position());
-                msg << "'return' was used with an expression inside '" << function_node->get_string() << "', a function returning Void.";
+                msg << "'return' was used with an expression inside '" << function_node->get_string() << "', a function returning Void or a constructor.";
             }
             expression(return_node->get_child(0));
         }

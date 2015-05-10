@@ -38,10 +38,10 @@ native package Native
 
 class Array extends Object
 {
-    function Array(Void) : Array;
-    function Array(var in value: Array) : Array;
-    function Array(var in len: Number) : Array;
-    function Array(var in ... items: Object) : Array;
+    function Array(Void) : Void;
+    function Array(var in value: Array) : Void;
+    function Array(var in len: Number) : Void;
+    function Array(var in ... items: Object) : Void;
 
     static function isArray(var in arg: Object) : Boolean;
 
@@ -61,7 +61,7 @@ class Array extends Object
     function reverse(Void) : Array;
     function shift(Void) : Object;
     function slice(var in start: Number, var in end: Number) : Array;
-    function sort(var in comparefn: function(var in j: Number, var in k: Number) : CompareResult := undefined) : Array;
+    function sort(var in comparefn: function(var in j: Number, var in k: Number) : Object.CompareResult := undefined) : Array;
     function splice(var in start: Number, var in deleteCount: Number, var in ... items: Object) : Array;
     function unshift(var in ... items: Object) : Number;
     function indexOf(var in searchElement: Object, var in fromIndex: Number := undefined) : Number;

@@ -115,10 +115,14 @@ void As2JsNodeUnitTests::test_display_all_types()
             expected << ": " << node->get_float64().get();
             break;
 
+        case as2js::Node::node_t::NODE_PARAM:
+            output_str(expected, node->get_string());
+            expected << ":";
+            break;
+
         case as2js::Node::node_t::NODE_CATCH:
         case as2js::Node::node_t::NODE_DIRECTIVE_LIST:
         case as2js::Node::node_t::NODE_FOR:
-        case as2js::Node::node_t::NODE_PARAM:
         case as2js::Node::node_t::NODE_PARAM_MATCH:
         case as2js::Node::node_t::NODE_SWITCH:
         case as2js::Node::node_t::NODE_TYPE:

@@ -168,6 +168,7 @@ void Node::verify_flag(flag_t f) const
         break;
 
     case flag_t::NODE_ENUM_FLAG_CLASS:
+    case flag_t::NODE_ENUM_FLAG_INUSE:
         if(f_type == node_t::NODE_ENUM)
         {
             return;
@@ -287,7 +288,8 @@ void Node::verify_flag(flag_t f) const
 
     // since we do not use 'default' completely invalid values are not caught
     // in the switch...
-    throw exception_internal_error("flag / type missmatch in Node::verify_flag()");
+    throw exception_internal_error("node_flag.cpp: Node::verify_flag(): flag (" + std::to_string(static_cast<int>(f))
+                                                        + ") / type missmatch (" + std::to_string(static_cast<int>(static_cast<node_t>(f_type))) + ")");
 }
 
 

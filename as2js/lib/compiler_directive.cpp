@@ -88,7 +88,8 @@ child.DisplayPtr(stderr);
 fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
 #endif
 
-            switch(child->get_type()) {
+            switch(child->get_type())
+            {
             case Node::node_t::NODE_PACKAGE:
                 // there is nothing to do on those
                 // until users reference them...
@@ -262,7 +263,10 @@ fprintf(stderr, " (%d + 1 of %d)\n", idx, max);
         }
     }
 
-    if(directive_list_node->get_flag(Node::flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES))
+    // The node may be a PACKAGE node in which case the "new variables"
+    // does not apply (TODO: make sure of that!)
+    if(directive_list_node->get_type() == Node::node_t::NODE_DIRECTIVE_LIST
+    && directive_list_node->get_flag(Node::flag_t::NODE_DIRECTIVE_LIST_FLAG_NEW_VARIABLES))
     {
         size_t const max_variables(directive_list_node->get_variable_size());
         for(size_t idx(0); idx < max_variables; ++idx)

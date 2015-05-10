@@ -274,11 +274,7 @@ void Node::display_data(std::ostream& out) const
         break;
 
     case node_t::NODE_PARAM:
-        // THIS SEEMS WRONG, We do not save a string in
-        // the NODE_PARAM; so either it is wrong here or
-        // we miss the necessary call(s) when parsing the
-        // function list of parameters
-        //sub_function::display_str(out, f_str);
+        sub_function::display_str(out, f_str);
         out << ":";
         if(f_flags[static_cast<size_t>(flag_t::NODE_PARAM_FLAG_CONST)])
         {

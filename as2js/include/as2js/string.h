@@ -70,35 +70,41 @@ public:
     };
 
                             String();
-                            String(char const *str, int len = -1);
-                            String(wchar_t const *str, int len = -1);
-                            String(as_char_t const *str, int len = -1);
-                            String(std::string const& str);
-                            String(std::wstring const& str);
-                            String(std::basic_string<as_char_t> const& str);
+                            String(char const * str, int len = -1);
+                            String(wchar_t const * str, int len = -1);
+                            String(as_char_t const * str, int len = -1);
+                            String(std::string const & str);
+                            String(std::wstring const & str);
+                            String(std::basic_string<as_char_t> const & str);
 
-    String&                 operator = (char const *str);
-    String&                 operator = (wchar_t const *str);
-    String&                 operator = (as_char_t const *str);
-    String&                 operator = (std::string const& str);
-    String&                 operator = (std::wstring const& str);
-    String&                 operator = (std::basic_string<as_char_t> const& str);
+    String&                 operator = (char const * str);
+    String&                 operator = (wchar_t const * str);
+    String&                 operator = (as_char_t const * str);
+    String&                 operator = (std::string const & str);
+    String&                 operator = (std::wstring const & str);
+    String&                 operator = (std::basic_string<as_char_t> const & str);
 
-    bool                    operator == (char const *str) const;
-    friend bool             operator == (char const *str, String const& string);
-    bool                    operator != (char const *str) const;
-    friend bool             operator != (char const *str, String const& string);
+    bool                    operator == (char const * str) const;
+    friend bool             operator == (char const * str, String const & string);
+    bool                    operator != (char const * str) const;
+    friend bool             operator != (char const * str, String const & string);
 
-    String&                 operator += (char const *str);
-    String&                 operator += (wchar_t const *str);
-    String&                 operator += (as_char_t const *str);
-    String&                 operator += (std::string const& str);
-    String&                 operator += (std::wstring const& str);
-    String&                 operator += (std::basic_string<as_char_t> const& str);
+    String &                operator += (char const * str);
+    String &                operator += (wchar_t const * str);
+    String &                operator += (as_char_t const * str);
+    String &                operator += (std::string const & str);
+    String &                operator += (std::wstring const & str);
+    String &                operator += (std::basic_string<as_char_t> const & str);
 
-    String&                 operator += (as_char_t const c);
-    String&                 operator += (char const c);
-    String&                 operator += (wchar_t const c);
+    String &                operator += (as_char_t const c);
+    String &                operator += (char const c);
+    String &                operator += (wchar_t const c);
+
+    String                  operator + (char const * str);
+    String                  operator + (wchar_t const * str);
+    String                  operator + (as_char_t const * str);
+    String                  operator + (std::string const & str);
+    String                  operator + (std::wstring const & str);
 
     bool                    valid() const;
     static bool             valid_character(as_char_t c);
@@ -110,10 +116,10 @@ public:
     Float64::float64_type   to_float64() const;
     bool                    is_true() const;
 
-    conversion_result_t     from_char(char const *str, int len = -1);
-    conversion_result_t     from_wchar(wchar_t const *str, int len = -1);
-    conversion_result_t     from_as_char(as_char_t const *str, int len = -1);
-    conversion_result_t     from_utf8(char const *str, int len = -1);
+    conversion_result_t     from_char(char const * str, int len = -1);
+    conversion_result_t     from_wchar(wchar_t const * str, int len = -1);
+    conversion_result_t     from_as_char(as_char_t const * str, int len = -1);
+    conversion_result_t     from_utf8(char const * str, int len = -1);
 
     ssize_t                 utf8_length() const;
     std::string             to_utf8() const;

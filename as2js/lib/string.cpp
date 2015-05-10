@@ -471,6 +471,102 @@ String& String::operator += (wchar_t const c)
 }
 
 
+/** \brief Concatenate a String and a C-string.
+ *
+ * This function concatenate this String and a standard C-string.
+ *
+ * \note
+ * This function creates a copy of the string. If you can, try to
+ * use the += operator instead.
+ *
+ * \param[in] str  The string to concatenate at the end of this String.
+ *
+ * \return A new string with the concatenated result.
+ */
+String String::operator + (char const * str)
+{
+    String result(*this);
+    return result += str;
+}
+
+
+/** \brief Concatenate a String and a wide C-string.
+ *
+ * This function concatenate this String and a standard wide C-string.
+ *
+ * \note
+ * This function creates a copy of the string. If you can, try to
+ * use the += operator instead.
+ *
+ * \param[in] str  The string to concatenate at the end of this String.
+ *
+ * \return A new string with the concatenated result.
+ */
+String String::operator + (wchar_t const * str)
+{
+    String result(*this);
+    return result += str;
+}
+
+
+/** \brief Concatenate a String and a C-like string made of as_char_t characters.
+ *
+ * This function concatenate this String and a C-link string made of
+ * as_char_t characters. The array must be null terminated (\0).
+ *
+ * \note
+ * This function creates a copy of the string. If you can, try to
+ * use the += operator instead.
+ *
+ * \param[in] str  The string to concatenate at the end of this String.
+ *
+ * \return A new string with the concatenated result.
+ */
+String String::operator + (as_char_t const * str)
+{
+    String result(*this);
+    return result += str;
+}
+
+
+/** \brief Concatenate a String and a C++ string.
+ *
+ * This function concatenate this String and a C++ string.
+ *
+ * \note
+ * This function creates a copy of the string. If you can, try to
+ * use the += operator instead.
+ *
+ * \param[in] str  The string to concatenate at the end of this String.
+ *
+ * \return A new string with the concatenated result.
+ */
+String String::operator + (std::string const & str)
+{
+    String result(*this);
+    return result += str;
+}
+
+
+/** \brief Concatenate a String and a C++ wide string.
+ *
+ * This function concatenate this String and a C++ wide string.
+ *
+ * \note
+ * This function creates a copy of the string. If you can, try to
+ * use the += operator instead.
+ *
+ * \param[in] str  The string to concatenate at the end of this String.
+ *
+ * \return A new string with the concatenated result.
+ */
+String String::operator + (std::wstring const & str)
+{
+    String result(*this);
+    return result += str;
+}
+
+
 /** \brief Copy a string in this String object.
  *
  * This function copies the ISO-8859-1 string pointer by str to

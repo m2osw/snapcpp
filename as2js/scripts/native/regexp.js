@@ -39,9 +39,9 @@ native package Native
 
 class RegExp extends Object
 {
-    function RegExp(Void) : RegExp;
-    function RegExp(var in value: RegExp, var in flags: String) : RegExp;
-    function RegExp(var in value: String) : RegExp;
+    function RegExp(Void) : Void;
+    function RegExp(var in value: RegExp, var in flags: String) : Void;
+    function RegExp(var in value: String) : Void;
 
     function exec(var in string: String) : Array;
     function test(var in string: String) : Boolean;

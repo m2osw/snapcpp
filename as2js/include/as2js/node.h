@@ -273,6 +273,7 @@ public:
 
         // NODE_ENUM
         NODE_ENUM_FLAG_CLASS,
+        NODE_ENUM_FLAG_INUSE,
 
         // NODE_FOR
         NODE_FOR_FLAG_CONST,
@@ -559,6 +560,7 @@ public:
     static node_t               string_to_operator(String const& str);
 
     void                        display(std::ostream& out, int indent, char c) const;
+    String                      type_node_to_string() const;
 
 private:
     typedef std::vector<controlled_vars::zint32_t>  param_depth_t;

@@ -304,6 +304,12 @@ int unittest_main(int argc, char *argv[])
     }
     srand(seed);
     std::cout << opt.get_program_name() << "[" << getpid() << "]" << ": version " << AS2JS_VERSION << ", seed is " << seed << std::endl;
+    std::ofstream seed_file;
+    seed_file.open("seed.txt");
+    if(seed_file.is_open())
+    {
+        seed_file << seed << std::endl;
+    }
 
     if(opt.is_defined("tmp"))
     {

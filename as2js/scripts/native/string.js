@@ -39,7 +39,9 @@ native package Native
 
 class String extends Object
 {
-    function String(var in value: String := 0.0) : Number;
+    use extended_operators(2);
+
+    function String(var in value: String := 0.0);
 
     static function fromCharCode(var in ... chars: Number) : String;
 
@@ -112,7 +114,7 @@ class String extends Object
     function !=  (var in value: Number) : Boolean;
     function === (var in value: Number) : Boolean;
     function !== (var in value: Number) : Boolean;
-    function <=> (var in value: Number) : CompareResult;
+    function <=> (var in value: Number) : Object.CompareResult;
     function ~~  (var in value: Number) : Boolean;
 
     function &   (var in value: Number) : Number;

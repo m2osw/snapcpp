@@ -1,4 +1,7 @@
 
 . JSON only accepts " and not ' for strings
 . JSON only accepts \n and \r as line terminators
+. The parser takes the 'use' definition in a declaration such as
+  'class ... { use extended_operators(2); ... };' as a global
+  definition instead of only applying it to the current scope.
 
