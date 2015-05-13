@@ -91,16 +91,11 @@ bool Compiler::replace_constant_variable(Node::pointer_t& replace, Node::pointer
         case Node::node_t::NODE_NULL:
         case Node::node_t::NODE_UNDEFINED:
         case Node::node_t::NODE_REGULAR_EXPRESSION:
-
-#if 0
-{
-Data& d = replace.GetData();
-fprintf(stderr, "Replace is of type %d\n", d.f_type);
-replace.Display(stderr, 2);
-}
-#endif
-
-            replace->replace_with(value);
+            {
+                Node::pointer_t clone(value->clone_basic_node());
+                replace->replace_with(clone);
+                replace = clone;
+            }
             return true;
 
         default:

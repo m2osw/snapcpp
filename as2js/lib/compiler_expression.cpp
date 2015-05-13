@@ -584,7 +584,7 @@ void Compiler::binary_operator(Node::pointer_t& expr)
     char const *op = expr->operator_to_string(expr->get_type());
     if(!op)
     {
-        throw exception_internal_error("operator_to_string() returned an empty string for a binary operator");
+        throw exception_internal_error("complier_expression.cpp: Compiler::binary_operator(): operator_to_string() returned an empty string for a binary operator");
     }
 
     Node::pointer_t left(expr->get_child(0));
@@ -615,21 +615,24 @@ void Compiler::binary_operator(Node::pointer_t& expr)
 
     Node::pointer_t id(expr->create_replacement(Node::node_t::NODE_IDENTIFIER));
     id->set_string(op);
-    id->append_child(params);
 
-    // temporarily add a child to expr
+    Node::pointer_t call(expr->create_replacement(Node::node_t::NODE_CALL));
+    call->append_child(id);
+    call->append_child(params);
+
+    // temporarily add the call to expr
     size_t const del(expr->get_children_size());
-    expr->append_child(id);
+    expr->append_child(call);
 
     Node::pointer_t resolution;
     int funcs = 0;
     bool result;
     {
         NodeLock ln(expr);
-        result = find_field(ltype, id, funcs, resolution, params, 0);
+        result = find_field(ltype, call, funcs, resolution, params, 0);
         if(!result)
         {
-            result = find_field(rtype, id, funcs, resolution, params, 0);
+            result = find_field(rtype, call, funcs, resolution, params, 0);
         }
     }
 
@@ -651,44 +654,33 @@ void Compiler::binary_operator(Node::pointer_t& expr)
         return;
     }
 
-    id->set_instance(resolution);
+    call->set_instance(resolution);
 
     // if not intrinsic, we need to transform the code
-    // to a CALL instead because the lower layer won't
-    // otherwise understand this operator!
-//fprintf(stderr, "Not intrinsic...\n");
-    id->delete_child(0);
-    id->set_type_node(op_type);
+    // to a CALL instead because the lower layer will
+    // not otherwise understand this as is!
+    call->delete_child(1);
+    call->delete_child(0);
+    call->set_type_node(op_type);
 
     // move left and right in the new expression
     expr->delete_child(1);
     expr->delete_child(0);
 
-    Node::pointer_t call(expr->create_replacement(Node::node_t::NODE_CALL));
-    call->set_type_node(op_type);
     Node::pointer_t member(expr->create_replacement(Node::node_t::NODE_MEMBER));;
     Node::pointer_t function_node;
     resolve_internal_type(expr, "Function", function_node);
     member->set_type_node(function_node);
     call->append_child(member);
 
-    // we need a function to get the name of 'type'
-    //Data& type_data = type.GetData();
-    //NodePtr object;
-    //object.CreateNode(NODE_IDENTIFIER);
-    //Data& obj_data = object.GetData();
-    //obj_data.f_str = type_data.f_str;
     member->append_child(left);
     member->append_child(id);
 
-//fprintf(stderr, "NOTE: add list (right param)\n");
     Node::pointer_t list;
     list->create_replacement(Node::node_t::NODE_LIST);
     list->set_type_node(op_type);
     list->append_child(right);
     call->append_child(list);
-
-//call.Display(stderr);
 
     expr->replace_with(call);
 }
@@ -1328,6 +1320,8 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
 
     case Node::node_t::NODE_OBJECT_LITERAL:
         object_literal(expr);
+        Optimizer::optimize(expr);
+        type_expr(expr);
         return;
 
     case Node::node_t::NODE_NULL:
@@ -1417,6 +1411,8 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
         //      we should have if(!expression_new(expr)) ...
         if(expression_new(expr))
         {
+            Optimizer::optimize(expr);
+            type_expr(expr);
             return;
         }
         break;
@@ -1448,14 +1444,20 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
 
     case Node::node_t::NODE_ASSIGNMENT:
         assignment_operator(expr);
+        Optimizer::optimize(expr);
+        type_expr(expr);
         return;
 
     case Node::node_t::NODE_FUNCTION:
         function(expr);
+        Optimizer::optimize(expr);
+        type_expr(expr);
         return;
 
     case Node::node_t::NODE_MEMBER:
         resolve_member(expr, params, SEARCH_FLAG_GETTER);
+        Optimizer::optimize(expr);
+        type_expr(expr);
         return;
 
     case Node::node_t::NODE_IDENTIFIER:
@@ -1503,10 +1505,14 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
             }
 //std::cerr << "---------- got type? ----------\n";
         }
+        Optimizer::optimize(expr);
+        type_expr(expr);
         return;
 
     case Node::node_t::NODE_CALL:
         resolve_call(expr);
+        Optimizer::optimize(expr);
+        type_expr(expr);
         return;
 
     default:
@@ -1652,6 +1658,9 @@ void Compiler::expression(Node::pointer_t expr, Node::pointer_t params)
         throw exception_internal_error("error: there is a missing entry in the 2nd switch of Compiler::expression()");
 
     }
+
+    Optimizer::optimize(expr);
+    type_expr(expr);
 }
 
 

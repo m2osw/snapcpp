@@ -475,6 +475,74 @@ void Node::set_switch_operator(node_t op)
 /**********************************************************************/
 
 
+/** \brief Create a clone of a basic node.
+ *
+ * This function creates a new node which is a copy of this node.
+ * The function really only works with basic nodes, namely,
+ * literals.
+ *
+ * This function cannot be used to create a copy of a node that
+ * has children or other pointers.
+ *
+ * \return A new node pointer.
+ *
+ * \sa create_replacement()
+ */
+Node::pointer_t Node::clone_basic_node() const
+{
+    Node::pointer_t n(new Node(f_type));
+
+    // this is why we want to have a function instead of doing new Node().
+    n->f_type_node = f_type_node;
+    n->f_flags = f_flags;
+    n->f_attribute_node = f_attribute_node;
+    n->f_attributes = f_attributes;
+    n->f_switch_operator = f_switch_operator;
+    //n->f_lock = f_lock; -- that would not make any sense here
+    n->f_position = f_position;
+    //n->f_param_depth = f_param_depth; -- specific to functions
+    //n->f_param_index = f_param_index;
+    //n->f_parent = f_parent; -- tree parameters cannot be changed here
+    //n->f_offset = f_offset;
+    //n->f_children = f_children;
+    n->f_instance = f_instance;
+    n->f_goto_enter = f_goto_enter;
+    n->f_goto_exit = f_goto_exit;
+    n->f_variables = f_variables;
+    n->f_labels = f_labels;
+
+    switch(f_type)
+    {
+    case node_t::NODE_FALSE:
+    case node_t::NODE_TRUE:
+    case node_t::NODE_NULL:
+    case node_t::NODE_UNDEFINED:
+        break;
+
+    case node_t::NODE_FLOAT64:
+        n->f_float = f_float;
+        break;
+
+    case node_t::NODE_INT64:
+        n->f_int = f_int;
+        break;
+
+    case node_t::NODE_STRING:
+    case node_t::NODE_REGULAR_EXPRESSION:
+        n->f_str = f_str;
+        break;
+
+    //case node_t::NODE_OBJECT_LITERAL: -- this one has children... TBD
+
+    default:
+        throw exception_internal_error("INTERNAL ERROR: node.cpp: clone_basic_node(): called with a node which is not considered to be a basic node.");
+
+    }
+
+    return n;
+}
+
+
 /** \brief Create a new node with the given type.
  *
  * This function creates a new node that is expected to be used as a
@@ -496,6 +564,7 @@ void Node::set_switch_operator(node_t op)
  * \return A new node pointer.
  *
  * \sa set_position()
+ * \sa clone_basic_node()
  */
 Node::pointer_t Node::create_replacement(node_t type) const
 {
@@ -683,24 +752,53 @@ Position const& Node::get_position() const
 /**********************************************************************/
 /**********************************************************************/
 
+
+/** \brief Retrieve the "Goto Enter" pointer.
+ *
+ * This function returns a pointer to the "Goto Enter" node. The
+ * pointer may be null.
+ *
+ * \return The "Goto Enter" pointer or nullptr.
+ */
 Node::pointer_t Node::get_goto_enter() const
 {
     return f_goto_enter.lock();
 }
 
 
+/** \brief Retrieve the "Goto Exit" pointer.
+ *
+ * This function returns a pointer to the "Goto Exit" node. The
+ * pointer may be null.
+ *
+ * \return The "Goto Exit" pointer or nullptr.
+ */
 Node::pointer_t Node::get_goto_exit() const
 {
     return f_goto_exit.lock();
 }
 
 
+/** \brief Define the "Goto Enter" pointer.
+ *
+ * This function saves the specified \p node pointer as the
+ * "Goto Enter" node. The pointer may be null.
+ *
+ * \param[in] node  The "Goto Enter" pointer.
+ */
 void Node::set_goto_enter(pointer_t node)
 {
     f_goto_enter = node;
 }
 
 
+/** \brief Define the "Goto Exit" pointer.
+ *
+ * This function saves the specified \p node pointer as the
+ * "Goto Exit" node. The pointer may be null.
+ *
+ * \param[in] node  The "Goto Exit" pointer.
+ */
 void Node::set_goto_exit(pointer_t node)
 {
     f_goto_exit = node;

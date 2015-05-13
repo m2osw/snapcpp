@@ -1301,14 +1301,20 @@ void Compiler::enum_directive(Node::pointer_t& enum_node)
         Node::pointer_t entry(enum_node->get_child(idx));
         if(entry->get_children_size() != 1)
         {
-            // not valid, skip
+            // this happens in case of an empty enumeration
+            // entry type should be NODE_EMPTY
             continue;
         }
-        Node::pointer_t set = entry->get_child(0);
-        if(set->get_children_size() != 1)
+        Node::pointer_t set(entry->get_child(0));
+        if(set->get_type() != Node::node_t::NODE_SET
+        || set->get_children_size() != 1)
         {
             // not valid, skip
-            continue;
+            //
+            // TODO: for test purposes we could create an invalid tree to hit
+            //       this line and have coverage
+            //
+            continue; // LCOV_EXCL_LINE
         }
         // compile the expression
         expression(set->get_child(0));

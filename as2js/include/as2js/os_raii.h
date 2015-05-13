@@ -37,6 +37,7 @@ SOFTWARE.
 
 #include    <ios>
 
+#include    <controlled_vars/controlled_vars_need_init.h>
 #include    <controlled_vars/controlled_vars_need_enum_init.h>
 #include    <controlled_vars/controlled_vars_ptr_need_init.h>
 
@@ -47,17 +48,20 @@ namespace as2js
 class raii_stream_flags
 {
 public:
-                            raii_stream_flags(std::ios_base& s);
+                            raii_stream_flags(std::ios_base & s);
                             ~raii_stream_flags();
 
     void                    restore();
 
 private:
-    typedef controlled_vars::ptr_need_init<std::ios_base>           mpstream_t;
-    typedef controlled_vars::need_enum_init<std::ios_base::fmtflags>     mfmtflags_t;
+    typedef controlled_vars::ptr_need_init<std::ios_base>               mpstream_t;
+    typedef controlled_vars::need_enum_init<std::ios_base::fmtflags>    mfmtflags_t;
+    typedef controlled_vars::need_init<std::streamsize>                 mstreamsize_t;
 
     mpstream_t              f_stream;
     mfmtflags_t             f_flags;
+    mstreamsize_t           f_precision;
+    mstreamsize_t           f_width;
 };
 
 

@@ -99,7 +99,7 @@ void Node::display_data(std::ostream& out) const
 
     struct sub_function
     {
-        static void display_str(std::ostream& out, String str)
+        static void display_str(std::ostream & out, String str)
         {
             out << ": '";
             for(as_char_t const *s(str.c_str()); *s != '\0'; ++s)
@@ -541,7 +541,14 @@ void Node::display(std::ostream& out, int indent, char c) const
     } display_attr(out, f_attributes);
 
     // end the line with our position
-    out << " (" << f_position << ")" << std::endl;
+    out << " (" << f_position << ")";
+
+    if(f_lock > 0)
+    {
+        out << " Locked: " << static_cast<int32_t>(f_lock);
+    }
+
+    out << std::endl;
 
     // now print children
     for(size_t idx(0); idx < f_children.size(); ++idx)

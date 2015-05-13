@@ -497,6 +497,7 @@ public:
 
     static compare_t            compare(Node::pointer_t const lhs, Node::pointer_t const rhs, compare_mode_t const mode);
 
+    pointer_t                   clone_basic_node() const;
     pointer_t                   create_replacement(node_t type) const;
 
     // check flags

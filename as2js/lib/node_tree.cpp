@@ -666,7 +666,27 @@ void Node::replace_with(pointer_t node)
     {
         throw exception_no_parent("trying to replace a node which has no parent");
     }
-    p->set_child(get_offset(), node);
+
+    // the replace is safe so force an unlock in the parent if necessary
+    // it is safe in the sense that the count will remain the same and
+    // that specific offset will remain in place
+    //
+    // specifically, I know this happens when replacing a reference to a
+    // constant variable with its value in the parent expression, the parent
+    // node is locked in that case
+
+    int32_t const save_lock(p->f_lock);
+    p->f_lock = 0;
+    try
+    {
+        p->set_child(get_offset(), node);
+    }
+    catch(...)
+    {
+        p->f_lock = save_lock;
+        throw;
+    }
+    p->f_lock = save_lock;
 }
 
 
