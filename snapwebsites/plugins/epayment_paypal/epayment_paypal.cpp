@@ -963,8 +963,8 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             {
                 messages::messages::instance()->set_error(
                     "PayPal Missing Option",
-                    "PayPal replied without a \"token\" parameter",
-                    "Without the \"token\" parameter we cannot know which invoice this is linked with.",
+                    "PayPal agreement has an invalid invoice date.",
+                    QString("Invoice date \"%1\" is not a valid number.").arg(token_date),
                     false
                 );
                 break;
@@ -1083,11 +1083,45 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             execute_request.set_header("Content-Type", "application/json");
             execute_request.set_header("Authorization", QString("%1 %2").arg(token_type.c_str()).arg(access_token.c_str()).toUtf8().data());
             execute_request.set_header("PayPal-Request-Id", invoice_ipath.get_key().toUtf8().data());
-            execute_request.set_data("{}");//body.toUtf8().data());
+            execute_request.set_data("{}");
             http_client_server::http_response::pointer_t response(http.send_request(execute_request));
 
             secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_AGREEMENT_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
             secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_AGREEMENT))->setValue(QString::fromUtf8(response->get_response().c_str()));
+
+            // we need a successful response
+            if(response->get_response_code() != 200
+            && response->get_response_code() != 201)
+            {
+                // I would think that responses with 500+ have no valid JSON
+                QString error_name("undefined");
+                QString error("Unknown error");
+                if(response->get_response_code() < 500)
+                {
+                    as2js::JSON::pointer_t json(new as2js::JSON);
+                    as2js::StringInput::pointer_t in(new as2js::StringInput(response->get_response()));
+                    as2js::JSON::JSONValue::pointer_t value(json->parse(in));
+                    if(value)
+                    {
+                        as2js::JSON::JSONValue::object_t const& object(value->get_object());
+                        if(object.find("message") != object.end())
+                        {
+                            error = QString::fromUtf8(object.at("message")->get_string().to_utf8().c_str());
+                        }
+                        if(object.find("name") != object.end())
+                        {
+                            error_name = QString::fromUtf8(object.at("name")->get_string().to_utf8().c_str());
+                        }
+                    }
+                }
+                messages::messages::instance()->set_error(
+                    "Payment Failed",
+                    QString("Somehow Paypal refused to process your payment: %1").arg(error),
+                    QString("The payment error type is %1.").arg(error_name),
+                    false
+                );
+                break;
+            }
 
             // looks pretty good, check the actual answer...
             as2js::JSON::pointer_t json(new as2js::JSON);
@@ -3406,7 +3440,7 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
 
         // OUSTANDING_BALANCE
         // retrieve the outstanding balance which is a currency object
-        if(agreement_details.find("outstanding_balance") == object.end())
+        if(agreement_details.find("outstanding_balance") == agreement_details.end())
         {
             // TODO: change status of invoice to CANCELED?
             SNAP_LOG_ERROR("'outstanding_balance' missing in 'agreement.agreement_details' response");
@@ -3416,7 +3450,7 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
 
         // VALUE
         // retrieve the amount of the outstanding balance
-        if(outstanding_balance.find("value") == object.end())
+        if(outstanding_balance.find("value") == outstanding_balance.end())
         {
             // TODO: change status of invoice to CANCELED?
             SNAP_LOG_ERROR("'value' missing in 'agreement.agreement_details.outstand_balance' response");
