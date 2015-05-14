@@ -1465,8 +1465,8 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
                     editor_widgets.setContent(widgets_xml);
                 }
             }
+            dynamic_editor_widget(ipath, script, editor_widgets);
         }
-        dynamic_editor_widget(ipath, script, editor_widgets);
         g_cached_form[cpath] = editor_widgets;
     }
 

@@ -722,7 +722,7 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *conten
 void layout::create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, QString const& ctemplate, bool handle_boxes, QString const& layout_name)
 {
 #ifdef DEBUG
-SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() << "]";
+SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() << "] name = [" << layout_name << "]";
 #endif
 
     // get the elements we are dealing with in this function
@@ -734,9 +734,11 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     body.setAttribute("layout-name", layout_name);
 
     // other plugins generate defaults
+//std::cerr << "*** Generate header...\n" << doc.toString() << "-------------------------\n";
     generate_header_content(ipath, head, metadata, ctemplate);
 
     // concerned (owner) plugin generates content
+//std::cerr << "*** Generate main content...\n";
     content_plugin->on_generate_main_content(ipath, page, body, ctemplate);
 //std::cout << "Header + Main XML is [" << doc.toString(-1) << "]\n";
 
@@ -747,10 +749,12 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     //       safer!)
     if(handle_boxes && page.firstChildElement("boxes").isNull())
     {
+//std::cerr << "*** Generate boxes?!...\n";
         generate_boxes(ipath, layout_name, doc);
     }
 
     // other plugins are allowed to modify the content if so they wish
+//std::cerr << "*** Generate page content...\n";
     generate_page_content(ipath, page, body, ctemplate);
 //std::cout << "Prepared XML is [" << doc.toString(-1) << "]\n";
 
@@ -761,10 +765,12 @@ SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() <
     //       tagging capability)
     if(plugins::exists("filter"))
     {
+//std::cerr << "*** Filter all of that...\n";
         // replace all tokens when filtering is available
         filter::filter::instance()->on_token_filter(ipath, doc);
     }
 
+//std::cerr << "*** Filtered content...\n";
     filtered_content(ipath, doc, xsl);
 
 #if 0
@@ -779,6 +785,7 @@ out.write(doc.toString(-1).toUtf8());
 #endif
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
+//std::cerr << "*** Generate output...\n";
     QString doc_str(doc.toString(-1));
     if(doc_str.isEmpty())
     {
@@ -1569,7 +1576,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
  *
  * \return true if the signal should go on to all the other plugins.
  */
-bool layout::generate_header_content_impl(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
 {
     static_cast<void>(header);
 
