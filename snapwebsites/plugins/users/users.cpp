@@ -515,7 +515,7 @@ QString users::get_user_cookie_name()
 void users::on_process_cookies()
 {
     // prevent cookies on a set of method that do not require them
-    QString const method(f_snap->snapenv("REQUEST_METHOD"));
+    QString const method(f_snap->snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
     if(method == "HEAD"
     || method == "TRACE")
     {

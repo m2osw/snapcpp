@@ -147,6 +147,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE:
         return "HTTP_ACCEPT_LANGUAGE";
 
+    case SNAP_NAME_CORE_HTTP_REQUEST_METHOD:
+        return "REQUEST_METHOD";
+
     case SNAP_NAME_CORE_HTTP_USER_AGENT:
         return "HTTP_USER_AGENT";
 

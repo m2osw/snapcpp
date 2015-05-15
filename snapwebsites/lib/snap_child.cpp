@@ -2667,8 +2667,9 @@ bool snap_child::process(int socket)
 
 #ifdef DEBUG
 {
-QString const method(snapenv("REQUEST_METHOD"));
-SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(")");
+QString const method(snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD));
+QString const agent(snapenv(get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(" ")(agent)(")");
 }
 #endif
 
@@ -5019,7 +5020,7 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
                 "The server snap_child::page_redirect() function was called before the website got canonicalized.");
         NOTREACHED();
     }
-    QString const method(snapenv("REQUEST_METHOD"));
+    QString const method(snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
     if(method != "GET"
     && method != "POST"
     && method != "HEAD")
@@ -7042,7 +7043,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
     // IMPORTANT NOTE: it looks like Apache2 removes the body no matter what
     //                 which is probably sensible... if a HEAD is used it is
     //                 not a browser anyway
-    if(snapenv("REQUEST_METHOD") != "HEAD"
+    if(snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)) != "HEAD"
     /*|| (modes & HEADER_MODE_NO_ERROR) == 0 -- not working... */)
     {
         write(output_data, output_data.size());

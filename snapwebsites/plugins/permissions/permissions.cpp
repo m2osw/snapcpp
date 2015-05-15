@@ -1286,7 +1286,7 @@ void permissions::on_validate_action(content::path_info_t& ipath, QString const&
         // the signal may set the flag to false to prevent such redirects
         bool redirect_to_login(true);
         permit_redirect_to_login_on_not_allowed(ipath, redirect_to_login);
-        QString const method(f_snap->snapenv("REQUEST_METHOD"));
+        QString const method(f_snap->snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
         bool const redirect_method(method == "GET" || method == "POST");
 
         users::users *users_plugin(users::users::instance());

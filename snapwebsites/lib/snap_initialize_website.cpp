@@ -154,7 +154,7 @@ void snap_initialize_website::snap_initialize_website_runner::send_init_command(
     ss << "SERVER_PROTOCOL=HTTP/1.1" << std::endl;
 
     // REQUEST_METHOD
-    ss << "REQUEST_METHOD=GET" << std::endl;
+    ss << get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD) <<  "=GET" << std::endl;
 
     // QUERY_STRING
     ss << "QUERY_STRING=initialize_website=1&q=%2f%2f" << std::endl;
