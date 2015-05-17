@@ -305,7 +305,7 @@ public:
     void                        kill();
     status_t                    check_status();
 
-    snap_uri const&             get_uri() const;
+    snap_uri const &            get_uri() const;
     bool                        has_post() const { return f_has_post; }
     QString                     get_action() const;
     void                        set_action(QString const& action);
@@ -319,23 +319,23 @@ public:
     void                        set_site_parameter(QString const& name, QtCassandra::QCassandraValue const& value);
     void                        improve_signature(QString const& path, QString& signature);
     QtCassandra::QCassandraContext::pointer_t get_context() { return f_context; }
-    QString const&              get_domain_key() const { return f_domain_key; }
-    QString const&              get_website_key() const { return f_website_key; }
-    QString const&              get_site_key() const { return f_site_key; }
-    QString const&              get_site_key_with_slash() const { return f_site_key_with_slash; }
+    QString const &             get_domain_key() const { return f_domain_key; }
+    QString const &             get_website_key() const { return f_website_key; }
+    QString const &             get_site_key() const { return f_site_key; }
+    QString const &             get_site_key_with_slash() const { return f_site_key_with_slash; }
     static int64_t              get_current_date();
     void                        init_start_date();
     int64_t                     get_start_date() const { return f_start_date; }
     time_t                      get_start_time() const { return f_start_date / static_cast<int64_t>(1000000); }
-    void                        set_header(QString const& name, QString const& value, header_mode_t modes = HEADER_MODE_NO_ERROR);
-    void                        set_cookie(http_cookie const& cookie);
+    void                        set_header(QString const & name, QString const & value, header_mode_t modes = HEADER_MODE_NO_ERROR);
+    void                        set_cookie(http_cookie const & cookie);
     void                        set_ignore_cookies();
-    bool                        has_header(QString const& name) const;
-    QString                     get_header(QString const& name) const;
+    bool                        has_header(QString const & name) const;
+    QString                     get_header(QString const & name) const;
     QString                     get_unique_number();
-    QtCassandra::QCassandraTable::pointer_t create_table(const QString& table_name, const QString& comment);
+    QtCassandra::QCassandraTable::pointer_t create_table(const QString & table_name, const QString & comment);
     void                        new_content();
-    void                        verify_permissions(QString const& path, permission_error_callback& err_callback);
+    void                        verify_permissions(QString const & path, permission_error_callback & err_callback);
     QString                     default_action(QString uri_path);
     void                        process_post();
     QString                     get_language();
@@ -348,53 +348,53 @@ public:
     snap_version::version_number_t get_revision() const;
     QString                     get_revision_key() const; // <branch>.<revision> as a string (pre-defined)
     compression_vector_t        get_compression() const;
-    static void                 canonicalize_path(QString& path);
+    static void                 canonicalize_path(QString & path);
     static QString              date_to_string(int64_t v, date_format_t date_format = DATE_FORMAT_SHORT);
-    static time_t               string_to_date(QString const& date);
+    static time_t               string_to_date(QString const & date);
     static int                  last_day_of_month(int month, int year);
-    bool                        verify_locale(QString& lang, QString& country, bool generate_errors);
-    static bool                 verify_language_name(QString& lang);
-    static bool                 verify_country_name(QString& country);
+    bool                        verify_locale(QString & lang, QString & country, bool generate_errors);
+    static bool                 verify_language_name(QString & lang);
+    static bool                 verify_country_name(QString & country);
     static language_name_t const *get_languages();
     static country_name_t const *get_countries();
-    static bool                 tag_is_inline(char const *tag, int length);
-    void                        set_timezone(QString const& timezone);
-    void                        set_locale(QString const& locale);
+    static bool                 tag_is_inline(char const * tag, int length);
+    void                        set_timezone(QString const & timezone);
+    void                        set_locale(QString const & locale);
 
-    QString                     snapenv(QString const& name) const;
-    bool                        postenv_exists(QString const& name) const;
-    QString                     postenv(QString const& name, QString const& default_value = "") const;
-    void                        replace_postenv(QString const& name, QString const& value);
-    environment_map_t const&    all_postenv() const { return f_post; }
-    bool                        postfile_exists(QString const& name) const;
-    post_file_t const&          postfile(QString const& name) const;
-    bool                        cookie_is_defined(QString const& name) const;
-    QString                     cookie(QString const& name) const;
+    QString                     snapenv(QString const & name) const;
+    bool                        postenv_exists(QString const & name) const;
+    QString                     postenv(QString const & name, QString const & default_value = "") const;
+    void                        replace_postenv(QString const & name, QString const & value);
+    environment_map_t const &   all_postenv() const { return f_post; }
+    bool                        postfile_exists(QString const & name) const;
+    post_file_t const&          postfile(QString const & name) const;
+    bool                        cookie_is_defined(QString const & name) const;
+    QString                     cookie(QString const & name) const;
     void                        attach_to_session();
-    bool                        load_file(post_file_t& file);
-    QString                     snap_url(QString const& url) const;
+    bool                        load_file(post_file_t & file);
+    QString                     snap_url(QString const & url) const;
     // TODO translations? (not too important though)
-    void                        page_redirect(QString const& path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY, QString const& reason_brief = "Moved", QString const& reason = "This page has moved");
-    void                        die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details);
-    static void                 define_http_name(http_code_t http_code, QString& http_name);
+    void                        page_redirect(QString const & path, http_code_t http_code = HTTP_CODE_MOVED_PERMANENTLY, QString const & reason_brief = "Moved", QString const & reason = "This page has moved");
+    void                        die(http_code_t err_code, QString err_name, QString const & err_description, QString const & err_details);
+    static void                 define_http_name(http_code_t http_code, QString & http_name);
     void                        finish_update();
 
     QByteArray                  get_output() const;
-    void                        output(QByteArray const& data);
-    void                        output(QString const& data);
-    void                        output(std::string const& data);
-    void                        output(char const *data);
-    void                        output(wchar_t const *data);
+    void                        output(QByteArray const & data);
+    void                        output(QString const & data);
+    void                        output(std::string const & data);
+    void                        output(char const * data);
+    void                        output(wchar_t const * data);
     bool                        empty_output() const;
     void                        output_result(header_mode_t mode, QByteArray output_data);
-    void                        trace(QString const& data);
-    void                        trace(std::string const& data);
-    void                        trace(char const *data);
+    void                        trace(QString const & data);
+    void                        trace(std::string const & data);
+    void                        trace(char const * data);
 
-    void                        udp_ping(char const *name, char const *message = "PING");
+    void                        udp_ping(char const * name, char const * message = "PING");
 
     typedef QSharedPointer<udp_client_server::udp_server> udp_server_t;
-    udp_server_t                udp_get_server( char const *name );
+    udp_server_t                udp_get_server( char const * name );
 
 protected:
     pid_t                       fork_child();

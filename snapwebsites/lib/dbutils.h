@@ -53,16 +53,17 @@ public:
 private:
     enum column_type_t
     {
+        CT_int8_value,
+        CT_uint8_value,
+        CT_int32_value,
+        CT_uint32_value,
         CT_int64_value,
         CT_uint64_value,
+        CT_float32_value,
+        CT_float64_value,
         CT_time_microseconds,
         CT_time_seconds,
         CT_time_microseconds_and_string,
-        CT_float32_value,
-        CT_float64_value,
-        CT_uint32_value,
-        CT_int8_value,
-        CT_uint8_value,
         CT_hexarray_value,
         CT_hexarray_limited_value,
         CT_md5array_value,

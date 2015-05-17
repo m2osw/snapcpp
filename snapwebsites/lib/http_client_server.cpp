@@ -120,7 +120,7 @@ std::string http_request::get_request() const
         request << (f_command.empty() ? "POST" : f_command.c_str())
                 << " " << f_path << " HTTP/1.1\r\n";
 
-        throw http_client_server_logic_error("attachments not supported yet");
+        throw http_client_server_logic_error("http_client_server.cpp:get_request(): attachments not supported yet");
     }
     else if(f_has_post)
     {

@@ -34,12 +34,17 @@ enum name_t
     SNAP_NAME_LIST_KEY,
     SNAP_NAME_LIST_LAST_UPDATED,
     SNAP_NAME_LIST_LINK,
+    SNAP_NAME_LIST_NAME,
     SNAP_NAME_LIST_NAMESPACE,
+    SNAP_NAME_LIST_NUMBER_OF_ITEMS,
     SNAP_NAME_LIST_ORDERED_PAGES,
     SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT,
     SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT,
+    SNAP_NAME_LIST_PAGE,
     SNAP_NAME_LIST_PAGELIST,
+    SNAP_NAME_LIST_PAGE_SIZE,
     SNAP_NAME_LIST_PROCESSLIST,
+    SNAP_NAME_LIST_RESETLISTS,
     SNAP_NAME_LIST_SELECTOR,
     SNAP_NAME_LIST_SIGNAL_NAME,
     SNAP_NAME_LIST_STANDALONE,
@@ -92,17 +97,75 @@ public:
 class list_item_t
 {
 public:
-    void                set_sort_key(QByteArray const& sort_key) { f_sort_key = sort_key; }
-    void                set_uri(QString const& uri) { f_uri = uri; }
+    void                set_sort_key(QByteArray const & sort_key) { f_sort_key = sort_key; }
+    void                set_uri(QString const & uri) { f_uri = uri; }
 
-    QByteArray const&   get_sort_key() const { return f_sort_key; }
-    QString const&      get_uri() const { return f_uri; }
+    QByteArray const &  get_sort_key() const { return f_sort_key; }
+    QString const &     get_uri() const { return f_uri; }
 
 private:
     QByteArray          f_sort_key;
     QString             f_uri;
 };
 typedef QVector<list_item_t> list_item_vector_t;
+
+
+
+class paging_t
+{
+public:
+    static int32_t const    DEFAULT_PAGE_SIZE = 20;
+
+                        paging_t(snap_child *snap, content::path_info_t & ipath);
+
+    list_item_vector_t  read_list();
+
+    QString             get_list_name() const;
+
+    int32_t             get_number_of_items() const;
+
+    void                set_start_offset(int32_t start_offset);
+    int32_t             get_start_offset() const;
+
+    void                process_query_string_info();
+    QString             generate_query_string_info(int32_t page_offset) const;
+    QString             generate_query_string_info_for_first_page() const;
+    QString             generate_query_string_info_for_last_page() const;
+    void                generate_list_navigation(QDomElement element, snap_uri uri, int32_t next_previous_count, bool const next_previous, bool const first_last) const;
+
+    void                set_page(int32_t page);
+    int32_t             get_page() const;
+
+    void                set_next_page(int32_t next_page);
+    int32_t             get_next_page() const;
+
+    void                set_previous_page(int32_t previous_page);
+    int32_t             get_previous_page() const;
+
+    int32_t             get_total_pages() const;
+
+    void                set_page_size(int32_t page_size);
+    int32_t             get_page_size() const;
+
+    // TODO: add support for counting the number of items in a list
+    //       so that way we can calculate the last page and allow
+    //       people to go there (the counting should happen in the
+    //       backend whenever we update a list.)
+
+private:
+    typedef controlled_vars::auto_init<int32_t, -1>     m1int32_t;
+    typedef controlled_vars::auto_init<int32_t, 1>      p1int32_t;
+
+    zpsnap_child_t                  f_snap;
+    content::path_info_t &          f_ipath;                // path to the list
+    mutable controlled_vars::fbool_t f_retrieved_list_name;
+    mutable QString                 f_list_name;            // name used in query string
+    mutable m1int32_t               f_number_of_items;      // total number of items
+    m1int32_t                       f_start_offset;         // if -1, ignore
+    p1int32_t                       f_page;                 // page count starts at 1
+    mutable m1int32_t               f_page_size;            // number of item per page
+    mutable m1int32_t               f_default_page_size;    // to know whether the query string should include the size
+};
 
 
 
@@ -128,39 +191,39 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_list_table();
     QtCassandra::QCassandraTable::pointer_t get_listref_table();
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_register_backend_action(server::backend_action_map_t& actions);
-    virtual char const *get_signal_name(QString const& action) const;
-    virtual void        on_backend_action(QString const& action);
+    void                on_bootstrap(snap_child * snap);
+    void                on_register_backend_action(server::backend_action_map_t & actions);
+    virtual char const *get_signal_name(QString const & action) const;
+    virtual void        on_backend_action(QString const & action);
     void                on_backend_process();
-    virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type);
-    void                on_modified_content(content::path_info_t& ipath);
-    void                on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
-    virtual void        on_generate_boxes_content(content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
+    void                on_modified_content(content::path_info_t & ipath);
+    void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate);
     void                on_attach_to_session();
-    void                on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+    void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
     void                on_modified_link(links::link_info const & link, bool const created);
 
-    list_item_vector_t  read_list(content::path_info_t const& ipath, int start, int count);
+    list_item_vector_t  read_list(content::path_info_t & ipath, int start, int count);
 
 private:
     void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
-    int                 generate_all_lists(QString const& site_key);
-    int                 generate_all_lists_for_page(QString const& site_key, QString const& row_key);
-    int                 generate_list_for_page(content::path_info_t& page_key, content::path_info_t& list_ipath);
-    int                 generate_new_lists(QString const& site_key);
-    int                 generate_new_list_for_all_pages(QString const& site_key, content::path_info_t& list_ipath);
-    int                 generate_new_list_for_descendant(QString const& site_key, content::path_info_t& list_ipath);
-    int                 generate_new_list_for_children(QString const& site_key, content::path_info_t& list_ipath);
-    int                 generate_new_list_for_all_descendants(content::path_info_t& list_ipath, content::path_info_t& parent, bool const descendants);
-    int                 generate_new_list_for_public(QString const& site_key, content::path_info_t& list_ipath);
-    int                 generate_new_list_for_type(QString const& site_key, content::path_info_t& list_ipath, QString const& type);
-    int                 generate_new_list_for_hand_picked_pages(QString const& site_key, content::path_info_t& list_ipath, QString const& hand_picked_pages);
-    bool                run_list_check(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
-    QString             run_list_item_key(content::path_info_t& list_ipath, content::path_info_t& page_ipath);
+    int                 generate_all_lists(QString const & site_key);
+    int                 generate_all_lists_for_page(QString const & site_key, QString const & row_key);
+    int                 generate_list_for_page(content::path_info_t & page_key, content::path_info_t & list_ipath);
+    int                 generate_new_lists(QString const & site_key);
+    int                 generate_new_list_for_all_pages(QString const & site_key, content::path_info_t & list_ipath);
+    int                 generate_new_list_for_descendant(QString const & site_key, content::path_info_t & list_ipath);
+    int                 generate_new_list_for_children(QString const & site_key, content::path_info_t & list_ipath);
+    int                 generate_new_list_for_all_descendants(content::path_info_t & list_ipath, content::path_info_t & parent, bool const descendants);
+    int                 generate_new_list_for_public(QString const & site_key, content::path_info_t & list_ipath);
+    int                 generate_new_list_for_type(QString const & site_key, content::path_info_t & list_ipath, QString const & type);
+    int                 generate_new_list_for_hand_picked_pages(QString const & site_key, content::path_info_t & list_ipath, QString const & hand_picked_pages);
+    bool                run_list_check(content::path_info_t & list_ipath, content::path_info_t & page_ipath);
+    QString             run_list_item_key(content::path_info_t & list_ipath, content::path_info_t & page_ipath);
 
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_list_table;

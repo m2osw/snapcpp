@@ -62,8 +62,14 @@ char const *get_name(name_t name)
     case SNAP_NAME_LIST_LINK: // standard link between list and list items
         return "list::link";
 
+    case SNAP_NAME_LIST_NAME: // name for query string
+        return "list::name";
+
     case SNAP_NAME_LIST_NAMESPACE:
         return "list";
+
+    case SNAP_NAME_LIST_NUMBER_OF_ITEMS:
+        return "list::number_of_items";
 
     case SNAP_NAME_LIST_ORDERED_PAGES: // list of ordered pages
         return "list::ordered_pages"; // + "::<item sort key>"
@@ -74,11 +80,20 @@ char const *get_name(name_t name)
     case SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT: // text format
         return "list::original_test_script";
 
+    case SNAP_NAME_LIST_PAGE: // query string name "...?page=..."
+        return "page";
+
     case SNAP_NAME_LIST_PAGELIST: // --action pagelist
         return "pagelist";
 
+    case SNAP_NAME_LIST_PAGE_SIZE:
+        return "list::page_size";
+
     case SNAP_NAME_LIST_PROCESSLIST: // --action processlist
         return "processlist";
+
+    case SNAP_NAME_LIST_RESETLISTS:
+        return "resetlist";
 
     case SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
         return "list::selector";
@@ -178,6 +193,841 @@ char const *get_name(name_t name)
  * to be part of a list the links will be updated accordingly.
  */
 
+
+
+
+
+/** \brief Initializes an object to access a list with paging capability.
+ *
+ * This function initializes this paging object with defaults.
+ *
+ * The \p ipath parameter is the page that represent a Snap list. It
+ * will be read later when you call the read_list() function.
+ *
+ * \param[in,out] snap  Pointer to the snap_child object.
+ * \param[in,out] ipath  The path to the page representing a list.
+ *
+ * \sa get_query_string_info()
+ */
+paging_t::paging_t(snap_child *snap, content::path_info_t & ipath)
+    : f_snap(snap)
+    , f_ipath(ipath)
+    //, f_retrieved_list_name(false) -- auto-init
+    //, f_list_name("") -- auto-init
+    //, f_number_of_items(-1) -- auto-init
+    //, f_start_offset(-1) -- auto-init
+    //, f_page(1) -- auto-init
+    //, f_page_size(-1) -- auto-init
+{
+}
+
+
+/** \brief Read the current page of this list.
+ *
+ * This function calls the list read_list() function with the parameters
+ * as defined in this paging object.
+ *
+ * \return The list of items as read using the list plugin.
+ *
+ * \sa get_start_offset()
+ * \sa get_page_size()
+ */
+list_item_vector_t paging_t::read_list()
+{
+std::cerr << "read list built with " << get_start_offset() << " for " << get_page_size() << "\n";
+    return list::list::instance()->read_list(f_ipath, get_start_offset() - 1, get_page_size());
+}
+
+
+/** \brief Retrieve the name of the list.
+ *
+ * This function returns the name of this paging object. This is the
+ * name used to retrieve the current information about the list position
+ * from the query string.
+ *
+ * The name is retrieved from the database using the referenced page.
+ * It is valid to not define a name. Without a name, the simple "page"
+ * query string variable is used. A name is important if the page is
+ * to appear in another which also represents a list.
+ *
+ * \note
+ * The name is cached so calling this function more than once is fast.
+ *
+ * \return The name of the list.
+ */
+QString paging_t::get_list_name() const
+{
+    if(!f_retrieved_list_name)
+    {
+        f_retrieved_list_name = true;
+
+        content::content *content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+        f_list_name = branch_table->row(f_ipath.get_branch_key())->cell(get_name(SNAP_NAME_LIST_NAME))->value().stringValue();
+    }
+    return f_list_name;
+}
+
+
+/** \brief Retrieve the total number of items in a list.
+ *
+ * This function retrieves the total number of items found in a list.
+ * This value is defined in the database under the name
+ * SNAP_NAME_LIST_NUMBER_OF_ITEMS.
+ *
+ * \note
+ * This function always returns a positive number or zero.
+ *
+ * \note
+ * The number is cached so this function can be called any number of
+ * times.
+ *
+ * \warning
+ * This is not the number of pages. Use the get_total_pages() to
+ * determine the total number of pages available in a list.
+ *
+ * \todo
+ * The code necessary to count the items in a list is not yet written.
+ *
+ * \return The number of items in the list.
+ */
+int32_t paging_t::get_number_of_items() const
+{
+    if(f_number_of_items < 0)
+    {
+        // if the number of items is not (yet) defined in the database
+        // then it will be set to zero
+        content::content *content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+        f_number_of_items = branch_table->row(f_ipath.get_branch_key())->cell(get_name(SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value();
+    }
+
+    return f_number_of_items;
+}
+
+
+/** \brief Define the start offset to use with read_list().
+ *
+ * This function is used to define the start offset. By default this
+ * value is set to -1 meaning that the start page parameter is used
+ * instead. This is useful in case you want to show items at any
+ * offset instead of an exact page multiple.
+ *
+ * You make set the parameter back to -1 to ignore it.
+ *
+ * If the offset is larger than the total number of items present in
+ * the list, the read_list() will return an empty list. You may test
+ * the limit using the get_number_of_items() function. This function
+ * does not prevent you from using an offsets larger than the
+ * number of available items.
+ *
+ * \warning
+ * The first item offset is 1, not 0 as generally expected in C/C++.
+ *
+ * \param[in] start_offset  The offset at which to start showing the list.
+ */
+void paging_t::set_start_offset(int32_t start_offset)
+{
+    // any invalid number, convert to -1 (ignore)
+    if(start_offset < 1)
+    {
+        f_start_offset = -1;
+    }
+    else
+    {
+        f_start_offset = start_offset;
+    }
+}
+
+
+/** \brief Retrieve the start offset.
+ *
+ * This function returns the start offset. This represents the number
+ * of the first item to return to the caller of the read_list() function.
+ * The offset may point to an item after the last item in which case the
+ * read_list() function will return an empty list of items.
+ *
+ * If the start offset is not defined (is -1) then this function calculates
+ * the start offset using the start page information:
+ *
+ * \code
+ *      return (f_page - 1) * get_page_size() + 1;
+ * \endcode
+ *
+ * Note that since f_page can be set to a number larger than the maximum
+ * number of pages, the offset returned in that situation may also be
+ * larger than the total number of items present in the list.
+ *
+ * \note
+ * The function returns one for the first item (and NOT zero as generally
+ * expected in C/C++).
+ *
+ * \warning
+ * There is no way to retrieve the f_start_offset value directly.
+ *
+ * \return The start offset.
+ */
+int32_t paging_t::get_start_offset() const
+{
+    if(f_start_offset < 1)
+    {
+        // the caller did not force the offset, first check the query
+        // string to see whether the end user defined a page parameter
+
+        // calculate the offset using the start page
+        // and page size instead, adjusting for the
+        // fact that page numbers start at one instead
+        // of zero
+        return (f_page - 1) * get_page_size() + 1;
+    }
+
+    return f_start_offset;
+}
+
+
+/** \brief Retrieve the query string page information.
+ *
+ * This function reads the query string page information and saves
+ * it in this paging object.
+ *
+ * The query string name is defined as:
+ *
+ * \code
+ *      page
+ *   or
+ *      page-<list_name>
+ * \endcode
+ *
+ * If the list name is empty or undefined, then the name of the query
+ * string variable is simply "page". If the name is defined, then the
+ * system adds a dash and the name of the list.
+ *
+ * The value of the query string is generally just the page number.
+ * The number is expected to be between 1 and the total number of
+ * pages available in this list. The number 1 is not required as it
+ * is the default.
+ *
+ * Multiple numbers can be specified by separating them with commas
+ * and preceeding them with a letter as follow:
+ *
+ * \li 'p' -- page number, the 'p' is always optional
+ * \li 'o' -- start offset, an item number, ignores the page number
+ * \li 's' -- page size, the number of items per page
+ *
+ * For example, to show page 3 of a list named blog with 300 items,
+ * showing 50 items per page, you can use:
+ *
+ * \code
+ *      page-blog=3,s50
+ *   or
+ *      page-blog=p3,s50
+ * \endcode
+ *
+ * \sa get_page()
+ * \sa get_page_size()
+ * \sa get_start_offset()
+ */
+void paging_t::process_query_string_info()
+{
+    // define the query string variable name
+    QString const list_name(get_list_name());
+    QString variable_name(get_name(SNAP_NAME_LIST_PAGE));
+    if(!list_name.isEmpty())
+    {
+        variable_name += "-";
+        variable_name += list_name;
+    }
+
+    // check whether such a variable exists in the query string
+    if(!f_snap->get_uri().has_query_option(variable_name))
+    {
+        return;
+    }
+
+    // got such, retrieve it
+    QString const variable(f_snap->get_uri().query_option(variable_name));
+    QStringList const params(variable.split(","));
+    bool defined_page(false);
+    bool defined_size(false);
+    bool defined_offset(false);
+    for(int idx(0); idx < params.size(); ++idx)
+    {
+        QString const p(params[idx]);
+        if(p.isEmpty())
+        {
+            continue;
+        }
+        switch(p[0].unicode())
+        {
+        case 'p':   // explicit page number
+            if(!defined_page)
+            {
+                defined_page = true;
+                bool ok(false);
+                int page = p.mid(1).toInt(&ok);
+                if(ok && page > 0)
+                {
+                    f_page = page;
+                }
+            }
+            break;
+
+        case 's':   // page size (number of items per page)
+            if(!defined_size)
+            {
+                defined_size = true;
+                bool ok(false);
+                int const size = p.mid(1).toInt(&ok);
+                if(ok && size > 0 && size <= list::LIST_MAXIMUM_ITEMS)
+                {
+                    f_page_size = size;
+                }
+            }
+            break;
+
+        case 'o':   // start offset (specific number of items)
+            if(!defined_offset)
+            {
+                defined_offset = true;
+                bool ok(false);
+                int offset = p.mid(1).toInt(&ok);
+                if(ok && offset > 0)
+                {
+                    f_start_offset = offset;
+                }
+            }
+            break;
+
+        case '0': // the page number
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            if(!defined_page)
+            {
+                defined_page = true;
+                bool ok(false);
+                int page = p.toInt(&ok);
+                if(ok && page > 0)
+                {
+                    f_page = page;
+                }
+            }
+            break;
+
+        }
+    }
+}
+
+
+/** \brief Generate the query string representing this paging information.
+ *
+ * This function is used to generate a link to a page as defined by this
+ * paging information.
+ *
+ * The \p page_offset parameter is expected to be zero (0) for a link
+ * to the current page. It is expected to be negative to go to a previous
+ * page and positive to go to a following page.
+ *
+ * \param[in] page_offset  The offset to the page to generate a query string for.
+ *
+ * \return The query string variable and value for the specified page.
+ */
+QString paging_t::generate_query_string_info(int32_t page_offset) const
+{
+    QString result(get_name(SNAP_NAME_LIST_PAGE));
+    QString const list_name(get_list_name());
+    if(!list_name.isEmpty())
+    {
+        result += "-";
+        result += list_name;
+    }
+    result += "=";
+
+    int32_t const page_size(get_page_size());
+
+    bool need_comma(false);
+    if(f_start_offset > 0)
+    {
+        // keep using the offset if defined
+        int32_t offset(f_start_offset + page_offset * page_size);
+        if(offset <= 0)
+        {
+            offset = 1;
+        }
+        else if(offset > get_number_of_items())
+        {
+            offset = f_number_of_items;
+        }
+        result += QString("o%1").arg(offset);
+        need_comma = true;
+    }
+    else
+    {
+        int32_t page(f_page + page_offset);
+        int32_t const max_pages(get_total_pages());
+        if(page > max_pages && max_pages != -1)
+        {
+            // maximum limit
+            page = max_pages;
+        }
+        if(page < 1)
+        {
+            // minimum limit
+            page = 1;
+        }
+
+        if(page != f_page)
+        {
+            // use the page only if no offset specified
+            // also we do not need to specify page=1 since that is the default
+            result += QString("%1").arg(page);
+            need_comma = true;
+        }
+std::cerr << "**** page_offset " << page_offset << " p+o = " << (f_page + page_offset) << " page = " << page << " / " << f_page << ", max pages = " << max_pages << " -- result = [" << result << "]\n";
+    }
+
+    if(page_size != f_default_page_size)
+    {
+        if(need_comma)
+        {
+            result += "%2C";
+        }
+        result += QString("s%1").arg(page_size);
+        need_comma = true;
+    }
+
+std::cerr << ">>> " << (need_comma ? "Need Comma TRUE" : "no comma?!") << " -> " << result << "\n";
+    if(!need_comma)
+    {
+        // page 1 with default size, add nothing to the query string
+        return QString();
+    }
+
+    return result;
+}
+
+
+/** \brief Generate the query string to access the first page.
+ *
+ * This function calculates the query string to send the user to the
+ * first page of this list. The first page is often represented by an
+ * empty query string so this function may return such when the offset
+ * was not specified and no specific page size was defined.
+ *
+ * \return The query string to send the user to the last page.
+ */
+QString paging_t::generate_query_string_info_for_first_page() const
+{
+    if(f_start_offset > 0)
+    {
+        int32_t const page_size(get_page_size());
+        return generate_query_string_info((1 - f_start_offset + page_size - 1) / page_size);
+    }
+
+    return generate_query_string_info(1 - f_page);
+}
+
+
+/** \brief Generate the query string to access the last page.
+ *
+ * This function calculates the query string to send the user to the
+ * last page of this list. The last page may be the first page in
+ * which case the function may return an empty string.
+ *
+ * \return The query string to send the user to the last page.
+ */
+QString paging_t::generate_query_string_info_for_last_page() const
+{
+    int32_t const max_pages(get_total_pages());
+    if(max_pages == -1)
+    {
+        // this also represents the very first page with the default
+        // page size... but without a valid max_pages, what can we do
+        // really?
+        return QString();
+    }
+
+    if(f_start_offset > 0)
+    {
+        int32_t const page_size(get_page_size());
+        return generate_query_string_info((get_number_of_items() - f_start_offset + page_size - 1) / page_size);
+    }
+
+    return generate_query_string_info(max_pages - f_page);
+}
+
+
+/** \brief Generate a set of anchors for navigation purposes.
+ *
+ * This function generates the navigation anchors used to let the
+ * end user move between pages quickly.
+ *
+ * \todo
+ * The next / previous anchors make use of characters that the end
+ * user should be able to change (since we have access to the list
+ * we can define them in the database.)
+ *
+ * \param[in,out] element  A QDomElement object where we add the navigation
+ *                         elements.
+ * \param[in] uri  The URI used to generate the next/previous, pages 1, 2, 3...
+ * \param[in] next_previous_count  The number of anchors before and after
+ *                                 the current page.
+ * \param[in] next_previous  Whether to add a next and previous set of anchors.
+ * \param[in] first_last  Whether to add a first and last set of anchors.
+ */
+void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32_t next_previous_count, bool const next_previous, bool const first_last) const
+{
+    if(element.isNull())
+    {
+        return;
+    }
+
+    QString const qs_path(f_snap->get_server_parameter("qs_path"));
+    uri.unset_query_option(qs_path);
+
+    QDomDocument doc(element.ownerDocument());
+    QDomElement ul(doc.createElement("ul"));
+
+    // add a root tag to encompass all the other tags
+    QString list_name(get_list_name());
+    if(!list_name.isEmpty())
+    {
+        list_name = " " + list_name;
+    }
+    ul.setAttribute("class", "list-navigation" + list_name);
+    element.appendChild(ul);
+
+std::cerr << "----------------------- LIST ----------------\n";
+    // generate the URIs in before/after the current page
+    int32_t first(0);
+    int32_t last(0);
+    int32_t current_index(0);
+    QStringList qs;
+    QString const current_page_query_string(generate_query_string_info(0));
+    qs.push_back(current_page_query_string);
+std::cerr << "+++++++ C [" << current_page_query_string << "]\n";
+std::cerr << "/previous\n";
+    for(int32_t i(-1); i >= -next_previous_count; --i)
+    {
+        QString const query_string(generate_query_string_info(i));
+std::cerr << "+++++++ P [" << query_string << "] (qs first: [" << qs.first() << "] )\n";
+        if(qs.first() == query_string)
+        {
+            break;
+        }
+        if(i < first)
+        {
+            first = i;
+        }
+std::cerr << "----------------------- [" << query_string << "]\n";
+        qs.push_front(query_string);
+    }
+std::cerr << "/next\n";
+    current_index = qs.size() - 1;
+    for(int32_t i(1); i <= next_previous_count; ++i)
+    {
+        QString const query_string(generate_query_string_info(i));
+std::cerr << "+++++++ N [" << query_string << "] (qs last: [" << qs.last() << "] )\n";
+        if(qs.last() == query_string)
+        {
+            break;
+        }
+        if(i > last)
+        {
+            last = i;
+        }
+std::cerr << "----------------------- [" << query_string << "]\n";
+        qs.push_back(query_string);
+    }
+std::cerr << "----------------------- FIRST " << first << " /LAST " << last << " -- index " << current_index << " ----------------\n";
+
+    // add the first anchor only if we are not on the first page
+    if(first_last && first < 0)
+    {
+        // add the first button
+        QDomElement li(doc.createElement("li"));
+        li.setAttribute("class", "list-navigation-first");
+        ul.appendChild(li);
+
+        snap_uri anchor_uri(uri);
+        anchor_uri.set_query_string(generate_query_string_info_for_first_page());
+        QDomElement anchor(doc.createElement("a"));
+        QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x21E4))));
+        anchor.appendChild(text);
+        anchor.setAttribute("href", "?" + anchor_uri.query_string());
+        li.appendChild(anchor);
+    }
+
+    // add the previous anchor only if we are not on the first page
+    if(next_previous && first < 0)
+    {
+        // add the previous button
+        QDomElement li(doc.createElement("li"));
+        li.setAttribute("class", "list-navigation-previous");
+        ul.appendChild(li);
+
+        snap_uri anchor_uri(uri);
+        anchor_uri.set_query_string(generate_query_string_info(-1));
+        QDomElement anchor(doc.createElement("a"));
+        QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x2190))));
+        anchor.appendChild(text);
+        //anchor.setAttribute("href", anchor_uri.get_uri());
+        anchor.setAttribute("href", "?" + anchor_uri.query_string());
+        li.appendChild(anchor);
+    }
+
+    // add the navigation links now
+    int32_t const max_qs(qs.size());
+    for(int32_t i(0); i < max_qs; ++i)
+    {
+        QString query_string(qs[i]);
+        if(i == current_index)
+        {
+            // the current page (not an anchor)
+std::cerr << "/current/ " << i << "\n";
+            QDomElement li(doc.createElement("li"));
+            li.setAttribute("class", "list-navigation-current");
+            ul.appendChild(li);
+            QDomText text(doc.createTextNode(QString("%1").arg(f_page)));
+            li.appendChild(text);
+        }
+        else if(i < current_index)
+        {
+            // a previous anchor
+std::cerr << "/previous/ " << i << "\n";
+            QDomElement li(doc.createElement("li"));
+            li.setAttribute("class", "list-navigation-preceeding-page");
+            ul.appendChild(li);
+
+            snap_uri anchor_uri(uri);
+            anchor_uri.set_query_string(query_string);
+            QDomElement anchor(doc.createElement("a"));
+            QDomText text(doc.createTextNode(QString("%1").arg(f_page + i - current_index)));
+            anchor.appendChild(text);
+            //anchor.setAttribute("href", anchor_uri.get_uri());
+            anchor.setAttribute("href", "?" + anchor_uri.query_string());
+            li.appendChild(anchor);
+        }
+        else
+        {
+            // a next anchor
+            QDomElement li(doc.createElement("li"));
+            li.setAttribute("class", "list-navigation-following-page");
+            ul.appendChild(li);
+
+            snap_uri anchor_uri(uri);
+            anchor_uri.set_query_string(query_string);
+            QDomElement anchor(doc.createElement("a"));
+            QDomText text(doc.createTextNode(QString("%1").arg(f_page + i - current_index)));
+            anchor.appendChild(text);
+            //anchor.setAttribute("href", anchor_uri.get_uri());
+            anchor.setAttribute("href", "?" + anchor_uri.query_string());
+            li.appendChild(anchor);
+        }
+    }
+
+    // add the previous anchor only if we are not on the first page
+    if(next_previous && last > 0)
+    {
+        // add the previous button
+        QDomElement li(doc.createElement("li"));
+        li.setAttribute("class", "list-navigation-next");
+        ul.appendChild(li);
+
+        snap_uri anchor_uri(uri);
+        anchor_uri.set_query_string(generate_query_string_info(1));
+        QDomElement anchor(doc.createElement("a"));
+        QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x2192))));
+        anchor.appendChild(text);
+        //anchor.setAttribute("href", anchor_uri.get_uri());
+        anchor.setAttribute("href", "?" + anchor_uri.query_string());
+        li.appendChild(anchor);
+    }
+
+    // add the last anchor only if we are not on the last page
+    if(first_last && last > 0)
+    {
+        // add the last button
+        QDomElement li(doc.createElement("li"));
+        li.setAttribute("class", "list-navigation-last");
+        ul.appendChild(li);
+
+        snap_uri anchor_uri(uri);
+        anchor_uri.set_query_string(generate_query_string_info_for_last_page());
+        QDomElement anchor(doc.createElement("a"));
+        QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x21E5))));
+        anchor.appendChild(text);
+        //anchor.setAttribute("href", anchor_uri.get_uri());
+        anchor.setAttribute("href", "?" + anchor_uri.query_string());
+        li.appendChild(anchor);
+    }
+}
+
+
+/** \brief Define the page with which the list shall start.
+ *
+ * This function defines the start page you want to read with the read_list()
+ * function. By default this is set to 1 to represent the very first page.
+ *
+ * This parameter must be at least 1. If larger than the total number of
+ * pages available, then the read_list() will return an empty list.
+ *
+ * \param[in] page  The page to read with read_list().
+ */
+void paging_t::set_page(int32_t page)
+{
+    // make sure this is at least 1
+    f_page = std::max(1, page);
+std::cerr << "paging f_page = " << f_page << "\n";
+}
+
+
+/** \brief Retrieve the start page.
+ *
+ * This function retrieves the page number that is to be read by the
+ * read_list() function. The first page is represented with 1 and not
+ * 0 as normally expected by C/C++.
+ *
+ * \note
+ * The page number returned here will always be 1 or more.
+ *
+ * \return The start page.
+ */
+int32_t paging_t::get_page() const
+{
+    return f_page;
+}
+
+
+/** \brief Calculate the next page number.
+ *
+ * This function calculates the page number to use to reach the next
+ * page. If the current page is the last page, then this function
+ * returns -1 meaning that there is no next page.
+ *
+ * \warning
+ * The function returns -1 if the total number of pages is not
+ * yet known. That number is known only after you called The
+ * read_list() at least once.
+ *
+ * \return The next page or -1 if there is no next page.
+ */
+int32_t paging_t::get_next_page() const
+{
+    int32_t const max_pages(get_total_pages());
+    if(f_page >= max_pages || max_pages == -1)
+    {
+        return -1;
+    }
+    return f_page + 1;
+}
+
+
+/** \brief Calculate the previous page number.
+ *
+ * This function calculates the page number to use to reach the
+ * previous page. If the current page is the first page, then this
+ * function returns -1 meaning that there is no previous page.
+ *
+ * \return The previous page or -1 if there is no previous page.
+ */
+int32_t paging_t::get_previous_page() const
+{
+    if(f_page <= 1)
+    {
+        return -1;
+    }
+
+    return f_page - 1;
+}
+
+
+/** \brief Calculate the total number of pages.
+ *
+ * This function calculates the total number of pages available in
+ * a list. This requires the total number of items available and
+ * thus it is known only after the read_list() function was called
+ * at least once.
+ *
+ * Note that a list may be empty. In that case the function returns
+ * zero (no pages available.)
+ *
+ * \return The total number of pages available.
+ */
+int32_t paging_t::get_total_pages() const
+{
+    int32_t const page_size(get_page_size());
+    return (get_number_of_items() + page_size - 1) / page_size;
+}
+
+
+/** \brief Set the size of a page.
+ *
+ * Set the number of items to be presented in a page.
+ *
+ * The default list paging mechanism only supports a constant
+ * number of items per page.
+ *
+ * By default the number of items in a page is defined using the
+ * database SNAP_NAME_LIST_PAGE_SIZE from the branch table. This
+ * function can be used to force the size of a page and ignore
+ * the size defined in the database.
+ *
+ * \param[in] page_size  The number of items per page for that list.
+ *
+ * \sa get_page_size()
+ */
+void paging_t::set_page_size(int32_t page_size)
+{
+    f_page_size = std::max(1, page_size);
+}
+
+
+/** \brief Retrieve the number of items per page.
+ *
+ * This function returns the number of items defined in a page.
+ *
+ * By default the function reads the size of a page for a given list
+ * by reading the size from the database. This way it is easy for the
+ * website owner to change that size.
+ *
+ * If the size is not defined in the database, then the DEFAULT_PAGE_SIZE
+ * value is used (20 at the time of writing.)
+ *
+ * If you prefer to enforce a certain size for your list, you may call
+ * the set_page_size() function. This way the data will not be hit.
+ *
+ * \return The number of items defined in one page.
+ *
+ * \sa set_page_size()
+ */
+int32_t paging_t::get_page_size() const
+{
+    if(f_default_page_size < 1)
+    {
+        content::content *content_plugin(content::content::instance());
+        QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+        f_default_page_size = branch_table->row(f_ipath.get_branch_key())->cell(get_name(SNAP_NAME_LIST_PAGE_SIZE))->value().safeInt32Value();
+        if(f_default_page_size < 1)
+        {
+            // not defined in the database, bump it to 20
+            f_default_page_size = DEFAULT_PAGE_SIZE;
+        }
+    }
+
+    if(f_page_size < 1)
+    {
+        f_page_size = f_default_page_size;
+    }
+
+    return f_page_size;
+}
 
 
 
@@ -548,7 +1398,7 @@ void list::on_modified_content(content::path_info_t& ipath)
         {
             // drop only if the key changed (i.e. if the code modifies the
             // same page over and over again within the same child process,
-            // then the key won't change.)
+            // then the key will not change.)
             list_table->row(site_key)->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
         }
     }
@@ -640,6 +1490,19 @@ void list::on_attach_to_session()
  * We read the list::index:200 and us that key to start reading the list
  * (i.e. in the column predicate would use that key as the start key.)
  *
+ * When a list name is specified, the \em page query string is checked for
+ * a parameter that starts with that name, followed by a dash and a number.
+ * Multiple lists can exist on a web page, and each list may be at a
+ * different page. In this way, each list can define a different page
+ * number, you only have to make sure that all the lists that can appear
+ * on a page have a different name.
+ *
+ * The syntax of the query string for pages is as follow:
+ *
+ * \code
+ *      page-<name>=<number>
+ * \endcode
+ *
  * \exception snap_logic_exception
  * The function raises the snap_logic_exception exception if the start or
  * count values are incompatible. The start parameter must be positive or
@@ -652,7 +1515,7 @@ void list::on_attach_to_session()
  *
  * \return The list of items
  */
-list_item_vector_t list::read_list(content::path_info_t const& ipath, int start, int count)
+list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int count)
 {
     list_item_vector_t result;
 
@@ -706,7 +1569,8 @@ list_item_vector_t list::read_list(content::path_info_t const& ipath, int start,
                 result.push_back(item);
                 if(result.size() == count)
                 {
-                    break;
+                    // we got the count we wanted, return now
+                    return result;
                 }
             }
         }
@@ -737,6 +1601,7 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
     actions[get_name(SNAP_NAME_LIST_PAGELIST)] = this;
     actions[get_name(SNAP_NAME_LIST_PROCESSLIST)] = this;
     actions[get_name(SNAP_NAME_LIST_STANDALONELIST)] = this;
+    actions[get_name(SNAP_NAME_LIST_RESETLISTS)] = this;
 }
 
 
@@ -810,7 +1675,7 @@ void list::on_backend_action(QString const& action)
         snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
         if(backend == nullptr)
         {
-            throw list_exception_no_backend("could not determine the snap_backend pointer");
+            throw list_exception_no_backend("list.cpp:on_backend_action(): could not determine the snap_backend pointer");
         }
         backend->create_signal( get_signal_name(action) );
 
@@ -953,10 +1818,32 @@ void list::on_backend_action(QString const& action)
         on_modified_content(ipath);
         f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_LIST_PAGELIST)));
     }
+    else if(action == get_name(SNAP_NAME_LIST_RESETLISTS))
+    {
+        // go through all the lists and delete the compiled script, this
+        // will force the list code to regenerate all the lists; this
+        // should be useful only when the code changes in such a way
+        // that the current lists may not be 100% correct as they are
+        int64_t const start_date(f_snap->get_start_date());
+        content::path_info_t ipath;
+        QString const site_key(f_snap->get_site_key_with_slash());
+        ipath.set_path(site_key + get_name(SNAP_NAME_LIST_TAXONOMY_PATH));
+        links::link_info info(get_name(SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
+        QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
+        links::link_info child_info;
+        while(link_ctxt->next_link(child_info))
+        {
+            QString const key(child_info.key());
+            content::path_info_t list_ipath;
+            list_ipath.set_path(key);
+            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+        }
+    }
     else
     {
         // unknown action (we should not have been called with that name!)
-        throw snap_logic_exception(QString("list::on_backend_action(\"%1\") called with an unknown action...").arg(action));
+        throw snap_logic_exception(QString("list.cpp:on_backend_action(): list::on_backend_action(\"%1\") called with an unknown action...").arg(action));
     }
 }
 
@@ -1063,7 +1950,7 @@ int list::generate_new_lists(QString const& site_key)
     int did_work(0);
 
     content::path_info_t ipath;
-    ipath.set_path(site_key + "types/taxonomy/system/list");
+    ipath.set_path(site_key + get_name(SNAP_NAME_LIST_TAXONOMY_PATH));
     links::link_info info(get_name(SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
@@ -1368,7 +2255,7 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
     int did_work(0);
 
     content::path_info_t ipath;
-    ipath.set_path(site_key + "types/taxonomy/system/list");
+    ipath.set_path(site_key + get_name(SNAP_NAME_LIST_TAXONOMY_PATH));
     links::link_info info(get_name(SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
@@ -1426,6 +2313,8 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
  *
  * \param[in] page_ipath  The path to the page being tested.
  * \param[in,out] list_ipath  The path to the list being worked on.
+ *
+ * \return Zero (0) if nothing happens, 1 if the list was modified.
  */
 int list::generate_list_for_page(content::path_info_t& page_ipath, content::path_info_t& list_ipath)
 {
@@ -1551,23 +2440,67 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
     int64_t const start_date(f_snap->get_start_date());
     list_row->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->setValue(start_date);
 
+    // TODO
+    // if we did work, the list size changed so we have to recalculate the
+    // length (list::number_of_items) -- since we cannot be totally sure that
+    // something was added or removed, we recalculate the size each time for
+    // now but this is very slow so we will want to fix the optimize that
+    // at a later time to make sure we do not take forever to build lists
+    //
+    // on the other hand, once a list is complete and we just add an
+    // entry every now and then, this is not an overhead at all
+    //
+    if(did_work != 0)
+    {
+        char const *ordered_pages(get_name(SNAP_NAME_LIST_ORDERED_PAGES));
+
+        int32_t count(0);
+        QtCassandra::QCassandraColumnRangePredicate column_predicate;
+        column_predicate.setStartColumnName(QString("%1::").arg(ordered_pages));
+        column_predicate.setEndColumnName(QString("%1;").arg(ordered_pages));
+        column_predicate.setCount(100);
+        column_predicate.setIndex(); // behave like an index
+        for(;;)
+        {
+            // clear the cache before reading the next load
+            list_row->clearCache();
+            list_row->readCells(column_predicate);
+            QtCassandra::QCassandraCells const cells(list_row->cells());
+            if(cells.empty())
+            {
+                // all columns read
+                break;
+            }
+            count += cells.size();
+        }
+
+        list_row->cell(get_name(SNAP_NAME_LIST_NUMBER_OF_ITEMS))->setValue(count);
+    }
+
     return did_work;
 }
 
 
 /** \brief Retrieve the test script of a list.
  *
- * This function is used to extract the test script of a list object.
- * The test script is saved in the list::test_script field of a page,
- * on a per branch basis. This function makes use of the branch
- * defined in the ipath.
+ * This function is used to run the test script of a list object against a
+ * page. It returns whether it is a match.
  *
- * \param[in,out] list_ipath  The ipath used to find the list.
- * \param[in,out] page_ipath  The ipath used to find the page.
+ * The function compiles the script and saves it in the "list::test_script"
+ * field of the list if it is not there yet. That way we can avoid the
+ * compile step on future access.
+ *
+ * If the script cannot be compiled for any reason, then the function returns
+ * false as if the page was not part of the list.
+ *
+ * The script has to return a result which can be converted to a boolean.
+ *
+ * \param[in,out] list_ipath  The ipath used to the list.
+ * \param[in,out] page_ipath  The ipath used to the page.
  *
  * \return true if the page is to be included.
  */
-bool list::run_list_check(content::path_info_t& list_ipath, content::path_info_t& page_ipath)
+bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_t & page_ipath)
 {
     QString const branch_key(list_ipath.get_branch_key());
     snap_expr::expr::expr_pointer_t e(nullptr);

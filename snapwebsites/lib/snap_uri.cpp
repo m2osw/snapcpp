@@ -1453,6 +1453,10 @@ void snap_uri::unset_query_option(QString const& name)
  *
  * The query string variable names and data gets URL decoded.
  *
+ * \warning
+ * This function does not clear the existing list of query
+ * string options.
+ *
  * \param[in] uri_query_string  The query string to add to the existing data.
  */
 void snap_uri::set_query_string(QString const& uri_query_string)
@@ -1462,7 +1466,7 @@ void snap_uri::set_query_string(QString const& uri_query_string)
                             it != value_pairs.end();
                             ++it)
     {
-        int pos = it->indexOf('=');
+        int const pos(it->indexOf('='));
         if(pos == -1)
         {
             // no value

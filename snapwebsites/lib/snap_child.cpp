@@ -2669,7 +2669,7 @@ bool snap_child::process(int socket)
 {
 QString const method(snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
 QString const agent(snapenv(get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
-SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(" ")(agent)(")");
+SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
 }
 #endif
 

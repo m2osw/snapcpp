@@ -200,7 +200,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
     int c(chart_page << 8);
 
     // range limit
-    if(c < 0 || c >= 0x100000)
+    if(c < 0 || c >= 0x110000)
     {
         // not a supported page
         return;
@@ -217,11 +217,11 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
     title.appendChild(title_text);
     title = doc.createElement("title");
     titles.appendChild(title);
-    title_text = doc.createTextNode(QString("Char Chart (%1)").arg(chart_page));
+    title_text = doc.createTextNode(QString("Char Chart (x%1)").arg(chart_page, 0, 16));
     title.appendChild(title_text);
     title = doc.createElement("long-title");
     titles.appendChild(title);
-    title_text = doc.createTextNode(QString("Unicode Char Chart (Page: %1)").arg(chart_page));
+    title_text = doc.createTextNode(QString("Unicode Char Chart (Page: %1)").arg(chart_page, 0, 16));
     title.appendChild(title_text);
 
     QDomElement content_tag(doc.createElement("content"));
@@ -557,9 +557,21 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
                 }
                 break;
 
+            case 0xFFFE:
+                character = "FFFE";
+                break;
+
+            case 0xFFFF:
+                character = "FFFF";
+                break;
+
             default:
+                // TODO: Qt does not properly support characters added as
+                //       entities over 0xFFFF; it seems to be a problem in
+                //       the QXmlPattern code and not the DOM implementation
                 {
                     //character = "&#" + QString("%1").arg(c) + ";";
+                    //character = QChar::decomposition(c);
                     QDomEntityReference ref(doc.createEntityReference(QString("#%1").arg(c)));
                     span_tag.appendChild(ref);
                 }
@@ -599,11 +611,11 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
         //f_snap->output(QString("<p><a href='snap.cgi?q=/char-chart/%1'>Previous</a></p>").arg(chart_page - 1));
         QDomElement a_tag(doc.createElement("a"));
         p_tag.appendChild(a_tag);
-        a_tag.setAttribute("href", f_snap->snap_url(QString("/char-chart/%1").arg(chart_page - 1)));
+        a_tag.setAttribute("href", f_snap->snap_url(QString("/char-chart/%1").arg(chart_page - 1, 0, 16)));
         QDomText text(doc.createTextNode("Previous"));
         a_tag.appendChild(text);
     }
-    if(chart_page != 0x0FFFFF)
+    if(chart_page != 0x10FFFF)
     {
         QDomText text;
         if(chart_page != 0)
@@ -615,7 +627,7 @@ void char_chart::on_generate_main_content(content::path_info_t& ipath, QDomEleme
         //f_snap->output(QString("<p><a href='snap.cgi?q=/char-chart/%1'>Next</a></p>").arg(chart_page + 1));
         QDomElement a_tag(doc.createElement("a"));
         p_tag.appendChild(a_tag);
-        a_tag.setAttribute("href", f_snap->snap_url(QString("/char-chart/%1").arg(chart_page + 1)));
+        a_tag.setAttribute("href", f_snap->snap_url(QString("/char-chart/%1").arg(chart_page + 1, 0, 16)));
         text = doc.createTextNode("Next");
         a_tag.appendChild(text);
     }

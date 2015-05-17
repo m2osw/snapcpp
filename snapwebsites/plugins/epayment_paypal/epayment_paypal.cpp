@@ -1082,8 +1082,9 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             execute_request.set_header("Accept-Language", "en_US");
             execute_request.set_header("Content-Type", "application/json");
             execute_request.set_header("Authorization", QString("%1 %2").arg(token_type.c_str()).arg(access_token.c_str()).toUtf8().data());
-            execute_request.set_header("PayPal-Request-Id", invoice_ipath.get_key().toUtf8().data());
+            execute_request.set_header("PayPal-Request-Id", create_unique_request_id(invoice_ipath.get_key()));
             execute_request.set_data("{}");
+            //SNAP_LOG_INFO("Request: ")(execute_request.get_request());
             http_client_server::http_response::pointer_t response(http.send_request(execute_request));
 
             secret_row->cell(get_name(SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTED_AGREEMENT_HEADER))->setValue(QString::fromUtf8(response->get_original_header().c_str()));
@@ -3723,6 +3724,18 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
         epayment_plugin->set_invoice_status(new_invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID);
     }
 }
+
+
+std::string epayment_paypal::create_unique_request_id(QString const & main_id)
+{
+    time_t const start_time(f_snap->get_start_time());
+    struct tm t;
+    localtime_r(&start_time, &t);
+    char buf[BUFSIZ];
+    strftime(buf, sizeof(buf), "-%Y%m%d-%H%M%S", &t);
+    return main_id.toUtf8().data() + std::string(buf);
+}
+
 
 
 

@@ -331,7 +331,74 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
 {
     QString const n( get_column_name( c ) );
 
-    if(n == "sessions::check_flags")
+    if(n == "content::prevent_delete"
+    || n == "epayment_paypal::debug"
+    || n == "oauth2::enable"
+    || n == "permissions::dynamic"
+    || n == "users::multiuser"
+    || n == "users::long_sessions"
+    || (f_tableName == "list" && f_rowName != "*standalone*")
+    || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::number_of_cashiers" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::plan" // TODO -- remove at some point since that is a cutomer's field
+    || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
+    || n == "finball::applies_to_companies" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
+    || n == "finball::applies_to_locations" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
+    )
+    {
+        // signed 8 bit value
+        // cast to integer so arg() doesn't take it as a character
+        return CT_int8_value;
+    }
+    else if(n == "content::final"
+         || n == "content::files::compressor"
+         || n.startsWith("content::files::reference::")
+         || n == "epayment_paypal::maximum_repeat_failures"
+         || n == "favicon::sitewide"
+         || n == "sessions::used_up"
+         || (f_tableName == "files" && f_rowName == "new")
+         || (f_tableName == "files" && f_rowName == "images")
+         || (f_tableName == "test_results" && n == "test_plugin::success")
+         )
+    {
+        // unsigned 8 bit value
+        // cast to integer so arg() doesn't take it as a character
+        return CT_uint8_value;
+    }
+    else if(n == "list::number_of_items"
+         )
+    {
+        return CT_int32_value;
+    }
+    else if(n.startsWith("content::attachment::reference::")
+         || n == "content::attachment::revision_control::last_branch"
+         || n.startsWith("content::attachment::revision_control::last_revision::")
+         || n == "content::files::image_height"
+         || n == "content::files::image_width"
+         || n == "content::files::size"
+         || n == "content::files::size::gzip_compressed"
+         || n == "content::revision_control::attachment::current_branch"
+         || n == "content::revision_control::attachment::current_working_branch"
+         || n == "content::revision_control::current_branch"
+         || n == "content::revision_control::current_working_branch"
+         || n == "content::revision_control::last_branch"
+         || n == "content::revision_control::attachment::last_branch"
+         || n.startsWith("content::revision_control::attachment::current_revision::")
+         || n.startsWith("content::revision_control::attachment::current_working_revision::")
+         || n.startsWith("content::revision_control::current_revision::")
+         || n.startsWith("content::revision_control::current_working_revision::")
+         || n.startsWith("content::revision_control::last_revision::")
+         || n.startsWith("content::revision_control::attachment::last_revision::")
+         || n == "sitemapxml::count"
+         || n == "sessions::id"
+         || n == "sessions::time_to_live"
+         || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
+         )
+    {
+        return CT_uint32_value;
+    }
+    else if(n == "sessions::check_flags"
+         )
     {
         return CT_int64_value;
     }
@@ -343,6 +410,29 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          )
     {
         return CT_uint64_value;
+    }
+    else if(n == "sitemapxml::priority"
+         )
+    {
+        // 32 bit float
+        return CT_float32_value;
+    }
+    else if(n == "epayment::price"
+         || (n.startsWith("finball::data_") && n.endsWith("_count")) // TODO -- remove at some point since that is a cutomer's field
+         || (n.startsWith("finball::data_") && n.endsWith("_amount")) // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan1" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan6" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::company_plan12" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan1" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan6" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::location_plan12" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::invoice_grand_total" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::promotion_amount" // TODO -- remove at some point since that is a cutomer's field
+         || n == "finball::minimum_total" // TODO -- remove at some point since that is a cutomer's field
+         )
+    {
+        // 64 bit float
+        return CT_float64_value;
     }
     else if(n == "content::created"
          || n == "content::cloned"
@@ -398,94 +488,10 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         // 64 bit value (seconds)
         return CT_time_seconds;
     }
-    else if(n == "sitemapxml::priority"
-         )
-    {
-        // 32 bit float
-        return CT_float32_value;
-    }
-    else if(n == "epayment::price"
-         || (n.startsWith("finball::data_") && n.endsWith("_count")) // TODO -- remove at some point since that is a cutomer's field
-         || (n.startsWith("finball::data_") && n.endsWith("_amount")) // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::company_plan1" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::company_plan6" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::company_plan12" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::location_plan1" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::location_plan6" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::location_plan12" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::invoice_grand_total" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::promotion_amount" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::minimum_total" // TODO -- remove at some point since that is a cutomer's field
-         )
-    {
-        // 64 bit float
-        return CT_float64_value;
-    }
-    else if(n.startsWith("content::attachment::reference::")
-         || n == "content::attachment::revision_control::last_branch"
-         || n.startsWith("content::attachment::revision_control::last_revision::")
-         || n == "content::files::image_height"
-         || n == "content::files::image_width"
-         || n == "content::files::size"
-         || n == "content::files::size::gzip_compressed"
-         || n == "content::revision_control::attachment::current_branch"
-         || n == "content::revision_control::attachment::current_working_branch"
-         || n == "content::revision_control::current_branch"
-         || n == "content::revision_control::current_working_branch"
-         || n == "content::revision_control::last_branch"
-         || n == "content::revision_control::attachment::last_branch"
-         || n.startsWith("content::revision_control::attachment::current_revision::")
-         || n.startsWith("content::revision_control::attachment::current_working_revision::")
-         || n.startsWith("content::revision_control::current_revision::")
-         || n.startsWith("content::revision_control::current_working_revision::")
-         || n.startsWith("content::revision_control::last_revision::")
-         || n.startsWith("content::revision_control::attachment::last_revision::")
-         || n == "sitemapxml::count"
-         || n == "sessions::id"
-         || n == "sessions::time_to_live"
-         || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
-         )
-    {
-        return CT_uint32_value;
-    }
-    else if(n == "content::final"
-         || n == "content::files::compressor"
-         || n.startsWith("content::files::reference::")
-         || n == "epayment_paypal::maximum_repeat_failures"
-         || n == "favicon::sitewide"
-         || n == "sessions::used_up"
-         || (f_tableName == "files" && f_rowName == "new")
-         || (f_tableName == "files" && f_rowName == "images")
-         || (f_tableName == "test_results" && n == "test_plugin::success")
-         )
-    {
-        // unsigned 8 bit value
-        // cast to integer so arg() doesn't take it as a character
-        return CT_uint8_value;
-    }
     else if(f_tableName == "listref"
          )
     {
         return CT_time_microseconds_and_string;
-    }
-    else if(n == "content::prevent_delete"
-         || n == "epayment_paypal::debug"
-         || n == "oauth2::enable"
-         || n == "permissions::dynamic"
-         || n == "users::multiuser"
-         || n == "users::long_sessions"
-         || (f_tableName == "list" && f_rowName != "*standalone*")
-         || n == "finball::data_status" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::number_of_cashiers" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::plan" // TODO -- remove at some point since that is a cutomer's field
-         || n == "finball::read_terms_n_conditions" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
-         || n == "finball::applies_to_companies" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
-         || n == "finball::applies_to_locations" // TODO -- remove at some point since that is a customer's field (we'd need to have an XML file instead)
-         )
-    {
-        // signed 8 bit value
-        // cast to integer so arg() doesn't take it as a character
-        return CT_int8_value;
     }
     else if(n == "sessions::random"
          || n == "users::password::salt"
@@ -534,6 +540,36 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
         column_type_t const ct( get_column_type( c ) );
         switch( ct )
         {
+            case CT_int8_value:
+            {
+                // signed 8 bit value
+                // cast to integer so arg() doesn't take it as a character
+                v = QString("%1").arg(static_cast<int>(c->value().signedCharValue()));
+            }
+            break;
+
+            case CT_uint8_value:
+            {
+                // unsigned 8 bit value
+                // cast to integer so arg() doesn't take it as a character
+                v = QString("%1").arg(static_cast<int>(c->value().unsignedCharValue()));
+            }
+            break;
+
+            case CT_int32_value:
+            {
+                // 32 bit value
+                v = QString("%1").arg(c->value().int32Value());
+            }
+            break;
+
+            case CT_uint32_value:
+            {
+                // 32 bit value
+                v = QString("%1").arg(c->value().uint32Value());
+            }
+            break;
+
             case CT_int64_value:
             {
                 v = QString("%1").arg(c->value().int64Value());
@@ -543,6 +579,22 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             case CT_uint64_value:
             {
                 v = QString("%1").arg(c->value().uint64Value());
+            }
+            break;
+
+            case CT_float32_value:
+            {
+                // 32 bit float
+                float value(c->value().floatValue());
+                v = QString("%1").arg(value);
+            }
+            break;
+
+            case CT_float64_value:
+            {
+                // 64 bit float
+                double value(c->value().doubleValue());
+                v = QString("%1").arg(value);
             }
             break;
 
@@ -582,45 +634,6 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
                 v = display_only
                   ? QString("%1 (%2)").arg(buf).arg(time)
                   : QString("%1").arg(buf);
-            }
-            break;
-
-            case CT_float32_value:
-            {
-                // 32 bit float
-                float value(c->value().floatValue());
-                v = QString("%1").arg(value);
-            }
-            break;
-
-            case CT_float64_value:
-            {
-                // 64 bit float
-                double value(c->value().doubleValue());
-                v = QString("%1").arg(value);
-            }
-            break;
-
-            case CT_uint32_value:
-            {
-                // 32 bit value
-                v = QString("%1").arg(c->value().uint32Value());
-            }
-            break;
-
-            case CT_int8_value:
-            {
-                // signed 8 bit value
-                // cast to integer so arg() doesn't take it as a character
-                v = QString("%1").arg(static_cast<int>(c->value().signedCharValue()));
-            }
-            break;
-
-            case CT_uint8_value:
-            {
-                // unsigned 8 bit value
-                // cast to integer so arg() doesn't take it as a character
-                v = QString("%1").arg(static_cast<int>(c->value().unsignedCharValue()));
             }
             break;
 
@@ -787,6 +800,30 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
     //
     switch( get_column_type( c ) )
     {
+        case CT_int8_value:
+        {
+            cvalue.setSignedCharValue( static_cast<signed char>(v.toInt()) );
+        }
+        break;
+
+        case CT_uint8_value:
+        {
+            cvalue.setUnsignedCharValue( static_cast<unsigned char>(v.toUInt()) );
+        }
+        break;
+
+        case CT_int32_value:
+        {
+            cvalue.setInt32Value( static_cast<int32_t>(v.toLong()) );
+        }
+        break;
+
+        case CT_uint32_value:
+        {
+            cvalue.setUInt32Value( static_cast<uint32_t>(v.toULong()) );
+        }
+        break;
+
         case CT_int64_value:
         {
             cvalue.setInt64Value( static_cast<uint64_t>(v.toLongLong()) );
@@ -796,6 +833,18 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         case CT_uint64_value:
         {
             cvalue.setUInt64Value( static_cast<uint64_t>(v.toULongLong()) );
+        }
+        break;
+
+        case CT_float32_value:
+        {
+            cvalue.setFloatValue( v.toFloat() );
+        }
+        break;
+
+        case CT_float64_value:
+        {
+            cvalue.setFloatValue( v.toDouble() );
         }
         break;
 
@@ -908,36 +957,6 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
             appendInt64Value( tms, tt * 1000000 + ns );
             appendStringValue( tms, str );
             cvalue.setBinaryValue(tms);
-        }
-        break;
-
-        case CT_float32_value:
-        {
-            cvalue.setFloatValue( v.toFloat() );
-        }
-        break;
-
-        case CT_float64_value:
-        {
-            cvalue.setFloatValue( v.toDouble() );
-        }
-        break;
-
-        case CT_uint32_value:
-        {
-            cvalue.setUInt32Value( static_cast<uint32_t>(v.toULong()) );
-        }
-        break;
-
-        case CT_int8_value:
-        {
-            cvalue.setSignedCharValue( static_cast<signed char>(v.toInt()) );
-        }
-        break;
-
-        case CT_uint8_value:
-        {
-            cvalue.setUnsignedCharValue( static_cast<unsigned char>(v.toUInt()) );
         }
         break;
 

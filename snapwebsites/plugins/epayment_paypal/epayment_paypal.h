@@ -150,6 +150,7 @@ private:
     QString                     get_product_plan(http_client_server::http_client http, std::string const& token_type, std::string const& access_token, epayment::epayment_product const& recurring_product, double const recurring_fee, QString& plan_id);
     bool                        get_debug();
     int8_t                      get_maximum_repeat_failures();
+    std::string                 create_unique_request_id(QString const & main_id);
 
     zpsnap_child_t                              f_snap;
     QtCassandra::QCassandraTable::pointer_t     f_epayment_paypal_table;
