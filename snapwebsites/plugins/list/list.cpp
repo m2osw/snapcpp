@@ -234,7 +234,6 @@ paging_t::paging_t(snap_child *snap, content::path_info_t & ipath)
  */
 list_item_vector_t paging_t::read_list()
 {
-std::cerr << "read list built with " << get_start_offset() << " for " << get_page_size() << "\n";
     return list::list::instance()->read_list(f_ipath, get_start_offset() - 1, get_page_size());
 }
 
@@ -589,7 +588,6 @@ QString paging_t::generate_query_string_info(int32_t page_offset) const
             result += QString("%1").arg(page);
             need_comma = true;
         }
-std::cerr << "**** page_offset " << page_offset << " p+o = " << (f_page + page_offset) << " page = " << page << " / " << f_page << ", max pages = " << max_pages << " -- result = [" << result << "]\n";
     }
 
     if(page_size != f_default_page_size)
@@ -602,7 +600,6 @@ std::cerr << "**** page_offset " << page_offset << " p+o = " << (f_page + page_o
         need_comma = true;
     }
 
-std::cerr << ">>> " << (need_comma ? "Need Comma TRUE" : "no comma?!") << " -> " << result << "\n";
     if(!need_comma)
     {
         // page 1 with default size, add nothing to the query string
@@ -680,8 +677,10 @@ QString paging_t::generate_query_string_info_for_last_page() const
  *                                 the current page.
  * \param[in] next_previous  Whether to add a next and previous set of anchors.
  * \param[in] first_last  Whether to add a first and last set of anchors.
+ * \param[in] next_previous_page  Whether to add a ... for next and previous
+ *                                pages.
  */
-void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32_t next_previous_count, bool const next_previous, bool const first_last) const
+void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32_t next_previous_count, bool const next_previous, bool const first_last, bool const next_previous_page) const
 {
     if(element.isNull())
     {
@@ -703,7 +702,6 @@ void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32
     ul.setAttribute("class", "list-navigation" + list_name);
     element.appendChild(ul);
 
-std::cerr << "----------------------- LIST ----------------\n";
     // generate the URIs in before/after the current page
     int32_t first(0);
     int32_t last(0);
@@ -711,12 +709,9 @@ std::cerr << "----------------------- LIST ----------------\n";
     QStringList qs;
     QString const current_page_query_string(generate_query_string_info(0));
     qs.push_back(current_page_query_string);
-std::cerr << "+++++++ C [" << current_page_query_string << "]\n";
-std::cerr << "/previous\n";
     for(int32_t i(-1); i >= -next_previous_count; --i)
     {
         QString const query_string(generate_query_string_info(i));
-std::cerr << "+++++++ P [" << query_string << "] (qs first: [" << qs.first() << "] )\n";
         if(qs.first() == query_string)
         {
             break;
@@ -725,15 +720,12 @@ std::cerr << "+++++++ P [" << query_string << "] (qs first: [" << qs.first() << 
         {
             first = i;
         }
-std::cerr << "----------------------- [" << query_string << "]\n";
         qs.push_front(query_string);
     }
-std::cerr << "/next\n";
     current_index = qs.size() - 1;
     for(int32_t i(1); i <= next_previous_count; ++i)
     {
         QString const query_string(generate_query_string_info(i));
-std::cerr << "+++++++ N [" << query_string << "] (qs last: [" << qs.last() << "] )\n";
         if(qs.last() == query_string)
         {
             break;
@@ -742,10 +734,8 @@ std::cerr << "+++++++ N [" << query_string << "] (qs last: [" << qs.last() << "]
         {
             last = i;
         }
-std::cerr << "----------------------- [" << query_string << "]\n";
         qs.push_back(query_string);
     }
-std::cerr << "----------------------- FIRST " << first << " /LAST " << last << " -- index " << current_index << " ----------------\n";
 
     // add the first anchor only if we are not on the first page
     if(first_last && first < 0)
@@ -777,9 +767,28 @@ std::cerr << "----------------------- FIRST " << first << " /LAST " << last << "
         QDomElement anchor(doc.createElement("a"));
         QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x2190))));
         anchor.appendChild(text);
-        //anchor.setAttribute("href", anchor_uri.get_uri());
         anchor.setAttribute("href", "?" + anchor_uri.query_string());
         li.appendChild(anchor);
+    }
+
+    if(next_previous_page && first < 0)
+    {
+        QString const query_string(generate_query_string_info(-1 - next_previous_count));
+        if(qs.first() != query_string)
+        {
+            // add the previous page button
+            QDomElement li(doc.createElement("li"));
+            li.setAttribute("class", "list-navigation-previous-page");
+            ul.appendChild(li);
+
+            snap_uri anchor_uri(uri);
+            anchor_uri.set_query_string(generate_query_string_info(-1 - next_previous_count));
+            QDomElement anchor(doc.createElement("a"));
+            QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x2026))));
+            anchor.appendChild(text);
+            anchor.setAttribute("href", "?" + anchor_uri.query_string());
+            li.appendChild(anchor);
+        }
     }
 
     // add the navigation links now
@@ -790,7 +799,6 @@ std::cerr << "----------------------- FIRST " << first << " /LAST " << last << "
         if(i == current_index)
         {
             // the current page (not an anchor)
-std::cerr << "/current/ " << i << "\n";
             QDomElement li(doc.createElement("li"));
             li.setAttribute("class", "list-navigation-current");
             ul.appendChild(li);
@@ -800,7 +808,6 @@ std::cerr << "/current/ " << i << "\n";
         else if(i < current_index)
         {
             // a previous anchor
-std::cerr << "/previous/ " << i << "\n";
             QDomElement li(doc.createElement("li"));
             li.setAttribute("class", "list-navigation-preceeding-page");
             ul.appendChild(li);
@@ -810,7 +817,6 @@ std::cerr << "/previous/ " << i << "\n";
             QDomElement anchor(doc.createElement("a"));
             QDomText text(doc.createTextNode(QString("%1").arg(f_page + i - current_index)));
             anchor.appendChild(text);
-            //anchor.setAttribute("href", anchor_uri.get_uri());
             anchor.setAttribute("href", "?" + anchor_uri.query_string());
             li.appendChild(anchor);
         }
@@ -826,7 +832,26 @@ std::cerr << "/previous/ " << i << "\n";
             QDomElement anchor(doc.createElement("a"));
             QDomText text(doc.createTextNode(QString("%1").arg(f_page + i - current_index)));
             anchor.appendChild(text);
-            //anchor.setAttribute("href", anchor_uri.get_uri());
+            anchor.setAttribute("href", "?" + anchor_uri.query_string());
+            li.appendChild(anchor);
+        }
+    }
+
+    if(next_previous_page && last > 0)
+    {
+        QString const query_string(generate_query_string_info(next_previous_count + 1));
+        if(qs.last() != query_string)
+        {
+            // add the previous page button
+            QDomElement li(doc.createElement("li"));
+            li.setAttribute("class", "list-navigation-previous-page");
+            ul.appendChild(li);
+
+            snap_uri anchor_uri(uri);
+            anchor_uri.set_query_string(generate_query_string_info(next_previous_count + 1));
+            QDomElement anchor(doc.createElement("a"));
+            QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x2026))));
+            anchor.appendChild(text);
             anchor.setAttribute("href", "?" + anchor_uri.query_string());
             li.appendChild(anchor);
         }
@@ -845,7 +870,6 @@ std::cerr << "/previous/ " << i << "\n";
         QDomElement anchor(doc.createElement("a"));
         QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x2192))));
         anchor.appendChild(text);
-        //anchor.setAttribute("href", anchor_uri.get_uri());
         anchor.setAttribute("href", "?" + anchor_uri.query_string());
         li.appendChild(anchor);
     }
@@ -863,10 +887,13 @@ std::cerr << "/previous/ " << i << "\n";
         QDomElement anchor(doc.createElement("a"));
         QDomText text(doc.createTextNode(QString("%1").arg(QChar(0x21E5))));
         anchor.appendChild(text);
-        //anchor.setAttribute("href", anchor_uri.get_uri());
         anchor.setAttribute("href", "?" + anchor_uri.query_string());
         li.appendChild(anchor);
     }
+
+    QDomElement div_clear(doc.createElement("div"));
+    div_clear.setAttribute("class", "div-clear");
+    element.appendChild(div_clear);
 }
 
 
@@ -884,7 +911,6 @@ void paging_t::set_page(int32_t page)
 {
     // make sure this is at least 1
     f_page = std::max(1, page);
-std::cerr << "paging f_page = " << f_page << "\n";
 }
 
 

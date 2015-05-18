@@ -131,7 +131,7 @@ public:
     QString             generate_query_string_info(int32_t page_offset) const;
     QString             generate_query_string_info_for_first_page() const;
     QString             generate_query_string_info_for_last_page() const;
-    void                generate_list_navigation(QDomElement element, snap_uri uri, int32_t next_previous_count, bool const next_previous, bool const first_last) const;
+    void                generate_list_navigation(QDomElement element, snap_uri uri, int32_t next_previous_count, bool const next_previous, bool const first_last, bool const next_previous_page) const;
 
     void                set_page(int32_t page);
     int32_t             get_page() const;
