@@ -122,6 +122,9 @@ public:
 
     QString             get_list_name() const;
 
+    void                set_maximum_number_of_items(int32_t maximum_items);
+    int32_t             get_maximum_number_of_items() const;
+
     int32_t             get_number_of_items() const;
 
     void                set_start_offset(int32_t start_offset);
@@ -160,6 +163,7 @@ private:
     content::path_info_t &          f_ipath;                // path to the list
     mutable controlled_vars::fbool_t f_retrieved_list_name;
     mutable QString                 f_list_name;            // name used in query string
+    m1int32_t                       f_maximum_number_of_items; // maximum number of items
     mutable m1int32_t               f_number_of_items;      // total number of items
     m1int32_t                       f_start_offset;         // if -1, ignore
     p1int32_t                       f_page;                 // page count starts at 1

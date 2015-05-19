@@ -234,7 +234,12 @@ paging_t::paging_t(snap_child *snap, content::path_info_t & ipath)
  */
 list_item_vector_t paging_t::read_list()
 {
-    return list::list::instance()->read_list(f_ipath, get_start_offset() - 1, get_page_size());
+    int count(get_page_size());
+    if(f_maximum_number_of_items > 0 && count > f_maximum_number_of_items)
+    {
+        count = f_maximum_number_of_items;
+    }
+    return list::list::instance()->read_list(f_ipath, get_start_offset() - 1, count);
 }
 
 
@@ -268,6 +273,50 @@ QString paging_t::get_list_name() const
 }
 
 
+/** \brief Set a maximum number of items to gather.
+ *
+ * This function defines the maximum number of items one wants to show
+ * in a list being paged. This value shadows the total number of items
+ * defined in the list if that total number is larger.
+ *
+ * This is particularly useful to control the length a list so it does
+ * not go out of hands. For example, if you create one page per day, you
+ * may want to show a list of up to 30 entries (nearly one month) instead
+ * of all the entries that have been created from the beginning of time.
+ *
+ * By default this value is set to -1 which means it has no effect. You
+ * may call this function with -1 as well.
+ *
+ * \param[in] maximum_number_of_items  The new maximum number of items.
+ */
+void paging_t::set_maximum_number_of_items(int32_t maximum_number_of_items)
+{
+    if(maximum_number_of_items < 1)
+    {
+        // make sure that turning this feature off is done using exactly -1
+        f_maximum_number_of_items = -1;
+    }
+    else
+    {
+        f_maximum_number_of_items = maximum_number_of_items;
+    }
+}
+
+
+/** \brief Get the current maximum number of items.
+ *
+ * This function returns the current maximum number of items. By default
+ * this value is set to -1 which means the number of items is not going
+ * to get clamped.
+ *
+ * \return The current maximum number of items.
+ */
+int32_t paging_t::get_maximum_number_of_items() const
+{
+    return f_maximum_number_of_items;
+}
+
+
 /** \brief Retrieve the total number of items in a list.
  *
  * This function retrieves the total number of items found in a list.
@@ -285,8 +334,10 @@ QString paging_t::get_list_name() const
  * This is not the number of pages. Use the get_total_pages() to
  * determine the total number of pages available in a list.
  *
- * \todo
- * The code necessary to count the items in a list is not yet written.
+ * \warning
+ * The exact number of items cannot currently be retrieved. This
+ * function is clamped to the maximum number of items as defined
+ * by set_maximum_number_of_items()
  *
  * \return The number of items in the list.
  */
@@ -301,7 +352,14 @@ int32_t paging_t::get_number_of_items() const
         f_number_of_items = branch_table->row(f_ipath.get_branch_key())->cell(get_name(SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value();
     }
 
-    return f_number_of_items;
+    // the count may have been limited by the user
+    if(f_maximum_number_of_items == -1
+    || f_number_of_items < f_maximum_number_of_items)
+    {
+        return f_number_of_items;
+    }
+
+    return f_maximum_number_of_items;
 }
 
 
@@ -561,7 +619,7 @@ QString paging_t::generate_query_string_info(int32_t page_offset) const
         }
         else if(offset > get_number_of_items())
         {
-            offset = f_number_of_items;
+            offset = get_number_of_items();
         }
         result += QString("o%1").arg(offset);
         need_comma = true;
@@ -683,6 +741,14 @@ QString paging_t::generate_query_string_info_for_last_page() const
 void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32_t next_previous_count, bool const next_previous, bool const first_last, bool const next_previous_page) const
 {
     if(element.isNull())
+    {
+        return;
+    }
+
+    // no navigation necessary if the number of items is limited and
+    // that limit is smaller or equal to the size of one page
+    if(f_maximum_number_of_items != -1
+    && f_maximum_number_of_items <= f_page_size)
     {
         return;
     }
