@@ -747,8 +747,8 @@ void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32
 
     // no navigation necessary if the number of items is limited and
     // that limit is smaller or equal to the size of one page
-    if(f_maximum_number_of_items != -1
-    && f_maximum_number_of_items <= f_page_size)
+    if((f_maximum_number_of_items != -1 && f_maximum_number_of_items <= f_page_size)
+    || get_number_of_items() < f_page_size)
     {
         return;
     }
