@@ -2897,6 +2897,10 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             }
 
             // read the list of items
+            //
+            // TODO: use a paging_t object to read the list so we can
+            //       append a navigation and handle the page parameter
+            //
             list_item_vector_t items(read_list(list_ipath, start, count));
             snap_child::post_file_t f;
 
@@ -2984,7 +2988,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                         item_ipath.set_parameter("action", "view");
                     }
                 }
-                // whether we're attempting to display this item
+                // whether we are attempting to display this item
                 // (opposed to the test when going to the page or generating
                 // the list in the first place)
                 item_ipath.set_parameter("mode", "display");

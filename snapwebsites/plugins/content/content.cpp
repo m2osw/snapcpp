@@ -3726,11 +3726,25 @@ void path_info_t::get_parent(path_info_t& parent_ipath) const
 }
 
 
-void path_info_t::get_child(path_info_t& parent_ipath, QString const& child) const
+/** \brief Create a path representing a child of this path.
+ *
+ * 'this' path is viewed as the parent path. This function uses the
+ * parent path and appends the \p child string and saves the result
+ * in the \p child_ipath parameter.
+ *
+ * \note
+ * Notice that the function does not return anything because a path_info_t
+ * cannot be copied. Instead we change the content of a parameter the user
+ * passes in.
+ *
+ * \param[out] child_ipath  The resulting child path.
+ * \param[in] child  The child to append to this path.
+ */
+void path_info_t::get_child(path_info_t & child_ipath, QString const & child) const
 {
     // since the path will not include the domain name, it will get
     // canonicalized automatically
-    parent_ipath.set_path(f_cpath + "/" + child);
+    child_ipath.set_path(f_cpath + "/" + child);
 }
 
 
