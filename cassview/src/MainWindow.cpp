@@ -220,6 +220,13 @@ void MainWindow::on_f_applyFilter_clicked()
 }
 
 
+void MainWindow::on_f_refreshFilter_clicked()
+{
+    QString const table_name( f_tables->currentText( ) );
+    on_f_tables_currentIndexChanged( table_name );
+}
+
+
 void MainWindow::on_f_contextCombo_currentIndexChanged(const QString &arg1)
 {
     if( arg1.isEmpty() )

@@ -101,6 +101,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="f_refreshView">
+        <property name="text">
+         <string>&amp;Refresh</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -190,7 +197,7 @@
    </widget>
    <widget class="QMenu" name="menu_Row">
     <property name="title">
-     <string>&amp;Row</string>
+     <string>Ro&amp;w</string>
     </property>
     <addaction name="action_InsertRow"/>
     <addaction name="action_DeleteRows"/>
