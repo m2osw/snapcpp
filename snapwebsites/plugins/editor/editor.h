@@ -18,6 +18,7 @@
 
 #include "../users/users.h"
 #include "../server_access/server_access.h"
+#include "../javascript/javascript.h"
 
 namespace snap
 {
@@ -93,6 +94,7 @@ class editor : public plugins::plugin
              , public layout::layout_content
              , public form::form_post
              , public layout::layout_boxes
+             , public javascript::javascript_dynamic_plugin
 {
 public:
     static int const    EDITOR_SESSION_ID_EDIT = 1;
@@ -168,6 +170,12 @@ public:
     SNAP_SIGNAL_WITH_MODE(new_attachment_saved, (content::attachment_file& the_attachment, QDomElement const& widget, QDomElement const& attachment_tag), (the_attachment, widget, attachment_tag), NEITHER);
     SNAP_SIGNAL_WITH_MODE(finish_editor_form_processing, (content::path_info_t& ipath, bool& succeeded), (ipath, succeeded), NEITHER);
 
+    // dynamic javascript property support
+    virtual int         js_property_count() const;
+    virtual QVariant    js_property_get(QString const& name) const;
+    virtual QString     js_property_name(int index) const;
+    virtual QVariant    js_property_get(int index) const;
+
 private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
@@ -178,6 +186,7 @@ private:
 
     zpsnap_child_t      f_snap;
     QDomDocument        f_editor_form;  // XSL from editor-form.xsl + other plugin extensions
+    QString             f_value_to_validate;        // for the JavaScript
 };
 
 } // namespace editor

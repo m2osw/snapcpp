@@ -19,6 +19,7 @@
 
 #include "../output/output.h"
 #include "../attachment/attachment.h"
+#include "../locale/snap_locale.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 
@@ -177,7 +178,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 4, 12, 19, 20, 45, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 5, 25, 15, 9, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -257,8 +258,10 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
             info.set_session_type(sessions::sessions::session_info::SESSION_INFO_FORM);
             info.set_session_id(EDITOR_SESSION_ID_EDIT);
             info.set_plugin_owner(get_plugin_name()); // ourselves
-            info.set_page_path(ipath.get_key());
-            //info.set_object_path();
+            content::path_info_t main_ipath;
+            main_ipath.set_path(f_snap->get_uri().path());
+            info.set_page_path(main_ipath.get_key());
+            info.set_object_path(ipath.get_key());
             info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
             info.set_time_to_live(86400);  // 24 hours
             QString const session(sessions::sessions::instance()->create_session(info));
@@ -651,6 +654,18 @@ void editor::on_process_post(QString const& uri_path)
 
     server_access::server_access *server_access_plugin(server_access::server_access::instance());
 
+    content::path_info_t real_ipath;
+    QString const object_path(info.get_object_path());
+    if(object_path.isEmpty())
+    {
+        real_ipath.set_path(ipath.get_key());
+    }
+    else
+    {
+        real_ipath.set_path(object_path);
+        ipath.set_real_path(object_path);
+    }
+
     // TODO: if we generated an error, we do not even get a way to save
     //       the data to a draft
     if(messages->get_error_count() == 0)
@@ -667,7 +682,9 @@ void editor::on_process_post(QString const& uri_path)
         }
 
         // verify that the path is correct
-        if(info.get_page_path() != ipath.get_key()
+        content::path_info_t main_ipath; // at this point main_ipath == ipath but that should get fixed one day
+        main_ipath.set_path(f_snap->get_uri().path());
+        if(info.get_page_path() != main_ipath.get_key()
         || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
         || info.get_plugin_owner() != get_plugin_name())
         {
@@ -682,7 +699,7 @@ void editor::on_process_post(QString const& uri_path)
         }
 
         // editing a draft?
-        if(ipath.get_cpath().startsWith("admin/drafts/"))
+        if(real_ipath.get_cpath().startsWith("admin/drafts/"))
         {
             // adjust the mode for drafts are "special" content
             switch(editor_save_mode)
@@ -717,22 +734,22 @@ void editor::on_process_post(QString const& uri_path)
             break;
 
         case EDITOR_SAVE_MODE_NEW_BRANCH:
-            editor_create_new_branch(ipath);
+            editor_create_new_branch(real_ipath);
             break;
 
         case EDITOR_SAVE_MODE_SAVE:
-            editor_save(ipath, info);
+            editor_save(real_ipath, info);
             break;
 
         case EDITOR_SAVE_MODE_PUBLISH:
-            //editor_save(ipath, info); -- this will most certainly call the same function with a flag
+            //editor_save(real_ipath, info); -- this will most certainly call the same function with a flag
             break;
 
         case EDITOR_SAVE_MODE_AUTO_DRAFT:
             break;
 
         case EDITOR_SAVE_MODE_ATTACHMENT:
-            editor_save_attachment(ipath, info, server_access_plugin);
+            editor_save_attachment(real_ipath, info, server_access_plugin);
             break;
 
         case EDITOR_SAVE_MODE_UNKNOWN:
@@ -826,6 +843,11 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
 //         potential problem in that arena...
 //
 
+    content::content * content_plugin(content::content::instance());
+    messages::messages * messages(messages::messages::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
+    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+
     snap_version::version_number_t branch_number(ipath.get_branch());
     bool const switch_branch(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH == branch_number);
     if(switch_branch)
@@ -835,8 +857,6 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     }
     QString const key(ipath.get_key());
     QString const locale(ipath.get_locale());
-    content::content *content_plugin(content::content::instance());
-    messages::messages *messages(messages::messages::instance());
 
     // get the widgets
     QDomDocument editor_widgets(get_editor_widgets(ipath));
@@ -896,9 +916,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     }
 
     // these pointers are used in the signal below (save_editor_fields)
-    QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     revision_row = revision_table->row(ipath.get_revision_key());
-    QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
     secret_row = secret_table->row(ipath.get_key()); // same key as the content table
 
     // this will get initialized if the row is required
@@ -911,6 +929,12 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         {
             server_access::server_access::instance()->ajax_redirect(on_save.attribute("redirect"), on_save.attribute("target"));
         }
+
+        locale::locale * locale_plugin(locale::locale::instance());
+
+        // make sure dates and times are properly handled
+        locale_plugin->set_timezone();
+        locale_plugin->set_locale();
 
         // now go through all the widgets checking out their path, if the
         // path exists in doc then save the data in Cassandra
@@ -1496,6 +1520,27 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
  * one of the SESSION_INFO_... that represent an error, in most cases we
  * use SESSION_INFO_INCOMPATIBLE.
  *
+ * The supported validations are described on the website. There is a
+ * brief list here:
+ *
+ * \li sizes -- minimum / maximum sizes, number of characters, number of
+ *              lines, number of pixels (width x height)
+ * \li required -- the data is required
+ * \li duplicate-of -- verify that this is equal to another widget
+ * \li filters -- validate using a filter: regex, name, date, datetime,
+ *                decimal, email, emails, integer, time, min-date, max-date,
+ *                min-time, max-time, uri, extensions, validate
+ *
+ * The filters/validate makes use of a JavaScript to know whether the value
+ * is valid. The script is given the value and you can access with:
+ *
+ * \code
+ *      plugins.editor.value
+ *
+ *      // for example
+ *      var a = ParseInt(plugins.editor.value); return a >= -100 && a <= 100;
+ * \endcode
+ *
  * \param[in] cpath  The path where the form is defined
  * \param[in,out] info  The information linked with this form (loaded from the session)
  * \param[in] widget  The widget being tested
@@ -1507,7 +1552,8 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
  */
 bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, QString const& value, bool const is_secret)
 {
-    messages::messages *messages(messages::messages::instance());
+    messages::messages * messages(messages::messages::instance());
+    locale::locale * locale_plugin(locale::locale::instance());
 
     bool has_minimum(false);
 
@@ -1519,239 +1565,305 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
         label = widget_name;
     }
 
-    // Check the minimum and maximum length / sizes / dimensions
-    QDomElement sizes(widget.firstChildElement("sizes"));
-    if(!sizes.isNull())
     {
-        QDomElement min_element(sizes.firstChildElement("min"));
-        if(!min_element.isNull())
+        // Check the minimum and maximum length / sizes / dimensions
+        QDomElement sizes(widget.firstChildElement("sizes"));
+        if(!sizes.isNull())
         {
-            has_minimum = true;
-            QString const m(min_element.text());
-            if(widget_type == "image-box"
-            || widget_type == "dropped-file-with-preview"
-            || widget_type == "dropped-image-with-preview"
-            || widget_type == "dropped-any-with-preview")
+            // minimum number of characters, for images minimum width and height
+            QDomElement min_element(sizes.firstChildElement("min"));
+            if(!min_element.isNull())
             {
-                int width, height;
-                if(!form::form::parse_width_height(m, width, height))
+                has_minimum = true;
+                QString const m(min_element.text());
+                if(widget_type == "image-box"
+                || widget_type == "dropped-file-with-preview"
+                || widget_type == "dropped-image-with-preview"
+                || widget_type == "dropped-any-with-preview")
                 {
-                    // invalid width 'x' height
-                    messages->set_error(
-                        "Invalid Sizes",
-                        QString("minimum size \"%1\" is not a valid \"width 'x' height\" definition for image widget \"%2\".")
-                            .arg(form::form::html_64max(m, false)).arg(label),
-                        QString("incorrect sizes for \"%1\"").arg(widget_name),
-                        false
-                    ).set_widget_name(widget_name);
-                    // TODO add another type of error for setup ("programmer") data?
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-                }
-                else if(f_snap->postfile_exists(widget_name))
-                {
-                    snap_child::post_file_t const& image(f_snap->postfile(widget_name));
-                    int image_width(image.get_image_width());
-                    int image_height(image.get_image_height());
-                    if(width == 0 || height == 0)
+                    int width, height;
+                    if(!form::form::parse_width_height(m, width, height))
                     {
+                        // invalid width 'x' height
                         messages->set_error(
-                            "Incompatible Image File",
-                            QString("The image \"%1\" was not recognized as a supported image file format.").arg(label),
-                            QString("the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size in \"%1\"").arg(widget_name),
+                            "Invalid Sizes",
+                            QString("minimum size \"%1\" is not a valid \"width 'x' height\" definition for image widget \"%2\".")
+                                .arg(form::form::html_64max(m, false)).arg(label),
+                            QString("incorrect sizes for \"%1\"").arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
+                        // TODO add another type of error for setup ("programmer") data?
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    else if(f_snap->postfile_exists(widget_name))
+                    {
+                        snap_child::post_file_t const& image(f_snap->postfile(widget_name));
+                        int image_width(image.get_image_width());
+                        int image_height(image.get_image_height());
+                        if(width == 0 || height == 0)
+                        {
+                            messages->set_error(
+                                "Incompatible Image File",
+                                QString("The image \"%1\" was not recognized as a supported image file format.").arg(label),
+                                QString("the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size in \"%1\"").arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                        else if(image_width < width || image_height < height)
+                        {
+                            messages->set_error(
+                                "Image Too Small",
+                                QString("The image \"%1\" you uploaded is too small (your image is %2x%3, the minimum required is %4x%5).")
+                                        .arg(label).arg(image_width).arg(image_height).arg(width).arg(height),
+                                "the user uploaded an image that is too small",
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                }
+                else
+                {
+                    bool ok;
+                    int const l(m.toInt(&ok));
+                    if(!ok)
+                    {
+                        throw editor_exception_invalid_editor_form_xml(QString("the minimum size \"%1\" must be a valid decimal integer").arg(m));
+                    }
+                    if(value.length() < l)
+                    {
+                        // length too small
+                        messages->set_error(
+                            "Length Too Small",
+                            QString("\"%1\" is too small in \"%2\". The widget requires at least %3 characters.")
+                                    .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
+                            QString("not enough characters in \"%1\"").arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
                         info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                     }
-                    else if(image_width < width || image_height < height)
+                }
+            }
+
+            // maximum number of characters, for images maximum width and height
+            QDomElement max_element(sizes.firstChildElement("max"));
+            if(!max_element.isNull())
+            {
+                QString const m(max_element.text());
+                if(widget_type == "image-box"
+                || widget_type == "dropped-file-with-preview"
+                || widget_type == "dropped-image-with-preview"
+                || widget_type == "dropped-any-with-preview")
+                {
+                    int width, height;
+                    if(!form::form::parse_width_height(m, width, height))
                     {
+                        // invalid width 'x' height
                         messages->set_error(
-                            "Image Too Small",
-                            QString("The image \"%1\" you uploaded is too small (your image is %2x%3, the minimum required is %4x%5).")
+                            "Invalid Sizes",
+                            QString("maximum size \"%1\" is not a valid \"width 'x' height\" definition for this image widget.")
+                                    .arg(form::form::html_64max(m, false)),
+                            "incorrect sizes for " + widget_name,
+                            false
+                        ).set_widget_name(widget_name);
+                        // TODO add another type of error for setup ("programmer") data?
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    else if(f_snap->postfile_exists(widget_name))
+                    {
+                        snap_child::post_file_t const& image(f_snap->postfile(widget_name));
+                        int image_width(image.get_image_width());
+                        int image_height(image.get_image_height());
+                        if(width == 0 || height == 0)
+                        {
+                            // TODO avoid error a 2nd time if done in minimum case
+                            messages->set_error(
+                                "Incompatible Image File",
+                                QString("The image \"%1\" was not recognized as a supported image file format.").arg(label),
+                                QString("the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size of \"%1\"").arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                        else if(image_width > width || image_height > height)
+                        {
+                            messages->set_error(
+                                "Image Too Large",
+                                QString("The image \"%1\" you uploaded is too large (your image is %2x%3, the maximum allowed is %4x%5).")
                                     .arg(label).arg(image_width).arg(image_height).arg(width).arg(height),
-                            "the user uploaded an image that is too small",
-                            false
-                        ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                QString("the user uploaded an image that is too large for \"%1\"").arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
                     }
                 }
-            }
-            else
-            {
-                bool ok;
-                int const l(m.toInt(&ok));
-                if(!ok)
+                else
                 {
-                    throw editor_exception_invalid_editor_form_xml(QString("the minimum size \"%1\" must be a valid decimal integer").arg(m));
-                }
-                if(value.length() < l)
-                {
-                    // length too small
-                    messages->set_error(
-                        "Length Too Small",
-                        QString("\"%1\" is too small in \"%2\". The widget requires at least %3 characters.")
-                                .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
-                        QString("not enough characters in \"%1\"").arg(widget_name),
-                        false
-                    ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-                }
-            }
-        }
-        QDomElement max_element(sizes.firstChildElement("max"));
-        if(!max_element.isNull())
-        {
-            QString const m(max_element.text());
-            if(widget_type == "image-box"
-            || widget_type == "dropped-file-with-preview"
-            || widget_type == "dropped-image-with-preview"
-            || widget_type == "dropped-any-with-preview")
-            {
-                int width, height;
-                if(!form::form::parse_width_height(m, width, height))
-                {
-                    // invalid width 'x' height
-                    messages->set_error(
-                        "Invalid Sizes",
-                        QString("maximum size \"%1\" is not a valid \"width 'x' height\" definition for this image widget.")
-                                .arg(form::form::html_64max(m, false)),
-                        "incorrect sizes for " + widget_name,
-                        false
-                    ).set_widget_name(widget_name);
-                    // TODO add another type of error for setup ("programmer") data?
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-                }
-                else if(f_snap->postfile_exists(widget_name))
-                {
-                    snap_child::post_file_t const& image(f_snap->postfile(widget_name));
-                    int image_width(image.get_image_width());
-                    int image_height(image.get_image_height());
-                    if(width == 0 || height == 0)
+                    bool ok;
+                    int const l(m.toInt(&ok));
+                    if(!ok)
                     {
-                        // TODO avoid error a 2nd time if done in minimum case
-                        messages->set_error(
-                            "Incompatible Image File",
-                            QString("The image \"%1\" was not recognized as a supported image file format.").arg(label),
-                            QString("the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size of \"%1\"").arg(widget_name),
-                            false
-                        ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        throw editor_exception_invalid_editor_form_xml(QString("the maximum size \"%1\" must be a valid decimal integer").arg(m));
                     }
-                    else if(image_width > width || image_height > height)
+                    if(value.length() > l)
                     {
+                        // length too large
                         messages->set_error(
-                            "Image Too Large",
-                            QString("The image \"%1\" you uploaded is too large (your image is %2x%3, the maximum allowed is %4x%5).")
-                                .arg(label).arg(image_width).arg(image_height).arg(width).arg(height),
-                            QString("the user uploaded an image that is too large for \"%1\"").arg(widget_name),
+                            "Length Too Long",
+                            QString("\"%1\" is too long in \"%2\". The widget requires at most %3 characters.")
+                                    .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
+                            QString("too many characters in \"%1\"").arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
                         info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
-            else
+
+            // maximum number of lines
+            QDomElement min_lines(sizes.firstChildElement("min-lines"));
+            QDomElement max_lines(sizes.firstChildElement("max-lines"));
+            if(!min_lines.isNull()
+            || !max_lines.isNull())
             {
-                bool ok;
-                int const l(m.toInt(&ok));
-                if(!ok)
+                QString min_str("-1");
+                QString max_str("-1");
+                int min_value(-1);
+                int max_value(-1);
+                bool ok(false);
+
+                // minimum defined?
+                if(!min_lines.isNull())
                 {
-                    throw editor_exception_invalid_editor_form_xml(QString("the maximum size \"%1\" must be a valid decimal integer").arg(m));
+                    min_str = min_lines.text();
+                    min_value = min_str.toInt(&ok);
+                    if(!ok || min_value < 0)
+                    {
+                        throw editor_exception_invalid_editor_form_xml(QString("the number of min-lines \"%1\" must be a valid and positive decimal integer").arg(min_str));
+                    }
                 }
-                if(value.length() > l)
+
+                // maximum defined?
+                if(!max_lines.isNull())
                 {
-                    // length too large
-                    messages->set_error(
-                        "Length Too Long",
-                        QString("\"%1\" is too long in \"%2\". The widget requires at most %3 characters.")
-                                .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
-                        QString("too many characters in \"%1\"").arg(widget_name),
-                        false
-                    ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    max_str = max_lines.text();
+                    max_value = max_str.toInt(&ok);
+                    if(!ok || max_value < 0)
+                    {
+                        throw editor_exception_invalid_editor_form_xml(QString("the number of max-lines \"%1\" must be a valid and positive decimal integer").arg(max_str));
+                    }
                 }
-            }
-        }
-        QDomElement lines(sizes.firstChildElement("lines"));
-        if(!lines.isNull())
-        {
-            QString const m(lines.text());
-            bool ok;
-            int const l(m.toInt(&ok));
-            if(!ok)
-            {
-                throw editor_exception_invalid_editor_form_xml(QString("the number of lines \"%1\" must be a valid decimal integer").arg(m));
-            }
-            if(widget_type == "text-edit"
-            || widget_type == "html-edit")
-            {
-                if(form::form::count_text_lines(value) < l)
+
+                // sorted properly?
+                if(min_value != -1 && max_value != -1 && max_value < min_value)
                 {
-                    // not enough lines (text)
-                    messages->set_error(
-                        "Not Enough Lines",
-                        QString("\"%1\" does not include enough lines in \"%2\". The widget requires at least %3 lines.")
-                                .arg(form::form::html_64max(value, is_secret)).arg(label).arg(m),
-                        QString("not enough lines in \"%1\"").arg(widget_name),
-                        false
-                    ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    throw editor_exception_invalid_editor_form_xml(QString("the number of min-lines \"%1\" is smaller than max-lines \"%2\"").arg(min_str).arg(max_str));
+                }
+
+                if(widget_type == "text-edit"
+                || widget_type == "html-edit")
+                {
+                    // calculate the number of lines in value
+                    int lines(form::form::count_text_lines(value));
+                    if(min_value != -1 && lines < min_value)
+                    {
+                        // not enough lines (text)
+                        messages->set_error(
+                            "Not Enough Lines",
+                            QString("\"%1\" does not include enough lines in \"%2\". The widget requires at least %3 lines.")
+                                    .arg(form::form::html_64max(value, is_secret)).arg(label).arg(min_str),
+                            QString("not enough lines in \"%1\"").arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    if(max_value != -1 && lines > max_value)
+                    {
+                        // not enough lines (text)
+                        messages->set_error(
+                            "Too Many Lines",
+                            QString("\"%1\" has too many lines in \"%2\". The widget accepts at most %3 lines.")
+                                    .arg(form::form::html_64max(value, is_secret)).arg(label).arg(max_str),
+                            QString("not enough lines in \"%1\"").arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
                 }
             }
         }
     }
 
-    // check whether the field is required, in case of a checkbox required
-    // means that the user selects the checkbox ("on")
-    if(widget_type == "line-edit"
-    //|| widget_type == "password" -- not yet implemented
-    || widget_type == "checkbox"
-    || widget_type == "radio"
-    //|| widget_type == "file" -- not yet implemented
-    || widget_type == "image-box"
-    || widget_type == "dropped-file-with-preview"
-    || widget_type == "dropped-image-with-preview"
-    || widget_type == "dropped-any-with-preview")
     {
-        QDomElement required(widget.firstChildElement("required"));
-        if(!required.isNull())
+        // check whether the field is required, in case of a checkbox required
+        // means that the user selects the checkbox ("on")
+        if(widget_type == "line-edit"
+        //|| widget_type == "password" -- not yet implemented
+        || widget_type == "checkbox"
+        || widget_type == "radio"
+        //|| widget_type == "file" -- not yet implemented
+        || widget_type == "image-box"
+        || widget_type == "dropped-file-with-preview"
+        || widget_type == "dropped-image-with-preview"
+        || widget_type == "dropped-any-with-preview")
         {
-            QString const required_text(required.text());
-            if(required_text == "required")
+            QDomElement required(widget.firstChildElement("required"));
+            if(!required.isNull())
             {
-                // It is required!
-                if(widget_type == "file"
-                || widget_type == "dropped-file-with-preview")
+                QString const required_text(required.text());
+                if(required_text == "required")
                 {
-                    if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
+                    // It is required!
+                    if(widget_type == "file"
+                    || widget_type == "dropped-file-with-preview")
                     {
-                        QDomElement root(widget.ownerDocument().documentElement());
-                        QString const name(QString("%1::%2::%3")
-                                .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
-                                .arg(widget_name)
-                                .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
-//std::cerr << "***\n*** Check for " << name << " in page " << ipath.get_key() << "\n***\n";
-                        QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::PARAM_REVISION_GLOBAL));
-                        if(cassandra_value.nullValue())
+                        if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
                         {
-                            // not defined!
-                            messages->set_error(
-                                    "Invalid Value",
-                                    QString("\"%1\" is a required field.").arg(label),
-                                    QString("no data entered by user in widget \"%1\"").arg(widget_name),
-                                    false
-                                ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            QDomElement root(widget.ownerDocument().documentElement());
+                            QString const name(QString("%1::%2::%3")
+                                    .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
+                                    .arg(widget_name)
+                                    .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
+                            QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::PARAM_REVISION_GLOBAL));
+                            if(cassandra_value.nullValue())
+                            {
+                                // not defined!
+                                messages->set_error(
+                                        "Invalid Value",
+                                        QString("\"%1\" is a required field.").arg(label),
+                                        QString("no data entered by user in widget \"%1\"").arg(widget_name),
+                                        false
+                                    ).set_widget_name(widget_name);
+                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            }
                         }
                     }
-                }
-                else if(widget_type == "image-box"
-                     || widget_type == "dropped-image-with-preview"
-                     || widget_type == "dropped-any-with-preview")
-                {
-                    // here whether has_minimum is set does not matter
-                    if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
+                    else if(widget_type == "image-box"
+                         || widget_type == "dropped-image-with-preview"
+                         || widget_type == "dropped-any-with-preview")
                     {
-                        if(value.isEmpty())
+                        // here whether has_minimum is set does not matter
+                        if(!f_snap->postfile_exists(widget_name)) // TBD <- this test is not logical if widget_type cannot be a FILE type...
+                        {
+                            if(value.isEmpty())
+                            {
+                                messages->set_error(
+                                        "Value is Invalid",
+                                        QString("\"%1\" is a required field.").arg(label),
+                                        QString("no data entered in widget \"%1\" by user").arg(widget_name),
+                                        false
+                                    ).set_widget_name(widget_name);
+                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // not an additional error if the minimum error was
+                        // already generated
+                        if(!has_minimum && value.isEmpty())
                         {
                             messages->set_error(
                                     "Value is Invalid",
@@ -1763,239 +1875,731 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                         }
                     }
                 }
-                else
+            }
+        }
+    }
+
+    {
+        // check whether the widget has a "duplicate-of" attribute, if so
+        // then it must be equal to that other widget's value
+        QString duplicate_of(widget.attribute("duplicate-of"));
+        if(!duplicate_of.isEmpty())
+        {
+            // What we need is the name of the widget so we can get its
+            // current value and the duplicate-of attribute is just that!
+            QString const duplicate_value(f_snap->postenv(duplicate_of));
+            if(duplicate_value != value)
+            {
+                QString dup_label(duplicate_of);
+                QDomXPath dom_xpath;
+                dom_xpath.setXPath(QString("/snap-form//widget[@id=\"%1\"]/@id").arg(duplicate_of));
+                QDomXPath::node_vector_t result(dom_xpath.apply(widget));
+                if(result.size() > 0 && result[0].isElement())
                 {
-                    // not an additional error if the minimum error was
-                    // already generated
-                    if(!has_minimum && value.isEmpty())
+                    // we found the widget, display its label instead
+                    dup_label = result[0].toElement().text();
+                }
+                messages->set_error(
+                  "Value is Invalid",
+                  QString("\"%1\" must be an exact copy of \"%2\". Please try again.")
+                        .arg(label).arg(dup_label),
+                  QString("confirmation widget \"%1\" is not equal to the original \"%2\" (i.e. most likely a password confirmation)")
+                        .arg(widget_name).arg(duplicate_of),
+                  false
+                ).set_widget_name(widget_name);
+                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+            }
+        }
+    }
+
+    {
+        QDomElement filters(widget.firstChildElement("filters"));
+        if(!filters.isNull()
+        && !value.isEmpty()) // emptiness was checked with the "required" test
+        {
+            // regular expression
+            {
+                QDomElement regex_tag(filters.firstChildElement("regex"));
+                if(!regex_tag.isNull())
+                {
+                    QString re;
+
+                    // not an email address by default; -1 any number, 1+ max. number
+                    int email(0);
+                    // not a date by default; 1 - date, 2 - time, 3 - both
+                    int date(0);
+
+                    QString const regex_name(regex_tag.attribute("name"));
+                    if(!regex_name.isEmpty())
                     {
-                        messages->set_error(
-                                "Value is Invalid",
-                                QString("\"%1\" is a required field.").arg(label),
-                                QString("no data entered in widget \"%1\" by user").arg(widget_name),
+                        switch(regex_name[0].unicode())
+                        {
+                        case 'd':
+                            if(regex_name == "date")
+                            {
+                                date = 1;
+                            }
+                            else if(regex_name == "datetime")
+                            {
+                                date = 3;
+                            }
+                            else if(regex_name == "decimal")
+                            {
+                                re = "^[0-9]+(?:\\.[0-9]+)?$";
+                            }
+                            break;
+
+                        case 'e':
+                            if(regex_name.startsWith("email("))
+                            {
+                                int const pos(regex_name.lastIndexOf(")"));
+                                if(pos > 6)
+                                {
+                                    QString const count(regex_name.mid(6, pos - 6));
+                                    bool ok(false);
+                                    email = count.toInt(&ok);
+                                    if(!ok)
+                                    {
+                                        // it did not work...
+                                        email = 0;
+                                    }
+                                }
+                                if(email == 0)
+                                {
+                                    f_snap->die(
+                                        snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                                        "Internal Server Error",
+                                        QString("The server could not parse the email filter in \"%1\".").arg(regex_name),
+                                        "The email format could not properly be parsed.");
+                                    NOTREACHED();
+                                }
+                            }
+                            else if(regex_name == "email")
+                            {
+                                // one email address
+                                email = 1;
+                            }
+                            else if(regex_name == "emails")
+                            {
+                                // unlimited number of email addresses
+                                email = -1;
+                            }
+                            break;
+
+                        case 'f':
+                            if(regex_name == "float")
+                            {
+                                re = "^[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?$";
+                            }
+                            break;
+
+                        case 'i':
+                            if(regex_name == "integer")
+                            {
+                                re = "^[0-9]+$";
+                            }
+                            break;
+
+                        case 't':
+                            if(regex_name == "time")
+                            {
+                                date = 2;
+                            }
+                            break;
+
+                        }
+                        // TBD: offer other plugins to support their own named regex?
+                        //
+                        // else -- should empty be ignored? TBD
+                        if(re.isEmpty() && email == 0 && date == 0)
+                        {
+                            // TBD: this can be a problem if we remove a plugin that
+                            //      adds some regexes (although right now we do not
+                            //      have such a signal...)
+                            throw editor_exception_invalid_editor_form_xml(QString("the regular expression named \"%1\" is not supported.").arg(regex_name));
+                        }
+                    }
+                    else
+                    {
+                        // Note:
+                        // We do not test whether there is some text here to avoid
+                        // wasting time; we could have such a test in a tool of
+                        // ours used to verify that the editor form is well defined.
+                        re = regex_tag.text();
+                    }
+
+                    if(email != 0)
+                    {
+                        tld_email_list emails;
+                        if(emails.parse(value.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
+                        {
+                            messages->set_error(
+                                "Invalid Value",
+                                QString("\"%1\" is not a valid email address for field \"%2\".")
+                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                QString("failed to check the label value for \"%1\"")
+                                        .arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                        else if(email != -1 && emails.count() > email) // if email is -1 then any number is fine
+                        {
+                            messages->set_error(
+                                "Invalid Value",
+                                QString("\"%1\" includes too many emails, \"%2\" expected at most %3 %4.")
+                                        .arg(form::form::html_64max(value, is_secret))
+                                        .arg(label)
+                                        .arg(email)
+                                        .arg(email == 1 ? "address" : "addresses"),
+                                QString("failed because \"%1\" expects only one email address")
+                                        .arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                    else if(date != 0)
+                    {
+                        // break parts date / time
+                        QStringList parts(value.split(" "));
+
+                        // remove empty entries (i.e. multiple spaces)
+                        for(int i(parts.size() - 1); i >= 0; i--)
+                        {
+                            if(parts[i].isEmpty())
+                            {
+                                parts.removeAt(i);
+                            }
+                        }
+
+                        if(((date == 1 || date == 2) && parts.size() != 1)
+                        || (date == 3 && parts.size() != 2))
+                        {
+                            messages->set_error(
+                                "Invalid Value",
+                                QString("\"%1\" is not valid for \"%2\".")
+                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                QString("widget \"%1\" does not represent a valid date and/or time")
+                                        .arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                        else
+                        {
+                            // check date?
+                            if(date == 1 || date == 3)
+                            {
+                                QStringList const date_parts(parts[0].split("/"));
+                                if(date_parts.size() != 3)
+                                {
+                                    messages->set_error(
+                                        "Invalid Value",
+                                        QString("\"%1\" is not a valid date for \"%2\".")
+                                                .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                        QString("the date did not validate for \"%1\"")
+                                                .arg(widget_name),
+                                        false
+                                    ).set_widget_name(widget_name);
+                                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                }
+                                else
+                                {
+                                    // TODO: use the user current locale information
+                                    //       to know whether the date is MM/DD/YYYY
+                                    //       or something else...
+                                    bool ok(false);
+                                    int const month(date_parts[0].toInt(&ok));
+                                    int day(0);
+                                    int year(0);
+                                    if(ok)
+                                    {
+                                        day = date_parts[1].toInt(&ok);
+                                        if(ok)
+                                        {
+                                            year = date_parts[2].toInt(&ok);
+                                        }
+                                    }
+                                    if(!ok)
+                                    {
+                                        messages->set_error(
+                                            "Invalid Value",
+                                            QString("\"%1\" is not a valid date for \"%2\", all three parts are not valid numbers.")
+                                                    .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                            QString("the date did not validate for \"%1\"")
+                                                    .arg(widget_name),
+                                            false
+                                        ).set_widget_name(widget_name);
+                                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                    }
+                                    else
+                                    {
+                                        // the maximum number of days depends on the
+                                        // year, use our snap_child function for that
+                                        if(month == 9 && year == 1752)
+                                        {
+                                            if(day < 1 || (day > 2 && day < 14) || day > 30)
+                                            {
+                                                messages->set_error(
+                                                    "Invalid Value",
+                                                    QString("\"%1\" is not a valid date in \"%2\" (Note that September 1752 is missing days 3 to 13).")
+                                                            .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                                    QString("the date did not validate for \"%1\"")
+                                                            .arg(widget_name),
+                                                    false
+                                                ).set_widget_name(widget_name);
+                                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                            }
+                                        }
+                                        else if(month < 1 || month > 12
+                                        || day < 1 || day > f_snap->last_day_of_month(month, year)
+                                        || year < 1 || year > 3000)
+                                        {
+                                            messages->set_error(
+                                                "Invalid Value",
+                                                QString("\"%1\" is not a valid date in \"%2\".")
+                                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                                QString("the date did note validate for \"%1\"")
+                                                        .arg(widget_name),
+                                                false
+                                            ).set_widget_name(widget_name);
+                                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                        }
+                                    }
+                                }
+                            }
+                            // check time?
+                            if(date == 2 || date == 3)
+                            {
+                                // get part 1 if we also had a date (date == 3)
+                                QStringList const time_parts(parts[date == 2 ? 0 : 1].split(":"));
+                                if(time_parts.size() == 3
+                                && time_parts.size() == 2)
+                                {
+                                    // TODO: use the user current locale information
+                                    //       to know whether the date is MM/DD/YYYY
+                                    //       or something else...
+                                    bool ok(false);
+                                    int const hours(time_parts[0].toInt(&ok));
+                                    int minutes(0);
+                                    int seconds(0);
+                                    if(ok)
+                                    {
+                                        minutes = time_parts[1].toInt(&ok);
+                                        if(ok && time_parts.size() == 3)
+                                        {
+                                            seconds = time_parts[2].toInt(&ok);
+                                        }
+                                    }
+                                    if(!ok)
+                                    {
+                                        messages->set_error(
+                                            "Invalid Value",
+                                            QString("\"%1\" is not a valid time for \"%2\", the two or three parts are not valid numbers.")
+                                                    .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                            QString("the time did not validate for \"%1\"")
+                                                    .arg(widget_name),
+                                            false
+                                        ).set_widget_name(widget_name);
+                                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                    }
+                                    else
+                                    {
+                                        // the maximum number of days depends on the
+                                        // year, use our snap_child function for that
+                                        if(hours   < 0 || hours   >= 24
+                                        || minutes < 0 || minutes >= 59
+                                        || seconds < 0 || seconds >= 59)
+                                        {
+                                            messages->set_error(
+                                                "Invalid Value",
+                                                QString("\"%1\" is not a valid time in \"%2\".")
+                                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                                QString("the time did validate for \"%1\"")
+                                                        .arg(widget_name),
+                                                false
+                                            ).set_widget_name(widget_name);
+                                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    messages->set_error(
+                                        "Invalid Value",
+                                        QString("\"%1\" is not a valid time for \"%2\".")
+                                                .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                        QString("the time did not validate for \"%1\"")
+                                                .arg(widget_name),
+                                        false
+                                    ).set_widget_name(widget_name);
+                                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Qt::CaseSensitivity cs(Qt::CaseSensitive);
+                        if(!re.isEmpty() && re[0] == '/')
+                        {
+                            re = re.mid(1);
+                            int const p(re.lastIndexOf('/'));
+                            if(p >= 0)
+                            {
+                                QString const flags(re.mid(p + 1));
+                                re = re.mid(0, p);
+                                for(auto s(flags.data()); s->unicode() != '\0'; ++s)
+                                {
+                                    switch(s->unicode())
+                                    {
+                                    case 'i':
+                                        cs = Qt::CaseInsensitive;
+                                        break;
+
+                                    default:
+                                        throw editor_exception_invalid_editor_form_xml(QString("\"%1\" is not a supported regex flag").arg(*s));
+
+                                    }
+                                }
+                            }
+                        }
+                        QRegExp reg_expr(re, cs, QRegExp::RegExp2);
+                        if(!reg_expr.isValid())
+                        {
+                            throw editor_exception_invalid_editor_form_xml(QString("\"%1\" regular expression is invalid.").arg(re));
+                        }
+                        bool const inverse_match(regex_tag.attribute("match").toLower() == "no");
+                        if((reg_expr.indexIn(value) == -1) ^ inverse_match)
+                        {
+                            messages->set_error(
+                                "Invalid Value",
+                                QString("\"%1\" is not valid for \"%2\".")
+                                        .arg(form::form::html_64max(value, is_secret)).arg(label),
+                                QString("the value did %1match the filter regular expression of \"%2\"")
+                                        .arg(inverse_match ? "" : "not ")
+                                        .arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                }
+            }
+
+            // minimum/maximum date
+            {
+                QDomElement min_date(filters.firstChildElement("min-date"));
+                QDomElement max_date(filters.firstChildElement("max-date"));
+                if(!min_date.isNull()
+                || !max_date.isNull())
+                {
+                    // first test whether the user entry was valid, if not
+                    // just skip this test 100% -- if the programmer wants
+                    // a valid date every time, he has to use the regex
+                    // tag with the name attribute set to date:
+                    //
+                    //     <regex name="date"/>
+                    //
+                    locale::locale::parse_error_t errcode;
+                    time_t const date_value(locale_plugin->parse_date(value, errcode));
+                    if(errcode == locale::locale::parse_error_t::PARSE_NO_ERROR)
+                    {
+                        QString min_str("-1");
+                        QString max_str("-1");
+                        time_t min_time(-1);
+                        time_t max_time(-1);
+
+                        if(!min_date.isNull())
+                        {
+                            min_str = min_date.text();
+                            min_time = locale_plugin->parse_date(min_str, errcode);
+                            if(errcode != locale::locale::parse_error_t::PARSE_NO_ERROR)
+                            {
+                                throw editor_exception_invalid_editor_form_xml(QString("the minimum date \"%1\" must be a valid date").arg(min_str));
+                            }
+                        }
+
+                        if(!max_date.isNull())
+                        {
+                            max_str = max_date.text();
+                            max_time = locale_plugin->parse_date(max_str, errcode);
+                            if(errcode != locale::locale::parse_error_t::PARSE_NO_ERROR)
+                            {
+                                throw editor_exception_invalid_editor_form_xml(QString("the maximum date \"%1\" must be a valid date").arg(max_str));
+                            }
+                        }
+
+                        if(min_time != -1 && max_time != -1 && max_time < min_time)
+                        {
+                            throw editor_exception_invalid_editor_form_xml(QString("the minimum date \"%1\" is not smaller than the maximum date \"%2\"").arg(min_str).arg(max_str));
+                        }
+
+                        // Note: if 'value' is not a valid date, we ignore the error
+                        //       at this point, we catch it below if the user asked
+                        //       for the format to be checked with a regex filter
+                        //       named 'date'.
+                        //  
+                        if(min_time != -1 && date_value < min_time)
+                        {
+                            // date is too small
+                            messages->set_error(
+                                "Too Old",
+                                QString("\"%1\" is too far in the past for \"%2\". The widget requires a date starting on \"%3\".")
+                                        .arg(form::form::html_64max(value, is_secret)).arg(label).arg(min_str),
+                                QString("unexpected date in \"%1\"").arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+
+                        if(max_time != -1 && date_value > max_time)
+                        {
+                            // date is too small
+                            messages->set_error(
+                                "Too Recent",
+                                QString("\"%1\" is too far in the future for \"%2\". The widget requires a date ending on \"%3\".")
+                                        .arg(form::form::html_64max(value, is_secret)).arg(label).arg(max_str),
+                                QString("unexpected date in \"%1\"").arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                }
+            }
+
+            // minimum/maximum time
+            {
+                QDomElement min_time(filters.firstChildElement("min-time"));
+                QDomElement max_time(filters.firstChildElement("max-time"));
+                if(!min_time.isNull()
+                || !max_time.isNull())
+                {
+                    // first test whether the user entry was valid, if not
+                    // just skip this test 100% -- if the programmer wants
+                    // a valid date every time, he has to use the regex
+                    // tag with the name attribute set to date:
+                    //
+                    //     <regex name="time"/>
+                    //
+                    locale::locale::parse_error_t errcode;
+                    time_t const time_value(locale_plugin->parse_time(value, errcode));
+                    if(errcode == locale::locale::parse_error_t::PARSE_NO_ERROR)
+                    {
+                        QString min_str("-1");
+                        QString max_str("-1");
+                        time_t min_time_value(-1);
+                        time_t max_time_value(-1);
+
+                        if(!min_time.isNull())
+                        {
+                            min_str = min_time.text();
+                            min_time_value = locale_plugin->parse_time(min_str, errcode);
+                            if(errcode != locale::locale::parse_error_t::PARSE_NO_ERROR)
+                            {
+                                throw editor_exception_invalid_editor_form_xml(QString("the minimum time \"%1\" must be a valid time").arg(min_str));
+                            }
+                        }
+
+                        if(!max_time.isNull())
+                        {
+                            max_str = max_time.text();
+                            max_time_value = locale_plugin->parse_time(max_str, errcode);
+                            if(errcode != locale::locale::parse_error_t::PARSE_NO_ERROR)
+                            {
+                                throw editor_exception_invalid_editor_form_xml(QString("the maximum time \"%1\" must be a valid time").arg(max_str));
+                            }
+                        }
+
+                        if(min_time_value != -1 && max_time_value != -1 && max_time_value < min_time_value)
+                        {
+                            // here we have a special case, the time loops so the min/max have to be
+                            // tested slightly differently
+                            if(time_value < max_time_value || time_value > min_time_value)
+                            {
+                                // date is too large or too small... out of range for sure
+                                messages->set_error(
+                                    "Time Out of Range",
+                                    QString("\"%1\" is out of range for \"%2\". The widget requires a time starting on \"%3\" and ending on \"%4\".")
+                                            .arg(form::form::html_64max(value, is_secret)).arg(label).arg(max_str).arg(min_str),
+                                    QString("unexpected time in \"%1\"").arg(widget_name),
+                                    false
+                                ).set_widget_name(widget_name);
+                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            }
+                        }
+                        else
+                        {
+                            // Note: if 'value' is not a valid date, we ignore the error
+                            //       at this point, we catch it below if the user asked
+                            //       for the format to be checked with a regex filter
+                            //       named 'date'.
+                            //  
+                            if(min_time_value != -1 && time_value < min_time_value)
+                            {
+                                // date is too small
+                                messages->set_error(
+                                    "Too Old",
+                                    QString("\"%1\" is too far in the past for \"%2\". The widget requires a time starting on \"%3\".")
+                                            .arg(form::form::html_64max(value, is_secret)).arg(label).arg(min_str),
+                                    QString("unexpected time in \"%1\"").arg(widget_name),
+                                    false
+                                ).set_widget_name(widget_name);
+                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            }
+
+                            if(max_time_value != -1 && time_value > max_time_value)
+                            {
+                                // date is too small
+                                messages->set_error(
+                                    "Too Recent",
+                                    QString("\"%1\" is too far in the future for \"%2\". The widget requires a time ending on \"%3\".")
+                                            .arg(form::form::html_64max(value, is_secret)).arg(label).arg(max_str),
+                                    QString("unexpected time in \"%1\"").arg(widget_name),
+                                    false
+                                ).set_widget_name(widget_name);
+                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // verify that a field is a valid URI
+            {
+                QDomElement uri_tag(filters.firstChildElement("uri"));
+                if(!uri_tag.isNull())
+                {
+                    // the text may include allowed or forbidden extensions
+                    QString const uri_tlds(uri_tag.text());
+                    QStringList tld_list(uri_tlds.split(",", QString::SkipEmptyParts));
+                    bool const match(uri_tag.attribute("match") != "no");
+                    snap_uri uri;
+                    bool valid(uri.set_uri(value));
+                    if(!valid)
+                    {
+                        // try again adding a default protocol
+                        valid = uri.set_uri("http://" + value);
+                    }
+                    if(!valid)
+                    {
+                        messages->set_error(
+                            "URL is Invalid",
+                            QString("\"%1\" is not a valid URL as expected by \"%2\".")
+                                    .arg(value).arg(label),
+                            QString("widget \"%1\" included a URL which is invalid")
+                                    .arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    }
+                    else
+                    {
+                        QString const tld(uri.top_level_domain());
+                        int const max_tld(tld_list.size());
+                        bool found(false);
+                        for(int i(0); i < max_tld; ++i)
+                        {
+                            QString const item(tld_list[i].trimmed());
+                            if(item.isEmpty())
+                            {
+                                // skip empty entries (this can happen if the trimmed()
+                                // call removed all spaces and it was only spaces!)
+                                continue;
+                            }
+                            if(item == tld)
+                            {
+                                found = true;
+                                break;
+                            }
+                            tld_list[i] = item; // save the trimmed version back for errors
+                        }
+                        // if all extensions were checked and none accepted, error
+                        if(!found ^ match)
+                        {
+                            messages->set_error(
+                                "URL is Invalid",
+                                QString("\"%1\" is not a valid URL as expected by \"%2\".")
+                                        .arg(value).arg(label),
+                                QString("widget \"%1\" included a URL which is not allowed")
+                                        .arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                }
+            }
+
+            // force extensions on file names
+            {
+                QDomElement extensions_tag(filters.firstChildElement("extensions"));
+                if(!extensions_tag.isNull())
+                {
+                    QString const extensions(extensions_tag.text());
+                    QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
+                    int const max_ext(ext_list.size());
+                    QFileInfo const file_info(value);
+                    QString const file_ext(file_info.suffix());
+                    int i;
+                    for(i = 0; i < max_ext; ++i)
+                    {
+                        QString const ext(ext_list[i].trimmed());
+                        if(ext.isEmpty())
+                        {
+                            // skip empty entries (this can happen if the trimmed()
+                            // call removed all spaces and it was only spaces!)
+                            continue;
+                        }
+                        if(file_ext == ext)
+                        {
+                            break;
+                        }
+                        ext_list[i] = ext; // save the trimmed version back for errors
+                    }
+                    // if all extensions were checked and none accepted, error
+                    if(i >= max_ext)
+                    {
+                        messages->set_error(
+                            "Filename Extension is Invalid",
+                            QString("\"%1\" must end with one of \"%2\" in \"%3\". Please try again.")
+                                    .arg(value).arg(ext_list.join(", ")).arg(label),
+                            QString("widget \"%1\" included a filename with an invalid extension")
+                                    .arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
                         info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
-        }
-    }
 
-    // check whether the widget has a "duplicate-of" attribute, if so
-    // then it must be equal to that other widget's value
-    QString duplicate_of(widget.attribute("duplicate-of"));
-    if(!duplicate_of.isEmpty())
-    {
-        // What we need is the name of the widget so we can get its
-        // current value and the duplicate-of attribute is just that!
-        QString duplicate_value(f_snap->postenv(duplicate_of));
-        if(duplicate_value != value)
-        {
-            QString dup_label(duplicate_of);
-            QDomXPath dom_xpath;
-            dom_xpath.setXPath(QString("/snap-form//widget[@id=\"%1\"]/@id").arg(duplicate_of));
-            QDomXPath::node_vector_t result(dom_xpath.apply(widget));
-            if(result.size() > 0 && result[0].isElement())
+            // run JavaScript validate script
             {
-                // we found the widget, display its label instead
-                dup_label = result[0].toElement().text();
-            }
-            messages->set_error(
-              "Value is Invalid",
-              QString("\"%1\" must be an exact copy of \"%2\". Please try again.")
-                    .arg(label).arg(dup_label),
-              QString("confirmation widget \"%1\" is not equal to the original \"%2\" (i.e. most likely a password confirmation)")
-                    .arg(widget_name).arg(duplicate_of),
-              false
-            ).set_widget_name(widget_name);
-            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-        }
-    }
-
-    QDomElement filters(widget.firstChildElement("filters"));
-    if(!filters.isNull())
-    {
-        QDomElement regex_tag(filters.firstChildElement("regex"));
-        if(!regex_tag.isNull())
-        {
-            QString re;
-
-            // not an email address by default
-            int email(0);
-
-            QString const regex_name(regex_tag.attribute("name"));
-            if(!regex_name.isEmpty())
-            {
-                switch(regex_name[0].unicode())
+                QDomElement validate_tag(filters.firstChildElement("validate"));
+                if(!validate_tag.isNull())
                 {
-                case 'd':
-                    if(regex_name == "decimal")
+                    // save so the JavaScript script can access the value
+                    // through the callbacks
+                    f_value_to_validate = value;
+
+                    javascript::javascript::instance()->register_dynamic_plugin(this);
+                    QString const validate_script(validate_tag.text());
+                    QVariant v(javascript::javascript::instance()->evaluate_script(validate_script));
+                    bool const result(v.toBool());
+                    if(!result)
                     {
-                        re = "^[0-9]+(?:\\.[0-9]+)?$";
+                        messages->set_error(
+                            "Validation Failed",
+                            QString("\"%1\" did not validate in \"%3\".")
+                                    .arg(value).arg(label),
+                            QString("widget \"%1\" included a filename with an invalid extension")
+                                    .arg(widget_name),
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                     }
-                    break;
-
-                case 'e':
-                    if(regex_name == "email")
-                    {
-                        // one email address
-                        email = 1;
-                    }
-                    else if(regex_name == "emails")
-                    {
-                        // unlimited number of email addresses
-                        email = -1;
-                    }
-                    break;
-
-                case 'f':
-                    if(regex_name == "float")
-                    {
-                        re = "^[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?$";
-                    }
-                    break;
-
-                case 'i':
-                    if(regex_name == "integer")
-                    {
-                        re = "^[0-9]+$";
-                    }
-                    break;
-
-                }
-                // TBD: offer other plugins to support their own named regex?
-                //
-                // else -- should empty be ignored? TBD
-                if(re.isEmpty())
-                {
-                    // TBD: this can be a problem if we remove a plugin that
-                    //      adds some regexes (although right now we don't
-                    //      have such a signal...)
-                    throw editor_exception_invalid_editor_form_xml(QString("the regular expression named \"%1\" is not supported.").arg(regex_name));
-                }
-            }
-            else
-            {
-                // Note:
-                // We do not test whether there is some text here to avoid
-                // wasting time; we could have such a test in a tool of
-                // ours used to verify that the editor form is well defined.
-                re = regex_tag.text();
-            }
-
-            if(email != 0)
-            {
-                tld_email_list emails;
-                if(emails.parse(value.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
-                {
-                    messages->set_error(
-                        "Invalid Value",
-                        QString("\"%1\" is not a valid email address for \"%2\".")
-                                .arg(form::form::html_64max(value, is_secret)).arg(label),
-                        QString("failed to check the label value for \"%1\"")
-                                .arg(widget_name),
-                        false
-                    ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-                }
-                else if(email != -1 && emails.count() != email)
-                {
-                    messages->set_error(
-                        "Invalid Value",
-                        QString("\"%1\" includes more than one email, \"%2\" expected just one address.")
-                                .arg(form::form::html_64max(value, is_secret)).arg(label),
-                        QString("failed because \"%1\" expects only one email address")
-                                .arg(widget_name),
-                        false
-                    ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-                }
-            }
-            else
-            {
-                Qt::CaseSensitivity cs(Qt::CaseSensitive);
-                if(!re.isEmpty() && re[0] == '/')
-                {
-                    re = re.mid(1);
-                }
-                int p(re.lastIndexOf('/'));
-                if(p >= 0)
-                {
-                    QString flags(re.mid(p + 1));
-                    re = re.mid(0, p);
-                    for(QChar *s(flags.data()); s->unicode() != '\0'; ++s)
-                    {
-                        switch(s->unicode())
-                        {
-                        case 'i':
-                            cs = Qt::CaseInsensitive;
-                            break;
-
-                        default:
-                            throw editor_exception_invalid_editor_form_xml(QString("\"%1\" is not a supported regex flag").arg(*s));
-
-                        }
-                    }
-                }
-                QRegExp reg_expr(re, cs, QRegExp::RegExp2);
-                if(!reg_expr.isValid())
-                {
-                    throw editor_exception_invalid_editor_form_xml(QString("\"%1\" regular expression is invalid.").arg(re));
-                }
-                if(reg_expr.indexIn(value) == -1)
-                {
-                    messages->set_error(
-                        "Invalid Value",
-                        QString("\"%1\" is not valid for \"%2\".")
-                                .arg(form::form::html_64max(value, is_secret)).arg(label),
-                        QString("the value did not match the filter regular expression of \"%1\"")
-                                .arg(widget_name),
-                        false
-                    ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
-                }
-            }
-        }
-
-        if(!value.isEmpty())
-        {
-            QDomElement extensions_tag(filters.firstChildElement("extensions"));
-            if(!extensions_tag.isNull())
-            {
-                QString const extensions(extensions_tag.text());
-                QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
-                int const max_ext(ext_list.size());
-                QFileInfo const file_info(value);
-                QString const file_ext(file_info.suffix());
-                int i;
-                for(i = 0; i < max_ext; ++i)
-                {
-                    QString const ext(ext_list[i].trimmed());
-                    if(ext.isEmpty())
-                    {
-                        // skip empty entries (this can happen if the trimmed()
-                        // call removed all spaces and it was only spaces!)
-                        continue;
-                    }
-                    if(file_ext == ext)
-                    {
-                        break;
-                    }
-                    ext_list[i] = ext; // save the trimmed version back for errors
-                }
-                // if all extensions were checked and none accepted, error
-                if(i >= max_ext)
-                {
-                    messages->set_error(
-                        "Filename Extension is Invalid",
-                        QString("\"%1\" must end with one of \"%2\" in \"%3\". Please try again.")
-                                .arg(value).arg(ext_list.join(", ")).arg(label),
-                        QString("widget \"%1\" included a filename with an invalid extension")
-                                .arg(widget_name),
-                        false
-                    ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
                 }
             }
         }
@@ -2941,8 +3545,10 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         info.set_session_type(sessions::sessions::session_info::SESSION_INFO_FORM);
         info.set_session_id(EDITOR_SESSION_ID_EDIT);
         info.set_plugin_owner(get_plugin_name()); // ourselves
-        info.set_page_path(ipath.get_key());
-        //info.set_object_path();
+        content::path_info_t main_ipath;
+        main_ipath.set_path(f_snap->get_uri().path());
+        info.set_page_path(main_ipath.get_key());
+        info.set_object_path(ipath.get_key());
         info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
         info.set_time_to_live(86400);  // 24 hours
         QString const session(sessions::sessions::instance()->create_session(info));
@@ -3254,6 +3860,45 @@ void editor::repair_link_of_cloned_page(QString const& clone, snap_version::vers
     links::link_info src(source.name(), source.is_unique(), clone, branch_number);
     links::links::instance()->create_link(src, destination);
 }
+
+
+// TODO: add support to return ALL the widget values instead of just
+//       the one being checked right now
+int editor::js_property_count() const
+{
+    return 1;
+}
+
+
+QVariant editor::js_property_get(QString const& name) const
+{
+    if(name == "value")
+    {
+        return f_value_to_validate;
+    }
+    return QVariant();
+}
+
+
+QString editor::js_property_name(int index) const
+{
+    if(index == 0)
+    {
+        return "value";
+    }
+    return "";
+}
+
+
+QVariant editor::js_property_get(int index) const
+{
+    if(index == 0)
+    {
+        return f_value_to_validate;
+    }
+    return QVariant();
+}
+
 
 
 

@@ -412,6 +412,10 @@ snapwebsites.ServerAccess.prototype.data_ = null;
  * This function is used to set the URI and optional query string of
  * the destination object.
  *
+ * The query string parameter (\p opt_queryString) is an object representing
+ * the query string of this URI. By default it is set to undefined meaning
+ * that no query string will be added.
+ *
  * @param {!string} uri  The URI where the data is to be sent.
  * @param {Object=} opt_queryString  An option set of key/value pairs.
  */

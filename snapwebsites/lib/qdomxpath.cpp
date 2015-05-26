@@ -792,7 +792,7 @@ public:
 
         //case ATOMIC_TYPE_UNDEFINED:
         default:
-            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)));
 
         }
     }
@@ -842,7 +842,7 @@ public:
 
             //case ATOMIC_TYPE_UNDEFINED:
             default:
-                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)));
 
             }
         }
@@ -911,7 +911,7 @@ public:
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Boolean was requested").arg(static_cast<int>(f_type)).toStdString());
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Boolean was requested").arg(static_cast<int>(f_type)));
             }
         }
         switch(f_type)
@@ -941,7 +941,7 @@ public:
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to Boolean conversion is not implemented").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_NotImplemented(QString("type %1 to Boolean conversion is not implemented").arg(static_cast<int>(f_type)));
 
         }
     }
@@ -983,7 +983,7 @@ public:
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when an Integer was requested").arg(static_cast<int>(f_type)).toStdString());
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when an Integer was requested").arg(static_cast<int>(f_type)));
             }
         }
         switch(f_type)
@@ -1009,7 +1009,7 @@ public:
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to integer conversion is not implemented").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_NotImplemented(QString("type %1 to integer conversion is not implemented").arg(static_cast<int>(f_type)));
 
         }
     }
@@ -1056,7 +1056,7 @@ public:
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Single was requested").arg(static_cast<int>(f_type)).toStdString());
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Single was requested").arg(static_cast<int>(f_type)));
             }
         }
         switch(f_type)
@@ -1081,7 +1081,7 @@ public:
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to single is not implemented").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_NotImplemented(QString("type %1 to single is not implemented").arg(static_cast<int>(f_type)));
 
         }
     }
@@ -1122,7 +1122,7 @@ public:
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Double was requested").arg(static_cast<int>(f_type)).toStdString());
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Double was requested").arg(static_cast<int>(f_type)));
             }
         }
         switch(f_type)
@@ -1150,7 +1150,7 @@ public:
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to double conversion is not implemented").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_NotImplemented(QString("type %1 to double conversion is not implemented").arg(static_cast<int>(f_type)));
 
         }
     }
@@ -1191,7 +1191,7 @@ public:
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a String was requested").arg(static_cast<int>(f_type)).toStdString());
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a String was requested").arg(static_cast<int>(f_type)));
             }
         }
         switch(f_type)
@@ -1216,7 +1216,7 @@ public:
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to string conversion is not implemented").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_NotImplemented(QString("type %1 to string conversion is not implemented").arg(static_cast<int>(f_type)));
 
         }
     }
@@ -1349,7 +1349,7 @@ public:
         default:
             // this should be done in the previous level
             // (i.e. this line should not be reachable)
-            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)));
 
         }
     }
@@ -1391,7 +1391,7 @@ public:
 
             //case ATOMIC_TYPE_UNDEFINED:
             default:
-                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)));
 
             }
         }
@@ -1646,7 +1646,7 @@ public:
         //case QDomNode::NotationNode:
         default:
             throw QDomXPathException_NotImplemented(QString("cast(node) as string for this node type (%1) is not implemented")
-                                                            .arg(static_cast<int>(node.nodeType())).toStdString());
+                                                            .arg(static_cast<int>(node.nodeType())));
 
         }
         /*NOTREACHED*/
@@ -1668,7 +1668,7 @@ public:
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Set was requested").arg(static_cast<int>(f_type)).toStdString());
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Set was requested").arg(static_cast<int>(f_type)));
             }
         }
         atomic_vector_t result;
@@ -1690,7 +1690,7 @@ public:
 
         case ATOMIC_TYPE_NODE_SET: // TODO -- is that an error or should we return something like the string() of each node
         default:
-            throw QDomXPathException_NotImplemented(QString("type %1 to set conversion is not implemented").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_NotImplemented(QString("type %1 to set conversion is not implemented").arg(static_cast<int>(f_type)));
 
         }
     }
@@ -1732,7 +1732,7 @@ public:
     {
         if(f_type != ATOMIC_TYPE_NODE_SET)
         {
-            throw QDomXPathException_WrongType(QString("atomic type is %1, when a Node Set was requested").arg(static_cast<int>(f_type)).toStdString());
+            throw QDomXPathException_WrongType(QString("atomic type is %1, when a Node Set was requested").arg(static_cast<int>(f_type)));
         }
         return const_cast<QDomXPath::node_vector_t&>(f_node_set);
     }
@@ -1773,7 +1773,7 @@ public:
     //{
     //    if(f_type != ATOMIC_TYPE_CONTEXT)
     //    {
-    //        throw QDomXPathException_WrongType(QString("atomic type is %1, when a Context was requested").arg(static_cast<int>(f_type)).toStdString());
+    //        throw QDomXPathException_WrongType(QString("atomic type is %1, when a Context was requested").arg(static_cast<int>(f_type)));
     //    }
     //    return const_cast<context_t&>(f_context);
     //}
@@ -2141,8 +2141,7 @@ void stack_not_empty(atomic_value_t::type_t type = atomic_value_t::ATOMIC_TYPE_U
     {
         throw QDomXPathException_WrongType(QString("the current type at the top of the stack is not of the right type (expected %1, it is %2)")
                                             .arg(static_cast<int>(type))
-                                            .arg(static_cast<int>(f_functions.back().f_stack.back().getType()))
-                                            .toStdString());
+                                            .arg(static_cast<int>(f_functions.back().f_stack.back().getType())));
     }
 }
 
@@ -2244,8 +2243,7 @@ void inst_undefined_instruction()
 {
     QDomXPath::instruction_t inst(f_program[f_functions.back().f_pc - 1]);
     throw QDomXPathException_UndefinedInstructionError(QString("instruction %1 is not defined (pc = %2)")
-            .arg(static_cast<int>(inst)).arg(f_functions.back().f_pc - 1)
-            .toStdString());
+            .arg(static_cast<int>(inst)).arg(f_functions.back().f_pc - 1));
 }
 
 
@@ -2330,7 +2328,7 @@ void inst_call()
         break;
 
     default:
-        throw QDomXPathException_NotImplemented(QString("function %1 is not yet implemented").arg(function_number.getIntegerValue()).toStdString());
+        throw QDomXPathException_NotImplemented(QString("function %1 is not yet implemented").arg(function_number.getIntegerValue()));
 
     }
 }
@@ -5031,7 +5029,7 @@ void inst_predicate()
 
     default:
         // anything else always returns false
-        //throw QDomXPathException_WrongType(QString("the 'predicate' operator cannot be used with anything else than a node-set (got node of type %1)").arg(static_cast<int>(predicate_result.getType())).toStdString());
+        //throw QDomXPathException_WrongType(QString("the 'predicate' operator cannot be used with anything else than a node-set (got node of type %1)").arg(static_cast<int>(predicate_result.getType())));
         break;
 
     }
@@ -5305,7 +5303,7 @@ void inst_axis()
                 break;
 
             default:
-                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)));
 
             }
             break;
@@ -5330,7 +5328,7 @@ void inst_axis()
                 break;
 
             default:
-                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)));
 
             }
             break;
@@ -5391,7 +5389,7 @@ axis_attribute:
                 break;
 
             default:
-                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)));
 
             }
             break;
@@ -5472,7 +5470,7 @@ axis_attribute:
                 break;
 
             default:
-                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)));
 
             }
             break;
@@ -5529,7 +5527,7 @@ axis_descendant_done:;
                 break;
 
             default:
-                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)));
 
             }
             break;
@@ -5660,7 +5658,7 @@ axis_descendant_done:;
                 break;
 
             default:
-                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)));
 
             }
             break;
@@ -5729,7 +5727,7 @@ axis_descendant_done:;
                 break;
 
             default:
-                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)).toStdString());
+                throw QDomXPathException_NotImplemented(QString("this axis (%1) does not support this node type (%2)").arg(static_cast<int>(axis)).arg(static_cast<int>(node_type)));
 
             }
             break;
@@ -5791,7 +5789,7 @@ char_t getc()
     && c != 0x0D
     && (c < 0x20 || c > 0xFFFD))
     {
-        throw QDomXPathException_InvalidCharacter(QString("invalid XML character 0x%1").arg(static_cast<int>(c), 4, 16, QChar('0')).toStdString());
+        throw QDomXPathException_InvalidCharacter(QString("invalid XML character 0x%1").arg(static_cast<int>(c), 4, 16, QChar('0')));
     }
     ++f_in;
     return c;
@@ -6694,7 +6692,7 @@ void append_push_token(const token_t& token)
         break;
 
     default:
-        throw QDomXPathException_InternalError(QString("unexpected token type (%1/%2) in an append_push_token() call").arg(static_cast<int>(token.f_token)).arg(token.f_string).toStdString());
+        throw QDomXPathException_InternalError(QString("unexpected token type (%1/%2) in an append_push_token() call").arg(static_cast<int>(token.f_token)).arg(token.f_string));
 
     }
 }
@@ -7301,19 +7299,19 @@ void function_call(token_t prefix_token, token_t local_part)
     if(f == FUNC_UNKNOWN)
     {
         throw QDomXPathException_UnknownFunctionError(QString("'%1' is not a known function (we may not yet support it...)")
-                                                    .arg(prefix_token.f_string + ":" + local_part.f_string).toStdString());
+                                                    .arg(prefix_token.f_string + ":" + local_part.f_string));
     }
     if(argc < min_argc)
     {
         throw QDomXPathException_UnknownFunctionError(QString("'%1' expects at least %2 arguments, but got %3 instead")
                                                     .arg(prefix_token.f_string + ":" + local_part.f_string)
-                                                    .arg(min_argc).arg(argc).toStdString());
+                                                    .arg(min_argc).arg(argc));
     }
     if(max_argc != -1 && argc > max_argc)
     {
         throw QDomXPathException_UnknownFunctionError(QString("'%1' expects at most %2 arguments, it got %3 instead")
                                                     .arg(prefix_token.f_string + ":" + local_part.f_string)
-                                                    .arg(max_argc).arg(argc).toStdString());
+                                                    .arg(max_argc).arg(argc));
     }
 
     append_push_integer(f);
@@ -7472,7 +7470,7 @@ void location_path()
                 f_last_token = save_token;
                 if(!token_is_axis_name())
                 {
-                    throw QDomXPathException_SyntaxError(QString("a double colon (::) must be preceded by a valid axis name, \"%1\" was not recognized as such").arg(f_last_token.f_string).toStdString());
+                    throw QDomXPathException_SyntaxError(QString("a double colon (::) must be preceded by a valid axis name, \"%1\" was not recognized as such").arg(f_last_token.f_string));
                 }
                 axis_token = f_last_token;
 axis_name_attribute:
@@ -7633,7 +7631,7 @@ void variable_reference()
         get_token();
         if(f_last_token.f_token != token_t::TOK_NCNAME)
         {
-            throw QDomXPathException_SyntaxError(QString("expected a variable name after the prefix '%1:' sign").arg(prefix.f_string).toStdString());
+            throw QDomXPathException_SyntaxError(QString("expected a variable name after the prefix '%1:' sign").arg(prefix.f_string));
         }
         // concatenate the prefix within the name; not too sure why we'd
         // have a prefix in the first place and we'd not likely to use
@@ -7684,7 +7682,7 @@ void path_expr()
         return;
 
     default:
-        throw QDomXPathException_SyntaxError(QString("unexpected token \"%1\"").arg(f_last_token.f_string).toStdString());
+        throw QDomXPathException_SyntaxError(QString("unexpected token \"%1\"").arg(f_last_token.f_string));
 
     }
 }
@@ -9552,7 +9550,7 @@ QString QDomXPath::getVariable(const QString& name)
 {
     if(!f_variables.contains(name))
     {
-        throw QDomXPathException_UndefinedVariable(QString("variable \"%1\" is not defined").arg(name).toStdString());
+        throw QDomXPathException_UndefinedVariable(QString("variable \"%1\" is not defined").arg(name));
     }
     return f_variables[name];
 }

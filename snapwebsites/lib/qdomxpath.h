@@ -31,8 +31,18 @@
 class QDomXPathException : public std::runtime_error
 {
 public:
-    QDomXPathException(std::string const& err)
+    QDomXPathException(char const * err)
         : runtime_error(err)
+    {
+    }
+
+    QDomXPathException(std::string const & err)
+        : runtime_error(err)
+    {
+    }
+
+    QDomXPathException(QString const & err)
+        : runtime_error(err.toUtf8().data())
     {
     }
 };
@@ -40,7 +50,17 @@ public:
 class QDomXPathException_InternalError : public QDomXPathException
 {
 public:
-    QDomXPathException_InternalError(std::string const& err)
+    QDomXPathException_InternalError(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InternalError(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InternalError(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -49,7 +69,17 @@ public:
 class QDomXPathException_UndefinedInstructionError : public QDomXPathException
 {
 public:
-    QDomXPathException_UndefinedInstructionError(std::string const& err)
+    QDomXPathException_UndefinedInstructionError(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_UndefinedInstructionError(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_UndefinedInstructionError(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -58,7 +88,17 @@ public:
 class QDomXPathException_UnknownFunctionError : public QDomXPathException
 {
 public:
-    QDomXPathException_UnknownFunctionError(std::string const& err)
+    QDomXPathException_UnknownFunctionError(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_UnknownFunctionError(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_UnknownFunctionError(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -67,7 +107,17 @@ public:
 class QDomXPathException_InvalidMagic : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidMagic(std::string const& err)
+    QDomXPathException_InvalidMagic(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InvalidMagic(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InvalidMagic(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -76,7 +126,17 @@ public:
 class QDomXPathException_InvalidError : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidError(std::string const& err)
+    QDomXPathException_InvalidError(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InvalidError(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InvalidError(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -85,7 +145,17 @@ public:
 class QDomXPathException_InvalidCharacter : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidCharacter(std::string const& err)
+    QDomXPathException_InvalidCharacter(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InvalidCharacter(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InvalidCharacter(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -94,7 +164,17 @@ public:
 class QDomXPathException_InvalidString : public QDomXPathException
 {
 public:
-    QDomXPathException_InvalidString(std::string const& err)
+    QDomXPathException_InvalidString(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InvalidString(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_InvalidString(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -103,7 +183,17 @@ public:
 class QDomXPathException_TooManyUnget : public QDomXPathException
 {
 public:
-    QDomXPathException_TooManyUnget(std::string const& err)
+    QDomXPathException_TooManyUnget(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_TooManyUnget(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_TooManyUnget(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -112,7 +202,17 @@ public:
 class QDomXPathException_SyntaxError : public QDomXPathException
 {
 public:
-    QDomXPathException_SyntaxError(std::string const& err)
+    QDomXPathException_SyntaxError(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_SyntaxError(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_SyntaxError(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -121,7 +221,17 @@ public:
 class QDomXPathException_ExecutionTime : public QDomXPathException
 {
 public:
-    QDomXPathException_ExecutionTime(std::string const& err)
+    QDomXPathException_ExecutionTime(char const * err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_ExecutionTime(std::string const & err)
+        : QDomXPathException(err)
+    {
+    }
+
+    QDomXPathException_ExecutionTime(QString const & err)
         : QDomXPathException(err)
     {
     }
@@ -130,7 +240,17 @@ public:
 class QDomXPathException_NotImplemented : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_NotImplemented(std::string const& err)
+    QDomXPathException_NotImplemented(char const * err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_NotImplemented(std::string const & err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_NotImplemented(QString const & err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -139,7 +259,17 @@ public:
 class QDomXPathException_OutOfRange : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_OutOfRange(std::string const& err)
+    QDomXPathException_OutOfRange(char const * err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_OutOfRange(std::string const & err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_OutOfRange(QString const & err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -148,7 +278,17 @@ public:
 class QDomXPathException_EmptyStack : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_EmptyStack(std::string const& err)
+    QDomXPathException_EmptyStack(char const * err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_EmptyStack(std::string const & err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_EmptyStack(QString const & err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -157,7 +297,17 @@ public:
 class QDomXPathException_EmptyContext : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_EmptyContext(std::string const& err)
+    QDomXPathException_EmptyContext(char const * err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_EmptyContext(std::string const & err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_EmptyContext(QString const & err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -166,7 +316,17 @@ public:
 class QDomXPathException_WrongType : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_WrongType(std::string const& err)
+    QDomXPathException_WrongType(char const * err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_WrongType(std::string const & err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_WrongType(QString const & err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -175,7 +335,17 @@ public:
 class QDomXPathException_UndefinedVariable : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_UndefinedVariable(std::string const& err)
+    QDomXPathException_UndefinedVariable(char const * err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_UndefinedVariable(std::string const & err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_UndefinedVariable(QString const & err)
         : QDomXPathException_ExecutionTime(err)
     {
     }
@@ -184,7 +354,17 @@ public:
 class QDomXPathException_DivisionByZero : public QDomXPathException_ExecutionTime
 {
 public:
-    QDomXPathException_DivisionByZero(std::string const& err)
+    QDomXPathException_DivisionByZero(char const * err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_DivisionByZero(std::string const & err)
+        : QDomXPathException_ExecutionTime(err)
+    {
+    }
+
+    QDomXPathException_DivisionByZero(QString const & err)
         : QDomXPathException_ExecutionTime(err)
     {
     }

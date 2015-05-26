@@ -718,7 +718,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
 }
 
 
-void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t& ipath, bool& redirect_to_login)
+void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t & ipath, bool & redirect_to_login)
 {
     // this is a signal, we get called whatever the ipath (i.e. it is not
     // specific to a plugin derived from a certain class so not specific

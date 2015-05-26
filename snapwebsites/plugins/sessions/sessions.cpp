@@ -48,7 +48,7 @@
 #include "poison.h"
 
 
-SNAP_PLUGIN_START(sessions, 1, 0)
+SNAP_PLUGIN_START(sessions, 1, 1)
 
 
 /** \brief Get a fixed sessions plugin name.
@@ -913,6 +913,7 @@ int64_t sessions::do_update(int64_t last_updated)
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
     SNAP_PLUGIN_UPDATE(2012, 12, 29, 13, 45, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 5, 25, 17, 40, 0, clean_session_table);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -945,8 +946,70 @@ void sessions::initial_update(int64_t variables_timestamp)
  */
 void sessions::content_update(int64_t variables_timestamp)
 {
-    (void) variables_timestamp;
+    static_cast<void>(variables_timestamp);
+
     content::content::instance()->add_xml(get_plugin_name());
+}
+
+
+/** \brief Clean up the sessions table from used up sessions.
+ *
+ * The session::used_up field is added to sessions as a marker to
+ * avoid loading such a session (it was used up.)
+ *
+ * The field was supposed to be given the TTL of the other fields and
+ * thus automatically get dropped with time. However, I used the same
+ * QCassandraValue to test whether used_up exists. If not, I would reuse
+ * that value which had lost its TTL.
+ *
+ * This upgrade goes through the table and check for sessions that are
+ * marked as used up. When finding such a session, the function either
+ * drops the column (i.e. no other columns exist) or it re-write the
+ * used_up value with the same TTL as the other fields.
+ *
+ * \param[in] variables_timestamp  The timestamp for all the variables added to the database by this update (in micro-seconds).
+ */
+void sessions::clean_session_table(int64_t variables_timestamp)
+{
+    static_cast<void>(variables_timestamp);
+
+    QString const used_up(get_name(SNAP_NAME_SESSIONS_USED_UP));
+    QString const id(get_name(SNAP_NAME_SESSIONS_ID));
+
+    QtCassandra::QCassandraTable::pointer_t sessions_table(get_sessions_table());
+    QtCassandra::QCassandraRowPredicate row_predicate;
+    row_predicate.setCount(1000);
+    for(;;)
+    {
+        sessions_table->clearCache();
+        uint32_t const count(sessions_table->readRows(row_predicate));
+        if(count == 0)
+        {
+            // no more sessions to process
+            break;
+        }
+        QtCassandra::QCassandraRows const rows(sessions_table->rows());
+        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                o != rows.end(); ++o)
+        {
+            // do not work on standalone websites
+            if((*o)->exists(used_up))
+            {
+                if((*o)->exists(id))
+                {
+                    // read the value so that way we get the TTL
+                    QtCassandra::QCassandraValue value((*o)->cell(id)->value());
+                    value.setCharValue(1);
+                    (*o)->cell(used_up)->setValue(value);
+                }
+                else
+                {
+                    // this is the last field, delete it
+                    (*o)->dropCell(used_up, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+                }
+            }
+        }
+    }
 }
 
 
@@ -1414,22 +1477,22 @@ void sessions::load_session(QString const& session_key, session_info& info, bool
         return;
     }
 
+    // check whether the session was already used up
+    QtCassandra::QCassandraValue used_up_value(row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->value());
+    if(!used_up_value.nullValue())
+    {
+        info.set_session_type(session_info::SESSION_INFO_USED_UP);
+        return;
+    }
+
+    // is that a session that is to be used just once?
     if(use_once)
     {
-        value = row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->value();
-        if(value.nullValue())
-        {
-            // IMPORTANT NOTE:
-            // As a side effect, since we just read values with a TTL
-            // this 'value' variable already has the expected TTL!
-            value.setCharValue(1);
-            row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->setValue(value);
-        }
-        else
-        {
-            info.set_session_type(session_info::SESSION_INFO_USED_UP);
-            return;
-        }
+        // IMPORTANT NOTE:
+        // As a side effect, since we just read values with a TTL
+        // this 'value' variable already has the expected TTL!
+        value.setCharValue(1);
+        row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->setValue(value);
     }
 
     // only case when it is valid

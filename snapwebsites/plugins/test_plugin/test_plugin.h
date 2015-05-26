@@ -43,9 +43,9 @@ char const *get_name(name_t name) __attribute__ ((const));
 class test_plugin_exception : public snap_exception
 {
 public:
-    test_plugin_exception(char const *       what_msg) : snap_exception("Test Plugin: " + std::string(what_msg)) {}
-    test_plugin_exception(std::string const& what_msg) : snap_exception("Test Plugin: " + what_msg) {}
-    test_plugin_exception(QString const&     what_msg) : snap_exception("Test Plugin: " + what_msg.toStdString()) {}
+    test_plugin_exception(char const *        what_msg) : snap_exception("Test Plugin", what_msg) {}
+    test_plugin_exception(std::string const & what_msg) : snap_exception("Test Plugin", what_msg) {}
+    test_plugin_exception(QString const &     what_msg) : snap_exception("Test Plugin", what_msg) {}
 };
 
 

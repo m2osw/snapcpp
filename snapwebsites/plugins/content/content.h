@@ -50,6 +50,7 @@ enum name_t
     SNAP_NAME_CONTENT_CREATED,
     SNAP_NAME_CONTENT_CURRENT_VERSION,
     SNAP_NAME_CONTENT_DESCRIPTION,
+    SNAP_NAME_CONTENT_DIRRESOURCES,
     SNAP_NAME_CONTENT_ERROR_FILES,
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
     SNAP_NAME_CONTENT_FILES_CREATED,
@@ -236,7 +237,7 @@ public:
         // hermetic type to save the status in the database
         typedef uint32_t            status_type;
 
-        // error state, if not NO then it has priority over the general state and working state
+        // error state, if not NO_ERROR then it has priority over the general state and working state
         enum class error_t
         {
             NO_ERROR,
@@ -246,26 +247,28 @@ public:
         typedef controlled_vars::limited_auto_enum_init<error_t, error_t::NO_ERROR, error_t::UNSUPPORTED, error_t::NO_ERROR> safe_error_t;
 
         // general state
+        // WARNING: these numbers are saved in the database, their value CANNOT change
         enum class state_t
         {
-            UNKNOWN_STATE,
-            CREATE,
-            NORMAL,
-            HIDDEN,
-            MOVED,
-            DELETED
+            UNKNOWN_STATE = 0,
+            CREATE = 1,
+            NORMAL = 2,
+            HIDDEN = 3,
+            MOVED = 4,
+            DELETED = 5
         };
         typedef controlled_vars::limited_auto_enum_init<state_t, state_t::UNKNOWN_STATE, state_t::DELETED, state_t::UNKNOWN_STATE> safe_state_t;
 
         // working state
+        // WARNING: these numbers are saved in the database, their value CANNOT change
         enum class working_t
         {
-            UNKNOWN_WORKING,
-            NOT_WORKING,
-            CREATING,
-            CLONING,
-            REMOVING,
-            UPDATING
+            UNKNOWN_WORKING = 0,
+            NOT_WORKING = 1,
+            CREATING = 2,
+            CLONING = 3,
+            REMOVING = 4,
+            UPDATING = 5
         };
         typedef controlled_vars::limited_auto_enum_init<working_t, working_t::UNKNOWN_WORKING, working_t::UPDATING, working_t::NOT_WORKING> safe_working_t;
 
@@ -787,6 +790,7 @@ private:
     void        backend_action_reset_status(bool const force);
     void        backend_process_status();
     void        backend_process_files();
+    void        backend_action_dir_resources();
 
     zpsnap_child_t                                  f_snap;
     QtCassandra::QCassandraTable::pointer_t         f_content_table;

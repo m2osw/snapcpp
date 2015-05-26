@@ -68,25 +68,25 @@ char const *get_name(name_t name) __attribute__ ((const));
 class permissions_exception : public snap_exception
 {
 public:
-    permissions_exception(char const *what_msg) : snap_exception("Permissions: " + std::string(what_msg)) {}
-    permissions_exception(std::string const& what_msg) : snap_exception("Permissions: " + what_msg) {}
-    permissions_exception(QString const& what_msg) : snap_exception("Permissions: " + what_msg.toStdString()) {}
+    permissions_exception(char const *        what_msg) : snap_exception("Permissions", what_msg) {}
+    permissions_exception(std::string const & what_msg) : snap_exception("Permissions", what_msg) {}
+    permissions_exception(QString const &     what_msg) : snap_exception("Permissions", what_msg) {}
 };
 
 class permissions_exception_invalid_group_name : public permissions_exception
 {
 public:
-    permissions_exception_invalid_group_name(char const *what_msg) : permissions_exception(what_msg) {}
-    permissions_exception_invalid_group_name(std::string const& what_msg) : permissions_exception(what_msg) {}
-    permissions_exception_invalid_group_name(QString const& what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_group_name(char const *        what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_group_name(std::string const & what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_group_name(QString const &     what_msg) : permissions_exception(what_msg) {}
 };
 
 class permissions_exception_invalid_path : public permissions_exception
 {
 public:
-    permissions_exception_invalid_path(char const *what_msg) : permissions_exception(what_msg) {}
-    permissions_exception_invalid_path(std::string const& what_msg) : permissions_exception(what_msg) {}
-    permissions_exception_invalid_path(QString const& what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_path(char const *        what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_path(std::string const & what_msg) : permissions_exception(what_msg) {}
+    permissions_exception_invalid_path(QString const &     what_msg) : permissions_exception(what_msg) {}
 };
 
 
@@ -150,7 +150,7 @@ public:
 
     SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
     SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));
-    SNAP_SIGNAL_WITH_MODE(permit_redirect_to_login_on_not_allowed, (content::path_info_t& ipath, bool& redirect_to_login), (ipath, redirect_to_login), NEITHER);
+    SNAP_SIGNAL(permit_redirect_to_login_on_not_allowed, (content::path_info_t& ipath, bool& redirect_to_login), (ipath, redirect_to_login));
 
     void                    add_user_rights(QString const & right, sets_t& sets);
     void                    add_plugin_permissions(QString const& plugin_name, QString const& group, sets_t& sets);

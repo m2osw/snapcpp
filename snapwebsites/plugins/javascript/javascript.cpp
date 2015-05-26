@@ -377,19 +377,14 @@ class javascript_plugins_iterator : public QScriptClassPropertyIterator
 {
 public:
     javascript_plugins_iterator(javascript *js, QScriptEngine *engine, const QScriptValue& object_value)
-        : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value),
-          f_javascript(js),
-          f_engine(engine),
-          f_pos(-1),
-          f_object(object_value)
+        : QScriptClassPropertyIterator::QScriptClassPropertyIterator(object_value)
+        , f_javascript(js)
+        , f_engine(engine)
+        , f_pos(-1)
+        , f_object(object_value)
     {
-//printf("javascript_plugins_iterator created!!!\n");
     }
 
-//~javascript_plugins_iterator()
-//{
-//printf("javascript_plugins_iterator destroyed...\n");
-//}
     //virtual QScriptValue::PropertyFlags flags() const;
 
     virtual bool hasNext() const
@@ -416,7 +411,7 @@ public:
         plugins::plugin *p(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[f_pos]));
         if(!p)
         {
-            throw std::runtime_error("plugin pointer is null (javascript_plugins_iterator::name)");
+            throw std::runtime_error("javascript.cpp:javascript_plugins_iterator::name: plugin pointer is null");
         }
         return f_engine->toStringHandle(p->get_plugin_name());
     }
@@ -478,18 +473,12 @@ class plugins_class : public QScriptClass
 {
 public:
     plugins_class(javascript *js, QScriptEngine *script_engine)
-        : QScriptClass(script_engine),
-          f_javascript(js)
+        : QScriptClass(script_engine)
+        , f_javascript(js)
     {
-//printf("plugins_class created...\n");
     }
 
-//~plugins_class()
-//{
-//printf("plugins_class destroyed...\n");
-//}
-
-    // we don't currently support extensions
+    // we do not currently support extensions
     //virtual bool supportsExtension(Extension extension) const { return false; }
     //virtual QVariant extension(Extension extension, const QVariant& argument = QVariant());
 
@@ -505,16 +494,16 @@ public:
 
     virtual QScriptValue property(QScriptValue const& object, QScriptString const& object_name, uint id)
     {
-        QString temp_name(object_name);
+        QString const temp_name(object_name);
         if(f_dynamic_plugins.contains(temp_name))
         {
-            QScriptValue plugin_object(engine()->newObject(f_dynamic_plugins[temp_name].data()));
+            QScriptValue const plugin_object(engine()->newObject(f_dynamic_plugins[temp_name].data()));
             return plugin_object;
         }
         int const max_plugins(f_javascript->f_dynamic_plugins.size());
         for(int i(0); i < max_plugins; ++i)
         {
-            plugins::plugin *p(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i]));
+            plugins::plugin * p(dynamic_cast<plugins::plugin *>(f_javascript->f_dynamic_plugins[i]));
             if(!p)
             {
                 throw std::runtime_error("plugin pointer is null (plugins_class::property)");
@@ -678,7 +667,7 @@ void javascript::on_process_attachment(QByteArray const& file_key, content::atta
 void javascript::on_check_attachment_security(content::attachment_file const& file, content::permission_flag& secure, bool const fast)
 {
     // always check the filename, just in case
-    QString cpath(file.get_file().get_filename());
+    QString const cpath(file.get_file().get_filename());
     if(cpath.startsWith("js/") || cpath == "js")
     {
         snap_version::versioned_filename js_filename(".js");

@@ -555,7 +555,7 @@ void users::on_process_cookies()
         if(f_info->get_session_random() != random_key.toInt())
         {
             SNAP_LOG_INFO("cookie would be refused because random key ")(random_key)(" does not match ")(f_info->get_session_random());
-            //authenticated = false; -- this should be a flag because
+            //authenticated = false; -- there should be a flag because
             //                          in many cases it kicks someone
             //                          out even when it should not...
             //
@@ -789,6 +789,67 @@ void users::user_logout()
 
     f_user_key.clear();
     f_user_logged_in = false;
+}
+
+
+/** \brief Save a user parameter.
+ *
+ * This function is used to save a field directly in the "users" table.
+ * Whether the user is already a registered user does not matter, the
+ * function accepts to save the parameter. This is particularly important
+ * for people who want to register for a newsletter or unsubscribe from
+ * the website as a whole (See the sendmail plugin).
+ *
+ * If a value with the same field name exists, it gets overwritten.
+ *
+ * \param[in] email  The user's email.
+ * \param[in] field_name  The name of the field where value gets saved.
+ * \param[in] value  The value of the field to save.
+ *
+ * \return true if the value was read from the database.
+ *
+ * \sa load_user_parameter()
+ */
+void users::save_user_parameter(QString const & email, QString const & field_name, QString const & value)
+{
+    get_users_table()->row(email)->cell(field_name)->setValue(value);
+}
+
+
+/** \brief Retrieve a user parameter.
+ *
+ * This function is used to read a field directly from the "users" table.
+ * If the value exists, then the function returns true and the \p value
+ * parameter is set to its content. If the field cannot be found, then
+ * the function returns false.
+ *
+ * If your value cannot be an empty string, then just testing whether
+ * value is the empty string on return is enough to know whether the
+ * field was defined in the database.
+ *
+ * \param[in] email  The user's email.
+ * \param[in] field_name  The name of the field being checked.
+ * \param[out] value  The value of the field, empty if undefined.
+ *
+ * \return true if the value was read from the database.
+ *
+ * \sa save_user_parameter()
+ */
+bool users::load_user_parameter(QString const & email, QString const & field_name, QString & value)
+{
+    value.clear();
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    if(!users_table->exists(email))
+    {
+        return false;
+    }
+    QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(email));
+    if(!user_row->exists(field_name))
+    {
+        return false;
+    }
+    value = user_row->cell(field_name)->value().stringValue();
+    return true;
 }
 
 
@@ -3248,7 +3309,7 @@ QString users::get_user_email(int64_t const identifier)
  *
  * \return The path to the user.
  */
-QString users::get_user_path(QString const& email)
+QString users::get_user_path(QString const & email)
 {
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(users_table->exists(email))
@@ -3880,6 +3941,11 @@ void users::set_referrer( QString path )
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(!content_table->exists(ipath.get_key()))
     {
+        // TODO: this test fails when we hit dynamic pages!
+        //       we will have to test the real path once it is fixed to
+        //       see whether it is possible that a parent would accept
+        //       this page when we cannot find the page directly
+        //
         SNAP_LOG_ERROR("path \"")(path)("\" was not found in the database?!");
         return;
     }

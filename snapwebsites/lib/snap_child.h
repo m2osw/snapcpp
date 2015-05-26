@@ -390,6 +390,7 @@ public:
     void                        trace(QString const & data);
     void                        trace(std::string const & data);
     void                        trace(char const * data);
+    void                        show_resources(std::ostream & out);
 
     void                        udp_ping(char const * name, char const * message = "PING");
 

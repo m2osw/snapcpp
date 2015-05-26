@@ -46,34 +46,36 @@ char const *get_name(name_t name) __attribute__ ((const));
 class sessions_exception : public snap_exception
 {
 public:
-    sessions_exception(char const *       what_msg) : snap_exception("Sessions: " + std::string(what_msg)) {}
-    sessions_exception(std::string const& what_msg) : snap_exception("Sessions: " + what_msg) {}
-    sessions_exception(QString const&     what_msg) : snap_exception("Sessions: " + what_msg.toStdString()) {}
+    sessions_exception(char const *       what_msg) : snap_exception("Sessions", what_msg) {}
+    sessions_exception(std::string const& what_msg) : snap_exception("Sessions", what_msg) {}
+    sessions_exception(QString const&     what_msg) : snap_exception("Sessions", what_msg) {}
 };
 
 class sessions_exception_invalid_parameter : public sessions_exception
 {
 public:
-    sessions_exception_invalid_parameter(const char *what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_invalid_parameter(const std::string& what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_invalid_parameter(const QString& what_msg) : sessions_exception(what_msg.toStdString()) {}
+    sessions_exception_invalid_parameter(const char *        what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_invalid_parameter(const std::string & what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_invalid_parameter(const QString &     what_msg) : sessions_exception(what_msg) {}
 };
 
 class sessions_exception_invalid_range : public sessions_exception
 {
 public:
-    sessions_exception_invalid_range(const char *what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_invalid_range(const std::string& what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_invalid_range(const QString& what_msg) : sessions_exception(what_msg.toStdString()) {}
+    sessions_exception_invalid_range(const char *        what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_invalid_range(const std::string & what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_invalid_range(const QString &     what_msg) : sessions_exception(what_msg) {}
 };
 
 class sessions_exception_no_random_data : public sessions_exception
 {
 public:
-    sessions_exception_no_random_data(const char *what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_no_random_data(const std::string& what_msg) : sessions_exception(what_msg) {}
-    sessions_exception_no_random_data(const QString& what_msg) : sessions_exception(what_msg.toStdString()) {}
+    sessions_exception_no_random_data(const char *        what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_no_random_data(const std::string & what_msg) : sessions_exception(what_msg) {}
+    sessions_exception_no_random_data(const QString &     what_msg) : sessions_exception(what_msg) {}
 };
+
+
 
 
 class sessions : public plugins::plugin, public layout::layout_content
@@ -126,12 +128,12 @@ public:
 
         session_info_type_t get_session_type() const;
         session_id_t get_session_id() const;
-        QString const& get_session_key() const;
+        QString const & get_session_key() const;
         int32_t get_session_random() const;
-        QString const& get_plugin_owner() const;
-        QString const& get_page_path() const;
-        QString const& get_object_path() const;
-        QString const& get_user_agent() const;
+        QString const & get_plugin_owner() const;
+        QString const & get_page_path() const;
+        QString const & get_object_path() const;
+        QString const & get_user_agent() const;
         int32_t get_time_to_live() const;
         time_t get_time_limit() const;
         time_t get_login_limit() const;
@@ -169,8 +171,10 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     void                    on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure);
+    void                    clean_session_table(int64_t variables_timestamp);
+
+    virtual void            on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
 
     QString                 create_session(session_info& info);
     void                    save_session(session_info& info, bool const new_random);

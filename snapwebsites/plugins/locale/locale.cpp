@@ -15,6 +15,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "qunicodestring.h"
+
 #include "snap_locale.h"
 
 #include "../editor/editor.h"
@@ -28,6 +30,7 @@
 #include <unicode/datefmt.h>
 #include <unicode/errorcode.h>
 #include <unicode/locid.h>
+#include <unicode/smpdtfmt.h>
 #include <unicode/timezone.h>
 
 #include <iostream>
@@ -180,33 +183,33 @@ locale::locale_list_t const& locale::get_locale_list()
             // Language
             {
                 info.f_abbreviations.f_language = QString::fromAscii(l[i].getLanguage());
-                UnicodeString lang;
+                QUnicodeString lang;
                 l[i].getDisplayLanguage(lang);
-                info.f_display_names.f_language = QString::fromUtf16(lang.getTerminatedBuffer());
+                info.f_display_names.f_language = lang;
             }
 
             // Variant
             {
                 info.f_abbreviations.f_variant = QString::fromAscii(l[i].getVariant());
-                UnicodeString variant;
+                QUnicodeString variant;
                 l[i].getDisplayVariant(variant);
-                info.f_display_names.f_variant = QString::fromUtf16(variant.getTerminatedBuffer());
+                info.f_display_names.f_variant = variant;
             }
 
             // Country
             {
                 info.f_abbreviations.f_country = QString::fromAscii(l[i].getCountry());
-                UnicodeString country;
+                QUnicodeString country;
                 l[i].getDisplayVariant(country);
-                info.f_display_names.f_country = QString::fromUtf16(country.getTerminatedBuffer());
+                info.f_display_names.f_country = country;
             }
 
             // Script
             {
                 info.f_abbreviations.f_script = QString::fromAscii(l[i].getScript());
-                UnicodeString script;
+                QUnicodeString script;
                 l[i].getDisplayVariant(script);
-                info.f_display_names.f_script = QString::fromUtf16(script.getTerminatedBuffer());
+                info.f_display_names.f_script = script;
             }
 
             info.f_locale = QString::fromAscii(l[i].getName());
@@ -250,7 +253,7 @@ locale::locale::timezone_list_t const& locale::get_timezone_list()
     // read the file only if empty
     if(f_timezone_list.empty())
     {
-        StringEnumeration *zone_list(TimeZone::createEnumeration());
+        StringEnumeration * zone_list(TimeZone::createEnumeration());
         if(zone_list != nullptr)
         {
             for(;;)
@@ -258,10 +261,10 @@ locale::locale::timezone_list_t const& locale::get_timezone_list()
                 // WARNING: you MUST initialize err otherwise
                 //          unext() fails immediately
                 UErrorCode err(U_ZERO_ERROR);
-                UChar const *id(zone_list->unext(nullptr, err));
+                UChar const * id(zone_list->unext(nullptr, err));
                 if(id == nullptr)
                 {
-                    if(err != U_ZERO_ERROR)
+                    if(U_FAILURE(err))
                     {
                         ErrorCode err_code;
                         err_code.set(err);
@@ -604,25 +607,15 @@ void locale::set_timezone_done()
  */
 QString locale::format_date(time_t d)
 {
-    std::string tz_utf8(f_current_timezone.toUtf8().data());
-    UnicodeString timezone_id(tz_utf8.c_str(), tz_utf8.size(), "utf-8");
-    // TODO: use ICU shared pointer
-    TimeZone *tz(TimeZone::createTimeZone(timezone_id)); // TODO: verify that it took properly
-    Locale l(f_current_locale.toUtf8().data());
-    // TODO: use ICU shared pointer -- I get a double pointer error at this
-    //       point!?
-    //LocalUDateFormatPointer dt(DateFormat::createDateInstance(DateFormat::kDefault, l));
-    DateFormat *dt(DateFormat::createDateInstance(DateFormat::kDefault, l));
+    QUnicodeString const timezone_id(f_current_timezone);
+    LocalPointer<TimeZone> tz(TimeZone::createTimeZone(timezone_id)); // TODO: verify that it took properly
+    Locale const l(f_current_locale.toUtf8().data()); // TODO: verify that it took properly
+    LocalPointer<DateFormat> dt(DateFormat::createDateInstance(DateFormat::kDefault, l));
     dt->setTimeZone(*tz);
-    UDate udate(d * 1000LL);
-    UnicodeString u;
+    UDate const udate(d * 1000LL);
+    QUnicodeString u;
     dt->format(udate, u);
-    delete dt;
-    delete tz;
-
-    std::string final_date;
-    u.toUTF8String(final_date);
-    return QString::fromUtf8(final_date.c_str());
+    return u;
 }
 
 
@@ -645,24 +638,15 @@ QString locale::format_date(time_t d)
  */
 QString locale::format_time(time_t d)
 {
-    std::string tz_utf8(f_current_timezone.toUtf8().data());
-    UnicodeString timezone_id(tz_utf8.c_str(), tz_utf8.size(), "utf-8");
-    // TODO: use ICU shared pointer
-    TimeZone *tz(TimeZone::createTimeZone(timezone_id)); // TODO: verify that it took properly
-    Locale l(f_current_locale.toUtf8().data()); // TODO: verify that it took properly
-    // TODO: use ICU shared pointer
-    //LocalUDateFormatPointer dt(DateFormat::createDateInstance(DateFormat::kDefault, l));
-    DateFormat *dt(DateFormat::createTimeInstance(DateFormat::kDefault, l));
+    QUnicodeString const timezone_id(f_current_timezone);
+    LocalPointer<TimeZone> tz(TimeZone::createTimeZone(timezone_id)); // TODO: verify that it took properly
+    Locale const l(f_current_locale.toUtf8().data()); // TODO: verify that it took properly
+    LocalPointer<DateFormat> dt(DateFormat::createTimeInstance(DateFormat::kDefault, l));
     dt->setTimeZone(*tz);
-    UDate udate(d * 1000LL);
-    UnicodeString u;
+    UDate const udate(d * 1000LL);
+    QUnicodeString u;
     dt->format(udate, u);
-    delete dt;
-    delete tz;
-
-    std::string final_time;
-    u.toUTF8String(final_time);
-    return QString::fromUtf8(final_time.c_str());
+    return u;
 }
 
 
@@ -684,11 +668,14 @@ QString locale::format_time(time_t d)
  *
  * \param[in] date_format  The format to use as defined in strftime().
  * \param[in] unix_time  The time to convert.
- * \param[in] use_locale  Whether to use the localtime() or gmtime() function.
+ * \param[in] use_local  Whether to use the localtime() or gmtime() function.
  *
  * \return The formatted date.
+ *
+ * \sa format_date()
+ * \sa format_time()
  */
-QString locale::format_date(time_t d, QString date_format, bool use_locale)
+QString locale::format_date(time_t d, QString const & date_format, bool use_local)
 {
     // prepare outselves if not yet ready...
     set_timezone();
@@ -699,10 +686,10 @@ QString locale::format_date(time_t d, QString date_format, bool use_locale)
         return format_date(d);
     }
 
-    // TBD: I think we can use a format string with the ICU library
-    //      but right now I'm copy/paste-ing some code...
+    // TODO: I think we can use a format string with the ICU library
+    //       but right now I am copy/paste-ing some code...
     struct tm t;
-    if(use_locale)
+    if(use_local)
     {
         localtime_r(&d, &t);
     }
@@ -715,6 +702,358 @@ QString locale::format_date(time_t d, QString date_format, bool use_locale)
     strftime(buf, sizeof(buf), date_format.toUtf8().data(), &t);
     buf[sizeof(buf) / sizeof(buf[0]) - 1] = '\0'; // make sure there is a NUL
     return QString::fromUtf8(buf);
+}
+
+
+/** \brief Parse a date and return its Unix time representation.
+ *
+ * This function parses a date and returns the representation of that date
+ * in a Unix time representation (i.e. milliseconds are lost.)
+ *
+ * The function is lenient, meaning that an input string that can be
+ * parsed in a valid date is parsed as such, always.
+ *
+ * \note
+ * The function returns -1 as the time and sets errcode to an error
+ * number other than PARSE_NO_ERROR if the input string cannot be parsed
+ * into what is considered a valid date.
+ *
+ * \warning
+ * This function fails if your input string includes a date and a time.
+ * Only the date gets parsed and then an error is generated.
+ *
+ * \param[in] date  The string representing a date.
+ * \param[out] errcode  An error code or PARSE_NO_ERROR on return.
+ *
+ * \return The time the string represented.
+ */
+time_t locale::parse_date(QString const & date, parse_error_t & errcode)
+{
+    errcode = parse_error_t::PARSE_NO_ERROR;
+
+    if(date.startsWith("now"))
+    {
+        // in this case we use our own special code
+        time_t result(f_snap->get_start_time());
+        QString d(date.mid(3));
+        QChar const *s(d.unicode());
+        for(;;)
+        {
+            while(s->isSpace())
+            {
+                ++s;
+            }
+            if(s->unicode() == L'\0')
+            {
+                return result;
+            }
+            int64_t sign(1LL);
+            if(s->unicode() == '+')
+            {
+                ++s;
+            }
+            else if(s->unicode() == '-')
+            {
+                ++s;
+                sign = -1LL;
+            }
+
+            while(s->isSpace())
+            {
+                ++s;
+            }
+
+            int64_t count(0LL);
+            for(;;)
+            {
+                int digit(s->digitValue());
+                if(digit < 0)
+                {
+                    break;
+                }
+                if(count > 1000)
+                {
+                    errcode = parse_error_t::PARSE_ERROR_OVERFLOW;
+                    return -1;
+                }
+                count = count * 10 + digit;
+                ++s;
+            }
+            if(count == 0)
+            {
+                errcode = parse_error_t::PARSE_ERROR_UNDERFLOW;
+                return -1;
+            }
+            count *= sign;
+
+            while(s->isSpace())
+            {
+                ++s;
+            }
+
+            // here we are interested in the following word
+            // unfortunately QChar does not offer a way to compare
+            // a word as is and we do not know the length...
+            if((s[0].unicode() == 's' || s[0].unicode() == 'S')
+            && (s[1].unicode() == 'e' || s[1].unicode() == 'E')
+            && (s[2].unicode() == 'c' || s[2].unicode() == 'C')
+            && (s[3].unicode() == 'o' || s[3].unicode() == 'O')
+            && (s[4].unicode() == 'n' || s[4].unicode() == 'N')
+            && (s[5].unicode() == 'd' || s[5].unicode() == 'D'))
+            {
+                s += 6;
+                result += count;
+            }
+            else if((s[0].unicode() == 'm' || s[0].unicode() == 'M')
+                 && (s[1].unicode() == 'i' || s[1].unicode() == 'I')
+                 && (s[2].unicode() == 'n' || s[2].unicode() == 'N')
+                 && (s[3].unicode() == 'u' || s[3].unicode() == 'U')
+                 && (s[4].unicode() == 't' || s[4].unicode() == 'T')
+                 && (s[5].unicode() == 'e' || s[5].unicode() == 'E'))
+            {
+                s += 6;
+                result += count * 60LL;
+            }
+            else if((s[0].unicode() == 'h' || s[0].unicode() == 'H')
+                 && (s[1].unicode() == 'o' || s[1].unicode() == 'O')
+                 && (s[2].unicode() == 'u' || s[2].unicode() == 'U')
+                 && (s[3].unicode() == 'r' || s[3].unicode() == 'R'))
+            {
+                s += 4;
+                result += count * 3600LL;
+            }
+            else if((s[0].unicode() == 'd' || s[0].unicode() == 'D')
+                 && (s[1].unicode() == 'a' || s[1].unicode() == 'A')
+                 && (s[2].unicode() == 'y' || s[2].unicode() == 'Y'))
+            {
+                s += 3;
+                result += count * 86400LL;
+            }
+            else if((s[0].unicode() == 'm' || s[0].unicode() == 'M')
+                 && (s[1].unicode() == 'o' || s[1].unicode() == 'O')
+                 && (s[2].unicode() == 'n' || s[2].unicode() == 'N')
+                 && (s[3].unicode() == 't' || s[3].unicode() == 'T')
+                 && (s[4].unicode() == 'h' || s[4].unicode() == 'H'))
+            {
+                // with roughly 365.25 days and 12 months a year
+                // we have an average of 30.4375 days per months
+                // which represents 2629800 seconds
+                s += 5;
+                result += count * 2629800LL;
+            }
+            else if((s[0].unicode() == 'y' || s[0].unicode() == 'Y')
+                 && (s[1].unicode() == 'e' || s[1].unicode() == 'E')
+                 && (s[2].unicode() == 'a' || s[2].unicode() == 'A')
+                 && (s[3].unicode() == 'r' || s[3].unicode() == 'R'))
+            {
+                // with roughly 365.25 days in a year and 86400 seconds
+                // per day, we have 31557600 seconds in a year
+                s += 4;
+                result += count * 31557600LL;
+            }
+            else
+            {
+                errcode = parse_error_t::PARSE_ERROR_DATE;
+                return -1;
+            }
+
+            // skip the plurial if defined
+            if(s->unicode() == 's' || s->unicode() == 'S')
+            {
+                ++s;
+            }
+        }
+        NOTREACHED();
+    }
+    else
+    {
+        Locale const l(f_current_locale.toUtf8().data()); // TODO: verify that it took properly
+        LocalPointer<DateFormat> dt(DateFormat::createDateInstance(DateFormat::kDefault, l));
+
+        LocalPointer<TimeZone> tz(TimeZone::createTimeZone(QUnicodeString(f_current_timezone))); // TODO: verify that it took properly
+        dt->setTimeZone(*tz);
+
+        QUnicodeString const date_format(date);
+        ParsePosition pos;
+        UDate const result(dt->parse(date_format, pos));
+
+        if(pos.getIndex() != date_format.length())
+        {
+            // it failed (we always expect the entire string to be parsed)
+            //
+            // TODO: ameliorate the error code with the error code that
+            //       the DateFormat generates
+            //
+            errcode = parse_error_t::PARSE_ERROR_DATE;
+            return static_cast<time_t>(-1);
+        }
+
+        // UDate is a double in milliseconds
+        return static_cast<time_t>(result / 1000LL);
+    }
+}
+
+
+/** \brief Parse a time and return its Unix time representation.
+ *
+ * This function parses a time and returns the representation of that time
+ * in a Unix time representation (i.e. milliseconds are lost.)
+ *
+ * The function is lenient, meaning that an input string that can be
+ * parsed in a valid time is parsed as such, always.
+ *
+ * \note
+ * The function returns -1 as the time and sets errcode to an error
+ * number other than PARSE_NO_ERROR if the input string cannot be parsed
+ * into what is considered a valid time.
+ *
+ * \warning
+ * This function fails if your input string includes a date and a time.
+ * Only the time gets parsed and then an error is generated.
+ *
+ * \param[in] time_str  The string representing a time.
+ * \param[out] errcode  An error code or PARSE_NO_ERROR on return.
+ *
+ * \return The time the string represented.
+ */
+time_t locale::parse_time(QString const & time_str, parse_error_t & errcode)
+{
+    errcode = parse_error_t::PARSE_NO_ERROR;
+
+    if(time_str.startsWith("now"))
+    {
+        // in this case we use our own special code
+        time_t result(f_snap->get_start_time());
+        QString d(time_str.mid(3));
+        QChar const *s(d.unicode());
+        for(;;)
+        {
+            while(s->isSpace())
+            {
+                ++s;
+            }
+            if(s->unicode() == L'\0')
+            {
+                // we are only interested in time so we shorten the input
+                // to a time only and lose days, months, years
+                return result % 86400;
+            }
+            int64_t sign(1LL);
+            if(s->unicode() == '+')
+            {
+                ++s;
+            }
+            else if(s->unicode() == '-')
+            {
+                ++s;
+                sign = -1LL;
+            }
+
+            while(s->isSpace())
+            {
+                ++s;
+            }
+
+            int64_t count(0LL);
+            for(;;)
+            {
+                int digit(s->digitValue());
+                if(digit < 0)
+                {
+                    break;
+                }
+                if(count > 1000)
+                {
+                    errcode = parse_error_t::PARSE_ERROR_OVERFLOW;
+                    return -1;
+                }
+                count = count * 10 + digit;
+                ++s;
+            }
+            if(count == 0)
+            {
+                errcode = parse_error_t::PARSE_ERROR_UNDERFLOW;
+                return -1;
+            }
+            count *= sign;
+
+            while(s->isSpace())
+            {
+                ++s;
+            }
+
+            // here we are interested in the following word
+            // unfortunately QChar does not offer a way to compare
+            // a word as is and we do not know the length...
+            if((s[0].unicode() == 's' || s[0].unicode() == 'S')
+            && (s[1].unicode() == 'e' || s[1].unicode() == 'E')
+            && (s[2].unicode() == 'c' || s[2].unicode() == 'C')
+            && (s[3].unicode() == 'o' || s[3].unicode() == 'O')
+            && (s[4].unicode() == 'n' || s[4].unicode() == 'N')
+            && (s[5].unicode() == 'd' || s[5].unicode() == 'D'))
+            {
+                s += 6;
+                result += count;
+            }
+            else if((s[0].unicode() == 'm' || s[0].unicode() == 'M')
+                 && (s[1].unicode() == 'i' || s[1].unicode() == 'I')
+                 && (s[2].unicode() == 'n' || s[2].unicode() == 'N')
+                 && (s[3].unicode() == 'u' || s[3].unicode() == 'U')
+                 && (s[4].unicode() == 't' || s[4].unicode() == 'T')
+                 && (s[5].unicode() == 'e' || s[5].unicode() == 'E'))
+            {
+                s += 6;
+                result += count * 60LL;
+            }
+            else if((s[0].unicode() == 'h' || s[0].unicode() == 'H')
+                 && (s[1].unicode() == 'o' || s[1].unicode() == 'O')
+                 && (s[2].unicode() == 'u' || s[2].unicode() == 'U')
+                 && (s[3].unicode() == 'r' || s[3].unicode() == 'R'))
+            {
+                s += 4;
+                result += count * 3600LL;
+            }
+            else
+            {
+                errcode = parse_error_t::PARSE_ERROR_DATE;
+                return -1;
+            }
+
+            // skip the plurial if defined
+            if(s->unicode() == 's' || s->unicode() == 'S')
+            {
+                ++s;
+            }
+        }
+        NOTREACHED();
+    }
+    else
+    {
+        Locale const l(f_current_locale.toUtf8().data()); // TODO: verify that it took properly
+        LocalPointer<DateFormat> dt(DateFormat::createTimeInstance(DateFormat::kDefault, l));
+
+        LocalPointer<TimeZone> tz(TimeZone::createTimeZone(QUnicodeString(f_current_timezone))); // TODO: verify that it took properly
+        dt->setTimeZone(*tz);
+
+        QUnicodeString const date_format(time_str);
+        ParsePosition pos;
+        UDate const result(dt->parse(date_format, pos));
+
+std::cerr << "*** " << f_current_locale << " time parsed " << time_str << " -> pos " << pos.getIndex() << ", length " << date_format.length() <<  " -> " << result << "\n";
+        if(pos.getIndex() != date_format.length())
+        {
+            // it failed (we always expect the entire string to be parsed)
+            //
+            // TODO: ameliorate the error code with the error code that
+            //       the DateFormat generates
+            //
+            errcode = parse_error_t::PARSE_ERROR_DATE;
+            return static_cast<time_t>(-1);
+        }
+
+        // UDate is a double in milliseconds
+        return static_cast<time_t>(result / 1000LL);
+    }
 }
 
 

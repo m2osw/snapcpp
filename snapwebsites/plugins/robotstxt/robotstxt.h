@@ -39,25 +39,25 @@ char const *get_name(name_t name) __attribute__ ((const));
 class robotstxt_exception : public snap_exception
 {
 public:
-    robotstxt_exception(const char *what_msg) : snap_exception("robots.txt: " + std::string(what_msg)) {}
-    robotstxt_exception(const std::string& what_msg) : snap_exception("robots.txt: " + what_msg) {}
-    robotstxt_exception(const QString& what_msg) : snap_exception("robots.txt: " + what_msg.toStdString()) {}
+    robotstxt_exception(const char *        what_msg) : snap_exception("robots.txt", what_msg) {}
+    robotstxt_exception(const std::string & what_msg) : snap_exception("robots.txt", what_msg) {}
+    robotstxt_exception(const QString &     what_msg) : snap_exception("robots.txt", what_msg) {}
 };
 
 class robotstxt_exception_invalid_field_name : public robotstxt_exception
 {
 public:
-    robotstxt_exception_invalid_field_name(const char *what_msg) : robotstxt_exception(what_msg) {}
-    robotstxt_exception_invalid_field_name(const std::string& what_msg) : robotstxt_exception(what_msg) {}
-    robotstxt_exception_invalid_field_name(const QString& what_msg) : robotstxt_exception(what_msg.toStdString()) {}
+    robotstxt_exception_invalid_field_name(const char *        what_msg) : robotstxt_exception(what_msg) {}
+    robotstxt_exception_invalid_field_name(const std::string & what_msg) : robotstxt_exception(what_msg) {}
+    robotstxt_exception_invalid_field_name(const QString &     what_msg) : robotstxt_exception(what_msg) {}
 };
 
 class robotstxt_exception_already_defined : public robotstxt_exception
 {
 public:
-    robotstxt_exception_already_defined(const char *what_msg) : robotstxt_exception(what_msg) {}
-    robotstxt_exception_already_defined(const std::string& what_msg) : robotstxt_exception(what_msg) {}
-    robotstxt_exception_already_defined(const QString& what_msg) : robotstxt_exception(what_msg.toStdString()) {}
+    robotstxt_exception_already_defined(const char *        what_msg) : robotstxt_exception(what_msg) {}
+    robotstxt_exception_already_defined(const std::string & what_msg) : robotstxt_exception(what_msg) {}
+    robotstxt_exception_already_defined(const QString &     what_msg) : robotstxt_exception(what_msg) {}
 };
 
 

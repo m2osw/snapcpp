@@ -18,11 +18,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <!ELEMENT editor-form (auto-reset|focus|immediate|mode|on-save|drop|no-toolbar|taborder|widget)+>
 <!ATTLIST editor-form owner CDATA #REQUIRED
-                      auto-save (auto-save) #IMPLIED
-                      processor CDATA #IMPLIED
                       content-modified CDATA #REQUIRED>
 
-<!ENTITY % html-data "a|b|br|div|em|i|img|p|small|strong|table|tbody|td|tr|u" >
+<!ENTITY % html-data "a|b|br|div|em|i|img|p|small|strong|table|tbody|td|tr|u|ul|ol|li" >
 
 <!ELEMENT auto-reset EMPTY>
 <!ATTLIST auto-reset minutes CDATA #REQUIRED>
@@ -61,11 +59,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                  duplicate-of IDREF #IMPLIED
                  secret (public|secret) "public"
                  mode (select-only|editable) "select-only"
-                 auto-save (double|html|int8|ms-date-us|no|plain|string) "string"
+                 auto-save (double|float64|html|int8|ms-date-us|no|plain|string) "string"
                  drop (drop) #IMPLIED>
 
 <!-- WARNING: label is used as the HTML label when appearing in HTML areas,
-              and as the label tag a widget -->
+              and as the label tag for other widgets -->
 <!ELEMENT label (#PCDATA|%html-data;)*>
 
 <!ELEMENT tooltip (#PCDATA|%html-data;)*>
@@ -95,15 +93,25 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
                class CDATA ""
                value CDATA #IMPLIED> <!-- value is the result, i.e. you could use 0, 1, 2, 3, instead of the string in the dropdown -->
 
-<!ELEMENT sizes (min|max|resize)+>
+<!ELEMENT sizes (min|max|min-lines|max-lines|resize)+>
 <!ELEMENT min (#PCDATA)>
 <!ELEMENT max (#PCDATA)>
+<!ELEMENT min-lines (#PCDATA)>
+<!ELEMENT max-lines (#PCDATA)>
 <!ELEMENT resize (#PCDATA)>
 
-<!ELEMENT filters (extensions|regex)+>
+<!ELEMENT filters (extensions|regex|min-date|max-date|min-time|max-time|uri|validate)+>
 <!ELEMENT extensions (#PCDATA)>
 <!ELEMENT regex (#PCDATA)*>
 <!ATTLIST regex name CDATA #IMPLIED>
+<!ATTLIST regex match (yes|no) "yes">
+<!ELEMENT min-date (#PCDATA)>
+<!ELEMENT max-date (#PCDATA)>
+<!ELEMENT min-time (#PCDATA)>
+<!ELEMENT max-time (#PCDATA)>
+<!ELEMENT uri (#PCDATA)>
+<!ATTLIST uri match (yes|no) "yes">
+<!ELEMENT validate (#PCDATA)>
 
 <!-- HTML tags that are used in default values or background values
      we're not trying to replicate the whole HTML DTD, so we simply here -->
@@ -153,6 +161,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 <!ATTLIST tr class CDATA #IMPLIED>
 
 <!ELEMENT u (#PCDATA|%html-data;)*>
+
+<!ELEMENT ul (#PCDATA|%html-data;)*>
+
+<!ELEMENT ol (#PCDATA|%html-data;)*>
+
+<!ELEMENT li (#PCDATA|%html-data;)*>
 
 <!--
 vim: ts=4 sw=4 et

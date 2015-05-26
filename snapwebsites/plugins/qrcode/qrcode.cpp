@@ -197,7 +197,7 @@ int64_t qrcode::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 1, 27, 4, 10, 30, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 5, 21, 4, 52, 30, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

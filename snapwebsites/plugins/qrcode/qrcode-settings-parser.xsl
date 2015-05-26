@@ -21,6 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 															xmlns:xs="http://www.w3.org/2001/XMLSchema"
 															xmlns:fn="http://www.w3.org/2005/xpath-functions"
 															xmlns:snap="snap:snap">
+	<!-- include system data -->
+	<xsl:include href="functions"/>
 
 	<!-- some special variables to define the theme -->
 	<xsl:variable name="layout-area">qrcode-settings-parser</xsl:variable>
@@ -28,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<xsl:variable name="layout-editor">qrcode-settings-page</xsl:variable>
 
 	<xsl:template match="snap">
-		<output><!-- lang="{$lang}"-->
+		<output lang="{$lang}">
 			<div id="content" class="editor-form" form_name="qrcode_settings">
 				<xsl:attribute name="session"><xsl:copy-of select="page/body/editor/session/div/div/node()"/></xsl:attribute>
 

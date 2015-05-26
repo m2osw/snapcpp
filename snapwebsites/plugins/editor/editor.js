@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.333
+ * Version: 0.0.3.335
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -2140,7 +2140,7 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      function getEditorBase() : EditorBase;
  *      function show() : Void;
  *      function hide() : Void;
- *      function enable() : Void;
+ *      function enable(opt_state: boolean) : Void;
  *      function disable() : Void;
  *      final function getWidget() : jQuery;
  *      final function getWidgetContent() : jQuery;
@@ -2513,7 +2513,7 @@ snapwebsites.EditorWidget.prototype.getEditorBase = function()
  */
 snapwebsites.EditorWidget.prototype.focus = function()
 {
-    var id = this.widgetContent_.focus();
+    this.widgetContent_.focus();
 };
 
 
@@ -2914,7 +2914,7 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  *      function EditorFormBase(editor_base: EditorBase, form_widget: jQuery) : EditorFormBase;
  *      function getEditorBase() : EditorBase;
  *      function getFormWidget() : jQuery;
- *      virtual function saveData();
+ *      virtual function saveData(mode: string, opt_option: object);
  *      virtual function serverAccessSuccess(result);
  *      virtual function serverAccessError(result);
  *      virtual function serverAccessComplete(result);
@@ -3092,8 +3092,10 @@ snapwebsites.EditorFormBase.prototype.getFormWidget = function()
  *                 version is called (i.e. not implemented.)
  *
  * @param {string} mode  The mode used to save the data.
+ * @param {Object=} opt_options  Additional options to be added to the query
+ *                               string.
  */
-snapwebsites.EditorFormBase.prototype.saveData = function(mode) // virtual
+snapwebsites.EditorFormBase.prototype.saveData = function(mode, opt_options) // virtual
 {
     throw new Error("snapwebsites.EditorFormBase.saveData() was called which means it was not properly overridden");
 };
@@ -3120,7 +3122,7 @@ snapwebsites.EditorFormBase.prototype.saveData = function(mode) // virtual
  * class SaveEditorDialog
  * {
  * public:
- *      function setPopup(widget: Element|jQuery);
+ *      function setPopup(widget: Element|jQuery, hide_button: boolean := true);
  *      function open();
  *      function close();
  *      function setStatus(new_status: boolean);
@@ -3167,6 +3169,17 @@ snapwebsites.base(snapwebsites.EditorSaveDialog);
  * @private
  */
 snapwebsites.EditorSaveDialog.prototype.editorForm_ = null;
+
+
+/** \brief Whether the saveDialogPopup_ widget gets hidden.
+ *
+ * This parameter holds a boolean value which tells us whether the
+ * saveDialogPopup_ object should automatically be hidden or not.
+ *
+ * @type {boolean}
+ * @private
+ */
+snapwebsites.EditorSaveDialog.prototype.saveDialogPopupAutoHide_ = true;
 
 
 /** \brief The jQuery of the DOM representing the save dialog.
@@ -3264,11 +3277,16 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
  * while currently saving.
  *
  * @param {Element|jQuery} widget  A DOM or jQuery widget.
+ * @param {boolean=} opt_hide_button  If true (default) then hide this button.
  */
-snapwebsites.EditorSaveDialog.prototype.setPopup = function(widget)
+snapwebsites.EditorSaveDialog.prototype.setPopup = function(widget, opt_hide_button)
 {
     this.saveDialogPopup_ = jQuery(widget);
-    this.saveDialogPopup_.hide();
+    this.saveDialogPopupAutoHide_ = typeof opt_hide_button === "undefined" || opt_hide_button;
+    if(this.saveDialogPopupAutoHide_)
+    {
+        this.saveDialogPopup_.hide();
+    }
 };
 
 
@@ -3298,7 +3316,10 @@ snapwebsites.EditorSaveDialog.prototype.open = function()
     {
         this.create_();
     }
-    this.saveDialogPopup_.fadeIn(300).css("display", "block");
+    if(this.saveDialogPopupAutoHide_)
+    {
+        this.saveDialogPopup_.fadeIn(300).css("display", "block");
+    }
 };
 
 
@@ -3315,7 +3336,7 @@ snapwebsites.EditorSaveDialog.prototype.open = function()
  */
 snapwebsites.EditorSaveDialog.prototype.close = function()
 {
-    if(this.saveDialogPopup_)
+    if(this.saveDialogPopup_ && this.saveDialogPopupAutoHide_)
     {
         this.saveDialogPopup_.fadeOut(300);
     }
@@ -3372,7 +3393,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function setInPopup(in_popup: boolean);
  *      function getToolbarAutoVisible() : boolean;
  *      function setToolbarAutoVisible(toolbar_auto_visible: boolean);
- *      virtual function saveData(mode: string);
+ *      virtual function saveData(mode: string, opt_options: object);
  *      virtual function serverAccessSuccess(result: ResultData);
  *      virtual function serverAccessError(result: ResultData);
  *      virtual function serverAccessComplete(result: ResultData);
@@ -3904,7 +3925,8 @@ snapwebsites.EditorForm.prototype.serverAccessComplete = function(result) // vir
  * data to the server using AJAX.
  *
  * @param {!string} mode  The mode used to save the data.
- * @param {Object=} opt_options  Additional options to be added to the query string.
+ * @param {Object=} opt_options  Additional options to be added to the query
+ *                               string.
  */
 snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
 {
@@ -4185,6 +4207,11 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
 
             widget.getWidgetType().initializeWidget(widget);
 
+            // TODO: add support for:
+            //    1. the focus=... query string
+            //    2. the first widget with an error
+            //    3. then check for .auto-focus
+            //
             // auto-focus the widget if so required
             if(widget_content.is(".auto-focus"))
             {

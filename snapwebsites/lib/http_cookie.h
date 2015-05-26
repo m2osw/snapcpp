@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "snap_exception.h"
+
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 #include <controlled_vars/controlled_vars_ptr_auto_init.h>
@@ -23,6 +25,25 @@
 
 namespace snap
 {
+
+class http_cookie_exception : public snap_exception
+{
+public:
+    http_cookie_exception(char const *        what_msg) : snap_exception("http_cookie", what_msg) {}
+    http_cookie_exception(std::string const & what_msg) : snap_exception("http_cookie", what_msg) {}
+    http_cookie_exception(QString const &     what_msg) : snap_exception("http_cookie", what_msg) {}
+};
+
+
+class http_cookie_parse_exception : public http_cookie_exception
+{
+public:
+    http_cookie_parse_exception(char const *        what_msg) : http_cookie_exception(what_msg) {}
+    http_cookie_parse_exception(std::string const & what_msg) : http_cookie_exception(what_msg) {}
+    http_cookie_parse_exception(QString const &     what_msg) : http_cookie_exception(what_msg) {}
+};
+
+
 
 class snap_child;
 typedef controlled_vars::ptr_auto_init<snap_child>    zpsnap_child_t;

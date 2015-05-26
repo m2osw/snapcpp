@@ -444,13 +444,14 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::modified"
          || n == "content::updated"
          || n == "content::status_changed"
-         || n.left(18) == "core::last_updated"
+         || n.startsWith("core::last_updated")
          || n == "core::plugin_threshold"
          || n == "core::site_ready"
          || n == "epayment_paypal::last_attempt"
          || n == "epayment_paypal::oauth2_expires"
          || n == "images::modified"
          || n == "list::last_updated"
+         || n.endsWith("::sendmail::created")
          || n == "sessions::date"
          || n == "shorturl::date"
          || n == "users::created_time"

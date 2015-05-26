@@ -1405,7 +1405,7 @@ void layout::replace_includes(QString& xsl)
  *                              If zero, do not check for updates.
  * \return last updated timestamp
  */
-int64_t layout::install_layout(QString const& layout_name, int64_t const last_updated)
+int64_t layout::install_layout(QString const & layout_name, int64_t const last_updated)
 {
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
@@ -1457,6 +1457,13 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
         }
     }
 
+    // make sure the layout is valid
+    content::path_info_t::status_t const status(layout_ipath.get_status());
+    if(status.get_state() != content::path_info_t::status_t::state_t::NORMAL)
+    {
+        return 0;
+    }
+
     // this layout is missing, create necessary basic info
     // (later users can edit those settings)
     //
@@ -1477,7 +1484,7 @@ int64_t layout::install_layout(QString const& layout_name, int64_t const last_up
     }
     else
     {
-        if( !layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
+        if(!layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
         {
             // that should probably apply to the body and theme names
             if(last_updated != 0)
@@ -1580,6 +1587,9 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
 {
     static_cast<void>(header);
 
+    content::path_info_t main_ipath;
+    main_ipath.set_path(f_snap->get_uri().path());
+
     int const p(ipath.get_cpath().lastIndexOf('/'));
     QString const base(f_snap->get_site_key_with_slash() + (p == -1 ? "" : ipath.get_cpath().left(p)));
 
@@ -1604,7 +1614,7 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
         (content::field_search::COMMAND_SAVE, "desc[type=base_uri]/data")
 
         // snap/head/metadata/desc[@type="page_uri"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_key())
+        (content::field_search::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
         (content::field_search::COMMAND_SAVE, "desc[type=page_uri]/data")
 
         // snap/head/metadata/desc[@type="template_uri"]/data
@@ -1753,6 +1763,18 @@ void layout::on_load_file(snap_child::post_file_t& file, bool& found)
 void layout::add_layout_from_resources(QString const& name)
 {
     QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
+
+    // TODO: we want to add a signal so other plugins can add their own expected pages
+    //       here it would be an editor file
+    {
+        QString const body(QString(":/xml/layout/%1-page.xml").arg(name));
+        QFile file(body);
+        if(file.open(QIODevice::ReadOnly))
+        {
+            QByteArray data(file.readAll());
+            layout_table->row(name)->cell(QString("%1-page").arg(name))->setValue(data);
+        }
+    }
 
     {
         QString const body(QString(":/xsl/layout/%1-body-parser.xsl").arg(name));

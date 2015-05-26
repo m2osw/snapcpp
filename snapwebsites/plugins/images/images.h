@@ -45,17 +45,17 @@ char const *get_name(name_t name) __attribute__ ((const));
 class images_exception : public snap_exception
 {
 public:
-    images_exception(char const *what_msg)        : snap_exception("images", std::string(what_msg)) {}
-    images_exception(std::string const& what_msg) : snap_exception("images", what_msg) {}
-    images_exception(QString const& what_msg)     : snap_exception("images", what_msg.toStdString()) {}
+    images_exception(char const *        what_msg) : snap_exception("images", what_msg) {}
+    images_exception(std::string const & what_msg) : snap_exception("images", what_msg) {}
+    images_exception(QString const &     what_msg) : snap_exception("images", what_msg) {}
 };
 
 class images_exception_no_backend : public images_exception
 {
 public:
-    images_exception_no_backend(char const *what_msg)        : images_exception(what_msg) {}
-    images_exception_no_backend(std::string const& what_msg) : images_exception(what_msg) {}
-    images_exception_no_backend(QString const& what_msg)     : images_exception(what_msg) {}
+    images_exception_no_backend(char const *        what_msg) : images_exception(what_msg) {}
+    images_exception_no_backend(std::string const & what_msg) : images_exception(what_msg) {}
+    images_exception_no_backend(QString const &     what_msg) : images_exception(what_msg) {}
 };
 
 

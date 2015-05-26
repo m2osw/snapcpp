@@ -201,7 +201,8 @@ DTD of the XSLT 2.0.
 <!ELEMENT em ANY>
 
 <!ELEMENT fieldset ANY>
-<!ATTLIST fieldset class CDATA #IMPLIED>
+<!ATTLIST fieldset class CDATA #IMPLIED
+                   style CDATA #IMPLIED>
 
 <!ELEMENT img ANY>
 <!ATTLIST img src CDATA #IMPLIED

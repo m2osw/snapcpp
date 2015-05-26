@@ -36,9 +36,9 @@ const char *get_name(name_t name) __attribute__ ((const));
 class header_exception : public snap_exception
 {
 public:
-    header_exception(char const *what_msg) : snap_exception("Header: " + std::string(what_msg)) {}
-    header_exception(std::string const& what_msg) : snap_exception("Header: " + what_msg) {}
-    header_exception(QString const& what_msg) : snap_exception("Header: " + what_msg.toStdString()) {}
+    header_exception(char const *        what_msg) : snap_exception("Header", what_msg) {}
+    header_exception(std::string const & what_msg) : snap_exception("Header", what_msg) {}
+    header_exception(QString const &     what_msg) : snap_exception("Header", what_msg) {}
 };
 
 

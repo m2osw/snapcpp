@@ -18,6 +18,7 @@
 
 #include "../sessions/sessions.h"
 #include "../filter/filter.h"
+#include "../path/path.h"
 
 #include "snap_backend.h"
 #include "qcaseinsensitivestring.h"
@@ -66,8 +67,12 @@ enum name_t
     SNAP_NAME_SENDMAIL,
     SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING,
     SNAP_NAME_SENDMAIL_CONTENT_TYPE,
+    SNAP_NAME_SENDMAIL_CREATED,
     SNAP_NAME_SENDMAIL_EMAIL,
+    SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION,
     SNAP_NAME_SENDMAIL_EMAILS_TABLE,
+    SNAP_NAME_SENDMAIL_FIELD_EMAIL,
+    SNAP_NAME_SENDMAIL_FIELD_LEVEL,
     SNAP_NAME_SENDMAIL_FREQUENCY,
     SNAP_NAME_SENDMAIL_FREQUENCY_DAILY,
     SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE,
@@ -77,6 +82,9 @@ enum name_t
     SNAP_NAME_SENDMAIL_IMPORTANT,
     SNAP_NAME_SENDMAIL_INDEX,
     SNAP_NAME_SENDMAIL_LAYOUT_NAME,
+    SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST,
+    SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST,
+    SNAP_NAME_SENDMAIL_LEVEL_WHITELIST,
     SNAP_NAME_SENDMAIL_LISTS,
     SNAP_NAME_SENDMAIL_MIME_VERSION,
     SNAP_NAME_SENDMAIL_NEW,
@@ -93,9 +101,12 @@ enum name_t
     SNAP_NAME_SENDMAIL_STATUS_SENDING,
     SNAP_NAME_SENDMAIL_STATUS_SENT,
     SNAP_NAME_SENDMAIL_STATUS_SPAM,
+    SNAP_NAME_SENDMAIL_STATUS_UNSUBSCRIBED,
     SNAP_NAME_SENDMAIL_STOP,
     SNAP_NAME_SENDMAIL_SUBJECT,
     SNAP_NAME_SENDMAIL_TO,
+    SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH,
+    SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION,
     SNAP_NAME_SENDMAIL_USER_AGENT,
     SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY,
     SNAP_NAME_SENDMAIL_X_PRIORITY
@@ -103,10 +114,14 @@ enum name_t
 const char *get_name(name_t name) __attribute__ ((const));
 
 
-class sendmail : public plugins::plugin, public server::backend_action, public layout::layout_content
+class sendmail : public plugins::plugin
+               , public server::backend_action
+               , public path::path_execute
+               , public layout::layout_content
 {
 public:
     static const sessions::sessions::session_info::session_id_t SENDMAIL_SESSION_ID_MESSAGE = 1;
+    static const sessions::sessions::session_info::session_id_t SENDMAIL_SESSION_EMAIL_ENCRYPTION = 2;
 
     class email : public QtSerialization::QSerializationObject
     {
@@ -114,8 +129,8 @@ public:
         static const int EMAIL_MAJOR_VERSION = 1;
         static const int EMAIL_MINOR_VERSION = 0;
 
-        typedef QMap<QCaseInsensitiveString, QString> header_map_t;
-        typedef QMap<QString, QString> parameter_map_t;
+        typedef QMap<QCaseInsensitiveString, QString>   header_map_t;
+        typedef QMap<QString, QString>                  parameter_map_t;
 
         enum email_priority_t
         {
@@ -129,22 +144,22 @@ public:
         class email_attachment : public QtSerialization::QSerializationObject
         {
         public:
-            email_attachment();
-            virtual ~email_attachment();
+                                    email_attachment();
+            virtual                 ~email_attachment();
 
-            void set_data(const QByteArray& data, QString mime_type);
-            QByteArray get_data() const;
-            void add_header(const QString& name, const QString& value);
-            QString get_header(const QString& name) const;
-            const header_map_t& get_all_headers() const;
-            void add_related(const email_attachment& data);
-            int get_related_count() const;
-            email_attachment& get_related(int index) const;
+            void                    set_data(QByteArray const & data, QString mime_type);
+            QByteArray              get_data() const;
+            void                    add_header(QString const & name, QString const & value);
+            QString                 get_header(QString const & name) const;
+            const header_map_t &    get_all_headers() const;
+            void                    add_related(email_attachment const & data);
+            int                     get_related_count() const;
+            email_attachment &      get_related(int index) const;
 
             // internal functions used to save the data serialized
-            void unserialize(QtSerialization::QReader& r);
-            virtual void readTag(const QString& name, QtSerialization::QReader& r);
-            void serialize(QtSerialization::QWriter& w) const;
+            void                    unserialize(QtSerialization::QReader & r);
+            virtual void            readTag(QString const & name, QtSerialization::QReader & r);
+            void                    serialize(QtSerialization::QWriter & w) const;
 
         private:
             header_map_t                    f_header;
@@ -154,35 +169,35 @@ public:
         };
         typedef QVector<email_attachment> attachment_vector_t;
 
-        email();
-        virtual ~email();
+                                email();
+        virtual                 ~email();
 
-        void set_from(const QString& from);
-        void set_cumulative(const QString& object);
-        void set_site_key(const QString& site_key);
-        const QString& get_site_key() const;
-        void set_email_path(const QString& email_path);
-        const QString& get_email_path() const;
-        void set_email_key(const QString& site_key);
-        const QString& get_email_key() const;
-        time_t get_time() const;
-        void set_priority(email_priority_t priority = EMAIL_PRIORITY_NORMAL);
-        void set_subject(const QString& subject);
-        void add_header(const QString& name, const QString& value);
-        QString get_header(const QString& name) const;
-        const header_map_t& get_all_headers() const;
-        void set_body_attachment(const email_attachment& data);
-        void add_attachment(const email_attachment& data);
-        int get_attachment_count() const;
-        email_attachment& get_attachment(int index) const;
-        void add_parameter(const QString& name, const QString& value);
-        QString get_parameter(const QString& name) const;
-        const parameter_map_t& get_all_parameters() const;
+        void                    set_from(QString const & from);
+        void                    set_cumulative(QString const & object);
+        void                    set_site_key(QString const & site_key);
+        const QString &         get_site_key() const;
+        void                    set_email_path(QString const & email_path);
+        const QString &         get_email_path() const;
+        void                    set_email_key(QString const & site_key);
+        const QString &         get_email_key() const;
+        time_t                  get_time() const;
+        void                    set_priority(email_priority_t priority = EMAIL_PRIORITY_NORMAL);
+        void                    set_subject(QString const & subject);
+        void                    add_header(QString const & name, QString  const & value);
+        QString                 get_header(QString const & name) const;
+        header_map_t const &    get_all_headers() const;
+        void                    set_body_attachment(email_attachment const & data);
+        void                    add_attachment(email_attachment const & data);
+        int                     get_attachment_count() const;
+        email_attachment &      get_attachment(int index) const;
+        void                    add_parameter(QString const & name, QString const & value);
+        QString                 get_parameter(QString const & name) const;
+        parameter_map_t const & get_all_parameters() const;
 
         // internal functions used to save the data serialized
-        void unserialize(QString const& data);
-        virtual void readTag(QString const& name, QtSerialization::QReader& r);
-        QString serialize() const;
+        void                    unserialize(QString const & data);
+        virtual void            readTag(QString const & name, QtSerialization::QReader & r);
+        QString                 serialize() const;
 
     private:
         QString                     f_cumulative;
@@ -203,25 +218,30 @@ public:
     virtual int64_t                         do_update(int64_t last_updated);
     QtCassandra::QCassandraTable::pointer_t get_emails_table();
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_register_backend_action(server::backend_action_map_t& actions);
-    virtual char const *get_signal_name(QString const& action) const;
-    virtual void        on_backend_action(QString const& action);
-    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_replace_token(content::path_info_t& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                    on_bootstrap(snap_child *snap);
+    void                    on_register_backend_action(server::backend_action_map_t& actions);
+    void                    on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+    void                    on_replace_token(content::path_info_t& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                    on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row);
+    void                    on_finish_editor_form_processing(content::path_info_t& ipath, bool& succeeded);
 
-    void                post_email(email const& e);
-    QString             default_from() const;
+    virtual char const *    get_signal_name(QString const& action) const;
+    virtual void            on_backend_action(QString const& action);
+    virtual void            on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual bool            on_path_execute(content::path_info_t& ipath);
+
+    void                    post_email(email const& e);
+    QString                 default_from() const;
 
     SNAP_SIGNAL_WITH_MODE(filter_email, (email& e), (e), NEITHER);
 
 private:
-    void content_update(int64_t variables_timestamp);
-    void process_emails();
-    void attach_email(email const& e);
-    void attach_user_email(email const& e);
-    void run_emails();
-    void sendemail(QString const& key, QString const& unique_key);
+    void                    content_update(int64_t variables_timestamp);
+    void                    process_emails();
+    void                    attach_email(email const& e);
+    void                    attach_user_email(email const& e);
+    void                    run_emails();
+    void                    sendemail(QString const& key, QString const& unique_key);
 
     zpsnap_child_t                  f_snap;
     snap_backend::zpsnap_backend_t  f_backend;

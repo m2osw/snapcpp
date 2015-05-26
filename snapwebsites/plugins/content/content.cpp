@@ -133,6 +133,9 @@ char const *get_name(name_t name)
     case SNAP_NAME_CONTENT_CREATED:
         return "content::created";
 
+    case SNAP_NAME_CONTENT_DIRRESOURCES:
+        return "dirresources";
+
     case SNAP_NAME_CONTENT_ERROR_FILES:
         return "error_files";
 
@@ -3511,14 +3514,14 @@ path_info_t::path_info_t()
  *
  * \sa set_real_path()
  */
-void path_info_t::set_path(QString const& path)
+void path_info_t::set_path(QString const & path)
 {
     if(!f_initialized
     || (path != f_cpath && path != f_key))
     {
         f_initialized = true;
 
-        QString const& site_key(f_snap->get_site_key_with_slash());
+        QString const & site_key(f_snap->get_site_key_with_slash());
         if(path.startsWith(site_key))
         {
             // already canonicalized
@@ -8046,12 +8049,26 @@ void content::on_save_content()
  * of all the nodes (usually only necessary for developers although once in
  * a while it could happen that a page never gets reset properly.)
  *
+ * \li resetstatus -- go through all the pages of a website and reset their
+ *                    status to Normal. This should be used by programmers
+ *                    when they make a mistake and mess up an entry; pages
+ *                    that are marked as Normal + something else will be
+ *                    changed to Normal + Not Working
+ * \li forceresetstatus -- this is similar to the reset status only it
+ *                         resets all the pages whatever the current state;
+ *                         this means a page that's hidden or deleted will
+ *                         become normal again
+ * \li dirresources -- show a directory of the resources; this is done here
+ *                     so you can see the available resources once all the
+ *                     plugins of a given website are
+ *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
 void content::on_register_backend_action(server::backend_action_map_t& actions)
 {
     actions[get_name(SNAP_NAME_CONTENT_RESETSTATUS)] = this;
     actions[get_name(SNAP_NAME_CONTENT_FORCERESETSTATUS)] = this;
+    actions[get_name(SNAP_NAME_CONTENT_DIRRESOURCES)] = this;
 }
 
 
@@ -8074,6 +8091,10 @@ void content::on_backend_action(QString const& action)
     {
         backend_action_reset_status(true);
     }
+    else if(action == get_name(SNAP_NAME_CONTENT_DIRRESOURCES))
+    {
+        backend_action_dir_resources();
+    }
 }
 
 
@@ -8082,6 +8103,7 @@ void content::backend_action_reset_status(bool const force)
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
     QtCassandra::QCassandraRowPredicate row_predicate;
+    QString const site_key(f_snap->get_site_key_with_slash());
     // process 100 in a row
     row_predicate.setCount(100);
     for(;;)
@@ -8097,30 +8119,47 @@ void content::backend_action_reset_status(bool const force)
         for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
                 o != rows.end(); ++o)
         {
-            path_info_t ipath;
-            ipath.set_path(QString::fromUtf8(o.key().data()));
-            if(content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_STATUS)))
+            QString const key(QString::fromUtf8(o.key().data()));
+            if(key.startsWith(site_key)) // filter out other websites... (dead slow since we are reading ALL the rows to only process one website!)
             {
-                // do not use the normal interface, force any normal (something) to normal (normal)
-                QtCassandra::QCassandraValue status(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value());
-                if(status.nullValue())
+                path_info_t ipath;
+                ipath.set_path(key);
+                if(content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_STATUS)))
                 {
-                    int32_t s(static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
-                            + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING) * 256));
-                    status.setInt32Value(s);
-                }
-                else
-                {
-                    int32_t s(status.int32Value());
-                    if((s & 0xFF) != static_cast<int>(path_info_t::status_t::state_t::NORMAL)
-                    && (s >> 8) != static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING))
+                    // do not use the normal interface, force any normal (something) to normal (normal)
+                    QtCassandra::QCassandraValue status(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value());
+                    if(status.nullValue())
                     {
-                        if(force
-                        || ((s & 0xFF) == static_cast<int>(path_info_t::status_t::state_t::NORMAL)
-                           && (s >> 8) != static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING)))
+                        // no valid status, mark the page as normal
+                        int32_t s(static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
+                                + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING) * 256));
+                        status.setInt32Value(s);
+                    }
+                    else
+                    {
+                        int32_t const current_status(status.int32Value());
+                        int32_t s(current_status);
+                        switch(s & 0xFF)
                         {
-                            s = static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::state_t::NORMAL))
-                              + static_cast<unsigned char>(static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING)) * 256;
+                        case static_cast<int>(path_info_t::status_t::state_t::NORMAL):
+                        case static_cast<int>(path_info_t::status_t::state_t::HIDDEN):
+                        case static_cast<int>(path_info_t::status_t::state_t::MOVED):
+                        case static_cast<int>(path_info_t::status_t::state_t::DELETED):
+                            break;
+
+                        default:
+                            // force back to normal if not considered
+                            // valid (so keep normal, hidden, moved,
+                            // and deleted pages as is)
+                            s = (current_status & ~0x000FF) | static_cast<int>(path_info_t::status_t::state_t::NORMAL);
+                            break;
+
+                        }
+                        // the working status is always reset to "not working"
+                        s = (s & ~0x0FF00) | (static_cast<int>(path_info_t::status_t::working_t::NOT_WORKING) * 256);
+
+                        if(force || s != current_status)
+                        {
                             status.setInt32Value(s);
                             content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->setValue(status);
                         }
@@ -8129,6 +8168,20 @@ void content::backend_action_reset_status(bool const force)
             }
         }
     }
+}
+
+
+/** \brief Backend function to display the list of resources.
+ *
+ * This function lists the name of all the resources available in this
+ * backend when the current website plugins are all loaded.
+ *
+ * This is useful to debug your code and make sure that all the resources
+ * you expect to be available are.
+ */
+void content::backend_action_dir_resources()
+{
+    f_snap->show_resources(std::cout);
 }
 
 

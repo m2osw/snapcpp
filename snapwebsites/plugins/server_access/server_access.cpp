@@ -243,7 +243,7 @@ void server_access::on_output_result(QString const& uri_path, QByteArray& result
  * \param[in] ipath  The path of the page being generated.
  * \param[in] success  Whether the request is considered successful.
  */
-void server_access::create_ajax_result(content::path_info_t& ipath, bool success)
+void server_access::create_ajax_result(content::path_info_t & ipath, bool success)
 {
     if(f_ajax_initialized)
     {

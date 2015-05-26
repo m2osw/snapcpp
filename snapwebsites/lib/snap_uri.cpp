@@ -130,10 +130,10 @@ snap_uri::snap_uri(const QString& uri)
  */
 bool snap_uri::set_uri(QString const& uri)
 {
-    const QChar *u(uri.constData());
+    QChar const * u(uri.constData());
 
     // retrieve the protocol
-    const QChar *s(u);
+    QChar const * s(u);
     while(!u->isNull() && u->unicode() != ':')
     {
         ++u;
@@ -150,9 +150,9 @@ bool snap_uri::set_uri(QString const& uri)
 
     // retrieve the sub-domains and domain parts
     // we may also discover a name, password, and port
-    const QChar *colon1(nullptr);
-    const QChar *colon2(nullptr);
-    const QChar *at(nullptr);
+    QChar const * colon1(nullptr);
+    QChar const * colon2(nullptr);
+    QChar const * at(nullptr);
     s = u;
     while(!u->isNull() && u->unicode() != '/')
     {
@@ -795,8 +795,8 @@ QString const& snap_uri::protocol() const
  *
  * \return true if the function succeeds, false otherwise
  */
-bool snap_uri::process_domain(QString const& full_domain_name,
-            QStringList& sub_domain_names, QString& domain_name, QString& tld)
+bool snap_uri::process_domain(QString const & full_domain_name,
+            QStringList & sub_domain_names, QString & domain_name, QString & tld)
 {
     // first we need to determine the TLD, we use the tld()
     // function from the libtld library for this purpose
@@ -841,27 +841,30 @@ bool snap_uri::process_domain(QString const& full_domain_name,
     sub_domain_names = all_sub_domains.split('.');
 
     // verify that all the sub-domains are valid (i.e. no "..")
-    int max_sub_domain_names(sub_domain_names.size());
-    for(int i(0); i < max_sub_domain_names; ++i)
+    if(!all_sub_domains.isEmpty())
     {
-        if(sub_domain_names[i].isEmpty())
+        int const max_sub_domain_names(sub_domain_names.size());
+        for(int i(0); i < max_sub_domain_names; ++i)
         {
-            // sub-domains cannot be empty or the URI includes
-            // two period one after another (this should actually
-            // be caught by the tld() call.)
-            return false;
-        }
-        sub_domain_names[i] = urldecode(sub_domain_names[i]);
+            if(sub_domain_names[i].isEmpty())
+            {
+                // sub-domains cannot be empty or the URI includes
+                // two period one after another (this should actually
+                // be caught by the tld() call.)
+                return false;
+            }
+            sub_domain_names[i] = urldecode(sub_domain_names[i]);
 
-        // TODO: look into whether we have to check for periods in the
-        //       decoded sub-domain names (i.e. a %2E is probably not a
-        //       valid character in a sub-domain name, at the same time
-        //       if we reach here, there should not be such a DNS entry...
-        //       but not automatically because a hacker can take an IP
-        //       and use it with any URI and send an HTTP request that
-        //       way... still, we would catch that in our domain/website
-        //       canonicalization.) Maybe we should decode the domain part
-        //       first, then parse it.
+            // TODO: look into whether we have to check for periods in the
+            //       decoded sub-domain names (i.e. a %2E is probably not a
+            //       valid character in a sub-domain name, at the same time
+            //       if we reach here, there should not be such a DNS entry...
+            //       but not automatically because a hacker can take an IP
+            //       and use it with any URI and send an HTTP request that
+            //       way... still, we would catch that in our domain/website
+            //       canonicalization.) Maybe we should decode the domain part
+            //       first, then parse it.
+        }
     }
 
     return true;

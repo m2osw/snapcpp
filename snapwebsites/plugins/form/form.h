@@ -40,26 +40,27 @@ char const *get_name(name_t const name) __attribute__ ((const));
 class form_exception : public snap_exception
 {
 public:
-    form_exception(char const *       what_msg) : snap_exception("Form: " + std::string(what_msg)) {}
-    form_exception(std::string const& what_msg) : snap_exception("Form: " + what_msg) {}
-    form_exception(QString const&     what_msg) : snap_exception("Form: " + what_msg.toStdString()) {}
+    form_exception(char const *        what_msg) : snap_exception("Form", what_msg) {}
+    form_exception(std::string const & what_msg) : snap_exception("Form", what_msg) {}
+    form_exception(QString const &     what_msg) : snap_exception("Form", what_msg) {}
 };
 
 class form_exception_invalid_form_xml : public form_exception
 {
 public:
-    form_exception_invalid_form_xml(char const *       what_msg) : form_exception(what_msg) {}
-    form_exception_invalid_form_xml(std::string const& what_msg) : form_exception(what_msg) {}
-    form_exception_invalid_form_xml(QString const&     what_msg) : form_exception(what_msg.toStdString()) {}
+    form_exception_invalid_form_xml(char const *        what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_form_xml(std::string const & what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_form_xml(QString const &     what_msg) : form_exception(what_msg) {}
 };
 
 class form_exception_invalid_xslt_data : public form_exception
 {
 public:
-    form_exception_invalid_xslt_data(char const *       what_msg) : form_exception(what_msg) {}
-    form_exception_invalid_xslt_data(std::string const& what_msg) : form_exception(what_msg) {}
-    form_exception_invalid_xslt_data(QString const&     what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_xslt_data(char const *        what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_xslt_data(std::string const & what_msg) : form_exception(what_msg) {}
+    form_exception_invalid_xslt_data(QString const &     what_msg) : form_exception(what_msg) {}
 };
+
 
 
 

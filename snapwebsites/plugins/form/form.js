@@ -2,7 +2,7 @@
  * Name: form
  * Version: 0.0.2.6
  * Browsers: all
- * Depends: output (>= 0.0.5), jquery-extensions (>= 1.0.1)
+ * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */

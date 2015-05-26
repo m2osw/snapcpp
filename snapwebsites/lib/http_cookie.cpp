@@ -212,19 +212,19 @@ http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& v
     int max_len(f_name.length());
     if(max_len == 0)
     {
-        throw std::runtime_error("the name of a cookie cannot be empty");
+        throw http_cookie_parse_exception("the name of a cookie cannot be empty");
     }
     for(int i(0); i < max_len; ++i)
     {
         ushort c(f_name[i].unicode());
         if(c <= ' ' || c >= 127 || (http_token[c >> 5] & (1 << (c & 0x1F))) == 0)
         {
-            throw std::runtime_error(QString("the name of a cookie must only include token compatible characters (offensive character: %1)").arg(QChar(c)).toStdString());
+            throw http_cookie_parse_exception(QString("the name of a cookie must only include token compatible characters (offensive character: %1)").arg(QChar(c)));
         }
     }
     if(f_name[0] == '$')
     {
-        throw std::runtime_error("cookie name cannot start with '$'; those are reserved by the HTTP protocol");
+        throw http_cookie_parse_exception("cookie name cannot start with '$'; those are reserved by the HTTP protocol");
     }
 
     if(f_snap)
@@ -321,7 +321,7 @@ void http_cookie::set_domain(const QString& domain)
     }
     if(max_len == 0)
     {
-        throw std::runtime_error("the domain of a cookie cannot be empty");
+        throw http_cookie_parse_exception("the domain of a cookie cannot be empty");
     }
     for(int i(0); i < max_len; ++i)
     {
@@ -333,7 +333,7 @@ void http_cookie::set_domain(const QString& domain)
         && (c < '0' || c > '9')
         && c != '.' && c != '-' && c != '_')
         {
-            throw std::runtime_error("the domain of a cookie must only include domain name compatible characters");
+            throw http_cookie_parse_exception("the domain of a cookie must only include domain name compatible characters");
         }
     }
 
@@ -368,7 +368,7 @@ void http_cookie::set_path(const QString& path)
         if((c < ' ' || c > '~')
         && c != ',' && c != ';')
         {
-            throw std::runtime_error("the path of a cookie must only include ASCII characters except controls, ',' and ';'.");
+            throw http_cookie_parse_exception("the path of a cookie must only include ASCII characters except controls, ',' and ';'.");
         }
     }
 

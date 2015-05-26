@@ -37,17 +37,17 @@ char const *get_name(name_t name) __attribute__ ((const));
 class info_exception : public snap_exception
 {
 public:
-    info_exception(char const *       what_msg) : snap_exception("Info: " + std::string(what_msg)) {}
-    info_exception(std::string const& what_msg) : snap_exception("Info: " + what_msg) {}
-    info_exception(QString const&     what_msg) : snap_exception("Info: " + what_msg.toStdString()) {}
+    info_exception(char const *        what_msg) : snap_exception("Info", what_msg) {}
+    info_exception(std::string const & what_msg) : snap_exception("Info", what_msg) {}
+    info_exception(QString const &     what_msg) : snap_exception("Info", what_msg) {}
 };
 
 class info_exception_invalid_path : public info_exception
 {
 public:
-    info_exception_invalid_path(char const *       what_msg) : info_exception(what_msg) {}
-    info_exception_invalid_path(std::string const& what_msg) : info_exception(what_msg) {}
-    info_exception_invalid_path(QString const&     what_msg) : info_exception(what_msg) {}
+    info_exception_invalid_path(char const *        what_msg) : info_exception(what_msg) {}
+    info_exception_invalid_path(std::string const & what_msg) : info_exception(what_msg) {}
+    info_exception_invalid_path(QString const &     what_msg) : info_exception(what_msg) {}
 };
 
 

@@ -127,6 +127,30 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <![CDATA[<p>Creating new content.</p><p>This is the general create permission. This permission should only be assigned to the root because it gives someone the right to create anything. Specific type of create are added under this right.</p>]]>
     </param>
   </content>
+  <content path="/types/permissions/rights/submit">
+    <param name="content::title" revision="revision">Submit Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Submit content.</p><p>By default websites do not authorize users to submit data. This is similar to the edit, only even users who are not currently logged in can be given the right to submit data to a website.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/submit/form">
+    <param name="content::title" revision="revision">Submit Form Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Submit content from a form.</p><p>Visitors who reach a form and want to submit its content can use this right.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/submit/survey">
+    <param name="content::title" revision="revision">Submit Survey Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Submit content from a survey.</p><p>Visitors who reach a survey and want to submit its content can use this right.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/submit/application">
+    <param name="content::title" revision="revision">Submit An Application Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Submit an application.</p><p>Visitors who reach an application and want to submit its content can use this right.</p>]]>
+    </param>
+  </content>
   <content path="/types/permissions/rights/edit">
     <param name="content::title" revision="revision">Edit Right</param>
     <param name="content::body" revision="revision">
@@ -200,6 +224,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::title" revision="revision">Moderate Action</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Someone offered to moderate a page is in effect given the right to change the current publication status of a page. The person is also expected to have enough rights to view unpublished content in order to moderate that content and publish it if acceptable.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/submit">
+    <param name="content::title" revision="revision">Submit Action</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Submit content.</p><p>By default websites do not authorize users to submit data. This is similar to the edit, only even users who are not currently logged in can be given the right to submit data to a website.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/actions/unlock">
@@ -301,6 +331,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/public</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/system-page</link>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/attachment/public</link>
+    <link name="permissions::action::submit" to="permissions::link_back" mode="*:*">/types/permissions/rights/submit/form</link>
+    <link name="permissions::action::submit" to="permissions::link_back" mode="*:*">/types/permissions/rights/submit/survey</link>
+    <link name="permissions::action::submit" to="permissions::link_back" mode="*:*">/types/permissions/rights/submit/application</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer">
     <param name="content::title" revision="revision">Spammer Group</param>

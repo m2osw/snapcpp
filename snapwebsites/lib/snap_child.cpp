@@ -47,6 +47,7 @@
 #include <sys/socket.h>
 #include <signal.h>
 
+#include <QDirIterator>
 #include <QDateTime>
 #include <QCoreApplication>
 
@@ -7467,6 +7468,24 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
  * dates that a client might send to us:
  * http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.1
  *
+ * Formats that we support:
+ *
+ * \code
+ *      DD-MMM-YYYY HH:MM:SS TZ
+ *      DD-MMM-YYYY HH:MM:SS TZ
+ *      WWW DD-MMM-YYYY HH:MM:SS TZ
+ *      MMM-DD-YYYY HH:MM:SS TZ
+ *      WWW MMM-DD HH:MM:SS YYYY
+ * \endcode
+ *
+ * The month and weekday may be a 3 letter abbreviation or the full English
+ * name. The month must use letters.
+ *
+ * The year may be 2 or 4 digits.
+ *
+ * The timezone is optional. It may use a space or a + or a - as a separator.
+ * The timezone may be an abbreviation or a 4 digit number.
+ *
  * \param[in] date  The date to convert to a time_t.
  *
  * \return The date and time as a Unix time_t number, -1 if the convertion fails.
@@ -7907,6 +7926,10 @@ time_t snap_child::string_to_date(QString const& date)
  *      leap = !(year % 4) && (year % 100 || !(year % 400));
  * \endcode
  *
+ * \warning
+ * This function throws if called with September 1752 because the
+ * month has missing days within the month (days 3 to 13).
+ *
  * \param[in] month  A number from 1 to 12 representing a month.
  * \param[in] year  A year, including the century.
  */
@@ -7917,18 +7940,31 @@ int snap_child::last_day_of_month(int month, int year)
         throw snap_logic_exception(QString("last_day_of_month called with %1 as the month number").arg(month));
     }
 
-    // The time when people switch from Julian to Gregorian is country
-    // dependent, Great Britain changed on September 2, 1752, but some
-    // countries changed as late as 1952...
-    if(year < 1800)
-    {
-        throw snap_logic_exception(QString("last_day_of_month called with %1 as the year number").arg(year));
-    }
-
     if(month == 2)
     {
         // special case for February
+        //
+        // The time when people switch from Julian to Gregorian is country
+        // dependent, Great Britain changed on September 2, 1752, but some
+        // countries changed as late as 1952...
+        //
+        // For now, we use the GB date. Once we have a valid way to handle
+        // this with the locale, we can look into updating the code. That
+        // being said, it should not matter too much because most dates on
+        // the Internet are past 2000.
+        //
+        if(year < 1752)
+        {
+            return year % 4 == 0 ? 29 : 28;
+        }
         return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? 29 : 28;
+    }
+
+    if(month == 9 && year == 1752)
+    {
+        // we cannot handle this nice here, days 3 to 13 are missing on this
+        // month... (to adjust the calendar all at once!)
+        throw snap_logic_exception(QString("last_day_of_month called with %1 as the year number").arg(year));
     }
 
     return g_month_days[month - 1];
@@ -8276,6 +8312,24 @@ bool snap_child::tag_is_inline(char const *tag, int length)
     }
 
     return false;
+}
+
+
+/** \brief Debug function
+ *
+ * This function is just for debug purposes. It can be used to make sure
+ * that the resources you are expecting to exist are indeed available.
+ * You may find it with the wrong path, for example.
+ *
+ * \param[in] out  An output stream such as std::err.
+ */
+void snap_child::show_resources(std::ostream & out)
+{
+    QDirIterator it(":", QDirIterator::Subdirectories);
+    while(it.hasNext())
+    {
+        out << it.next() << "\n";
+    }
 }
 
 

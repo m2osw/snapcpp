@@ -62,33 +62,33 @@ char const *get_name(name_t name) __attribute__ ((const));
 class list_exception : public snap_exception
 {
 public:
-    list_exception(char const *what_msg)        : snap_exception("list", std::string(what_msg)) {}
-    list_exception(std::string const& what_msg) : snap_exception("list", what_msg) {}
-    list_exception(QString const& what_msg)     : snap_exception("list", what_msg.toStdString()) {}
+    list_exception(char const *        what_msg) : snap_exception("list", what_msg) {}
+    list_exception(std::string const & what_msg) : snap_exception("list", what_msg) {}
+    list_exception(QString const &     what_msg) : snap_exception("list", what_msg) {}
 };
 
 class list_exception_no_backend : public list_exception
 {
 public:
-    list_exception_no_backend(char const *what_msg)        : list_exception(what_msg) {}
-    list_exception_no_backend(std::string const& what_msg) : list_exception(what_msg) {}
-    list_exception_no_backend(QString const& what_msg)     : list_exception(what_msg) {}
+    list_exception_no_backend(char const *        what_msg) : list_exception(what_msg) {}
+    list_exception_no_backend(std::string const & what_msg) : list_exception(what_msg) {}
+    list_exception_no_backend(QString const &     what_msg) : list_exception(what_msg) {}
 };
 
 class list_exception_invalid_number_of_parameters : public list_exception
 {
 public:
-    list_exception_invalid_number_of_parameters(char const *what_msg)        : list_exception(what_msg) {}
-    list_exception_invalid_number_of_parameters(std::string const& what_msg) : list_exception(what_msg) {}
-    list_exception_invalid_number_of_parameters(QString const& what_msg)     : list_exception(what_msg) {}
+    list_exception_invalid_number_of_parameters(char const *        what_msg) : list_exception(what_msg) {}
+    list_exception_invalid_number_of_parameters(std::string const & what_msg) : list_exception(what_msg) {}
+    list_exception_invalid_number_of_parameters(QString const &     what_msg) : list_exception(what_msg) {}
 };
 
 class list_exception_invalid_parameter_type : public list_exception
 {
 public:
-    list_exception_invalid_parameter_type(char const *what_msg)        : list_exception(what_msg) {}
-    list_exception_invalid_parameter_type(std::string const& what_msg) : list_exception(what_msg) {}
-    list_exception_invalid_parameter_type(QString const& what_msg)     : list_exception(what_msg) {}
+    list_exception_invalid_parameter_type(char const *        what_msg) : list_exception(what_msg) {}
+    list_exception_invalid_parameter_type(std::string const & what_msg) : list_exception(what_msg) {}
+    list_exception_invalid_parameter_type(QString const &     what_msg) : list_exception(what_msg) {}
 };
 
 

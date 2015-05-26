@@ -181,8 +181,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
       <xsl:attribute name="field_name"><xsl:value-of select="$name"/></xsl:attribute>
       <xsl:attribute name="class"><xsl:if test="$action = 'edit'">snap-editor </xsl:if>editable <xsl:value-of
         select="classes"/> dropdown <xsl:value-of select="$name"/><xsl:if
-        test="@immediate or ../immediate"> immediate</xsl:if><xsl:if
-        test="@id = ../focus/@refid"> auto-focus</xsl:if><xsl:if
+        test="@immediate or /editor-form/immediate"> immediate</xsl:if><xsl:if
+        test="@id = /editor-form/focus/@refid"> auto-focus</xsl:if><xsl:if
         test="state = 'disabled'"> disabled</xsl:if><xsl:if
         test="not(@mode) or @mode = 'select-only'"> read-only</xsl:if></xsl:attribute>
       <div class="snap-editor-dropdown-reset-value"><xsl:copy-of select="default/node()"/></div>
@@ -395,6 +395,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:if test="tooltip">
           <xsl:attribute name="title"><xsl:value-of select="tooltip"/></xsl:attribute>
         </xsl:if>
+        <xsl:choose>
+          <xsl:when test="$value != ''">
+            <xsl:attribute name="value"><xsl:value-of select="$value"/></xsl:attribute>
+          </xsl:when>
+          <xsl:when test="preset/item[@default = 'default']">
+            <!-- use the default value when there is one -->
+            <xsl:copy-of select="preset/item[@default = 'default']/@value"/>
+          </xsl:when>
+        </xsl:choose>
 
         <!-- WARNING: the order is VERY important -->
         <xsl:variable name="default_position">
