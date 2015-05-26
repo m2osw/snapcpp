@@ -6,11 +6,11 @@ Build-Depends: debhelper, cmake,
     libmagic-dev, libmagick++-dev (>= 6.7.7.10-6ubuntu3), libicu-dev,
     libqtwebkit-dev, libboost-dev, libxml2-utils, python-pip (>= 1.4.1-2),
     libprocps3-dev, libzipios++-dev (>= 0.1.5.10m2osw1~saucy), zip, uuid-dev,
-    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.225~trusty),
-    libcontrolledvars-dev (>= 1.4.15.225~trusty), libadvgetopt-dev (>= 1.0.15.225~trusty),
-    libtld-dev (>= 1.4.21.86~trusty), libqtcassandra-dev (>= 0.5.21.14~trusty),
-    libqtserialization-dev (>= 0.1.16.225~trusty), closure-linter (>= 2.3.13),
-    libas2js-dev (>= 0.1.13.225~trusty), libssl-dev (>= 1.0.1),
+    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.230~trusty),
+    libcontrolledvars-dev (>= 1.4.15.230~trusty), libadvgetopt-dev (>= 1.0.15.230~trusty),
+    libtld-dev (>= 1.4.21.91~trusty), libqtcassandra-dev (>= 0.5.21.19~trusty),
+    libqtserialization-dev (>= 0.1.16.230~trusty), closure-linter (>= 2.3.13),
+    libas2js-dev (>= 0.1.13.230~trusty), libssl-dev (>= 1.0.1),
     libqrencode-dev (>= 3.4)
 Standards-Version: 3.9.4
 Section: libs
