@@ -506,7 +506,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           </xsl:if>
           <!-- see http://stackoverflow.com/questions/153527/setting-the-character-encoding-in-form-submit-for-internet-explorer -->
           <input id="form__iehack" name="form__iehack" type="hidden" value="&#9760;"/>
-          <input id="form_session" name="form_session" type="hidden" value="{$form_session}"/>
+          <input id="_form_session" name="_form_session" type="hidden" value="{$_form_session}"/>
           <xsl:choose>
             <xsl:when test="widgetorder">
               <xsl:for-each select="widgetorder/widgetpriority">

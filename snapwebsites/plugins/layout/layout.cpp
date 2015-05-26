@@ -1927,7 +1927,7 @@ void layout::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, Qt
        <div class="snap-form">
         <form onkeypress="javascript:if((event.which&amp;&amp;event.which==13)||(event.keyCode&amp;&amp;event.keyCode==13))fire_event(login_34,'click');" method="post" accept-charset="utf-8" id="form_34" autocomplete="off">
          <input type="hidden" value=" " id="form__iehack" name="form__iehack"/>
-         <input type="hidden" value="3673b0558e8ad92c" id="form_session" name="form_session"/>
+         <input type="hidden" value="3673b0558e8ad92c" id="_form_session" name="_form_session"/>
          <div class="form-item fieldset">
           <fieldset class="" id="log_info_34">
            <legend title="Enter your log in information below then click the Log In button." accesskey="l">Log In Form</legend>

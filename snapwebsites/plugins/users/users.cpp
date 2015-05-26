@@ -1965,7 +1965,7 @@ void users::send_to_replace_password_page(QString const& email, bool const set_s
  * \param[in,out] ipath  The path the user is accessing now.
  * \param[in] session_info  The user session being processed.
  */
-void users::on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info)
+void users::on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info)
 {
     static_cast<void>(session_info);
 
@@ -2032,7 +2032,7 @@ void users::on_process_form_post(content::path_info_t& ipath, sessions::sessions
  */
 void users::process_login_form(login_mode_t login_mode)
 {
-    messages::messages *messages_plugin(messages::messages::instance());
+    messages::messages * messages_plugin(messages::messages::instance());
 
     // retrieve the row for that user
     QString const key(f_snap->postenv("email"));
