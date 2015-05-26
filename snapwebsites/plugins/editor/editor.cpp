@@ -379,7 +379,7 @@ void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::
                     QString("Type \"%1\" is not yet defined and you do not have permission to create a new type of pages at this point.").arg(type),
                     "type does not exist and we do not yet offer a way to auto-create a content type",
                     false
-                );
+                ).set_widget_name(widget_name);
                 info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
             }
         }
@@ -391,6 +391,8 @@ void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::
  *
  * This function processes the post of an editor form. The function uses the
  * \p ipath parameter in order to determine which form is being processed.
+ *
+ * See the plugins/editor/new-draft.xml file.
  *
  * \param[in,out] ipath  The path the user is accessing now.
  * \param[in] session_info  The user session being processed.

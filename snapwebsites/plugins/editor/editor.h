@@ -143,7 +143,6 @@ public:
     virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
     virtual bool        on_path_execute(content::path_info_t& ipath);
     void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    virtual void        on_process_form_post(content::path_info_t& cpath, sessions::sessions::session_info const& info);
     void                on_validate_post_for_widget(content::path_info_t& ipath, sessions::sessions::session_info& info,
                                          QDomElement const& widget, QString const& widget_name,
                                          QString const& widget_type, bool is_secret);
@@ -151,6 +150,9 @@ public:
     void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
     virtual void        on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate);
     virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning);
+
+    // form::form_post
+    virtual void        on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & info);
 
     QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
     static save_mode_t  string_to_save_mode(QString const& mode);
