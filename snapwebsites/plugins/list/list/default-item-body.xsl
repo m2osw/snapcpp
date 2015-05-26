@@ -26,9 +26,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	<xsl:param name="layout-modified">2014-02-19 18:00:22</xsl:param>
 
 	<!-- get the base URI (i.e. parent URI to this page) -->
-	<xsl:variable name="page_uri" as="xs:string" select="/snap/head/metadata/desc[@type='page_uri']/data"/>
+	<xsl:variable name="real_uri" as="xs:string" select="/snap/head/metadata/desc[@type='real_uri']/data"/>
 	<!-- compute the full path from the main URI to this page -->
-	<xsl:variable name="full_path" as="xs:string" select="substring-after(substring-after($page_uri, '://'), '/')"/>
+	<xsl:variable name="full_path" as="xs:string" select="substring-after(substring-after($real_uri, '://'), '/')"/>
 
 	<xsl:template match="snap">
 		<output>

@@ -64,7 +64,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <xsl:value-of select="substring-after(substring-after($page_uri, '://'), '/')"/>
   </xsl:variable>
 
-  <!-- compute the full path from the main URI to this page -->
+  <!-- compute the relative path from the root of this website -->
   <xsl:variable name="page" as="xs:string">
     <xsl:value-of select="substring-after($page_uri, $base_uri)"/>
   </xsl:variable>

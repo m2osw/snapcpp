@@ -1617,6 +1617,10 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
         (content::field_search::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
         (content::field_search::COMMAND_SAVE, "desc[type=page_uri]/data")
 
+        // snap/head/metadata/desc[@type="real_uri"]/data
+        (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_key())
+        (content::field_search::COMMAND_SAVE, "desc[type=real_uri]/data")
+
         // snap/head/metadata/desc[@type="template_uri"]/data
         (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, ctemplate.isEmpty() ? "" : f_snap->get_site_key_with_slash() + ctemplate)
         (content::field_search::COMMAND_SAVE, "desc[type=template_uri]/data")

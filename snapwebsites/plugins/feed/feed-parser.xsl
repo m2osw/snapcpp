@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 	<xsl:template match="snap">
 		<output lang="{$lang}">
+			<!-- the path is probably wrong, we may want to use $base_uri instead? -->
 			<url><xsl:copy-of select="$page_uri"/></url>
 			<xsl:copy-of select="page/body/titles"/>
 			<xsl:copy-of select="page/body/author"/>
