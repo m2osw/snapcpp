@@ -357,6 +357,8 @@ DTD of the XSLT 2.0.
 <!ELEMENT gc-ppd-amount ANY>
 <!ELEMENT gc-ppd-count ANY>
 <!ELEMENT computed ANY>
+<!ELEMENT location-report ANY>
+<!ELEMENT competition-report ANY>
 
 <!-- for the feed... -->
 <!ELEMENT url ANY>
