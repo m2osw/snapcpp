@@ -30,17 +30,17 @@ namespace snap
 class snap_mounts_exception : public snap_exception
 {
 public:
-    snap_mounts_exception(const char *       whatmsg) : snap_exception("snap_mounts", whatmsg) {}
-    snap_mounts_exception(const std::string& whatmsg) : snap_exception("snap_mounts", whatmsg) {}
-    snap_mounts_exception(const QString&     whatmsg) : snap_exception("snap_mounts", whatmsg) {}
+    snap_mounts_exception(const char *        whatmsg) : snap_exception("snap_mounts", whatmsg) {}
+    snap_mounts_exception(const std::string & whatmsg) : snap_exception("snap_mounts", whatmsg) {}
+    snap_mounts_exception(const QString &     whatmsg) : snap_exception("snap_mounts", whatmsg) {}
 };
 
 class snap_mounts_exception_io_error : public snap_mounts_exception
 {
 public:
-    snap_mounts_exception_io_error(const char *       whatmsg) : snap_mounts_exception(whatmsg) {}
-    snap_mounts_exception_io_error(const std::string& whatmsg) : snap_mounts_exception(whatmsg) {}
-    snap_mounts_exception_io_error(const QString&     whatmsg) : snap_mounts_exception(whatmsg) {}
+    snap_mounts_exception_io_error(const char *        whatmsg) : snap_mounts_exception(whatmsg) {}
+    snap_mounts_exception_io_error(const std::string & whatmsg) : snap_mounts_exception(whatmsg) {}
+    snap_mounts_exception_io_error(const QString &     whatmsg) : snap_mounts_exception(whatmsg) {}
 };
 
 
@@ -49,7 +49,7 @@ public:
 class mount_entry
 {
 public:
-    mount_entry(struct mntent *e)
+    mount_entry(struct mntent * e)
         : f_fsname(e->mnt_fsname)
         , f_dir(e->mnt_dir)
         , f_type(e->mnt_type)
@@ -59,10 +59,10 @@ public:
     {
     }
 
-    std::string const&  get_fsname()  const { return f_fsname;  }
-    std::string const&  get_dir()     const { return f_dir;     }
-    std::string const&  get_type()    const { return f_type;    }
-    std::string const&  get_options() const { return f_options; }
+    std::string const & get_fsname()  const { return f_fsname;  }
+    std::string const & get_dir()     const { return f_dir;     }
+    std::string const & get_type()    const { return f_type;    }
+    std::string const & get_options() const { return f_options; }
     int                 get_freq()    const { return f_freq;    }
     int                 get_passno()  const { return f_passno;  }
 
@@ -80,9 +80,9 @@ private:
 class mounts : public std::vector<mount_entry>
 {
 public:
-                            mounts(std::string const& path);
+                            mounts(std::string const & path);
 
-    std::string const&      get_path() const { return f_path; }
+    std::string const &     get_path() const { return f_path; }
 
 private:
     std::string             f_path;

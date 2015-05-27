@@ -46,12 +46,12 @@ char const *get_name(name_t name)
     //       when dealing with JavaScript and CSS files (Version: field)
     switch(name)
     {
-    case SNAP_NAME_SERVER_ACCESS_AJAX_FIELD:
+    case name_t::SNAP_NAME_SERVER_ACCESS_AJAX_FIELD:
         return "_ajax";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_PATH_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_PATH_...");
 
     }
     NOTREACHED();
@@ -178,7 +178,7 @@ void server_access::content_update(int64_t variables_timestamp)
  */
 bool server_access::is_ajax_request() const
 {
-    return f_snap->postenv_exists(get_name(SNAP_NAME_SERVER_ACCESS_AJAX_FIELD));
+    return f_snap->postenv_exists(get_name(name_t::SNAP_NAME_SERVER_ACCESS_AJAX_FIELD));
 }
 
 
@@ -203,7 +203,7 @@ void server_access::on_output_result(QString const& uri_path, QByteArray& result
     }
 
     // remove the Location header if present!
-    f_snap->set_header(snap::get_name(SNAP_NAME_CORE_LOCATION_HEADER), "", snap_child::HEADER_MODE_EVERYWHERE);
+    f_snap->set_header(snap::get_name(snap::name_t::SNAP_NAME_CORE_LOCATION_HEADER), "", snap_child::HEADER_MODE_EVERYWHERE);
 
     // This is viewed as an AJAX request... transform the response here
     content::path_info_t ipath;
@@ -316,19 +316,19 @@ void server_access::ajax_output()
             messages::messages::message const& msg(messages->get_message(i));
             switch(msg.get_type())
             {
-            case messages::messages::message::MESSAGE_TYPE_ERROR:
+            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_ERROR:
                 type = "error";
                 break;
 
-            case messages::messages::message::MESSAGE_TYPE_WARNING:
+            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_WARNING:
                 type = "warning";
                 break;
 
-            case messages::messages::message::MESSAGE_TYPE_INFO:
+            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_INFO:
                 type = "info";
                 break;
 
-            case messages::messages::message::MESSAGE_TYPE_DEBUG:
+            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_DEBUG:
                 type = "debug";
                 break;
 
@@ -377,7 +377,7 @@ void server_access::ajax_output()
         {
             // on errors generate a warning in the header
             f_snap->set_header(
-                    messages::get_name(messages::SNAP_NAME_MESSAGES_WARNING_HEADER),
+                    messages::get_name(messages::name_t::SNAP_NAME_MESSAGES_WARNING_HEADER),
                     QString("This page generated %1 error%2")
                             .arg(errcnt)
                             .arg(errcnt == 1 ? "" : "s"),
@@ -386,7 +386,7 @@ void server_access::ajax_output()
     }
 
     // the type in this case is XML
-    f_snap->set_header(snap::get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+    f_snap->set_header(snap::get_name(snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
                        "text/xml; charset=utf-8",
                        snap_child::HEADER_MODE_EVERYWHERE);
 

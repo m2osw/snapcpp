@@ -61,148 +61,148 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_SENDMAIL:
+    case name_t::SNAP_NAME_SENDMAIL:
         return "sendmail";
 
-    case SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING:
+    case name_t::SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING:
         return "Content-Transfer-Encoding";
 
-    case SNAP_NAME_SENDMAIL_CONTENT_TYPE:
+    case name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE:
         return "Content-Type";
 
-    case SNAP_NAME_SENDMAIL_CREATED:
+    case name_t::SNAP_NAME_SENDMAIL_CREATED:
         return "sendmail::created";
 
-    case SNAP_NAME_SENDMAIL_EMAIL:
+    case name_t::SNAP_NAME_SENDMAIL_EMAIL:
         return "sendmail::email";
 
-    case SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION:
+    case name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION:
         return "sendmail::email_encryption";
 
-    case SNAP_NAME_SENDMAIL_EMAILS_TABLE:
+    case name_t::SNAP_NAME_SENDMAIL_EMAILS_TABLE:
         return "emails";
 
-    case SNAP_NAME_SENDMAIL_FIELD_EMAIL:
+    case name_t::SNAP_NAME_SENDMAIL_FIELD_EMAIL:
         return "email";
 
-    case SNAP_NAME_SENDMAIL_FIELD_LEVEL:
+    case name_t::SNAP_NAME_SENDMAIL_FIELD_LEVEL:
         return "level";
 
-    case SNAP_NAME_SENDMAIL_FREQUENCY:
+    case name_t::SNAP_NAME_SENDMAIL_FREQUENCY:
         return "sendmail::frequency";
 
-    case SNAP_NAME_SENDMAIL_FREQUENCY_DAILY:
+    case name_t::SNAP_NAME_SENDMAIL_FREQUENCY_DAILY:
         return "daily";
 
-    case SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE:
+    case name_t::SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE:
         return "immediate";
 
-    case SNAP_NAME_SENDMAIL_FREQUENCY_MONTHLY:
+    case name_t::SNAP_NAME_SENDMAIL_FREQUENCY_MONTHLY:
         return "monthly";
 
-    case SNAP_NAME_SENDMAIL_FREQUENCY_WEEKLY:
+    case name_t::SNAP_NAME_SENDMAIL_FREQUENCY_WEEKLY:
         return "weekly";
 
-    case SNAP_NAME_SENDMAIL_FROM:
+    case name_t::SNAP_NAME_SENDMAIL_FROM:
         return "From";
 
-    case SNAP_NAME_SENDMAIL_IMPORTANT:
+    case name_t::SNAP_NAME_SENDMAIL_IMPORTANT:
         return "Importance";
 
-    case SNAP_NAME_SENDMAIL_INDEX:
+    case name_t::SNAP_NAME_SENDMAIL_INDEX:
         return "*index*";
 
-    case SNAP_NAME_SENDMAIL_LAYOUT_NAME:
+    case name_t::SNAP_NAME_SENDMAIL_LAYOUT_NAME:
         return "sendmail";
 
-    case SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST:
+    case name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST:
         return "blacklist";
 
-    case SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST:
+    case name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST:
         return "orangelist";
 
-    case SNAP_NAME_SENDMAIL_LEVEL_WHITELIST:
+    case name_t::SNAP_NAME_SENDMAIL_LEVEL_WHITELIST:
         return "whitelist";
 
-    case SNAP_NAME_SENDMAIL_LISTS:
+    case name_t::SNAP_NAME_SENDMAIL_LISTS:
         return "lists";
 
-    case SNAP_NAME_SENDMAIL_MIME_VERSION:
+    case name_t::SNAP_NAME_SENDMAIL_MIME_VERSION:
         return "MIME-Version";
 
-    case SNAP_NAME_SENDMAIL_NEW:
+    case name_t::SNAP_NAME_SENDMAIL_NEW:
         return "new";
 
-    case SNAP_NAME_SENDMAIL_PING:
+    case name_t::SNAP_NAME_SENDMAIL_PING:
         return "PING";
 
-    case SNAP_NAME_SENDMAIL_PRECEDENCE:
+    case name_t::SNAP_NAME_SENDMAIL_PRECEDENCE:
         return "Precedence";
 
-    case SNAP_NAME_SENDMAIL_SENDING_STATUS:
+    case name_t::SNAP_NAME_SENDMAIL_SENDING_STATUS:
         return "sendmail::sending_status";
 
-    case SNAP_NAME_SENDMAIL_SIGNAL_NAME:
+    case name_t::SNAP_NAME_SENDMAIL_SIGNAL_NAME:
         return "sendmail_udp_signal";
 
-    case SNAP_NAME_SENDMAIL_STATUS:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS:
         return "sendmail::status";
 
-    case SNAP_NAME_SENDMAIL_STATUS_DELETED:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_DELETED:
         return "deleted";
 
-    case SNAP_NAME_SENDMAIL_STATUS_FAILED:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_FAILED:
         return "failed";
 
-    case SNAP_NAME_SENDMAIL_STATUS_LOADING:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_LOADING:
         return "loading";
 
-    case SNAP_NAME_SENDMAIL_STATUS_NEW:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_NEW:
         return "new";
 
-    case SNAP_NAME_SENDMAIL_STATUS_READ:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_READ:
         return "read";
 
-    case SNAP_NAME_SENDMAIL_STATUS_SENDING:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_SENDING:
         return "sending";
 
-    case SNAP_NAME_SENDMAIL_STATUS_SENT:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_SENT:
         return "sent";
 
-    case SNAP_NAME_SENDMAIL_STATUS_SPAM:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_SPAM:
         return "spam";
 
-    case SNAP_NAME_SENDMAIL_STATUS_UNSUBSCRIBED:
+    case name_t::SNAP_NAME_SENDMAIL_STATUS_UNSUBSCRIBED:
         return "unsubscribed";
 
-    case SNAP_NAME_SENDMAIL_STOP:
+    case name_t::SNAP_NAME_SENDMAIL_STOP:
         return "STOP";
 
-    case SNAP_NAME_SENDMAIL_SUBJECT:
+    case name_t::SNAP_NAME_SENDMAIL_SUBJECT:
         return "Subject";
 
-    case SNAP_NAME_SENDMAIL_TO:
+    case name_t::SNAP_NAME_SENDMAIL_TO:
         return "To";
 
-    case SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH:
+    case name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH:
         return "unsubscribe";
 
-    case SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION:
+    case name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION:
         return "sendmail::unsubscribe_selection";
 
-    case SNAP_NAME_SENDMAIL_USER_AGENT:
+    case name_t::SNAP_NAME_SENDMAIL_USER_AGENT:
         // it would be better with the version of the sendmail plugin...
         return "Snap! C++ Sendmail User Agent v" SNAPWEBSITES_VERSION_STRING;
 
-    case SNAP_NAME_SENDMAIL_X_PRIORITY:
+    case name_t::SNAP_NAME_SENDMAIL_X_PRIORITY:
         return "X-Priority";
 
-    case SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY:
+    case name_t::SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY:
         return "X-MSMail-Priority";
 
     default:
         // invalid index
-        throw snap_logic_exception(QString("Invalid SNAP_NAME_SENDMAIL_...").arg(static_cast<int>(name)));
+        throw snap_logic_exception(QString("Invalid name_t::SNAP_NAME_SENDMAIL_...").arg(static_cast<int>(name)));
 
     }
     NOTREACHED();
@@ -259,7 +259,7 @@ void sendmail::email::email_attachment::set_data(const QByteArray& data, QString
     {
         mime_type = get_mime_type(f_data);
     }
-    f_header[get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = mime_type;
+    f_header[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = mime_type;
 }
 
 
@@ -274,7 +274,7 @@ void sendmail::email::email_attachment::set_data(const QByteArray& data, QString
  * retrieve the MIME type, use the following:
  *
  * \code
- * QString mime_type(attachment->get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+ * QString mime_type(attachment->get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
  * \endcode
  */
 QByteArray sendmail::email::email_attachment::get_data() const
@@ -625,7 +625,7 @@ void sendmail::email::set_from(QString const& from)
     {
         throw sendmail_exception_invalid_argument("multiple From: emails");
     }
-    f_header[get_name(SNAP_NAME_SENDMAIL_FROM)] = from;
+    f_header[get_name(name_t::SNAP_NAME_SENDMAIL_FROM)] = from;
 }
 
 
@@ -799,23 +799,23 @@ void sendmail::email::set_priority(email_priority_t priority)
     QString name;
     switch(priority)
     {
-    case EMAIL_PRIORITY_BULK:
+    case email_priority_t::EMAIL_PRIORITY_BULK:
         name = "Bulk";
         break;
 
-    case EMAIL_PRIORITY_LOW:
+    case email_priority_t::EMAIL_PRIORITY_LOW:
         name = "Low";
         break;
 
-    case EMAIL_PRIORITY_NORMAL:
+    case email_priority_t::EMAIL_PRIORITY_NORMAL:
         name = "Normal";
         break;
 
-    case EMAIL_PRIORITY_HIGH:
+    case email_priority_t::EMAIL_PRIORITY_HIGH:
         name = "High";
         break;
 
-    case EMAIL_PRIORITY_URGENT:
+    case email_priority_t::EMAIL_PRIORITY_URGENT:
         name = "Urgent";
         break;
 
@@ -824,10 +824,10 @@ void sendmail::email::set_priority(email_priority_t priority)
 
     }
 
-    f_header[get_name(SNAP_NAME_SENDMAIL_X_PRIORITY)] = QString("%1 (%2)").arg(static_cast<int>(priority)).arg(name);
-    f_header[get_name(SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY)] = name;
-    f_header[get_name(SNAP_NAME_SENDMAIL_IMPORTANT)] = name;
-    f_header[get_name(SNAP_NAME_SENDMAIL_PRECEDENCE)] = name;
+    f_header[get_name(name_t::SNAP_NAME_SENDMAIL_X_PRIORITY)] = QString("%1 (%2)").arg(static_cast<int>(priority)).arg(name);
+    f_header[get_name(name_t::SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY)] = name;
+    f_header[get_name(name_t::SNAP_NAME_SENDMAIL_IMPORTANT)] = name;
+    f_header[get_name(name_t::SNAP_NAME_SENDMAIL_PRECEDENCE)] = name;
 }
 
 
@@ -853,7 +853,7 @@ void sendmail::email::set_priority(email_priority_t priority)
  */
 void sendmail::email::set_subject(const QString& subject)
 {
-    f_header[get_name(SNAP_NAME_SENDMAIL_SUBJECT)] = subject;
+    f_header[get_name(name_t::SNAP_NAME_SENDMAIL_SUBJECT)] = subject;
 }
 
 
@@ -1416,7 +1416,7 @@ void sendmail::content_update(int64_t variables_timestamp)
 
     content::content::instance()->add_xml(get_plugin_name());
 
-    layout::layout::instance()->add_layout_from_resources(get_name(SNAP_NAME_SENDMAIL_LAYOUT_NAME));
+    layout::layout::instance()->add_layout_from_resources(get_name(name_t::SNAP_NAME_SENDMAIL_LAYOUT_NAME));
 }
 
 
@@ -1487,7 +1487,7 @@ void sendmail::content_update(int64_t variables_timestamp)
  */
 QtCassandra::QCassandraTable::pointer_t sendmail::get_emails_table()
 {
-    return f_snap->create_table(get_name(SNAP_NAME_SENDMAIL_EMAILS_TABLE), "E-Mails table.");
+    return f_snap->create_table(get_name(name_t::SNAP_NAME_SENDMAIL_EMAILS_TABLE), "E-Mails table.");
 }
 
 
@@ -1547,7 +1547,7 @@ void sendmail::post_email(email const & e)
 
     // setup the FROM email address if not yet defined
     // administrator can define this email address
-    if(!copy.get_all_headers().contains(get_name(SNAP_NAME_SENDMAIL_FROM)))
+    if(!copy.get_all_headers().contains(get_name(name_t::SNAP_NAME_SENDMAIL_FROM)))
     {
         copy.set_from(default_from());
     }
@@ -1559,10 +1559,10 @@ void sendmail::post_email(email const & e)
     QtCassandra::QCassandraValue value;
     QString const data(copy.serialize());
     value.setStringValue(data);
-    table->row(get_name(SNAP_NAME_SENDMAIL_NEW))->cell(key)->setValue(value);
+    table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW))->cell(key)->setValue(value);
 
     // signal the listening server if IP is available (send PING)
-    f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_SENDMAIL)));
+    f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_SENDMAIL)));
 }
 
 
@@ -1571,7 +1571,7 @@ void sendmail::post_email(email const & e)
  * This function can be used to retrieve the default From field.
  *
  * If you do not define the From field in an email, this value is used.
- * It comes from the SNAP_NAME_CORE_ADMINISTRATOR_EMAIL site parameter.
+ * It comes from the name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL site parameter.
  * If that parameter is not defined, then an internal default is returned:
  *
  * \code
@@ -1582,7 +1582,7 @@ void sendmail::post_email(email const & e)
  */
 QString sendmail::default_from() const
 {
-    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)));
+    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(snap::name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)));
     if(from.nullValue())
     {
         // some hard coded fallback default...
@@ -1595,7 +1595,7 @@ QString sendmail::default_from() const
 void sendmail::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     QString const cpath(ipath.get_cpath());
-    if(cpath.startsWith(QString("%1/").arg(get_name(SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
+    if(cpath.startsWith(QString("%1/").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
     {
         // tell the path plugin that this is ours
         plugin_info.set_plugin(this);
@@ -1607,7 +1607,7 @@ void sendmail::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dy
 bool sendmail::on_path_execute(content::path_info_t & ipath)
 {
     QString const cpath(ipath.get_cpath());
-    if(cpath.startsWith(QString("%1/").arg(get_name(SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
+    if(cpath.startsWith(QString("%1/").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH))))
     {
         content::path_info_t unsubscribe_ipath;
         unsubscribe_ipath.set_path("unsubscribe");
@@ -1618,7 +1618,7 @@ bool sendmail::on_path_execute(content::path_info_t & ipath)
     }
 
     // we should not reach this code
-    f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Sendmail Page Not Found",
+    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Sendmail Page Not Found",
             "This \"sendmail\" page was not handled by the \"sendmail\" plugin.",
             "sendmail::on_path_execute(): It looks like the path \"" + ipath.get_cpath() + "\" is said to be a dynamic \"sendmail\" path but it does not get handled.");
     NOTREACHED();
@@ -1642,7 +1642,7 @@ void sendmail::on_init_editor_widget(content::path_info_t & ipath, QString const
             {
                 sessions::sessions::session_info info;
                 sessions::sessions::instance()->load_session(identifier, info, false);
-                if(info.get_session_type() == sessions::sessions::session_info::SESSION_INFO_VALID)
+                if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
                 {
                     QString const & object_path(info.get_object_path());
                     int pos(object_path.lastIndexOf("/"));
@@ -1696,19 +1696,19 @@ void sendmail::on_finish_editor_form_processing(content::path_info_t & ipath, bo
         users::users * users_plugin(users::users::instance());
 
         // always save blacklist in the user parameter
-        QString const user_email(f_snap->postenv(get_name(SNAP_NAME_SENDMAIL_FIELD_EMAIL)));
-        QString const level(f_snap->postenv(get_name(SNAP_NAME_SENDMAIL_FIELD_LEVEL)));
-        if(level == get_name(SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST))
+        QString const user_email(f_snap->postenv(get_name(name_t::SNAP_NAME_SENDMAIL_FIELD_EMAIL)));
+        QString const level(f_snap->postenv(get_name(name_t::SNAP_NAME_SENDMAIL_FIELD_LEVEL)));
+        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST))
         {
-            users_plugin->save_user_parameter(user_email, get_name(SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level);
+            users_plugin->save_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level);
         }
-        else if(level == get_name(SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST))
+        else if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST))
         {
             // The user may not exist in this website so we cannot hope to
             // set that up there; so instead we use a "special" key
             //    sendmail::unsubscribe_selection::<site-key>
             //
-            users_plugin->save_user_parameter(user_email, QString("%1::%2").arg(get_name(SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), get_name(SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST));
+            users_plugin->save_user_parameter(user_email, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST));
         }
 
         if(has_session)
@@ -1735,14 +1735,14 @@ void sendmail::on_finish_editor_form_processing(content::path_info_t & ipath, bo
  */
 void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
 {
-    actions[get_name(SNAP_NAME_SENDMAIL)] = this;
+    actions[get_name(name_t::SNAP_NAME_SENDMAIL)] = this;
 }
 
 
 /** \brief Retrieve the signal name for the sendmail plugin.
  *
  * This function returns "sendmail_udp_signal". See the definition
- * of the SNAP_NAME_SENDMAIL_SIGNAL_NAME.
+ * of the name_t::SNAP_NAME_SENDMAIL_SIGNAL_NAME.
  *
  * \param[in] action  The concerned action.
  *
@@ -1750,9 +1750,9 @@ void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
  */
 char const *sendmail::get_signal_name(QString const& action) const
 {
-    if(action == get_name(SNAP_NAME_SENDMAIL))
+    if(action == get_name(name_t::SNAP_NAME_SENDMAIL))
     {
-        return get_name(SNAP_NAME_SENDMAIL_SIGNAL_NAME);
+        return get_name(name_t::SNAP_NAME_SENDMAIL_SIGNAL_NAME);
     }
     return backend_action::get_signal_name(action);
 }
@@ -1903,7 +1903,7 @@ void sendmail::process_emails()
     QString const site_key(f_snap->get_site_key());
 
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
-    QtCassandra::QCassandraRow::pointer_t row(table->row(get_name(SNAP_NAME_SENDMAIL_NEW)));
+    QtCassandra::QCassandraRow::pointer_t row(table->row(get_name(name_t::SNAP_NAME_SENDMAIL_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(100); // should this be a parameter?
     column_predicate.setIndex(); // behave like an index
@@ -1979,7 +1979,7 @@ void sendmail::process_emails()
  */
 void sendmail::attach_email(const email& e)
 {
-    QString const to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
+    QString const to(e.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
 
     // transform To: ... in a list of emails
     tld_email_list list;
@@ -1991,7 +1991,7 @@ void sendmail::attach_email(const email& e)
     }
 
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
-    QtCassandra::QCassandraRow::pointer_t lists(table->row(get_name(SNAP_NAME_SENDMAIL_LISTS)));
+    QtCassandra::QCassandraRow::pointer_t lists(table->row(get_name(name_t::SNAP_NAME_SENDMAIL_LISTS)));
 
     // read all the emails
     QString const& site_key(e.get_site_key());
@@ -2043,7 +2043,7 @@ void sendmail::attach_email(const email& e)
                 if(!it->f_email_only.empty())
                 {
                     email copy(e);
-                    copy.add_header(get_name(SNAP_NAME_SENDMAIL_TO), it->f_canonicalized_email.c_str());
+                    copy.add_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO), it->f_canonicalized_email.c_str());
                     attach_user_email(copy);
                 }
             }
@@ -2071,13 +2071,13 @@ void sendmail::attach_user_email(email const & e)
     //      the sendmail reference in the user plugin)
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     users::users * users_plugin(users::users::instance());
-    char const * email_key(users::get_name(users::SNAP_NAME_USERS_ORIGINAL_EMAIL));
+    char const * email_key(users::get_name(users::name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
     QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
 
     // TBD: would we need to have a lock to test whether the user
     //      exists? since we are not about to add it ourselves, I
     //      do not think it is necessary
-    QString const to(e.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
+    QString const to(e.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
     tld_email_list list;
     if(list.parse(to.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
     {
@@ -2112,25 +2112,25 @@ void sendmail::attach_user_email(email const & e)
     QtCassandra::QCassandraValue email_value;
     email_value.setStringValue(serialized_email);
     QString unique_key(e.get_email_key());
-    row->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_EMAIL))->setValue(email_value);
+    row->cell(unique_key + "::" + get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL))->setValue(email_value);
     QtCassandra::QCassandraValue status_value;
-    status_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_NEW));
-    row->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_STATUS))->setValue(status_value);
+    status_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_NEW));
+    row->cell(unique_key + "::" + get_name(name_t::SNAP_NAME_SENDMAIL_STATUS))->setValue(status_value);
     QtCassandra::QCassandraValue sent_value;
-    sent_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_NEW));
-    row->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sent_value);
+    sent_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_NEW));
+    row->cell(unique_key + "::" + get_name(name_t::SNAP_NAME_SENDMAIL_SENDING_STATUS))->setValue(sent_value);
     int64_t const start_date(f_snap->get_start_date());
-    row->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_CREATED))->setValue(start_date);
+    row->cell(unique_key + "::" + get_name(name_t::SNAP_NAME_SENDMAIL_CREATED))->setValue(start_date);
 
     // try to retrieve the mail frequency the user likes, but first check
     // whether the email has one because if so it overrides the user's choice
-    QtCassandra::QCassandraValue freq_value(row->cell(get_name(SNAP_NAME_SENDMAIL_FREQUENCY))->value());
+    QtCassandra::QCassandraValue freq_value(row->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value());
     if(freq_value.nullValue())
     {
-        freq_value = users_table->row(key)->cell(get_name(SNAP_NAME_SENDMAIL_FREQUENCY))->value();
+        freq_value = users_table->row(key)->cell(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY))->value();
     }
 
-    char const * immediate(get_name(SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE));
+    char const * immediate(get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY_IMMEDIATE));
     QString frequency(immediate);
     if(!freq_value.nullValue())
     {
@@ -2146,18 +2146,18 @@ void sendmail::attach_user_email(email const & e)
         t.tm_sec = 0;
         t.tm_min = 0;
         t.tm_hour = 10;
-        if(frequency == get_name(SNAP_NAME_SENDMAIL_FREQUENCY_DAILY))
+        if(frequency == get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY_DAILY))
         {
             // tomorrow at 10am
             ++t.tm_mday;
         }
-        else if(frequency == get_name(SNAP_NAME_SENDMAIL_FREQUENCY_WEEKLY))
+        else if(frequency == get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY_WEEKLY))
         {
             // next Sunday at 10am
             t.tm_mday += 7 - t.tm_wday;
             // TODO: allow users to select the day of the week they prefer
         }
-        else if(frequency == get_name(SNAP_NAME_SENDMAIL_FREQUENCY_MONTHLY))
+        else if(frequency == get_name(name_t::SNAP_NAME_SENDMAIL_FREQUENCY_MONTHLY))
         {
             // 1st of next month
             t.tm_mday = 1;
@@ -2177,7 +2177,7 @@ void sendmail::attach_user_email(email const & e)
     QString const index_key(QString("%1::%2").arg(unix_date, 16, 16, QLatin1Char('0')).arg(key));
 
     QtCassandra::QCassandraValue index_value;
-    const char *index(get_name(SNAP_NAME_SENDMAIL_INDEX));
+    const char *index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
     if(table->exists(index))
     {
         // the index already exists, check to see whether that cell exists
@@ -2208,7 +2208,7 @@ void sendmail::attach_user_email(email const & e)
 void sendmail::run_emails()
 {
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
-    const char *index(get_name(SNAP_NAME_SENDMAIL_INDEX));
+    const char *index(get_name(name_t::SNAP_NAME_SENDMAIL_INDEX));
     QtCassandra::QCassandraRow::pointer_t row(table->row(index));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setStartColumnName("0");
@@ -2275,17 +2275,17 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
 {
     QString const sending_status(QString("%1::%2")
                                     .arg(unique_key)
-                                    .arg(get_name(SNAP_NAME_SENDMAIL_SENDING_STATUS)));
+                                    .arg(get_name(name_t::SNAP_NAME_SENDMAIL_SENDING_STATUS)));
 
     // first check the status to make sure it is to be sent
     QtCassandra::QCassandraTable::pointer_t table(get_emails_table());
     QtCassandra::QCassandraRow::pointer_t row(table->row(key));
     QtCassandra::QCassandraValue const sent_value(row->cell(sending_status)->value());
     QString const sent_status(sent_value.stringValue());
-    if(sent_status == get_name(SNAP_NAME_SENDMAIL_STATUS_SENT)
-    || sent_status == get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED)
-    || sent_status == get_name(SNAP_NAME_SENDMAIL_STATUS_DELETED)
-    || sent_status == get_name(SNAP_NAME_SENDMAIL_STATUS_UNSUBSCRIBED))
+    if(sent_status == get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_SENT)
+    || sent_status == get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_FAILED)
+    || sent_status == get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_DELETED)
+    || sent_status == get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_UNSUBSCRIBED))
     {
         // email was already sent, not too sure why we are being called,
         // just ignore to avoid bothering the destination owner...
@@ -2305,32 +2305,32 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     // however, the status will change to FAILED and at that point
     // the system stops trying to send the email
     QtCassandra::QCassandraValue sending_value;
-    sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_LOADING));
+    sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_LOADING));
     row->cell(sending_status)->setValue(sending_value);
 
-    QtCassandra::QCassandraValue email_data(row->cell(unique_key + "::" + get_name(SNAP_NAME_SENDMAIL_EMAIL))->value());
+    QtCassandra::QCassandraValue email_data(row->cell(unique_key + "::" + get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL))->value());
     // we use f_email so that way we can generate the XML data
     // in the on_generate_main_content() function
     f_email = email(); // reset f_email
     f_email.unserialize(email_data.stringValue());
-    f_email.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE), "text/html; charset=\"utf-8\"");
+    f_email.add_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE), "text/html; charset=\"utf-8\"");
 
     // although we could send emails to unsubscribe in clear (many do it)
     // it can be a privacy issue, so better encrypt the email! however,
     // we do not want to deal with encryption/decryption so instead we
     // use a session ID; the email "unsubscribe" feature will therefore
     // die after about 1 year
-    QString const to(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
+    QString const to(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
 
     QString level;
-    if(users::users::instance()->load_user_parameter(to, get_name(SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
-    || users::users::instance()->load_user_parameter(to, QString("%1::%2").arg(get_name(SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
+    if(users::users::instance()->load_user_parameter(to, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
+    || users::users::instance()->load_user_parameter(to, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
     {
-        if(level == get_name(SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST))
+        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST))
         {
             // marked as "unsubscribed" from all websites
             // so we never send email to that user...
-            sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_UNSUBSCRIBED));
+            sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_UNSUBSCRIBED));
             row->cell(sending_status)->setValue(sending_value);
             SNAP_LOG_INFO("User \"")(to)("\" unsubscribed. Email with key \"")(unique_key)("\" will not be sent.");
             return;
@@ -2339,14 +2339,14 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
 
     {
         sessions::sessions::session_info info;
-        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_SECURE);
+        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_SECURE);
         info.set_session_id(SENDMAIL_SESSION_EMAIL_ENCRYPTION);
         info.set_plugin_owner(get_plugin_name()); // ourselves
         //info.set_page_path(); -- no path for emails
         info.set_object_path("/email-session/" + to); // save the email address; this is not a real path though
-        info.set_user_agent(get_name(SNAP_NAME_SENDMAIL_USER_AGENT));
+        info.set_user_agent(get_name(name_t::SNAP_NAME_SENDMAIL_USER_AGENT));
         info.set_time_to_live(86400 * 370);  // about 1 year
-        f_email.add_parameter(get_name(SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION), sessions::sessions::instance()->create_session(info));
+        f_email.add_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION), sessions::sessions::instance()->create_session(info));
     }
 
     QString const & path(f_email.get_email_path());
@@ -2370,16 +2370,16 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
             QByteArray body_data;
             body_data.append(encoded_body.c_str(), static_cast<int>(encoded_body.length()));
             html_body_attachment.set_data(body_data, "text/html; charset=\"utf-8\"");
-            html_body_attachment.add_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING), "quoted-printable");
+            html_body_attachment.add_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING), "quoted-printable");
             f_email.set_body_attachment(html_body_attachment);
 
             // Use the page title as the subject
             // (TBD: should the page title always overwrite the subject?)
-            if(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_SUBJECT)).isEmpty())
+            if(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_SUBJECT)).isEmpty())
             {
                 // TODO: apply safety filters on the subject
                 content::content *c(content::content::instance());
-                f_email.set_subject(c->get_content_parameter(ipath, content::get_name(content::SNAP_NAME_CONTENT_TITLE), c->PARAM_REVISION_REVISION).stringValue());
+                f_email.set_subject(c->get_content_parameter(ipath, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE), c->param_revision_t::PARAM_REVISION_REVISION).stringValue());
             }
         }
         else
@@ -2393,7 +2393,7 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     if(max_attachments < 1)
     {
         // this should never happen since this is tested in the post_email() function
-        sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED));
+        sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_FAILED));
         row->cell(sending_status)->setValue(sending_value);
         SNAP_LOG_FATAL("No attachment, not even a body, so email ")(key)("/")(unique_key)(" cannot be sent");
         return;
@@ -2404,11 +2404,11 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     // TODO: verify that the body is indeed HTML!
     //       although html2text works against plain text but that is a waste
     QString plain_text;
-    QString const body_mime_type(body_attachment.get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
+    QString const body_mime_type(body_attachment.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)));
     if(body_mime_type.mid(0, 9) == "text/html")
     {
         process p("html2text");
-        p.set_mode(process::PROCESS_MODE_INOUT);
+        p.set_mode(process::mode_t::PROCESS_MODE_INOUT);
         p.set_command("html2text");
         //p.add_argument("-help");
         p.add_argument("-nobs");
@@ -2420,7 +2420,7 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         std::string html_data;
         QByteArray data(body_attachment.get_data());
         // TODO: support other encoding, err if not supported
-        if(body_attachment.get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING)) == "quoted-printable")
+        if(body_attachment.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING)) == "quoted-printable")
         {
             // if it was quoted-printable encoded, we have to decode
             // (I know, we encode in this very function and could just
@@ -2450,7 +2450,7 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     if(list.parse(to.toUtf8().data(), 0) != TLD_RESULT_SUCCESS)
     {
         // this should never happen here
-        sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED));
+        sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_FAILED));
         row->cell(sending_status)->setValue(sending_value);
         SNAP_LOG_FATAL("To: email address is considered invalid, email ")(key)("/")(unique_key)("  won't get sent");
         return;
@@ -2458,23 +2458,23 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     tld_email_list::tld_email_t m;
     if(!list.next(m))
     {
-        sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED));
+        sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_FAILED));
         row->cell(sending_status)->setValue(sending_value);
         SNAP_LOG_FATAL("To: email address does not return at least one email, email ")(key)("/")(unique_key)(" won't get sent");
         return;
     }
 
     // now we're starting to send the email to the system sendmail tool
-    sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_SENDING));
+    sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_SENDING));
     row->cell(sending_status)->setValue(sending_value);
 
     QString cmd("sendmail -f ");
-    cmd += f_email.get_header(get_name(SNAP_NAME_SENDMAIL_FROM));
+    cmd += f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_FROM));
     cmd += " ";
     cmd += m.f_email_only.c_str();
 
     // XXX: capture the throw in case the pipe cannot be created?
-    snap_pipe spipe(cmd, snap_pipe::PIPE_MODE_IN);
+    snap_pipe spipe(cmd, snap_pipe::mode_t::PIPE_MODE_IN);
     std::ostream f(&spipe);
 
     // convert email data to text and send that to the sendmail command line
@@ -2485,9 +2485,9 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     {
         // if the body is by itself, then its encoding needs to be transported
         // to the main set of headers
-        if(body_attachment.get_header(get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING)) == "quoted-printable")
+        if(body_attachment.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING)) == "quoted-printable")
         {
-            headers[get_name(SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING)] = "quoted-printable";
+            headers[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING)] = "quoted-printable";
         }
     }
     else
@@ -2513,15 +2513,15 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
             int const c(static_cast<int>(rand() % (sizeof(allowed) - 1)));
             boundary += allowed[c];
         }
-        headers[get_name(SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = "multipart/mixed;\n  boundary=\"" + boundary + "\"";
-        headers[get_name(SNAP_NAME_SENDMAIL_MIME_VERSION)] = "1.0";
+        headers[get_name(name_t::SNAP_NAME_SENDMAIL_CONTENT_TYPE)] = "multipart/mixed;\n  boundary=\"" + boundary + "\"";
+        headers[get_name(name_t::SNAP_NAME_SENDMAIL_MIME_VERSION)] = "1.0";
     }
     if(!headers.contains("Date"))
     {
         // the date must be specified in English only which prevents us from
         // using the strftime() or QDateTime functions which are affected by
         // the current locale of the server
-        headers["Date"] = f_snap->date_to_string(time(nullptr) * 1000000, snap_child::DATE_FORMAT_EMAIL);
+        headers["Date"] = f_snap->date_to_string(time(nullptr) * 1000000, snap_child::date_format_t::DATE_FORMAT_EMAIL);
     }
     if(!headers.contains("Message-ID"))
     {
@@ -2537,12 +2537,12 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
         // we use a "secure" ID because they are bigger; a USER one would
         // probably be more than enough though
         sessions::sessions::session_info info;
-        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_SECURE);
+        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_SECURE);
         info.set_session_id(SENDMAIL_SESSION_ID_MESSAGE);
         info.set_plugin_owner(get_plugin_name()); // ourselves
         //info.set_page_path(); -- no path for emails
         info.set_object_path("/email/" + f_email.get_email_key()); // save the email key; this is not a real path though
-        info.set_user_agent(get_name(SNAP_NAME_SENDMAIL_USER_AGENT));
+        info.set_user_agent(get_name(name_t::SNAP_NAME_SENDMAIL_USER_AGENT));
         info.set_time_to_live(86400 * 30);  // 30 days
         QString const message_id(sessions::sessions::instance()->create_session(info));
 
@@ -2558,7 +2558,7 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     {
         headers["List-Unsubscribe"] =  f_snap->get_site_key_with_slash()
                     + "unsubscribe/"
-                    + f_email.get_parameter(get_name(SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION));
+                    + f_email.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION));
     }
     for(email::header_map_t::const_iterator it(headers.begin());
                                             it != headers.end();
@@ -2651,14 +2651,14 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     // close pipe as soon as we are done writing to it
     if(spipe.close_pipe() != 0)
     {
-        sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_FAILED));
+        sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_FAILED));
         row->cell(sending_status)->setValue(sending_value);
         SNAP_LOG_FATAL("Pipe to sendmail failed, email ")(key)("/")(unique_key)(" won't get sent.");
         return;
     }
 
     // now it is marked as fully sent
-    sending_value.setStringValue(get_name(SNAP_NAME_SENDMAIL_STATUS_SENT));
+    sending_value.setStringValue(get_name(name_t::SNAP_NAME_SENDMAIL_STATUS_SENT));
     row->cell(sending_status)->setValue(sending_value);
 }
 
@@ -2692,7 +2692,7 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
         {
             QDomElement from(doc.createElement("from"));
             sendmail_tag.appendChild(from);
-            const QString from_email(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_FROM)));
+            const QString from_email(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_FROM)));
             QDomText from_text(doc.createTextNode(from_email));
             from.appendChild(from_text);
             // TODO: parse the email address with libtld and offer:
@@ -2703,7 +2703,7 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
         {
             QDomElement to(doc.createElement("to"));
             sendmail_tag.appendChild(to);
-            const QString to_email(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_TO)));
+            const QString to_email(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
             QDomText to_text(doc.createTextNode(to_email));
             to.appendChild(to_text);
         }
@@ -2722,7 +2722,7 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
             key.appendChild(key_text);
         }
         // /snap/page/body/sendmail/created
-        const QString created(f_snap->date_to_string(f_email.get_time() * 1000000, snap_child::DATE_FORMAT_LONG));
+        const QString created(f_snap->date_to_string(f_email.get_time() * 1000000, snap_child::date_format_t::DATE_FORMAT_LONG));
         {
             QDomElement time_tag(doc.createElement("created"));
             sendmail_tag.appendChild(time_tag);
@@ -2751,12 +2751,12 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
             time_tag.appendChild(time_text);
         }
         // /snap/page/body/sendmail/important
-        const QString x_priority(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_X_PRIORITY)));
+        const QString x_priority(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_X_PRIORITY)));
         {
             // save the priority as a name
             QDomElement important(doc.createElement("important"));
             sendmail_tag.appendChild(important);
-            const QString important_email(f_email.get_header(get_name(SNAP_NAME_SENDMAIL_IMPORTANT)));
+            const QString important_email(f_email.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_IMPORTANT)));
             QDomText important_text(doc.createTextNode(important_email));
             important.appendChild(important_text);
         }
@@ -2838,7 +2838,7 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
     {
         QString identifier;
         QDomXPath dom_xpath;
-        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"") + users::get_name(users::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL) + "\"]/@value");
+        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"") + users::get_name(users::name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL) + "\"]/@value");
         QDomXPath::node_vector_t result(dom_xpath.apply(xml));
         if(result.size() > 0 && result[0].isAttr())
         {
@@ -2847,7 +2847,7 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
         QString anchor_text("Click here to change your password");
         if(token.verify_args(0, 1) && token.f_parameters.size() >= 1)
         {
-            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::token_t::TOK_STRING));
             if(!token.f_error)
             {
                 anchor_text = param.f_value;
@@ -2859,7 +2859,7 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
     {
         QString user_email;
         QDomXPath dom_xpath;
-        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value").arg(get_name(SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION)));
+        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value").arg(get_name(name_t::SNAP_NAME_SENDMAIL_EMAIL_ENCRYPTION)));
         QDomXPath::node_vector_t result(dom_xpath.apply(xml));
         if(result.size() > 0 && result[0].isAttr())
         {
@@ -2870,7 +2870,7 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
         QString anchor_text("unsubscribe from Snap! Websites emails");
         if(token.verify_args(0, 1) && token.f_parameters.size() >= 1)
         {
-            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::token_t::TOK_STRING));
             if(!token.f_error)
             {
                 anchor_text = param.f_value;
@@ -2886,7 +2886,7 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
     {
         QString identifier;
         QDomXPath dom_xpath;
-        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value").arg(users::get_name(users::SNAP_NAME_USERS_VERIFY_EMAIL)));
+        dom_xpath.setXPath(QString("/snap/page/body/sendmail/parameters/param[@name=\"%1\"]/@value").arg(users::get_name(users::name_t::SNAP_NAME_USERS_VERIFY_EMAIL)));
         QDomXPath::node_vector_t result(dom_xpath.apply(xml));
         if(result.size() > 0 && result[0].isAttr())
         {
@@ -2895,7 +2895,7 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
         QString anchor_text("Click here to verify your account");
         if(token.verify_args(0, 1) && token.f_parameters.size() >= 1)
         {
-            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::TOK_STRING));
+            filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::token_t::TOK_STRING));
             if(!token.f_error)
             {
                 anchor_text = param.f_value;
@@ -2950,7 +2950,7 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
         {
             if(token.verify_args(1, 1))
             {
-                filter::filter::parameter_t param(token.get_arg("name", 0, filter::filter::TOK_STRING));
+                filter::filter::parameter_t param(token.get_arg("name", 0, filter::filter::token_t::TOK_STRING));
                 if(!token.f_error)
                 {
                     xpath = "/snap/page/body/sendmail/parameters/param[@name=\"" + param.f_value + "\"]/@value";

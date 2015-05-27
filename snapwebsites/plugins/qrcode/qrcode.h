@@ -25,13 +25,13 @@ namespace qrcode
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_QRCODE_DEFAULT_SCALE,
     SNAP_NAME_QRCODE_DEFAULT_EDGE,
     SNAP_NAME_QRCODE_PRIVATE_ENABLE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class qrcode_exception : public snap_exception
@@ -60,8 +60,8 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(content::path_info_t& ipath);
-    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+    virtual bool        on_path_execute(content::path_info_t & ipath);
+    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
 
 private:
     void                content_update(int64_t variables_timestamp);

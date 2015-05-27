@@ -357,12 +357,12 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
             QString date_format;
             if(token.has_arg("format", 0))
             {
-                parameter_t param(token.get_arg("format", 0, TOK_STRING));
+                parameter_t param(token.get_arg("format", 0, token_t::TOK_STRING));
                 date_format = param.f_value;
             }
             if(token.has_arg("unixtime", 1))
             {
-                parameter_t param(token.get_arg("unixtime", 1, TOK_STRING));
+                parameter_t param(token.get_arg("unixtime", 1, token_t::TOK_STRING));
                 bool ok(false);
                 unix_time = param.f_value.toLongLong(&ok);
                 // TODO: verify ok
@@ -379,12 +379,12 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
             QString date_format;
             if(token.has_arg("format", 0))
             {
-                parameter_t param(token.get_arg("format", 0, TOK_STRING));
+                parameter_t param(token.get_arg("format", 0, token_t::TOK_STRING));
                 date_format = param.f_value;
             }
             if(token.has_arg("unixtime", 1))
             {
-                parameter_t param(token.get_arg("unixtime", 1, TOK_STRING));
+                parameter_t param(token.get_arg("unixtime", 1, token_t::TOK_STRING));
                 bool ok(false);
                 unix_time = param.f_value.toLongLong(&ok);
                 // TODO: verify ok
@@ -582,7 +582,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             f_token = "[";
             token_t t(get_token(info.f_name, false));
             f_token += info.f_name;
-            if(t != TOK_IDENTIFIER)
+            if(t != token_t::TOK_IDENTIFIER)
             {
                 // the '[' must be followed by an identifier, no choice here
                 return false;
@@ -590,7 +590,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             QString tok;
             t = get_token(tok);
             f_token += tok;
-            if(t != TOK_SEPARATOR || (tok != "]" && tok != "("))
+            if(t != token_t::TOK_SEPARATOR || (tok != "]" && tok != "("))
             {
                 // we can only have a ']' or '(' separator at this point
                 return false;
@@ -600,7 +600,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                 // note: the list of parameters may be empty
                 t = get_token(tok);
                 f_token += tok;
-                if(t != TOK_SEPARATOR || tok != ")")
+                if(t != token_t::TOK_SEPARATOR || tok != ")")
                 {
                     parameter_t param;
                     param.f_type = t;
@@ -609,11 +609,11 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                     {
                         switch(param.f_type)
                         {
-                        case TOK_IDENTIFIER:
+                        case token_t::TOK_IDENTIFIER:
                             {
                                 t = get_token(tok);
                                 f_token += tok;
-                                if(t == TOK_SEPARATOR && tok == "=")
+                                if(t == token_t::TOK_SEPARATOR && tok == "=")
                                 {
                                     // named parameter; the identifier was the name
                                     // and not the value, swap those
@@ -622,13 +622,13 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                                     f_token += param.f_value;
                                     switch(param.f_type)
                                     {
-                                    case TOK_STRING:
+                                    case token_t::TOK_STRING:
                                         // remove the quotes from the parameters
                                         param.f_value = param.f_value.mid(1, param.f_value.size() - 2);
                                         break;
 
-                                    case TOK_INTEGER:
-                                    case TOK_REAL:
+                                    case token_t::TOK_INTEGER:
+                                    case token_t::TOK_REAL:
                                         break;
 
                                     default:
@@ -641,12 +641,12 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                             }
                             break;
 
-                        case TOK_STRING:
+                        case token_t::TOK_STRING:
                             // remove the quotes from the parameters
                             param.f_value = param.f_value.mid(1, param.f_value.size() - 2);
                             /*FALLTHROUGH*/
-                        case TOK_INTEGER:
-                        case TOK_REAL:
+                        case token_t::TOK_INTEGER:
+                        case token_t::TOK_REAL:
                             t = get_token(tok);
                             f_token += tok;
                             break;
@@ -658,7 +658,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                         }
                         info.f_parameters.push_back(param);
 
-                        if(t != TOK_SEPARATOR)
+                        if(t != token_t::TOK_SEPARATOR)
                         {
                             // only commas are accepted here until we find
                             // a closing parenthesis
@@ -751,7 +751,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                     if(!parse_token())
                     {
                         f_token = save_token + f_token;
-                        return TOK_INVALID;
+                        return token_t::TOK_INVALID;
                     }
                     f_token = save_token;
                 }
@@ -778,7 +778,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                         c = getc();
                         if(c == '\0')
                         {
-                            return TOK_INVALID;
+                            return token_t::TOK_INVALID;
                         }
                         tok += QChar(c);
                         if(c == '\\')
@@ -786,7 +786,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                             c = getc();
                             if(c == '\0')
                             {
-                                return TOK_INVALID;
+                                return token_t::TOK_INVALID;
                             }
                             tok += QChar(c);
                             // ignore quotes if escaped
@@ -796,7 +796,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                     while(c != quote);
                     tok = tok.mid(0, tok.size() - 1) + QChar(quote);
                 }
-                return TOK_STRING;
+                return token_t::TOK_STRING;
 
             case '0':
             case '1':
@@ -826,10 +826,10 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                         c = getc();
                     }
                     ungetc(c);
-                    return TOK_REAL;
+                    return token_t::TOK_REAL;
                 }
                 ungetc(c);
-                return TOK_INTEGER;
+                return token_t::TOK_INTEGER;
 
             // separators
             case ']':
@@ -837,7 +837,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             case ')':
             case ',':
             case '=':
-                return TOK_SEPARATOR;
+                return token_t::TOK_SEPARATOR;
 
             case '-':
                 // XXX: Should the be an error instead?
@@ -847,7 +847,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                 //                 entered piece of text.
                 //
                 SNAP_LOG_WARNING("tokens found in on_token_filter() cannot use dash ('-') in their name; use underscore (_) instead.");
-                return TOK_INVALID;
+                return token_t::TOK_INVALID;
 
             default:
                 if((c >= 'a' && c <= 'z')
@@ -865,9 +865,9 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
                     }
                     // TODO: prevent use of ':' at the end of a token
                     ungetc(c);
-                    return TOK_IDENTIFIER;
+                    return token_t::TOK_IDENTIFIER;
                 }
-                return TOK_INVALID;
+                return token_t::TOK_INVALID;
 
             }
         }

@@ -47,12 +47,12 @@ SNAP_PLUGIN_START(path, 1, 0)
 //    //       when dealing with JavaScript and CSS files (Version: field)
 //    switch(name)
 //    {
-//    case SNAP_NAME_CONTENT_PRIMARY_OWNER:
+//    case name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER:
 //        return "path::primary_owner";
 //
 //    default:
 //        // invalid index
-//        throw snap_logic_exception("invalid SNAP_NAME_PATH_...");
+//        throw snap_logic_exception("invalid name_t::SNAP_NAME_PATH_...");
 //
 //    }
 //    NOTREACHED();
@@ -103,7 +103,7 @@ public:
 
                     // content type has to be defined by the handler, also
                     // the output auto-generated
-                    //f_snap->set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
+                    //f_snap->set_header(get_name(snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", HEADER_MODE_EVERYWHERE);
                     //f_snap->output_result(HEADER_MODE_ERROR, html.toUtf8());
                     handle_error->on_handle_error_by_mime_type(err_code, err_name, err_description, f_ipath.get_key());
                 }
@@ -194,7 +194,7 @@ void dynamic_plugin_t::set_plugin(plugins::plugin *p)
         // two different plugins are fighting for the same path
         // we'll have to enhance our error to give the user a way to choose
         // the plugin one wants to use for this request...
-        content::content::instance()->get_snap()->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
+        content::content::instance()->get_snap()->die(snap_child::http_code_t::HTTP_CODE_MULTIPLE_CHOICE,
                 "Multiple Choices",
                 "This page references multiple plugins and the server does not currently have means of choosing one over the other.",
                 QString("User tried to access dynamic page but more than one plugin says it owns the resource, primary is \"%1\", second request by \"%2\"")
@@ -243,7 +243,7 @@ void dynamic_plugin_t::set_plugin_if_renamed(plugins::plugin *p, QString const& 
         // I'm not too sure how we can resolve the problem because we
         // cannot be sure in which order the plugins will be executing
         // the tests...
-        content::content::instance()->get_snap()->die(snap_child::HTTP_CODE_MULTIPLE_CHOICE,
+        content::content::instance()->get_snap()->die(snap_child::http_code_t::HTTP_CODE_MULTIPLE_CHOICE,
                     "Multiple Choices",
                     "This page references multiple plugins if the path is renamed and the server does not currently have means of choosing one over the other.",
                     QString("User tried to access dynamic page, but more than one plugin says it can handle it: primary \"%2\", second request \"%3\".")
@@ -338,7 +338,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
 
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(content_table->exists(ipath.get_key())
-    && content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+    && content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
         // verify that the status is good for displaying this page
         content::path_info_t::status_t status(ipath.get_status());
@@ -352,7 +352,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
             // TODO: for administrators who can undelete pages, the DELETED
             //       will need special handling at some point
             // TBD: maybe we should use 403 instead of 404?
-            err_callback.on_error(snap_child::HTTP_CODE_NOT_FOUND,
+            err_callback.on_error(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                         "Unknow Page Status",
                         "An internal error occured and this page cannot properly be displayed at this time.",
                         QString("User tried to access page \"%1\" but its status state is %2.")
@@ -370,11 +370,11 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
 
         // get the modified date so we can setup the Last-Modified HTTP header field
         // it is also another way to determine that a path is valid
-        QtCassandra::QCassandraValue const value(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value());
-        QString const owner(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+        QtCassandra::QCassandraValue const value(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
+        QString const owner(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
         if(value.nullValue() || owner.isEmpty())
         {
-            err_callback.on_error(snap_child::HTTP_CODE_NOT_FOUND,
+            err_callback.on_error(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                         "Invalid Page",
                         "An internal error occured and this page cannot properly be displayed at this time.",
                         QString("User tried to access page \"%1\" but it does not look valid (null value? %2, empty owner? %3)")
@@ -394,7 +394,7 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
         {
             // if the plugin cannot be found then either it was mispelled
             // or the plugin is not currently installed...
-            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                         "Plugin Missing",
                         "This page is not currently available as its plugin is not currently installed.",
                         QString("User tried to access page \"%1\" but its plugin (%2) does not exist (not installed? mispelled?)")
@@ -595,7 +595,7 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
     // ddd, dd MMM yyyy hh:mm:ss +0000
     if(0 != f_last_modified)
     {
-        f_snap->set_header("Last-Modified", f_snap->date_to_string(f_last_modified, snap_child::DATE_FORMAT_HTTP));
+        f_snap->set_header("Last-Modified", f_snap->date_to_string(f_last_modified, snap_child::date_format_t::DATE_FORMAT_HTTP));
     }
 
     // if a plugin pointer was defined we expect that the dynamic_cast<> will
@@ -614,14 +614,14 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
             {
                 // if the page exists then
                 QString const owner(path_plugin->get_plugin_name());
-                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                             "Plugin Missing",
                             "This page is not currently available as its plugin is not currently installed.",
                             "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + owner + ") does not yet implement the path_execute");
             }
             else
             {
-                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                             "Page Not Found",
                             "This page does not exist on this website.",
                             "User tried to access page \"" + ipath.get_cpath() + "\" and no dynamic path handling happened");
@@ -653,7 +653,7 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
                 // page_not_found() not called here because the page exists
                 // it is just not available right now and thus we
                 // may not want to replace it with something else?
-                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                         "Page Not Present",
                         "Somehow this page is not currently available.",
                         QString("User tried to access page \"%1\" but the page's plugin (%2) refused it.")
@@ -687,7 +687,7 @@ bool path::check_for_redirect_impl(content::path_info_t& ipath)
         // TBD: what code is the most appropriate here? (we are using 301
         //      for now, but 303 or 307 could be better?)
         //
-        links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_ORIGINAL_PAGE), true, ipath.get_key(), ipath.get_branch());
+        links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_ORIGINAL_PAGE), true, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info clone_info;
         if(link_ctxt->next_link(clone_info))
@@ -698,7 +698,7 @@ bool path::check_for_redirect_impl(content::path_info_t& ipath)
             {
                 // we have a valid destination, go there
                 f_snap->page_redirect(imoved.get_key(),
-                            snap_child::HTTP_CODE_MOVED_PERMANENTLY,
+                            snap_child::http_code_t::HTTP_CODE_MOVED_PERMANENTLY,
                             "Redirect to the new version of this page.",
                             QString("This page (%1) was moved so we are redirecting this user to the new location (%2).")
                                     .arg(ipath.get_key()).arg(imoved.get_key()));
@@ -708,7 +708,7 @@ bool path::check_for_redirect_impl(content::path_info_t& ipath)
         }
 
         // we cannot redirect to the copy, so just say not found
-        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                     "Invalid Page",
                     "This page is not currently valid. It can not be viewed.",
                     QString("User tried to access page \"%1\" but it is marked as MOVED and the destination is either unspecified or not NORMAL.")

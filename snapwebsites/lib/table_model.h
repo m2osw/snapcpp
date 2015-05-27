@@ -16,6 +16,8 @@
 //
 #pragma once
 
+#include <controlled_vars/controlled_vars_need_init.h>
+
 #include <QtCassandra/QCassandraTable.h>
 #include <QtCassandra/QCassandraRowPredicate.h>
 #include <QAbstractListModel>
@@ -31,36 +33,36 @@ class table_model
 {
     Q_OBJECT
 
-    public:
-        table_model()
-            : f_rowCount(1000)
-            , f_rowsRemaining(0)
-            , f_pos(0)
-        {
-        }
+public:
+    table_model()
+        : f_rowCount(1000)
+        //, f_rowsRemaining(0) -- auto-init
+        //, f_pos(0) -- auto-init
+    {
+    }
 
-        QtCassandra::QCassandraTable::pointer_t getTable() const;
-        void                    setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re );
+    QtCassandra::QCassandraTable::pointer_t getTable() const;
+    void                    setTable( QtCassandra::QCassandraTable::pointer_t t, QRegExp const & re );
 
-        // Read only access
-        //
-        virtual Qt::ItemFlags   flags       ( QModelIndex const & index ) const;
-        virtual QVariant        data        ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
-        virtual QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-        virtual int             rowCount    ( QModelIndex const & parent = QModelIndex() ) const;
+    // Read only access
+    //
+    virtual Qt::ItemFlags   flags       ( QModelIndex const & index ) const;
+    virtual QVariant        data        ( QModelIndex const & index, int role = Qt::DisplayRole ) const;
+    virtual QVariant        headerData  ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
+    virtual int             rowCount    ( QModelIndex const & parent = QModelIndex() ) const;
 
-        // Fecth more
-        //
-        virtual bool            canFetchMore ( QModelIndex const & index ) const;
-        virtual void            fetchMore    ( QModelIndex const & index );
+    // Fecth more
+    //
+    virtual bool            canFetchMore ( QModelIndex const & index ) const;
+    virtual void            fetchMore    ( QModelIndex const & index );
 
-    private:
-        QtCassandra::QCassandraTable::pointer_t f_table;
-        QtCassandra::QCassandraRowPredicate     f_rowp;
-        // TODO: use controlled_vars instead of constructor
-        int                                     f_rowCount;
-        int                                     f_rowsRemaining;
-        int                                     f_pos;
+private:
+    QtCassandra::QCassandraTable::pointer_t f_table;
+    QtCassandra::QCassandraRowPredicate     f_rowp;
+    // TODO: use controlled_vars instead of constructor
+    controlled_vars::mint32_t               f_rowCount;
+    controlled_vars::zint32_t               f_rowsRemaining;
+    controlled_vars::zint32_t               f_pos;
 };
 
 }

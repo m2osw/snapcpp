@@ -37,11 +37,11 @@ SNAP_PLUGIN_START(antivirus, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_ANTIVIRUS_SCAN_ARCHIVE:
+    case name_t::SNAP_NAME_ANTIVIRUS_SCAN_ARCHIVE:
         return "antivirus::scan_archive";
 
     default:
@@ -217,7 +217,7 @@ void antivirus::on_check_attachment_security(content::attachment_file const& fil
     }
 
     process p("antivirus::clamscan");
-    p.set_mode(process::PROCESS_MODE_INOUT);
+    p.set_mode(process::mode_t::PROCESS_MODE_INOUT);
     p.set_command("clamscan");
     p.add_argument("--tempdir=" + data_path);
     p.add_argument("--quiet");
@@ -240,7 +240,7 @@ void antivirus::on_check_attachment_security(content::attachment_file const& fil
 void antivirus::on_versions_tools(filter::filter::token_info_t& token)
 {
     process p("antivirus::clamscan-version");
-    p.set_mode(process::PROCESS_MODE_OUTPUT);
+    p.set_mode(process::mode_t::PROCESS_MODE_OUTPUT);
     p.set_command("clamscan");
     p.add_argument("--version");
     p.run();

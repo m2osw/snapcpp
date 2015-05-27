@@ -36,8 +36,8 @@ class snap_initialize_website
 public:
     typedef std::shared_ptr<snap_initialize_website>   pointer_t;
 
-                    snap_initialize_website(QString const& snap_host, int snap_port,
-                                            QString const& website_uri, int destination_port);
+                    snap_initialize_website(QString const & snap_host, int snap_port,
+                                            QString const & website_uri, int destination_port);
 
     bool            start_process();
     bool            is_done() const;
@@ -47,9 +47,9 @@ private:
     class snap_initialize_website_runner : public snap_thread::snap_runner
     {
     public:
-                        snap_initialize_website_runner(snap_initialize_website *parent,
-                                                       QString const& snap_host, int snap_port,
-                                                       QString const& website_uri, int destination_port);
+                        snap_initialize_website_runner(snap_initialize_website * parent,
+                                                       QString const & snap_host, int snap_port,
+                                                       QString const & website_uri, int destination_port);
 
         // from class snap_thread
         virtual void    run();
@@ -59,7 +59,7 @@ private:
 
     private:
         void            done();
-        void            message(QString const& msg);
+        void            message(QString const & msg);
         void            send_init_command();
 
         snap_initialize_website *           f_parent;

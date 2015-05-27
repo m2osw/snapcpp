@@ -49,18 +49,18 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_HASHTAG_LINK:
+    case name_t::SNAP_NAME_HASHTAG_LINK:
         return "hashtag::link";
 
-    case SNAP_NAME_HASHTAG_PATH:
+    case name_t::SNAP_NAME_HASHTAG_PATH:
         return "types/taxonomy/system/content-types/hashtag";
 
-    case SNAP_NAME_HASHTAG_SETTINGS_PATH:
+    case name_t::SNAP_NAME_HASHTAG_SETTINGS_PATH:
         return "admin/settings/hashtag";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_HASHTAG_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_HASHTAG_...");
 
     }
     NOTREACHED();
@@ -228,7 +228,7 @@ void hashtag::on_filter_text(content::path_info_t& ipath, QDomDocument& xml, QSt
             //       we would need to convert them to %XX codes
             QString const hash(result.mid(start + 1, pos - start - 1));
             content::path_info_t hash_ipath;
-            hash_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_HASHTAG_PATH)).arg(hash));
+            hash_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_HASHTAG_PATH)).arg(hash));
             if(first)
             {
                 first = false;
@@ -238,14 +238,14 @@ void hashtag::on_filter_text(content::path_info_t& ipath, QDomDocument& xml, QSt
                 revision_table = content_plugin->get_revision_table();
 
                 content::path_info_t settings_ipath;
-                settings_ipath.set_path(get_name(SNAP_NAME_HASHTAG_SETTINGS_PATH));
-                link_settings = revision_table->row(settings_ipath.get_revision_key())->cell(get_name(SNAP_NAME_HASHTAG_LINK))->value().stringValue();
+                settings_ipath.set_path(get_name(name_t::SNAP_NAME_HASHTAG_SETTINGS_PATH));
+                link_settings = revision_table->row(settings_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_HASHTAG_LINK))->value().stringValue();
             }
             if(content_table->exists(hash_ipath.get_key())
-            && content_table->row(hash_ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
+            && content_table->row(hash_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
             {
                 // the tag exists, add the link
-                QString const title(revision_table->row(hash_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->value().stringValue());
+                QString const title(revision_table->row(hash_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue());
                 QString a;
                 if(link_settings == "bottom")
                 {

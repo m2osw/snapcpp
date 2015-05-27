@@ -23,7 +23,7 @@ namespace snap
 namespace javascript
 {
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_JAVASCRIPT_MINIMIZED,
     SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED,
@@ -40,7 +40,7 @@ class javascript_dynamic_plugin
 public:
     virtual             ~javascript_dynamic_plugin() {}
     virtual int         js_property_count() const = 0;
-    virtual QVariant    js_property_get(QString const& name) const = 0;
+    virtual QVariant    js_property_get(QString const & name) const = 0;
     virtual QString     js_property_name(int index) const = 0;
     virtual QVariant    js_property_get(int index) const = 0;
 };
@@ -57,13 +57,13 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_process_attachment(QByteArray const& key, content::attachment_file const& file);
-    void                on_check_attachment_security(content::attachment_file const& file, content::permission_flag& secure, bool const fast);
+    void                on_bootstrap(snap_child * snap);
+    void                on_process_attachment(QByteArray const & key, content::attachment_file const & file);
+    void                on_check_attachment_security(content::attachment_file const & file, content::permission_flag & secure, bool const fast);
 
     void                register_dynamic_plugin(javascript_dynamic_plugin *p);
 
-    QVariant            evaluate_script(const QString& script);
+    QVariant            evaluate_script(QString const & script);
 
 private:
     friend class javascript_plugins_iterator;

@@ -24,32 +24,32 @@ namespace snap
 namespace server_access
 {
 
+enum class name_t
+{
+    SNAP_NAME_SERVER_ACCESS_AJAX_FIELD
+};
+char const * get_name(name_t name) __attribute__ ((const));
+
+
 
 class server_access_exception : public snap_exception
 {
 public:
-    server_access_exception(char const *       what_msg) : snap_exception("server-access", what_msg) {}
-    server_access_exception(std::string const& what_msg) : snap_exception("server-access", what_msg) {}
-    server_access_exception(QString const&     what_msg) : snap_exception("server-access", what_msg) {}
+    server_access_exception(char const *        what_msg) : snap_exception("server-access", what_msg) {}
+    server_access_exception(std::string const & what_msg) : snap_exception("server-access", what_msg) {}
+    server_access_exception(QString const &     what_msg) : snap_exception("server-access", what_msg) {}
 };
 
 class server_access_exception_create_called_twice : public server_access_exception
 {
 public:
-    server_access_exception_create_called_twice(char const *       what_msg) : server_access_exception(what_msg) {}
-    server_access_exception_create_called_twice(std::string const& what_msg) : server_access_exception(what_msg) {}
-    server_access_exception_create_called_twice(QString const&     what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_create_called_twice(char const *        what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_create_called_twice(std::string const & what_msg) : server_access_exception(what_msg) {}
+    server_access_exception_create_called_twice(QString const &     what_msg) : server_access_exception(what_msg) {}
 };
 
 
 
-
-
-enum name_t
-{
-    SNAP_NAME_SERVER_ACCESS_AJAX_FIELD
-};
-char const *get_name(name_t name) __attribute__ ((const));
 
 
 
@@ -66,18 +66,18 @@ public:
     virtual QString             description() const;
     virtual int64_t             do_update(int64_t last_updated);
 
-    void                        on_bootstrap(snap_child *snap);
-    void                        on_output_result(QString const& uri_path, QByteArray& result);
+    void                        on_bootstrap(snap_child * snap);
+    void                        on_output_result(QString const & uri_path, QByteArray & result);
 
     bool                        is_ajax_request() const;
-    void                        create_ajax_result(content::path_info_t& ipath, bool const success);
+    void                        create_ajax_result(content::path_info_t & ipath, bool const success);
     void                        ajax_output();
 
     void                        ajax_failure();
-    void                        ajax_redirect(QString const& uri, QString const& target = "");
-    void                        ajax_append_data(QString const& name, QByteArray const& data);
+    void                        ajax_redirect(QString const & uri, QString const & target = "");
+    void                        ajax_append_data(QString const & name, QByteArray const & data);
 
-    SNAP_SIGNAL_WITH_MODE(process_ajax_result, (content::path_info_t& ipath, bool const succeeded), (ipath, succeeded), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(process_ajax_result, (content::path_info_t & ipath, bool const succeeded), (ipath, succeeded), NEITHER);
 
     // links test suite
     SNAP_TEST_PLUGIN_SUITE_SIGNALS()

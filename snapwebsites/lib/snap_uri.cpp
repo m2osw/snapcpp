@@ -496,7 +496,7 @@ QString const& snap_uri::get_original_uri() const
  *
  * \return The URI represented by this Snap URI object.
  */
-QString const snap_uri::get_uri(bool use_hash_bang) const
+QString snap_uri::get_uri(bool use_hash_bang) const
 {
     QString uri(f_protocol);
 
@@ -2209,7 +2209,7 @@ void domain_set_flag_var(const rule& r, QSharedPointer<token_node>& t)
 
     // if o starts with an empty token then it's the empty rule
     // (if not the empty rule, it is the comma)
-    bool is_empty = (*o)[0]->get_id() == TOKEN_ID_EMPTY_ENUM;
+    bool is_empty = (*o)[0]->get_id() == token_t::TOKEN_ID_EMPTY_ENUM;
 
     domain_variable::domain_variable_type_t type(is_empty ?
                   domain_variable::DOMAIN_VARIABLE_TYPE_FLAG_NO_DEFAULT
@@ -2807,7 +2807,7 @@ void website_set_flag_var(const rule& r, QSharedPointer<token_node>& t)
 
     // if o starts with an empty token then it's the empty rule
     // (if not the empty rule, it is the comma)
-    bool is_empty = (*o)[0]->get_id() == TOKEN_ID_EMPTY_ENUM;
+    bool is_empty = (*o)[0]->get_id() == token_t::TOKEN_ID_EMPTY_ENUM;
 
     website_variable::website_variable_type_t type(is_empty ?
                   website_variable::WEBSITE_VARIABLE_TYPE_FLAG_NO_DEFAULT

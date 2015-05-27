@@ -22,22 +22,16 @@
 namespace snap
 {
 
-class snap_communicator_runtime_error : public std::runtime_error
+class snap_communicator_parameter_error : public tcp_client_server_logic_error
 {
 public:
-    snap_communicator_runtime_error(std::string const& errmsg) : runtime_error(errmsg) {}
+    snap_communicator_parameter_error(std::string const & whatmsg) : tcp_client_server_logic_error(whatmsg) {}
 };
 
-class snap_communicator_parameter_error : public snap_communicator_runtime_error
+class snap_communicator_initialization_error : public tcp_client_server_runtime_error
 {
 public:
-    snap_communicator_parameter_error(std::string const& errmsg) : snap_communicator_runtime_error(errmsg) {}
-};
-
-class snap_communicator_initialization_error : public snap_communicator_runtime_error
-{
-public:
-    snap_communicator_initialization_error(std::string const& errmsg) : snap_communicator_runtime_error(errmsg) {}
+    snap_communicator_initialization_error(std::string const & whatmsg) : tcp_client_server_runtime_error(whatmsg) {}
 };
 
 
@@ -53,7 +47,7 @@ public:
 
     static int const    MAX_CONNECTIONS = 50;
 
-                        tcp_server(std::string const& addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
+                        tcp_server(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
                         ~tcp_server();
 
     int                 get_socket() const;
@@ -89,7 +83,7 @@ public:
         MODE_ALWAYS_SECURE      // fails if cannot be secure
     };
 
-                        bio_client(std::string const& addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+                        bio_client(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
                         ~bio_client();
 
     int                 get_socket() const;
@@ -98,8 +92,8 @@ public:
     std::string         get_addr() const;
     std::string         get_client_addr() const;
 
-    int                 read(char *buf, size_t size);
-    int                 read_line(std::string& line);
+    int                 read(char * buf, size_t size);
+    int                 read_line(std::string & line);
     int                 write(char const *buf, size_t size);
 
 private:

@@ -45,7 +45,7 @@ public:
      *
      * \param[in] name  The name of the file to open and lock.
      */
-    QLockFile(const QString& name)
+    QLockFile(QString const & name)
         : QFile(name)
     {
     }
@@ -65,14 +65,16 @@ public:
      */
     virtual bool open(OpenMode iomode)
     {
-        if(!QFile::open(iomode)) {
+        if(!QFile::open(iomode))
+		{
             return false;
         }
         // we want to ignore the text and unbuffered flags
         OpenMode m(iomode & ~(QIODevice::Text | QIODevice::Unbuffered));
         int op(m == QIODevice::ReadOnly ? LOCK_SH : LOCK_EX);
         // note: on close() the flock() is automatically released
-          if(flock(handle(), op) != 0) {
+        if(flock(handle(), op) != 0)
+		{
             QFile::close();
             return false;
         }

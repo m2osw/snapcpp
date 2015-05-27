@@ -25,7 +25,7 @@ namespace info
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_INFO_LONG_NAME,
     SNAP_NAME_INFO_NAME,
@@ -65,12 +65,12 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
-    virtual bool            on_path_execute(content::path_info_t& ipath);
-    virtual void            on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    //void                    on_generate_header_content(QString const& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
-    //void                    on_generate_page_content(QString const& cpath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_improve_signature(QString const& path, QString& signature);
+    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
+    virtual bool            on_path_execute(content::path_info_t & ipath);
+    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    //void                    on_generate_header_content(QString const & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
+    //void                    on_generate_page_content(QString const & cpath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                    on_improve_signature(QString const & path, QString & signature);
 
 private:
     void                    content_update(int64_t variables_timestamp);

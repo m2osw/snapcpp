@@ -34,11 +34,11 @@ SNAP_PLUGIN_START(avatar, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_AVATAR_TITLE:
+    case name_t::SNAP_NAME_AVATAR_TITLE:
         return "avatar::title";
 
     default:
@@ -169,7 +169,7 @@ void avatar::on_replace_token(content::path_info_t& ipath, QString const& plugin
     {
         // the parameter is the email address to convert
         token.verify_args(1, 1);
-        filter::filter::parameter_t email(token.get_arg("email", 0, filter::filter::TOK_STRING));
+        filter::filter::parameter_t email(token.get_arg("email", 0, filter::filter::token_t::TOK_STRING));
         if(!email.f_value.isEmpty())
         {
             // TODO: verify everything (i.e. that the email is from one of

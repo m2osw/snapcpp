@@ -34,73 +34,73 @@ namespace snap_expr
 class snap_expr_exception : public snap_exception
 {
 public:
-    snap_expr_exception(char const *       what_msg) : snap_exception("snap_expr", what_msg) {}
-    snap_expr_exception(std::string const& what_msg) : snap_exception("snap_expr", what_msg) {}
-    snap_expr_exception(QString const&     what_msg) : snap_exception("snap_expr", what_msg) {}
+    snap_expr_exception(char const *        what_msg) : snap_exception("snap_expr", what_msg) {}
+    snap_expr_exception(std::string const & what_msg) : snap_exception("snap_expr", what_msg) {}
+    snap_expr_exception(QString const &     what_msg) : snap_exception("snap_expr", what_msg) {}
 };
 
 class snap_expr_exception_unknown_function : public snap_expr_exception
 {
 public:
-    snap_expr_exception_unknown_function(char const *       what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_unknown_function(std::string const& what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_unknown_function(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_unknown_function(char const *        what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_unknown_function(std::string const & what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_unknown_function(QString const &     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 class snap_expr_exception_invalid_number_of_parameters : public snap_expr_exception
 {
 public:
-    snap_expr_exception_invalid_number_of_parameters(char const *       what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_invalid_number_of_parameters(std::string const& what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_invalid_number_of_parameters(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_number_of_parameters(char const *        what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_number_of_parameters(std::string const & what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_number_of_parameters(QString const &     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 class snap_expr_exception_invalid_parameter_type : public snap_expr_exception
 {
 public:
-    snap_expr_exception_invalid_parameter_type(char const *       what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_invalid_parameter_type(std::string const& what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_invalid_parameter_type(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_parameter_type(char const *        what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_parameter_type(std::string const & what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_parameter_type(QString const &     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 class snap_expr_exception_invalid_parameter_value : public snap_expr_exception
 {
 public:
-    snap_expr_exception_invalid_parameter_value(char const *       what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_invalid_parameter_value(std::string const& what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_invalid_parameter_value(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_parameter_value(char const *        what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_parameter_value(std::string const & what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_parameter_value(QString const &     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 class snap_expr_exception_not_accessible : public snap_expr_exception
 {
 public:
-    snap_expr_exception_not_accessible(char const *       what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_not_accessible(std::string const& what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_not_accessible(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_accessible(char const *        what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_accessible(std::string const & what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_accessible(QString const &     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 class snap_expr_exception_not_ready : public snap_expr_exception
 {
 public:
-    snap_expr_exception_not_ready(char const *       what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_not_ready(std::string const& what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_not_ready(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_ready(char const *        what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_ready(std::string const & what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_not_ready(QString const &     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 class snap_expr_exception_invalid_data : public snap_expr_exception
 {
 public:
-    snap_expr_exception_invalid_data(char const *       what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_invalid_data(std::string const& what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_invalid_data(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_data(char const *        what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_data(std::string const & what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_invalid_data(QString const &     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 class snap_expr_exception_division_by_zero : public snap_expr_exception
 {
 public:
-    snap_expr_exception_division_by_zero(char const *       what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_division_by_zero(std::string const& what_msg) : snap_expr_exception(what_msg) {}
-    snap_expr_exception_division_by_zero(QString const&     what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_division_by_zero(char const *        what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_division_by_zero(std::string const & what_msg) : snap_expr_exception(what_msg) {}
+    snap_expr_exception_division_by_zero(QString const &     what_msg) : snap_expr_exception(what_msg) {}
 };
 
 
@@ -113,7 +113,7 @@ public:
     typedef QMap<QString, variable_t> variable_map_t;
     typedef QVector<variable_t> variable_vector_t;
 
-    enum variable_type_t
+    enum class variable_type_t
     {
         // Variables
         // WARNING: the order is VERY important
@@ -132,15 +132,15 @@ public:
         EXPR_VARIABLE_TYPE_STRING,
         EXPR_VARIABLE_TYPE_BINARY
     };
-    typedef controlled_vars::limited_auto_enum_init<variable_type_t, EXPR_VARIABLE_TYPE_NULL, EXPR_VARIABLE_TYPE_BINARY, EXPR_VARIABLE_TYPE_NULL> safe_variable_type_t;
+    typedef controlled_vars::limited_auto_enum_init<variable_type_t, variable_type_t::EXPR_VARIABLE_TYPE_NULL, variable_type_t::EXPR_VARIABLE_TYPE_BINARY, variable_type_t::EXPR_VARIABLE_TYPE_NULL> safe_variable_type_t;
 
-                                        variable_t(QString const& name = "");
+                                        variable_t(QString const & name = "");
 
     QString                             get_name() const;
 
     variable_type_t                     get_type() const;
-    QtCassandra::QCassandraValue const& get_value() const;
-    void                                set_value(variable_type_t type, QtCassandra::QCassandraValue const& value);
+    QtCassandra::QCassandraValue const & get_value() const;
+    void                                set_value(variable_type_t type, QtCassandra::QCassandraValue const & value);
     void                                set_value(); // set to NULL
     void                                set_value(bool value);
     void                                set_value(char value);
@@ -154,15 +154,15 @@ public:
     void                                set_value(uint64_t value);
     void                                set_value(float value);
     void                                set_value(double value);
-    void                                set_value(char const *value);
-    void                                set_value(wchar_t const *value);
-    void                                set_value(QString const& value);
-    void                                set_value(QByteArray const& value);
+    void                                set_value(char const * value);
+    void                                set_value(wchar_t const * value);
+    void                                set_value(QString const & value);
+    void                                set_value(QByteArray const & value);
 
-    bool                                get_bool(QString const& name) const;
-    int64_t                             get_integer(QString const& name) const;
-    double                              get_floating_point(QString const& name) const;
-    QString                             get_string(QString const& name) const;
+    bool                                get_bool(QString const & name) const;
+    int64_t                             get_integer(QString const & name) const;
+    double                              get_floating_point(QString const & name) const;
+    QString                             get_string(QString const & name) const;
 
     bool                                is_true() const;
 
@@ -178,7 +178,7 @@ private:
 class functions_t
 {
 public:
-    typedef void (*function_call_t)(variable_t& result, variable_t::variable_vector_t const& parameters);
+    typedef void (*function_call_t)(variable_t & result, variable_t::variable_vector_t const & parameters);
     struct function_call_table_t
     {
         char const *    f_name;
@@ -201,7 +201,7 @@ public:
         }
     }
 
-    function_call_t get_function(QString const& name)
+    function_call_t get_function(QString const & name)
     {
         if(f_functions.contains(name))
         {
@@ -252,10 +252,10 @@ public:
     typedef QSharedPointer<expr>            expr_pointer_t;
     typedef QMap<QString, expr_pointer_t>   expr_map_t;
 
-    bool            compile(QString const& expression);
+    bool            compile(QString const & expression);
     QByteArray      serialize() const;
-    void            unserialize(QByteArray const& serialized_code);
-    void            execute(variable_t& result, variable_t::variable_map_t& variables, functions_t& functions);
+    void            unserialize(QByteArray const & serialized_code);
+    void            execute(variable_t & result, variable_t::variable_map_t & variables, functions_t & functions);
 
     // some Snap! specialization
     static void     set_cassandra_context(QtCassandra::QCassandraContext::pointer_t context);

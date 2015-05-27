@@ -29,27 +29,27 @@ namespace output
 {
 
 
-//enum name_t
+//enum class name_t
 //{
 //    SNAP_NAME_OUTPUT_ACCEPTED
 //};
-//char const *get_name(name_t name) __attribute__ ((const));
+//char const * get_name(name_t name) __attribute__ ((const));
 
 
 class output_exception : public snap_exception
 {
 public:
-    output_exception(char const *       what_msg) : snap_exception("output", what_msg) {}
-    output_exception(std::string const& what_msg) : snap_exception("output", what_msg) {}
-    output_exception(QString const&     what_msg) : snap_exception("output", what_msg) {}
+    output_exception(char const *        what_msg) : snap_exception("output", what_msg) {}
+    output_exception(std::string const & what_msg) : snap_exception("output", what_msg) {}
+    output_exception(QString const &     what_msg) : snap_exception("output", what_msg) {}
 };
 
 class output_exception_invalid_content_xml : public output_exception
 {
 public:
-    output_exception_invalid_content_xml(char const *       what_msg) : output_exception(what_msg) {}
-    output_exception_invalid_content_xml(std::string const& what_msg) : output_exception(what_msg) {}
-    output_exception_invalid_content_xml(QString const&     what_msg) : output_exception(what_msg) {}
+    output_exception_invalid_content_xml(char const *        what_msg) : output_exception(what_msg) {}
+    output_exception_invalid_content_xml(std::string const & what_msg) : output_exception(what_msg) {}
+    output_exception_invalid_content_xml(QString const &     what_msg) : output_exception(what_msg) {}
 };
 
 
@@ -65,7 +65,7 @@ class output : public plugins::plugin
              , public layout::layout_boxes
 {
 public:
-    enum phone_number_type_t
+    enum class phone_number_type_t
     {
         PHONE_NUMBER_TYPE_FAX,
         PHONE_NUMBER_TYPE_SKYPE,
@@ -80,17 +80,17 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(content::path_info_t& ipath);
-    virtual void        on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    virtual void        on_generate_boxes_content(content::path_info_t& page_ipath, content::path_info_t& ipath, QDomElement& page, QDomElement& boxes, QString const& ctemplate);
-    void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    virtual bool        on_path_execute(content::path_info_t & ipath);
+    virtual void        on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    virtual void        on_generate_boxes_content(content::path_info_t & page_ipath, content::path_info_t & ipath, QDomElement & page, QDomElement & boxes, QString const & ctemplate);
+    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
 
     static QString      phone_to_uri(QString const phone, phone_number_type_t const type);
 
     // dynamic javascript property support
     virtual int         js_property_count() const;
-    virtual QVariant    js_property_get(QString const& name) const;
+    virtual QVariant    js_property_get(QString const & name) const;
     virtual QString     js_property_name(int index) const;
     virtual QVariant    js_property_get(int index) const;
 

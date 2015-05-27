@@ -29,7 +29,7 @@ namespace snap
 namespace logging
 {
 
-enum log_level_t
+enum class log_level_t
 {
     LOG_LEVEL_OFF,
     LOG_LEVEL_FATAL,
@@ -40,7 +40,7 @@ enum log_level_t
     LOG_LEVEL_TRACE
 };
 
-enum log_security_t
+enum class log_security_t
 {
     LOG_SECURITY_NONE,
     LOG_SECURITY_SECURE
@@ -49,38 +49,38 @@ enum log_security_t
 class logger
 {
 public:
-    logger(log_level_t log_level, char const * file = nullptr, char const * func = nullptr, int line = -1);
-    logger(logger const & l);
-    ~logger();
+                    logger(log_level_t log_level, char const * file = nullptr, char const * func = nullptr, int line = -1);
+                    logger(logger const & l);
+                    ~logger();
 
     // avoid assignments
-    logger& operator = (logger const &) = delete;
+    logger &        operator = (logger const &) = delete;
 
-    logger& operator () ();
-    logger& operator () (log_security_t const v);
-    logger& operator () (char const * s);
-    logger& operator () (wchar_t const *s);
-    logger& operator () (std::string const & s);
-    logger& operator () (std::wstring const & s);
-    logger& operator () (QString const & s);
-    logger& operator () (char const v);
-    logger& operator () (signed char const v);
-    logger& operator () (unsigned char const v);
-    logger& operator () (signed short const v);
-    logger& operator () (unsigned short const v);
-    logger& operator () (signed int const v);
-    logger& operator () (unsigned int const v);
-    logger& operator () (signed long const v);
-    logger& operator () (unsigned long const v);
-    logger& operator () (signed long long const v);
-    logger& operator () (unsigned long long const v);
-    logger& operator () (float const v);
-    logger& operator () (double const v);
-    logger& operator () (bool const v);
+    logger &        operator () ();
+    logger &        operator () (log_security_t const v);
+    logger &        operator () (char const * s);
+    logger &        operator () (wchar_t const * s);
+    logger &        operator () (std::string const & s);
+    logger &        operator () (std::wstring const & s);
+    logger &        operator () (QString const & s);
+    logger &        operator () (char const v);
+    logger &        operator () (signed char const v);
+    logger &        operator () (unsigned char const v);
+    logger &        operator () (signed short const v);
+    logger &        operator () (unsigned short const v);
+    logger &        operator () (signed int const v);
+    logger &        operator () (unsigned int const v);
+    logger &        operator () (signed long const v);
+    logger &        operator () (unsigned long const v);
+    logger &        operator () (signed long long const v);
+    logger &        operator () (unsigned long long const v);
+    logger &        operator () (float const v);
+    logger &        operator () (double const v);
+    logger &        operator () (bool const v);
 
 private:
-    typedef controlled_vars::limited_need_enum_init<log_security_t, LOG_SECURITY_NONE, LOG_SECURITY_SECURE> mlog_security_t;
-    typedef controlled_vars::limited_need_enum_init<log_level_t, LOG_LEVEL_OFF, LOG_LEVEL_TRACE> mlog_level_t;
+    typedef controlled_vars::limited_need_enum_init<log_security_t, log_security_t::LOG_SECURITY_NONE, log_security_t::LOG_SECURITY_SECURE> mlog_security_t;
+    typedef controlled_vars::limited_need_enum_init<log_level_t, log_level_t::LOG_LEVEL_OFF, log_level_t::LOG_LEVEL_TRACE> mlog_level_t;
     typedef controlled_vars::ptr_need_init<char const> mpcchar_t;
 
     mlog_level_t                        f_log_level;
@@ -100,25 +100,25 @@ void reconfigure       ();
 bool is_configured     ();
 void setLogOutputLevel ( log_level_t level );
 
-logger& operator << ( logger & l, QString const &                    msg );
-logger& operator << ( logger & l, std::basic_string<char> const &    msg );
-logger& operator << ( logger & l, std::basic_string<wchar_t> const & msg );
-logger& operator << ( logger & l, char const *                       msg );
-logger& operator << ( logger & l, wchar_t const *                    msg );
+logger & operator << ( logger & l, QString const &                    msg );
+logger & operator << ( logger & l, std::basic_string<char> const &    msg );
+logger & operator << ( logger & l, std::basic_string<wchar_t> const & msg );
+logger & operator << ( logger & l, char const *                       msg );
+logger & operator << ( logger & l, wchar_t const *                    msg );
 
 template <class T>
-logger& operator << ( logger & l, T const & msg )
+logger & operator << ( logger & l, T const & msg )
 {
     l( msg );
     return l;
 }
 
-logger fatal  (char const *file = nullptr, char const *func = nullptr, int line = -1);
-logger error  (char const *file = nullptr, char const *func = nullptr, int line = -1);
-logger warning(char const *file = nullptr, char const *func = nullptr, int line = -1);
-logger info   (char const *file = nullptr, char const *func = nullptr, int line = -1);
-logger debug  (char const *file = nullptr, char const *func = nullptr, int line = -1);
-logger trace  (char const *file = nullptr, char const *func = nullptr, int line = -1);
+logger fatal  (char const * file = nullptr, char const * func = nullptr, int line = -1);
+logger error  (char const * file = nullptr, char const * func = nullptr, int line = -1);
+logger warning(char const * file = nullptr, char const * func = nullptr, int line = -1);
+logger info   (char const * file = nullptr, char const * func = nullptr, int line = -1);
+logger debug  (char const * file = nullptr, char const * func = nullptr, int line = -1);
+logger trace  (char const * file = nullptr, char const * func = nullptr, int line = -1);
 
 #define    SNAP_LOG_FATAL       snap::logging::fatal  (__FILE__, __func__, __LINE__)
 #define    SNAP_LOG_ERROR       snap::logging::error  (__FILE__, __func__, __LINE__)

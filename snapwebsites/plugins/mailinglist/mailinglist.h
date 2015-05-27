@@ -33,11 +33,11 @@ class mailinglist_exception : public snap_exception {};
 class mailinglist_exception_no_magic : public mailinglist_exception {};
 class mailinglist_exception_invalid_argument : public mailinglist_exception {};
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_MAILINGLIST_TABLE
 };
-const char *get_name(name_t name) __attribute__ ((const));
+const char * get_name(name_t name) __attribute__ ((const));
 
 
 class mailinglist : public plugins::plugin
@@ -49,7 +49,7 @@ public:
         static const int LIST_MAJOR_VERSION = 1;
         static const int LIST_MINOR_VERSION = 0;
 
-        list(mailinglist *parent, const QString& list_name);
+        list(mailinglist * parent, QString const & list_name);
         virtual ~list();
 
         QString name() const;
@@ -75,9 +75,9 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_mailinglist_table();
 
     void                on_bootstrap(snap_child *snap);
-    void                on_name_to_list(const QString& name, QSharedPointer<list>& emails);
+    void                on_name_to_list(QString const & name, QSharedPointer<list> & emails);
 
-    SNAP_SIGNAL_WITH_MODE(name_to_list, (const QString& name, QSharedPointer<list>& emails), (name, emails), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(name_to_list, (QString const & name, QSharedPointer<list> & emails), (name, emails), NEITHER);
 
 private:
     void initial_update(int64_t variables_timestamp);

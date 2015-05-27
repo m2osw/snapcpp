@@ -348,7 +348,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         // signed 8 bit value
         // cast to integer so arg() doesn't take it as a character
-        return CT_int8_value;
+        return column_type_t::CT_int8_value;
     }
     else if(n == "content::final"
          || n == "content::files::compressor"
@@ -363,12 +363,12 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         // unsigned 8 bit value
         // cast to integer so arg() doesn't take it as a character
-        return CT_uint8_value;
+        return column_type_t::CT_uint8_value;
     }
     else if(n == "list::number_of_items"
          )
     {
-        return CT_int32_value;
+        return column_type_t::CT_int32_value;
     }
     else if(n.startsWith("content::attachment::reference::")
          || n == "content::attachment::revision_control::last_branch"
@@ -395,12 +395,12 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || (f_tableName == "libQtCassandraLockTable" && f_rowName == "hosts")
          )
     {
-        return CT_uint32_value;
+        return column_type_t::CT_uint32_value;
     }
     else if(n == "sessions::check_flags"
          )
     {
-        return CT_int64_value;
+        return column_type_t::CT_int64_value;
     }
     else if(n == "ecommerce::invoice_number"
          || n == "epayment_paypal::invoice_number"
@@ -409,13 +409,13 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "finball::invoice_number" // TODO -- remove at some point since that is a customer's type (we'd need to have an XML file instead)
          )
     {
-        return CT_uint64_value;
+        return column_type_t::CT_uint64_value;
     }
     else if(n == "sitemapxml::priority"
          )
     {
         // 32 bit float
-        return CT_float32_value;
+        return column_type_t::CT_float32_value;
     }
     else if(n == "epayment::price"
          || (n.startsWith("finball::data_") && n.endsWith("_count")) // TODO -- remove at some point since that is a cutomer's field
@@ -432,7 +432,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          )
     {
         // 64 bit float
-        return CT_float64_value;
+        return column_type_t::CT_float64_value;
     }
     else if(n == "content::created"
          || n == "content::cloned"
@@ -480,19 +480,19 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          )
     {
         // 64 bit value (microseconds)
-        return CT_time_microseconds;
+        return column_type_t::CT_time_microseconds;
     }
     else if(n == "sessions::login_limit"
          || n == "sessions::time_limit"
          )
     {
         // 64 bit value (seconds)
-        return CT_time_seconds;
+        return column_type_t::CT_time_seconds;
     }
     else if(f_tableName == "listref"
          )
     {
-        return CT_time_microseconds_and_string;
+        return column_type_t::CT_time_microseconds_and_string;
     }
     else if(n == "sessions::random"
          || n == "users::password::salt"
@@ -500,7 +500,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          )
     {
         // n bit binary value
-        return CT_hexarray_value;
+        return column_type_t::CT_hexarray_value;
     }
     else if(n == "favicon::icon"
          || n.startsWith("content::files::data")
@@ -509,7 +509,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
     {
         // n bit binary value
         // same as previous only this can be huge so we limit it
-        return CT_hexarray_limited_value;
+        return column_type_t::CT_hexarray_limited_value;
     }
     else if((f_tableName == "revision" && n == "content::attachment")
          || (f_tableName == "files" && f_rowName == "javascripts")
@@ -517,19 +517,19 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          )
     {
         // md5 in binary
-        return CT_md5array_value;
+        return column_type_t::CT_md5array_value;
     }
     else if(n == "content::files::secure")
     {
-        return CT_secure_value;
+        return column_type_t::CT_secure_value;
     }
     else if(n == "content::status")
     {
-        return CT_status_value;
+        return column_type_t::CT_status_value;
     }
 
     // all others viewed as strings
-    return CT_string_value;
+    return column_type_t::CT_string_value;
 }
 
 
@@ -541,7 +541,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
         column_type_t const ct( get_column_type( c ) );
         switch( ct )
         {
-            case CT_int8_value:
+            case column_type_t::CT_int8_value:
             {
                 // signed 8 bit value
                 // cast to integer so arg() doesn't take it as a character
@@ -549,7 +549,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_uint8_value:
+            case column_type_t::CT_uint8_value:
             {
                 // unsigned 8 bit value
                 // cast to integer so arg() doesn't take it as a character
@@ -557,33 +557,33 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_int32_value:
+            case column_type_t::CT_int32_value:
             {
                 // 32 bit value
                 v = QString("%1").arg(c->value().int32Value());
             }
             break;
 
-            case CT_uint32_value:
+            case column_type_t::CT_uint32_value:
             {
                 // 32 bit value
                 v = QString("%1").arg(c->value().uint32Value());
             }
             break;
 
-            case CT_int64_value:
+            case column_type_t::CT_int64_value:
             {
                 v = QString("%1").arg(c->value().int64Value());
             }
             break;
 
-            case CT_uint64_value:
+            case column_type_t::CT_uint64_value:
             {
                 v = QString("%1").arg(c->value().uint64Value());
             }
             break;
 
-            case CT_float32_value:
+            case column_type_t::CT_float32_value:
             {
                 // 32 bit float
                 float value(c->value().floatValue());
@@ -591,7 +591,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_float64_value:
+            case column_type_t::CT_float64_value:
             {
                 // 64 bit float
                 double value(c->value().doubleValue());
@@ -599,7 +599,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_time_microseconds:
+            case column_type_t::CT_time_microseconds:
             {
                 // 64 bit value (microseconds)
                 uint64_t const time(c->value().uint64Value());
@@ -614,7 +614,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_time_microseconds_and_string:
+            case column_type_t::CT_time_microseconds_and_string:
             {
                 QByteArray value(c->value().binaryValue());
                 v = QString("%1 %2")
@@ -623,7 +623,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_time_seconds:
+            case column_type_t::CT_time_seconds:
             {
                 // 64 bit value (seconds)
                 uint64_t time(c->value().uint64Value());
@@ -638,11 +638,11 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_hexarray_value:
-            case CT_hexarray_limited_value:
+            case column_type_t::CT_hexarray_value:
+            case column_type_t::CT_hexarray_limited_value:
             {
                 // n bit binary value
-                bool const display_limited( display_only && (ct == CT_hexarray_limited_value) );
+                bool const display_limited( display_only && (ct == column_type_t::CT_hexarray_limited_value) );
                 const QByteArray& buf(c->value().binaryValue());
                 int const max_length( display_limited ? std::min(f_displayLen, buf.size()): buf.size() );
                 if( display_only )
@@ -660,7 +660,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_md5array_value:
+            case column_type_t::CT_md5array_value:
             {
                 // md5 in binary
                 QByteArray const& buf(c->value().binaryValue());
@@ -676,7 +676,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_secure_value:
+            case column_type_t::CT_secure_value:
             {
                 switch(c->value().signedCharValue())
                 {
@@ -700,7 +700,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_status_value:
+            case column_type_t::CT_status_value:
             {
                 uint32_t status(c->value().uint32Value());
                 if(display_only)
@@ -775,7 +775,7 @@ QString dbutils::get_column_value( QCassandraCell::pointer_t c, const bool displ
             }
             break;
 
-            case CT_string_value:
+            case column_type_t::CT_string_value:
             {
                 v = c->value().stringValue().replace("\r", "\\r").replace("\n", "\\n");
             }
@@ -801,55 +801,55 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
     //
     switch( get_column_type( c ) )
     {
-        case CT_int8_value:
+        case column_type_t::CT_int8_value:
         {
             cvalue.setSignedCharValue( static_cast<signed char>(v.toInt()) );
         }
         break;
 
-        case CT_uint8_value:
+        case column_type_t::CT_uint8_value:
         {
             cvalue.setUnsignedCharValue( static_cast<unsigned char>(v.toUInt()) );
         }
         break;
 
-        case CT_int32_value:
+        case column_type_t::CT_int32_value:
         {
             cvalue.setInt32Value( static_cast<int32_t>(v.toLong()) );
         }
         break;
 
-        case CT_uint32_value:
+        case column_type_t::CT_uint32_value:
         {
             cvalue.setUInt32Value( static_cast<uint32_t>(v.toULong()) );
         }
         break;
 
-        case CT_int64_value:
+        case column_type_t::CT_int64_value:
         {
             cvalue.setInt64Value( static_cast<uint64_t>(v.toLongLong()) );
         }
         break;
 
-        case CT_uint64_value:
+        case column_type_t::CT_uint64_value:
         {
             cvalue.setUInt64Value( static_cast<uint64_t>(v.toULongLong()) );
         }
         break;
 
-        case CT_float32_value:
+        case column_type_t::CT_float32_value:
         {
             cvalue.setFloatValue( v.toFloat() );
         }
         break;
 
-        case CT_float64_value:
+        case column_type_t::CT_float64_value:
         {
             cvalue.setFloatValue( v.toDouble() );
         }
         break;
 
-        case CT_time_microseconds:
+        case column_type_t::CT_time_microseconds:
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S.%N"
             //
@@ -885,7 +885,7 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         }
         break;
 
-        case CT_time_seconds:
+        case column_type_t::CT_time_seconds:
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S"
             //
@@ -918,7 +918,7 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         }
         break;
 
-        case CT_time_microseconds_and_string:
+        case column_type_t::CT_time_microseconds_and_string:
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S.%N string"
             //
@@ -961,20 +961,20 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         }
         break;
 
-        case CT_hexarray_value:
-        case CT_hexarray_limited_value:
+        case column_type_t::CT_hexarray_value:
+        case column_type_t::CT_hexarray_limited_value:
         {
             cvalue.setBinaryValue( string_to_key( v ) );
         }
         break;
 
-        case CT_md5array_value:
+        case column_type_t::CT_md5array_value:
         {
             cvalue.setBinaryValue( string_to_key( v ) );
         }
         break;
 
-        case CT_secure_value:
+        case column_type_t::CT_secure_value:
         {
             signed char cv;
             if( v == "not checked (-1)" || v == "-1" )
@@ -997,7 +997,7 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         }
         break;
 
-        case CT_status_value:
+        case column_type_t::CT_status_value:
         {
             uint32_t cv;
             QString state_name(v);
@@ -1071,7 +1071,7 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         }
         break;
 
-        case CT_string_value:
+        case column_type_t::CT_string_value:
         {
             // all others viewed as strings
             //v = c->value().stringValue().replace("\n", "\\n");

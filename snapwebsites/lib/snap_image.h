@@ -30,25 +30,25 @@ namespace snap
 class snap_image_exception : public snap_exception
 {
 public:
-    snap_image_exception(char const *whatmsg) : snap_exception("snap_image", whatmsg) {}
-    snap_image_exception(std::string const& whatmsg) : snap_exception("snap_image", whatmsg) {}
-    snap_image_exception(QString const& whatmsg) : snap_exception("snap_image", whatmsg) {}
+    snap_image_exception(char const *        whatmsg) : snap_exception("snap_image", whatmsg) {}
+    snap_image_exception(std::string const & whatmsg) : snap_exception("snap_image", whatmsg) {}
+    snap_image_exception(QString const &     whatmsg) : snap_exception("snap_image", whatmsg) {}
 };
 
 class snap_image_exception_no_buffer : public snap_image_exception
 {
 public:
-    snap_image_exception_no_buffer(char const *whatmsg) : snap_image_exception(whatmsg) {}
-    snap_image_exception_no_buffer(std::string const& whatmsg) : snap_image_exception(whatmsg) {}
-    snap_image_exception_no_buffer(QString const& whatmsg) : snap_image_exception(whatmsg) {}
+    snap_image_exception_no_buffer(char const *        whatmsg) : snap_image_exception(whatmsg) {}
+    snap_image_exception_no_buffer(std::string const & whatmsg) : snap_image_exception(whatmsg) {}
+    snap_image_exception_no_buffer(QString const &     whatmsg) : snap_image_exception(whatmsg) {}
 };
 
 class snap_image_exception_invalid_image : public snap_image_exception
 {
 public:
-    snap_image_exception_invalid_image(char const *whatmsg) : snap_image_exception(whatmsg) {}
-    snap_image_exception_invalid_image(std::string const& whatmsg) : snap_image_exception(whatmsg) {}
-    snap_image_exception_invalid_image(QString const& whatmsg) : snap_image_exception(whatmsg) {}
+    snap_image_exception_invalid_image(char const *        whatmsg) : snap_image_exception(whatmsg) {}
+    snap_image_exception_invalid_image(std::string const & whatmsg) : snap_image_exception(whatmsg) {}
+    snap_image_exception_invalid_image(QString const &     whatmsg) : snap_image_exception(whatmsg) {}
 };
 
 
@@ -73,12 +73,12 @@ class snap_image_buffer_t
 public:
                         snap_image_buffer_t(snap_image *owner);
 
-    QString const&      get_mime_type() const;
-    void                set_mime_type(QString const& mime_type);
-    QString const&      get_format_version() const;
-    void                set_format_version(QString const& format_version);
-    QString const&      get_resolution_unit() const;
-    void                set_resolution_unit(QString const& resolution_unit);
+    QString const &     get_mime_type() const;
+    void                set_mime_type(QString const & mime_type);
+    QString const &     get_format_version() const;
+    void                set_format_version(QString const & format_version);
+    QString const &     get_resolution_unit() const;
+    void                set_resolution_unit(QString const & resolution_unit);
     int                 get_xres() const;
     void                set_xres(int xres);
     int                 get_yres() const;
@@ -114,17 +114,17 @@ typedef QVector<smart_snap_image_buffer_t>      snap_image_buffer_vector_t;
 class snap_image
 {
 public:
-    bool                        get_info(QByteArray const& data);
+    bool                        get_info(QByteArray const & data);
 
     size_t                      get_size() const;
     smart_snap_image_buffer_t   get_buffer(int idx);
 
 private:
-    bool                        info_jpeg(unsigned char const *s, size_t l, unsigned char const *e);
-    bool                        info_ico(unsigned char const *s, size_t l, unsigned char const *e);
-    bool                        info_bmp(unsigned char const *s, size_t l, unsigned char const *e);
-    bool                        info_png(unsigned char const *s, size_t l, unsigned char const *e);
-    bool                        info_gif(unsigned char const *s, size_t l, unsigned char const *e);
+    bool                        info_jpeg(unsigned char const * s, size_t l, unsigned char const * e);
+    bool                        info_ico(unsigned char const * s, size_t l, unsigned char const * e);
+    bool                        info_bmp(unsigned char const * s, size_t l, unsigned char const * e);
+    bool                        info_png(unsigned char const * s, size_t l, unsigned char const * e);
+    bool                        info_gif(unsigned char const * s, size_t l, unsigned char const * e);
 
     // each buffer represents one RGBA image
     snap_image_buffer_vector_t  f_buffers;

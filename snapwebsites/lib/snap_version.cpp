@@ -378,29 +378,29 @@ bool validate_operator(QString const& operator_string, operator_t& op, QString& 
 
     if(operator_string == "=" || operator_string == "==")
     {
-        op = OPERATOR_EQUAL;
+        op = operator_t::OPERATOR_EQUAL;
     }
     else if(operator_string == "!=" || operator_string == "<>")
     {
-        op = OPERATOR_EXCEPT;
+        op = operator_t::OPERATOR_EXCEPT;
     }
     else if(operator_string == "<")
     {
         // support << as well, like in Debian
-        op = OPERATOR_EARLIER;
+        op = operator_t::OPERATOR_EARLIER;
     }
     else if(operator_string == ">")
     {
         // support >> as well, like in Debian
-        op = OPERATOR_LATER;
+        op = operator_t::OPERATOR_LATER;
     }
     else if(operator_string == "<=")
     {
-        op = OPERATOR_EARLIER_OR_EQUAL;
+        op = operator_t::OPERATOR_EARLIER_OR_EQUAL;
     }
     else if(operator_string == ">=")
     {
-        op = OPERATOR_LATER_OR_EQUAL;
+        op = operator_t::OPERATOR_LATER_OR_EQUAL;
     }
     else
     {
@@ -515,23 +515,23 @@ compare_t name::compare(name const& rhs) const
 {
     if(!is_valid() || !rhs.is_valid())
     {
-        return COMPARE_INVALID;
+        return compare_t::COMPARE_INVALID;
     }
 
     if(f_name == "any" || rhs.f_name == "any")
     {
-        return COMPARE_EQUAL;
+        return compare_t::COMPARE_EQUAL;
     }
 
     if(f_name < rhs.f_name)
     {
-        return COMPARE_SMALLER;
+        return compare_t::COMPARE_SMALLER;
     }
     if(f_name > rhs.f_name)
     {
-        return COMPARE_LARGER;
+        return compare_t::COMPARE_LARGER;
     }
-    return COMPARE_EQUAL;
+    return compare_t::COMPARE_EQUAL;
 }
 
 
@@ -662,7 +662,7 @@ QString version::get_opversion_string() const
 {
     QString v(get_version_string());
 
-    if(f_operator.get_operator() != OPERATOR_UNORDERED)
+    if(f_operator.get_operator() != operator_t::OPERATOR_UNORDERED)
     {
         v = f_operator.get_operator_string() + (" " + v);
     }
@@ -702,7 +702,7 @@ compare_t version::compare(version const& rhs) const
 {
     if(!is_valid() || !rhs.is_valid())
     {
-        return COMPARE_INVALID;
+        return compare_t::COMPARE_INVALID;
     }
 
     int const max_size(std::max SNAP_PREVENT_MACRO_SUBSTITUTION (f_version.size(), rhs.f_version.size()));
@@ -712,15 +712,15 @@ compare_t version::compare(version const& rhs) const
         int r(i >= rhs.f_version.size() ? 0 : static_cast<int>(rhs.f_version[i]));
         if(l < r)
         {
-            return COMPARE_SMALLER;
+            return compare_t::COMPARE_SMALLER;
         }
         if(l > r)
         {
-            return COMPARE_LARGER;
+            return compare_t::COMPARE_LARGER;
         }
     }
 
-    return COMPARE_EQUAL;
+    return compare_t::COMPARE_EQUAL;
 }
 
 
@@ -818,13 +818,13 @@ bool version_operator::set_operator(operator_t op)
 {
     switch(op)
     {
-    case OPERATOR_UNORDERED:
-    case OPERATOR_EQUAL:
-    case OPERATOR_EXCEPT:
-    case OPERATOR_EARLIER:
-    case OPERATOR_LATER:
-    case OPERATOR_EARLIER_OR_EQUAL:
-    case OPERATOR_LATER_OR_EQUAL:
+    case operator_t::OPERATOR_UNORDERED:
+    case operator_t::OPERATOR_EQUAL:
+    case operator_t::OPERATOR_EXCEPT:
+    case operator_t::OPERATOR_EARLIER:
+    case operator_t::OPERATOR_LATER:
+    case operator_t::OPERATOR_EARLIER_OR_EQUAL:
+    case operator_t::OPERATOR_LATER_OR_EQUAL:
         f_operator = op;
         return true;
 
@@ -846,7 +846,7 @@ bool version_operator::set_operator(operator_t op)
  */
 char const *version_operator::get_operator_string() const
 {
-    return g_operators + static_cast<int>(f_operator) * 3;
+    return g_operators + static_cast<int>(static_cast<operator_t>(f_operator)) * 3;
 }
 
 
@@ -1131,16 +1131,16 @@ compare_t versioned_filename::compare(versioned_filename const& rhs) const
 {
     if(!is_valid())
     {
-        return COMPARE_INVALID;
+        return compare_t::COMPARE_INVALID;
     }
 
     compare_t c(f_name.compare(rhs.f_name));
-    if(c != COMPARE_EQUAL)
+    if(c != compare_t::COMPARE_EQUAL)
     {
         return c;
     }
     c = f_browser.compare(rhs.f_browser);
-    if(c != COMPARE_EQUAL)
+    if(c != compare_t::COMPARE_EQUAL)
     {
         return c;
     }
@@ -1161,10 +1161,10 @@ compare_t versioned_filename::compare(versioned_filename const& rhs) const
  *
  * \return true if both filenames are considered equal.
  */
-bool versioned_filename::operator == (versioned_filename const& rhs) const
+bool versioned_filename::operator == (versioned_filename const & rhs) const
 {
-    int r(compare(rhs));
-    return r == COMPARE_EQUAL;
+    compare_t r(compare(rhs));
+    return r == compare_t::COMPARE_EQUAL;
 }
 
 
@@ -1182,8 +1182,8 @@ bool versioned_filename::operator == (versioned_filename const& rhs) const
  */
 bool versioned_filename::operator != (versioned_filename const& rhs) const
 {
-    int r(compare(rhs));
-    return r == COMPARE_SMALLER || r == COMPARE_LARGER;
+    compare_t r(compare(rhs));
+    return r == compare_t::COMPARE_SMALLER || r == compare_t::COMPARE_LARGER;
 }
 
 
@@ -1201,8 +1201,8 @@ bool versioned_filename::operator != (versioned_filename const& rhs) const
  */
 bool versioned_filename::operator <  (versioned_filename const& rhs) const
 {
-    int r(compare(rhs));
-    return r == COMPARE_SMALLER;
+    compare_t r(compare(rhs));
+    return r == compare_t::COMPARE_SMALLER;
 }
 
 
@@ -1221,8 +1221,8 @@ bool versioned_filename::operator <  (versioned_filename const& rhs) const
  */
 bool versioned_filename::operator <= (versioned_filename const& rhs) const
 {
-    int r(compare(rhs));
-    return r == COMPARE_SMALLER || r == COMPARE_EQUAL;
+    compare_t r(compare(rhs));
+    return r == compare_t::COMPARE_SMALLER || r == compare_t::COMPARE_EQUAL;
 }
 
 
@@ -1240,8 +1240,8 @@ bool versioned_filename::operator <= (versioned_filename const& rhs) const
  */
 bool versioned_filename::operator >  (versioned_filename const& rhs) const
 {
-    int r(compare(rhs));
-    return r > COMPARE_EQUAL;
+    compare_t r(compare(rhs));
+    return r > compare_t::COMPARE_EQUAL;
 }
 
 
@@ -1260,8 +1260,8 @@ bool versioned_filename::operator >  (versioned_filename const& rhs) const
  */
 bool versioned_filename::operator >= (versioned_filename const& rhs) const
 {
-    int r(compare(rhs));
-    return r >= COMPARE_EQUAL;
+    compare_t r(compare(rhs));
+    return r >= compare_t::COMPARE_EQUAL;
 }
 
 
@@ -1404,7 +1404,7 @@ bool dependency::set_dependency(QString const& dependency_string)
             if(*s != '\0')
             {
                 // not end of the version, check for an operator
-                if(vo.get_operator() != OPERATOR_UNORDERED)
+                if(vo.get_operator() != operator_t::OPERATOR_UNORDERED)
                 {
                     f_error = "a version specification in a dependency can only include one operator, two found in \"" + vonly + "\" (missing ',' or ')' maybe?)";
                     return false;
@@ -1422,9 +1422,9 @@ bool dependency::set_dependency(QString const& dependency_string)
                 operator_t const range_op(vo.get_operator());
                 switch(range_op)
                 {
-                case OPERATOR_UNORDERED:
-                case OPERATOR_EQUAL:
-                case OPERATOR_EXCEPT:
+                case operator_t::OPERATOR_UNORDERED:
+                case operator_t::OPERATOR_EQUAL:
+                case operator_t::OPERATOR_EXCEPT:
                     f_error = "unsupported operator \"" + QString(vo.get_operator_string()) + "\" for a range";
                     return false;
 
@@ -1451,56 +1451,56 @@ bool dependency::set_dependency(QString const& dependency_string)
                 }
                 switch(range_op)
                 {
-                case OPERATOR_EARLIER:
-                    vo.set_operator(OPERATOR_LATER);
+                case operator_t::OPERATOR_EARLIER:
+                    vo.set_operator(operator_t::OPERATOR_LATER);
                     v.set_operator(vo);
                     f_versions.push_back(v);
-                    vo.set_operator(OPERATOR_EARLIER);
+                    vo.set_operator(operator_t::OPERATOR_EARLIER);
                     rhs_v.set_operator(vo);
                     f_versions.push_back(rhs_v);
-                    if(v.compare(rhs_v) >= COMPARE_EQUAL)
+                    if(v.compare(rhs_v) >= compare_t::COMPARE_EQUAL)
                     {
                         f_error = "versions are not in the correct order in range \"" + vonly + "\" since " + v.get_version_string() + " >= " + rhs_v.get_version_string();
                         return false;
                     }
                     break;
 
-                case OPERATOR_EARLIER_OR_EQUAL:
-                    vo.set_operator(OPERATOR_LATER_OR_EQUAL);
+                case operator_t::OPERATOR_EARLIER_OR_EQUAL:
+                    vo.set_operator(operator_t::OPERATOR_LATER_OR_EQUAL);
                     v.set_operator(vo);
                     f_versions.push_back(v);
-                    vo.set_operator(OPERATOR_EARLIER_OR_EQUAL);
+                    vo.set_operator(operator_t::OPERATOR_EARLIER_OR_EQUAL);
                     rhs_v.set_operator(vo);
                     f_versions.push_back(rhs_v);
-                    if(v.compare(rhs_v) >= COMPARE_EQUAL)
+                    if(v.compare(rhs_v) >= compare_t::COMPARE_EQUAL)
                     {
                         f_error = "versions are not in the correct order in range \"" + vonly + "\" since " + v.get_version_string() + " >= " + rhs_v.get_version_string();
                         return false;
                     }
                     break;
 
-                case OPERATOR_LATER:
-                    vo.set_operator(OPERATOR_LATER);
+                case operator_t::OPERATOR_LATER:
+                    vo.set_operator(operator_t::OPERATOR_LATER);
                     rhs_v.set_operator(vo);
                     f_versions.push_back(rhs_v);
-                    vo.set_operator(OPERATOR_EARLIER);
+                    vo.set_operator(operator_t::OPERATOR_EARLIER);
                     v.set_operator(vo);
                     f_versions.push_back(v);
-                    if(v.compare(rhs_v) <= COMPARE_EQUAL)
+                    if(v.compare(rhs_v) <= compare_t::COMPARE_EQUAL)
                     {
                         f_error = "versions are not in the correct order in range \"" + vonly + "\" since " + v.get_version_string() + " <= " + rhs_v.get_version_string();
                         return false;
                     }
                     break;
 
-                case OPERATOR_LATER_OR_EQUAL:
-                    vo.set_operator(OPERATOR_LATER_OR_EQUAL);
+                case operator_t::OPERATOR_LATER_OR_EQUAL:
+                    vo.set_operator(operator_t::OPERATOR_LATER_OR_EQUAL);
                     rhs_v.set_operator(vo);
                     f_versions.push_back(rhs_v);
-                    vo.set_operator(OPERATOR_EARLIER_OR_EQUAL);
+                    vo.set_operator(operator_t::OPERATOR_EARLIER_OR_EQUAL);
                     v.set_operator(vo);
                     f_versions.push_back(v);
-                    if(v.compare(rhs_v) <= COMPARE_EQUAL)
+                    if(v.compare(rhs_v) <= compare_t::COMPARE_EQUAL)
                     {
                         f_error = "versions are not in the correct order in range \"" + vonly + "\" since " + v.get_version_string() + " <= " + rhs_v.get_version_string();
                         return false;
@@ -1514,10 +1514,10 @@ bool dependency::set_dependency(QString const& dependency_string)
             }
             else
             {
-                if(vo.get_operator() == OPERATOR_UNORDERED)
+                if(vo.get_operator() == operator_t::OPERATOR_UNORDERED)
                 {
                     // default operator is '>='
-                    vo.set_operator(OPERATOR_LATER_OR_EQUAL);
+                    vo.set_operator(operator_t::OPERATOR_LATER_OR_EQUAL);
                 }
                 v.set_operator(vo);
                 f_versions.push_back(v);

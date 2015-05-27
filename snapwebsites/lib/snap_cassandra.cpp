@@ -111,7 +111,7 @@ void snap_cassandra::init_context()
     if( !context )
     {
         // create a new context
-        QString const context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
+        QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
         SNAP_LOG_INFO("Creating \"")(context_name)("\"...");
         context = f_cassandra->context(context_name);
 
@@ -202,7 +202,7 @@ QtCassandra::QCassandraContext::pointer_t snap_cassandra::get_snap_context()
     // we need to read all the contexts in order to make sure the
     // findContext() works
     f_cassandra->contexts();
-    const QString context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
+    const QString context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     return f_cassandra->findContext(context_name);
 }
 

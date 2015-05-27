@@ -25,27 +25,27 @@ namespace mimetype
 {
 
 
-//enum name_t
+//enum class name_t
 //{
 //    SNAP_NAME_MIMETYPE_ACCEPTED
 //};
-//char const *get_name(name_t name) __attribute__ ((const));
+//char const * get_name(name_t name) __attribute__ ((const));
 
 
 class mimetype_exception : public snap_exception
 {
 public:
-    mimetype_exception(char const *       what_msg) : snap_exception("mimetype", what_msg) {}
-    mimetype_exception(std::string const& what_msg) : snap_exception("mimetype", what_msg) {}
-    mimetype_exception(QString const&     what_msg) : snap_exception("mimetype", what_msg) {}
+    mimetype_exception(char const *        what_msg) : snap_exception("mimetype", what_msg) {}
+    mimetype_exception(std::string const & what_msg) : snap_exception("mimetype", what_msg) {}
+    mimetype_exception(QString const &     what_msg) : snap_exception("mimetype", what_msg) {}
 };
 
 class mimetype_exception_invalid_content_xml : public mimetype_exception
 {
 public:
-    mimetype_exception_invalid_content_xml(char const *       what_msg) : mimetype_exception(what_msg) {}
-    mimetype_exception_invalid_content_xml(std::string const& what_msg) : mimetype_exception(what_msg) {}
-    mimetype_exception_invalid_content_xml(QString const&     what_msg) : mimetype_exception(what_msg) {}
+    mimetype_exception_invalid_content_xml(char const *        what_msg) : mimetype_exception(what_msg) {}
+    mimetype_exception_invalid_content_xml(std::string const & what_msg) : mimetype_exception(what_msg) {}
+    mimetype_exception_invalid_content_xml(QString const &     what_msg) : mimetype_exception(what_msg) {}
 };
 
 
@@ -64,12 +64,12 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
-    void                on_bootstrap(snap_child *snap);
+    void                on_bootstrap(snap_child * snap);
 
 private:
     void                content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t                  f_snap;
+    zpsnap_child_t      f_snap;
 };
 
 

@@ -24,27 +24,27 @@ namespace versions
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_VERSIONS_VERSION
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class versions_exception : public snap_exception
 {
 public:
-    versions_exception(char const *       what_msg) : snap_exception("versions", what_msg) {}
-    versions_exception(std::string const& what_msg) : snap_exception("versions", what_msg) {}
-    versions_exception(QString const&     what_msg) : snap_exception("versions", what_msg) {}
+    versions_exception(char const *        what_msg) : snap_exception("versions", what_msg) {}
+    versions_exception(std::string const & what_msg) : snap_exception("versions", what_msg) {}
+    versions_exception(QString const &     what_msg) : snap_exception("versions", what_msg) {}
 };
 
 class versions_exception_invalid_content_xml : public versions_exception
 {
 public:
-    versions_exception_invalid_content_xml(char const *       what_msg) : versions_exception(what_msg) {}
-    versions_exception_invalid_content_xml(std::string const& what_msg) : versions_exception(what_msg) {}
-    versions_exception_invalid_content_xml(QString const&     what_msg) : versions_exception(what_msg) {}
+    versions_exception_invalid_content_xml(char const *        what_msg) : versions_exception(what_msg) {}
+    versions_exception_invalid_content_xml(std::string const & what_msg) : versions_exception(what_msg) {}
+    versions_exception_invalid_content_xml(QString const &     what_msg) : versions_exception(what_msg) {}
 };
 
 
@@ -63,16 +63,16 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                on_bootstrap(snap_child * snap);
+    void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
 
-    SNAP_SIGNAL_WITH_MODE(versions_libraries, (filter::filter::token_info_t& token), (token), START_AND_DONE);
-    SNAP_SIGNAL_WITH_MODE(versions_tools, (filter::filter::token_info_t& token), (token), START_AND_DONE);
+    SNAP_SIGNAL_WITH_MODE(versions_libraries, (filter::filter::token_info_t & token), (token), START_AND_DONE);
+    SNAP_SIGNAL_WITH_MODE(versions_tools, (filter::filter::token_info_t & token), (token), START_AND_DONE);
 
 private:
     void                content_update(int64_t variables_timestamp);
 
-    zpsnap_child_t                  f_snap;
+    zpsnap_child_t      f_snap;
 };
 
 

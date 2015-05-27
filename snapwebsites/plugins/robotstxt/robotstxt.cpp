@@ -40,24 +40,24 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_ROBOTSTXT_FORBIDDEN_PATH:
+    case name_t::SNAP_NAME_ROBOTSTXT_FORBIDDEN_PATH:
         return "types/taxonomy/system/robotstxt/forbidden";
 
-    case SNAP_NAME_ROBOTSTXT_FORBIDDEN:
+    case name_t::SNAP_NAME_ROBOTSTXT_FORBIDDEN:
         return "robotstxt::forbidden";
 
-    case SNAP_NAME_ROBOTSTXT_NOARCHIVE:
+    case name_t::SNAP_NAME_ROBOTSTXT_NOARCHIVE:
         return "robotstxt::noarchive";
 
-    case SNAP_NAME_ROBOTSTXT_NOFOLLOW:
+    case name_t::SNAP_NAME_ROBOTSTXT_NOFOLLOW:
         return "robotstxt::nofollow";
 
-    case SNAP_NAME_ROBOTSTXT_NOINDEX:
+    case name_t::SNAP_NAME_ROBOTSTXT_NOINDEX:
         return "robotstxt::noindex";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_ROBOTSTXT_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_ROBOTSTXT_...");
 
     }
     NOTREACHED();
@@ -298,8 +298,8 @@ bool robotstxt::generate_robotstxt_impl(robotstxt *r)
     //r->add_robots_txt_field("/admin/");
 
     content::path_info_t forbidden_ipath;
-    forbidden_ipath.set_path(get_name(SNAP_NAME_ROBOTSTXT_FORBIDDEN_PATH));
-    links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_FORBIDDEN), false, forbidden_ipath.get_key(), forbidden_ipath.get_branch());
+    forbidden_ipath.set_path(get_name(name_t::SNAP_NAME_ROBOTSTXT_FORBIDDEN_PATH));
+    links::link_info robots_info(get_name(name_t::SNAP_NAME_ROBOTSTXT_FORBIDDEN), false, forbidden_ipath.get_key(), forbidden_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
     links::link_info robots_txt;
     while(link_ctxt->next_link(robots_txt))
@@ -400,7 +400,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
         {
 // linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
 // <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>
-            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOINDEX), true, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(name_t::SNAP_NAME_ROBOTSTXT_NOINDEX), true, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -410,7 +410,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             }
         }
         {
-            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOFOLLOW), true, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(name_t::SNAP_NAME_ROBOTSTXT_NOFOLLOW), true, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;
@@ -420,7 +420,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
             }
         }
         {
-            links::link_info robots_info(get_name(SNAP_NAME_ROBOTSTXT_NOARCHIVE), true, ipath.get_key(), ipath.get_branch());
+            links::link_info robots_info(get_name(name_t::SNAP_NAME_ROBOTSTXT_NOARCHIVE), true, ipath.get_key(), ipath.get_branch());
             robots_info.set_branch(ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(robots_info));
             links::link_info robots_txt;

@@ -59,7 +59,7 @@ listener::~listener()
  *
  * \param[in] snap  The child handling this request.
  */
-void listener::on_bootstrap(snap_child *snap)
+void listener::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -195,7 +195,7 @@ void listener::on_process_post(QString const& uri_path)
     {
         // this number must be a valid decimal, integer; it cannot be empty
         // either which is caught by the toInt() function
-        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                 "The number of URI you are listening to is not a valid integer.",
                 QString("Somehow _listener_size is not an integer (%1).").arg(size_str));
         NOTREACHED();
@@ -204,7 +204,7 @@ void listener::on_process_post(QString const& uri_path)
     {
         // this number must be a positive decimal; this is not caught by
         // toInt() [if I may say]
-        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                 "The number of URI you are listening to is negative...",
                 QString("Somehow _listener_size is negative (%1 -> %2).").arg(size_str).arg(max_uri));
         NOTREACHED();

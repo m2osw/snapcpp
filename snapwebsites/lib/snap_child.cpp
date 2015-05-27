@@ -2615,7 +2615,7 @@ bool snap_child::process(int socket)
     {
         // this is a bug! die() on the spot
         // (here we ARE in the child process!)
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "Server Bug", "Your Snap! server detected a serious problem. Please check your logs for more information.", "snap_child::process() was called from the child process.");
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "Server Bug", "Your Snap! server detected a serious problem. Please check your logs for more information.", "snap_child::process() was called from the child process.");
         return false;
     }
 
@@ -2668,8 +2668,8 @@ bool snap_child::process(int socket)
 
 #ifdef DEBUG
 {
-QString const method(snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
-QString const agent(snapenv(get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+QString const agent(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
 SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
 }
 #endif
@@ -2745,7 +2745,7 @@ void snap_child::kill()
 
     ::kill( f_child_pid, SIGTERM );
     int timeout = 5;
-    while( check_status() == SNAP_CHILD_STATUS_RUNNING )
+    while( check_status() == status_t::SNAP_CHILD_STATUS_RUNNING )
     {
         sleep( 1 );
         if( --timeout <= 0 )
@@ -2777,7 +2777,7 @@ snap_child::status_t snap_child::check_status()
     {
         // XXX -- call die() instead
         SNAP_LOG_FATAL("snap_child::check_status() was called from the child process.");
-        return SNAP_CHILD_STATUS_RUNNING;
+        return status_t::SNAP_CHILD_STATUS_RUNNING;
     }
 
     if(f_child_pid != 0)
@@ -2810,7 +2810,7 @@ snap_child::status_t snap_child::check_status()
         }
     }
 
-    return f_child_pid == 0 ? SNAP_CHILD_STATUS_READY : SNAP_CHILD_STATUS_RUNNING;
+    return f_child_pid == 0 ? status_t::SNAP_CHILD_STATUS_READY : status_t::SNAP_CHILD_STATUS_RUNNING;
 }
 
 
@@ -2882,7 +2882,7 @@ void snap_child::read_environment()
 
         void die(QString const& details) const
         {
-            f_snap->die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+            f_snap->die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Unstable network connection",
                 QString("an error occured while reading the environment from the socket in the server child process (%1).").arg(details));
             NOTREACHED();
@@ -3128,7 +3128,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 f_post_content.append(nul);
                 if(!is_valid_utf8(f_post_content.data()))
                 {
-                    f_snap->die(HTTP_CODE_BAD_REQUEST, "Invalid Form Content",
+                    f_snap->die(http_code_t::HTTP_CODE_BAD_REQUEST, "Invalid Form Content",
                         "Your form includes characters that are not compatible with the UTF-8 encoding. Try to avoid special characters and try again. If you are using Internet Explorer, know that older versions may not be compatible with international characters.",
                         "is_valid_utf8() returned false against the user's content");
                     NOTREACHED();
@@ -3194,7 +3194,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 f_post_line.append(nul);
                 if(!is_valid_ascii(f_post_line.data()))
                 {
-                    f_snap->die(HTTP_CODE_BAD_REQUEST, "Invalid Form Content",
+                    f_snap->die(http_code_t::HTTP_CODE_BAD_REQUEST, "Invalid Form Content",
                         "Your multi-part form header includes characters that are not compatible with the ASCII encoding.",
                         "is_valid_ascii() returned false against a line of the user's multipart form header");
                     NOTREACHED();
@@ -3681,7 +3681,7 @@ void snap_child::setup_uri()
     // HOST (domain name including all sub-domains)
     if(f_env.count("HTTP_HOST") != 1)
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                     "HTTP_HOST is required but not defined in your request.",
                     "HTTP_HOST was not defined in the user request");
         NOTREACHED();
@@ -3695,7 +3695,7 @@ void snap_child::setup_uri()
     }
     if(host.isEmpty())
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                     "HTTP_HOST is required but is empty in your request.",
                     "HTTP_HOST was defined but there was no domain name");
         NOTREACHED();
@@ -3705,7 +3705,7 @@ void snap_child::setup_uri()
     // PORT
     if(f_env.count("SERVER_PORT") != 1)
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                     "SERVER_PORT is required but not defined in your request.",
                     "SERVER_PORT was not defined in the user request");
         NOTREACHED();
@@ -3722,7 +3722,7 @@ void snap_child::setup_uri()
     // Although we ignore the URI, it MUST be there
     if(f_env.count("REQUEST_URI") != 1)
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                      "REQUEST_URI is required but not defined in your request.",
                      "REQUEST_URI was not defined in the user's request");
         NOTREACHED();
@@ -3918,7 +3918,7 @@ void snap_child::connect_cassandra()
     // Cassandra already exists?
     if(f_cassandra)
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database is being initialized more than once.",
                 "The connect_cassandra() function cannot be called more than once.");
         NOTREACHED();
@@ -3933,7 +3933,7 @@ void snap_child::connect_cassandra()
     f_cassandra = QtCassandra::QCassandra::create();
     if(!f_cassandra->connect(server->cassandra_host(), server->cassandra_port()))
     {
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database system is temporarilly unavailable.",
                 "Could not connect to Cassandra");
         NOTREACHED();
@@ -3941,12 +3941,12 @@ void snap_child::connect_cassandra()
 
     // select the Snap! context
     f_cassandra->contexts();
-    QString const context_name(get_name(SNAP_NAME_CONTEXT));
+    QString const context_name(get_name(name_t::SNAP_NAME_CONTEXT));
     f_context = f_cassandra->findContext(context_name);
     if(!f_context)
     {
         // we connected to the database, but it is not properly initialized!?
-        die(HTTP_CODE_SERVICE_UNAVAILABLE, "",
+        die(http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE, "",
                 "Our database system does not seem to be properly installed.",
                 QString("The child process connected to Cassandra but it could not find the \"%1\" context.").arg(context_name));
         NOTREACHED();
@@ -4000,7 +4000,7 @@ QtCassandra::QCassandraTable::pointer_t snap_child::create_table(QString const& 
 void snap_child::canonicalize_domain()
 {
     // retrieve domain table
-    QString const table_name(get_name(SNAP_NAME_DOMAINS));
+    QString const table_name(get_name(name_t::SNAP_NAME_DOMAINS));
     QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
     // row for that domain exists?
@@ -4008,17 +4008,17 @@ void snap_child::canonicalize_domain()
     if(!table->exists(f_domain_key))
     {
         // this domain doesn't exist; i.e. that's a 404
-        die(HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_domain_key + "\" which is not defined as a domain.");
+        die(http_code_t::HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_domain_key + "\" which is not defined as a domain.");
         NOTREACHED();
     }
 
     // get the core::rules
-    QtCassandra::QCassandraValue value(table->row(f_domain_key)->cell(QString(get_name(SNAP_NAME_CORE_RULES)))->value());
+    QtCassandra::QCassandraValue value(table->row(f_domain_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_RULES)))->value());
     if(value.nullValue())
     {
         // Null value means an empty string or undefined column and either
         // way it's wrong here
-        die(HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access domain \"" + f_domain_key + "\" which does not have a valid core::rules entry.");
+        die(http_code_t::HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access domain \"" + f_domain_key + "\" which does not have a valid core::rules entry.");
         NOTREACHED();
     }
 
@@ -4128,7 +4128,7 @@ void snap_child::canonicalize_domain()
     }
 
     // no domain match, we're dead meat
-    die(HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "The domain \"" + f_uri.full_domain() + "\" did not match any domain name defined in your Snap! system. Should you remove it from your DNS?");
+    die(http_code_t::HTTP_CODE_NOT_FOUND, "Domain Not Found", "This website does not exist. Please check the URI and make corrections as required.", "The domain \"" + f_uri.full_domain() + "\" did not match any domain name defined in your Snap! system. Should you remove it from your DNS?");
 }
 
 
@@ -4168,24 +4168,24 @@ void snap_child::canonicalize_domain()
 void snap_child::canonicalize_website()
 {
     // retrieve website table
-    QString const table_name(get_name(SNAP_NAME_WEBSITES));
+    QString const table_name(get_name(name_t::SNAP_NAME_WEBSITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->table(table_name));
 
     // row for that website exists?
     if(!table->exists(f_website_key))
     {
         // this website doesn't exist; i.e. that's a 404
-        die(HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_website_key + "\" which was not defined as a website.");
+        die(http_code_t::HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access \"" + f_website_key + "\" which was not defined as a website.");
         NOTREACHED();
     }
 
     // get the core::rules
-    QtCassandra::QCassandraValue value(table->row(f_website_key)->cell(QString(get_name(SNAP_NAME_CORE_RULES)))->value());
+    QtCassandra::QCassandraValue value(table->row(f_website_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_RULES)))->value());
     if(value.nullValue())
     {
         // Null value means an empty string or undefined column and either
         // way it's wrong here
-        die(HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access website \"" + f_website_key + "\" which does not have a valid core::rules entry.");
+        die(http_code_t::HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "User attempt to access website \"" + f_website_key + "\" which does not have a valid core::rules entry.");
         NOTREACHED();
     }
 
@@ -4413,7 +4413,7 @@ void snap_child::canonicalize_website()
     }
 
     // no website match, we're dead meat
-    die(HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "The website \"" + f_website_key + "\" did not match any website defined in your Snap! system. Should you remove it from your DNS?");
+    die(http_code_t::HTTP_CODE_NOT_FOUND, "Website Not Found", "This website does not exist. Please check the URI and make corrections as required.", "The website \"" + f_website_key + "\" did not match any website defined in your Snap! system. Should you remove it from your DNS?");
 }
 
 
@@ -4448,7 +4448,7 @@ void snap_child::canonicalize_options()
     // first take care of the language
 
     // transform the language specified by the browser in an array
-    http_strings::WeightedHttpString languages(snapenv(get_name(SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE)));
+    http_strings::WeightedHttpString languages(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE)));
     http_strings::WeightedHttpString::part_vector_t browser_languages(languages.get_parts());
     if(!browser_languages.isEmpty())
     {
@@ -4554,7 +4554,7 @@ void snap_child::canonicalize_options()
                 else
                 {
                     // refuse branch/revision + rev definitions together
-                    die(HTTP_CODE_BAD_REQUEST, "Invalid Revision",
+                    die(http_code_t::HTTP_CODE_BAD_REQUEST, "Invalid Revision",
                             QString("The revision (%1) is not valid. It is expected to be a branch number, a period (.), and a revision number.").arg(rev),
                             "We found a number of period other than 1 or 2.");
                     NOTREACHED();
@@ -4566,7 +4566,7 @@ void snap_child::canonicalize_options()
     else if(!rev.isEmpty())
     {
         // refuse branch/revision + rev definitions together
-        die(HTTP_CODE_BAD_REQUEST, "Invalid Revision",
+        die(http_code_t::HTTP_CODE_BAD_REQUEST, "Invalid Revision",
                 "You defined a rev parameter along a branch and/or revision, which is not supported. Remove one or the other to access your page.",
                 QString("We only accept a branch+revision (%1.%2) or a rev (%3).").arg(branch).arg(revision).arg(rev));
         NOTREACHED();
@@ -4582,7 +4582,7 @@ void snap_child::canonicalize_options()
         if(!ok)
         {
             // if defined the branch needs to be a valid decimal number
-            die(HTTP_CODE_BAD_REQUEST, "Invalid Branch",
+            die(http_code_t::HTTP_CODE_BAD_REQUEST, "Invalid Branch",
                     QString("Branch number \"%1\" is invalid. Only digits are expected.").arg(branch),
                     "The user did not give us a number as the branch number.");
             NOTREACHED();
@@ -4595,7 +4595,7 @@ void snap_child::canonicalize_options()
         if(!ok)
         {
             // if defined the revision needs to be a valid decimal number
-            die(HTTP_CODE_BAD_REQUEST, "Invalid Revision",
+            die(http_code_t::HTTP_CODE_BAD_REQUEST, "Invalid Revision",
                     QString("Revision number \"%1\" is invalid. Only digits are expected.").arg(revision),
                     "The user did not give us a number as the revision number.");
             NOTREACHED();
@@ -4617,7 +4617,7 @@ void snap_child::canonicalize_options()
     float const deflate_level(encodings.get_level("deflate"));
     if(gzip_level > 0.0f && gzip_level >= deflate_level)
     {
-        compressions.push_back(COMPRESSION_GZIP);
+        compressions.push_back(compression_t::COMPRESSION_GZIP);
         got_gzip = true;
     }
 
@@ -4637,7 +4637,7 @@ void snap_child::canonicalize_options()
             {
                 // if you reach this entry, generate a 406!
                 // this means the user will not accept uncompressed data
-                compressions.push_back(COMPRESSION_INVALID);
+                compressions.push_back(compression_t::COMPRESSION_INVALID);
             }
         }
         else
@@ -4650,28 +4650,28 @@ void snap_child::canonicalize_options()
                 // flag to avoid adding gzip more than once
                 if(!got_gzip)
                 {
-                    compressions.push_back(COMPRESSION_GZIP);
+                    compressions.push_back(compression_t::COMPRESSION_GZIP);
                     got_gzip = true;
                 }
             }
             else if(encoding_name == "deflate")
             {
-                compressions.push_back(COMPRESSION_DEFLATE);
+                compressions.push_back(compression_t::COMPRESSION_DEFLATE);
             }
             else if(encoding_name == "bz2")
             {
                 // not yet implemented though...
-                compressions.push_back(COMPRESSION_BZ2);
+                compressions.push_back(compression_t::COMPRESSION_BZ2);
             }
             else if(encoding_name == "sdch")
             {
                 // not yet implemented though...
-                compressions.push_back(COMPRESSION_SDCH);
+                compressions.push_back(compression_t::COMPRESSION_SDCH);
             }
             else if(encoding_name == "identity")
             {
                 // identity is acceptable
-                compressions.push_back(COMPRESSION_IDENTITY);
+                compressions.push_back(compression_t::COMPRESSION_IDENTITY);
             }
             // else -- we do not support yet...
         }
@@ -4731,7 +4731,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
             if(generate_errors)
             {
                 // we do not accept entries such as "br-" or "ru_"
-                die(HTTP_CODE_BAD_REQUEST, "Country Defined Twice",
+                die(http_code_t::HTTP_CODE_BAD_REQUEST, "Country Defined Twice",
                         QString("Country is defined twice.").arg(lang).arg(c),
                         "This one may be a programmer mistake. The country parameter was not an empty string on entry of this function.");
                 NOTREACHED();
@@ -4746,7 +4746,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
             if(generate_errors)
             {
                 // we do not accept entries such as "-br" or "_RU"
-                die(HTTP_CODE_NOT_FOUND, "Language Not Found",
+                die(http_code_t::HTTP_CODE_NOT_FOUND, "Language Not Found",
                         QString("Language in the locale specification \"%1\" is not defined which is not supported.").arg(lang),
                         "Prevented user from accessing the website with no language specified, even though he specified a language entry.");
                 NOTREACHED();
@@ -4758,7 +4758,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
             if(generate_errors)
             {
                 // we do not accept entries such as "br-" or "ru_"
-                die(HTTP_CODE_NOT_FOUND, "Country Not Found",
+                die(http_code_t::HTTP_CODE_NOT_FOUND, "Country Not Found",
                         QString("Country in the locale specification \"%1\" is not defined. Remove '%2' if you do not want to include a country.").arg(lang).arg(c),
                         "Prevented user from accessing the website with no country specified, even though he specified a country entry.");
                 NOTREACHED();
@@ -4779,7 +4779,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
             if(generate_errors)
             {
                 // language is not valid; generate an error
-                die(HTTP_CODE_NOT_FOUND, "Language Not Found",
+                die(http_code_t::HTTP_CODE_NOT_FOUND, "Language Not Found",
                         QString("Language in the locale specification \"%1\" is not currently considered a known or valid language name.").arg(lang),
                         "Prevented user from accessing the website with an invalid language.");
                 NOTREACHED();
@@ -4797,7 +4797,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
             if(generate_errors)
             {
                 // charset not supported here for now
-                die(HTTP_CODE_NOT_FOUND, "Country Not Found",
+                die(http_code_t::HTTP_CODE_NOT_FOUND, "Country Not Found",
                         QString("Locale specification \"%1\" seems to include a charset which is not legal at this time.").arg(lang),
                         "Prevented user from accessing the website because a charset was specified with the language.");
                 NOTREACHED();
@@ -4809,7 +4809,7 @@ bool snap_child::verify_locale(QString& lang, QString& country, bool generate_er
             if(generate_errors)
             {
                 // abbreviation not found
-                die(HTTP_CODE_NOT_FOUND, "Country Not Found",
+                die(http_code_t::HTTP_CODE_NOT_FOUND, "Country Not Found",
                         QString("Country in locale specification \"%1\" does not look like a valid country name.").arg(lang),
                         "Prevented user from accessing the website with an invalid country.");
                 NOTREACHED();
@@ -4958,7 +4958,7 @@ bool snap_child::verify_country_name(QString& country)
  */
 void snap_child::site_redirect()
 {
-    QtCassandra::QCassandraValue redirect(get_site_parameter(get_name(SNAP_NAME_CORE_REDIRECT)));
+    QtCassandra::QCassandraValue redirect(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_REDIRECT)));
     if(redirect.nullValue())
     {
         // no redirect
@@ -5016,17 +5016,17 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
 {
     if(f_site_key_with_slash.isEmpty())
     {
-        die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Initialization Mismatch",
+        die(http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR, "Initialization Mismatch",
                 "An internal server error was detected while initializing the process.",
                 "The server snap_child::page_redirect() function was called before the website got canonicalized.");
         NOTREACHED();
     }
-    QString const method(snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+    QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
     if(method != "GET"
     && method != "POST"
     && method != "HEAD")
     {
-        die(HTTP_CODE_FORBIDDEN, "Method Not Allowed",
+        die(http_code_t::HTTP_CODE_FORBIDDEN, "Method Not Allowed",
                 QString("Prevented a redirect when using method %1.").arg(method),
                 "We do not currently support redirecting users for methods other than GET, POST, and HEAD.");
         NOTREACHED();
@@ -5037,7 +5037,7 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
         // if the path includes a \n or \r then the user could inject
         // a header which could have all sorts of effects we don't even
         // want to think about! just deny it...
-        die(HTTP_CODE_INTERNAL_SERVER_ERROR, "Hack Prevention",
+        die(http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR, "Hack Prevention",
                 "Server prevented a potential hack from being applied.",
                 "The server snap_child::page_redirect() function was called with a path that includes \n or \r and refused processing it: \"" + path + "\"");
         NOTREACHED();
@@ -5051,7 +5051,7 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
         canonicalize_path(local_path);
         if(!uri.set_uri(get_site_key_with_slash() + local_path))
         {
-            die(HTTP_CODE_ACCESS_DENIED, "Invalid URI",
+            die(http_code_t::HTTP_CODE_ACCESS_DENIED, "Invalid URI",
                     "The server prevented a redirect because it could not understand the destination URI.",
                     "The server snap_child::page_redirect() function was called with a path that it did not like: \"" + path + "\"");
             NOTREACHED();
@@ -5078,7 +5078,7 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
 
     // also the default is already text/html we force it again in case this
     // function is called after someone changed this header
-    set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
+    set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
 
     // compute the body ahead so we can get its size
     // (should we support getting the content of a page? since 99.9999% of
@@ -5094,7 +5094,7 @@ void snap_child::page_redirect(QString const& path, http_code_t http_code, QStri
             "<meta name=\"ROBOTS\" content=\"NOINDEX\"/>" // no need for the NOFOLLOW on this one
             "</head><body><h1>%2</h1><p>%3. New location: "
             "<a href=\"%4\">%4</a>.</p></body></html>")
-        .arg(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
+        .arg(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
         .arg(reason_brief)
         .arg(reason)
         .arg(uri.get_uri()));
@@ -5168,7 +5168,7 @@ bool snap_child::load_file(post_file_t& file)
  */
 QString snap_child::snapenv(QString const& name) const
 {
-    if(name == get_name(SNAP_NAME_CORE_SERVER_PROTOCOL))
+    if(name == get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL))
     {
         // SERVER PROTOCOL
         if(false == f_fixed_server_protocol)
@@ -5176,24 +5176,24 @@ QString snap_child::snapenv(QString const& name) const
             f_fixed_server_protocol = true;
             // Drupal does the following
             // TBD can the SERVER_PROTOCOL really be wrong?
-            if(f_env.count(get_name(SNAP_NAME_CORE_SERVER_PROTOCOL)) != 1)
+            if(f_env.count(get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL)) != 1)
             {
                 // if undefined, set a default protocol
-                const_cast<snap_child *>(this)->f_env[get_name(SNAP_NAME_CORE_SERVER_PROTOCOL)] = "HTTP/1.0";
+                const_cast<snap_child *>(this)->f_env[get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL)] = "HTTP/1.0";
             }
             else
             {
                 // note that HTTP/0.9 could be somewhat supported but that's
                 // most certainly totally useless
-                if("HTTP/1.0" != f_env.value(get_name(SNAP_NAME_CORE_SERVER_PROTOCOL))
-                && "HTTP/1.1" != f_env.value(get_name(SNAP_NAME_CORE_SERVER_PROTOCOL)))
+                if("HTTP/1.0" != f_env.value(get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL))
+                && "HTTP/1.1" != f_env.value(get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL)))
                 {
                     // environment is no good!?
-                    const_cast<snap_child *>(this)->f_env[get_name(SNAP_NAME_CORE_SERVER_PROTOCOL)] = "HTTP/1.0";
+                    const_cast<snap_child *>(this)->f_env[get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL)] = "HTTP/1.0";
                 }
             }
         }
-        return f_env.value(get_name(SNAP_NAME_CORE_SERVER_PROTOCOL), "HTTP/1.0");
+        return f_env.value(get_name(name_t::SNAP_NAME_CORE_SERVER_PROTOCOL), "HTTP/1.0");
     }
 
     return f_env.value(name, "");
@@ -5496,7 +5496,7 @@ QtCassandra::QCassandraValue snap_child::get_site_parameter(const QString& name)
     // retrieve site table if not there yet
     if(!f_site_table)
     {
-        QString const table_name(get_name(SNAP_NAME_SITES));
+        QString const table_name(get_name(name_t::SNAP_NAME_SITES));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
         if(!table)
         {
@@ -5551,18 +5551,18 @@ void snap_child::set_site_parameter(QString const& name, QtCassandra::QCassandra
         }
 
         // create
-        server->create_table(f_context, get_name(SNAP_NAME_SITES), "List of sites with their global parameters.");
+        server->create_table(f_context, get_name(name_t::SNAP_NAME_SITES), "List of sites with their global parameters.");
 
         // get the pointer after synchronization
-        f_site_table = server->create_table(f_context, get_name(SNAP_NAME_SITES), "List of sites with their global parameters.");
+        f_site_table = server->create_table(f_context, get_name(name_t::SNAP_NAME_SITES), "List of sites with their global parameters.");
 
         // mandatory field if this is not the first field being written
         //
         // TODO: this "mandatory field" is incorrect because only one
         //       website gets to create this table...
-        if(name != get_name(SNAP_NAME_CORE_SITE_NAME))
+        if(name != get_name(name_t::SNAP_NAME_CORE_SITE_NAME))
         {
-            f_site_table->row(f_site_key)->cell(QString(get_name(SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
+            f_site_table->row(f_site_key)->cell(QString(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)))->setValue(QString("Website Name"));
         }
     }
 
@@ -5790,7 +5790,7 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
             // content type is HTML, we reset this header because it could have
             // been changed to something else and prevent the error from showing
             // up in the browser
-            set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
+            set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER),
                        "text/html; charset=utf8",
                        HEADER_MODE_EVERYWHERE);
 
@@ -5809,7 +5809,7 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
                 //       page so that way it can get a translated message
                 //       (only for some 4XX errors though)
 
-                QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(SNAP_NAME_CORE_SITE_NAME)));
+                QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
                 signature = QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue());
                 server->improve_signature(f_uri.path(), signature);
             }
@@ -5827,7 +5827,7 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
                             "<title>Snap Server Error</title>"
                             "</head>"
                             "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
-                    .arg(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
+                    .arg(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
                     .arg(static_cast<int>(err_code))
                     .arg(err_name)
                     .arg(err_description)
@@ -5863,88 +5863,95 @@ void snap_child::define_http_name(http_code_t http_code, QString& http_name)
     {
         switch(http_code)
         {
-        case 100: http_name = "Continue"; break;
-        case 101: http_name = "Switching Protocols"; break;
-        case 102: http_name = "Processing"; break;
+        // 1xx
+        case http_code_t::HTTP_CODE_CONTINUE:                               http_name = "Continue"; break;
+        case http_code_t::HTTP_CODE_SWITCHING_PROTOCOLS:                    http_name = "Switching Protocols"; break;
+        case http_code_t::HTTP_CODE_PROCESSING:                             http_name = "Processing"; break;
 
-        case 200: http_name = "OK"; break;
-        case 201: http_name = "Created"; break;
-        case 202: http_name = "Accepted"; break;
-        case 203: http_name = "Non-Authoritative Information"; break;
-        case 204: http_name = "No Content"; break;
-        case 205: http_name = "Reset Content"; break;
-        case 206: http_name = "Partial Content"; break;
-        case 207: http_name = "Multi-Status"; break;
-        case 208: http_name = "Already Reported"; break;
-        case 226: http_name = "Instance-Manipulation Used"; break;
+        // 2xx
+        case http_code_t::HTTP_CODE_OK:                                     http_name = "OK"; break;
+        case http_code_t::HTTP_CODE_CREATED:                                http_name = "Created"; break;
+        case http_code_t::HTTP_CODE_ACCEPTED:                               http_name = "Accepted"; break;
+        case http_code_t::HTTP_CODE_NON_AUTHORITATIVE_INFORMATION:          http_name = "Non-Authoritative Information"; break;
+        case http_code_t::HTTP_CODE_NO_CONTENT:                             http_name = "No Content"; break;
+        case http_code_t::HTTP_CODE_RESET_CONTENT:                          http_name = "Reset Content"; break;
+        case http_code_t::HTTP_CODE_PARTIAL_CONTENT:                        http_name = "Partial Content"; break;
+        case http_code_t::HTTP_CODE_MULTI_STATUS:                           http_name = "Multi-Status"; break;
+        case http_code_t::HTTP_CODE_ALREADY_REPORTED:                       http_name = "Already Reported"; break;
+        case http_code_t::HTTP_CODE_IM_USED:                                http_name = "Instance-Manipulation Used"; break;
 
-        case 300: http_name = "Multiple Choice"; break;
-        case 301: http_name = "Moved Permanently"; break;
-        case 302: http_name = "Found"; break;
-        case 303: http_name = "See Other"; break; // POST becomes GET
-        case 304: http_name = "Not Modified"; break;
-        case 305: http_name = "Use Proxy"; break;
-        case 306: http_name = "Switch Proxy"; break;
-        case 307: http_name = "Temporary Redirect"; break; // keep same method
-        case 308: http_name = "Permanent Redirect"; break; // keep same method
+        // 3xx
+        case http_code_t::HTTP_CODE_MULTIPLE_CHOICE:                        http_name = "Multiple Choice"; break;
+        case http_code_t::HTTP_CODE_MOVED_PERMANENTLY:                      http_name = "Moved Permanently"; break;
+        case http_code_t::HTTP_CODE_FOUND:                                  http_name = "Found"; break;
+        case http_code_t::HTTP_CODE_SEE_OTHER:                              http_name = "See Other"; break; // POST becomes GET
+        case http_code_t::HTTP_CODE_NOT_MODIFIED:                           http_name = "Not Modified"; break;
+        case http_code_t::HTTP_CODE_USE_PROXY:                              http_name = "Use Proxy"; break;
+        case http_code_t::HTTP_CODE_SWITCH_PROXY:                           http_name = "Switch Proxy"; break;
+        case http_code_t::HTTP_CODE_TEMPORARY_REDIRECT:                     http_name = "Temporary Redirect"; break; // keep same method
+        case http_code_t::HTTP_CODE_PERMANENT_REDIRECT:                     http_name = "Permanent Redirect"; break; // keep same method
 
-        case 400: http_name = "Bad Request"; break;
-        case 401: http_name = "Unauthorized"; break;
-        case 402: http_name = "Payment Required"; break;
-        case 403: http_name = "Forbidden"; break;
-        case 404: http_name = "Not Found"; break;
-        case 405: http_name = "Method Not Allowed"; break;
-        case 406: http_name = "Not Acceptable"; break;
-        case 407: http_name = "Proxy Authentication Required"; break;
-        case 408: http_name = "Request Timeout"; break;
-        case 409: http_name = "Conflict"; break;
-        case 410: http_name = "Gone"; break;
-        case 411: http_name = "Length Required"; break;
-        case 412: http_name = "Precondition Failed"; break;
-        case 413: http_name = "Request Entity Too Large"; break;
-        case 414: http_name = "Request-URI Too Long"; break;
-        case 415: http_name = "Unsupported Media Type"; break;
-        case 416: http_name = "Requested Range Not Satisfiable"; break;
-        case 417: http_name = "Expectation Failed"; break;
-        case 418: http_name = "I'm a teapot"; break;
-        case 420: http_name = "Enhance Your Calm"; break;
-        case 422: http_name = "Unprocessable Entity"; break;
-        case 423: http_name = "Locked"; break;
-        case 424: http_name = "Failed Dependency"; break;
-        //case 424: http_name = "Method Failure"; break;
-        case 425: http_name = "Unordered Collection"; break;
-        case 426: http_name = "Upgrade Required"; break;
-        case 428: http_name = "Precondition Required"; break;
-        case 429: http_name = "Too Many Requests"; break;
-        case 431: http_name = "Request Header Fields Too Large"; break;
-        case 444: http_name = "No Response"; break;
-        case 449: http_name = "Retry With"; break;
-        case 450: http_name = "Blocked by Windows Parental Controls"; break;
-        case 451: http_name = "Unavailable For Legal Reasons"; break;
-        //case 451: http_name = "Redirect"; break;
-        case 494: http_name = "Request Header Too Large"; break;
-        case 495: http_name = "Cert Error"; break;
-        case 496: http_name = "No Cert"; break;
-        case 497: http_name = "HTTP to HTTPS"; break;
-        case 499: http_name = "Client Closed Request"; break;
+        // 4xx
+        case http_code_t::HTTP_CODE_BAD_REQUEST:                            http_name = "Bad Request"; break;
+        case http_code_t::HTTP_CODE_UNAUTHORIZED:                           http_name = "Unauthorized"; break;
+        case http_code_t::HTTP_CODE_PAYMENT_REQUIRED:                       http_name = "Payment Required"; break;
+        case http_code_t::HTTP_CODE_FORBIDDEN:                              http_name = "Forbidden"; break;
+        case http_code_t::HTTP_CODE_NOT_FOUND:                              http_name = "Not Found"; break;
+        case http_code_t::HTTP_CODE_METHOD_NOT_ALLOWED:                     http_name = "Method Not Allowed"; break;
+        case http_code_t::HTTP_CODE_NOT_ACCEPTABLE:                         http_name = "Not Acceptable"; break;
+        case http_code_t::HTTP_CODE_PROXY_AUTHENTICATION_REQUIRED:          http_name = "Proxy Authentication Required"; break;
+        case http_code_t::HTTP_CODE_REQUEST_TIMEOUT:                        http_name = "Request Timeout"; break;
+        case http_code_t::HTTP_CODE_CONFLICT:                               http_name = "Conflict"; break;
+        case http_code_t::HTTP_CODE_GONE:                                   http_name = "Gone"; break;
+        case http_code_t::HTTP_CODE_LENGTH_REQUIRED:                        http_name = "Length Required"; break;
+        case http_code_t::HTTP_CODE_PRECONDITION_FAILED:                    http_name = "Precondition Failed"; break;
+        case http_code_t::HTTP_CODE_REQUEST_ENTITY_TOO_LARGE:               http_name = "Request Entity Too Large"; break;
+        case http_code_t::HTTP_CODE_REQUEST_URI_TOO_LONG:                   http_name = "Request-URI Too Long"; break;
+        case http_code_t::HTTP_CODE_UNSUPPORTED_MEDIA_TYPE:                 http_name = "Unsupported Media Type"; break;
+        case http_code_t::HTTP_CODE_REQUESTED_RANGE_NOT_SATISFIABLE:        http_name = "Requested Range Not Satisfiable"; break;
+        case http_code_t::HTTP_CODE_EXPECTATION_FAILED:                     http_name = "Expectation Failed"; break;
+        case http_code_t::HTTP_CODE_I_AM_A_TEAPOT:                          http_name = "I'm a teapot"; break;
+        case http_code_t::HTTP_CODE_ENHANCE_YOUR_CALM:                      http_name = "Enhance Your Calm"; break;
+        //case http_code_t::HTTP_CODE_METHOD_FAILURE:                         http_name = "Method Failure"; break;
+        case http_code_t::HTTP_CODE_UNPROCESSABLE_ENTITY:                   http_name = "Unprocessable Entity"; break;
+        case http_code_t::HTTP_CODE_LOCKED:                                 http_name = "Locked"; break;
+        case http_code_t::HTTP_CODE_FAILED_DEPENDENCY:                      http_name = "Failed Dependency"; break;
+        case http_code_t::HTTP_CODE_UNORDERED_COLLECTION:                   http_name = "Unordered Collection"; break;
+        case http_code_t::HTTP_CODE_UPGRADE_REQUIRED:                       http_name = "Upgrade Required"; break;
+        case http_code_t::HTTP_CODE_PRECONDITION_REQUIRED:                  http_name = "Precondition Required"; break;
+        case http_code_t::HTTP_CODE_TOO_MANY_REQUESTS:                      http_name = "Too Many Requests"; break;
+        case http_code_t::HTTP_CODE_REQUEST_HEADER_FIELDS_TOO_LARGE:        http_name = "Request Header Fields Too Large"; break;
+        case http_code_t::HTTP_CODE_NO_RESPONSE:                            http_name = "No Response"; break;
+        case http_code_t::HTTP_CODE_RETRY_WITH:                             http_name = "Retry With"; break;
+        case http_code_t::HTTP_CODE_BLOCKED_BY_WINDOWS_PARENTAL_CONTROLS:   http_name = "Blocked by Windows Parental Controls"; break;
+        case http_code_t::HTTP_CODE_UNAVAILABLE_FOR_LEGAL_REASONS:          http_name = "Unavailable For Legal Reasons"; break;
+        //case http_code_t::HTTP_CODE_REDIRECT:                               http_name = "Redirect"; break;
+        case http_code_t::HTTP_CODE_REQUEST_HEADER_TOO_LARGE:               http_name = "Request Header Too Large"; break;
+        case http_code_t::HTTP_CODE_CERT_ERROR:                             http_name = "Cert Error"; break;
+        case http_code_t::HTTP_CODE_NO_CERT:                                http_name = "No Cert"; break;
+        case http_code_t::HTTP_CODE_HTTP_TO_HTTPS:                          http_name = "HTTP to HTTPS"; break;
+        case http_code_t::HTTP_CODE_TOKEN_EXPIRED:                          http_name = "Token Expired"; break;
+        case http_code_t::HTTP_CODE_CLIENT_CLOSED_REQUEST:                  http_name = "Client Closed Request"; break;
+        //case http_code_t::HTTP_CODE_TOKEN_REQUIRED:                         http_name = "Token Required"; break;
 
-        case 500: http_name = "Internal Server Error"; break;
-        case 501: http_name = "Not Implemented"; break;
-        case 502: http_name = "Bad Gateway"; break;
-        case 503: http_name = "Service Unavailable"; break;
-        case 504: http_name = "Gateway Timeout"; break;
-        case 505: http_name = "HTTP Version Not Supported"; break;
-        case 506: http_name = "Variants Also Negotiates"; break;
-        case 507: http_name = "Insufficiant Storage"; break;
-        case 508: http_name = "Loop Detected"; break;
-        case 509: http_name = "Bandwidth Limit Exceeded"; break;
-        case 510: http_name = "Not Extended"; break;
-        case 511: http_name = "Network Authentication Required"; break;
-        case 531: http_name = "Access Denied"; break;
-        case 598: http_name = "Network read timeout error"; break;
-        case 599: http_name = "Network connect timeout error"; break;
+        // 5xx
+        case http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR:                  http_name = "Internal Server Error"; break;
+        case http_code_t::HTTP_CODE_NOT_IMPLEMENTED:                        http_name = "Not Implemented"; break;
+        case http_code_t::HTTP_CODE_BAD_GATEWAY:                            http_name = "Bad Gateway"; break;
+        case http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE:                    http_name = "Service Unavailable"; break;
+        case http_code_t::HTTP_CODE_GATEWAY_TIMEOUT:                        http_name = "Gateway Timeout"; break;
+        case http_code_t::HTTP_CODE_HTTP_VERSION_NOT_SUPPORTED:             http_name = "HTTP Version Not Supported"; break;
+        case http_code_t::HTTP_CODE_VARIANTS_ALSO_NEGOTIATES:               http_name = "Variants Also Negotiates"; break;
+        case http_code_t::HTTP_CODE_INSUFFICIANT_STORAGE:                   http_name = "Insufficiant Storage"; break;
+        case http_code_t::HTTP_CODE_LOOP_DETECTED:                          http_name = "Loop Detected"; break;
+        case http_code_t::HTTP_CODE_BANDWIDTH_LIMIT_EXCEEDED:               http_name = "Bandwidth Limit Exceeded"; break;
+        case http_code_t::HTTP_CODE_NOT_EXTENDED:                           http_name = "Not Extended"; break;
+        case http_code_t::HTTP_CODE_NETWORK_AUTHENTICATION_REQUIRED:        http_name = "Network Authentication Required"; break;
+        case http_code_t::HTTP_CODE_ACCESS_DENIED:                          http_name = "Access Denied"; break;
+        case http_code_t::HTTP_CODE_NETWORK_READ_TIMEOUT_ERROR:             http_name = "Network read timeout error"; break;
+        case http_code_t::HTTP_CODE_NETWORK_CONNECT_TIMEOUT_ERROR:          http_name = "Network connect timeout error"; break;
 
-        default:
+        default: // plugins can always use other codes
             http_name = "Unknown HTTP Code";
             break;
 
@@ -6413,7 +6420,7 @@ QStringList snap_child::init_plugins(bool const add_defaults)
     if(site_plugins.isEmpty())
     {
         // maybe user defined his list of plugins in his website
-        QtCassandra::QCassandraValue plugins(get_site_parameter(get_name(SNAP_NAME_CORE_PLUGINS)));
+        QtCassandra::QCassandraValue plugins(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_PLUGINS)));
         site_plugins = plugins.stringValue();
         if(site_plugins.isEmpty())
         {
@@ -6453,7 +6460,7 @@ QStringList snap_child::init_plugins(bool const add_defaults)
     {
         // Sanity check
         //
-        die( HTTP_CODE_SERVICE_UNAVAILABLE
+        die( http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE
            , "Plugin path not configured"
            , "Server cannot find any plugins because the path is not properly configured."
            , "An error occured loading the server plugins."
@@ -6463,7 +6470,7 @@ QStringList snap_child::init_plugins(bool const add_defaults)
 
     if(!snap::plugins::load(plugins_path, std::static_pointer_cast<snap::plugins::plugin>(server), list_of_plugins))
     {
-        die( HTTP_CODE_SERVICE_UNAVAILABLE
+        die( http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE
            , "Plugin Unavailable"
            , "Server encountered problems with its plugins."
            , "An error occured loading the server plugins."
@@ -6520,7 +6527,7 @@ QStringList snap_child::init_plugins(bool const add_defaults)
 void snap_child::update_plugins(QStringList const& list_of_plugins)
 {
     // system updates run at most once every 10 minutes
-    QString const core_last_updated(get_name(SNAP_NAME_CORE_LAST_UPDATED));
+    QString const core_last_updated(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
     QString const param_name(core_last_updated);
     QtCassandra::QCassandraValue last_updated(get_site_parameter(param_name));
     if(last_updated.nullValue())
@@ -6535,7 +6542,7 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
     {
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);
-        QString const core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
+        QString const core_plugin_threshold(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
         set_site_parameter(param_name, last_updated);
         QtCassandra::QCassandraValue threshold(get_site_parameter(core_plugin_threshold));
         if(threshold.nullValue())
@@ -6610,7 +6617,7 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
             gettimeofday(&tv, nullptr);
             int64_t const now = static_cast<int64_t>(tv.tv_sec) * static_cast<int64_t>(1000000)
                               + static_cast<int64_t>(tv.tv_usec);
-            set_site_parameter(get_name(SNAP_NAME_CORE_SITE_READY), now);
+            set_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_READY), now);
         }
     }
 }
@@ -6837,7 +6844,7 @@ void snap_child::execute()
     set_header("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0", HEADER_MODE_EVERYWHERE);
 
     // By default we expect [X]HTML in the output
-    set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
+    set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf-8", HEADER_MODE_EVERYWHERE);
 
     // XXX I moved that up here from just before sending the output because
     //     it seems that all answers should use this flag (because even pages
@@ -6900,7 +6907,7 @@ void snap_child::execute()
         // somehow nothing was output...
         // (that should not happen because the path::on_execute() function
         // checks and generates a Page Not Found on empty content)
-        die(HTTP_CODE_NOT_FOUND, "Page Empty",
+        die(http_code_t::HTTP_CODE_NOT_FOUND, "Page Empty",
             "Somehow this page could not be generated.",
             "the execute() command ran but the output is empty (this is never correct with HTML data, it could be with text/plain responses though)");
         NOTREACHED();
@@ -6974,7 +6981,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
 
     // it looks like some browsers use that one instead of plain "gzip"
     // try both just in case
-    QString const content_type(get_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER)));
+    QString const content_type(get_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER)));
     // at this point we only attempt to compress known text formats
     // (should we instead have a list of mime types that we do not want to
     // compress? before, attempting to compress the "wrong" files would
@@ -7017,7 +7024,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
             if(identity_level == 0.0f)
 #pragma GCC diagnostic pop
             {
-                die(HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
+                die(http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",
                     "Your client requested a compression that we do not offer and it does not accept content without compression.",
                     "a client requested content with Accept-Encoding: identify;q=0 and no other compression we understand");
                 NOTREACHED();
@@ -7044,7 +7051,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
     // IMPORTANT NOTE: it looks like Apache2 removes the body no matter what
     //                 which is probably sensible... if a HEAD is used it is
     //                 not a browser anyway
-    if(snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)) != "HEAD"
+    if(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)) != "HEAD"
     /*|| (modes & HEADER_MODE_NO_ERROR) == 0 -- not working... */)
     {
         write(output_data, output_data.size());
@@ -7400,25 +7407,25 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
 
     switch(date_format)
     {
-    case DATE_FORMAT_SHORT:
+    case date_format_t::DATE_FORMAT_SHORT:
         strftime(buf, sizeof(buf), "%Y-%m-%d", &time_info);
         break;
 
-    case DATE_FORMAT_SHORT_US:
+    case date_format_t::DATE_FORMAT_SHORT_US:
         strftime(buf, sizeof(buf), "%m-%d-%Y", &time_info);
         break;
 
-    case DATE_FORMAT_LONG:
+    case date_format_t::DATE_FORMAT_LONG:
         // TBD do we want the Z when generating time for HTML headers?
         // (it is useful for the sitemap.xml at this point)
         strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", &time_info);
         break;
 
-    case DATE_FORMAT_TIME:
+    case date_format_t::DATE_FORMAT_TIME:
         strftime(buf, sizeof(buf), "%H:%M:%S", &time_info);
         break;
 
-    case DATE_FORMAT_EMAIL:
+    case date_format_t::DATE_FORMAT_EMAIL:
         { // dd MMM yyyy hh:mm:ss +0000
             // do it manually so the date is ALWAYS in English
             return QString("%1 %2 %3 %4:%5:%6 +0000")
@@ -7431,7 +7438,7 @@ QString snap_child::date_to_string(int64_t v, date_format_t date_format)
         }
         break;
 
-    case DATE_FORMAT_HTTP:
+    case date_format_t::DATE_FORMAT_HTTP:
         { // ddd, dd MMM yyyy hh:mm:ss GMT
             // do it manually so the date is ALWAYS in English
             return QString("%1, %2 %3 %4 %5:%6:%7 +0000")

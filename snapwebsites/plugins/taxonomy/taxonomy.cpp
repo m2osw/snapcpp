@@ -45,15 +45,15 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_TAXONOMY_NAME:
+    case name_t::SNAP_NAME_TAXONOMY_NAME:
         return "taxonomy::name";
 
-    case SNAP_NAME_TAXONOMY_NAMESPACE:
+    case name_t::SNAP_NAME_TAXONOMY_NAMESPACE:
         return "taxonomy";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_TAXONOMY_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_TAXONOMY_...");
 
     }
     NOTREACHED();
@@ -223,14 +223,14 @@ QtCassandra::QCassandraValue taxonomy::find_type_with(content::path_info_t& ipat
             return result;
         }
         // have we reached the limit
-        QtCassandra::QCassandraValue limit(row->cell(QString(get_name(SNAP_NAME_TAXONOMY_NAME)))->value());
+        QtCassandra::QCassandraValue limit(row->cell(QString(get_name(name_t::SNAP_NAME_TAXONOMY_NAME)))->value());
         if(!limit.nullValue() && limit.stringValue() == limit_name)
         {
             // we reached the limit and have not found a result
             return not_found;
         }
         // get the parent
-        links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PARENT), true, tpath.get_key(), tpath.get_branch());
+        links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PARENT), true, tpath.get_key(), tpath.get_branch());
         QSharedPointer<links::link_context> ctxt(links::links::instance()->new_link_context(info));
         links::link_info link_info;
         if(!ctxt->next_link(link_info))
@@ -264,7 +264,7 @@ void taxonomy::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, 
 {
     static_cast<void>(destination_branch);
 
-    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(SNAP_NAME_TAXONOMY_NAMESPACE));
+    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_TAXONOMY_NAMESPACE));
 }
 
 

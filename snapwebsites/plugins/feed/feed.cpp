@@ -53,39 +53,39 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_FEED_ADMIN_SETTINGS:
+    case name_t::SNAP_NAME_FEED_ADMIN_SETTINGS:
         return "admin/settings/feed";
 
-    case SNAP_NAME_FEED_AGE:
+    case name_t::SNAP_NAME_FEED_AGE:
         return "feed::age";
 
-    case SNAP_NAME_FEED_ATTACHMENT_TYPE:
+    case name_t::SNAP_NAME_FEED_ATTACHMENT_TYPE:
         return "types/taxonomy/system/content-types/feed/attachment";
 
-    case SNAP_NAME_FEED_DESCRIPTION:
+    case name_t::SNAP_NAME_FEED_DESCRIPTION:
         return "feed::description";
 
-    case SNAP_NAME_FEED_EXTENSION:
+    case name_t::SNAP_NAME_FEED_EXTENSION:
         return "feed::extension";
 
-    case SNAP_NAME_FEED_MIMETYPE:
+    case name_t::SNAP_NAME_FEED_MIMETYPE:
         return "feed::mimetype";
 
-    case SNAP_NAME_FEED_PAGE_LAYOUT:
+    case name_t::SNAP_NAME_FEED_PAGE_LAYOUT:
         return "feed::page_layout";
 
-    case SNAP_NAME_FEED_TITLE:
+    case name_t::SNAP_NAME_FEED_TITLE:
         return "feed::title";
 
-    case SNAP_NAME_FEED_TTL:
+    case name_t::SNAP_NAME_FEED_TTL:
         return "feed::ttl";
 
-    case SNAP_NAME_FEED_TYPE:
+    case name_t::SNAP_NAME_FEED_TYPE:
         return "feed::type";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_FEED_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_FEED_...");
 
     }
     NOTREACHED();
@@ -222,8 +222,8 @@ void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& pa
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
     content::path_info_t attachment_type_ipath;
-    attachment_type_ipath.set_path(get_name(SNAP_NAME_FEED_ATTACHMENT_TYPE));
-    links::link_info feed_info(get_name(SNAP_NAME_FEED_TYPE), false, attachment_type_ipath.get_key(), attachment_type_ipath.get_branch());
+    attachment_type_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_ATTACHMENT_TYPE));
+    links::link_info feed_info(get_name(name_t::SNAP_NAME_FEED_TYPE), false, attachment_type_ipath.get_key(), attachment_type_ipath.get_branch());
     QSharedPointer<links::link_context> feed_ctxt(links::links::instance()->new_link_context(feed_info));
     links::link_info feed_child_info;
     while(feed_ctxt->next_link(feed_child_info))
@@ -232,16 +232,16 @@ void feed::on_generate_page_content(content::path_info_t& ipath, QDomElement& pa
         attachment_ipath.set_path(feed_child_info.key());
 
         QtCassandra::QCassandraRow::pointer_t row(revision_table->row(attachment_ipath.get_revision_key()));
-        QString const mimetype(row->cell(get_name(SNAP_NAME_FEED_MIMETYPE))->value().stringValue());
+        QString const mimetype(row->cell(get_name(name_t::SNAP_NAME_FEED_MIMETYPE))->value().stringValue());
 
         FIELD_SEARCH
-            (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-            (content::field_search::COMMAND_ELEMENT, body)
-            (content::field_search::COMMAND_PATH_INFO_REVISION, attachment_ipath)
+            (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+            (content::field_search::command_t::COMMAND_ELEMENT, body)
+            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, attachment_ipath)
 
-            (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FEED_TITLE))
-            (content::field_search::COMMAND_SELF)
-            (content::field_search::COMMAND_SAVE, QString("formats[href=\"%1\"][type=\"%2\"]").arg(attachment_ipath.get_key()).arg(mimetype))
+            (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_FEED_TITLE))
+            (content::field_search::command_t::COMMAND_SELF)
+            (content::field_search::command_t::COMMAND_SAVE, QString("formats[href=\"%1\"][type=\"%2\"]").arg(attachment_ipath.get_key()).arg(mimetype))
 
             // generate
             ;
@@ -287,7 +287,7 @@ void feed::generate_feeds()
     // the children of this location are the XSLT 2.0 files to convert the
     // data to an actual feed file
     content::path_info_t admin_feed_ipath;
-    admin_feed_ipath.set_path(get_name(SNAP_NAME_FEED_ADMIN_SETTINGS));
+    admin_feed_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_ADMIN_SETTINGS));
     QVector<QString> feed_formats;
 
     int64_t const start_date(f_snap->get_start_date());
@@ -296,11 +296,11 @@ void feed::generate_feeds()
     content::path_info_t ipath;
     ipath.set_path("feed");
     if(!content_table->exists(ipath.get_key())
-    || !content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
+    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
     {
         return;
     }
-    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ipath.get_key(), ipath.get_branch());
+    links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
     while(link_ctxt->next_link(child_info))
@@ -314,7 +314,7 @@ void feed::generate_feeds()
         // TODO: is the page layout directly a feed XSL file or is it
         //       the name to an attachment? (or maybe we should just check
         //       for a specifically named attachment?)
-        QString feed_parser_layout(revision_row->cell(get_name(SNAP_NAME_FEED_PAGE_LAYOUT))->value().stringValue());
+        QString feed_parser_layout(revision_row->cell(get_name(name_t::SNAP_NAME_FEED_PAGE_LAYOUT))->value().stringValue());
         if(feed_parser_layout.isEmpty())
         {
             // already loaded?
@@ -323,7 +323,7 @@ void feed::generate_feeds()
                 QFile file(":/xsl/layout/feed-parser.xsl");
                 if(!file.open(QIODevice::ReadOnly))
                 {
-                    f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Default Feed Layout Unavailable",
                         "Somehow the default feed layout was accessible.",
                         "feed::generate_feeds() could not open the feed-parser.xsl resource file.");
@@ -333,7 +333,7 @@ void feed::generate_feeds()
                 f_feed_parser_xsl = QString::fromUtf8(data.data(), data.size());
                 if(f_feed_parser_xsl.isEmpty())
                 {
-                    f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                    f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Default Feed Layout Empty",
                         "Somehow the default feed layout is empty.",
                         "feed::generate_feeds() could not read the feed-parser.xsl resource file.");
@@ -411,7 +411,7 @@ void feed::generate_feeds()
             QDomXPath::node_vector_t current_description(dom_xpath.apply(result));
             if(current_description.isEmpty())
             {
-                QString const feed_description(revision_row->cell(get_name(SNAP_NAME_FEED_DESCRIPTION))->value().stringValue());
+                QString const feed_description(revision_row->cell(get_name(name_t::SNAP_NAME_FEED_DESCRIPTION))->value().stringValue());
                 QDomElement desc(result.createElement("desc"));
                 metadata_tag.appendChild(desc);
                 desc.setAttribute("type", "description");
@@ -472,7 +472,7 @@ void feed::generate_feeds()
             }
 
             {
-                QtCassandra::QCassandraValue const ttl(revision_row->cell(get_name(SNAP_NAME_FEED_TTL))->value());
+                QtCassandra::QCassandraValue const ttl(revision_row->cell(get_name(name_t::SNAP_NAME_FEED_TTL))->value());
                 if(ttl.size() == sizeof(int64_t))
                 {
                     int64_t const ttl_us(ttl.int64Value());
@@ -500,7 +500,7 @@ void feed::generate_feeds()
             // formats loaded yet?
             if(feed_formats.isEmpty())
             {
-                links::link_info feed_info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, admin_feed_ipath.get_key(), admin_feed_ipath.get_branch());
+                links::link_info feed_info(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN), false, admin_feed_ipath.get_key(), admin_feed_ipath.get_branch());
                 QSharedPointer<links::link_context> feed_link_ctxt(links::links::instance()->new_link_context(feed_info));
                 links::link_info feed_child_info;
                 while(feed_link_ctxt->next_link(feed_child_info))
@@ -690,14 +690,14 @@ void feed::generate_feeds()
                         content::path_info_t attachment_ipath;
                         attachment_ipath.set_path(attachment.get_attachment_cpath());
 
-                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(SNAP_NAME_FEED_TITLE))->setValue(title);
-                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(SNAP_NAME_FEED_EXTENSION))->setValue(extension);
-                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(SNAP_NAME_FEED_MIMETYPE))->setValue(mimetype);
+                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_FEED_TITLE))->setValue(title);
+                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_FEED_EXTENSION))->setValue(extension);
+                        revision_table->row(attachment_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_FEED_MIMETYPE))->setValue(mimetype);
 
                         content::path_info_t type_ipath;
-                        type_ipath.set_path(get_name(SNAP_NAME_FEED_ATTACHMENT_TYPE));
+                        type_ipath.set_path(get_name(name_t::SNAP_NAME_FEED_ATTACHMENT_TYPE));
 
-                        QString const link_name(get_name(SNAP_NAME_FEED_TYPE));
+                        QString const link_name(get_name(name_t::SNAP_NAME_FEED_TYPE));
                         bool const source_unique(true);
                         bool const destination_unique(false);
                         links::link_info source(link_name, source_unique, attachment_ipath.get_key(), attachment_ipath.get_branch());

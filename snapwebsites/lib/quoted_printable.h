@@ -25,8 +25,8 @@ int const QUOTED_PRINTABLE_FLAG_EDBIC          = 0x0002;
 int const QUOTED_PRINTABLE_FLAG_LFONLY         = 0x0004; // many sendmail(1) do not like \r\n somehow
 int const QUOTED_PRINTABLE_FLAG_NO_LONE_PERIOD = 0x0008; // many sendmail(1) do not like \r\n somehow
 
-std::string encode(std::string const& text, int flags = 0);
-std::string decode(std::string const& text);
+std::string encode(std::string const & text, int flags = 0);
+std::string decode(std::string const & text);
 }
 
 // vim: ts=4 sw=4 et

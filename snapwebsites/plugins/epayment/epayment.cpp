@@ -43,90 +43,90 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_EPAYMENT_CANCELED_PATH:
+    case name_t::SNAP_NAME_EPAYMENT_CANCELED_PATH:
         return "epayment/canceled";
 
-    case SNAP_NAME_EPAYMENT_DESCRIPTION:
+    case name_t::SNAP_NAME_EPAYMENT_DESCRIPTION:
         return "epayment::description";
 
-    case SNAP_NAME_EPAYMENT_FAILED_PATH:
+    case name_t::SNAP_NAME_EPAYMENT_FAILED_PATH:
         return "epayment/failed";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS:
         return "epayment::invoice_status";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
         return "abandoned";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
         return "canceled";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
         return "completed";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED:
         return "created";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
         return "failed";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
         return "paid";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING:
         return "pending";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING:
         return "processing";
 
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN:
         return "unknown";
 
-    case SNAP_NAME_EPAYMENT_LONG_DESCRIPTION:
+    case name_t::SNAP_NAME_EPAYMENT_LONG_DESCRIPTION:
         return "epayment::long_description";
 
-    case SNAP_NAME_EPAYMENT_PRICE:
+    case name_t::SNAP_NAME_EPAYMENT_PRICE:
         return "epayment::price";
 
-    case SNAP_NAME_EPAYMENT_PRODUCT:
+    case name_t::SNAP_NAME_EPAYMENT_PRODUCT:
         return "epayment::product";
 
-    case SNAP_NAME_EPAYMENT_PRODUCT_NAME:
+    case name_t::SNAP_NAME_EPAYMENT_PRODUCT_NAME:
         return "epayment::product_name";
 
-    case SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH:
+    case name_t::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH:
         return "types/taxonomy/system/content-types/epayment/product";
 
-    case SNAP_NAME_EPAYMENT_QUANTITY:
+    case name_t::SNAP_NAME_EPAYMENT_QUANTITY:
         return "epayment::quantity";
 
-    case SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM:
+    case name_t::SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM:
         return "epayment::quantity_minimum";
 
-    case SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM:
+    case name_t::SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM:
         return "epayment::quantity_maximum";
 
-    case SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT:
+    case name_t::SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT:
         return "epayment::quantity_increment";
 
-    case SNAP_NAME_EPAYMENT_RECURRING:
+    case name_t::SNAP_NAME_EPAYMENT_RECURRING:
         return "epayment::recurring";
 
-    case SNAP_NAME_EPAYMENT_RECURRING_SETUP_FEE:
+    case name_t::SNAP_NAME_EPAYMENT_RECURRING_SETUP_FEE:
         return "epayment::recurring_setup_fee";
 
-    case SNAP_NAME_EPAYMENT_SKU:
+    case name_t::SNAP_NAME_EPAYMENT_SKU:
         return "epayment::sku";
 
-    case SNAP_NAME_EPAYMENT_THANK_YOU_PATH:
+    case name_t::SNAP_NAME_EPAYMENT_THANK_YOU_PATH:
         return "epayment/thank-you";
 
-    case SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH:
+    case name_t::SNAP_NAME_EPAYMENT_THANK_YOU_SUBSCRIPTION_PATH:
         return "epayment/thank-you-subscription";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_EPAYMENT_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_EPAYMENT_...");
 
     }
     NOTREACHED();
@@ -310,15 +310,15 @@ epayment_product::epayment_product(QString const& product, double const quantity
 {
     // we cannot call the set_property() functions because the product
     // and quantity are marked as "read-only" properties
-    //set_property(get_name(SNAP_NAME_EPAYMENT_PRODUCT), product.toUtf8().data());
+    //set_property(get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT), product.toUtf8().data());
     value_t p(product);
-    f_properties[get_name(SNAP_NAME_EPAYMENT_PRODUCT)] = p;
+    f_properties[get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT)] = p;
 
-    //set_property(get_name(SNAP_NAME_EPAYMENT_QUANTITY), quantity);
+    //set_property(get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY), quantity);
     value_t q(quantity);
-    f_properties[get_name(SNAP_NAME_EPAYMENT_QUANTITY)] = q;
+    f_properties[get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY)] = q;
 
-    set_property(get_name(SNAP_NAME_EPAYMENT_DESCRIPTION), description.toUtf8().data());
+    set_property(get_name(name_t::SNAP_NAME_EPAYMENT_DESCRIPTION), description.toUtf8().data());
 }
 
 
@@ -333,7 +333,7 @@ epayment_product::epayment_product(QString const& product, double const quantity
  * \endcode
  *
  * (if you want to reference the product type, please use the 
- * SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH name instead of the path directly.)
+ * name_t::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH name instead of the path directly.)
  *
  * Note that products can be given many other types, as long as these are
  * defined below the product type path. So if you are selling instruments,
@@ -353,7 +353,7 @@ bool epayment_product::verify_guid() const
         f_verified = verification_t::VERIFICATION_INVALID;
 
         // get the product GUID
-        QString const product(get_string_property(get_name(SNAP_NAME_EPAYMENT_PRODUCT)));
+        QString const product(get_string_property(get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT)));
 
         // a product must exist, so throw if the path is wrong
         // (we may want to think about that twice since this means you
@@ -366,13 +366,13 @@ bool epayment_product::verify_guid() const
             return false;
         }
         f_revision_row = f_revision_table->row(f_product_ipath.get_revision_key());
-        if(!f_revision_row->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
+        if(!f_revision_row->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
         {
             return false;
         }
 
         // Is this GUID pointing to a page representing a product at least?
-        links::link_info product_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, f_product_ipath.get_key(), f_product_ipath.get_branch());
+        links::link_info product_info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, f_product_ipath.get_key(), f_product_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(product_info));
         links::link_info product_child_info;
         if(!link_ctxt->next_link(product_child_info))
@@ -384,8 +384,8 @@ bool epayment_product::verify_guid() const
         // use a path_info_t to retrieve the cpath instead
         content::path_info_t type_ipath;
         type_ipath.set_path(product_child_info.key());
-        if(type_ipath.get_cpath() != get_name(SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)
-        && !type_ipath.get_cpath().startsWith(QString("%1/").arg(get_name(SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH))))
+        if(type_ipath.get_cpath() != get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)
+        && !type_ipath.get_cpath().startsWith(QString("%1/").arg(get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH))))
         {
             return false;
         }
@@ -415,7 +415,7 @@ bool epayment_product::verify_guid() const
  */
 void epayment_product::set_property(QString const& name, QString const& value)
 {
-    if(name == get_name(SNAP_NAME_EPAYMENT_PRODUCT))
+    if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT))
     {
         throw epayment_cannot_set_exception("this property cannot be changed in an epayment_product object");
     }
@@ -442,7 +442,7 @@ void epayment_product::set_property(QString const& name, QString const& value)
  */
 void epayment_product::set_property(QString const& name, int64_t const value)
 {
-    if(name == get_name(SNAP_NAME_EPAYMENT_PRODUCT))
+    if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT))
     {
         throw epayment_cannot_set_exception("this property cannot be changed in an epayment_product object");
     }
@@ -468,7 +468,7 @@ void epayment_product::set_property(QString const& name, int64_t const value)
  */
 void epayment_product::set_property(QString const& name, double const value)
 {
-    if(name == get_name(SNAP_NAME_EPAYMENT_PRODUCT))
+    if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT))
     {
         throw epayment_cannot_set_exception("this property cannot be changed in an epayment_product object");
     }
@@ -492,9 +492,9 @@ void epayment_product::set_property(QString const& name, double const value)
  */
 void epayment_product::unset_property(QString const& name)
 {
-    if(name == get_name(SNAP_NAME_EPAYMENT_PRODUCT)
-    || name == get_name(SNAP_NAME_EPAYMENT_QUANTITY)
-    || name == get_name(SNAP_NAME_EPAYMENT_DESCRIPTION))
+    if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT)
+    || name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY)
+    || name == get_name(name_t::SNAP_NAME_EPAYMENT_DESCRIPTION))
     {
         throw epayment_cannot_unset_exception(QString("property \"%1\" cannot be unset from an epayment_product object").arg(name));
     }
@@ -537,7 +537,7 @@ bool epayment_product::has_property(QString const & name) const
         return true;
     }
 
-    if(name == get_name(SNAP_NAME_EPAYMENT_RECURRING))
+    if(name == get_name(name_t::SNAP_NAME_EPAYMENT_RECURRING))
     {
         if(verify_guid())
         {
@@ -557,9 +557,9 @@ bool epayment_product::has_property(QString const & name) const
 
     // the property is not yet defined, check for some parameters that
     // the epayment system knows how to handle
-    return name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM)
-        || name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM)
-        || name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT);
+    return name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM)
+        || name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM)
+        || name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT);
 }
 
 
@@ -666,10 +666,10 @@ double epayment_product::get_float_property(QString const& name) const
     auto const pos(f_properties.find(name));
     if(pos == f_properties.end())
     {
-        if(name == get_name(SNAP_NAME_EPAYMENT_PRICE)
-        || name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM)
-        || name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM)
-        || name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT))
+        if(name == get_name(name_t::SNAP_NAME_EPAYMENT_PRICE)
+        || name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM)
+        || name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM)
+        || name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT))
         {
             if(verify_guid())
             {
@@ -684,17 +684,17 @@ double epayment_product::get_float_property(QString const& name) const
                     return floating_point;
                 }
             }
-            if(name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM))
+            if(name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_MINIMUM))
             {
                 return 1.0;
             }
-            if(name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM))
+            if(name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_MAXIMUM))
             {
                 // TBD: should we use a max. such as 10,000 or something
                 //      more reasonable than +oo?
                 return std::numeric_limits<double>::infinity();
             }
-            if(name == get_name(SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT))
+            if(name == get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY_INCREMENT))
             {
                 return 1.0;
             }
@@ -717,8 +717,8 @@ double epayment_product::get_float_property(QString const& name) const
  */
 double epayment_product::get_total() const
 {
-    double const price(get_float_property(get_name(SNAP_NAME_EPAYMENT_PRICE)));
-    double const quantity(get_float_property(get_name(SNAP_NAME_EPAYMENT_QUANTITY)));
+    double const price(get_float_property(get_name(name_t::SNAP_NAME_EPAYMENT_PRICE)));
+    double const quantity(get_float_property(get_name(name_t::SNAP_NAME_EPAYMENT_QUANTITY)));
     return price * quantity;
 }
 
@@ -1525,7 +1525,7 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
     QDomDocument doc(header.ownerDocument());
 
     // make sure this is a product, if so, add product fields
-    links::link_info product_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
+    links::link_info product_info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(product_info));
     links::link_info product_child_info;
     if(link_ctxt->next_link(product_child_info))
@@ -1534,36 +1534,36 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
         // use a path_info_t to retrieve the cpath instead
         content::path_info_t type_ipath;
         type_ipath.set_path(product_child_info.key());
-        if(type_ipath.get_cpath().startsWith(get_name(SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)))
+        if(type_ipath.get_cpath().startsWith(get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)))
         {
             // if the content is the main page then define the titles and body here
             FIELD_SEARCH
-                (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                (content::field_search::COMMAND_ELEMENT, metadata)
-                (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
+                (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+                (content::field_search::command_t::COMMAND_ELEMENT, metadata)
+                (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
 
                 // /snap/head/metadata/epayment
-                (content::field_search::COMMAND_CHILD_ELEMENT, "epayment")
+                (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "epayment")
 
                 // /snap/head/metadata/epayment/product-name
-                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_PRODUCT_NAME))
-                (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_SAVE, "product-name")
+                (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_EPAYMENT_PRODUCT_NAME))
+                (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_SAVE, "product-name")
 
                 // /snap/head/metadata/epayment/product-description
-                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_DESCRIPTION))
-                (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_IF_FOUND, 1)
+                (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_EPAYMENT_DESCRIPTION))
+                (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_IF_FOUND, 1)
                     // use page title as a fallback
-                    (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
-                    (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_LABEL, 1)
-                (content::field_search::COMMAND_SAVE, "product-description")
+                    (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
+                    (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_LABEL, 1)
+                (content::field_search::command_t::COMMAND_SAVE, "product-description")
 
                 // /snap/head/metadata/epayment/product-price
-                (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_EPAYMENT_PRICE))
-                (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_SAVE_FLOAT64, "product-price")
+                (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_EPAYMENT_PRICE))
+                (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_SAVE_FLOAT64, "product-price")
 
                 // generate!
                 ;
@@ -1583,14 +1583,14 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
  *
  * A page that was never marked as an invoice will not have a status.
  * In that case the function returns
- * SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN.
+ * name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN.
  *
  * When you create a page which represents an invoice, you should set
  * the invoice status to created as in:
  *
  * \code
  *    epayment::epayment::instance()->set_invoice_status(invoice_ipath,
- *           epayment::epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED);
+ *           epayment::epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED);
  * \endcode
  *
  * It is VERY IMPORTANT to call the function since it is a signal and other
@@ -1598,45 +1598,45 @@ void epayment::on_generate_header_content(content::path_info_t& ipath, QDomEleme
  *
  * The statuses are defined here:
  *
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED
  *            -- the payment failed too many times and the invoice was
  *               finally abandoned meaning that no more attempts to make
  *               a payment against that invoice shall happen
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED
  *            -- the invoice was void in some ways; either the customer
  *               decided to not process the payment at all or the customer
  *               decided to cancel later in which case he was reimbursed;
  *               it could also be used when a payment is attempted too
  *               many times and fails each time (i.e. 3 attempts...)
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED
  *            -- the invoice was paid and the shipping processed; this
  *               status is most often not used when there is no shipping
  *               (i.e. an online service); payment wise, COMPLETED also
  *               means that the products/services were PAID
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED
  *            -- the invoice was just created; it is brand new and was
  *               not yet paid; it also means a payment was not attempted
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED
  *            -- the customer attempted a payment and it failed; the
  *               customer is allowed to try again; however, auto-repeat
  *               is now turned off against that invoice
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID
  *            -- the payment was received in full (we do not currently
  *               support partial payments, if you want to offer partial
  *               payments, you need to create multiple invoices)
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING
  *            -- the payment request was sent to a processor and we are
  *               waiting for the reply by the processor; this status is
  *               not always used; (TBD: we probably should include a way
  *               to save the date when that started)
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING
  *            -- the payment is being processed; this is generally used
  *               by processors that send users to an external website
  *               where they enter their information before doing their
  *               payment; this is different from pending because the
  *               customer has to act on it whereas pending means it is
  *               all automated
- * \li SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN
+ * \li name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN
  *            -- when checking a page with an epayment::status which is
  *               not one of the accepted statuses, this is returned
  *
@@ -1653,43 +1653,43 @@ name_t epayment::get_invoice_status(content::path_info_t& invoice_ipath)
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraRow::pointer_t row(content_table->row(invoice_ipath.get_key()));
-    QString const status(row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
+    QString const status(row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
 
     // convert string to ID, makes it easier to test the status
-    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED))
+    if(status == get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED))
     {
-        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED;
+        return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED;
     }
-    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED))
+    if(status == get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED))
     {
-        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED;
+        return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED;
     }
-    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED))
+    if(status == get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED))
     {
-        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED;
+        return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED;
     }
-    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED))
+    if(status == get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED))
     {
-        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED;
+        return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED;
     }
-    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED))
+    if(status == get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED))
     {
-        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED;
+        return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED;
     }
-    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID))
+    if(status == get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID))
     {
-        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID;
+        return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID;
     }
-    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING))
+    if(status == get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING))
     {
-        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING;
+        return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING;
     }
-    if(status == get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING))
+    if(status == get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING))
     {
-        return SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING;
+        return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING;
     }
 
-    return SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN;
+    return name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN;
 }
 
 
@@ -1708,10 +1708,10 @@ name_t epayment::get_invoice_status(content::path_info_t& invoice_ipath)
  * function.
  *
  * \note
- * Although SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN is considered a
+ * Although name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_UNKNOWN is considered a
  * possible status when you do a get_status(), you cannot actually set
  * an invoice to that status. If an invoice is somehow "lost", use the
- * canceled status instead: SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED.
+ * canceled status instead: name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED.
  *
  * \todo
  * We need to see whether we want to enforce only legal status changes.
@@ -1736,34 +1736,34 @@ bool epayment::set_invoice_status_impl(content::path_info_t& invoice_ipath, name
     // make sure the status is properly defined
     switch(status)
     {
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PENDING:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PROCESSING:
         break;
 
     default:
         // status is contolled as the few types defined in this switch;
         // anything else is not allowed
-        throw snap_logic_exception("invalid SNAP_NAME_EPAYMENT_INVOICE_STATUS_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_...");
 
     }
 
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraRow::pointer_t row(content_table->row(invoice_ipath.get_key()));
-    QString const current_status(row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
+    QString const current_status(row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
     QString const new_status(get_name(status));
     if(current_status == new_status)
     {
         // status not changing, avoid any additional work
         return false;
     }
-    row->cell(get_name(SNAP_NAME_EPAYMENT_INVOICE_STATUS))->setValue(new_status);
+    row->cell(get_name(name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->setValue(new_status);
 
     return true;
 }
@@ -1808,11 +1808,11 @@ bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, co
 
     switch(get_invoice_status(new_invoice_ipath))
     {
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_ABANDONED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CANCELED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_FAILED:
         // it was marked as paid or failed so ignore the request
         SNAP_LOG_WARNING("repeat_payment() called with an invoice which is marked abandoned, canceled, paid, completed, or failed.");
         return false;
@@ -1825,8 +1825,8 @@ bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, co
 
     switch(get_invoice_status(previous_invoice_ipath))
     {
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
         break;
 
     default:
@@ -1837,8 +1837,8 @@ bool epayment::repeat_payment_impl(content::path_info_t& first_invoice_ipath, co
 
     switch(get_invoice_status(first_invoice_ipath))
     {
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
-    case SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_PAID:
+    case name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_COMPLETED:
         break;
 
     default:

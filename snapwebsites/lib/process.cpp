@@ -148,7 +148,7 @@ namespace snap
  */
 process::process(const QString& name)
     : f_name(name)
-    //, f_mode(PROCESS_MODE_COMMAND) -- auto-init
+    //, f_mode(mode_t::PROCESS_MODE_COMMAND) -- auto-init
     //, f_command("") -- auto-init
     //, f_arguments() -- auto-init
     //, f_environment() -- auto-init
@@ -218,7 +218,7 @@ const QString& process::get_name() const
  */
 void process::set_mode(mode_t mode)
 {
-    f_mode = static_cast<int>(mode);
+    f_mode = mode;
 }
 
 /** \brief Set how the environment variables are defined in the process.
@@ -395,7 +395,7 @@ int process::run()
     };
 
     raii_pipe rp(/*this,*/ f_command, f_arguments);
-    SNAP_LOG_INFO("Running process \"")(rp.command_line())("\" in mode ")(f_mode);
+    SNAP_LOG_INFO("Running process \"")(rp.command_line())("\" in mode ")(static_cast<int>(static_cast<mode_t>(f_mode)));
 
     // if the user imposes environment restrictions we cannot use system()
     // or popen(). In that case just use the more complex case anyway.
@@ -403,10 +403,10 @@ int process::run()
     {
         switch(f_mode)
         {
-        case PROCESS_MODE_COMMAND:
+        case mode_t::PROCESS_MODE_COMMAND:
             return system(rp.command_line().toUtf8().data());
 
-        case PROCESS_MODE_INPUT:
+        case mode_t::PROCESS_MODE_INPUT:
             {
                 FILE *f(rp.open_pipe(true));
                 if(f == NULL)
@@ -421,7 +421,7 @@ int process::run()
                 return rp.close_pipe();
             }
 
-        case PROCESS_MODE_OUTPUT:
+        case mode_t::PROCESS_MODE_OUTPUT:
             {
                 FILE *f(rp.open_pipe(false));
                 if(f == NULL)
@@ -447,7 +447,7 @@ int process::run()
         }
     }
 
-    if(PROCESS_MODE_INOUT_INTERACTIVE == f_mode && !f_output_callback)
+    if(mode_t::PROCESS_MODE_INOUT_INTERACTIVE == f_mode && !f_output_callback)
     {
         // mode is not compatible with the current setup
         throw snap_process_exception_invalid_mode_error("mode cannot be in/out interactive without a callback");

@@ -58,42 +58,42 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_LAYOUT_ADMIN_LAYOUTS:
+    case name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS:
         return "admin/layouts";
 
-    case SNAP_NAME_LAYOUT_BODY_XSL:
+    case name_t::SNAP_NAME_LAYOUT_BODY_XSL:
         return "body-parser";
 
-    case SNAP_NAME_LAYOUT_BOX:
+    case name_t::SNAP_NAME_LAYOUT_BOX:
         return "layout::box";
 
-    case SNAP_NAME_LAYOUT_BOXES:
+    case name_t::SNAP_NAME_LAYOUT_BOXES:
         return "layout::boxes";
 
-    case SNAP_NAME_LAYOUT_CONTENT:
+    case name_t::SNAP_NAME_LAYOUT_CONTENT:
         return "content";
 
-    case SNAP_NAME_LAYOUT_LAYOUT:
+    case name_t::SNAP_NAME_LAYOUT_LAYOUT:
         return "layout::layout";
 
-    case SNAP_NAME_LAYOUT_NAMESPACE:
+    case name_t::SNAP_NAME_LAYOUT_NAMESPACE:
         return "layout";
 
-    case SNAP_NAME_LAYOUT_REFERENCE:
+    case name_t::SNAP_NAME_LAYOUT_REFERENCE:
         return "layout::reference";
 
-    case SNAP_NAME_LAYOUT_TABLE:
+    case name_t::SNAP_NAME_LAYOUT_TABLE:
         return "layout";
 
-    case SNAP_NAME_LAYOUT_THEME:
+    case name_t::SNAP_NAME_LAYOUT_THEME:
         return "layout::theme";
 
-    case SNAP_NAME_LAYOUT_THEME_XSL:
+    case name_t::SNAP_NAME_LAYOUT_THEME_XSL:
         return "theme-parser";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_LAYOUT_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_LAYOUT_...");
 
     }
     NOTREACHED();
@@ -220,7 +220,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
     QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
 
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString const base_key(site_key + get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/");
+    QString const base_key(site_key + get_name(name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS) + "/");
 
     content::path_info_t types_ipath;
     types_ipath.set_path("types/taxonomy/system/content-types/layout-page");
@@ -230,7 +230,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
         return last_updated;
     }
     int64_t new_last_updated(last_updated);
-    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PAGE), false, types_ipath.get_key(), types_ipath.get_branch());
+    links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE), false, types_ipath.get_key(), types_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info layout_info;
     while(link_ctxt->next_link(layout_info))
@@ -275,7 +275,7 @@ int64_t layout::do_layout_updates(int64_t const last_updated)
  */
 QtCassandra::QCassandraTable::pointer_t layout::get_layout_table()
 {
-    return f_snap->create_table(get_name(SNAP_NAME_LAYOUT_TABLE), "Layouts table.");
+    return f_snap->create_table(get_name(name_t::SNAP_NAME_LAYOUT_TABLE), "Layouts table.");
 }
 
 
@@ -324,9 +324,9 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
             // that very content does not define a layout, check its type(s)
             layout_value = taxonomy::taxonomy::instance()->find_type_with(
                 ipath,
-                content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE),
+                content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE),
                 column_name,
-                content::get_name(content::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME)
+                content::get_name(content::name_t::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME)
             );
             if(layout_value.nullValue())
             {
@@ -405,7 +405,7 @@ QString layout::get_layout(content::path_info_t& ipath, QString const& column_na
             && *s != '_')
             {
                 // tainted layout/theme name
-                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                         "Layout Not Found",
                         QString("User specified layout \"%1\"").arg(layout_name),
                         "Found a tainted layout name, refusing it!");
@@ -448,7 +448,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
 {
     // First generate the body content (a large XML document)
     QString layout_name;
-    QString xsl(define_layout(ipath, get_name(SNAP_NAME_LAYOUT_LAYOUT), get_name(SNAP_NAME_LAYOUT_BODY_XSL), ":/xsl/layout/default-body-parser.xsl", layout_name));
+    QString xsl(define_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_LAYOUT), get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL), ":/xsl/layout/default-body-parser.xsl", layout_name));
 
     // check whether the layout was defined in this website database
     // (note: this was in the define_layout() which now gets called twice...)
@@ -472,7 +472,7 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
     create_body(doc, ipath, xsl, content_plugin, ctemplate, true, layout_name);
 
     // Then apply a theme to it
-    xsl = define_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME), get_name(SNAP_NAME_LAYOUT_THEME_XSL), ":/xsl/layout/default-theme-parser.xsl", layout_name);
+    xsl = define_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_THEME), get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL), ":/xsl/layout/default-theme-parser.xsl", layout_name);
     // HTML5 DOCTYPE is just "html" as follow
     return "<!DOCTYPE html>" + apply_theme(doc, xsl, layout_name);
 }
@@ -485,8 +485,8 @@ QString layout::apply_layout(content::path_info_t& ipath, layout_content *conten
  *
  * The \p name parameter defines the field to be used. By default it is
  * expected to be set to layout::layout or layout::theme, but other names
- * could be used. The default names come from SNAP_NAME_LAYOUT_LAYOUT and
- * SNAP_NAME_LAYOUT_THEME names.
+ * could be used. The default names come from name_t::SNAP_NAME_LAYOUT_LAYOUT and
+ * name_t::SNAP_NAME_LAYOUT_THEME names.
  *
  * The \p key parameter is the name of the cell to load from the layout
  * table if the name parameter is something else than "default". Note that
@@ -535,7 +535,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
         if(names.size() > 2)
         {
             // can be one or two workds, no more
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     "Somehow no website layout was accessible.",
                     QString("layout::define_layout() found more than one '/' in \"%1\".").arg(layout_name));
@@ -548,7 +548,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
         || cell_name.contains(':'))
         {
             // this is just to try to avoid some security issues
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     QString("The name \"%1\" used as the layout cell is not acceptable.").arg(cell_name),
                     "layout::define_layout() found an illegal cell name.");
@@ -604,7 +604,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
         QFile file(default_filename);
         if(!file.open(QIODevice::ReadOnly))
         {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     "Somehow no website layout was accessible, not even the internal default.",
                     "layout::define_layout() could not open default-body-parser.xsl resource file.");
@@ -613,7 +613,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
         QByteArray const data(file.readAll());
         if(data.size() == 0)
         {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     "Somehow no website layout was accessible, not even the internal default.",
                     "layout::define_layout() could not read the default-body-parser.xsl resource file.");
@@ -835,7 +835,7 @@ out.write(doc.toString(-1).toUtf8());
 //std::cout << "Body HTML is [" << doc_output.toString(-1) << "]\n";
 #else
     //QDomDocument doc_body("body");
-    //doc_body.setContent(get_content_parameter(path, get_name(SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, nullptr, nullptr, nullptr);
+    //doc_body.setContent(get_content_parameter(path, get_name(name_t::SNAP_NAME_CONTENT_BODY) <<-- that would be wrong now).stringValue(), true, nullptr, nullptr, nullptr);
     //QDomElement content_tag(doc.createElement("content"));
     //body.appendChild(content_tag);
     //content_tag.appendChild(doc.importNode(doc_body.documentElement(), true));
@@ -986,14 +986,14 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
     //   . Under the theme path branch[layout::boxes]
     //
     content::path_info_t boxes_ipath;
-    boxes_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
+    boxes_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
 
     // get the page type
     //
     // TODO: we probably want to also add a specificy tag for boxes
     //       (i.e. a page_boxes link to a tree that defines boxes)
     //
-    links::link_info type_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
+    links::link_info type_info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> type_ctxt(links::links::instance()->new_link_context(type_info));
     links::link_info link_type;
     QString type_key;
@@ -1009,39 +1009,39 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
 
     content::field_search::search_result_t box_names;
     FIELD_SEARCH
-        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
 
         // /snap/head/metadata/boxes
-        (content::field_search::COMMAND_ELEMENT, doc)
-        (content::field_search::COMMAND_PATH_ELEMENT, "/snap/head/metadata/boxes")
+        (content::field_search::command_t::COMMAND_ELEMENT, doc)
+        (content::field_search::command_t::COMMAND_PATH_ELEMENT, "/snap/head/metadata/boxes")
         // if boxes exist in doc then that is our result
-        (content::field_search::COMMAND_IF_ELEMENT_NULL, 1)
-        (content::field_search::COMMAND_ELEMENT_TEXT)
-        (content::field_search::COMMAND_RESULT, box_names)
-        (content::field_search::COMMAND_GOTO, 100)
+        (content::field_search::command_t::COMMAND_IF_ELEMENT_NULL, 1)
+        (content::field_search::command_t::COMMAND_ELEMENT_TEXT)
+        (content::field_search::command_t::COMMAND_RESULT, box_names)
+        (content::field_search::command_t::COMMAND_GOTO, 100)
 
         // no boxes in source document
-        (content::field_search::COMMAND_LABEL, 1)
+        (content::field_search::command_t::COMMAND_LABEL, 1)
 
         // check in this specific page for a layout::boxes field
-        (content::field_search::COMMAND_PATH_INFO_BRANCH, ipath)
-        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_IF_FOUND, 100)
+        (content::field_search::command_t::COMMAND_PATH_INFO_BRANCH, ipath)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_LAYOUT_BOXES))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_IF_FOUND, 100)
 
         // check in the type or any parents
-        (content::field_search::COMMAND_PATH_INFO_BRANCH, type_ipath)
-        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
-        (content::field_search::COMMAND_PARENTS, content::get_name(content::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME))
-        (content::field_search::COMMAND_IF_FOUND, 100)
+        (content::field_search::command_t::COMMAND_PATH_INFO_BRANCH, type_ipath)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_LAYOUT_BOXES))
+        (content::field_search::command_t::COMMAND_PARENTS, content::get_name(content::name_t::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME))
+        (content::field_search::command_t::COMMAND_IF_FOUND, 100)
 
         // check in the boxes path for a layout::boxes field
-        (content::field_search::COMMAND_PATH_INFO_BRANCH, boxes_ipath)
-        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_LAYOUT_BOXES))
-        (content::field_search::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_PATH_INFO_BRANCH, boxes_ipath)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_LAYOUT_BOXES))
+        (content::field_search::command_t::COMMAND_SELF)
 
-        (content::field_search::COMMAND_LABEL, 100)
-        (content::field_search::COMMAND_RESULT, box_names)
+        (content::field_search::command_t::COMMAND_LABEL, 100)
+        (content::field_search::command_t::COMMAND_RESULT, box_names)
 
         // retrieve names of all the boxes
         ;
@@ -1080,13 +1080,13 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
             for(int i(0); i < max_boxes; ++i)
             {
                 content::path_info_t ichild;
-                ichild.set_path(QString("%1/%2/%3").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
+                ichild.set_path(QString("%1/%2/%3").arg(get_name(name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name).arg(names[i]));
                 // links cannot be read if the version is undefined;
                 // the version is undefined if the theme has no boxes at all
                 snap_version::version_number_t branch(ichild.get_branch());
                 if(snap_version::SPECIAL_VERSION_UNDEFINED != branch)
                 {
-                    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
+                    links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN), false, ichild.get_key(), ichild.get_branch());
                     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                     links::link_info child_info;
                     while(link_ctxt->next_link(child_info))
@@ -1128,7 +1128,7 @@ SNAP_LOG_TRACE() << "handle box for " << box_plugin->get_plugin_name();
                             {
                                 // if this happens a plugin offers a box but not
                                 // the handler
-                                f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                                f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                                         "Plugin Missing",
                                         "Plugin \"" + box_plugin->get_plugin_name() + "\" does not know how to handle a box assigned to it.",
                                         "layout::generate_boxes() the plugin does not derive from layout::layout_boxes.");
@@ -1235,7 +1235,7 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
 //{
 //    QString xsl;
 //
-//    QString theme_name( get_layout(ipath, get_name(SNAP_NAME_LAYOUT_THEME), false) );
+//    QString theme_name( get_layout(ipath, get_name(name_t::SNAP_NAME_LAYOUT_THEME), false) );
 //
 //    // If theme_name is not default, attempt to obtain the
 //    // selected theme from the layout table.
@@ -1245,7 +1245,7 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
 //        // try to load the layout from the database, if not found
 //        // we'll switch to the default layout instead
 //        QtCassandra::QCassandraTable::pointer_t layout_table(get_layout_table());
-//        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(get_name(SNAP_NAME_LAYOUT_THEME_XSL))->value());
+//        QtCassandra::QCassandraValue theme_value(layout_table->row(theme_name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL))->value());
 //        if(theme_value.nullValue())
 //        {
 //            // If no theme selected, then default to the "default" theme."
@@ -1271,7 +1271,7 @@ QString layout::apply_theme(QDomDocument doc, QString const& xsl, QString const&
 //        QFile file(":/xsl/layout/default-theme-parser.xsl");
 //        if(!file.open(QIODevice::ReadOnly))
 //        {
-//            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+//            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
 //                "Layout Unavailable",
 //                "Somehow no website layout was accessible, not even the internal default.",
 //                "layout::define_theme() could not open the default-theme-parser.xsl resource file.");
@@ -1428,14 +1428,14 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     }
     else
     {
-        last_updated_value = layout_table->row(layout_name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->value();
+        last_updated_value = layout_table->row(layout_name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->value();
     }
 
     content::path_info_t layout_ipath;
-    layout_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
+    layout_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_ADMIN_LAYOUTS)).arg(layout_name));
     if(layout_ipath.has_branch()
     && branch_table->exists(layout_ipath.get_branch_key())
-    && branch_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)))
+    && branch_table->row(layout_ipath.get_branch_key())->exists(get_name(name_t::SNAP_NAME_LAYOUT_BOXES)))
     {
         // The layout is already installed
         if(last_updated == 0)
@@ -1473,7 +1473,7 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
         QFile file(":/xml/layout/content.xml");
         if(!file.open(QIODevice::ReadOnly))
         {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Layout Unavailable",
                     "Could not read content.xml from the resources.",
                     "layout::install_layout() could not open content.xml resource file.");
@@ -1484,27 +1484,27 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     }
     else
     {
-        if(!layout_table->row(layout_name)->exists(get_name(SNAP_NAME_LAYOUT_CONTENT)))
+        if(!layout_table->row(layout_name)->exists(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT)))
         {
             // that should probably apply to the body and theme names
             if(last_updated != 0)
             {
-                SNAP_LOG_ERROR("Could not read \"")(layout_name)(".")(get_name(SNAP_NAME_LAYOUT_CONTENT))("\" from the layout table while updating layouts, error is ignored now so your plugin can fix it.");
+                SNAP_LOG_ERROR("Could not read \"")(layout_name)(".")(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT))("\" from the layout table while updating layouts, error is ignored now so your plugin can fix it.");
                 return last_updated;
             }
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Layout Unavailable",
                         QString("Layout \"%1\" content.xml file is missing.").arg(layout_name),
                         "layout::install_layout() could not find the content.xml file in the layout table.");
             NOTREACHED();
         }
-        xml_content = layout_table->row(layout_name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->value().stringValue();
+        xml_content = layout_table->row(layout_name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT))->value().stringValue();
     }
 
     QDomDocument dom;
     if(!dom.setContent(xml_content, false))
     {
-        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 QString("Layout \"%1\" content.xml file could not be loaded.").arg(layout_name),
                 "layout::install_layout() could not load the content.xml file from the layout table.");
@@ -1515,22 +1515,22 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     //      because at this point we cannot really know what p is
     //      and it should probably not be initialized with a plugin
     //      that we don't know anything about...
-    //content_plugin->add_xml_document(dom, p == nullptr ? content::get_name(content::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
-    content_plugin->add_xml_document(dom, content::get_name(content::SNAP_NAME_CONTENT_OUTPUT_PLUGIN));
+    //content_plugin->add_xml_document(dom, p == nullptr ? content::get_name(content::name_t::SNAP_NAME_CONTENT_OUTPUT) : p->get_plugin_name());
+    content_plugin->add_xml_document(dom, content::get_name(content::name_t::SNAP_NAME_CONTENT_OUTPUT_PLUGIN));
     f_snap->finish_update();
 
     // after an update of the content.xml file we expect the layout::boxes
     // field to be defined
-    if( !branch_table->row(layout_ipath.get_branch_key())->exists(get_name(SNAP_NAME_LAYOUT_BOXES)) )
+    if( !branch_table->row(layout_ipath.get_branch_key())->exists(get_name(name_t::SNAP_NAME_LAYOUT_BOXES)) )
     {
         if(last_updated != 0)
         {
             SNAP_LOG_ERROR("Could not read \"")(layout_ipath.get_branch_key())(".")
-                    (get_name(SNAP_NAME_LAYOUT_BOXES))
+                    (get_name(name_t::SNAP_NAME_LAYOUT_BOXES))
                     ("\" from the layout, error is ignored now so your plugin can fix it.");
             return last_updated;
         }
-        f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                 "Layout Unavailable",
                 QString("Layout \"%1\" content.xml file does not define the layout::boxes entry for this layout.").arg(layout_name),
                 QString("layout::install_layout() the content.xml did not define \"%1->[layout::boxes]\" as expected.").arg(layout_ipath.get_branch_key()));
@@ -1540,7 +1540,7 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     // create a reference back to us from the layout
     // that way we know who uses what (although a layout may not be in use
     // anymore after a while and the reference won't be removed...)
-    QString const reference(QString("%1::%2").arg(get_name(SNAP_NAME_LAYOUT_REFERENCE)).arg(layout_ipath.get_key()));
+    QString const reference(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LAYOUT_REFERENCE)).arg(layout_ipath.get_key()));
     int64_t const start_date(f_snap->get_start_date());
     QtCassandra::QCassandraValue value;
     value.setInt64Value(start_date);
@@ -1552,7 +1552,7 @@ int64_t layout::install_layout(QString const & layout_name, int64_t const last_u
     if(last_updated_value.size() != sizeof(int64_t))
     {
         last_updated_value.setInt64Value(last_updated);
-        layout_table->row(layout_name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated_value);
+        layout_table->row(layout_name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated_value);
     }
 
     return last_updated_value.int64Value();
@@ -1598,54 +1598,54 @@ bool layout::generate_header_content_impl(content::path_info_t & ipath, QDomElem
     QString const action(uri.query_option(qs_action));
 
     FIELD_SEARCH
-        (content::field_search::COMMAND_ELEMENT, metadata)
-        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+        (content::field_search::command_t::COMMAND_ELEMENT, metadata)
+        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
 
         // snap/head/metadata/desc[@type="version"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, SNAPWEBSITES_VERSION_STRING)
-        (content::field_search::COMMAND_SAVE, "desc[type=version]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, SNAPWEBSITES_VERSION_STRING)
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=version]/data")
 
         // snap/head/metadata/desc[@type="website_uri"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_key())
-        (content::field_search::COMMAND_SAVE, "desc[type=website_uri]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->get_site_key())
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=website_uri]/data")
 
         // snap/head/metadata/desc[@type="base_uri"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, base)
-        (content::field_search::COMMAND_SAVE, "desc[type=base_uri]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, base)
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=base_uri]/data")
 
         // snap/head/metadata/desc[@type="page_uri"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
-        (content::field_search::COMMAND_SAVE, "desc[type=page_uri]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=page_uri]/data")
 
         // snap/head/metadata/desc[@type="real_uri"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_key())
-        (content::field_search::COMMAND_SAVE, "desc[type=real_uri]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=real_uri]/data")
 
         // snap/head/metadata/desc[@type="template_uri"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, ctemplate.isEmpty() ? "" : f_snap->get_site_key_with_slash() + ctemplate)
-        (content::field_search::COMMAND_SAVE, "desc[type=template_uri]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, ctemplate.isEmpty() ? "" : f_snap->get_site_key_with_slash() + ctemplate)
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=template_uri]/data")
 
         // snap/head/metadata/desc[@type="name"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_NAME)))
-        (content::field_search::COMMAND_SAVE, "desc[type=name]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)))
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/data")
         // snap/head/metadata/desc[@type="name"]/short-data
-        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_SHORT_NAME)))
-        (content::field_search::COMMAND_SAVE, "desc[type=name]/short-data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME)))
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/short-data")
         // snap/head/metadata/desc[@type="name"]/long-data
-        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_LONG_NAME)))
-        (content::field_search::COMMAND_SAVE, "desc[type=name]/long-data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME)))
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=name]/long-data")
 
         // snap/head/metadata/desc[@type="email"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)))
-        (content::field_search::COMMAND_SAVE, "desc[type=email]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)))
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=email]/data")
 
         // snap/head/metadata/desc[@type="remote_ip"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, f_snap->snapenv("REMOTE_ADDR"))
-        (content::field_search::COMMAND_SAVE, "desc[type=remote_ip]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, f_snap->snapenv("REMOTE_ADDR"))
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=remote_ip]/data")
 
         // snap/head/metadata/desc[@type="action"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, action)
-        (content::field_search::COMMAND_SAVE, "desc[type=action]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, action)
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=action]/data")
 
         // generate!
         ;
@@ -1785,14 +1785,14 @@ void layout::add_layout_from_resources(QString const& name)
         QFile file(body);
         if(!file.open(QIODevice::ReadOnly))
         {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Body Layout Unavailable",
                     QString("Could not read \"%1\" from the Qt resources.").arg(body),
                     "layout::add_layout_from_resources() could not open resource file for a body file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
-        layout_table->row(name)->cell(get_name(SNAP_NAME_LAYOUT_BODY_XSL))->setValue(data);
+        layout_table->row(name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_BODY_XSL))->setValue(data);
     }
 
     {
@@ -1800,14 +1800,14 @@ void layout::add_layout_from_resources(QString const& name)
         QFile file(theme);
         if(!file.open(QIODevice::ReadOnly))
         {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Theme Layout Unavailable",
                     QString("Could not read \"%1\" from the Qt resources.").arg(theme),
                     "layout::add_layout_from_resources() could not open resource file for a theme file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
-        layout_table->row(name)->cell(get_name(SNAP_NAME_LAYOUT_THEME_XSL))->setValue(data);
+        layout_table->row(name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_THEME_XSL))->setValue(data);
     }
 
     {
@@ -1815,18 +1815,18 @@ void layout::add_layout_from_resources(QString const& name)
         QFile file(content);
         if(!file.open(QIODevice::ReadOnly))
         {
-            f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                     "Sendmail Theme Content Unavailable",
                     QString("Could not read \"%1\" from the Qt resources.").arg(content),
                     "layout::add_layout_from_resources() could not open resource file for a content.xml file.");
             NOTREACHED();
         }
         QByteArray data(file.readAll());
-        layout_table->row(name)->cell(get_name(SNAP_NAME_LAYOUT_CONTENT))->setValue(data);
+        layout_table->row(name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT))->setValue(data);
     }
 
     int64_t updated(f_snap->get_start_date());
-    layout_table->row(name)->cell(snap::get_name(SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
+    layout_table->row(name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);
 }
 
 
@@ -1834,7 +1834,7 @@ void layout::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, Qt
 {
     static_cast<void>(destination_branch);
 
-    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(SNAP_NAME_LAYOUT_NAMESPACE));
+    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_LAYOUT_NAMESPACE));
 }
 
 

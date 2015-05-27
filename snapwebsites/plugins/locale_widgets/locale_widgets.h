@@ -30,19 +30,19 @@ namespace locale_widgets
 {
 
 
-//enum name_t
+//enum class name_t
 //{
 //    SNAP_NAME_LOCALE_WIDGETS_NAME
 //};
-//char const *get_name(name_t name) __attribute__ ((const));
+//char const * get_name(name_t name) __attribute__ ((const));
 
 
 //class locale_widgets_exception : public snap_exception
 //{
 //public:
-//    locale_widgets_exception(char const *       what_msg) : snap_exception("locale_widgets", what_msg) {}
-//    locale_widgets_exception(std::string const& what_msg) : snap_exception("locale_widgets", what_msg) {}
-//    locale_widgets_exception(QString const&     what_msg) : snap_exception("locale_widgets", what_msg) {}
+//    locale_widgets_exception(char const *        what_msg) : snap_exception("locale_widgets", what_msg) {}
+//    locale_widgets_exception(std::string const & what_msg) : snap_exception("locale_widgets", what_msg) {}
+//    locale_widgets_exception(QString const &     what_msg) : snap_exception("locale_widgets", what_msg) {}
 //};
 
 
@@ -77,8 +77,8 @@ public:
     virtual QString             description() const;
     virtual int64_t             do_update(int64_t last_updated);
 
-    void                        on_bootstrap(snap_child *snap);
-    void                        on_init_editor_widget(content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row);
+    void                        on_bootstrap(snap_child * snap);
+    void                        on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row);
     void                        on_prepare_editor_form(editor::editor *e);
 
 private:

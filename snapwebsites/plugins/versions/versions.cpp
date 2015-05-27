@@ -46,12 +46,12 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_VERSIONS_VERSION:
+    case name_t::SNAP_NAME_VERSIONS_VERSION:
         return "versions::version";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_VERSIONS_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_VERSIONS_...");
 
     }
     NOTREACHED();

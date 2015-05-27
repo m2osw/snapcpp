@@ -28,7 +28,7 @@ namespace list
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_LIST_ITEM_KEY_SCRIPT,
     SNAP_NAME_LIST_KEY,

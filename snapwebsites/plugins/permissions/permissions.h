@@ -24,7 +24,7 @@ namespace snap
 namespace permissions
 {
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER,
     SNAP_NAME_PERMISSIONS_ACTION_EDIT,
@@ -104,26 +104,26 @@ public:
         typedef QVector<QString>        set_t;
         typedef QMap<QString, set_t>    req_sets_t;
 
-                                sets_t(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status);
+                                sets_t(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status);
 
-        void                    set_login_status(QString const& status);
-        QString const&          get_login_status() const;
+        void                    set_login_status(QString const & status);
+        QString const &         get_login_status() const;
                        
-        QString const&          get_user_path() const;
-        content::path_info_t&   get_ipath() const;
-        QString const&          get_action() const;
+        QString const &         get_user_path() const;
+        content::path_info_t &  get_ipath() const;
+        QString const &         get_action() const;
 
         void                    add_user_right(QString right);
         int                     get_user_rights_count() const;
 
-        void                    add_plugin_permission(QString const& plugin, QString right);
+        void                    add_plugin_permission(QString const & plugin, QString right);
 
         bool                    is_root() const;
         bool                    allowed() const;
 
     private:
         QString                 f_user_path;
-        content::path_info_t&   f_ipath;
+        content::path_info_t &  f_ipath;
         QString                 f_action;
         QString                 f_login_status;
         set_t                   f_user_rights;
@@ -138,29 +138,29 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    void                    on_generate_header_content(content::path_info_t& path, QDomElement& hader, QDomElement& metadata, QString const& ctemplate);
-    virtual void            on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_validate_action(content::path_info_t& path, QString const& action, permission_error_callback& err_callback);
-    void                    on_access_allowed(QString const& user_path, content::path_info_t& ipath, QString const& action, QString const& login_status, content::permission_flag& result);
-    void                    on_register_backend_action(server::backend_action_map_t& actions);
-    virtual void            on_backend_action(QString const& action);
-    void                    on_user_verified(content::path_info_t& ipath, int64_t identifier);
-    void                    on_add_snap_expr_functions(snap_expr::functions_t& functions);
-    virtual void            repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning);
+    void                    on_generate_header_content(content::path_info_t & path, QDomElement & hader, QDomElement & metadata, QString const & ctemplate);
+    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                    on_validate_action(content::path_info_t & path, QString const & action, permission_error_callback & err_callback);
+    void                    on_access_allowed(QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result);
+    void                    on_register_backend_action(server::backend_action_map_t & actions);
+    virtual void            on_backend_action(QString const & action);
+    void                    on_user_verified(content::path_info_t & ipath, int64_t identifier);
+    void                    on_add_snap_expr_functions(snap_expr::functions_t & functions);
+    virtual void            repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
-    SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t& sets), (perms, sets));
-    SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t& sets), (perms, sets));
-    SNAP_SIGNAL(permit_redirect_to_login_on_not_allowed, (content::path_info_t& ipath, bool& redirect_to_login), (ipath, redirect_to_login));
+    SNAP_SIGNAL(get_user_rights, (permissions *perms, sets_t & sets), (perms, sets));
+    SNAP_SIGNAL(get_plugin_permissions, (permissions *perms, sets_t & sets), (perms, sets));
+    SNAP_SIGNAL(permit_redirect_to_login_on_not_allowed, (content::path_info_t & ipath, bool & redirect_to_login), (ipath, redirect_to_login));
 
-    void                    add_user_rights(QString const & right, sets_t& sets);
-    void                    add_plugin_permissions(QString const& plugin_name, QString const& group, sets_t& sets);
-    QString const&          get_login_status();
-    QString const&          get_user_path();
+    void                    add_user_rights(QString const  & right, sets_t & sets);
+    void                    add_plugin_permissions(QString const & plugin_name, QString const & group, sets_t & sets);
+    QString const &         get_login_status();
+    QString const &         get_user_path();
 
 private:
     void                    content_update(int64_t variables_timestamp);
-    void                    recursive_add_user_rights(QString const& key, sets_t& sets);
-    void                    recursive_add_plugin_permissions(QString const& plugin_name, QString const& key, sets_t& sets);
+    void                    recursive_add_user_rights(QString const & key, sets_t & sets);
+    void                    recursive_add_plugin_permissions(QString const & plugin_name, QString const & key, sets_t & sets);
 
     zpsnap_child_t              f_snap;
     QString                     f_login_status;

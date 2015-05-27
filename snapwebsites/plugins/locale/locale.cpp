@@ -903,6 +903,37 @@ time_t locale::parse_date(QString const & date, parse_error_t & errcode)
  * parsed in a valid time is parsed as such, always.
  *
  * \note
+ * At this time the ICU time parser does not work for us. It may be a
+ * small problem that we could resolve in some way, but for now we
+ * have our own parser. We support times defined as:
+ *
+ * \code
+ *      HH:MM[:SS] [AM/PM]
+ * \endcode
+ *
+ * \par
+ * In other words a positive decimal number representing the hour. Note
+ * that it may be just one digit. If AM or PM are used, then the number
+ * must be between 1 and 12 inclusive. Otherwise it has to be between
+ * 0 and 23.
+ *
+ * \par
+ * The minutes are also mandatory and is a positive decimal number. Note
+ * that it may be just one digit. Minutes are limited to a number between
+ * 0 and 59 inclusive.
+ *
+ * \par
+ * The seconds are optional, although if a colon is specified, it becomes
+ * mandatory. Note that it may be just one digit. Minutes are limited to
+ * a number between 0 and 60 inclusive.
+ *
+ * \par
+ * The AM or PM may appear right after the minute or second (no space
+ * required). It may be in lower or upper case. (aM and pM is always
+ * acceptable.) The hour is limited to a number from 1 to 12 when
+ * AM/PM is used.
+ *
+ * \note
  * The function returns -1 as the time and sets errcode to an error
  * number other than PARSE_NO_ERROR if the input string cannot be parsed
  * into what is considered a valid time.
@@ -957,7 +988,7 @@ time_t locale::parse_time(QString const & time_str, parse_error_t & errcode)
             int64_t count(0LL);
             for(;;)
             {
-                int digit(s->digitValue());
+                int const digit(s->digitValue());
                 if(digit < 0)
                 {
                     break;
@@ -1029,30 +1060,209 @@ time_t locale::parse_time(QString const & time_str, parse_error_t & errcode)
     }
     else
     {
-        Locale const l(f_current_locale.toUtf8().data()); // TODO: verify that it took properly
-        LocalPointer<DateFormat> dt(DateFormat::createTimeInstance(DateFormat::kDefault, l));
+        // Somehow the time parser always gives me an error
+        // Until we can figure out what the heck is happening, I have my own
+        // parser that supports the fairly worldwide standard
+        //          "HH:MM[:SS] [AM/PM]"
+        //
+//        Locale const l(f_current_locale.toUtf8().data()); // TODO: verify that it took properly
+//        LocalPointer<DateFormat> dt(DateFormat::createTimeInstance(DateFormat::kDefault, l));
+//
+//        LocalPointer<TimeZone> tz(TimeZone::createTimeZone(QUnicodeString(f_current_timezone))); // TODO: verify that it took properly
+//        dt->setTimeZone(*tz);
+//
+//        QUnicodeString const date_format(time_str);
+//        ParsePosition pos;
+//        UDate const result(dt->parse(date_format, pos));
+//
+//std::cerr << "*** " << f_current_locale << " time parsed " << time_str << " -> pos " << pos.getIndex() << ", length " << date_format.length() <<  " -> " << result << "\n";
+//        if(pos.getIndex() != date_format.length())
+//        {
+//            // it failed (we always expect the entire string to be parsed)
+//            //
+//            // TODO: ameliorate the error code with the error code that
+//            //       the DateFormat generates
+//            //
+//            errcode = parse_error_t::PARSE_ERROR_DATE;
+//            return static_cast<time_t>(-1);
+//        }
+//
+//        // UDate is a double in milliseconds
+//        return static_cast<time_t>(result / 1000LL);
 
-        LocalPointer<TimeZone> tz(TimeZone::createTimeZone(QUnicodeString(f_current_timezone))); // TODO: verify that it took properly
-        dt->setTimeZone(*tz);
+        // our own time reader with format HH:MM[:SS] [AM/PM]
+        //
+        // we allow any type of spaces at the start and between the
+        // time and AM/PM
+        //
+        time_t result(0);
+        QChar const *s(time_str.unicode());
 
-        QUnicodeString const date_format(time_str);
-        ParsePosition pos;
-        UDate const result(dt->parse(date_format, pos));
-
-std::cerr << "*** " << f_current_locale << " time parsed " << time_str << " -> pos " << pos.getIndex() << ", length " << date_format.length() <<  " -> " << result << "\n";
-        if(pos.getIndex() != date_format.length())
+        // skip spaces at the start
+        while(s->isSpace())
         {
-            // it failed (we always expect the entire string to be parsed)
-            //
-            // TODO: ameliorate the error code with the error code that
-            //       the DateFormat generates
-            //
+            ++s;
+        }
+
+        // H or HH
+        int hour(s->digitValue());
+        {
+            if(hour < 0)
+            {
+                errcode = parse_error_t::PARSE_ERROR_DATE;
+                return static_cast<time_t>(-1);
+            }
+            ++s;
+            int const digit2(s->digitValue());
+            if(digit2 >= 0)
+            {
+                hour = hour * 10 + digit2;
+                ++s;
+            }
+        }
+
+        // hours and minutes must be separated by a colon
+        if(s->unicode() != L':')
+        {
             errcode = parse_error_t::PARSE_ERROR_DATE;
             return static_cast<time_t>(-1);
         }
+        ++s;
 
-        // UDate is a double in milliseconds
-        return static_cast<time_t>(result / 1000LL);
+        // M or MM
+        {
+            int minute(s->digitValue());
+            if(minute < 0)
+            {
+                errcode = parse_error_t::PARSE_ERROR_DATE;
+                return static_cast<time_t>(-1);
+            }
+            ++s;
+            int const digit2(s->digitValue());
+            if(digit2 >= 0)
+            {
+                minute = minute * 10 + digit2;
+                ++s;
+            }
+            if(minute > 59)
+            {
+                errcode = parse_error_t::PARSE_ERROR_OVERFLOW;
+                return static_cast<time_t>(-1);
+            }
+            result += minute * 60;
+        }
+
+        // if we have a colon there are seconds
+        if(s->unicode() == L':')
+        {
+            int second(s->digitValue());
+            if(second < 0)
+            {
+                errcode = parse_error_t::PARSE_ERROR_DATE;
+                return static_cast<time_t>(-1);
+            }
+            ++s;
+            int const digit2(s->digitValue());
+            if(digit2 >= 0)
+            {
+                second = second * 10 + digit2;
+                ++s;
+            }
+            if(second > 60) // allow adjustment second
+            {
+                errcode = parse_error_t::PARSE_ERROR_OVERFLOW;
+                return static_cast<time_t>(-1);
+            }
+            result += second;
+        }
+
+        // skip spaces after the time
+        while(s->isSpace())
+        {
+            ++s;
+        }
+
+        // see whether we have AM/PM
+        int mode(0);
+        if(!s->isNull())
+        {
+            if(s->toLower().unicode() == 'a'
+            && !s[1].isNull()
+            && s[1].toLower().unicode() == 'm')
+            {
+                mode = 1;
+                s += 2;
+            }
+            else if(s->toLower().unicode() == 'p'
+                 && !s[1].isNull()
+                 && s[1].toLower().unicode() == 'm')
+            {
+                mode = 2;
+                s += 2;
+            }
+            else
+            {
+                // followed by something other than AM or PM
+                errcode = parse_error_t::PARSE_ERROR_DATE;
+                return static_cast<time_t>(-1);
+            }
+
+            // skip spaces after the AM/PM
+            while(s->isSpace())
+            {
+                ++s;
+            }
+
+            if(!s->isNull())
+            {
+                // AM/PM followed something
+                errcode = parse_error_t::PARSE_ERROR_DATE;
+                return static_cast<time_t>(-1);
+            }
+        }
+
+        switch(mode)
+        {
+        case 0:
+            if(hour > 23)
+            {
+                errcode = parse_error_t::PARSE_ERROR_OVERFLOW;
+                return static_cast<time_t>(-1);
+            }
+            break;
+
+        case 1:
+        case 2:
+            if(hour < 1)
+            {
+                errcode = parse_error_t::PARSE_ERROR_UNDERFLOW;
+                return static_cast<time_t>(-1);
+            }
+            if(hour > 12)
+            {
+                errcode = parse_error_t::PARSE_ERROR_OVERFLOW;
+                return static_cast<time_t>(-1);
+            }
+            // in case of AM hour is used as is
+            if(mode == 2)
+            {
+                if(hour == 12)
+                {
+                    hour = 0;
+                }
+                else
+                {
+                    hour += 12;
+                }
+            }
+            break;
+
+        default:
+            throw snap_logic_exception("locale.cpp:locale::parse_time(): hour mode unexpected.");
+
+        }
+
+        return result + hour * 3600LL;
     }
 }
 

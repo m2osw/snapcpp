@@ -28,55 +28,55 @@ namespace editor
 class editor_exception : public snap_exception
 {
 public:
-    editor_exception(char const *       what_msg) : snap_exception("editor", what_msg) {}
-    editor_exception(std::string const& what_msg) : snap_exception("editor", what_msg) {}
-    editor_exception(QString const&     what_msg) : snap_exception("editor", what_msg) {}
+    editor_exception(char const *        what_msg) : snap_exception("editor", what_msg) {}
+    editor_exception(std::string const & what_msg) : snap_exception("editor", what_msg) {}
+    editor_exception(QString const &     what_msg) : snap_exception("editor", what_msg) {}
 };
 
 class editor_exception_invalid_argument : public editor_exception
 {
 public:
-    editor_exception_invalid_argument(char const *       what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_argument(std::string const& what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_argument(QString const&     what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_argument(char const *        what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_argument(std::string const & what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_argument(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 class editor_exception_invalid_path : public editor_exception
 {
 public:
-    editor_exception_invalid_path(char const *       what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_path(std::string const& what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_path(QString const&     what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_path(char const *        what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_path(std::string const & what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_path(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 class editor_exception_invalid_editor_form_xml : public editor_exception
 {
 public:
-    editor_exception_invalid_editor_form_xml(char const *       what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_editor_form_xml(std::string const& what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_editor_form_xml(QString const&     what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_editor_form_xml(char const *        what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_editor_form_xml(std::string const & what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_editor_form_xml(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 class editor_exception_too_many_tags : public editor_exception
 {
 public:
-    editor_exception_too_many_tags(char const *       what_msg) : editor_exception(what_msg) {}
-    editor_exception_too_many_tags(std::string const& what_msg) : editor_exception(what_msg) {}
-    editor_exception_too_many_tags(QString const&     what_msg) : editor_exception(what_msg) {}
+    editor_exception_too_many_tags(char const *        what_msg) : editor_exception(what_msg) {}
+    editor_exception_too_many_tags(std::string const & what_msg) : editor_exception(what_msg) {}
+    editor_exception_too_many_tags(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 class editor_exception_invalid_xslt_data : public editor_exception
 {
 public:
-    editor_exception_invalid_xslt_data(char const *       what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_xslt_data(std::string const& what_msg) : editor_exception(what_msg) {}
-    editor_exception_invalid_xslt_data(QString const&     what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_xslt_data(char const *        what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_xslt_data(std::string const & what_msg) : editor_exception(what_msg) {}
+    editor_exception_invalid_xslt_data(QString const &     what_msg) : editor_exception(what_msg) {}
 };
 
 
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_EDITOR_DRAFTS_PATH,
     SNAP_NAME_EDITOR_LAYOUT,
@@ -99,7 +99,7 @@ class editor : public plugins::plugin
 public:
     static int const    EDITOR_SESSION_ID_EDIT = 1;
 
-    enum save_mode_t
+    enum class save_mode_t
     {
         EDITOR_SAVE_MODE_UNKNOWN = -1,
         EDITOR_SAVE_MODE_DRAFT,
@@ -114,7 +114,7 @@ public:
 
     struct editor_uri_token
     {
-        editor_uri_token(content::path_info_t& ipath, QString const& page_name, params_map_t const& params)
+        editor_uri_token(content::path_info_t & ipath, QString const & page_name, params_map_t const & params)
             : f_ipath(ipath)
             , f_page_name(page_name)
             , f_params(params)
@@ -123,9 +123,9 @@ public:
         {
         }
 
-        content::path_info_t&   f_ipath;
-        QString const&          f_page_name;
-        params_map_t const&     f_params;
+        content::path_info_t &  f_ipath;
+        QString const &         f_page_name;
+        params_map_t const &    f_params;
         QString                 f_token;
         QString                 f_result;
     };
@@ -138,53 +138,53 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
     QSharedPointer<QtCassandra::QCassandraTable> get_emails_table();
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
-    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    virtual bool        on_path_execute(content::path_info_t& ipath);
-    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    void                on_validate_post_for_widget(content::path_info_t& ipath, sessions::sessions::session_info& info,
-                                         QDomElement const& widget, QString const& widget_name,
-                                         QString const& widget_type, bool is_secret);
-    void                on_process_post(QString const& uri_path);
-    void                on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    virtual void        on_generate_boxes_content(content::path_info_t& page_cpath, content::path_info_t& ipath, QDomElement& page, QDomElement& box, QString const& ctemplate);
-    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning);
+    void                on_bootstrap(snap_child * snap);
+    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    virtual bool        on_path_execute(content::path_info_t & ipath);
+    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+    void                on_validate_post_for_widget(content::path_info_t & ipath, sessions::sessions::session_info & info,
+                                         QDomElement const & widget, QString const & widget_name,
+                                         QString const & widget_type, bool is_secret);
+    void                on_process_post(QString const & uri_path);
+    void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    virtual void        on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box, QString const & ctemplate);
+    virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
 
     // form::form_post
     virtual void        on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & info);
 
-    QString             format_uri(QString const& format, content::path_info_t& ipath, QString const& page_name, params_map_t const& params);
-    static save_mode_t  string_to_save_mode(QString const& mode);
-    static QString      clean_post_value(QString const& widget_type, QString const& value);
-    void                parse_out_inline_img(content::path_info_t& ipath, QString& body, QDomElement widget);
-    QDomDocument        get_editor_widgets(content::path_info_t& ipath);
+    QString             format_uri(QString const & format, content::path_info_t & ipath, QString const & page_name, params_map_t const & params);
+    static save_mode_t  string_to_save_mode(QString const & mode);
+    static QString      clean_post_value(QString const & widget_type, QString const & value);
+    void                parse_out_inline_img(content::path_info_t & ipath, QString & body, QDomElement widget);
+    QDomDocument        get_editor_widgets(content::path_info_t & ipath);
     void                add_editor_widget_templates(QDomDocument doc);
-    void                add_editor_widget_templates(QString const& doc);
-    void                add_editor_widget_templates_from_file(QString const& filename);
+    void                add_editor_widget_templates(QString const & doc);
+    void                add_editor_widget_templates_from_file(QString const & filename);
 
-    SNAP_SIGNAL(prepare_editor_form, (editor *e), (e));
-    SNAP_SIGNAL(save_editor_fields, (content::path_info_t& ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row), (ipath, revision_row, secret_row));
-    SNAP_SIGNAL(validate_editor_post_for_widget, (content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, QString const& value, bool const is_secret), (ipath, info, widget, widget_name, widget_type, value, is_secret));
-    SNAP_SIGNAL(replace_uri_token, (editor_uri_token& token_info), (token_info));
-    SNAP_SIGNAL_WITH_MODE(dynamic_editor_widget, (content::path_info_t& cpath, QString const& name, QDomDocument& editor_widgets), (cpath, name, editor_widgets), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(init_editor_widget, (content::path_info_t& ipath, QString const& field_id, QString const& field_type, QDomElement& widget, QtCassandra::QCassandraRow::pointer_t row), (ipath, field_id, field_type, widget, row), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(new_attachment_saved, (content::attachment_file& the_attachment, QDomElement const& widget, QDomElement const& attachment_tag), (the_attachment, widget, attachment_tag), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(finish_editor_form_processing, (content::path_info_t& ipath, bool& succeeded), (ipath, succeeded), NEITHER);
+    SNAP_SIGNAL(prepare_editor_form, (editor * e), (e));
+    SNAP_SIGNAL(save_editor_fields, (content::path_info_t & ipath, QtCassandra::QCassandraRow::pointer_t revision_row, QtCassandra::QCassandraRow::pointer_t secret_row), (ipath, revision_row, secret_row));
+    SNAP_SIGNAL(validate_editor_post_for_widget, (content::path_info_t & ipath, sessions::sessions::session_info & info, QDomElement const & widget, QString const & widget_name, QString const & widget_type, QString const & value, bool const is_secret), (ipath, info, widget, widget_name, widget_type, value, is_secret));
+    SNAP_SIGNAL(replace_uri_token, (editor_uri_token & token_info), (token_info));
+    SNAP_SIGNAL_WITH_MODE(dynamic_editor_widget, (content::path_info_t & cpath, QString const & name, QDomDocument & editor_widgets), (cpath, name, editor_widgets), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(init_editor_widget, (content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row), (ipath, field_id, field_type, widget, row), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(new_attachment_saved, (content::attachment_file & the_attachment, QDomElement const & widget, QDomElement const & attachment_tag), (the_attachment, widget, attachment_tag), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(finish_editor_form_processing, (content::path_info_t & ipath, bool & succeeded), (ipath, succeeded), NEITHER);
 
     // dynamic javascript property support
     virtual int         js_property_count() const;
-    virtual QVariant    js_property_get(QString const& name) const;
+    virtual QVariant    js_property_get(QString const & name) const;
     virtual QString     js_property_name(int index) const;
     virtual QVariant    js_property_get(int index) const;
 
 private:
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
-    void                editor_save(content::path_info_t& ipath, sessions::sessions::session_info& info);
-    void                editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info, server_access::server_access *server_access_plugin);
-    void                editor_create_new_branch(content::path_info_t& ipath);
-    bool                save_inline_image(content::path_info_t& ipath, QDomElement img, QString const& src, QString filename, QDomElement widget);
+    void                editor_save(content::path_info_t & ipath, sessions::sessions::session_info & info);
+    void                editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access *server_access_plugin);
+    void                editor_create_new_branch(content::path_info_t & ipath);
+    bool                save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget);
 
     zpsnap_child_t      f_snap;
     QDomDocument        f_editor_form;  // XSL from editor-form.xsl + other plugin extensions

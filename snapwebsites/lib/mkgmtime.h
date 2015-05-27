@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-extern time_t mkgmtime(struct tm *tim_p);
+extern time_t mkgmtime(struct tm * tim_p);
 
 #ifdef __cplusplus
 }

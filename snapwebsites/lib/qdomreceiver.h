@@ -30,17 +30,17 @@ class QDomReceiver : public QAbstractXmlReceiver
 public:
                     QDomReceiver(QXmlNamePool namepool, QDomDocument doc);
     virtual         ~QDomReceiver();
-    virtual void    atomicValue(const QVariant& value);
-    virtual void    attribute(const QXmlName& name, const QStringRef& value);
-    virtual void    characters(const QStringRef& value);
-    virtual void    comment(const QString& value);
+    virtual void    atomicValue(QVariant const & value);
+    virtual void    attribute(QXmlName const & name, QStringRef const & value);
+    virtual void    characters(QStringRef const & value);
+    virtual void    comment(QString const & value);
     virtual void    endDocument();
     virtual void    endElement();
     virtual void    endOfSequence();
-    virtual void    namespaceBinding(const QXmlName& name);
-    virtual void    processingInstruction(const QXmlName& target, const QString& value );
+    virtual void    namespaceBinding(QXmlName const & name);
+    virtual void    processingInstruction(QXmlName const & target, QString const & value );
     virtual void    startDocument();
-    virtual void    startElement(const QXmlName& name);
+    virtual void    startElement(QXmlName const & name);
     virtual void    startOfSequence();
 
 private:

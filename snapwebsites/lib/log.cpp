@@ -125,7 +125,7 @@ void configureConsole()
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
-    setLogOutputLevel( LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+    setLogOutputLevel( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
 }
 
 
@@ -177,7 +177,7 @@ void configureLogfile( QString const& logfile )
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
-    setLogOutputLevel( LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+    setLogOutputLevel( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
 }
 
 
@@ -222,7 +222,7 @@ void configureSysLog()
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
-    setLogOutputLevel( LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+    setLogOutputLevel( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
 }
 
 
@@ -330,31 +330,31 @@ void setLogOutputLevel( log_level_t level )
 
     switch(level)
     {
-    case LOG_LEVEL_OFF:
+    case log_level_t::LOG_LEVEL_OFF:
         new_level = log4cplus::OFF_LOG_LEVEL;
         return;
 
-    case LOG_LEVEL_FATAL:
+    case log_level_t::LOG_LEVEL_FATAL:
         new_level = log4cplus::FATAL_LOG_LEVEL;
         break;
 
-    case LOG_LEVEL_ERROR:
+    case log_level_t::LOG_LEVEL_ERROR:
         new_level = log4cplus::ERROR_LOG_LEVEL;
         break;
 
-    case LOG_LEVEL_WARNING:
+    case log_level_t::LOG_LEVEL_WARNING:
         new_level = log4cplus::WARN_LOG_LEVEL;
         break;
 
-    case LOG_LEVEL_INFO:
+    case log_level_t::LOG_LEVEL_INFO:
         new_level = log4cplus::INFO_LOG_LEVEL;
         break;
 
-    case LOG_LEVEL_DEBUG:
+    case log_level_t::LOG_LEVEL_DEBUG:
         new_level = log4cplus::DEBUG_LOG_LEVEL;
         break;
 
-    case LOG_LEVEL_TRACE:
+    case log_level_t::LOG_LEVEL_TRACE:
         new_level = log4cplus::TRACE_LOG_LEVEL;
         break;
 
@@ -396,7 +396,7 @@ logger::logger(log_level_t log_level, char const *file, char const *func, int li
     , f_file(file)
     , f_func(func)
     , f_line(line)
-    , f_security(LOG_SECURITY_NONE)
+    , f_security(log_security_t::LOG_SECURITY_NONE)
     //, f_message() -- auto-init
     //, f_ignore(false) -- auto-init
 {
@@ -456,48 +456,48 @@ logger::~logger()
     char const *level_str(nullptr);
     switch(f_log_level)
     {
-    case LOG_LEVEL_OFF:
+    case log_level_t::LOG_LEVEL_OFF:
         // off means we don't emit anything
         return;
 
-    case LOG_LEVEL_FATAL:
+    case log_level_t::LOG_LEVEL_FATAL:
         ll = log4cplus::FATAL_LOG_LEVEL;
         sll = LOG_CRIT;
         console = true;
         level_str = "fatal error";
         break;
 
-    case LOG_LEVEL_ERROR:
+    case log_level_t::LOG_LEVEL_ERROR:
         ll = log4cplus::ERROR_LOG_LEVEL;
         sll = LOG_ERR;
         console = true;
         level_str = "error";
         break;
 
-    case LOG_LEVEL_WARNING:
+    case log_level_t::LOG_LEVEL_WARNING:
         ll = log4cplus::WARN_LOG_LEVEL;
         sll = LOG_WARNING;
         console = true;
         level_str = "warning";
         break;
 
-    case LOG_LEVEL_INFO:
+    case log_level_t::LOG_LEVEL_INFO:
         ll = log4cplus::INFO_LOG_LEVEL;
         sll = LOG_INFO;
         break;
 
-    case LOG_LEVEL_DEBUG:
+    case log_level_t::LOG_LEVEL_DEBUG:
         ll = log4cplus::DEBUG_LOG_LEVEL;
         break;
 
-    case LOG_LEVEL_TRACE:
+    case log_level_t::LOG_LEVEL_TRACE:
         ll = log4cplus::TRACE_LOG_LEVEL;
         break;
 
     }
 
     // TBD: is the exists() call doing anything for us here?
-    if( (g_logging_type == logging_type_t::unconfigured_logger) || !log4cplus::Logger::exists(LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
+    if( (g_logging_type == logging_type_t::unconfigured_logger) || !log4cplus::Logger::exists(log_security_t::LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
     {
         // not even configured, return immediately
         if(sll != -1)
@@ -525,7 +525,7 @@ logger::~logger()
         }
 
         // actually emit the log
-        if(LOG_SECURITY_SECURE == f_security)
+        if(log_security_t::LOG_SECURITY_SECURE == f_security)
         {
             // generally this at least goes in the /var/log/syslog
             // and it may also go in a secure log file (i.e. not readable by everyone)
@@ -737,37 +737,37 @@ logger& operator << ( logger& l, wchar_t const* msg )
 
 logger fatal(char const *file, char const *func, int line)
 {
-    logger l(LOG_LEVEL_FATAL, file, func, line);
+    logger l(log_level_t::LOG_LEVEL_FATAL, file, func, line);
     return l.operator () ("fatal: ");
 }
 
 logger error(char const *file, char const *func, int line)
 {
-    logger l(LOG_LEVEL_ERROR, file, func, line);
+    logger l(log_level_t::LOG_LEVEL_ERROR, file, func, line);
     return l.operator () ("error: ");
 }
 
 logger warning(char const *file, char const *func, int line)
 {
-    logger l(LOG_LEVEL_WARNING, file, func, line);
+    logger l(log_level_t::LOG_LEVEL_WARNING, file, func, line);
     return l.operator () ("warning: ");
 }
 
 logger info(char const *file, char const *func, int line)
 {
-    logger l(LOG_LEVEL_INFO, file, func, line);
+    logger l(log_level_t::LOG_LEVEL_INFO, file, func, line);
     return l.operator () ("info: ");
 }
 
 logger debug(char const *file, char const *func, int line)
 {
-    logger l(LOG_LEVEL_DEBUG, file, func, line);
+    logger l(log_level_t::LOG_LEVEL_DEBUG, file, func, line);
     return l.operator () ("debug: ");
 }
 
 logger trace(char const *file, char const *func, int line)
 {
-    logger l(LOG_LEVEL_INFO, file, func, line);
+    logger l(log_level_t::LOG_LEVEL_INFO, file, func, line);
     return l.operator () ("trace: ");
 }
 

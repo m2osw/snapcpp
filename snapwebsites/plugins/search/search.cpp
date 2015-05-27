@@ -39,12 +39,12 @@ SNAP_PLUGIN_START(search, 1, 0)
 const char *get_name(name_t name)
 {
     switch(name) {
-    case SNAP_NAME_SEARCH_STATUS:
+    case name_t::SNAP_NAME_SEARCH_STATUS:
         return "search::status";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_SEARCH_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_SEARCH_...");
 
     }
     NOTREACHED();

@@ -25,7 +25,7 @@ namespace test_plugin
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_TEST_PLUGIN_DURATION_FIELD,
     SNAP_NAME_TEST_PLUGIN_END_DATE,
@@ -37,7 +37,7 @@ enum name_t
     SNAP_NAME_TEST_PLUGIN_TEST_NAME_FIELD,
     SNAP_NAME_TEST_PLUGIN_TEST_RESULTS_TABLE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class test_plugin_exception : public snap_exception
@@ -63,10 +63,10 @@ public:
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
 
-    void                    on_bootstrap(snap_child *snap);
-    void                    on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
-    void                    on_process_post(QString const& uri_path);
-    virtual bool            on_path_execute(content::path_info_t& ipath);
+    void                    on_bootstrap(snap_child * snap);
+    void                    on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                    on_process_post(QString const & uri_path);
+    virtual bool            on_path_execute(content::path_info_t & ipath);
 
     QtCassandra::QCassandraTable::pointer_t get_test_results_table();
 

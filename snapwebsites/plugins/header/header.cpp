@@ -35,18 +35,19 @@ SNAP_PLUGIN_START(header, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+const char * get_name(name_t name)
 {
-    switch(name) {
-    case SNAP_NAME_HEADER_INTERNAL:
+    switch(name)
+    {
+    case name_t::SNAP_NAME_HEADER_INTERNAL:
         return "header::internal";
 
-    case SNAP_NAME_HEADER_GENERATOR:
+    case name_t::SNAP_NAME_HEADER_GENERATOR:
         return "header::generator";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_HEADER_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_HEADER_...");
 
     }
     NOTREACHED();
@@ -204,7 +205,7 @@ void header::on_generate_header_content(content::path_info_t& ipath, QDomElement
     {   // snap/head/metadata/generator
         QDomElement created(doc.createElement("generator"));
         metadata.appendChild(created);
-        QtCassandra::QCassandraValue generator(content_plugin->get_content_parameter(ipath, get_name(SNAP_NAME_HEADER_GENERATOR), content::content::PARAM_REVISION_BRANCH));
+        QtCassandra::QCassandraValue generator(content_plugin->get_content_parameter(ipath, get_name(name_t::SNAP_NAME_HEADER_GENERATOR), content::content::param_revision_t::PARAM_REVISION_BRANCH));
         if(!generator.nullValue())
         {
             // also save that one as a header

@@ -55,23 +55,23 @@ SNAP_PLUGIN_START(info, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_INFO_LONG_NAME:
+    case name_t::SNAP_NAME_INFO_LONG_NAME:
         return "long_name";
 
-    case SNAP_NAME_INFO_NAME:
+    case name_t::SNAP_NAME_INFO_NAME:
         return "name";
 
-    case SNAP_NAME_INFO_SHORT_NAME:
+    case name_t::SNAP_NAME_INFO_SHORT_NAME:
         return "short_name";
 
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_INFO_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_INFO_...");
 
     }
     NOTREACHED();
@@ -302,17 +302,17 @@ void info::on_process_form_post(content::path_info_t& ipath, sessions::sessions:
     QtCassandra::QCassandraValue value;
     QString name;
 
-    name = f_snap->postenv(get_name(SNAP_NAME_INFO_NAME));
+    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_NAME));
     value = name;
-    f_snap->set_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_NAME), value);
+    f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME), value);
 
-    name = f_snap->postenv(get_name(SNAP_NAME_INFO_LONG_NAME));
+    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_LONG_NAME));
     value = name;
-    f_snap->set_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_LONG_NAME), value);
+    f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_LONG_NAME), value);
 
-    name = f_snap->postenv(get_name(SNAP_NAME_INFO_SHORT_NAME));
+    name = f_snap->postenv(get_name(name_t::SNAP_NAME_INFO_SHORT_NAME));
     value = name;
-    f_snap->set_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_SHORT_NAME), value);
+    f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_SITE_SHORT_NAME), value);
 }
 #pragma GCC diagnostic pop
 

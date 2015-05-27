@@ -67,7 +67,7 @@ QtCassandra::QCassandraContext::pointer_t   g_context;
 
 variable_t::variable_t(QString const& name)
     : f_name(name)
-    //, f_type(EXPR_VARIABLE_TYPE_NULL) -- auto-init
+    //, f_type(variable_type_t::EXPR_VARIABLE_TYPE_NULL) -- auto-init
     //, f_value() -- auto-init (empty, a.k.a. NULL)
 {
 }
@@ -100,14 +100,14 @@ void variable_t::set_value(variable_type_t type, QtCassandra::QCassandraValue co
 
 void variable_t::set_value()
 {
-    f_type = EXPR_VARIABLE_TYPE_NULL;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_NULL;
     f_value.setNullValue();
 }
 
 
 void variable_t::set_value(bool value)
 {
-    f_type = EXPR_VARIABLE_TYPE_BOOL;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_BOOL;
     f_value = value;
 }
 
@@ -115,105 +115,105 @@ void variable_t::set_value(bool value)
 void variable_t::set_value(char value)
 {
     // with g++ this is unsigned...
-    f_type = EXPR_VARIABLE_TYPE_UINT8;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_UINT8;
     f_value = value;
 }
 
 
 void variable_t::set_value(signed char value)
 {
-    f_type = EXPR_VARIABLE_TYPE_INT8;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_INT8;
     f_value = value;
 }
 
 
 void variable_t::set_value(unsigned char value)
 {
-    f_type = EXPR_VARIABLE_TYPE_UINT8;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_UINT8;
     f_value = value;
 }
 
 
 void variable_t::set_value(int16_t value)
 {
-    f_type = EXPR_VARIABLE_TYPE_INT16;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_INT16;
     f_value = value;
 }
 
 
 void variable_t::set_value(uint16_t value)
 {
-    f_type = EXPR_VARIABLE_TYPE_UINT16;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_UINT16;
     f_value = value;
 }
 
 
 void variable_t::set_value(int32_t value)
 {
-    f_type = EXPR_VARIABLE_TYPE_INT32;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_INT32;
     f_value = value;
 }
 
 
 void variable_t::set_value(uint32_t value)
 {
-    f_type = EXPR_VARIABLE_TYPE_UINT32;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_UINT32;
     f_value = value;
 }
 
 
 void variable_t::set_value(int64_t value)
 {
-    f_type = EXPR_VARIABLE_TYPE_INT64;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_INT64;
     f_value = value;
 }
 
 
 void variable_t::set_value(uint64_t value)
 {
-    f_type = EXPR_VARIABLE_TYPE_UINT64;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_UINT64;
     f_value = value;
 }
 
 
 void variable_t::set_value(float value)
 {
-    f_type = EXPR_VARIABLE_TYPE_FLOAT;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_FLOAT;
     f_value = value;
 }
 
 
 void variable_t::set_value(double value)
 {
-    f_type = EXPR_VARIABLE_TYPE_DOUBLE;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE;
     f_value = value;
 }
 
 
 void variable_t::set_value(char const *value)
 {
-    f_type = EXPR_VARIABLE_TYPE_STRING;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = QString::fromUtf8(value);
 }
 
 
 void variable_t::set_value(wchar_t const *value)
 {
-    f_type = EXPR_VARIABLE_TYPE_STRING;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = QString::fromWCharArray(value);
 }
 
 
 void variable_t::set_value(QString const& value)
 {
-    f_type = EXPR_VARIABLE_TYPE_STRING;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_STRING;
     f_value = value;
 }
 
 
 void variable_t::set_value(QByteArray const& value)
 {
-    f_type = EXPR_VARIABLE_TYPE_BINARY;
+    f_type = variable_type_t::EXPR_VARIABLE_TYPE_BINARY;
     f_value = value;
 }
 
@@ -222,42 +222,42 @@ bool variable_t::is_true() const
 {
     switch(f_type)
     {
-    case EXPR_VARIABLE_TYPE_NULL:
+    case variable_type_t::EXPR_VARIABLE_TYPE_NULL:
         return false;
 
-    case EXPR_VARIABLE_TYPE_BOOL:
+    case variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
         return f_value.safeBoolValue();
 
-    case EXPR_VARIABLE_TYPE_INT8:
-    case EXPR_VARIABLE_TYPE_UINT8:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT8:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
         return f_value.safeSignedCharValue() != 0;
 
-    case EXPR_VARIABLE_TYPE_INT16:
-    case EXPR_VARIABLE_TYPE_UINT16:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT16:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
         return f_value.safeInt16Value() != 0;
 
-    case EXPR_VARIABLE_TYPE_INT32:
-    case EXPR_VARIABLE_TYPE_UINT32:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT32:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
         return f_value.safeInt32Value() != 0;
 
-    case EXPR_VARIABLE_TYPE_INT64:
-    case EXPR_VARIABLE_TYPE_UINT64:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT64:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
         return f_value.safeInt32Value() != 0;
 
-    case EXPR_VARIABLE_TYPE_FLOAT:
+    case variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
         return f_value.safeFloatValue() != 0.0f;
 #pragma GCC diagnostic pop
 
-    case EXPR_VARIABLE_TYPE_DOUBLE:
+    case variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
         return f_value.safeDoubleValue() != 0.0;
 #pragma GCC diagnostic pop
 
-    case EXPR_VARIABLE_TYPE_STRING:
-    case EXPR_VARIABLE_TYPE_BINARY:
+    case variable_type_t::EXPR_VARIABLE_TYPE_STRING:
+    case variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
         return !f_value.nullValue();
 
     }
@@ -269,7 +269,7 @@ bool variable_t::get_bool(QString const& name) const
 {
     switch(get_type())
     {
-    case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+    case variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
         return get_value().safeBoolValue();
 
     default:
@@ -284,34 +284,34 @@ int64_t variable_t::get_integer(QString const& name) const
 {
     switch(get_type())
     {
-    case variable_t::EXPR_VARIABLE_TYPE_INT8:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT8:
         return get_value().safeSignedCharValue();
 
-    case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
         return get_value().safeUnsignedCharValue();
 
-    case variable_t::EXPR_VARIABLE_TYPE_INT16:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT16:
         return get_value().safeInt16Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
         return get_value().safeUInt16Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_INT32:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT32:
         return get_value().safeInt32Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
         return get_value().safeUInt32Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_INT64:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT64:
         return get_value().safeInt64Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
         return get_value().safeUInt64Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+    case variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
         return static_cast<int64_t>(get_value().safeFloatValue());
 
-    case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+    case variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
         return static_cast<int64_t>(get_value().safeDoubleValue());
 
     default:
@@ -327,34 +327,34 @@ double variable_t::get_floating_point(QString const& name) const
 {
     switch(get_type())
     {
-    case variable_t::EXPR_VARIABLE_TYPE_INT8:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT8:
         return get_value().safeSignedCharValue();
 
-    case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
         return get_value().safeUnsignedCharValue();
 
-    case variable_t::EXPR_VARIABLE_TYPE_INT16:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT16:
         return get_value().safeInt16Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
         return get_value().safeUInt16Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_INT32:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT32:
         return get_value().safeInt32Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
         return get_value().safeUInt32Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_INT64:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT64:
         return get_value().safeInt64Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
         return get_value().safeUInt64Value();
 
-    case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+    case variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
         return static_cast<int64_t>(get_value().safeFloatValue());
 
-    case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+    case variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
         return static_cast<int64_t>(get_value().safeDoubleValue());
 
     default:
@@ -370,7 +370,7 @@ QString variable_t::get_string(QString const& name) const
 {
     switch(get_type())
     {
-    case variable_t::EXPR_VARIABLE_TYPE_STRING:
+    case variable_type_t::EXPR_VARIABLE_TYPE_STRING:
         return get_value().stringValue();
 
     default:
@@ -387,46 +387,46 @@ QString variable_t::to_string() const
 {
     switch(f_type)
     {
-    case EXPR_VARIABLE_TYPE_NULL:
+    case variable_type_t::EXPR_VARIABLE_TYPE_NULL:
         return "(null)";
 
-    case EXPR_VARIABLE_TYPE_BOOL:
+    case variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
         return f_value.safeBoolValue() ? "true" : "false";
 
-    case EXPR_VARIABLE_TYPE_INT8:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT8:
         return QString("%1").arg(f_value.safeSignedCharValue());
 
-    case EXPR_VARIABLE_TYPE_UINT8:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
         return QString("%1").arg(static_cast<int>(f_value.safeUnsignedCharValue()));
 
-    case EXPR_VARIABLE_TYPE_INT16:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT16:
         return QString("%1").arg(f_value.safeInt16Value());
 
-    case EXPR_VARIABLE_TYPE_UINT16:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
         return QString("%1").arg(f_value.safeUInt16Value());
 
-    case EXPR_VARIABLE_TYPE_INT32:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT32:
         return QString("%1").arg(f_value.safeInt32Value());
 
-    case EXPR_VARIABLE_TYPE_UINT32:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
         return QString("%1").arg(f_value.safeUInt32Value());
 
-    case EXPR_VARIABLE_TYPE_INT64:
+    case variable_type_t::EXPR_VARIABLE_TYPE_INT64:
         return QString("%1").arg(f_value.safeInt64Value());
 
-    case EXPR_VARIABLE_TYPE_UINT64:
+    case variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
         return QString("%1").arg(f_value.safeUInt64Value());
 
-    case EXPR_VARIABLE_TYPE_FLOAT:
+    case variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
         return QString("%1").arg(f_value.safeFloatValue());
 
-    case EXPR_VARIABLE_TYPE_DOUBLE:
+    case variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
         return QString("%1").arg(f_value.safeDoubleValue());
 
-    case EXPR_VARIABLE_TYPE_STRING:
+    case variable_type_t::EXPR_VARIABLE_TYPE_STRING:
         return QString("\"%1\"").arg(f_value.stringValue());
 
-    case EXPR_VARIABLE_TYPE_BINARY:
+    case variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
         return "#...TODO: binary...#";
 
     }
@@ -454,7 +454,7 @@ public:
 
     static functions_t::function_call_table_t const internal_functions[];
 
-    enum node_type_t
+    enum class node_type_t
     {
         NODE_TYPE_UNKNOWN, // used when creating a node without a type
         NODE_TYPE_LOADING, // used when loading
@@ -499,9 +499,9 @@ public:
         // Variable
         NODE_TYPE_VARIABLE
     };
-    typedef controlled_vars::limited_need_enum_init<node_type_t, NODE_TYPE_UNKNOWN, NODE_TYPE_VARIABLE> safe_node_type_t;
+    typedef controlled_vars::limited_need_enum_init<node_type_t, node_type_t::NODE_TYPE_UNKNOWN, node_type_t::NODE_TYPE_VARIABLE> safe_node_type_t;
 
-    static char const *type_names[NODE_TYPE_VARIABLE + 1];
+    static char const *type_names[static_cast<size_t>(node_type_t::NODE_TYPE_VARIABLE) + 1];
 
     expr_node(node_type_t type)
         : f_type(type)
@@ -575,7 +575,7 @@ public:
     static QSharedPointer<expr_node> load(QtSerialization::QReader& r)
     {
         // create a "root" used only to load the data
-        expr_node_pointer_t root(new expr_node(NODE_TYPE_LOADING));
+        expr_node_pointer_t root(new expr_node(node_type_t::NODE_TYPE_LOADING));
         root->read(r);
 #ifdef DEBUG
         if(root->children_size() != 1)
@@ -591,7 +591,7 @@ public:
     {
         // read the data from the reader
         QtSerialization::QComposite comp;
-        qint32 type(NODE_TYPE_LOADING);
+        qint32 type(static_cast<qint32>(static_cast<node_type_t>(node_type_t::NODE_TYPE_LOADING)));
         QtSerialization::QFieldInt32 node_type(comp, "type", type); // f_type is an enum...
         QtSerialization::QFieldString node_name(comp, "name", f_name);
         qint64 value_int(0);
@@ -605,23 +605,23 @@ public:
         f_type = static_cast<node_type_t>(type);
         switch(f_type)
         {
-        case NODE_TYPE_UNKNOWN:
-            throw snap_logic_exception("expr_node::read() loaded a node of type: NODE_TYPE_UNKNOWN");
+        case node_type_t::NODE_TYPE_UNKNOWN:
+            throw snap_logic_exception("expr_node::read() loaded a node of type: node_type_t::NODE_TYPE_UNKNOWN");
 
-        case NODE_TYPE_LITERAL_BOOLEAN:
-            f_variable.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, static_cast<bool>(value_int));
+        case node_type_t::NODE_TYPE_LITERAL_BOOLEAN:
+            f_variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, static_cast<bool>(value_int));
             break;
 
-        case NODE_TYPE_LITERAL_INTEGER:
-            f_variable.set_value(variable_t::EXPR_VARIABLE_TYPE_INT64, static_cast<int64_t>(value_int));
+        case node_type_t::NODE_TYPE_LITERAL_INTEGER:
+            f_variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64, static_cast<int64_t>(value_int));
             break;
 
-        case NODE_TYPE_LITERAL_FLOATING_POINT:
-            f_variable.set_value(variable_t::EXPR_VARIABLE_TYPE_DOUBLE, value_dbl);
+        case node_type_t::NODE_TYPE_LITERAL_FLOATING_POINT:
+            f_variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE, value_dbl);
             break;
 
-        case NODE_TYPE_LITERAL_STRING:
-            f_variable.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value_str);
+        case node_type_t::NODE_TYPE_LITERAL_STRING:
+            f_variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value_str);
             break;
 
         default:
@@ -636,7 +636,7 @@ public:
         if(name == "node")
         {
             // create a node
-            expr_node_pointer_t child(new expr_node(NODE_TYPE_LOADING));
+            expr_node_pointer_t child(new expr_node(node_type_t::NODE_TYPE_LOADING));
             // read the data from the reader
             child->read(r);
             // add to the vector
@@ -648,7 +648,7 @@ public:
     {
         QtSerialization::QWriter::QTag tag(w, "node");
 
-        QtSerialization::writeTag(w, "type", static_cast<qint32>(f_type));
+        QtSerialization::writeTag(w, "type", static_cast<qint32>(static_cast<node_type_t>(f_type)));
 
         if(!f_name.isEmpty())
         {
@@ -657,19 +657,19 @@ public:
 
         switch(f_type)
         {
-        case NODE_TYPE_LITERAL_BOOLEAN:
+        case node_type_t::NODE_TYPE_LITERAL_BOOLEAN:
             QtSerialization::writeTag(w, "int", static_cast<qint64>(f_variable.get_value().safeBoolValue()));
             break;
 
-        case NODE_TYPE_LITERAL_INTEGER:
+        case node_type_t::NODE_TYPE_LITERAL_INTEGER:
             QtSerialization::writeTag(w, "int", static_cast<qint64>(f_variable.get_value().safeInt64Value()));
             break;
 
-        case NODE_TYPE_LITERAL_FLOATING_POINT:
+        case node_type_t::NODE_TYPE_LITERAL_FLOATING_POINT:
             QtSerialization::writeTag(w, "flt", f_variable.get_value().safeDoubleValue());
             break;
 
-        case NODE_TYPE_LITERAL_STRING:
+        case node_type_t::NODE_TYPE_LITERAL_STRING:
             QtSerialization::writeTag(w, "str", f_variable.get_value().stringValue());
             break;
 
@@ -755,7 +755,7 @@ public:
     {
         QtCassandra::QCassandraValue value;
         value.setFloatValue(static_cast<float>(F::floating_points(a, b)));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_FLOAT, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT, value);
     }
 
 #pragma GCC diagnostic push
@@ -771,7 +771,7 @@ public:
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::floating_points(a, b));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
 #pragma GCC diagnostic push
@@ -787,7 +787,7 @@ public:
     {
         QtCassandra::QCassandraValue value;
         value.setDoubleValue(F::floating_points(a, b));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_DOUBLE, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE, value);
     }
 
 #pragma GCC diagnostic push
@@ -803,7 +803,7 @@ public:
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::floating_points(a, b));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
 #pragma GCC diagnostic push
@@ -819,7 +819,7 @@ public:
     {
         QtCassandra::QCassandraValue value;
         value.setStringValue(F::string_integer(a, b));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
 #pragma GCC diagnostic push
@@ -835,7 +835,7 @@ public:
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::string_integer(a, b));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
 #pragma GCC diagnostic push
@@ -851,7 +851,7 @@ public:
     {
         QtCassandra::QCassandraValue value;
         value.setStringValue(F::strings(a, b));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
 #pragma GCC diagnostic push
@@ -867,7 +867,7 @@ public:
     {
         QtCassandra::QCassandraValue value;
         value.setBoolValue(F::strings(a, b));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
 #pragma GCC diagnostic push
@@ -1064,158 +1064,158 @@ public:
 #ifdef SHOW_COMMANDS
         switch(f_type)
         {
-        case NODE_TYPE_UNKNOWN:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_UNKNOWN";
+        case node_type_t::NODE_TYPE_UNKNOWN:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_UNKNOWN";
             break;
 
-        case NODE_TYPE_LOADING:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LOADING";
+        case node_type_t::NODE_TYPE_LOADING:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_LOADING";
             break;
 
-        case NODE_TYPE_OPERATION_LIST:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LIST";
+        case node_type_t::NODE_TYPE_OPERATION_LIST:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_LIST";
             break;
 
-        case NODE_TYPE_OPERATION_LOGICAL_NOT:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LOGICAL_NOT";
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_NOT:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_LOGICAL_NOT";
             break;
 
-        case NODE_TYPE_OPERATION_BITWISE_NOT:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_BITWISE_NOT";
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_NOT:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_BITWISE_NOT";
             break;
 
-        case NODE_TYPE_OPERATION_NEGATE:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_NEGATE";
+        case node_type_t::NODE_TYPE_OPERATION_NEGATE:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_NEGATE";
             break;
 
-        case NODE_TYPE_OPERATION_FUNCTION:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_FUNCTION -- " << f_name << "()";
+        case node_type_t::NODE_TYPE_OPERATION_FUNCTION:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_FUNCTION -- " << f_name << "()";
             break;
 
-        case NODE_TYPE_OPERATION_MULTIPLY:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_MULTIPLY (*)";
+        case node_type_t::NODE_TYPE_OPERATION_MULTIPLY:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_MULTIPLY (*)";
             break;
 
-        case NODE_TYPE_OPERATION_DIVIDE:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_DIVIDE (/)";
+        case node_type_t::NODE_TYPE_OPERATION_DIVIDE:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_DIVIDE (/)";
             break;
 
-        case NODE_TYPE_OPERATION_MODULO:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_MODULO (%)";
+        case node_type_t::NODE_TYPE_OPERATION_MODULO:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_MODULO (%)";
             break;
 
-        case NODE_TYPE_OPERATION_ADD:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_ADD (+)";
+        case node_type_t::NODE_TYPE_OPERATION_ADD:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_ADD (+)";
             break;
 
-        case NODE_TYPE_OPERATION_SUBTRACT:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_SUBTRACT (-)";
+        case node_type_t::NODE_TYPE_OPERATION_SUBTRACT:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_SUBTRACT (-)";
             break;
 
-        case NODE_TYPE_OPERATION_SHIFT_LEFT:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_SHIFT_LEFT (<<)";
+        case node_type_t::NODE_TYPE_OPERATION_SHIFT_LEFT:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_SHIFT_LEFT (<<)";
             break;
 
-        case NODE_TYPE_OPERATION_SHIFT_RIGHT:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_SHIFT_RIGHT (>>)";
+        case node_type_t::NODE_TYPE_OPERATION_SHIFT_RIGHT:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_SHIFT_RIGHT (>>)";
             break;
 
-        case NODE_TYPE_OPERATION_LESS:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LESS (<)";
+        case node_type_t::NODE_TYPE_OPERATION_LESS:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_LESS (<)";
             break;
 
-        case NODE_TYPE_OPERATION_LESS_OR_EQUAL:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LESS_OR_EQUAL (<=)";
+        case node_type_t::NODE_TYPE_OPERATION_LESS_OR_EQUAL:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_LESS_OR_EQUAL (<=)";
             break;
 
-        case NODE_TYPE_OPERATION_GREATER:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_GREATER (>)";
+        case node_type_t::NODE_TYPE_OPERATION_GREATER:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_GREATER (>)";
             break;
 
-        case NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_GREATER_OR_EQUAL (>=)";
+        case node_type_t::NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_GREATER_OR_EQUAL (>=)";
             break;
 
-        case NODE_TYPE_OPERATION_MINIMUM:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_MINIMUM (<?)";
+        case node_type_t::NODE_TYPE_OPERATION_MINIMUM:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_MINIMUM (<?)";
             break;
 
-        case NODE_TYPE_OPERATION_MAXIMUM:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_MAXIMUM (>?)";
+        case node_type_t::NODE_TYPE_OPERATION_MAXIMUM:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_MAXIMUM (>?)";
             break;
 
-        case NODE_TYPE_OPERATION_EQUAL:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_EQUAL (==)";
+        case node_type_t::NODE_TYPE_OPERATION_EQUAL:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_EQUAL (==)";
             break;
 
-        case NODE_TYPE_OPERATION_NOT_EQUAL:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_NOT_EQUAL (!=)";
+        case node_type_t::NODE_TYPE_OPERATION_NOT_EQUAL:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_NOT_EQUAL (!=)";
             break;
 
-        case NODE_TYPE_OPERATION_BITWISE_AND:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_BITWISE_AND (&)";
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_AND:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_BITWISE_AND (&)";
             break;
 
-        case NODE_TYPE_OPERATION_BITWISE_XOR:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_BITWISE_XOR (^)";
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_XOR:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_BITWISE_XOR (^)";
             break;
 
-        case NODE_TYPE_OPERATION_BITWISE_OR:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_BITWISE_OR (|)";
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_OR:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_BITWISE_OR (|)";
             break;
 
-        case NODE_TYPE_OPERATION_LOGICAL_AND:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LOGICAL_AND (&&)";
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_AND:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_LOGICAL_AND (&&)";
             break;
 
-        case NODE_TYPE_OPERATION_LOGICAL_XOR:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LOGICAL_XOR (^^)";
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_XOR:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_LOGICAL_XOR (^^)";
             break;
 
-        case NODE_TYPE_OPERATION_LOGICAL_OR:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_LOGICAL_OR (||)";
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_OR:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_LOGICAL_OR (||)";
             break;
 
-        case NODE_TYPE_OPERATION_CONDITIONAL:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_CONDITIONAL (?:)";
+        case node_type_t::NODE_TYPE_OPERATION_CONDITIONAL:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_CONDITIONAL (?:)";
             break;
 
-        case NODE_TYPE_OPERATION_ASSIGNMENT:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_ASSIGNMENT (" << f_name << ":= ...)";
+        case node_type_t::NODE_TYPE_OPERATION_ASSIGNMENT:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_ASSIGNMENT (" << f_name << ":= ...)";
             break;
 
-        case NODE_TYPE_OPERATION_VARIABLE:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_OPERATION_VARIABLE (" << f_name
+        case node_type_t::NODE_TYPE_OPERATION_VARIABLE:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_OPERATION_VARIABLE (" << f_name
                 << (variables.contains(f_name) ? " = " : "")
                 << (variables.contains(f_name) ? variables[f_name].to_string() : "")
                 << ")";
             break;
 
-        case NODE_TYPE_LITERAL_BOOLEAN:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LITERAL_BOOLEAN (" << (f_variable.get_bool(f_name) ? "true" : "false") << ")";
+        case node_type_t::NODE_TYPE_LITERAL_BOOLEAN:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_LITERAL_BOOLEAN (" << (f_variable.get_bool(f_name) ? "true" : "false") << ")";
             break;
 
-        case NODE_TYPE_LITERAL_INTEGER:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LITERAL_INTEGER (" << f_variable.get_integer(f_name) << ")";
+        case node_type_t::NODE_TYPE_LITERAL_INTEGER:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_LITERAL_INTEGER (" << f_variable.get_integer(f_name) << ")";
             break;
 
-        case NODE_TYPE_LITERAL_FLOATING_POINT:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LITERAL_FLOATING_POINT (" << f_variable.get_value().safeDoubleValue() << ")";
+        case node_type_t::NODE_TYPE_LITERAL_FLOATING_POINT:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_LITERAL_FLOATING_POINT (" << f_variable.get_value().safeDoubleValue() << ")";
             break;
 
-        case NODE_TYPE_LITERAL_STRING:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_LITERAL_STRING (" << f_variable.get_string(f_name) << ")";
+        case node_type_t::NODE_TYPE_LITERAL_STRING:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_LITERAL_STRING (" << f_variable.get_string(f_name) << ")";
             break;
 
-        case NODE_TYPE_VARIABLE:
-            SNAP_LOG_TRACE() << "execute: NODE_TYPE_VARIABLE";
+        case node_type_t::NODE_TYPE_VARIABLE:
+            SNAP_LOG_TRACE() << "execute: node_type_t::NODE_TYPE_VARIABLE";
             break;
 
         }
 #endif
 
         variable_t::variable_vector_t sub_results;
-        if(NODE_TYPE_OPERATION_CONDITIONAL != f_type)
+        if(node_type_t::NODE_TYPE_OPERATION_CONDITIONAL != f_type)
         {
             // we don't do that for conditionals because only the left
             // or only the right shall be computed!
@@ -1230,145 +1230,145 @@ public:
 
         switch(f_type)
         {
-        case NODE_TYPE_UNKNOWN:
-        case NODE_TYPE_LOADING:
-            throw snap_logic_exception("expr_node::execute() called with an incompatible result type: NODE_TYPE_UNKNOWN or NODE_TYPE_LOADING");
+        case node_type_t::NODE_TYPE_UNKNOWN:
+        case node_type_t::NODE_TYPE_LOADING:
+            throw snap_logic_exception("expr_node::execute() called with an incompatible result type: node_type_t::NODE_TYPE_UNKNOWN or node_type_t::NODE_TYPE_LOADING");
 
-        case NODE_TYPE_OPERATION_LIST:
+        case node_type_t::NODE_TYPE_OPERATION_LIST:
             result = sub_results.last();
             break;
 
-        case NODE_TYPE_OPERATION_LOGICAL_NOT:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_NOT:
             logical_not(result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_BITWISE_NOT:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_NOT:
             bitwise_not(result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_NEGATE:
+        case node_type_t::NODE_TYPE_OPERATION_NEGATE:
             negate(result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_FUNCTION:
+        case node_type_t::NODE_TYPE_OPERATION_FUNCTION:
             call_function(result, sub_results, functions);
             break;
 
-        case NODE_TYPE_OPERATION_MULTIPLY:
+        case node_type_t::NODE_TYPE_OPERATION_MULTIPLY:
             binary_operation<op_multiply>("*", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_DIVIDE:
+        case node_type_t::NODE_TYPE_OPERATION_DIVIDE:
             binary_operation<op_divide>("/", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_MODULO:
+        case node_type_t::NODE_TYPE_OPERATION_MODULO:
             binary_operation<op_modulo>("%", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_ADD:
+        case node_type_t::NODE_TYPE_OPERATION_ADD:
             binary_operation<op_add>("+", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_SUBTRACT:
+        case node_type_t::NODE_TYPE_OPERATION_SUBTRACT:
             binary_operation<op_subtract>("-", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_SHIFT_LEFT:
+        case node_type_t::NODE_TYPE_OPERATION_SHIFT_LEFT:
             binary_operation<op_shift_left>("<<", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_SHIFT_RIGHT:
+        case node_type_t::NODE_TYPE_OPERATION_SHIFT_RIGHT:
             binary_operation<op_shift_right>(">>", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_LESS:
+        case node_type_t::NODE_TYPE_OPERATION_LESS:
             bool_binary_operation<op_less>("<", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_LESS_OR_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_LESS_OR_EQUAL:
             bool_binary_operation<op_less_or_equal>("<=", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_GREATER:
+        case node_type_t::NODE_TYPE_OPERATION_GREATER:
             bool_binary_operation<op_greater>(">", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
             bool_binary_operation<op_greater_or_equal>(">=", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_MINIMUM:
+        case node_type_t::NODE_TYPE_OPERATION_MINIMUM:
             binary_operation<op_minimum>("<?", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_MAXIMUM:
+        case node_type_t::NODE_TYPE_OPERATION_MAXIMUM:
             binary_operation<op_maximum>(">?", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_EQUAL:
             bool_binary_operation<op_equal>("==", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_NOT_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_NOT_EQUAL:
             bool_binary_operation<op_not_equal>("!=", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_BITWISE_AND:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_AND:
             binary_operation<op_bitwise_and>("&", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_BITWISE_XOR:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_XOR:
             binary_operation<op_bitwise_xor>("^", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_BITWISE_OR:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_OR:
             binary_operation<op_bitwise_or>("|", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_LOGICAL_AND:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_AND:
             bool_binary_operation<op_logical_and>("&&", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_LOGICAL_XOR:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_XOR:
             bool_binary_operation<op_logical_xor>("^^", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_LOGICAL_OR:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_OR:
             bool_binary_operation<op_logical_or>("||", result, sub_results);
             break;
 
-        case NODE_TYPE_OPERATION_CONDITIONAL:
+        case node_type_t::NODE_TYPE_OPERATION_CONDITIONAL:
             conditional(result, variables, functions);
             break;
 
-        case NODE_TYPE_OPERATION_ASSIGNMENT:
+        case node_type_t::NODE_TYPE_OPERATION_ASSIGNMENT:
             assignment(result, sub_results, variables);
             break;
 
-        case NODE_TYPE_OPERATION_VARIABLE:
+        case node_type_t::NODE_TYPE_OPERATION_VARIABLE:
             load_variable(result, variables);
             break;
 
-        case NODE_TYPE_LITERAL_BOOLEAN:
+        case node_type_t::NODE_TYPE_LITERAL_BOOLEAN:
             result = f_variable;
             break;
 
-        case NODE_TYPE_LITERAL_INTEGER:
+        case node_type_t::NODE_TYPE_LITERAL_INTEGER:
             result = f_variable;
             break;
 
-        case NODE_TYPE_LITERAL_FLOATING_POINT:
+        case node_type_t::NODE_TYPE_LITERAL_FLOATING_POINT:
             result = f_variable;
             break;
 
-        case NODE_TYPE_LITERAL_STRING:
+        case node_type_t::NODE_TYPE_LITERAL_STRING:
             result = f_variable;
             break;
 
-        case NODE_TYPE_VARIABLE:
+        case node_type_t::NODE_TYPE_VARIABLE:
             // a program cannot include variables as instructions
-            throw snap_logic_exception(QString("expr_node::execute() called with an incompatible type: %1").arg(f_type));
+            throw snap_logic_exception(QString("expr_node::execute() called with an incompatible type: %1").arg(static_cast<int>(static_cast<node_type_t>(f_type))));
 
         }
     }
@@ -1379,61 +1379,61 @@ public:
         QtCassandra::QCassandraValue value;
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             value.setBoolValue(!sub_results[0].get_value().safeBoolValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             value.setBoolValue(sub_results[0].get_value().safeSignedCharValue() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             value.setBoolValue(sub_results[0].get_value().safeUnsignedCharValue() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             value.setBoolValue(sub_results[0].get_value().safeInt16Value() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             value.setBoolValue(sub_results[0].get_value().safeUInt16Value() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             value.setBoolValue(sub_results[0].get_value().safeInt32Value() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             value.setBoolValue(sub_results[0].get_value().safeUInt32Value() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             value.setBoolValue(sub_results[0].get_value().safeInt64Value() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             value.setBoolValue(sub_results[0].get_value().safeUInt64Value() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             value.setBoolValue(sub_results[0].get_value().safeFloatValue() == 0.0f);
 #pragma GCC diagnostic pop
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             value.setBoolValue(sub_results[0].get_value().safeDoubleValue() == 0.0);
 #pragma GCC diagnostic pop
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             value.setBoolValue(sub_results[0].get_value().stringValue().length() == 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             value.setBoolValue(sub_results[0].get_value().binaryValue().size() == 0);
             break;
 
@@ -1441,7 +1441,7 @@ public:
             throw snap_logic_exception(QString("expr_node::logical_not() called with an incompatible sub_result type: %1").arg(static_cast<int>(sub_results[0].get_type())));
 
         }
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
     void bitwise_not(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -1450,43 +1450,43 @@ public:
         QtCassandra::QCassandraValue value;
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             value.setBoolValue(~static_cast<int>(sub_results[0].get_value().safeBoolValue()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             value.setSignedCharValue(static_cast<signed char>(~sub_results[0].get_value().safeSignedCharValue()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             value.setUnsignedCharValue(static_cast<unsigned char>(~sub_results[0].get_value().safeUnsignedCharValue()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             value.setInt16Value(static_cast<int16_t>(~sub_results[0].get_value().safeInt16Value()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             value.setUInt16Value(static_cast<uint16_t>(~sub_results[0].get_value().safeUInt16Value()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             value.setInt32Value(~sub_results[0].get_value().safeInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             value.setUInt32Value(~sub_results[0].get_value().safeUInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             value.setInt64Value(~sub_results[0].get_value().safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             value.setUInt64Value(~sub_results[0].get_value().safeUInt64Value());
             break;
 
-        //case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        //case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             // TODO:
             // swap case (A -> a and A -> a)
         default:
@@ -1502,43 +1502,43 @@ public:
         QtCassandra::QCassandraValue value;
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             value.setSignedCharValue(static_cast<signed char>(-sub_results[0].get_value().safeSignedCharValue()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             value.setUnsignedCharValue(static_cast<unsigned char>(-sub_results[0].get_value().safeUnsignedCharValue()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             value.setInt16Value(static_cast<int16_t>(-sub_results[0].get_value().safeInt16Value()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             value.setUInt16Value(static_cast<uint16_t>(-sub_results[0].get_value().safeUInt16Value()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             value.setInt32Value(-sub_results[0].get_value().safeInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             value.setUInt32Value(-sub_results[0].get_value().safeUInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             value.setInt64Value(-sub_results[0].get_value().safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             value.setUInt64Value(-sub_results[0].get_value().safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             value.setFloatValue(-sub_results[0].get_value().safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             value.setDoubleValue(-sub_results[0].get_value().safeDoubleValue());
             break;
 
@@ -1578,7 +1578,7 @@ public:
 
         QtCassandra::QCassandraValue value(g_context->table(table_name)->row(row_name)->cell(cell_name)->value());
 //std::cerr << "  -> value size: " << value.size() << "\n";
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BINARY, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY, value);
     }
 
     static void call_cell_exists(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -1596,7 +1596,7 @@ public:
         QString const cell_name(sub_results[2].get_string("cell_exist(3)"));
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->table(table_name)->row(row_name)->exists(cell_name));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
     static void call_format(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -1946,7 +1946,7 @@ public:
         };
         input in(sub_results);
         in.parse();
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, in.f_result);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, in.f_result);
     }
 
     static void call_int16(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -1959,66 +1959,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //r = 0; -- an "empty" number...
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             r = v.safeBoolValue() ? 1 : 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = v.safeSignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = v.safeUnsignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = v.safeInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = v.safeUInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = static_cast<int16_t>(v.safeInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = static_cast<int16_t>(v.safeUInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = static_cast<int16_t>(v.safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = static_cast<int16_t>(v.safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             r = static_cast<int16_t>(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             r = static_cast<int16_t>(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = static_cast<int16_t>(v.stringValue().toLongLong());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = v.safeInt16Value();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setInt16Value(r);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT16, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16, value);
     }
 
     static void call_int32(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2031,66 +2031,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //r = 0; -- an "empty" number...
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             r = v.safeBoolValue() ? 1 : 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = v.safeSignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = v.safeUnsignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = v.safeInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = v.safeUInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = v.safeInt32Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = v.safeUInt32Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = static_cast<int32_t>(v.safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = static_cast<int32_t>(v.safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             r = static_cast<int32_t>(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             r = static_cast<int32_t>(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = static_cast<int32_t>(v.stringValue().toLongLong());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = v.safeInt32Value();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setInt32Value(r);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT32, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32, value);
     }
 
     static void call_int64(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2103,66 +2103,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //r = 0; -- an "empty" number...
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             r = v.safeBoolValue() ? 1 : 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = v.safeSignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = v.safeUnsignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = v.safeInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = v.safeUInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = v.safeInt32Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = v.safeUInt32Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = v.safeInt64Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = v.safeUInt64Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             r = static_cast<int64_t>(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             r = static_cast<int64_t>(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = v.stringValue().toLongLong();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = v.safeInt64Value();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setInt64Value(r);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT64, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64, value);
     }
 
     static void call_int8(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2175,66 +2175,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //r = 0; -- an "empty" number...
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             r = v.safeBoolValue() ? 1 : 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = v.safeSignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = static_cast<int8_t>(v.safeUnsignedCharValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = static_cast<int8_t>(v.safeInt16Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = static_cast<int8_t>(v.safeUInt16Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = static_cast<int8_t>(v.safeInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = static_cast<int8_t>(v.safeUInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = static_cast<int8_t>(v.safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = static_cast<int8_t>(v.safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             r = static_cast<int8_t>(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             r = static_cast<int8_t>(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = static_cast<int8_t>(v.stringValue().toLongLong());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = v.safeSignedCharValue();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setSignedCharValue(r);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT8, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8, value);
     }
 
     static void call_parent(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2259,7 +2259,7 @@ public:
         }
         QtCassandra::QCassandraValue value;
         value.setStringValue(path);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
     static void call_row_exists(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2276,7 +2276,7 @@ public:
         QString const row_name(sub_results[1].get_string("row_exists(2)"));
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->table(table_name)->exists(row_name));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
     static void call_segment(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2291,11 +2291,11 @@ public:
         QStringList list(str.split(sep));
         if(idx >= 0 && idx < list.size())
         {
-            result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, list[idx]);
+            result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, list[idx]);
         }
         else
         {
-            result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, "");
+            result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, "");
         }
     }
 
@@ -2309,66 +2309,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //str = ""; -- an empty string is the default
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             str = v.safeBoolValue() ? "true" : "false";
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             str = QString("%1").arg(static_cast<int>(v.safeSignedCharValue()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             str = QString("%1").arg(static_cast<int>(v.safeUnsignedCharValue()));
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             str = QString("%1").arg(v.safeInt16Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             str = QString("%1").arg(v.safeUInt16Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             str = QString("%1").arg(v.safeInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             str = QString("%1").arg(v.safeUInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             str = QString("%1").arg(v.safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             str = QString("%1").arg(v.safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             str = QString("%1").arg(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             str = QString("%1").arg(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             str = v.stringValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             str = v.stringValue();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setStringValue(str);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
     static void call_strlen(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2380,7 +2380,7 @@ public:
         QString const str(sub_results[0].get_string("strlen(1)"));
         QtCassandra::QCassandraValue value;
         value.setInt64Value(str.length());
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_INT64, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64, value);
     }
 
     static void call_strmatch(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2405,7 +2405,7 @@ public:
         QRegExp re(pattern, cs, QRegExp::RegExp2);
         QtCassandra::QCassandraValue value;
         value.setBoolValue(re.exactMatch(str));
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
     static void call_substr(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2427,7 +2427,7 @@ public:
         {
             value.setStringValue(str.mid(start));
         }
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     }
 
     static void call_table_exists(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2443,7 +2443,7 @@ public:
         QString const table_name(sub_results[0].get_string("table_exists(1)"));
         QtCassandra::QCassandraValue value;
         value.setBoolValue(g_context->findTable(table_name) != nullptr);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     }
 
     static void call_uint16(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2456,66 +2456,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //r = 0; -- an "empty" number...
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             r = v.safeBoolValue() ? 1 : 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = v.safeSignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = v.safeUnsignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = v.safeInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = v.safeUInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = static_cast<uint16_t>(v.safeInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = static_cast<uint16_t>(v.safeUInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = static_cast<uint16_t>(v.safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = static_cast<uint16_t>(v.safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             r = static_cast<uint16_t>(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             r = static_cast<uint16_t>(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = static_cast<uint16_t>(v.stringValue().toLongLong());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = v.safeUInt16Value();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setUInt16Value(r);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_UINT16, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16, value);
     }
 
     static void call_uint32(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2528,66 +2528,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //r = 0; -- an "empty" number...
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             r = v.safeBoolValue() ? 1 : 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = v.safeSignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = v.safeUnsignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = v.safeInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = v.safeUInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = v.safeInt32Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = v.safeUInt32Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = static_cast<uint32_t>(v.safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = static_cast<uint32_t>(v.safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             r = static_cast<uint32_t>(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             r = static_cast<uint32_t>(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = static_cast<uint32_t>(v.stringValue().toLongLong());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = v.safeUInt32Value();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setUInt32Value(r);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_UINT32, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32, value);
     }
 
     static void call_uint64(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2600,66 +2600,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //r = 0; -- an "empty" number...
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             r = v.safeBoolValue() ? 1 : 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = v.safeSignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = v.safeUnsignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = v.safeInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = v.safeUInt16Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = v.safeInt32Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = v.safeUInt32Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = v.safeInt64Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = v.safeUInt64Value();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             r = static_cast<int64_t>(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             r = static_cast<int64_t>(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = v.stringValue().toLongLong();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = v.safeInt64Value();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setUInt64Value(r);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_UINT64, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64, value);
     }
 
     static void call_uint8(variable_t& result, variable_t::variable_vector_t const& sub_results)
@@ -2672,66 +2672,66 @@ public:
         QtCassandra::QCassandraValue const& v(sub_results[0].get_value());
         switch(sub_results[0].get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_NULL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
             //r = 0; -- an "empty" number...
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             r = v.safeBoolValue() ? 1 : 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = v.safeSignedCharValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = static_cast<uint8_t>(v.safeUnsignedCharValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = static_cast<uint8_t>(v.safeInt16Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = static_cast<uint8_t>(v.safeUInt16Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = static_cast<uint8_t>(v.safeInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = static_cast<uint8_t>(v.safeUInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = static_cast<uint8_t>(v.safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = static_cast<uint8_t>(v.safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
             r = static_cast<uint8_t>(v.safeFloatValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             r = static_cast<uint8_t>(v.safeDoubleValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = static_cast<uint8_t>(v.stringValue().toLongLong());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = v.safeUnsignedCharValue();
             break;
 
         }
         QtCassandra::QCassandraValue value;
         value.setUnsignedCharValue(r);
-        result.set_value(variable_t::EXPR_VARIABLE_TYPE_UINT8, value);
+        result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8, value);
     }
 
     void call_function(variable_t& result, variable_t::variable_vector_t const& sub_results, functions_t& functions)
@@ -2763,52 +2763,52 @@ public:
     {
         switch(var.get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             integer = static_cast<int64_t>(var.get_value().safeBoolValue() != 0);
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             integer = static_cast<int64_t>(var.get_value().safeSignedCharValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             signed_integer = false;
             integer = static_cast<int64_t>(var.get_value().safeUnsignedCharValue());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             integer = static_cast<int64_t>(var.get_value().safeInt16Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             signed_integer = false;
             integer = static_cast<int64_t>(var.get_value().safeUInt16Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             integer = static_cast<int64_t>(var.get_value().safeInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             signed_integer = false;
             integer = static_cast<int64_t>(var.get_value().safeUInt32Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             integer = static_cast<int64_t>(var.get_value().safeInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             signed_integer = false;
             integer = static_cast<int64_t>(var.get_value().safeUInt64Value());
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
             is_floating_point = true;
             floating_point = var.get_value().safeDoubleValue();
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             is_string_type = true;
             string = var.get_value().stringValue();
             break;
@@ -2843,52 +2843,52 @@ public:
             QtCassandra::QCassandraValue value;
             switch(type)
             {
-            case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
                 value.setSignedCharValue(static_cast<signed char>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
                 value.setUnsignedCharValue(static_cast<unsigned char>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
                 value.setInt16Value(static_cast<int16_t>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
                 value.setUInt16Value(static_cast<uint16_t>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
                 value.setInt32Value(static_cast<int32_t>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
                 value.setUInt32Value(static_cast<uint32_t>(F::integers(li, ri)));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
                 value.setInt64Value(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
                 value.setUInt64Value(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
                 if(has_function<F>::has_floating_points)
                 {
                     if(!lfloating_point)
@@ -2904,7 +2904,7 @@ public:
                 }
                 break;
 
-            case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
                 if(has_function<F>::has_floating_points)
                 {
                     if(!lfloating_point)
@@ -2920,7 +2920,7 @@ public:
                 }
                 break;
 
-            case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
                 if(has_function<F>::has_strings)
                 {
                     if(!lstring_type)
@@ -2936,7 +2936,7 @@ public:
                     return;
                 }
                 else if(has_function<F>::has_string_integer
-                     && variable_t::EXPR_VARIABLE_TYPE_STRING == sub_results[0].get_type()
+                     && variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING == sub_results[0].get_type()
                      && !rfloating_point && !rstring_type)
                 {
                     // very special case to support: "string" * 123
@@ -2980,52 +2980,52 @@ public:
             QtCassandra::QCassandraValue value;
             switch(type)
             {
-            case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_INT8:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_INT16:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_INT32:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_INT64:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
                 value.setBoolValue(F::integers(li, ri));
                 result.set_value(type, value);
                 return;
 
-            case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
                 if(has_function<F>::has_bool_floating_points)
                 {
                     if(!lfloating_point)
@@ -3041,7 +3041,7 @@ public:
                 }
                 break;
 
-            case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
                 if(has_function<F>::has_bool_floating_points)
                 {
                     if(!lfloating_point)
@@ -3057,7 +3057,7 @@ public:
                 }
                 break;
 
-            case variable_t::EXPR_VARIABLE_TYPE_STRING:
+            case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
                 if(has_function<F>::has_bool_strings)
                 {
                     if(!lstring_type)
@@ -3073,7 +3073,7 @@ public:
                     return;
                 }
                 else if(has_function<F>::has_bool_string_integer
-                     && variable_t::EXPR_VARIABLE_TYPE_STRING == sub_results[0].get_type()
+                     && variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING == sub_results[0].get_type()
                      && !rfloating_point && !rstring_type)
                 {
                     // very special case to support: "string" * 123
@@ -3114,62 +3114,62 @@ public:
         bool r(false);
         switch(result.get_type())
         {
-        case variable_t::EXPR_VARIABLE_TYPE_BOOL:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
             // using the following to force the value ot 0 or 1
             r = result.get_value().safeSignedCharValue() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
             r = result.get_value().safeSignedCharValue() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT8:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
             r = result.get_value().safeUnsignedCharValue() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
             r = result.get_value().safeInt16Value() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT16:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
             r = result.get_value().safeUInt16Value() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
             r = result.get_value().safeInt32Value() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT32:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
             r = result.get_value().safeUInt32Value() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_INT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
             r = result.get_value().safeInt64Value() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_UINT64:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
             r = result.get_value().safeUInt64Value() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             r = result.get_value().safeFloatValue() != 0.0f;
 #pragma GCC diagnostic pop
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             r = result.get_value().safeDoubleValue() != 0.0;
 #pragma GCC diagnostic pop
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_STRING:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
             r = result.get_value().stringValue().length() != 0;
             break;
 
-        case variable_t::EXPR_VARIABLE_TYPE_BINARY:
+        case variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
             r = result.get_value().binaryValue().size() != 0;
             break;
 
@@ -3220,67 +3220,67 @@ private:
     QString internal_toString(QString indent)
     {
         // start with the type
-        QString result(QString("%1%2").arg(indent).arg(type_names[f_type]));
+        QString result(QString("%1%2").arg(indent).arg(type_names[static_cast<int>(static_cast<node_type_t>(f_type))]));
 
         // add type specific data
         switch(f_type)
         {
-        case NODE_TYPE_UNKNOWN:
-        case NODE_TYPE_LOADING:
-        case NODE_TYPE_OPERATION_LIST:
-        case NODE_TYPE_OPERATION_LOGICAL_NOT:
-        case NODE_TYPE_OPERATION_BITWISE_NOT:
-        case NODE_TYPE_OPERATION_NEGATE:
-        case NODE_TYPE_OPERATION_MULTIPLY:
-        case NODE_TYPE_OPERATION_DIVIDE:
-        case NODE_TYPE_OPERATION_MODULO:
-        case NODE_TYPE_OPERATION_ADD:
-        case NODE_TYPE_OPERATION_SUBTRACT:
-        case NODE_TYPE_OPERATION_SHIFT_LEFT:
-        case NODE_TYPE_OPERATION_SHIFT_RIGHT:
-        case NODE_TYPE_OPERATION_LESS:
-        case NODE_TYPE_OPERATION_LESS_OR_EQUAL:
-        case NODE_TYPE_OPERATION_GREATER:
-        case NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
-        case NODE_TYPE_OPERATION_MINIMUM:
-        case NODE_TYPE_OPERATION_MAXIMUM:
-        case NODE_TYPE_OPERATION_EQUAL:
-        case NODE_TYPE_OPERATION_NOT_EQUAL:
-        case NODE_TYPE_OPERATION_BITWISE_AND:
-        case NODE_TYPE_OPERATION_BITWISE_XOR:
-        case NODE_TYPE_OPERATION_BITWISE_OR:
-        case NODE_TYPE_OPERATION_LOGICAL_AND:
-        case NODE_TYPE_OPERATION_LOGICAL_XOR:
-        case NODE_TYPE_OPERATION_LOGICAL_OR:
-        case NODE_TYPE_OPERATION_CONDITIONAL:
+        case node_type_t::NODE_TYPE_UNKNOWN:
+        case node_type_t::NODE_TYPE_LOADING:
+        case node_type_t::NODE_TYPE_OPERATION_LIST:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_NOT:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_NOT:
+        case node_type_t::NODE_TYPE_OPERATION_NEGATE:
+        case node_type_t::NODE_TYPE_OPERATION_MULTIPLY:
+        case node_type_t::NODE_TYPE_OPERATION_DIVIDE:
+        case node_type_t::NODE_TYPE_OPERATION_MODULO:
+        case node_type_t::NODE_TYPE_OPERATION_ADD:
+        case node_type_t::NODE_TYPE_OPERATION_SUBTRACT:
+        case node_type_t::NODE_TYPE_OPERATION_SHIFT_LEFT:
+        case node_type_t::NODE_TYPE_OPERATION_SHIFT_RIGHT:
+        case node_type_t::NODE_TYPE_OPERATION_LESS:
+        case node_type_t::NODE_TYPE_OPERATION_LESS_OR_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_GREATER:
+        case node_type_t::NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_MINIMUM:
+        case node_type_t::NODE_TYPE_OPERATION_MAXIMUM:
+        case node_type_t::NODE_TYPE_OPERATION_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_NOT_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_AND:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_XOR:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_OR:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_AND:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_XOR:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_OR:
+        case node_type_t::NODE_TYPE_OPERATION_CONDITIONAL:
             break;
 
-        case NODE_TYPE_OPERATION_FUNCTION:
+        case node_type_t::NODE_TYPE_OPERATION_FUNCTION:
             result += QString(" (function name: %1)").arg(f_name);
             break;
 
-        case NODE_TYPE_OPERATION_ASSIGNMENT:
-        case NODE_TYPE_OPERATION_VARIABLE:
+        case node_type_t::NODE_TYPE_OPERATION_ASSIGNMENT:
+        case node_type_t::NODE_TYPE_OPERATION_VARIABLE:
             result += QString(" (variable name: %1)").arg(f_name);
             break;
 
-        case NODE_TYPE_LITERAL_BOOLEAN:
+        case node_type_t::NODE_TYPE_LITERAL_BOOLEAN:
             result += QString(" (%1)").arg(f_variable.get_value().safeBoolValue() ? "true" : "false");
             break;
 
-        case NODE_TYPE_LITERAL_INTEGER:
+        case node_type_t::NODE_TYPE_LITERAL_INTEGER:
             result += QString(" (%1)").arg(f_variable.get_value().safeInt64Value());
             break;
 
-        case NODE_TYPE_LITERAL_FLOATING_POINT:
+        case node_type_t::NODE_TYPE_LITERAL_FLOATING_POINT:
             result += QString(" (%1)").arg(f_variable.get_value().safeDoubleValue());
             break;
 
-        case NODE_TYPE_LITERAL_STRING:
+        case node_type_t::NODE_TYPE_LITERAL_STRING:
             result += QString(" (%1)").arg(f_variable.get_value().stringValue());
             break;
 
-        case NODE_TYPE_VARIABLE:
+        case node_type_t::NODE_TYPE_VARIABLE:
             result += "a program cannot include variables";
             break;
 
@@ -3302,16 +3302,16 @@ private:
 #ifdef DEBUG
         switch(f_type)
         {
-        case NODE_TYPE_OPERATION_ASSIGNMENT:
-        case NODE_TYPE_LITERAL_BOOLEAN:
-        case NODE_TYPE_LITERAL_INTEGER:
-        case NODE_TYPE_LITERAL_FLOATING_POINT:
-        case NODE_TYPE_LITERAL_STRING:
-        case NODE_TYPE_OPERATION_VARIABLE:
+        case node_type_t::NODE_TYPE_OPERATION_ASSIGNMENT:
+        case node_type_t::NODE_TYPE_LITERAL_BOOLEAN:
+        case node_type_t::NODE_TYPE_LITERAL_INTEGER:
+        case node_type_t::NODE_TYPE_LITERAL_FLOATING_POINT:
+        case node_type_t::NODE_TYPE_LITERAL_STRING:
+        case node_type_t::NODE_TYPE_OPERATION_VARIABLE:
             break;
 
         default:
-            throw snap_logic_exception(QString("expr_node::[gs]et_name(\"...\") called on a node which does not support a name... (type: %1)").arg(f_type));
+            throw snap_logic_exception(QString("expr_node::[gs]et_name(\"...\") called on a node which does not support a name... (type: %1)").arg(static_cast<int>(static_cast<node_type_t>(f_type))));
 
         }
 #endif
@@ -3322,40 +3322,40 @@ private:
 #ifdef DEBUG
         switch(f_type)
         {
-        case NODE_TYPE_LOADING: // this happens while loading; the type is set afterward because of the recursion mechanism...
-        case NODE_TYPE_OPERATION_LIST:
-        case NODE_TYPE_OPERATION_LOGICAL_NOT:
-        case NODE_TYPE_OPERATION_BITWISE_NOT:
-        case NODE_TYPE_OPERATION_NEGATE:
-        case NODE_TYPE_OPERATION_FUNCTION:
-        case NODE_TYPE_OPERATION_MULTIPLY:
-        case NODE_TYPE_OPERATION_DIVIDE:
-        case NODE_TYPE_OPERATION_MODULO:
-        case NODE_TYPE_OPERATION_ADD:
-        case NODE_TYPE_OPERATION_SUBTRACT:
-        case NODE_TYPE_OPERATION_SHIFT_LEFT:
-        case NODE_TYPE_OPERATION_SHIFT_RIGHT:
-        case NODE_TYPE_OPERATION_LESS:
-        case NODE_TYPE_OPERATION_LESS_OR_EQUAL:
-        case NODE_TYPE_OPERATION_GREATER:
-        case NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
-        case NODE_TYPE_OPERATION_MINIMUM:
-        case NODE_TYPE_OPERATION_MAXIMUM:
-        case NODE_TYPE_OPERATION_EQUAL:
-        case NODE_TYPE_OPERATION_NOT_EQUAL:
-        case NODE_TYPE_OPERATION_BITWISE_AND:
-        case NODE_TYPE_OPERATION_BITWISE_XOR:
-        case NODE_TYPE_OPERATION_BITWISE_OR:
-        case NODE_TYPE_OPERATION_LOGICAL_AND:
-        case NODE_TYPE_OPERATION_LOGICAL_XOR:
-        case NODE_TYPE_OPERATION_LOGICAL_OR:
-        case NODE_TYPE_OPERATION_CONDITIONAL:
-        case NODE_TYPE_OPERATION_ASSIGNMENT:
+        case node_type_t::NODE_TYPE_LOADING: // this happens while loading; the type is set afterward because of the recursion mechanism...
+        case node_type_t::NODE_TYPE_OPERATION_LIST:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_NOT:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_NOT:
+        case node_type_t::NODE_TYPE_OPERATION_NEGATE:
+        case node_type_t::NODE_TYPE_OPERATION_FUNCTION:
+        case node_type_t::NODE_TYPE_OPERATION_MULTIPLY:
+        case node_type_t::NODE_TYPE_OPERATION_DIVIDE:
+        case node_type_t::NODE_TYPE_OPERATION_MODULO:
+        case node_type_t::NODE_TYPE_OPERATION_ADD:
+        case node_type_t::NODE_TYPE_OPERATION_SUBTRACT:
+        case node_type_t::NODE_TYPE_OPERATION_SHIFT_LEFT:
+        case node_type_t::NODE_TYPE_OPERATION_SHIFT_RIGHT:
+        case node_type_t::NODE_TYPE_OPERATION_LESS:
+        case node_type_t::NODE_TYPE_OPERATION_LESS_OR_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_GREATER:
+        case node_type_t::NODE_TYPE_OPERATION_GREATER_OR_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_MINIMUM:
+        case node_type_t::NODE_TYPE_OPERATION_MAXIMUM:
+        case node_type_t::NODE_TYPE_OPERATION_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_NOT_EQUAL:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_AND:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_XOR:
+        case node_type_t::NODE_TYPE_OPERATION_BITWISE_OR:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_AND:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_XOR:
+        case node_type_t::NODE_TYPE_OPERATION_LOGICAL_OR:
+        case node_type_t::NODE_TYPE_OPERATION_CONDITIONAL:
+        case node_type_t::NODE_TYPE_OPERATION_ASSIGNMENT:
             break;
 
         default:
             throw snap_logic_exception(QString("expr_node::add_child/children_size/get_child() called on a node which does not support children... (type: %1)")
-                    .arg(static_cast<int>(f_type)));
+                    .arg(static_cast<int>(static_cast<node_type_t>(f_type))));
 
         }
 #endif
@@ -3379,7 +3379,7 @@ private:
         if(sub_results.size() != 1)
         {
             throw snap_logic_exception(QString("expr_node::execute() found an unary operator (%1) with a number of results which is not 1")
-                    .arg(f_type).arg(sub_results.size()));
+                    .arg(static_cast<int>(static_cast<node_type_t>(f_type))).arg(sub_results.size()));
         }
 #else
         static_cast<void>(sub_results);
@@ -3392,7 +3392,7 @@ private:
         if(sub_results.size() != 2)
         {
             throw snap_logic_exception(QString("expr_node::execute() found a binary operator (%1) with %2 results, expected exactly 2")
-                    .arg(f_type).arg(sub_results.size()));
+                    .arg(static_cast<int>(static_cast<node_type_t>(f_type))).arg(sub_results.size()));
         }
 #else
         static_cast<void>(sub_results);
@@ -3493,7 +3493,7 @@ functions_t::function_call_table_t const expr_node::internal_functions[] =
 };
 
 
-char const *expr_node::type_names[NODE_TYPE_VARIABLE + 1] =
+char const *expr_node::type_names[static_cast<size_t>(node_type_t::NODE_TYPE_VARIABLE) + 1] =
 {
     /* NODE_TYPE_UNKNOWN */ "Unknown",
     /* NODE_TYPE_LOADING */ "Loading",
@@ -3577,7 +3577,7 @@ void list_expr_binary_operation(QSharedPointer<token_node>& t, expr_node::node_t
     void list_expr_##a(rule const& r, QSharedPointer<token_node>& t) \
     { \
         static_cast<void>(r); \
-        list_expr_binary_operation(t, expr_node::NODE_TYPE_OPERATION_##b); \
+        list_expr_binary_operation(t, expr_node::node_type_t::NODE_TYPE_OPERATION_##b); \
     }
 
 LIST_EXPR_BINARY_OPERATION(multiplicative_multiply, MULTIPLY)
@@ -3618,7 +3618,7 @@ void list_expr_unary_operation(QSharedPointer<token_node>& t, expr_node::node_ty
     void list_expr_##a(rule const& r, QSharedPointer<token_node>& t) \
     { \
         static_cast<void>(r); \
-        list_expr_unary_operation(t, expr_node::NODE_TYPE_OPERATION_##b); \
+        list_expr_unary_operation(t, expr_node::node_type_t::NODE_TYPE_OPERATION_##b); \
     }
 
 LIST_EXPR_UNARY_OPERATION(logical_not, LOGICAL_NOT)
@@ -3639,7 +3639,7 @@ void list_expr_conditional(rule const& r, QSharedPointer<token_node>& t)
     QSharedPointer<token_node> n4(qSharedPointerDynamicCast<token_node, token>((*t)[4]));
     expr_node::expr_node_pointer_t af(qSharedPointerDynamicCast<expr_node, parser_user_data>(n4->get_user_data()));
 
-    expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_OPERATION_CONDITIONAL));
+    expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_OPERATION_CONDITIONAL));
     v->add_child(c);
     v->add_child(at);
     v->add_child(af);
@@ -3653,7 +3653,7 @@ void list_expr_level_child(expr_node::expr_node_pointer_t n)
     for(int i(0); i < max_children; ++i)
     {
         expr_node::expr_node_pointer_t child(n->get_child(i));
-        if(child->get_type() == expr_node::NODE_TYPE_OPERATION_LIST)
+        if(child->get_type() == expr_node::node_type_t::NODE_TYPE_OPERATION_LIST)
         {
             n->remove_child(i);
 
@@ -3687,7 +3687,7 @@ void list_expr_list(rule const& r, QSharedPointer<token_node>& t)
     // DO NOT OPTIMIZE HERE -- instead we have to optimize when
     // expr_list is being reduced (in the unary and function expressions.)
     // see the list_expr_level_child() function
-    //if(l->get_type() == expr_node::NODE_TYPE_OPERATION_LIST)
+    //if(l->get_type() == expr_node::node_type_t::NODE_TYPE_OPERATION_LIST)
     //{
     //    // just add to the existing list
     //    l->add_child(i);
@@ -3696,7 +3696,7 @@ void list_expr_list(rule const& r, QSharedPointer<token_node>& t)
     //else
     {
         // not a list yet, create it
-        expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_OPERATION_LIST));
+        expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_OPERATION_LIST));
         v->add_child(l);
         v->add_child(i);
         t->set_user_data(v);
@@ -3730,10 +3730,10 @@ void list_expr_function(rule const& r, QSharedPointer<token_node>& t)
     QSharedPointer<token_node> n2(qSharedPointerDynamicCast<token_node, token>((*t)[2]));
     expr_node::expr_node_pointer_t l(qSharedPointerDynamicCast<expr_node, parser_user_data>(n2->get_user_data()));
 
-    QSharedPointer<expr_node> v(new expr_node(expr_node::NODE_TYPE_OPERATION_FUNCTION));
+    QSharedPointer<expr_node> v(new expr_node(expr_node::node_type_t::NODE_TYPE_OPERATION_FUNCTION));
     v->set_name(func_name);
 
-    if(l->get_type() == expr_node::NODE_TYPE_OPERATION_LIST)
+    if(l->get_type() == expr_node::node_type_t::NODE_TYPE_OPERATION_LIST)
     {
         list_expr_level_child(l);
         int const max_children(l->children_size());
@@ -3755,11 +3755,11 @@ void list_expr_true(rule const& r, QSharedPointer<token_node>& t)
 {
     static_cast<void>(r);
 
-    expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_LITERAL_BOOLEAN));
+    expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_BOOLEAN));
     QtCassandra::QCassandraValue value;
     value.setBoolValue(true);
     variable_t variable;
-    variable.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     v->set_variable(variable);
     t->set_user_data(v);
 }
@@ -3769,11 +3769,11 @@ void list_expr_false(rule const& r, QSharedPointer<token_node>& t)
 {
     static_cast<void>(r);
 
-    expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_LITERAL_BOOLEAN));
+    expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_BOOLEAN));
     QtCassandra::QCassandraValue value;
     value.setBoolValue(false);
     variable_t variable;
-    variable.set_value(variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
     v->set_variable(variable);
     t->set_user_data(v);
 }
@@ -3785,11 +3785,11 @@ void list_expr_string(rule const& r, QSharedPointer<token_node>& t)
 
     QString const str((*t)[0]->get_value().toString());
 
-    expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_LITERAL_STRING));
+    expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_STRING));
     QtCassandra::QCassandraValue value;
     value.setStringValue(str);
     variable_t variable;
-    variable.set_value(variable_t::EXPR_VARIABLE_TYPE_STRING, value);
+    variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, value);
     v->set_variable(variable);
     t->set_user_data(v);
 }
@@ -3801,11 +3801,11 @@ void list_expr_integer(rule const& r, QSharedPointer<token_node>& t)
 
     int64_t const integer((*t)[0]->get_value().toLongLong());
 
-    expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_LITERAL_INTEGER));
+    expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_INTEGER));
     QtCassandra::QCassandraValue value;
     value.setInt64Value(integer);
     variable_t variable;
-    variable.set_value(variable_t::EXPR_VARIABLE_TYPE_INT64, value);
+    variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64, value);
     v->set_variable(variable);
     t->set_user_data(v);
 }
@@ -3817,11 +3817,11 @@ void list_expr_float(rule const& r, QSharedPointer<token_node>& t)
 
     double const floating_point((*t)[0]->get_value().toDouble());
 
-    expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_LITERAL_FLOATING_POINT));
+    expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_LITERAL_FLOATING_POINT));
     QtCassandra::QCassandraValue value;
     value.setDoubleValue(floating_point);
     variable_t variable;
-    variable.set_value(variable_t::EXPR_VARIABLE_TYPE_DOUBLE, value);
+    variable.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE, value);
     v->set_variable(variable);
     t->set_user_data(v);
 }
@@ -3847,7 +3847,7 @@ void list_expr_variable(rule const& r, QSharedPointer<token_node>& t)
 
     QString const name((*t)[0]->get_value().toString());
 
-    expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_OPERATION_VARIABLE));
+    expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_OPERATION_VARIABLE));
     v->set_name(name);
     t->set_user_data(v);
 }
@@ -3862,7 +3862,7 @@ void list_expr_assignment(rule const& r, QSharedPointer<token_node>& t)
     QSharedPointer<token_node> n2(qSharedPointerDynamicCast<token_node, token>((*t)[2]));
     expr_node::expr_node_pointer_t i(qSharedPointerDynamicCast<expr_node, parser_user_data>(n2->get_user_data()));
 
-    expr_node::expr_node_pointer_t v(new expr_node(expr_node::NODE_TYPE_OPERATION_ASSIGNMENT));
+    expr_node::expr_node_pointer_t v(new expr_node(expr_node::node_type_t::NODE_TYPE_OPERATION_ASSIGNMENT));
     v->set_name(name);
     v->add_child(i);
     t->set_user_data(v);

@@ -29,23 +29,23 @@
 class QHtmlSerializer : public QAbstractXmlReceiver
 {
 public:
-                    QHtmlSerializer(QXmlNamePool namepool, QBuffer *output, bool const is_html = true);
+                    QHtmlSerializer(QXmlNamePool namepool, QBuffer * output, bool const is_html = true);
     virtual         ~QHtmlSerializer();
-    virtual void    atomicValue(const QVariant& value);
-    virtual void    attribute(const QXmlName& name, const QStringRef& value);
-    virtual void    characters(const QStringRef& value);
-    virtual void    comment(const QString& value);
+    virtual void    atomicValue(QVariant const & value);
+    virtual void    attribute(QXmlName const & name, QStringRef const & value);
+    virtual void    characters(QStringRef const & value);
+    virtual void    comment(QString const & value);
     virtual void    endDocument();
     virtual void    endElement();
     virtual void    endOfSequence();
-    virtual void    namespaceBinding(const QXmlName& name);
-    virtual void    processingInstruction(const QXmlName& target, const QString& value );
+    virtual void    namespaceBinding(QXmlName const & name);
+    virtual void    processingInstruction(QXmlName const & target, QString const & value );
     virtual void    startDocument();
-    virtual void    startElement(const QXmlName& name);
+    virtual void    startElement(QXmlName const & name);
     virtual void    startOfSequence();
 
 private:
-    enum html_serializer_status_t
+    enum class html_serializer_status_t
     {
         HTML_SERIALIZER_STATUS_READY,
         HTML_SERIALIZER_STATUS_ELEMENT_OPEN

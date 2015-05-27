@@ -79,255 +79,255 @@ char const *get_name(name_t name)
     //       when dealing with JavaScript and CSS files (Version: field)
     switch(name)
     {
-    case SNAP_NAME_CONTENT_ACCEPTED:
+    case name_t::SNAP_NAME_CONTENT_ACCEPTED:
         return "content::accepted";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT:
+    case name_t::SNAP_NAME_CONTENT_ATTACHMENT:
         return "content::attachment";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
+    case name_t::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME:
         return "content::attachment::filename";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE:
+    case name_t::SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE:
         return "content::attachment::mime_type";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
+    case name_t::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END:
         return "path";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN: // this is a forward definition...
+    case name_t::SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN: // this is a forward definition...
         return "attachment";
 
-    case SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE:
+    case name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE:
         return "content::attachment::reference";
 
-    case SNAP_NAME_CONTENT_BODY:
+    case name_t::SNAP_NAME_CONTENT_BODY:
         return "content::body";
 
-    case SNAP_NAME_CONTENT_BRANCH:
+    case name_t::SNAP_NAME_CONTENT_BRANCH:
         return "content::branch";
 
-    case SNAP_NAME_CONTENT_BRANCH_TABLE:
+    case name_t::SNAP_NAME_CONTENT_BRANCH_TABLE:
         return "branch";
 
-    case SNAP_NAME_CONTENT_CHILDREN:
+    case name_t::SNAP_NAME_CONTENT_CHILDREN:
         return "content::children";
 
-    case SNAP_NAME_CONTENT_CLONE:
+    case name_t::SNAP_NAME_CONTENT_CLONE:
         return "content::clone";
 
-    case SNAP_NAME_CONTENT_CLONED:
+    case name_t::SNAP_NAME_CONTENT_CLONED:
         return "content::cloned";
 
-    case SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED:
+    case name_t::SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED:
         return "uncompressed";
 
-    case SNAP_NAME_CONTENT_CONTENT_TYPES:
+    case name_t::SNAP_NAME_CONTENT_CONTENT_TYPES:
         return "Content Types";
 
-    case SNAP_NAME_CONTENT_CONTENT_TYPES_NAME:
+    case name_t::SNAP_NAME_CONTENT_CONTENT_TYPES_NAME:
         return "content-types";
 
-    case SNAP_NAME_CONTENT_COPYRIGHTED:
+    case name_t::SNAP_NAME_CONTENT_COPYRIGHTED:
         return "content::copyrighted";
 
-    case SNAP_NAME_CONTENT_CREATED:
+    case name_t::SNAP_NAME_CONTENT_CREATED:
         return "content::created";
 
-    case SNAP_NAME_CONTENT_DIRRESOURCES:
+    case name_t::SNAP_NAME_CONTENT_DIRRESOURCES:
         return "dirresources";
 
-    case SNAP_NAME_CONTENT_ERROR_FILES:
+    case name_t::SNAP_NAME_CONTENT_ERROR_FILES:
         return "error_files";
 
-    case SNAP_NAME_CONTENT_DESCRIPTION:
+    case name_t::SNAP_NAME_CONTENT_DESCRIPTION:
         return "content::description";
 
-    case SNAP_NAME_CONTENT_FILES_COMPRESSOR:
+    case name_t::SNAP_NAME_CONTENT_FILES_COMPRESSOR:
         return "content::files::compressor";
 
-    case SNAP_NAME_CONTENT_FILES_CREATED:
+    case name_t::SNAP_NAME_CONTENT_FILES_CREATED:
         return "content::files::created";
 
-    case SNAP_NAME_CONTENT_FILES_CREATION_TIME:
+    case name_t::SNAP_NAME_CONTENT_FILES_CREATION_TIME:
         return "content::files::creation_time";
 
-    case SNAP_NAME_CONTENT_FILES_DATA:
+    case name_t::SNAP_NAME_CONTENT_FILES_DATA:
         return "content::files::data";
 
-    case SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED:
+    case name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED:
         return "content::files::data::gzip_compressed";
 
-    case SNAP_NAME_CONTENT_FILES_DEPENDENCY:
+    case name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY:
         return "content::files::dependency";
 
-    case SNAP_NAME_CONTENT_FILES_FILENAME:
+    case name_t::SNAP_NAME_CONTENT_FILES_FILENAME:
         return "content::files::filename";
 
-    case SNAP_NAME_CONTENT_FORCERESETSTATUS:
+    case name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS:
         return "forceresetstatus";
 
-    case SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT:
+    case name_t::SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT:
         return "content::files::image_height";
 
-    case SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH:
+    case name_t::SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH:
         return "content::files::image_width";
 
-    case SNAP_NAME_CONTENT_FILES_MIME_TYPE:
+    case name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE:
         return "content::files::mime_type";
 
-    case SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME:
+    case name_t::SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME:
         return "content::files::modification_time";
 
-    case SNAP_NAME_CONTENT_FILES_NEW:
+    case name_t::SNAP_NAME_CONTENT_FILES_NEW:
         return "new";
 
-    case SNAP_NAME_CONTENT_FILES_REFERENCE:
+    case name_t::SNAP_NAME_CONTENT_FILES_REFERENCE:
         return "content::files::reference";
 
-    case SNAP_NAME_CONTENT_RESETSTATUS:
+    case name_t::SNAP_NAME_CONTENT_RESETSTATUS:
         return "resetstatus";
 
-    case SNAP_NAME_CONTENT_FILES_SECURE: // -1 -- unknown, 0 -- unsecure, 1 -- secure
+    case name_t::SNAP_NAME_CONTENT_FILES_SECURE: // -1 -- unknown, 0 -- unsecure, 1 -- secure
         return "content::files::secure";
 
-    case SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK:
+    case name_t::SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK:
         return "content::files::secure::last_check";
 
-    case SNAP_NAME_CONTENT_FILES_SECURITY_REASON:
+    case name_t::SNAP_NAME_CONTENT_FILES_SECURITY_REASON:
         return "content::files::security_reason";
 
-    case SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE:
+    case name_t::SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE:
         return "content::files::original_mime_type";
 
-    case SNAP_NAME_CONTENT_FILES_SIZE:
+    case name_t::SNAP_NAME_CONTENT_FILES_SIZE:
         return "content::files::size";
 
-    case SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED:
+    case name_t::SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED:
         return "content::files::size::gzip_compressed";
 
-    case SNAP_NAME_CONTENT_FILES_TABLE:
+    case name_t::SNAP_NAME_CONTENT_FILES_TABLE:
         return "files";
 
-    case SNAP_NAME_CONTENT_FILES_UPDATED:
+    case name_t::SNAP_NAME_CONTENT_FILES_UPDATED:
         return "content::files::updated";
 
-    case SNAP_NAME_CONTENT_FINAL:
+    case name_t::SNAP_NAME_CONTENT_FINAL:
         return "content::final";
 
-    case SNAP_NAME_CONTENT_ISSUED:
+    case name_t::SNAP_NAME_CONTENT_ISSUED:
         return "content::issued";
 
-    case SNAP_NAME_CONTENT_LONG_TITLE:
+    case name_t::SNAP_NAME_CONTENT_LONG_TITLE:
         return "content::long_title";
 
-    case SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME:
+    case name_t::SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME:
         return "notheme";
 
-    case SNAP_NAME_CONTENT_MODIFIED:
+    case name_t::SNAP_NAME_CONTENT_MODIFIED:
         return "content::modified";
 
-    case SNAP_NAME_CONTENT_ORIGINAL_PAGE:
+    case name_t::SNAP_NAME_CONTENT_ORIGINAL_PAGE:
         return "content::original_page";
 
-    case SNAP_NAME_CONTENT_OUTPUT_PLUGIN: // this a forward declaration of the name of the "output" plugin...
+    case name_t::SNAP_NAME_CONTENT_OUTPUT_PLUGIN: // this a forward declaration of the name of the "output" plugin...
         return "output";
 
-    case SNAP_NAME_CONTENT_PAGE:
+    case name_t::SNAP_NAME_CONTENT_PAGE:
         return "content::page";
 
-    case SNAP_NAME_CONTENT_PAGE_TYPE:
+    case name_t::SNAP_NAME_CONTENT_PAGE_TYPE:
         return "content::page_type";
 
-    case SNAP_NAME_CONTENT_PARENT:
+    case name_t::SNAP_NAME_CONTENT_PARENT:
         return "content::parent";
 
-    case SNAP_NAME_CONTENT_PREVENT_DELETE:
+    case name_t::SNAP_NAME_CONTENT_PREVENT_DELETE:
         return "content::prevent_delete";
 
-    case SNAP_NAME_CONTENT_PRIMARY_OWNER:
+    case name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER:
         return "content::primary_owner";
 
-    case SNAP_NAME_CONTENT_PROCESSING_TABLE:
+    case name_t::SNAP_NAME_CONTENT_PROCESSING_TABLE:
         return "processing";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL: // content::revision_control::...
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL: // content::revision_control::...
         return "content::revision_control";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH: // content::revision_control::current_branch [uint32_t]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH: // content::revision_control::current_branch [uint32_t]
         return "current_branch";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY: // content::revision_control::current_branch_key [string]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY: // content::revision_control::current_branch_key [string]
         return "current_branch_key";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION: // content::revision_control::current_revision::<branch>::<locale> [uint32_t]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION: // content::revision_control::current_revision::<branch>::<locale> [uint32_t]
         return "current_revision";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY: // content::revision_control::current_revision_key::<branch>::<locale> [string]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY: // content::revision_control::current_revision_key::<branch>::<locale> [string]
         return "current_revision_key";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH: // content::revision_control::current_working_branch [uint32_t]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH: // content::revision_control::current_working_branch [uint32_t]
         return "current_working_branch";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY: // content::revision_control::current_working_branch_key [string]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY: // content::revision_control::current_working_branch_key [string]
         return "current_working_branch_key";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION: // content::revision_control::current_working_revision::<branch>::<locale> [uint32_t]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION: // content::revision_control::current_working_revision::<branch>::<locale> [uint32_t]
         return "current_working_revision";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY: // content::revision_control::current_working_revision_key::<branch>::<locale> [string]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY: // content::revision_control::current_working_revision_key::<branch>::<locale> [string]
         return "current_working_revision_key";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH: // content::revision_control::last_branch [uint32_t]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH: // content::revision_control::last_branch [uint32_t]
         return "last_branch";
 
-    case SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION: // content::revision_control::last_revision::<branch>::<locale> [uint32_t]
+    case name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION: // content::revision_control::last_revision::<branch>::<locale> [uint32_t]
         return "last_revision";
 
-    case SNAP_NAME_CONTENT_REVISION_TABLE:
+    case name_t::SNAP_NAME_CONTENT_REVISION_TABLE:
         return "revision";
 
-    case SNAP_NAME_CONTENT_SECRET_TABLE:
+    case name_t::SNAP_NAME_CONTENT_SECRET_TABLE:
         return "secret";
 
-    case SNAP_NAME_CONTENT_SHORT_TITLE:
+    case name_t::SNAP_NAME_CONTENT_SHORT_TITLE:
         return "content::short_title";
 
-    case SNAP_NAME_CONTENT_SINCE:
+    case name_t::SNAP_NAME_CONTENT_SINCE:
         return "content::since";
 
-    case SNAP_NAME_CONTENT_STATUS:
+    case name_t::SNAP_NAME_CONTENT_STATUS:
         return "content::status";
 
-    case SNAP_NAME_CONTENT_STATUS_CHANGED:
+    case name_t::SNAP_NAME_CONTENT_STATUS_CHANGED:
         return "content::status_changed";
 
-    case SNAP_NAME_CONTENT_SUBMITTED:
+    case name_t::SNAP_NAME_CONTENT_SUBMITTED:
         return "content::submitted";
 
-    case SNAP_NAME_CONTENT_TABLE: // pages, tags, comments, etc.
+    case name_t::SNAP_NAME_CONTENT_TABLE: // pages, tags, comments, etc.
         return "content";
 
-    case SNAP_NAME_CONTENT_TAG:
+    case name_t::SNAP_NAME_CONTENT_TAG:
         return "content";
 
-    case SNAP_NAME_CONTENT_TITLE:
+    case name_t::SNAP_NAME_CONTENT_TITLE:
         return "content::title";
 
-    case SNAP_NAME_CONTENT_TRASHCAN:
+    case name_t::SNAP_NAME_CONTENT_TRASHCAN:
         return "content::trashcan";
 
-    case SNAP_NAME_CONTENT_UNTIL:
+    case name_t::SNAP_NAME_CONTENT_UNTIL:
         return "content::until";
 
-    case SNAP_NAME_CONTENT_UPDATED:
+    case name_t::SNAP_NAME_CONTENT_UPDATED:
         return "content::updated";
 
-    case SNAP_NAME_CONTENT_VARIABLE_REVISION:
+    case name_t::SNAP_NAME_CONTENT_VARIABLE_REVISION:
         return "revision";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_CONTENT_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_CONTENT_...");
 
     }
     NOTREACHED();
@@ -744,7 +744,7 @@ char const *css_extensions[] =
  * object.
  */
 field_search::cmd_info_t::cmd_info_t()
-    //: f_cmd(COMMAND_UNKNOWN) -- auto-init
+    //: f_cmd(command_t::COMMAND_UNKNOWN) -- auto-init
     //, f_value() -- auto-init
     //, f_element() -- auto-init
     //, f_result(nullptr) -- auto-init
@@ -769,10 +769,10 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd)
 {
     switch(cmd)
     {
-    case COMMAND_PARENT_ELEMENT:
-    case COMMAND_ELEMENT_TEXT:
-    case COMMAND_RESET:
-    case COMMAND_SELF:
+    case command_t::COMMAND_PARENT_ELEMENT:
+    case command_t::COMMAND_ELEMENT_TEXT:
+    case command_t::COMMAND_RESET:
+    case command_t::COMMAND_SELF:
         break;
 
     default:
@@ -790,7 +790,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd)
  * \param[in] cmd  The search instruction (i.e. SELF, PARENTS, etc.)
  * \param[in] str_value  The string value attached to that instruction.
  */
-field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
+field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const & str_value)
     : f_cmd(cmd)
     , f_value(str_value)
     //, f_element() -- auto-init
@@ -799,22 +799,22 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QString const& str_value)
 {
     switch(cmd)
     {
-    case COMMAND_FIELD_NAME:
-    case COMMAND_PATH:
-    case COMMAND_PARENTS:
-    case COMMAND_LINK:
-    case COMMAND_DEFAULT_VALUE:
-    case COMMAND_DEFAULT_VALUE_OR_NULL:
-    case COMMAND_PATH_ELEMENT:
-    case COMMAND_CHILD_ELEMENT:
-    case COMMAND_NEW_CHILD_ELEMENT:
-    case COMMAND_ELEMENT_ATTR:
-    case COMMAND_SAVE:
-    case COMMAND_SAVE_FLOAT64:
-    case COMMAND_SAVE_INT64:
-    case COMMAND_SAVE_INT64_DATE:
-    case COMMAND_SAVE_XML:
-    case COMMAND_WARNING:
+    case command_t::COMMAND_FIELD_NAME:
+    case command_t::COMMAND_PATH:
+    case command_t::COMMAND_PARENTS:
+    case command_t::COMMAND_LINK:
+    case command_t::COMMAND_DEFAULT_VALUE:
+    case command_t::COMMAND_DEFAULT_VALUE_OR_NULL:
+    case command_t::COMMAND_PATH_ELEMENT:
+    case command_t::COMMAND_CHILD_ELEMENT:
+    case command_t::COMMAND_NEW_CHILD_ELEMENT:
+    case command_t::COMMAND_ELEMENT_ATTR:
+    case command_t::COMMAND_SAVE:
+    case command_t::COMMAND_SAVE_FLOAT64:
+    case command_t::COMMAND_SAVE_INT64:
+    case command_t::COMMAND_SAVE_INT64_DATE:
+    case command_t::COMMAND_SAVE_XML:
+    case command_t::COMMAND_WARNING:
         break;
 
     default:
@@ -841,20 +841,46 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, int64_t int_value)
 {
     switch(cmd)
     {
-    case COMMAND_MODE:
-    case COMMAND_CHILDREN:
-    case COMMAND_DEFAULT_VALUE:
-    case COMMAND_DEFAULT_VALUE_OR_NULL:
-    case COMMAND_LABEL:
-    case COMMAND_GOTO:
-    case COMMAND_IF_FOUND:
-    case COMMAND_IF_NOT_FOUND:
-    case COMMAND_IF_ELEMENT_NULL:
-    case COMMAND_IF_NOT_ELEMENT_NULL:
+    case command_t::COMMAND_CHILDREN:
+    case command_t::COMMAND_DEFAULT_VALUE:
+    case command_t::COMMAND_DEFAULT_VALUE_OR_NULL:
+    case command_t::COMMAND_LABEL:
+    case command_t::COMMAND_GOTO:
+    case command_t::COMMAND_IF_FOUND:
+    case command_t::COMMAND_IF_NOT_FOUND:
+    case command_t::COMMAND_IF_ELEMENT_NULL:
+    case command_t::COMMAND_IF_NOT_ELEMENT_NULL:
         break;
 
     default:
-        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a string (%2)").arg(static_cast<int>(cmd)).arg(int_value));
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for an integer (%2)").arg(static_cast<int>(cmd)).arg(int_value));
+
+    }
+}
+
+
+/** \brief Initialize an cmd_info_t object.
+ *
+ * This function initializes the cmd_info_t. Note that the parameters
+ * cannot be changed later (read-only.)
+ *
+ * \param[in] cmd  The search instruction (i.e. MODE.)
+ * \param[in] int_value  The integer value attached to that instruction.
+ */
+field_search::cmd_info_t::cmd_info_t(command_t cmd, mode_t mode)
+    : f_cmd(cmd)
+    , f_value(static_cast<int32_t>(mode))
+    //, f_element() -- auto-init
+    //, f_result(nullptr) -- auto-init
+    //, f_path_info() -- auto-init
+{
+    switch(cmd)
+    {
+    case command_t::COMMAND_MODE:
+        break;
+
+    default:
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a mode (%2)").arg(static_cast<int>(cmd)).arg(static_cast<int>(mode)));
 
     }
 }
@@ -877,8 +903,8 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QtCassandra::QCassandraValue
 {
     switch(cmd)
     {
-    case COMMAND_DEFAULT_VALUE:
-    case COMMAND_DEFAULT_VALUE_OR_NULL:
+    case command_t::COMMAND_DEFAULT_VALUE:
+    case command_t::COMMAND_DEFAULT_VALUE_OR_NULL:
         break;
 
     default:
@@ -905,11 +931,11 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomElement element)
 {
     switch(cmd)
     {
-    case COMMAND_ELEMENT:
+    case command_t::COMMAND_ELEMENT:
         break;
 
     default:
-        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a QCassandraValue").arg(static_cast<int>(cmd)));
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a QDomElement").arg(static_cast<int>(cmd)));
 
     }
 }
@@ -932,11 +958,11 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, QDomDocument doc)
 {
     switch(cmd)
     {
-    case COMMAND_ELEMENT:
+    case command_t::COMMAND_ELEMENT:
         break;
 
     default:
-        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a QCassandraValue").arg(static_cast<int>(cmd)));
+        throw content_exception_type_mismatch(QString("invalid parameter option (command %1) for a QDomDocument").arg(static_cast<int>(cmd)));
 
     }
 }
@@ -959,7 +985,7 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, search_result_t& result)
 {
     switch(cmd)
     {
-    case COMMAND_RESULT:
+    case command_t::COMMAND_RESULT:
         break;
 
     default:
@@ -986,9 +1012,9 @@ field_search::cmd_info_t::cmd_info_t(command_t cmd, path_info_t const& ipath)
 {
     switch(cmd)
     {
-    case COMMAND_PATH_INFO_GLOBAL:
-    case COMMAND_PATH_INFO_BRANCH:
-    case COMMAND_PATH_INFO_REVISION:
+    case command_t::COMMAND_PATH_INFO_GLOBAL:
+    case command_t::COMMAND_PATH_INFO_BRANCH:
+    case command_t::COMMAND_PATH_INFO_REVISION:
         break;
 
     default:
@@ -1072,7 +1098,7 @@ field_search& field_search::operator () (command_t cmd)
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (command_t cmd, char const *str_value)
+field_search& field_search::operator () (command_t cmd, char const * str_value)
 {
     cmd_info_t inst(cmd, QString(str_value));
     f_program.push_back(inst);
@@ -1100,7 +1126,7 @@ field_search& field_search::operator () (command_t cmd, char const *str_value)
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (command_t cmd, QString const& str_value)
+field_search& field_search::operator () (command_t cmd, QString const & str_value)
 {
     cmd_info_t inst(cmd, str_value);
     f_program.push_back(inst);
@@ -1127,9 +1153,28 @@ field_search& field_search::operator () (command_t cmd, QString const& str_value
  *
  * \return A reference to the field_search so further () can be used.
  */
-field_search& field_search::operator () (command_t cmd, int64_t int_value)
+field_search & field_search::operator () (command_t cmd, int64_t int_value)
 {
     cmd_info_t inst(cmd, int_value);
+    f_program.push_back(inst);
+    return *this;
+}
+
+
+/** \brief Add a command with a 64 bit integer.
+ *
+ * The following commands support the integer:
+ *
+ * \li COMMAND_MODE
+ *
+ * \param[in] cmd  The command.
+ * \param[in] value  The integer attached to that command.
+ *
+ * \return A reference to the field_search so further () can be used.
+ */
+field_search & field_search::operator () (command_t cmd, mode_t mode)
+{
+    cmd_info_t inst(cmd, mode);
     f_program.push_back(inst);
     return *this;
 }
@@ -1256,7 +1301,7 @@ void field_search::run()
             , f_line(line)
             , f_snap(snap)
             , f_program(program)
-            //, f_mode(SEARCH_MODE_FIRST) -- auto-init
+            //, f_mode(mode_t::SEARCH_MODE_FIRST) -- auto-init
             , f_site_key(f_snap->get_site_key_with_slash())
             , f_revision_owner(f_content_plugin->get_plugin_name())
             //, f_field_name("") -- auto-init
@@ -1349,15 +1394,15 @@ void field_search::run()
 
         void cmd_table(QString const& name)
         {
-            if(name == get_name(SNAP_NAME_CONTENT_TABLE))
+            if(name == get_name(name_t::SNAP_NAME_CONTENT_TABLE))
             {
                 f_current_table = f_content_plugin->get_content_table();
             }
-            else if(name == get_name(SNAP_NAME_CONTENT_BRANCH_TABLE))
+            else if(name == get_name(name_t::SNAP_NAME_CONTENT_BRANCH_TABLE))
             {
                 f_current_table = f_content_plugin->get_branch_table();
             }
-            else if(name == get_name(SNAP_NAME_CONTENT_REVISION_TABLE))
+            else if(name == get_name(name_t::SNAP_NAME_CONTENT_REVISION_TABLE))
             {
                 f_current_table = f_content_plugin->get_revision_table();
             }
@@ -1381,7 +1426,7 @@ void field_search::run()
                 f_found_self = true;
 
                 // found a field, add it to result
-                if(SEARCH_MODE_PATHS == f_mode)
+                if(mode_t::SEARCH_MODE_PATHS == f_mode)
                 {
                     // save the path(s) only
                     f_result.push_back(self);
@@ -1413,17 +1458,17 @@ void field_search::run()
         {
             switch(mode)
             {
-            case content::PARAM_REVISION_GLOBAL:
+            case content::param_revision_t::PARAM_REVISION_GLOBAL:
                 cmd_path(ipath.get_cpath());
                 f_current_table = f_content_plugin->get_content_table();
                 break;
 
-            case content::PARAM_REVISION_BRANCH:
+            case content::param_revision_t::PARAM_REVISION_BRANCH:
                 cmd_path(ipath.get_branch_key());
                 f_current_table = f_content_plugin->get_branch_table();
                 break;
 
-            case content::PARAM_REVISION_REVISION:
+            case content::param_revision_t::PARAM_REVISION_REVISION:
                 cmd_path(ipath.get_revision_key());
                 f_current_table = f_content_plugin->get_revision_table();
                 break;
@@ -1473,7 +1518,7 @@ void field_search::run()
                 // and if depth is larger than 1, repeat the process with those children
                 path_info_t ipath;
                 ipath.set_path(children[i]);
-                links::link_info info(get_name(SNAP_NAME_CONTENT_CHILDREN), false, ipath.get_key(), ipath.get_branch());
+                links::link_info info(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, ipath.get_key(), ipath.get_branch());
                 QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                 links::link_info child_info;
                 while(link_ctxt->next_link(child_info))
@@ -1482,7 +1527,7 @@ void field_search::run()
                     if(match.isEmpty() || child.startsWith(match))
                     {
                         cmd_self(child);
-                        if(!f_result.isEmpty() && SEARCH_MODE_FIRST == f_mode)
+                        if(!f_result.isEmpty() && mode_t::SEARCH_MODE_FIRST == f_mode)
                         {
                             return;
                         }
@@ -1527,7 +1572,7 @@ void field_search::run()
                     parts.pop_back();
                     QString self(parts.join("/"));
                     cmd_self(f_site_key + self);
-                    if((!f_result.isEmpty() && SEARCH_MODE_FIRST == f_mode)
+                    if((!f_result.isEmpty() && mode_t::SEARCH_MODE_FIRST == f_mode)
                     || self == limit_path)
                     {
                         return;
@@ -1677,11 +1722,11 @@ void field_search::run()
             f_variables[varname] = value.stringValue();
         }
 
-        void cmd_save(QString const& child_name)
+        void cmd_save(QString const & child_name)
         {
             struct parser
             {
-                enum token_t
+                enum class token_t
                 {
                     TOKEN_EOF,
                     TOKEN_OPEN_ATTR,
@@ -1691,7 +1736,7 @@ void field_search::run()
                     TOKEN_IDENTIFIER
                 };
 
-                parser(QString const& child_name)
+                parser(QString const & child_name)
                     : f_child_name(child_name)
                     //, f_pos(0) -- auto-init
                     , f_length(f_child_name.length())
@@ -1716,22 +1761,22 @@ void field_search::run()
                     int c(getc());
                     if(c == EOF)
                     {
-                        return TOKEN_EOF;
+                        return token_t::TOKEN_EOF;
                     }
 
                     switch(c)
                     {
                     case '[':
-                        return TOKEN_OPEN_ATTR;
+                        return token_t::TOKEN_OPEN_ATTR;
 
                     case ']':
-                        return TOKEN_CLOSE_ATTR;
+                        return token_t::TOKEN_CLOSE_ATTR;
 
                     case '/':
-                        return TOKEN_SLASH;
+                        return token_t::TOKEN_SLASH;
 
                     case '=':
-                        return TOKEN_EQUAL;
+                        return token_t::TOKEN_EQUAL;
 
                     case '\'':
                     case '"':
@@ -1747,7 +1792,7 @@ void field_search::run()
                                 }
                                 if(c == quote)
                                 {
-                                    return TOKEN_IDENTIFIER;
+                                    return token_t::TOKEN_IDENTIFIER;
                                 }
                                 // that does not seem necessary
                                 // (i.e. use &quot; and &#27; for quotes in strings)
@@ -1771,7 +1816,7 @@ void field_search::run()
                             c = getc();
                             if(c == EOF)
                             {
-                                return TOKEN_IDENTIFIER;
+                                return token_t::TOKEN_IDENTIFIER;
                             }
                             if(c == '\''
                             || c == '"')
@@ -1785,7 +1830,7 @@ void field_search::run()
                             {
                                 //ungetc();
                                 --f_pos;
-                                return TOKEN_IDENTIFIER;
+                                return token_t::TOKEN_IDENTIFIER;
                             }
                             // that does not seem necessary
                             //if(c == '\\')
@@ -1849,11 +1894,11 @@ void field_search::run()
                 QDomElement child;
                 QString v;
                 parser::token_t t(p.get_token(v));
-                while(t != p.TOKEN_EOF)
+                while(t != p.token_t::TOKEN_EOF)
                 {
                     // we must have an identifier before attributes or '/'
                     //    <path>
-                    if(t != p.TOKEN_IDENTIFIER)
+                    if(t != p.token_t::TOKEN_IDENTIFIER)
                     {
                         throw content_exception_invalid_sequence(QString("syntax error in field name \"%1\", expected a path name got token %2 instead").arg(child_name).arg(static_cast<int>(t)));
                     }
@@ -1863,13 +1908,13 @@ void field_search::run()
                     // start an attribute?
                     //    '['
                     t = p.get_token(v);
-                    while(t == p.TOKEN_OPEN_ATTR)
+                    while(t == p.token_t::TOKEN_OPEN_ATTR)
                     {
                         // attribute name
                         //    <name>
                         QString attr_name;
                         t = p.get_token(attr_name);
-                        if(t != p.TOKEN_IDENTIFIER)
+                        if(t != p.token_t::TOKEN_IDENTIFIER)
                         {
                             throw content_exception_invalid_sequence("attribute name expected after a '['");
                         }
@@ -1887,12 +1932,12 @@ void field_search::run()
                         //    '='
                         QString attr_value;
                         t = p.get_token(v);
-                        if(t == p.TOKEN_EQUAL)
+                        if(t == p.token_t::TOKEN_EQUAL)
                         {
                             // we have a value, we are setting the attribute
                             //     <value>
                             t = p.get_token(attr_value);
-                            if(t != p.TOKEN_IDENTIFIER)
+                            if(t != p.token_t::TOKEN_IDENTIFIER)
                             {
                                 throw content_exception_invalid_sequence("attribute name expected after an '='");
                             }
@@ -1910,7 +1955,7 @@ void field_search::run()
 
                         // make sure we have a closing ']'
                         //     ']'
-                        if(t != p.TOKEN_CLOSE_ATTR)
+                        if(t != p.token_t::TOKEN_CLOSE_ATTR)
                         {
                             throw content_exception_invalid_sequence(QString("attribute must end with ']' in %1, got token %2").arg(child_name).arg(static_cast<int>(t)));
                         }
@@ -1918,9 +1963,9 @@ void field_search::run()
                         t = p.get_token(v);
                     }
 
-                    if(t != p.TOKEN_EOF)
+                    if(t != p.token_t::TOKEN_EOF)
                     {
-                        if(t != p.TOKEN_SLASH)
+                        if(t != p.token_t::TOKEN_SLASH)
                         {
                             throw content_exception_invalid_sequence(QString("expect a slash '/' instead of %1 to seperate each child name in \"%2\".").arg(static_cast<int>(t)).arg(child_name));
                         }
@@ -2015,7 +2060,7 @@ void field_search::run()
             int const max_size(f_program.size());
             for(int j(0); j < max_size; ++j)
             {
-                if(f_program[j].get_command() == COMMAND_LABEL
+                if(f_program[j].get_command() == command_t::COMMAND_LABEL
                 && f_program[j].get_int64() == label)
                 {
                     // NOTE: the for() loop will do a ++i which is fine
@@ -2045,155 +2090,155 @@ void field_search::run()
             {
                 switch(f_program[i].get_command())
                 {
-                case COMMAND_RESET:
+                case command_t::COMMAND_RESET:
                     cmd_reset(false);
                     break;
 
-                case COMMAND_FIELD_NAME:
+                case command_t::COMMAND_FIELD_NAME:
                     cmd_field_name(f_program[i].get_string());
                     break;
 
-                case COMMAND_FIELD_NAME_WITH_VARS:
+                case command_t::COMMAND_FIELD_NAME_WITH_VARS:
                     cmd_field_name_with_vars(f_program[i].get_string());
                     break;
 
-                case COMMAND_MODE:
-                    cmd_mode(f_program[i].get_int64());
+                case command_t::COMMAND_MODE:
+                    cmd_mode(f_program[i].get_int32());
                     break;
 
-                case COMMAND_BRANCH_PATH:
+                case command_t::COMMAND_BRANCH_PATH:
                     cmd_branch_path(f_program[i].get_int64());
                     break;
 
-                case COMMAND_REVISION_PATH:
+                case command_t::COMMAND_REVISION_PATH:
                     cmd_revision_path(f_program[i].get_int64());
                     break;
 
-                case COMMAND_TABLE:
+                case command_t::COMMAND_TABLE:
                     cmd_table(f_program[i].get_string());
                     break;
 
-                case COMMAND_SELF:
+                case command_t::COMMAND_SELF:
                     cmd_self(f_self);
                     break;
 
-                case COMMAND_PATH:
+                case command_t::COMMAND_PATH:
                     cmd_path(f_program[i].get_string());
                     break;
 
-                case COMMAND_PATH_INFO_GLOBAL:
-                    cmd_path_info(f_program[i].get_ipath(), content::PARAM_REVISION_GLOBAL);
+                case command_t::COMMAND_PATH_INFO_GLOBAL:
+                    cmd_path_info(f_program[i].get_ipath(), content::param_revision_t::PARAM_REVISION_GLOBAL);
                     break;
 
-                case COMMAND_PATH_INFO_BRANCH:
-                    cmd_path_info(f_program[i].get_ipath(), content::PARAM_REVISION_BRANCH);
+                case command_t::COMMAND_PATH_INFO_BRANCH:
+                    cmd_path_info(f_program[i].get_ipath(), content::param_revision_t::PARAM_REVISION_BRANCH);
                     break;
 
-                case COMMAND_PATH_INFO_REVISION:
-                    cmd_path_info(f_program[i].get_ipath(), content::PARAM_REVISION_REVISION);
+                case command_t::COMMAND_PATH_INFO_REVISION:
+                    cmd_path_info(f_program[i].get_ipath(), content::param_revision_t::PARAM_REVISION_REVISION);
                     break;
 
-                case COMMAND_CHILDREN:
+                case command_t::COMMAND_CHILDREN:
                     cmd_children(f_program[i].get_int64());
                     break;
 
-                case COMMAND_PARENTS:
+                case command_t::COMMAND_PARENTS:
                     cmd_parents(f_program[i].get_string());
                     break;
 
-                case COMMAND_LINK:
+                case command_t::COMMAND_LINK:
                     cmd_link(f_program[i].get_string());
                     break;
 
-                case COMMAND_DEFAULT_VALUE:
+                case command_t::COMMAND_DEFAULT_VALUE:
                     cmd_default_value(f_program[i].get_value(), true);
                     break;
 
-                case COMMAND_DEFAULT_VALUE_OR_NULL:
+                case command_t::COMMAND_DEFAULT_VALUE_OR_NULL:
                     cmd_default_value(f_program[i].get_value(), false);
                     break;
 
-                case COMMAND_ELEMENT:
+                case command_t::COMMAND_ELEMENT:
                     cmd_element(f_program[i].get_element());
                     break;
 
-                case COMMAND_PATH_ELEMENT:
+                case command_t::COMMAND_PATH_ELEMENT:
                     cmd_path_element(f_program[i].get_string());
                     break;
 
-                case COMMAND_CHILD_ELEMENT:
+                case command_t::COMMAND_CHILD_ELEMENT:
                     cmd_child_element(f_program[i].get_string());
                     break;
 
-                case COMMAND_NEW_CHILD_ELEMENT:
+                case command_t::COMMAND_NEW_CHILD_ELEMENT:
                     cmd_new_child_element(f_program[i].get_string());
                     break;
 
-                case COMMAND_PARENT_ELEMENT:
+                case command_t::COMMAND_PARENT_ELEMENT:
                     cmd_parent_element();
                     break;
 
-                case COMMAND_ELEMENT_TEXT:
+                case command_t::COMMAND_ELEMENT_TEXT:
                     cmd_element_text();
                     break;
 
-                case COMMAND_ELEMENT_ATTR:
+                case command_t::COMMAND_ELEMENT_ATTR:
                     cmd_element_attr(f_program[i].get_string());
                     break;
 
-                case COMMAND_RESULT:
+                case command_t::COMMAND_RESULT:
                     cmd_result(*f_program[i].get_result());
                     break;
 
-                case COMMAND_LAST_RESULT_TO_VAR:
+                case command_t::COMMAND_LAST_RESULT_TO_VAR:
                     cmd_last_result_to_var(f_program[i].get_string());
                     break;
 
-                case COMMAND_SAVE:
+                case command_t::COMMAND_SAVE:
                     cmd_save(f_program[i].get_string());
                     break;
 
-                case COMMAND_SAVE_FLOAT64:
+                case command_t::COMMAND_SAVE_FLOAT64:
                     cmd_save_float64(f_program[i].get_string());
                     break;
 
-                case COMMAND_SAVE_INT64:
+                case command_t::COMMAND_SAVE_INT64:
                     cmd_save_int64(f_program[i].get_string());
                     break;
 
-                case COMMAND_SAVE_INT64_DATE:
+                case command_t::COMMAND_SAVE_INT64_DATE:
                     cmd_save_int64_date(f_program[i].get_string());
                     break;
 
-                case COMMAND_SAVE_XML:
+                case command_t::COMMAND_SAVE_XML:
                     cmd_save_xml(f_program[i].get_string());
                     break;
 
-                case COMMAND_LABEL:
+                case command_t::COMMAND_LABEL:
                     // this is a nop
                     break;
 
-                case COMMAND_IF_FOUND:
+                case command_t::COMMAND_IF_FOUND:
                     cmd_if_found(i, f_program[i].get_int64(), false);
                     break;
 
-                case COMMAND_IF_NOT_FOUND:
+                case command_t::COMMAND_IF_NOT_FOUND:
                     cmd_if_found(i, f_program[i].get_int64(), true);
                     break;
 
-                case COMMAND_IF_ELEMENT_NULL:
+                case command_t::COMMAND_IF_ELEMENT_NULL:
                     cmd_if_element_null(i, f_program[i].get_int64(), true);
                     break;
 
-                case COMMAND_IF_NOT_ELEMENT_NULL:
+                case command_t::COMMAND_IF_NOT_ELEMENT_NULL:
                     cmd_if_element_null(i, f_program[i].get_int64(), false);
                     break;
 
-                case COMMAND_GOTO:
+                case command_t::COMMAND_GOTO:
                     cmd_goto(i, f_program[i].get_int64());
                     break;
 
-                case COMMAND_WARNING:
+                case command_t::COMMAND_WARNING:
                     cmd_warning(f_program[i].get_string());
                     break;
 
@@ -2201,7 +2246,7 @@ void field_search::run()
                     throw content_exception_invalid_sequence(QString("encountered an unknown instruction (%1)").arg(static_cast<int>(f_program[i].get_command())));
 
                 }
-                if(!f_result.isEmpty() && SEARCH_MODE_FIRST == f_mode)
+                if(!f_result.isEmpty() && mode_t::SEARCH_MODE_FIRST == f_mode)
                 {
                     return;
                 }
@@ -2922,18 +2967,18 @@ QString const& attachment_file::get_name() const
         if(f_multiple)
         {
             f_name = QString("%1::%2::%3::%4")
-                    .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT))
+                    .arg(snap::content::get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))
                     .arg(get_field_name())
-                    .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT_PATH_END))
+                    .arg(snap::content::get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END))
                     .arg(f_snap->get_unique_number())
                     ;
         }
         else
         {
             f_name = QString("%1::%2::%3")
-                    .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT))
+                    .arg(snap::content::get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))
                     .arg(get_field_name())
-                    .arg(snap::content::get_name(SNAP_NAME_CONTENT_ATTACHMENT_PATH_END))
+                    .arg(snap::content::get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END))
                     ;
         }
     }
@@ -3855,7 +3900,7 @@ path_info_t::status_t path_info_t::get_status() const
 
     // we set the consistency of the cell to QUORUM to make sure
     // we read the last written value
-    QtCassandra::QCassandraCell::pointer_t cell(content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS)));
+    QtCassandra::QCassandraCell::pointer_t cell(content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS)));
     cell->setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
     QtCassandra::QCassandraValue value(cell->value());
     if(value.size() != sizeof(uint32_t))
@@ -3940,7 +3985,7 @@ void path_info_t::set_status(status_t const& status)
     {
         QtCassandra::QCassandraTable::pointer_t processing_table(f_content_plugin->get_processing_table());
         signed char const one_byte(1);
-        processing_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(one_byte);
+        processing_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(one_byte);
     }
     QtCassandra::QCassandraTable::pointer_t content_table(f_content_plugin->get_content_table());
 
@@ -3956,12 +4001,12 @@ void path_info_t::set_status(status_t const& status)
     int64_t const start_date(f_snap->get_start_date());
     changed.setInt64Value(start_date);
     changed.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(changed);
+    content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->setValue(changed);
 
     QtCassandra::QCassandraValue value;
     value.setUInt32Value(status.get_status());
     value.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
-    content_table->row(f_key)->cell(get_name(SNAP_NAME_CONTENT_STATUS))->setValue(value);
+    content_table->row(f_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->setValue(value);
 }
 
 
@@ -4158,10 +4203,10 @@ QString path_info_t::get_revision_key() const
 
             // name of the field in the content table of that page
             QString field(QString("%1::%2::%3")
-                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                         .arg(get_name(get_working_branch()
-                                ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
-                                : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
+                                ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                                : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
                         .arg(f_branch));
             if(!f_locale.isEmpty())
             {
@@ -4432,7 +4477,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_content_table()
 {
     if(!f_content_table)
     {
-        f_content_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_TABLE), "Website content table.");
+        f_content_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_TABLE), "Website content table.");
     }
     return f_content_table;
 }
@@ -4475,7 +4520,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_secret_table()
 {
     if(!f_secret_table)
     {
-        f_secret_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_SECRET_TABLE), "Website secret table.");
+        f_secret_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_SECRET_TABLE), "Website secret table.");
     }
     return f_secret_table;
 }
@@ -4501,7 +4546,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_processing_table()
 {
     if(!f_processing_table)
     {
-        f_processing_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_PROCESSING_TABLE), "Website content table.");
+        f_processing_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_PROCESSING_TABLE), "Website content table.");
     }
     return f_processing_table;
 }
@@ -4559,7 +4604,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_branch_table()
 {
     if(!f_branch_table)
     {
-        f_branch_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_BRANCH_TABLE), "Website branch table.");
+        f_branch_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_BRANCH_TABLE), "Website branch table.");
     }
     return f_branch_table;
 }
@@ -4603,7 +4648,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_revision_table()
 {
     if(!f_revision_table)
     {
-        f_revision_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_REVISION_TABLE), "Website data table.");
+        f_revision_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_REVISION_TABLE), "Website data table.");
     }
     return f_revision_table;
 }
@@ -4632,7 +4677,7 @@ QtCassandra::QCassandraTable::pointer_t content::get_files_table()
 {
     if(!f_files_table)
     {
-        f_files_table = f_snap->create_table(get_name(SNAP_NAME_CONTENT_FILES_TABLE), "List of all the files ever uploaded to all the websites.");
+        f_files_table = f_snap->create_table(get_name(name_t::SNAP_NAME_CONTENT_FILES_TABLE), "List of all the files ever uploaded to all the websites.");
     }
     return f_files_table;
 }
@@ -4670,7 +4715,7 @@ snap_child *content::get_snap()
  */
 void content::invalid_revision_control(QString const& version)
 {
-    f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
+    f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR, "Invalid Revision Control",
             "The revision control \"" + version + "\" does not look valid.",
             "The version does not seem to start with a valid decimal number.");
     NOTREACHED();
@@ -4699,10 +4744,10 @@ void content::invalid_revision_control(QString const& version)
 snap_version::version_number_t content::get_current_branch(QString const& key, bool working_branch)
 {
     QString current_branch_key(QString("%1::%2")
-                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                         .arg(get_name(working_branch
-                                ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH
-                                : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
+                                ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH
+                                : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     if(content_table->exists(key)
     && content_table->row(key)->exists(current_branch_key))
@@ -4742,8 +4787,8 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
 
         // get the last branch number
         QString const last_branch_key(QString("%1::%2")
-                            .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                            .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+                            .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                            .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
         if(!branch_value.nullValue())
         {
@@ -4784,10 +4829,10 @@ snap_version::version_number_t content::get_current_user_branch(QString const& k
 snap_version::version_number_t content::get_current_revision(QString const& key, snap_version::version_number_t const branch, QString const& locale, bool working_branch)
 {
     QString revision_key(QString("%1::%2::%3")
-            .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+            .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
             .arg(get_name(working_branch
-                    ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION
-                    : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
+                    ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION
+                    : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
             .arg(branch));
     if(!locale.isEmpty())
     {
@@ -4825,10 +4870,10 @@ snap_version::version_number_t content::get_current_revision(QString const& key,
 {
     snap_version::version_number_t const branch(get_current_branch(key, working_branch));
     QString revision_key(QString("%1::%2::%3")
-            .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+            .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
             .arg(get_name(working_branch
-                    ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION
-                    : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
+                    ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION
+                    : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
             .arg(branch));
     if(!locale.isEmpty())
     {
@@ -4883,8 +4928,8 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
 
     // get the last branch number
     QString const last_branch_key(QString("%1::%2")
-                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
 
     // increase revision if one exists, otherwise we keep the user default (1)
     snap_version::version_number_t branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
@@ -4908,8 +4953,8 @@ snap_version::version_number_t content::get_new_branch(QString const& key, QStri
     content_table->row(key)->cell(last_branch_key)->setValue(static_cast<snap_version::basic_version_number_t>(branch));
 
     QString last_revision_key(QString("%1::%2::%3")
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
                     .arg(branch));
     if(!locale.isEmpty())
     {
@@ -4961,7 +5006,7 @@ void content::copy_branch(QString const& key, snap_version::version_number_t con
     source_uri.force_branch(source_branch);
 
     QtCassandra::QCassandraRow::pointer_t source_row(branch_table->row(source_uri.get_branch_key()));
-    if(!source_row->exists(get_name(SNAP_NAME_CONTENT_CREATED)))
+    if(!source_row->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
     {
         // no source, ignore
         return;
@@ -4973,7 +5018,7 @@ void content::copy_branch(QString const& key, snap_version::version_number_t con
 
     QtCassandra::QCassandraRow::pointer_t destination_row(branch_table->row(destination_uri.get_branch_key()));
 
-    QString const links_namespace(QString("%1::").arg(links::get_name(links::SNAP_NAME_LINKS_NAMESPACE)));
+    QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
     QByteArray const links_bytearray(links_namespace.toAscii());
 
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -4999,7 +5044,7 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells& source_cells,
     // we handle the links here because the links cannot include the
     // content.h header file...
     links::links *link_plugin(links::links::instance());
-    QString const links_namespace(QString("%1::").arg(links::get_name(links::SNAP_NAME_LINKS_NAMESPACE)));
+    QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
     QByteArray const links_bytearray(links_namespace.toAscii());
 
     QtCassandra::QCassandraCells left_cells;
@@ -5012,7 +5057,7 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells& source_cells,
         QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
         QByteArray cell_key(source_cell->columnKey());
 
-        if(cell_key == get_name(SNAP_NAME_CONTENT_MODIFIED)
+        if(cell_key == get_name(name_t::SNAP_NAME_CONTENT_MODIFIED)
         || destination_row->exists(cell_key))
         {
             // ignore the content::modified cell
@@ -5024,11 +5069,11 @@ bool content::copy_branch_cells_impl(QtCassandra::QCassandraCells& source_cells,
             continue;
         }
 
-        if(cell_key == get_name(SNAP_NAME_CONTENT_CREATED))
+        if(cell_key == get_name(name_t::SNAP_NAME_CONTENT_CREATED))
         {
             // handle the content::created field
             int64_t const now(f_snap->get_start_date());
-            destination_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(now);
+            destination_row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(now);
         }
         else if(cell_key.startsWith(links_bytearray))
         {
@@ -5158,16 +5203,16 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
 
     // define the key
     QString last_revision_key(QString("%1::%2::%3")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
                 .arg(branch));
     if(!locale.isEmpty())
     {
         last_revision_key += "::" + locale;
     }
     QString current_revision_key(QString("%1::%2::%3")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION))
                 .arg(previous_branch));
     if(!locale.isEmpty())
     {
@@ -5183,8 +5228,8 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
     {
         // verify correctness of branch
         QString const last_branch_key(QString("%1::%2")
-                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
         if(!branch_value.nullValue()
         && branch > branch_value.uint32Value())
@@ -5251,7 +5296,7 @@ snap_version::version_number_t content::get_new_revision(QString const& key,
         // change the creation date
         QtCassandra::QCassandraValue created;
         created.setInt64Value(f_snap->get_start_date());
-        revision_table->row(revision_key)->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(created);
+        revision_table->row(revision_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created);
     }
 
     // unlock ASAP
@@ -5279,10 +5324,10 @@ QString content::get_branch_key(QString const& key, bool working_branch)
 {
     // key in the content table
     QString const current_key(QString("%1::%2")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY)));
+                        ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY
+                        : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY)));
 
     // get the data key from the content table
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
@@ -5322,10 +5367,10 @@ void content::set_branch(QString const& key, snap_version::version_number_t bran
 {
     // key in the content table
     QString const current_key(QString("%1::%2")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
+                        ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH
+                        : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
 
     // save the data key in the content table
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
@@ -5333,8 +5378,8 @@ void content::set_branch(QString const& key, snap_version::version_number_t bran
 
     // Last branch
     QString const last_branch_key(QString("%1::%2")
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
     QtCassandra::QCassandraValue last_branch_value(content_table->row(key)->cell(last_branch_key)->value());
     if(last_branch_value.nullValue())
     {
@@ -5373,10 +5418,10 @@ QString content::set_branch_key(QString const& key, snap_version::version_number
 
     // key in the content table
     QString const current_key(QString("%1::%2")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY)));
+                        ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY
+                        : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY)));
 
     // save the data key in the content table
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
@@ -5407,8 +5452,8 @@ void content::initialize_branch(QString const& key)
     {
         // Last branch
         QString const last_branch_key(QString("%1::%2")
-                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                        .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                        .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(last_branch_key)->value());
         if(branch_value.nullValue())
         {
@@ -5423,8 +5468,8 @@ void content::initialize_branch(QString const& key)
 
     {
         QString const current_branch_key(QString("%1::%2")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(current_branch_key)->value());
         if(branch_value.nullValue())
         {
@@ -5434,8 +5479,8 @@ void content::initialize_branch(QString const& key)
 
     {
         QString const current_branch_key(QString("%1::%2")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH)));
         QtCassandra::QCassandraValue branch_value(content_table->row(key)->cell(current_branch_key)->value());
         if(branch_value.nullValue())
         {
@@ -5482,10 +5527,10 @@ QString content::get_revision_key(QString const& key, snap_version::version_numb
 {
     // key in the content table
     QString current_key(QString("%1::%2::%3")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
+                        ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                        : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
                 .arg(branch));
     if(!locale.isEmpty())
     {
@@ -5593,16 +5638,16 @@ void content::set_current_revision(QString const& key, snap_version::version_num
 {
     // revision key in the content table
     QString current_key(QString("%1::%2::%3")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION))
+                        ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION
+                        : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION))
                 .arg(branch));
 
     // key to the last revision
     QString last_revision_key(QString("%1::%2::%3")
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
                     .arg(branch));
 
     if(!locale.isEmpty())
@@ -5662,10 +5707,10 @@ QString content::set_revision_key(QString const& key, snap_version::version_numb
 
     // key in the content table
     QString current_key(QString("%1::%2::%3")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
+                        ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                        : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
                 .arg(branch));
     if(!locale.isEmpty())
     {
@@ -5706,10 +5751,10 @@ QString content::set_revision_key(QString const& key, snap_version::version_numb
 
     // key in the content table
     QString current_key(QString("%1::%2::%3")
-                .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
+                .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
                 .arg(get_name(working_branch
-                        ? SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
-                        : SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
+                        ? name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY
+                        : name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY))
                 .arg(branch));
     if(!locale.isEmpty())
     {
@@ -5792,7 +5837,7 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
     QString const key(ipath.get_key());
 
     // create the row
-    QString const primary_owner(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER));
+    QString const primary_owner(get_name(name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER));
     QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
     if(row->exists(primary_owner))
     {
@@ -5817,7 +5862,7 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
             if(is_final(parent_key))
             {
                 // the user was trying to add content under a final leaf
-                f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Final Parent",
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Final Parent",
                         QString("Page \"%1\" cannot be added under \"%2\" since \"%2\" is marked as final.")
                                     .arg(key).arg(parent_key),
                         "The parent row does not allow for further children.");
@@ -5855,11 +5900,11 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
 
     // add the different basic content dates setup
     int64_t const start_date(f_snap->get_start_date());
-    row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 
     QtCassandra::QCassandraRow::pointer_t data_row(branch_table->row(ipath.get_branch_key()));
-    data_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
-    data_row->cell(get_name(SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
+    data_row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    data_row->cell(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
 
     // link the page to its type (very important for permissions)
     {
@@ -5872,8 +5917,8 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
         QString const destination_key(site_key + "types/taxonomy/system/content-types/" + (type.isEmpty() ? "page" : type));
         path_info_t destination_ipath;
         destination_ipath.set_path(destination_key);
-        QString const link_name(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
-        QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE));
+        QString const link_name(get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE));
+        QString const link_to(get_name(name_t::SNAP_NAME_CONTENT_PAGE));
         bool const source_unique(true);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, key, branch_number);
@@ -5896,8 +5941,8 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
         parent_branch = get_current_branch(dst, true);
 
         // TBD: is the use of the system branch always correct here?
-        links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src, child_branch);
-        links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst, parent_branch);
+        links::link_info source(get_name(name_t::SNAP_NAME_CONTENT_PARENT), true, src, child_branch);
+        links::link_info destination(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, dst, parent_branch);
 // TODO only repeat if the parent did not exist, otherwise we assume the
 //      parent created its own parent/children link already.
 //printf("parent/children [%s]/[%s]\n", src.toUtf8().data(), dst.toUtf8().data());
@@ -6076,7 +6121,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
     if(is_final(parent_key))
     {
         // the user was trying to add content under a final leaf
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Final Parent",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Final Parent",
                 QString("The attachment \"%1\" cannot be added under \"%2\" as this page is marked as final.")
                             .arg(attachment_filename).arg(parent_key),
                 "The parent row does not allow for further children.");
@@ -6096,7 +6141,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
         extension = snap_version::find_extension(attachment_filename, js_extensions);
         if(extension.isEmpty())
         {
-            f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Extension",
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Invalid Extension",
                     QString("The attachment \"%1\" cannot be added under \"%2\" as it does not represent JavaScript code.")
                                 .arg(attachment_filename).arg(parent_key),
                     "The filename does not have a .js extension.");
@@ -6108,7 +6153,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
         extension = snap_version::find_extension(attachment_filename, css_extensions);
         if(extension.isEmpty())
         {
-            f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Extension",
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Invalid Extension",
                     QString("The attachment \"%1\" cannot be added under \"%2\" as it does not represent CSS data.")
                                 .arg(attachment_filename).arg(parent_key),
                     "The filename does not have a .css extension.");
@@ -6128,7 +6173,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
 
         if(!fv.find_version(post_file.get_data().data(), post_file.get_size()))
         {
-            f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid File",
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Invalid File",
                     "The attachment \"" + attachment_filename + "\" does not include a valid C-like comment at the start. The comment must at least include a <a href=\"See http://snapwebsites.org/implementation/feature-requirements/attachments-core\">Version field</a>.",
                     "The content of this file is not valid for a JavaScript or CSS file (version required).");
             NOTREACHED();
@@ -6145,14 +6190,14 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
             snap_version::versioned_filename js_filename(extension);
             if(!js_filename.set_filename(attachment_filename))
             {
-                f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Filename",
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Invalid Filename",
                         "The attachment \"" + attachment_filename + "\" has an invalid name and must be rejected. " + js_filename.get_error(),
                         "The name is not considered valid for a versioned file.");
                 NOTREACHED();
             }
             if(fv.get_version_string() != js_filename.get_version_string())
             {
-                f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Versions Mismatch",
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Versions Mismatch",
                         QString("The attachment \"%1\" filename version (%2) is not the same as the version inside the file (%3).")
                             .arg(attachment_filename)
                             .arg(js_filename.get_version_string())
@@ -6186,7 +6231,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
             if(!snap_version::validate_name(name_string, errmsg, namespace_string))
             {
                 // unacceptable filename
-                f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Invalid Filename",
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Invalid Filename",
                         QString("The attachment \"%1\" has an invalid name and must be rejected. %2").arg(attachment_filename).arg(errmsg),
                         "The name is not considered valid for a versioned file.");
                 NOTREACHED();
@@ -6263,13 +6308,13 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
         //
         // 1. create the row with the file data, the compression used,
         //    and size; also add it to the list of new cells
-        files_table->row(md5)->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA))->setValue(post_file.get_data());
-        files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW))->cell(md5)->setValue(true);
+        files_table->row(md5)->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_DATA))->setValue(post_file.get_data());
+        files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_NEW))->cell(md5)->setValue(true);
 
         QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(md5));
 
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_COMPRESSOR))->setValue(get_name(SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED));
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE))->setValue(static_cast<int32_t>(post_file.get_size()));
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_COMPRESSOR))->setValue(get_name(name_t::SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED));
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SIZE))->setValue(static_cast<int32_t>(post_file.get_size()));
 
         // Note we save the following mainly for completness because it is
         // not really usable (i.e. two people who are to upload the same file
@@ -6277,39 +6322,39 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
         // creation/modification dates... close to impossible!)
         //
         // 2. link back to the row where the file is saved in the content table
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_FILENAME))->setValue(attachment_filename);
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_FILENAME))->setValue(attachment_filename);
 
         // 3. save the computed MIME type
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE))->setValue(post_file.get_mime_type());
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->setValue(post_file.get_mime_type());
 
         // 4. save the original MIME type
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE))->setValue(post_file.get_original_mime_type());
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE))->setValue(post_file.get_original_mime_type());
 
         // 5. save the creation date if available (i.e. if not zero)
         if(post_file.get_creation_time() != 0)
         {
-            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_CREATION_TIME))->setValue(static_cast<int64_t>(post_file.get_creation_time()));
+            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_CREATION_TIME))->setValue(static_cast<int64_t>(post_file.get_creation_time()));
         }
 
         // 6. save the modification date if available (i.e. if not zero)
         if(post_file.get_modification_time() != 0)
         {
-            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME))->setValue(static_cast<int64_t>(post_file.get_modification_time()));
+            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME))->setValue(static_cast<int64_t>(post_file.get_modification_time()));
         }
 
         // 7. save the date when the file was uploaded
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_CREATED))->setValue(f_snap->get_start_date());
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_CREATED))->setValue(f_snap->get_start_date());
 
         // 8. save the date when the file was last updated
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_UPDATED))->setValue(f_snap->get_start_date());
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_UPDATED))->setValue(f_snap->get_start_date());
 
         // 9. if the file is an image save the width & height
         int32_t width(post_file.get_image_width());
         int32_t height(post_file.get_image_height());
         if(width > 0 && height > 0)
         {
-            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH))->setValue(width);
-            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT))->setValue(height);
+            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH))->setValue(width);
+            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT))->setValue(height);
         }
 
         // 10. save the description
@@ -6322,9 +6367,9 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
 
         // 11. Some additional fields
         signed char sflag(CONTENT_SECURE_UNDEFINED);
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(static_cast<int64_t>(0));
-        file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString());
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(static_cast<int64_t>(0));
+        file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString());
 
         // 12. save dependencies
         {
@@ -6362,22 +6407,22 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
                     {
                         // save the canonicalized version of the dependency in the database
                         found[full_name] = true;
-                        file_row->cell(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)).arg(full_name))->setValue(d.get_dependency_string());
+                        file_row->cell(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)).arg(full_name))->setValue(d.get_dependency_string());
                     }
                 }
             }
         }
     }
 // for test purposes to check a file over and over again
-//files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW))->cell(md5)->setValue(true);
+//files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_NEW))->cell(md5)->setValue(true);
 
     // make a full reference back to the attachment (which may not yet
     // exist at this point, we do that next)
     signed char const ref(1);
-    files_table->row(md5)->cell(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(attachment_ipath.get_key()))->setValue(ref);
+    files_table->row(md5)->cell(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(attachment_ipath.get_key()))->setValue(ref);
 
     QByteArray attachment_ref;
-    attachment_ref.append(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
+    attachment_ref.append(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
     attachment_ref.append("::");
     attachment_ref.append(md5); // binary md5
 
@@ -6409,7 +6454,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
             // file had an existing revision in this attachment row so
             // search for all existing revisions (need a better way to
             // instantly find those!)
-            //QString const attachment_ref(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE)).arg(md5));
+            //QString const attachment_ref(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE)).arg(md5));
             file_exists = branch_table->exists(attachment_ipath.get_branch_key())
                        && branch_table->row(attachment_ipath.get_branch_key())->exists(attachment_ref);
             if(file_exists)
@@ -6418,7 +6463,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
                 file_exists = true; // avoid generation of a new revision!
                 revision_number = branch_table->row(attachment_ipath.get_branch_key())->cell(attachment_ref)->value().int64Value();
                 attachment_ipath.force_revision(revision_number);
-                //content_table->row(attachment_ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
+                //content_table->row(attachment_ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_REVISION_CONTROL_CURRENT_WORKING_VERSION))->setValue(revision);
             }
         }
 
@@ -6528,10 +6573,10 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
             }
         }
 
-        if(revision_attachment_row->exists(get_name(SNAP_NAME_CONTENT_ATTACHMENT)))
+        if(revision_attachment_row->exists(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
         {
             // the MD5 is saved in there, get it and compare
-            QtCassandra::QCassandraValue existing_ref(revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->value());
+            QtCassandra::QCassandraValue existing_ref(revision_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
             if(!existing_ref.nullValue())
             {
                 if(existing_ref.binaryValue() == md5)
@@ -6571,7 +6616,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
         //       one of them is the same file (i.e. user uploading the
         //       same file twice with two different file names...)
 
-        files_table->row(md5)->cell(get_name(SNAP_NAME_CONTENT_FILES_UPDATED))->setValue(f_snap->get_start_date());
+        files_table->row(md5)->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_UPDATED))->setValue(f_snap->get_start_date());
     }
 
     // yes that path may already exists, no worries since the create_content()
@@ -6583,21 +6628,21 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
 
     // mark all attachments as final (i.e. cannot create children below an attachment)
     signed char final(1);
-    content_attachment_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->setValue(final);
+    content_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FINAL))->setValue(final);
 
     // in this case 'post' represents the filename as sent by the
     // user, the binary data is in the corresponding file
-    revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_FILENAME))->setValue(attachment_filename);
+    revision_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME))->setValue(attachment_filename);
 
     // save the file reference
-    revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->setValue(md5);
+    revision_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))->setValue(md5);
 
     // save the MIME type (this is the one returned by the magic library)
-    revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE))->setValue(post_file.get_mime_type());
+    revision_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_MIME_TYPE))->setValue(post_file.get_mime_type());
 
     // the date when it was created
     int64_t const start_date(f_snap->get_start_date());
-    revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    revision_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
 
     // XXX we could also save the modification and creation dates, but the
     //     likelihood that these exist is so small that I'll skip at this
@@ -6636,7 +6681,7 @@ bool content::create_attachment_impl(attachment_file& file, snap_version::versio
             // TODO: find a proper way to access the JS plugin... unless
             //       we consider the JAVASCRIPT row name as a content plugin
             //       definition?
-            files_table->row(is_css ? "css" : "javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/)->cell(jskey)->setValue(md5);
+            files_table->row(is_css ? "css" : "javascripts"/*javascript::get_name(javascript::name_t::SNAP_NAME_JAVASCRIPT_ROW)*/)->cell(jskey)->setValue(md5);
             if(!all)
             {
                 // TODO: need to parse the script for this specific browser
@@ -6664,9 +6709,9 @@ bool content::is_final(QString const& key)
     if(content_table->exists(key))
     {
         QtCassandra::QCassandraRow::pointer_t parent_row(content_table->row(key));
-        if(parent_row->exists(get_name(SNAP_NAME_CONTENT_FINAL)))
+        if(parent_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FINAL)))
         {
-            QtCassandra::QCassandraValue final_value(parent_row->cell(get_name(SNAP_NAME_CONTENT_FINAL))->value());
+            QtCassandra::QCassandraValue final_value(parent_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FINAL))->value());
             if(!final_value.nullValue())
             {
                 if(final_value.signedCharValue())
@@ -6709,7 +6754,7 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
     //       edit this attachment
     QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
     QtCassandra::QCassandraRow::pointer_t revision_attachment_row(revision_table->row(ipath.get_revision_key()));
-    QtCassandra::QCassandraValue md5_value(revision_attachment_row->cell(get_name(SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue md5_value(revision_attachment_row->cell(get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     if(!files_table->exists(md5_value.binaryValue()))
@@ -6719,18 +6764,18 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
     }
     QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(md5_value.binaryValue()));
 
-    if(!file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_DATA)))
+    if(!file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_DATA)))
     {
         // no data available
         return false;
     }
 
     // TODO handle the compression of the file...
-    //file.set_file_compressor(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_COMPRESSOR))->value().stringValue());
+    //file.set_file_compressor(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_COMPRESSOR))->value().stringValue());
 
     if(load_data)
     {
-        file.set_file_data(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA))->value().binaryValue());
+        file.set_file_data(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_DATA))->value().binaryValue());
 
         // TODO if compressed, we may have (want) to decompress here?
     }
@@ -6738,52 +6783,52 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
     {
         // since we are not loading the data, we want to get some additional
         // information on the side: the verified MIME type and the file size
-        if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE)))
+        if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE)))
         {
             // This one gets set automatically when we set the data so we only
             // load it if the data is not getting loaded
-            file.set_file_mime_type(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value().stringValue());
+            file.set_file_mime_type(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value().stringValue());
         }
-        if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_SIZE)))
+        if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_SIZE)))
         {
             // since we're not loading the data, we get the size parameter
             // like this (later we may want to always do that once we save
             // files compressed in the database!)
-            file.set_file_size(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE))->value().int32Value());
+            file.set_file_size(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SIZE))->value().int32Value());
         }
     }
 
-    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_FILENAME)))
+    if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_FILENAME)))
     {
-        file.set_file_filename(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_FILENAME))->value().stringValue());
+        file.set_file_filename(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_FILENAME))->value().stringValue());
     }
-    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE)))
+    if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE)))
     {
-        file.set_file_original_mime_type(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE))->value().stringValue());
+        file.set_file_original_mime_type(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE))->value().stringValue());
     }
-    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_CREATION_TIME)))
+    if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_CREATION_TIME)))
     {
-        file.set_file_creation_time(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_CREATION_TIME))->value().int64Value());
+        file.set_file_creation_time(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_CREATION_TIME))->value().int64Value());
     }
-    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME)))
+    if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME)))
     {
-        file.set_file_creation_time(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME))->value().int64Value());
+        file.set_file_creation_time(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME))->value().int64Value());
     }
-    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_CREATED)))
+    if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_CREATED)))
     {
-        file.set_creation_time(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_CREATED))->value().int64Value());
+        file.set_creation_time(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_CREATED))->value().int64Value());
     }
-    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_UPDATED)))
+    if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_UPDATED)))
     {
-        file.set_update_time(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_UPDATED))->value().int64Value());
+        file.set_update_time(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_UPDATED))->value().int64Value());
     }
-    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH)))
+    if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH)))
     {
-        file.set_file_image_width(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH))->value().int32Value());
+        file.set_file_image_width(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH))->value().int32Value());
     }
-    if(file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT)))
+    if(file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT)))
     {
-        file.set_file_image_height(file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT))->value().int32Value());
+        file.set_file_image_height(file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT))->value().int32Value());
     }
 
     return true;
@@ -6838,7 +6883,7 @@ bool content::modified_content_impl(path_info_t& ipath)
     QtCassandra::QCassandraRow::pointer_t row(branch_table->row(branch_key));
 
     int64_t const start_date(f_snap->get_start_date());
-    row->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+    row->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
     return true;
 }
@@ -6874,7 +6919,7 @@ QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, 
 {
     switch(revision)
     {
-    case PARAM_REVISION_GLOBAL:
+    case param_revision_t::PARAM_REVISION_GLOBAL:
         {
             QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
 
@@ -6889,7 +6934,7 @@ QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, 
             return content_table->row(ipath.get_key())->cell(param_name)->value();
         }
 
-    case PARAM_REVISION_BRANCH:
+    case param_revision_t::PARAM_REVISION_BRANCH:
         {
             QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
 
@@ -6904,7 +6949,7 @@ QtCassandra::QCassandraValue content::get_content_parameter(path_info_t& ipath, 
             return branch_table->row(ipath.get_branch_key())->cell(param_name)->value();
         }
 
-    case PARAM_REVISION_REVISION:
+    case param_revision_t::PARAM_REVISION_REVISION:
         {
             QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
 
@@ -6999,7 +7044,7 @@ void content::add_xml(const QString& plugin_name)
  */
 void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
 {
-    QDomNodeList content_nodes(dom.elementsByTagName(get_name(SNAP_NAME_CONTENT_TAG)));
+    QDomNodeList content_nodes(dom.elementsByTagName(get_name(name_t::SNAP_NAME_CONTENT_TAG)));
     int const max_nodes(content_nodes.size());
     for(int i(0); i < max_nodes; ++i)
     {
@@ -7121,20 +7166,20 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                     }
                 }
 
-                if(fullname == get_name(SNAP_NAME_CONTENT_PREVENT_DELETE))
+                if(fullname == get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE))
                 {
                     found_prevent_delete = true;
                 }
 
-                param_revision_t revision_type(PARAM_REVISION_BRANCH);
+                param_revision_t revision_type(param_revision_t::PARAM_REVISION_BRANCH);
                 QString const revision_name(element.attribute("revision", "branch"));
                 if(revision_name == "global")
                 {
-                    revision_type = PARAM_REVISION_GLOBAL;
+                    revision_type = param_revision_t::PARAM_REVISION_GLOBAL;
                 }
                 else if(revision_name == "revision")
                 {
-                    revision_type = PARAM_REVISION_REVISION;
+                    revision_type = param_revision_t::PARAM_REVISION_REVISION;
                 }
                 else if(revision_name != "branch")
                 {
@@ -7166,29 +7211,29 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                     param_type_t param_type;
                     if(type == "string")
                     {
-                        param_type = PARAM_TYPE_STRING;
+                        param_type = param_type_t::PARAM_TYPE_STRING;
                     }
                     else if(type == "float"
                          || type == "float32")
                     {
-                        param_type = PARAM_TYPE_FLOAT32;
+                        param_type = param_type_t::PARAM_TYPE_FLOAT32;
                     }
                     else if(type == "double"
                          || type == "float64")
                     {
-                        param_type = PARAM_TYPE_FLOAT64;
+                        param_type = param_type_t::PARAM_TYPE_FLOAT64;
                     }
                     else if(type == "int8")
                     {
-                        param_type = PARAM_TYPE_INT8;
+                        param_type = param_type_t::PARAM_TYPE_INT8;
                     }
                     else if(type == "int32")
                     {
-                        param_type = PARAM_TYPE_INT32;
+                        param_type = param_type_t::PARAM_TYPE_INT32;
                     }
                     else if(type == "int64")
                     {
-                        param_type = PARAM_TYPE_INT64;
+                        param_type = param_type_t::PARAM_TYPE_INT64;
                     }
                     else
                     {
@@ -7214,7 +7259,7 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                     // force the owner in the link name
                     link_name = QString("%1::%2").arg(plugin_name).arg(link_name);
                 }
-                if(link_name == get_name(SNAP_NAME_CONTENT_PAGE_TYPE))
+                if(link_name == get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE))
                 {
                     found_content_type = true;
                 }
@@ -7275,7 +7320,7 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
                 if(ca.f_owner.isEmpty())
                 {
                     // the output plugin is the default owner
-                    ca.f_owner = get_name(SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN);
+                    ca.f_owner = get_name(name_t::SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN);
                 }
                 ca.f_field_name = element.attribute("name");
                 if(ca.f_field_name.isEmpty())
@@ -7325,8 +7370,8 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
         }
         if(!found_content_type)
         {
-            QString const link_name(get_name(SNAP_NAME_CONTENT_PAGE_TYPE));
-            QString const link_to(get_name(SNAP_NAME_CONTENT_PAGE));
+            QString const link_name(get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE));
+            QString const link_to(get_name(name_t::SNAP_NAME_CONTENT_PAGE));
             bool const source_unique(true);
             bool const destination_unique(false);
             QString destination_path;
@@ -7361,9 +7406,9 @@ void content::add_xml_document(QDomDocument& dom, QString const& plugin_name)
         {
             // add the "content::prevent_delete" to 1 on all that do not
             // set it to another value (1 byte value)
-            add_param(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), PARAM_REVISION_GLOBAL, "en", "1");
-            set_param_overwrite(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), true); // always overwrite
-            set_param_type(key, get_name(SNAP_NAME_CONTENT_PREVENT_DELETE), PARAM_TYPE_INT8);
+            add_param(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), param_revision_t::PARAM_REVISION_GLOBAL, "en", "1");
+            set_param_overwrite(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), true); // always overwrite
+            set_param_type(key, get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE), param_type_t::PARAM_TYPE_INT8);
         }
     }
 }
@@ -7676,7 +7721,7 @@ void content::on_save_content()
         return;
     }
 
-    QString const primary_owner(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER));
+    QString const primary_owner(get_name(name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER));
     QString const site_key(f_snap->get_site_key_with_slash());
 
     // lock the entire website (this does not prevent others from accessing
@@ -7732,10 +7777,10 @@ void content::on_save_content()
 
         // make sure we have our different basic content dates setup
         int64_t const start_date(f_snap->get_start_date());
-        if(content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->value().nullValue())
+        if(content_table->row(d->f_path)->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))->value().nullValue())
         {
             // do not overwrite the created date
-            content_table->row(d->f_path)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
+            content_table->row(d->f_path)->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
         }
 
         // TODO: fix the locale... actually the revision for English is
@@ -7756,12 +7801,12 @@ void content::on_save_content()
         QString const branch_key(QString("%1#%2").arg(d->f_path).arg(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH)));
 
         // do not overwrite the created date
-        if(branch_table->row(branch_key)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->value().nullValue())
+        if(branch_table->row(branch_key)->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))->value().nullValue())
         {
-            branch_table->row(branch_key)->cell(QString(get_name(SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
+            branch_table->row(branch_key)->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))->setValue(start_date);
         }
         // always overwrite the modified date
-        branch_table->row(branch_key)->cell(QString(get_name(SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
+        branch_table->row(branch_key)->cell(QString(get_name(name_t::SNAP_NAME_CONTENT_MODIFIED)))->setValue(start_date);
 
         // save the parameters (i.e. cells of data defined by the developer)
         bool use_new_revision(true);
@@ -7786,19 +7831,19 @@ void content::on_save_content()
                 QString row_key;
                 switch(p->f_revision_type)
                 {
-                case PARAM_REVISION_GLOBAL:
+                case param_revision_t::PARAM_REVISION_GLOBAL:
                     // in the content table
                     param_table = content_table;
                     row_key = d->f_path;
                     break;
 
-                case PARAM_REVISION_BRANCH:
+                case param_revision_t::PARAM_REVISION_BRANCH:
                     // path + "#0" in the data table
                     param_table = branch_table;
                     row_key = branch_key;
                     break;
 
-                case PARAM_REVISION_REVISION:
+                case param_revision_t::PARAM_REVISION_REVISION:
                     if(p->f_overwrite)
                     {
                         throw snap_logic_exception("the overwrite=\"yes\" flag cannot be used along revision=\"revision\"");
@@ -7822,7 +7867,7 @@ void content::on_save_content()
                         use_new_revision = false;
 
                         // mark when the row was created
-                        revision_table->row(row_key)->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+                        revision_table->row(row_key)->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
                     }
                     break;
 
@@ -7839,25 +7884,25 @@ void content::on_save_content()
                     bool ok(true);
                     switch(p->f_type)
                     {
-                    case PARAM_TYPE_STRING:
+                    case param_type_t::PARAM_TYPE_STRING:
                         param_table->row(row_key)->cell(p->f_name)->setValue(*data);
                         break;
 
-                    case PARAM_TYPE_FLOAT32:
+                    case param_type_t::PARAM_TYPE_FLOAT32:
                         {
                             float const v(data->toFloat(&ok));
                             param_table->row(row_key)->cell(p->f_name)->setValue(v);
                         }
                         break;
 
-                    case PARAM_TYPE_FLOAT64:
+                    case param_type_t::PARAM_TYPE_FLOAT64:
                         {
                             double const v(data->toDouble(&ok));
                             param_table->row(row_key)->cell(p->f_name)->setValue(v);
                         }
                         break;
 
-                    case PARAM_TYPE_INT8:
+                    case param_type_t::PARAM_TYPE_INT8:
                         {
                             int const v(data->toInt(&ok));
                             ok = ok && v >= -128 && v <= 127; // verify overflows
@@ -7865,11 +7910,11 @@ void content::on_save_content()
                         }
                         break;
 
-                    case PARAM_TYPE_INT32:
+                    case param_type_t::PARAM_TYPE_INT32:
                         param_table->row(row_key)->cell(p->f_name)->setValue(static_cast<int32_t>(data->toInt(&ok)));
                         break;
 
-                    case PARAM_TYPE_INT64:
+                    case param_type_t::PARAM_TYPE_INT64:
                         param_table->row(row_key)->cell(p->f_name)->setValue(static_cast<int64_t>(data->toLongLong(&ok)));
                         break;
 
@@ -7893,8 +7938,8 @@ void content::on_save_content()
             parts.pop_back();
             QString dst(parts.join("/"));
             dst = site_key + dst;
-            links::link_info source(get_name(SNAP_NAME_CONTENT_PARENT), true, src, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
-            links::link_info destination(get_name(SNAP_NAME_CONTENT_CHILDREN), false, dst, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+            links::link_info source(get_name(name_t::SNAP_NAME_CONTENT_PARENT), true, src, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
+            links::link_info destination(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, dst, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH);
 
             // TODO: these rows generate errors because they are missing the
             //       branch and revision information generally expected; we
@@ -8012,7 +8057,7 @@ void content::on_save_content()
             // TODO: we may want to have a better way to choose the language
             path_info_t ipath;
             ipath.set_path(path);
-            links::link_info info(get_name(SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
+            links::link_info info(get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, ipath.get_key(), ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
             links::link_info child_info;
             if(link_ctxt->next_link(child_info))
@@ -8066,9 +8111,9 @@ void content::on_save_content()
  */
 void content::on_register_backend_action(server::backend_action_map_t& actions)
 {
-    actions[get_name(SNAP_NAME_CONTENT_RESETSTATUS)] = this;
-    actions[get_name(SNAP_NAME_CONTENT_FORCERESETSTATUS)] = this;
-    actions[get_name(SNAP_NAME_CONTENT_DIRRESOURCES)] = this;
+    actions[get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS)] = this;
+    actions[get_name(name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS)] = this;
+    actions[get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES)] = this;
 }
 
 
@@ -8083,15 +8128,15 @@ void content::on_register_backend_action(server::backend_action_map_t& actions)
  */
 void content::on_backend_action(QString const& action)
 {
-    if(action == get_name(SNAP_NAME_CONTENT_RESETSTATUS))
+    if(action == get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS))
     {
         backend_action_reset_status(false);
     }
-    else if(action == get_name(SNAP_NAME_CONTENT_FORCERESETSTATUS))
+    else if(action == get_name(name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS))
     {
         backend_action_reset_status(true);
     }
-    else if(action == get_name(SNAP_NAME_CONTENT_DIRRESOURCES))
+    else if(action == get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES))
     {
         backend_action_dir_resources();
     }
@@ -8124,10 +8169,10 @@ void content::backend_action_reset_status(bool const force)
             {
                 path_info_t ipath;
                 ipath.set_path(key);
-                if(content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_STATUS)))
+                if(content_table->row(ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_STATUS)))
                 {
                     // do not use the normal interface, force any normal (something) to normal (normal)
-                    QtCassandra::QCassandraValue status(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value());
+                    QtCassandra::QCassandraValue status(content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->value());
                     if(status.nullValue())
                     {
                         // no valid status, mark the page as normal
@@ -8161,7 +8206,7 @@ void content::backend_action_reset_status(bool const force)
                         if(force || s != current_status)
                         {
                             status.setInt32Value(s);
-                            content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->setValue(status);
+                            content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->setValue(status);
                         }
                     }
                 }
@@ -8264,9 +8309,9 @@ void content::backend_process_status()
                 path_info_t ipath;
                 ipath.set_path(key);
                 if(content_table->exists(ipath.get_key())
-                && content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED)))
+                && content_table->row(ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED)))
                 {
-                    int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS_CHANGED))->value().int64Value());
+                    int64_t const last_changed(content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED))->value().int64Value());
                     if(last_changed < start_date)
                     {
                         // we are done with that page since we just reset the
@@ -8277,7 +8322,7 @@ void content::backend_process_status()
 
                         // it has been more than 10 minutes, reset the state
                         path_info_t::status_t status(ipath.get_status());
-                        status.set_status(static_cast<path_info_t::status_t::status_type>(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_STATUS))->value().uint32Value()));
+                        status.set_status(static_cast<path_info_t::status_t::status_type>(content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_STATUS))->value().uint32Value()));
                         if(status.get_state() == path_info_t::status_t::state_t::CREATE)
                         {
                             // a create failed, set it to normal...
@@ -8362,7 +8407,7 @@ void content::backend_process_files()
     char const *site_key_utf8(site_key_buffer.data());
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
-    QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(SNAP_NAME_CONTENT_FILES_NEW)));
+    QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_NEW)));
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(100); // should this be a parameter?
     column_predicate.setIndex(); // behave like an index
@@ -8391,8 +8436,8 @@ void content::backend_process_files()
 
                 QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(file_key));
                 QtCassandra::QCassandraColumnRangePredicate reference_column_predicate;
-                reference_column_predicate.setStartColumnName(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE));
-                reference_column_predicate.setEndColumnName(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
+                reference_column_predicate.setStartColumnName(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE));
+                reference_column_predicate.setEndColumnName(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE) + QString(";"));
                 reference_column_predicate.setCount(100);
                 reference_column_predicate.setIndex(); // behave like an index
                 bool first(true); // load the files only once each
@@ -8417,8 +8462,8 @@ void content::backend_process_files()
                         QtCassandra::QCassandraCell::pointer_t content_cell(*cc);
                         if(!content_cell->value().nullValue())
                         {
-                            QByteArray attachment_key(content_cell->columnKey().data() + (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2),
-                                     static_cast<int>(content_cell->columnKey().size() - (strlen(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2)));
+                            QByteArray attachment_key(content_cell->columnKey().data() + (strlen(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2),
+                                     static_cast<int>(content_cell->columnKey().size() - (strlen(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)) + 2)));
 
                             int8_t const reference_value(content_cell->value().signedCharValue());
                             if(attachment_key.startsWith(site_key_utf8))
@@ -8434,9 +8479,9 @@ void content::backend_process_files()
                                         if(!load_attachment(attachment_key, file, true))
                                         {
                                             signed char const sflag(CONTENT_SECURE_UNDEFINED);
-                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
-                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
-                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString("Attachment could not be loaded."));
+                                            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
+                                            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
+                                            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(QString("Attachment could not be loaded."));
 
                                             // TODO generate an email about the error...
                                         }
@@ -8446,9 +8491,9 @@ void content::backend_process_files()
 
                                             // always save the secure flag
                                             signed char const sflag(secure.allowed() ? CONTENT_SECURE_SECURE : CONTENT_SECURE_INSECURE);
-                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
-                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
-                                            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(secure.reason());
+                                            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->setValue(sflag);
+                                            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE_LAST_CHECK))->setValue(f_snap->get_start_date());
+                                            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURITY_REASON))->setValue(secure.reason());
 
                                             if(secure.allowed())
                                             {
@@ -8522,22 +8567,22 @@ bool content::process_attachment_impl(QByteArray const& file_key, attachment_fil
 {
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
     QtCassandra::QCassandraRow::pointer_t file_row(files_table->row(file_key));
-    if(!file_row->exists(get_name(SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED)))
+    if(!file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED)))
     {
         QString compressor_name("gzip");
         QByteArray compressed_file(compression::compress(compressor_name, file.get_file().get_data(), 100, false));
         if(compressor_name == "gzip")
         {
             // compression succeeded
-            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED))->setValue(compressed_file);
+            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED))->setValue(compressed_file);
             uint64_t const compressed_size(compressed_file.size());
-            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED))->setValue(compressed_size);
+            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED))->setValue(compressed_size);
         }
         else
         {
             // no better when compressed, mark such with a size of zero
             uint64_t const empty_size(0);
-            file_row->cell(get_name(SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED))->setValue(empty_size);
+            file_row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED))->setValue(empty_size);
         }
     }
 
@@ -8559,7 +8604,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
     // TBD: it may make sense to move to the javascript plugin since it now
     //      can include the content plugin; the one advantage would be that
     //      the get_name() from the JavaScript plugin would then make use
-    //      of the "local" SNAP_NAME_JAVASCRIPT_...
+    //      of the "local" name_t::SNAP_NAME_JAVASCRIPT_...
     if(f_added_javascripts.contains(name))
     {
         // already added, we are done
@@ -8568,15 +8613,15 @@ void content::add_javascript(QDomDocument doc, QString const& name)
     f_added_javascripts[name] = true;
 
     QtCassandra::QCassandraTable::pointer_t files_table(get_files_table());
-    if(!files_table->exists("javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)--incorrect dependency*/))
+    if(!files_table->exists("javascripts"/*javascript::get_name(javascript::name_t::SNAP_NAME_JAVASCRIPT_ROW)--incorrect dependency*/))
     {
         // absolutely no JavaScripts available!
-        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
                 "JavaScript \"" + name + "\" could not be read for inclusion in your HTML page.",
                 "A JavaScript was requested in the \"files\" table before it was inserted under /js/...");
         NOTREACHED();
     }
-    QtCassandra::QCassandraRow::pointer_t javascript_row(files_table->row("javascripts"/*javascript::get_name(javascript::SNAP_NAME_JAVASCRIPT_ROW)*/));
+    QtCassandra::QCassandraRow::pointer_t javascript_row(files_table->row("javascripts"/*javascript::get_name(javascript::name_t::SNAP_NAME_JAVASCRIPT_ROW)*/));
 
     // TODO: at this point I read all the entries with "name_..."
     //       we will want to first check with the user's browser and
@@ -8630,17 +8675,17 @@ void content::add_javascript(QDomDocument doc, QString const& name)
                 continue;
             }
             QtCassandra::QCassandraRow::pointer_t row(files_table->row(key));
-            if(!row->exists(get_name(SNAP_NAME_CONTENT_FILES_SECURE)))
+            if(!row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE)))
             {
                 // secure field missing?! (file was probably deleted)
-                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" does not have a ")(get_name(SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" does not have a ")(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))(" field");
                 continue;
             }
-            QtCassandra::QCassandraValue const secure(row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->value());
+            QtCassandra::QCassandraValue const secure(row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->value());
             if(secure.nullValue())
             {
                 // secure field missing?!
-                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has an empty ")(get_name(SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                SNAP_LOG_ERROR("file referenced as JavaScript \"")(name)("\" has an empty ")(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))(" field");
                 continue;
             }
             signed char const sflag(secure.signedCharValue());
@@ -8664,7 +8709,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
             references_column_predicate.setCount(1);
             references_column_predicate.setIndex(); // behave like an index
             QString const site_key(f_snap->get_site_key_with_slash());
-            QString const start_ref(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
+            QString const start_ref(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
             references_column_predicate.setStartColumnName(start_ref);
             references_column_predicate.setEndColumnName(start_ref + QtCassandra::QCassandraColumnPredicate::last_char);
 
@@ -8700,7 +8745,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
             QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
             dependencies_column_predicate.setCount(100);
             dependencies_column_predicate.setIndex(); // behave like an index
-            QString start_dep(QString("%1:").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
+            QString start_dep(QString("%1:").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
             dependencies_column_predicate.setStartColumnName(start_dep + ":");
             dependencies_column_predicate.setEndColumnName(start_dep + ";");
             for(;;)
@@ -8740,7 +8785,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
                             }
                             else
                             {
-                                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Invalid Dependency",
+                                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Invalid Dependency",
                                         QString("JavaScript dependency \"%1::%2\" has a non-supported namespace.").arg(dep_namespace).arg(name),
                                         QString("The namespace is expected to be \"javascripts\" (or empty,) or \"css\"."));
                                 NOTREACHED();
@@ -8776,7 +8821,7 @@ void content::add_javascript(QDomDocument doc, QString const& name)
         }
     }
 
-    f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
+    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "JavaScript Not Found",
             "JavaScript \"" + name + "\" was not found. Was it installed?",
             "The named JavaScript was not found in the \"javascripts\" row of the \"files\" table.");
     NOTREACHED();
@@ -8805,7 +8850,7 @@ void content::add_css(QDomDocument doc, QString const& name)
     if(!files_table->exists("css"))
     {
         // absolutely no CSS available!
-        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "CSS Not Found",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "CSS Not Found",
                 "CSS \"" + name + "\" could not be read for inclusion in your HTML page.",
                 "A CSS was requested in the \"files\" table before it was inserted under /css/...");
         NOTREACHED();
@@ -8864,17 +8909,17 @@ void content::add_css(QDomDocument doc, QString const& name)
                 continue;
             }
             QtCassandra::QCassandraRow::pointer_t row(files_table->row(key));
-            if(!row->exists(get_name(SNAP_NAME_CONTENT_FILES_SECURE)))
+            if(!row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE)))
             {
                 // secure field missing?! (file was probably deleted)
-                SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" does not have a ")(get_name(SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" does not have a ")(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))(" field");
                 continue;
             }
-            QtCassandra::QCassandraValue const secure(row->cell(get_name(SNAP_NAME_CONTENT_FILES_SECURE))->value());
+            QtCassandra::QCassandraValue const secure(row->cell(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))->value());
             if(secure.nullValue())
             {
                 // secure field missing?!
-                SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" has an empty ")(get_name(SNAP_NAME_CONTENT_FILES_SECURE))(" field");
+                SNAP_LOG_ERROR("file referenced as CSS \"")(name)("\" has an empty ")(get_name(name_t::SNAP_NAME_CONTENT_FILES_SECURE))(" field");
                 continue;
             }
             signed char const sflag(secure.signedCharValue());
@@ -8898,7 +8943,7 @@ void content::add_css(QDomDocument doc, QString const& name)
             references_column_predicate.setCount(1);
             references_column_predicate.setIndex(); // behave like an index
             QString const site_key(f_snap->get_site_key_with_slash());
-            QString const start_ref(QString("%1::%2").arg(get_name(SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
+            QString const start_ref(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(site_key));
             references_column_predicate.setStartColumnName(start_ref);
             references_column_predicate.setEndColumnName(start_ref + QtCassandra::QCassandraColumnPredicate::last_char);
 
@@ -8928,7 +8973,7 @@ void content::add_css(QDomDocument doc, QString const& name)
             QtCassandra::QCassandraColumnRangePredicate dependencies_column_predicate;
             dependencies_column_predicate.setCount(100);
             dependencies_column_predicate.setIndex(); // behave like an index
-            QString start_dep(QString("%1::").arg(get_name(SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
+            QString start_dep(QString("%1::").arg(get_name(name_t::SNAP_NAME_CONTENT_FILES_DEPENDENCY)));
             dependencies_column_predicate.setStartColumnName(start_dep);
             dependencies_column_predicate.setEndColumnName(start_dep + QtCassandra::QCassandraColumnPredicate::last_char);
             for(;;)
@@ -8989,7 +9034,7 @@ void content::add_css(QDomDocument doc, QString const& name)
         }
     }
 
-    f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "CSS Not Found",
+    f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "CSS Not Found",
             "CSS \"" + name + "\" was not found. Was it installed?",
             "The named CSS was not found in the \"css\" row of the \"files\" table.");
     NOTREACHED();
@@ -9002,8 +9047,8 @@ void content::add_css(QDomDocument doc, QString const& name)
  */
 void content::repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning)
 {
-    if(source.name() == get_name(SNAP_NAME_CONTENT_PARENT)
-    && destination.name() == get_name(SNAP_NAME_CONTENT_CHILDREN))
+    if(source.name() == get_name(name_t::SNAP_NAME_CONTENT_PARENT)
+    && destination.name() == get_name(name_t::SNAP_NAME_CONTENT_CHILDREN))
     {
         // this is a special case as the cloned page parent is in most
         // cases not the same as the cloned page's parent page; for
@@ -9013,19 +9058,19 @@ void content::repair_link_of_cloned_page(QString const& clone, snap_version::ver
         child.set_path(clone);
         path_info_t parent;
         child.get_parent(parent);
-        links::link_info src(get_name(SNAP_NAME_CONTENT_PARENT), true, clone, branch_number);
-        links::link_info dst(get_name(SNAP_NAME_CONTENT_CHILDREN), false, parent.get_key(), get_current_branch(parent.get_key(), true));
+        links::link_info src(get_name(name_t::SNAP_NAME_CONTENT_PARENT), true, clone, branch_number);
+        links::link_info dst(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, parent.get_key(), get_current_branch(parent.get_key(), true));
         links::links::instance()->create_link(src, dst);
     }
-    else if(source.name() == get_name(SNAP_NAME_CONTENT_PAGE_TYPE)
-    && destination.name() == get_name(SNAP_NAME_CONTENT_PAGE))
+    else if(source.name() == get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE)
+    && destination.name() == get_name(name_t::SNAP_NAME_CONTENT_PAGE))
     {
-        links::link_info src(get_name(SNAP_NAME_CONTENT_PAGE_TYPE), true, clone, branch_number);
+        links::link_info src(get_name(name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, clone, branch_number);
         links::links::instance()->create_link(src, destination);
     }
     else if(!cloning
-    && source.name() == get_name(SNAP_NAME_CONTENT_CHILDREN)
-    && destination.name() == get_name(SNAP_NAME_CONTENT_PARENT))
+    && source.name() == get_name(name_t::SNAP_NAME_CONTENT_CHILDREN)
+    && destination.name() == get_name(name_t::SNAP_NAME_CONTENT_PARENT))
     {
         // copy the children links only if we are not cloning
         links::link_info src(source.name(), false, clone, branch_number);
@@ -9175,7 +9220,7 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
         void clone_children(path_info_t source_parent, path_info_t destination_parent)
         {
             QString const source_key(source_parent.get_key());
-            links::link_info info(get_name(SNAP_NAME_CONTENT_CHILDREN), false, source_key, source_parent.get_branch());
+            links::link_info info(get_name(name_t::SNAP_NAME_CONTENT_CHILDREN), false, source_key, source_parent.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
             links::link_info child_info;
             while(link_ctxt->next_link(child_info))
@@ -9207,7 +9252,7 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
             path_info_t::raii_status_t destination_state(destination, f_destination.f_processing_state, f_destination.f_done_state);
 
             // save the date when we cloned the page
-            f_content_table->row(destination.get_key())->cell(get_name(SNAP_NAME_CONTENT_CLONED))->setValue(f_start_date);
+            f_content_table->row(destination.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_CLONED))->setValue(f_start_date);
 
             // the content table is just one row, we specialize it because
             // we can directly fix the branch/revision information (and that
@@ -9237,11 +9282,11 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
 
         void copy_content(path_info_t& source, path_info_t& destination)
         {
-            QString revision_control(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL));
-            QString current_branch_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY));
-            QString current_working_branch_key(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY));
-            QString current_revision_key(QString("::%1::").arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY)));
-            QString current_working_revision_key(QString("::%1::").arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY)));
+            QString revision_control(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL));
+            QString current_branch_key(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_BRANCH_KEY));
+            QString current_working_branch_key(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_BRANCH_KEY));
+            QString current_revision_key(QString("::%1::").arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_REVISION_KEY)));
+            QString current_working_revision_key(QString("::%1::").arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_CURRENT_WORKING_REVISION_KEY)));
             // copy the main row in the content table by hand because
             // otherwise we would have problems with the status and a
             // few other things; also that way we can immediately fix
@@ -9269,9 +9314,9 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
                     QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
                     QByteArray cell_key(source_cell->columnKey());
                     // ignore the status
-                    if(strcmp(cell_key.data(), get_name(SNAP_NAME_CONTENT_STATUS)) != 0
-                    && strcmp(cell_key.data(), get_name(SNAP_NAME_CONTENT_STATUS_CHANGED)) != 0
-                    && strcmp(cell_key.data(), get_name(SNAP_NAME_CONTENT_CLONED)) != 0)
+                    if(strcmp(cell_key.data(), get_name(name_t::SNAP_NAME_CONTENT_STATUS)) != 0
+                    && strcmp(cell_key.data(), get_name(name_t::SNAP_NAME_CONTENT_STATUS_CHANGED)) != 0
+                    && strcmp(cell_key.data(), get_name(name_t::SNAP_NAME_CONTENT_CLONED)) != 0)
                     {
                         QString key(QString::fromAscii(cell_key.data()));
                         if(key.startsWith(revision_control)
@@ -9316,8 +9361,8 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
 
             // retrieve the last branch (inclusive)
             QString last_branch_key(QString("%1::%2")
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_BRANCH)));
             QtCassandra::QCassandraValue last_branch_value(f_content_table->row(source_key)->cell(last_branch_key)->value());
             snap_version::version_number_t last_branch;
             if(last_branch_value.nullValue())
@@ -9330,7 +9375,7 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
                 last_branch = last_branch_value.uint32Value();
             }
 
-            QString const links_namespace(QString("%1::").arg(links::get_name(links::SNAP_NAME_LINKS_NAMESPACE)));
+            QString const links_namespace(QString("%1::").arg(links::get_name(links::name_t::SNAP_NAME_LINKS_NAMESPACE)));
             QByteArray const links_bytearray(links_namespace.toAscii());
 
             // all the names end with '#' and the <branch> number
@@ -9340,7 +9385,7 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
                 QString const source_uri(f_content_plugin->generate_branch_key(source_key, branch));
                 QString const destination_uri(f_content_plugin->generate_branch_key(destination_key, branch));
                 if(f_branch_table->exists(source_uri)
-                && f_branch_table->row(source_uri)->exists(get_name(SNAP_NAME_CONTENT_CREATED)))
+                && f_branch_table->row(source_uri)->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
                 {
                     cloned_branch_t cloned_branch;
                     cloned_branch.f_branch = branch;
@@ -9400,14 +9445,14 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
                         bool source_unique(false);
                         si.set_path(page.f_source.get_key());
                         si.force_branch(branch);
-                        char const *clone_name(get_name(SNAP_NAME_CONTENT_CLONE));
+                        char const *clone_name(get_name(name_t::SNAP_NAME_CONTENT_CLONE));
                         links::link_info link_source(clone_name, source_unique, si.get_key(), si.get_branch());
 
                         path_info_t di;
                         bool destination_unique(true);
                         di.set_path(page.f_destination.get_key());
                         di.force_branch(branch);
-                        char const *original_page_name(get_name(SNAP_NAME_CONTENT_ORIGINAL_PAGE));
+                        char const *original_page_name(get_name(name_t::SNAP_NAME_CONTENT_ORIGINAL_PAGE));
                         links::link_info link_destination(original_page_name, destination_unique, di.get_key(), di.get_branch());
 
                         links::links::instance()->create_link(link_source, link_destination);
@@ -9428,8 +9473,8 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
             // languages for each branch; so we have a loop per
             // branch/language and then an inner loop for each revision
             QString last_revision_key(QString("%1::%2::%3")
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL))
-                    .arg(get_name(SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL))
+                    .arg(get_name(name_t::SNAP_NAME_CONTENT_REVISION_CONTROL_LAST_REVISION))
                     .arg(cloned_branch.f_branch));
 
             QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -9483,7 +9528,7 @@ bool content::clone_page(clone_info_t& source, clone_info_t& destination)
                             QString const destination_uri(f_content_plugin->generate_revision_key(destination_key, cloned_branch.f_branch, revision, locale));
 
                             if(f_revision_table->exists(source_uri)
-                            && f_revision_table->row(source_uri)->exists(get_name(SNAP_NAME_CONTENT_CREATED)))
+                            && f_revision_table->row(source_uri)->exists(get_name(name_t::SNAP_NAME_CONTENT_CREATED)))
                             {
                                 dbutils::copy_row(f_revision_table, source_uri, f_revision_table, destination_uri);
 
@@ -9544,10 +9589,10 @@ bool content::move_page(path_info_t& ipath_source, path_info_t& ipath_destinatio
     // (administrative pages, those created from content.xml, are nearly
     // all marked as not deletable by default!)
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
-    QtCassandra::QCassandraValue prevent_delete(content_table->row(ipath_source.get_key())->cell(get_name(SNAP_NAME_CONTENT_PREVENT_DELETE))->value());
+    QtCassandra::QCassandraValue prevent_delete(content_table->row(ipath_source.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE))->value());
     if(!prevent_delete.nullValue() && prevent_delete.signedCharValue())
     {
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Forbidden Move",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Forbidden Move",
                 "Sorry. this page is marked as undeletable and as such it cannot be moved.",
                 QString("User tried to move page \"%1\", which is locked (marked as undeletable).").arg(ipath_source.get_key()));
         NOTREACHED();
@@ -9595,10 +9640,10 @@ bool content::trash_page(path_info_t& ipath)
     // (administrative pages, those created from content.xml, are nearly
     // all marked as not deletable by default!)
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
-    QtCassandra::QCassandraValue prevent_delete(content_table->row(ipath.get_key())->cell(get_name(SNAP_NAME_CONTENT_PREVENT_DELETE))->value());
+    QtCassandra::QCassandraValue prevent_delete(content_table->row(ipath.get_key())->cell(get_name(name_t::SNAP_NAME_CONTENT_PREVENT_DELETE))->value());
     if(!prevent_delete.nullValue() && prevent_delete.signedCharValue())
     {
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Forbidden Removal",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN, "Forbidden Removal",
                 "Sorry. This page is marked as undeletable.",
                 QString("User tried to delete page \"%1\", which is locked.").arg(ipath.get_key()));
         NOTREACHED();
@@ -9608,7 +9653,7 @@ bool content::trash_page(path_info_t& ipath)
     QString trashcan_path("trashcan");
 
     // path can be changed by administrator
-    QtCassandra::QCassandraValue trashcan_path_value(f_snap->get_site_parameter(get_name(SNAP_NAME_CONTENT_TRASHCAN)));
+    QtCassandra::QCassandraValue trashcan_path_value(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_CONTENT_TRASHCAN)));
     if(!trashcan_path_value.nullValue())
     {
         // administrators can move the trashcan around up until something
@@ -9632,18 +9677,18 @@ bool content::trash_page(path_info_t& ipath)
 
         // TODO: the owner is the first person who deletes something on the
         //       website; that's probably wrong!
-        create_content(trashcan_ipath, get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER), "system-page");
+        create_content(trashcan_ipath, get_name(name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER), "system-page");
 
         // save the creation date, title, and description
         QtCassandra::QCassandraTable::pointer_t revision_table(get_revision_table());
         QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(trashcan_ipath.get_revision_key()));
         int64_t const start_date(f_snap->get_start_date());
-        revision_row->cell(get_name(SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+        revision_row->cell(get_name(name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
         // TODO: add support for translation
         QString const title("Trashcan");
-        revision_row->cell(get_name(SNAP_NAME_CONTENT_TITLE))->setValue(title);
+        revision_row->cell(get_name(name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
         QString const empty_string;
-        revision_row->cell(get_name(SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
+        revision_row->cell(get_name(name_t::SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
     }
 
     // new page goes under a randomly generated number
@@ -9709,7 +9754,7 @@ void content::on_load_file(snap_child::post_file_t& file, bool& found)
             ipath.set_path(filename);
             QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
             if(content_table->exists(ipath.get_key())
-            && content_table->row(ipath.get_key())->exists(get_name(SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+            && content_table->row(ipath.get_key())->exists(get_name(name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
             {
                 // set the default filename, the load_attachment() is likely
                 // going to set the filename as defined when uploading the
@@ -9756,7 +9801,7 @@ void content::on_cell_is_secure(QString const& table, QString const& row, QStrin
 
     // all data in the secret table are considered secure
     // also check the lock table which really does not need to be public
-    if(table == get_name(SNAP_NAME_CONTENT_SECRET_TABLE)
+    if(table == get_name(name_t::SNAP_NAME_CONTENT_SECRET_TABLE)
     || table == f_snap->get_context()->lockTableName())
     {
         secure.mark_as_secure();

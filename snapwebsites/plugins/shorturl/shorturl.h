@@ -25,7 +25,7 @@ namespace shorturl
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_SHORTURL_DATE,
     SNAP_NAME_SHORTURL_HTTP_LINK,
@@ -36,7 +36,7 @@ enum name_t
     SNAP_NAME_SHORTURL_TABLE,
     SNAP_NAME_SHORTURL_URL
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class shorturl_exception : public snap_exception
@@ -63,17 +63,17 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_shorturl_table();
 
     void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(content::path_info_t& ipath);
-    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
-    void                on_create_content(content::path_info_t& path, const QString& owner, const QString& type);
-    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    void                on_page_cloned(content::content::cloned_tree_t const& tree);
+    virtual bool        on_path_execute(content::path_info_t & ipath);
+    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
+    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, const QString & ctemplate);
+    void                on_create_content(content::path_info_t & path, const QString & owner, const QString & type);
+    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+    void                on_page_cloned(content::content::cloned_tree_t const & tree);
 
-    QString             get_shorturl(QString const& id, int base);
+    QString             get_shorturl(QString const & id, int base);
     QString             get_shorturl(uint64_t identifier);
 
-    SNAP_SIGNAL(allow_shorturl, (content::path_info_t& ipath, QString const& owner, QString const& type, bool& allow), (ipath, owner, type, allow));
+    SNAP_SIGNAL(allow_shorturl, (content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow), (ipath, owner, type, allow));
 
 private:
     void initial_update(int64_t variables_timestamp);

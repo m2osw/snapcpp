@@ -23,7 +23,7 @@ namespace snap
 namespace sitemapxml
 {
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_SITEMAPXML_COUNT,
     SNAP_NAME_SITEMAPXML_FREQUENCY,
@@ -32,31 +32,31 @@ enum name_t
     SNAP_NAME_SITEMAPXML_SITEMAP_XML,
     SNAP_NAME_SITEMAPXML_PRIORITY
 };
-const char *get_name(name_t name) __attribute__ ((const));
+const char * get_name(name_t name) __attribute__ ((const));
 
 
 class sitemapxml_exception : public snap_exception
 {
 public:
-    sitemapxml_exception(char const *       what_msg) : snap_exception("sitemap.xml", what_msg) {}
-    sitemapxml_exception(std::string const& what_msg) : snap_exception("sitemap.xml", what_msg) {}
-    sitemapxml_exception(QString const&     what_msg) : snap_exception("sitemap.xml", what_msg) {}
+    sitemapxml_exception(char const *        what_msg) : snap_exception("sitemap.xml", what_msg) {}
+    sitemapxml_exception(std::string const & what_msg) : snap_exception("sitemap.xml", what_msg) {}
+    sitemapxml_exception(QString const &     what_msg) : snap_exception("sitemap.xml", what_msg) {}
 };
 
 class sitemapxml_exception_missing_table : public sitemapxml_exception
 {
 public:
-    sitemapxml_exception_missing_table(char const *       what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_missing_table(std::string const& what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_missing_table(QString const&     what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_table(char const *        what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_table(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_missing_table(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
 };
 
 class sitemapxml_exception_invalid_xslt_data : public sitemapxml_exception
 {
 public:
-    sitemapxml_exception_invalid_xslt_data(char const *       what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_invalid_xslt_data(std::string const& what_msg) : sitemapxml_exception(what_msg) {}
-    sitemapxml_exception_invalid_xslt_data(QString const&     what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_invalid_xslt_data(char const *        what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_invalid_xslt_data(std::string const & what_msg) : sitemapxml_exception(what_msg) {}
+    sitemapxml_exception_invalid_xslt_data(QString const &     what_msg) : sitemapxml_exception(what_msg) {}
 };
 
 
@@ -75,7 +75,7 @@ public:
 
                     url_info();
 
-        void        set_uri(const QString& uri);
+        void        set_uri(QString const & uri);
         void        set_priority(float priority);
         void        set_last_modification(time_t last_modification);
         void        set_frequency(int frequency);
@@ -85,7 +85,7 @@ public:
         time_t      get_last_modification() const;
         int         get_frequency() const;
 
-        bool        operator < (const url_info& rhs) const;
+        bool        operator < (url_info const & rhs) const;
 
     private:
         typedef controlled_vars::auto_init<time_t, 0>   ztime_t;
@@ -108,13 +108,13 @@ public:
     void                    on_bootstrap(::snap::snap_child *snap);
     void                    on_generate_robotstxt(robotstxt::robotstxt *r);
     void                    on_backend_process();
-    virtual bool            on_path_execute(content::path_info_t& ipath);
-    void                    on_allow_shorturl(content::path_info_t& ipath, QString const& owner, QString const& type, bool& allow);
-    void                    on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+    virtual bool            on_path_execute(content::path_info_t & ipath);
+    void                    on_allow_shorturl(content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow);
+    void                    on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
 
     SNAP_SIGNAL(generate_sitemapxml, (sitemapxml *sitemap), (sitemap));
 
-    void                    add_url(const url_info& url);
+    void                    add_url(url_info const & url);
 
 private:
     void                    content_update(int64_t variables_timestamp);

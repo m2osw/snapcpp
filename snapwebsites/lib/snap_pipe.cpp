@@ -32,12 +32,12 @@ namespace snap
 snap_pipe::snap_pipe(QString const& command, mode_t mode)
     : f_command(command)
     , f_mode(static_cast<int>(mode))
-    , f_file(popen(f_command.toUtf8().data(), mode == PIPE_MODE_IN ? "w" : "r"))
+    , f_file(popen(f_command.toUtf8().data(), mode == mode_t::PIPE_MODE_IN ? "w" : "r"))
 {
     if(!f_file)
     {
         throw snap_pipe_exception_cannot_open(QString("popen(\"%1\", \"%2\" failed to start command")
-                                                .arg(f_command).arg(mode == PIPE_MODE_IN ? "w" : "r"));
+                                                .arg(f_command).arg(mode == mode_t::PIPE_MODE_IN ? "w" : "r"));
     }
 }
 
@@ -84,7 +84,7 @@ int snap_pipe::close_pipe()
 std::ostream::int_type snap_pipe::overflow(int_type c)
 {
 #ifdef DEBUG
-    if(PIPE_MODE_IN != f_mode)
+    if(mode_t::PIPE_MODE_IN != f_mode)
     {
         throw snap_pipe_exception_cannot_write("pipe opened in read mode, cannot write to it");
     }
@@ -104,7 +104,7 @@ std::ostream::int_type snap_pipe::overflow(int_type c)
 std::ostream::int_type snap_pipe::underflow()
 {
 #ifdef DEBUG
-    if(PIPE_MODE_OUT != f_mode)
+    if(mode_t::PIPE_MODE_OUT != f_mode)
     {
         throw snap_pipe_exception_cannot_read("pipe opened in write mode, cannot read from it");
     }

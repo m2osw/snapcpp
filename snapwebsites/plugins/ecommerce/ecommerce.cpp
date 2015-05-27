@@ -129,32 +129,32 @@ SNAP_PLUGIN_START(ecommerce, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_ECOMMERCE_CART_MODIFIED_POST_FIELD:
+    case name_t::SNAP_NAME_ECOMMERCE_CART_MODIFIED_POST_FIELD:
         return "ecommerce__cart_modified";
 
-    case SNAP_NAME_ECOMMERCE_CART_PRODUCTS:
+    case name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS:
         return "ecommerce::cart_products";
 
-    case SNAP_NAME_ECOMMERCE_CART_PRODUCTS_POST_FIELD:
+    case name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS_POST_FIELD:
         return "ecommerce__cart_products";
 
-    case SNAP_NAME_ECOMMERCE_INVOICE_NUMBER: // int64_t
+    case name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER: // int64_t
         return "ecommerce::invoice_number";
 
-    case SNAP_NAME_ECOMMERCE_INVOICE_PATH:
+    case name_t::SNAP_NAME_ECOMMERCE_INVOICE_PATH:
         return "ecommerce::invoice_path";
 
-    case SNAP_NAME_ECOMMERCE_INVOICES_PATH:
+    case name_t::SNAP_NAME_ECOMMERCE_INVOICES_PATH:
         return "invoices";
 
-    case SNAP_NAME_ECOMMERCE_INVOICE_TABLE:
+    case name_t::SNAP_NAME_ECOMMERCE_INVOICE_TABLE:
         return "invoice";
 
-    case SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART:
+    case name_t::SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART:
         return "js/ecommerce/ecommerce-cart.js";
 
     default:
@@ -537,7 +537,7 @@ void ecommerce::on_process_post(QString const& uri_path)
     //}
 
     // make sure this is a cart post
-    char const *cart_products(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS_POST_FIELD));
+    char const *cart_products(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS_POST_FIELD));
     if(!f_snap->postenv_exists(cart_products))
     {
         return;
@@ -547,7 +547,7 @@ void ecommerce::on_process_post(QString const& uri_path)
     ipath.set_path(uri_path);
 
     QString const cart_xml(f_snap->postenv(cart_products));
-    users::users::instance()->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), cart_xml);
+    users::users::instance()->attach_to_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS), cart_xml);
 
     // create the AJAX response
     server_access::server_access *server_access_plugin(server_access::server_access::instance());
@@ -568,7 +568,7 @@ void ecommerce::on_process_post(QString const& uri_path)
 bool ecommerce::on_path_execute(content::path_info_t& ipath)
 {
     QString const cpath(ipath.get_cpath());
-    if(cpath == get_name(SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART))
+    if(cpath == get_name(name_t::SNAP_NAME_ECOMMERCE_JAVASCRIPT_CART))
     {
         // check whether we have some products in the cart, if so
         // spit them out now! (with the exception of the product
@@ -578,7 +578,7 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
         // know that there is at least one product in the cart
 
         // get the session information
-        QString const cart_xml(users::users::instance()->get_from_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+        QString const cart_xml(users::users::instance()->get_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
 
         QString js(QString("// e-Commerce Cart generated on %1\n").arg(QDateTime::currentDateTime().toString()));
         QDomDocument doc;
@@ -612,24 +612,24 @@ bool ecommerce::on_path_execute(content::path_info_t& ipath)
                 product_ipath.set_path(guid);
                 content::field_search::search_result_t product_result;
                 FIELD_SEARCH
-                    (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                    (content::field_search::COMMAND_PATH_INFO_REVISION, product_ipath)
+                    (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+                    (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, product_ipath)
 
                     // DESCRIPTION
-                    (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_DESCRIPTION))
-                    (content::field_search::COMMAND_SELF)
-                    (content::field_search::COMMAND_IF_FOUND, 1)
+                    (content::field_search::command_t::COMMAND_FIELD_NAME, epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_DESCRIPTION))
+                    (content::field_search::command_t::COMMAND_SELF)
+                    (content::field_search::command_t::COMMAND_IF_FOUND, 1)
                         // use page title as a fallback
-                        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
-                        (content::field_search::COMMAND_SELF)
-                    (content::field_search::COMMAND_LABEL, 1)
+                        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
+                        (content::field_search::command_t::COMMAND_SELF)
+                    (content::field_search::command_t::COMMAND_LABEL, 1)
 
                     // PRICE
-                    (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE))
-                    (content::field_search::COMMAND_SELF)
+                    (content::field_search::command_t::COMMAND_FIELD_NAME, epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRICE))
+                    (content::field_search::command_t::COMMAND_SELF)
 
                     // get the 2 results
-                    (content::field_search::COMMAND_RESULT, product_result)
+                    (content::field_search::command_t::COMMAND_RESULT, product_result)
 
                     // retrieve!
                     ;
@@ -964,7 +964,7 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
             {
                 // read the existing cart if the user did not want to
                 // empty it first
-                QString cart_xml(users_plugin->get_from_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+                QString cart_xml(users_plugin->get_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
                 doc.setContent(cart_xml);
                 cart_tag = doc.documentElement();
                 if(cart_tag.tagName() != "cart") // make sure it is a cart element
@@ -1074,7 +1074,7 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                     product_allowed(p, product_ipath);
                 }
             }
-            users_plugin->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), doc.toString(-1));
+            users_plugin->attach_to_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS), doc.toString(-1));
         }
     }
 }
@@ -1143,7 +1143,7 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
 
     // get the session information
     users::users *users_plugin(users::users::instance());
-    QString cart_xml(users_plugin->get_from_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+    QString cart_xml(users_plugin->get_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
     if(cart_xml.isEmpty())
     {
         // we should not be able to get here if the cart is empty
@@ -1212,24 +1212,24 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
             //       all over theplace! -- only it should probably be in the
             //       e-Payment plugin?
             FIELD_SEARCH
-                (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                (content::field_search::COMMAND_PATH_INFO_REVISION, product_ipath)
+                (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+                (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, product_ipath)
 
                 // DESCRIPTION
-                (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_DESCRIPTION))
-                (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_IF_FOUND, 1)
+                (content::field_search::command_t::COMMAND_FIELD_NAME, epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_DESCRIPTION))
+                (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_IF_FOUND, 1)
                     // use page title as a fallback
-                    (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
-                    (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_LABEL, 1)
+                    (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
+                    (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_LABEL, 1)
 
                 // PRICE
-                (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE))
-                (content::field_search::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_FIELD_NAME, epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRICE))
+                (content::field_search::command_t::COMMAND_SELF)
 
                 // get the 2 results
-                (content::field_search::COMMAND_RESULT, product_result)
+                (content::field_search::command_t::COMMAND_RESULT, product_result)
 
                 // retrieve!
                 ;
@@ -1271,7 +1271,7 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
 
                 // create a product in the plist
                 epayment::epayment_product& p(plist.add_product(product_ipath.get_key(), quantity, product_description));
-                p.set_property(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE), price);
+                p.set_property(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRICE), price);
 
                 // TODO: we need to add support for attributes and put them
                 //       in the long description
@@ -1295,12 +1295,12 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
     {
         // save the new DOM as a string back in the database
         cart_xml = doc.toString(-1);
-        users_plugin->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS), cart_xml);
+        users_plugin->attach_to_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS), cart_xml);
 
         // since the cart changed we need to send it back to the client
         // otherwise the client will show the wrong cart (unless we force
         // a reload of the page, but then we would lose the error messages)
-        server_access::server_access::instance()->ajax_append_data(get_name(SNAP_NAME_ECOMMERCE_CART_MODIFIED_POST_FIELD), cart_xml.toUtf8());
+        server_access::server_access::instance()->ajax_append_data(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_MODIFIED_POST_FIELD), cart_xml.toUtf8());
     }
 
     // the number of products could have dropped to zero now...
@@ -1334,21 +1334,21 @@ void ecommerce::on_generate_invoice(content::path_info_t& invoice_ipath, uint64_
 
     // create a lock to generate the next unique invoice number
     content::path_info_t invoices_ipath;
-    invoices_ipath.set_path(get_name(SNAP_NAME_ECOMMERCE_INVOICES_PATH));
+    invoices_ipath.set_path(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICES_PATH));
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(invoices_ipath.get_key()));
     {
         QtCassandra::QCassandraLock lock(f_snap->get_context(), invoices_ipath.get_key());
 
         // retrieve the current invoice number and increment by one
-        QtCassandra::QCassandraValue invoice_number_value(content_row->cell(get_name(SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->value());
+        QtCassandra::QCassandraValue invoice_number_value(content_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->value());
         if(invoice_number_value.size() == sizeof(uint64_t))
         {
             invoice_number = invoice_number_value.uint64Value();
         }
         ++invoice_number;
         invoice_number_value.setUInt64Value(invoice_number);
-        content_row->cell(get_name(SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->setValue(invoice_number_value);
+        content_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_NUMBER))->setValue(invoice_number_value);
     }
     invoices_ipath.get_child(invoice_ipath, QString("%1").arg(invoice_number));
     invoice_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
@@ -1363,25 +1363,25 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
     //       along the create_content() instead of having this separate.
     int64_t const start_date(f_snap->get_start_date());
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(invoice_ipath.get_revision_key()));
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     QString const title(QString("Invoice #%1").arg(invoice_number));
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(title);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     QString const body; // empty for now... will be generated later
                         // by a backend or on the fly as we decide then
                         // (we could also have a tag transformed on the fly
                         // something like: [ecommerce::invoice(###)])
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
-    revision_row->cell(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS))->setValue(cart_xml);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(body);
+    revision_row->cell(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS))->setValue(cart_xml);
 
     // the default status is "created" which is likely to be updated
     // right behind this call...
-    epayment::epayment::instance()->set_invoice_status(invoice_ipath, epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED);
+    epayment::epayment::instance()->set_invoice_status(invoice_ipath, epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS_CREATED);
 
     // now it is safe to remove the cart in the session since a copy
     // was just saved in the invoice; in its place we put an invoice
     // URL so for users without an account we still have access
-    users_plugin->attach_to_session(get_name(SNAP_NAME_ECOMMERCE_INVOICE_PATH), invoice_ipath.get_key());
-    static_cast<void>(users_plugin->detach_from_session(get_name(SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
+    users_plugin->attach_to_session(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_PATH), invoice_ipath.get_key());
+    static_cast<void>(users_plugin->detach_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_CART_PRODUCTS)));
 
     // The "actual" generation of the invoice should be using an XSLT
     // file and not C++ code; that way we can easily extend the display.
@@ -1412,16 +1412,16 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
     //        (content::field_search::COMMAND_PATH_INFO_REVISION, product_ipath)
 
     //        // DESCRIPTION
-    //        (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_DESCRIPTION))
+    //        (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_DESCRIPTION))
     //        (content::field_search::COMMAND_SELF)
     //        (content::field_search::COMMAND_IF_FOUND, 1)
     //            // use page title as a fallback
-    //            (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
+    //            (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
     //            (content::field_search::COMMAND_SELF)
     //        (content::field_search::COMMAND_LABEL, 1)
 
     //        // PRICE
-    //        (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE))
+    //        (content::field_search::COMMAND_FIELD_NAME, epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRICE))
     //        (content::field_search::COMMAND_SELF)
 
     //        // get the 2 results
@@ -1507,7 +1507,7 @@ std::cerr << "***\n*** from invoices " << invoices_ipath.get_key() << " create i
 bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t product_ipath)
 {
     // Is this GUID pointing to a page which represents a product at least?
-    links::link_info product_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, product_ipath.get_key(), product_ipath.get_branch());
+    links::link_info product_info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, product_ipath.get_key(), product_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(product_info));
     links::link_info product_child_info;
     if(!link_ctxt->next_link(product_child_info))
@@ -1531,7 +1531,7 @@ bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t p
     // use a path_info_t to retrieve the cpath instead
     content::path_info_t type_ipath;
     type_ipath.set_path(product_child_info.key());
-    if(!type_ipath.get_cpath().startsWith(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)))
+    if(!type_ipath.get_cpath().startsWith(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRODUCT_TYPE_PATH)))
     {
         messages::messages::instance()->set_error(
             "Invalid Cart",
@@ -1551,7 +1551,7 @@ bool ecommerce::product_allowed_impl(QDomElement product, content::path_info_t p
     // product either...
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    if(revision_table->row(product_ipath.get_revision_key())->cell(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_PRICE))->value().size() != sizeof(double))
+    if(revision_table->row(product_ipath.get_revision_key())->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRICE))->value().size() != sizeof(double))
     {
         // no price?!
         messages::messages::instance()->set_error(
@@ -1619,12 +1619,12 @@ void ecommerce::on_replace_token(content::path_info_t& ipath, QString const& plu
         bool has_invoice(false);
         content::path_info_t invoice_ipath;
         token.verify_args(1, 1);
-        filter::filter::parameter_t which(token.get_arg("which", 0, filter::filter::TOK_STRING));
+        filter::filter::parameter_t which(token.get_arg("which", 0, filter::filter::token_t::TOK_STRING));
         if(which.f_value == "last-invoice")
         {
             // WARNING: this can be bogus if the same user creates two
             //          invoices in two separate browsers...
-            QString const invoice(users_plugin->get_from_session(get_name(SNAP_NAME_ECOMMERCE_INVOICE_PATH)));
+            QString const invoice(users_plugin->get_from_session(get_name(name_t::SNAP_NAME_ECOMMERCE_INVOICE_PATH)));
             if(!invoice.isEmpty())
             {
                 invoice_ipath.set_path(invoice);
@@ -1656,14 +1656,14 @@ void ecommerce::on_replace_token(content::path_info_t& ipath, QString const& plu
         if(has_invoice)
         {
             if(content_table->exists(invoice_ipath.get_key())
-            && content_table->row(invoice_ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
+            && content_table->row(invoice_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
             {
                 // the invoice exists
                 locale::locale *locale_plugin(locale::locale::instance());
                 locale_plugin->set_timezone();
                 locale_plugin->set_locale();
-                QString const invoice_status(content_table->row(invoice_ipath.get_key())->cell(epayment::get_name(epayment::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
-                int64_t const invoice_date_us(content_table->row(invoice_ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().int64Value());
+                QString const invoice_status(content_table->row(invoice_ipath.get_key())->cell(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_INVOICE_STATUS))->value().stringValue());
+                int64_t const invoice_date_us(content_table->row(invoice_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().int64Value());
                 time_t const invoice_date_sec(invoice_date_us / 1000000);
                 QString const invoice_date_str(locale_plugin->format_date(invoice_date_sec));
                 QString const invoice_time_str(locale_plugin->format_time(invoice_date_sec));

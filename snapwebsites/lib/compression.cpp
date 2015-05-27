@@ -710,12 +710,12 @@ public:
         // TYPE, SIZE
         switch(file.get_type())
         {
-        case file_t::FILE_TYPE_REGULAR:
+        case file_t::type_t::FILE_TYPE_REGULAR:
             header[156] = '0'; // regular (tar type)
             append_int(&header[124], file.get_data().size(), 11, 8, '0');
             break;
 
-        case file_t::FILE_TYPE_DIRECTORY:
+        case file_t::type_t::FILE_TYPE_DIRECTORY:
             // needs to be zero in ASCII
             header[156] = '5'; // directory (tar type)
             append_int(&header[124], 0, 11, 8, '0');
@@ -741,7 +741,7 @@ public:
 
         switch(file.get_type())
         {
-        case file_t::FILE_TYPE_REGULAR:
+        case file_t::type_t::FILE_TYPE_REGULAR:
             f_archive.append(file.get_data());
             {
                 // padding to next 512 bytes
@@ -823,11 +823,11 @@ public:
         {
         case '\0':
         case '0':
-            file.set_type(file_t::FILE_TYPE_REGULAR);
+            file.set_type(file_t::type_t::FILE_TYPE_REGULAR);
             break;
 
         case '5':
-            file.set_type(file_t::FILE_TYPE_DIRECTORY);
+            file.set_type(file_t::type_t::FILE_TYPE_DIRECTORY);
             break;
 
 
@@ -847,7 +847,7 @@ public:
 
         f_pos += 512;
 
-        if(file.get_type() == file_t::FILE_TYPE_REGULAR)
+        if(file.get_type() == file_t::type_t::FILE_TYPE_REGULAR)
         {
             uint32_t size(read_int(&header[124], 12, 8));
             int total_size((size + 511) & -512);

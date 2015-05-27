@@ -33,14 +33,14 @@ bool g_verbose = false;
 
 struct versions_t
 {
-    char const *        f_extension;
-    char const *        f_left;
-    char const *        f_left_canonicalized;
-    char const *        f_right;
-    char const *        f_right_canonicalized;
-    bool                f_left_valid;
-    bool                f_right_valid;
-    int                 f_compare;
+    char const *                    f_extension;
+    char const *                    f_left;
+    char const *                    f_left_canonicalized;
+    char const *                    f_right;
+    char const *                    f_right_canonicalized;
+    bool                            f_left_valid;
+    bool                            f_right_valid;
+    snap::snap_version::compare_t   f_compare;
 };
 
 
@@ -54,7 +54,7 @@ versions_t g_versions[] =
         "name_2.5.7.js",
         true,
         true,
-        snap::snap_version::COMPARE_SMALLER
+        snap::snap_version::compare_t::COMPARE_SMALLER
     },
     {
         ".js",
@@ -64,7 +64,7 @@ versions_t g_versions[] =
         "name_1.2.3.js",
         true,
         true,
-        snap::snap_version::COMPARE_SMALLER
+        snap::snap_version::compare_t::COMPARE_SMALLER
     },
     {
         "css",
@@ -74,7 +74,7 @@ versions_t g_versions[] =
         "name_1.2.3.css",
         true,
         true,
-        snap::snap_version::COMPARE_SMALLER
+        snap::snap_version::compare_t::COMPARE_SMALLER
     },
     {
         "css",
@@ -84,7 +84,7 @@ versions_t g_versions[] =
         "name_1.2.3.css",
         true,
         true,
-        snap::snap_version::COMPARE_SMALLER
+        snap::snap_version::compare_t::COMPARE_SMALLER
     },
     {
         ".js",
@@ -94,7 +94,7 @@ versions_t g_versions[] =
         "poo-34_1.2.3_ie.js",
         true,
         true,
-        snap::snap_version::COMPARE_SMALLER
+        snap::snap_version::compare_t::COMPARE_SMALLER
     },
     {
         ".js",
@@ -104,7 +104,7 @@ versions_t g_versions[] =
         "name_1.2.3.js",
         true,
         true,
-        snap::snap_version::COMPARE_SMALLER
+        snap::snap_version::compare_t::COMPARE_SMALLER
     },
     {
         ".js",
@@ -114,7 +114,7 @@ versions_t g_versions[] =
         "name_1.2.3_mozilla.js",
         true,
         true,
-        snap::snap_version::COMPARE_SMALLER
+        snap::snap_version::compare_t::COMPARE_SMALLER
     },
     {
         "js",
@@ -124,7 +124,7 @@ versions_t g_versions[] =
         "name_1.2.3_mozilla.js",
         true,
         true,
-        snap::snap_version::COMPARE_EQUAL
+        snap::snap_version::compare_t::COMPARE_EQUAL
     },
     {
         "js",
@@ -134,7 +134,7 @@ versions_t g_versions[] =
         "name_1.2.3_moz-lla.js",
         true,
         true,
-        snap::snap_version::COMPARE_EQUAL
+        snap::snap_version::compare_t::COMPARE_EQUAL
     },
     {
         "lla",
@@ -144,7 +144,7 @@ versions_t g_versions[] =
         "name_1.2.3.99998_mozi.lla",
         true,
         true,
-        snap::snap_version::COMPARE_LARGER
+        snap::snap_version::compare_t::COMPARE_LARGER
     },
     {
         "lla",
@@ -154,7 +154,7 @@ versions_t g_versions[] =
         "name_1.2.3.99999_mozi.lla",
         true,
         true,
-        snap::snap_version::COMPARE_LARGER
+        snap::snap_version::compare_t::COMPARE_LARGER
     },
     {
         ".js",
@@ -164,7 +164,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.js",
         true,
         true,
-        snap::snap_version::COMPARE_LARGER
+        snap::snap_version::compare_t::COMPARE_LARGER
     },
     {
         "jpg",
@@ -174,7 +174,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -184,7 +184,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -194,7 +194,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         true,
         true,
-        snap::snap_version::COMPARE_LARGER
+        snap::snap_version::compare_t::COMPARE_LARGER
     },
     {
         "jpg",
@@ -204,7 +204,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -214,7 +214,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -224,7 +224,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -234,7 +234,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -244,7 +244,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -254,7 +254,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -264,7 +264,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -274,7 +274,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -284,7 +284,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -294,7 +294,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -304,7 +304,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -314,7 +314,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -324,7 +324,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -334,7 +334,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -344,7 +344,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -354,7 +354,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -364,7 +364,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -374,7 +374,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     },
     {
         "jpg",
@@ -384,7 +384,7 @@ versions_t g_versions[] =
         "name_1.2.3_ie.jpg",
         false,
         true,
-        snap::snap_version::COMPARE_INVALID
+        snap::snap_version::compare_t::COMPARE_INVALID
     }
 };
 
@@ -508,7 +508,7 @@ int check_version(versions_t *v)
         }
         switch(c)
         {
-        case snap::snap_version::COMPARE_INVALID:
+        case snap::snap_version::compare_t::COMPARE_INVALID:
             if(l == r)
             {
                 ++errcnt;
@@ -541,7 +541,7 @@ int check_version(versions_t *v)
             }
             break;
 
-        case snap::snap_version::COMPARE_SMALLER:
+        case snap::snap_version::compare_t::COMPARE_SMALLER:
             if((l == r))
             {
                 ++errcnt;
@@ -574,7 +574,7 @@ int check_version(versions_t *v)
             }
             break;
 
-        case snap::snap_version::COMPARE_EQUAL:
+        case snap::snap_version::compare_t::COMPARE_EQUAL:
             if(!(l == r))
             {
                 ++errcnt;
@@ -607,7 +607,7 @@ int check_version(versions_t *v)
             }
             break;
 
-        case snap::snap_version::COMPARE_LARGER:
+        case snap::snap_version::compare_t::COMPARE_LARGER:
             if((l == r))
             {
                 ++errcnt;

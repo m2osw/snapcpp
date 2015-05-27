@@ -182,7 +182,7 @@ bool g_debug = false;
 class lexer
 {
 public:
-    enum mode_t
+    enum class mode_t
     {
         LEXER_MODE_NORMAL,      // normal parsing
         LEXER_MODE_MESSAGE,     // read whatever up to the end of line as a string (keep spaces, do not convert integers, etc.)
@@ -195,7 +195,7 @@ public:
     class token_t
     {
     public:
-        enum type_t
+        enum class type_t
         {
             TOKEN_TYPE_EOT,         // end of token
             TOKEN_TYPE_CHARACTER,   // '\n' for new line, ' ' for spaces (space or tab), other operators as themselves
@@ -204,37 +204,37 @@ public:
             TOKEN_TYPE_FLOAT,       // floating point ('.' is the trigger)
             TOKEN_TYPE_COMMAND      // !:<command> a string with "command"
         };
-        typedef controlled_vars::limited_need_init<type_t, TOKEN_TYPE_EOT, TOKEN_TYPE_FLOAT> safe_type_t;
+        typedef controlled_vars::limited_need_init<type_t, type_t::TOKEN_TYPE_EOT, type_t::TOKEN_TYPE_FLOAT> safe_type_t;
         typedef char            character_t;
         typedef std::string     string_t;
         typedef int64_t         integer_t;
         typedef double          float_t;
 
                         token_t()
-                            : f_type(static_cast<int32_t>(TOKEN_TYPE_EOT))
+                            : f_type(static_cast<int32_t>(type_t::TOKEN_TYPE_EOT))
                         {
                         }
 
                         token_t(character_t character)
-                            : f_type(static_cast<int32_t>(TOKEN_TYPE_CHARACTER))
+                            : f_type(static_cast<int32_t>(type_t::TOKEN_TYPE_CHARACTER))
                             , f_character(character)
                         {
                         }
 
                         token_t(string_t string, bool is_string = true)
-                            : f_type(static_cast<int32_t>(is_string ? TOKEN_TYPE_STRING : TOKEN_TYPE_COMMAND))
+                            : f_type(static_cast<int32_t>(is_string ? type_t::TOKEN_TYPE_STRING : type_t::TOKEN_TYPE_COMMAND))
                             , f_string(string)
                         {
                         }
 
                         token_t(integer_t integer)
-                            : f_type(static_cast<int32_t>(TOKEN_TYPE_INTEGER))
+                            : f_type(static_cast<int32_t>(type_t::TOKEN_TYPE_INTEGER))
                             , f_integer(integer)
                         {
                         }
 
                         token_t(float_t floating_point)
-                            : f_type(static_cast<int32_t>(TOKEN_TYPE_FLOAT))
+                            : f_type(static_cast<int32_t>(type_t::TOKEN_TYPE_FLOAT))
                             , f_float(floating_point)
                         {
                         }
@@ -292,11 +292,11 @@ std::ostream& operator << (std::ostream& out, lexer::token_t const& token)
 {
     switch(token.get_type())
     {
-    case lexer::token_t::TOKEN_TYPE_EOT:
+    case lexer::token_t::type_t::TOKEN_TYPE_EOT:
         out << "end of token";
         break;
 
-    case lexer::token_t::TOKEN_TYPE_CHARACTER:
+    case lexer::token_t::type_t::TOKEN_TYPE_CHARACTER:
         {
             char c(token.get_character());
             if(c == 0)
@@ -342,19 +342,19 @@ std::ostream& operator << (std::ostream& out, lexer::token_t const& token)
         }
         break;
 
-    case lexer::token_t::TOKEN_TYPE_STRING:
+    case lexer::token_t::type_t::TOKEN_TYPE_STRING:
         out << "string \"" << token.get_string() << "\"";
         break;
 
-    case lexer::token_t::TOKEN_TYPE_INTEGER:
+    case lexer::token_t::type_t::TOKEN_TYPE_INTEGER:
         out << "integer " << token.get_integer() << " (0x" << std::hex << token.get_integer() << std::dec << ")";
         break;
 
-    case lexer::token_t::TOKEN_TYPE_FLOAT:
+    case lexer::token_t::type_t::TOKEN_TYPE_FLOAT:
         out << "float " << token.get_float();
         break;
 
-    case lexer::token_t::TOKEN_TYPE_COMMAND:
+    case lexer::token_t::type_t::TOKEN_TYPE_COMMAND:
         out << "command !:" << token.get_string();
         break;
 
@@ -423,15 +423,15 @@ lexer::token_t lexer::get_token(mode_t mode)
     lexer::token_t token;
     switch(mode)
     {
-    case LEXER_MODE_NORMAL:
+    case mode_t::LEXER_MODE_NORMAL:
         token = get_normal_token();
         break;
 
-    case LEXER_MODE_MESSAGE:
+    case mode_t::LEXER_MODE_MESSAGE:
         token = get_message_token();
         break;
 
-    case LEXER_MODE_REGEX:
+    case mode_t::LEXER_MODE_REGEX:
         token = get_string_token();
         break;
 
@@ -510,7 +510,7 @@ void lexer::ungetc(int c)
  *
  * This function reads one token and returns it.
  *
- * If the end of all the input files is reached, then the TOKEN_TYPE_EOT
+ * If the end of all the input files is reached, then the type_t::TOKEN_TYPE_EOT
  * token is returned.
  *
  * \return The next token.
@@ -635,7 +635,7 @@ lexer::token_t lexer::get_message_token()
         int c(getc());
         if(c == std::istream::traits_type::eof())
         {
-            // return TOKEN_TYPE_EOT
+            // return type_t::TOKEN_TYPE_EOT
             return token_t(message);
         }
         if(c == '\r')
@@ -986,7 +986,7 @@ public:
     public:
         typedef std::shared_ptr<entry_t>        pointer_t;
 
-        enum type_t
+        enum class type_t
         {
             ENTRY_TYPE_UNKNOWN,
 
@@ -1055,7 +1055,7 @@ public:
             ENTRY_TYPE_INDIRECT,
             ENTRY_TYPE_DEFAULT
         };
-        typedef controlled_vars::limited_auto_init<type_t, ENTRY_TYPE_UNKNOWN, ENTRY_TYPE_DEFAULT, ENTRY_TYPE_UNKNOWN> safe_type_t;
+        typedef controlled_vars::limited_auto_init<type_t, type_t::ENTRY_TYPE_UNKNOWN, type_t::ENTRY_TYPE_DEFAULT, type_t::ENTRY_TYPE_UNKNOWN> safe_type_t;
 
         typedef lexer::token_t::integer_t                   integer_t;
         typedef controlled_vars::auto_init<integer_t, 0>    zinteger_t;
@@ -1185,10 +1185,10 @@ void parser::parse()
     entry_t::pointer_t e;
     for(;;)
     {
-        lexer::token_t token(f_lexer->get_token(lexer::LEXER_MODE_NORMAL));
+        lexer::token_t token(f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL));
         switch(token.get_type())
         {
-        case lexer::token_t::TOKEN_TYPE_COMMAND:
+        case lexer::token_t::type_t::TOKEN_TYPE_COMMAND:
             if(!e)
             {
                 std::cerr << "error: a command without any line is not legal.\n";
@@ -1197,7 +1197,7 @@ void parser::parse()
             if(token.get_string() == "mime")
             {
                 // these we accept!
-                token = f_lexer->get_token(lexer::LEXER_MODE_MESSAGE);
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_MESSAGE);
                 std::string mimetype(token.get_string());
                 while(mimetype[0] == ' ' || mimetype[0] == '\t')
                 {
@@ -1208,15 +1208,15 @@ void parser::parse()
             else if(token.get_string() == "apple" || token.get_string() == "strength")
             {
                 // ignore those for now
-                f_lexer->get_token(lexer::LEXER_MODE_MESSAGE);
+                f_lexer->get_token(lexer::mode_t::LEXER_MODE_MESSAGE);
             }
             else
             {
                 std::cerr << "error: unknown command (!:" << token.get_string() << ").\n";
                 exit(1);
             }
-            token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-            if(token.get_type() != lexer::token_t::TOKEN_TYPE_CHARACTER
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+            if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             || token.get_character() != '\n')
             {
                 std::cerr << "error: a command line is expected to end with a new line.\n";
@@ -1224,11 +1224,11 @@ void parser::parse()
             }
             continue;
 
-        case lexer::token_t::TOKEN_TYPE_EOT:
+        case lexer::token_t::type_t::TOKEN_TYPE_EOT:
             // we're done parsing
             return;
 
-        case lexer::token_t::TOKEN_TYPE_CHARACTER:
+        case lexer::token_t::type_t::TOKEN_TYPE_CHARACTER:
             // a line may start with characters (>)
             if(token.get_character() != '>')
             {
@@ -1241,20 +1241,20 @@ void parser::parse()
                 do
                 {
                     ++level;
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                 }
-                while(token.get_type() == lexer::token_t::TOKEN_TYPE_CHARACTER
+                while(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
                    && token.get_character() == '>');
                 e->set_level(level);
             }
 
-            if(token.get_type() == lexer::token_t::TOKEN_TYPE_CHARACTER
+            if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             && token.get_character() == '&')
             {
                 e->set_flags(entry_t::ENTRY_FLAG_RELATIVE);
             }
 
-            if(token.get_type() == lexer::token_t::TOKEN_TYPE_INTEGER)
+            if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
             {
                 // the actual offset
                 e->set_offset(token.get_integer());
@@ -1262,38 +1262,38 @@ void parser::parse()
             }
 
             // indirect
-            if(token.get_type() != lexer::token_t::TOKEN_TYPE_CHARACTER
+            if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             || token.get_character() != '(')
             {
                 std::cerr << "error: expected an integer, '&', or '(' after the level indication.\n";
                 exit(1);
             }
-            token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-            if(token.get_type() == lexer::token_t::TOKEN_TYPE_CHARACTER
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+            if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             && token.get_character() == '&')
             {
                 e->set_flags(entry_t::ENTRY_FLAG_INDIRECT_RELATIVE);
-                token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
             }
 
             // indirect offset
-            if(token.get_type() != lexer::token_t::TOKEN_TYPE_INTEGER)
+            if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
             {
                 std::cerr << "error: expected an integer for the indirect offset.\n";
                 exit(1);
             }
             e->set_offset(token.get_integer());
 
-            token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-            if(token.get_type() == lexer::token_t::TOKEN_TYPE_CHARACTER
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+            if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             && token.get_character() == '.')
             {
                 // NOTE: The documentation says that the size is
                 //       optional, and if not defined, long is used
                 //       (but they do not specify the endian, so I would
                 //       imagine that the machine endian is to be used?!)
-                token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-                if(token.get_type() != lexer::token_t::TOKEN_TYPE_STRING)
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_STRING)
                 {
                     std::cerr << "error: indirect offsets can be followed by a size (.b, .l, etc.), here the size is missing.\n";
                     exit(1);
@@ -1344,9 +1344,9 @@ void parser::parse()
                     exit(1);
 
                 }
-                token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
             }
-            if(token.get_type() == lexer::token_t::TOKEN_TYPE_CHARACTER
+            if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             && token.get_character() != ')')
             {
                 switch(token.get_character())
@@ -1367,8 +1367,8 @@ void parser::parse()
                     exit(1);
 
                 }
-                token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-                if(token.get_type() != lexer::token_t::TOKEN_TYPE_INTEGER)
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
                 {
                     // Note: in the documentation they say you can also have
                     //       another parenthesis layer as in: +(-4)
@@ -1378,9 +1378,9 @@ void parser::parse()
                 // Note: the + and - can be optimized by replacing the
                 //       integer with -integer and the '-' by '+'
                 //e->set_indirect_adjustment(token.get_integer());
-                token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
             }
-            if(token.get_type() != lexer::token_t::TOKEN_TYPE_CHARACTER
+            if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             || token.get_character() != ')')
             {
                 std::cerr << "error: an indirect offset must end with ')'.\n";
@@ -1388,7 +1388,7 @@ void parser::parse()
             }
             break;
 
-        case lexer::token_t::TOKEN_TYPE_INTEGER:
+        case lexer::token_t::type_t::TOKEN_TYPE_INTEGER:
             // the offset for this line
             e.reset(new entry_t);
             e->set_offset(token.get_integer());
@@ -1401,16 +1401,16 @@ void parser::parse()
         }
 
         // after the offset we have to have a space then the type
-        token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-        if(token.get_type() != lexer::token_t::TOKEN_TYPE_CHARACTER
+        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+        if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
         || token.get_character() != ' ')
         {
             std::cerr << "error: expected a space or tab after the offset.\n";
             exit(1);
         }
 
-        token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-        if(token.get_type() != lexer::token_t::TOKEN_TYPE_STRING)
+        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+        if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_STRING)
         {
             std::cerr << "error: expected a string to indicate the type on this line.\n";
             exit(1);
@@ -1419,223 +1419,223 @@ void parser::parse()
         std::string type(token.get_string());
         if(type == "byte")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BYTE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BYTE);
         }
         else if(type == "ubyte")
         {
-            e->set_type(entry_t::ENTRY_TYPE_UBYTE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_UBYTE);
         }
         else if(type == "short")
         {
-            e->set_type(entry_t::ENTRY_TYPE_SHORT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_SHORT);
         }
         else if(type == "leshort")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LESHORT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LESHORT);
         }
         else if(type == "beshort")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BESHORT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BESHORT);
         }
         else if(type == "ushort")
         {
-            e->set_type(entry_t::ENTRY_TYPE_USHORT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_USHORT);
         }
         else if(type == "uleshort")
         {
-            e->set_type(entry_t::ENTRY_TYPE_ULESHORT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_ULESHORT);
         }
         else if(type == "ubeshort")
         {
-            e->set_type(entry_t::ENTRY_TYPE_UBESHORT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_UBESHORT);
         }
         else if(type == "long")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LONG);
         }
         else if(type == "lelong")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LELONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LELONG);
         }
         else if(type == "belong")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BELONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BELONG);
         }
         else if(type == "melong")
         {
-            e->set_type(entry_t::ENTRY_TYPE_MELONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_MELONG);
         }
         else if(type == "ulong")
         {
-            e->set_type(entry_t::ENTRY_TYPE_ULONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_ULONG);
         }
         else if(type == "ulong")
         {
-            e->set_type(entry_t::ENTRY_TYPE_ULONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_ULONG);
         }
         else if(type == "ulelong")
         {
-            e->set_type(entry_t::ENTRY_TYPE_ULELONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_ULELONG);
         }
         else if(type == "ubelong")
         {
-            e->set_type(entry_t::ENTRY_TYPE_UBELONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_UBELONG);
         }
         else if(type == "umelong")
         {
-            e->set_type(entry_t::ENTRY_TYPE_UMELONG);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_UMELONG);
         }
         else if(type == "beid3")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BEID3);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BEID3);
         }
         else if(type == "leid3")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LEID3);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LEID3);
         }
         else if(type == "ubeid3")
         {
-            e->set_type(entry_t::ENTRY_TYPE_UBEID3);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_UBEID3);
         }
         else if(type == "uleid3")
         {
-            e->set_type(entry_t::ENTRY_TYPE_ULEID3);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_ULEID3);
         }
         else if(type == "quad")
         {
-            e->set_type(entry_t::ENTRY_TYPE_QUAD);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_QUAD);
         }
         else if(type == "bequad")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BEQUAD);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BEQUAD);
         }
         else if(type == "lequad")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LEQUAD);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LEQUAD);
         }
         else if(type == "uquad")
         {
-            e->set_type(entry_t::ENTRY_TYPE_UQUAD);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_UQUAD);
         }
         else if(type == "ubequad")
         {
-            e->set_type(entry_t::ENTRY_TYPE_UBEQUAD);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_UBEQUAD);
         }
         else if(type == "ulequad")
         {
-            e->set_type(entry_t::ENTRY_TYPE_ULEQUAD);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_ULEQUAD);
         }
         else if(type == "float")
         {
-            e->set_type(entry_t::ENTRY_TYPE_FLOAT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_FLOAT);
         }
         else if(type == "befloat")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BEFLOAT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BEFLOAT);
         }
         else if(type == "lefloat")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LEFLOAT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LEFLOAT);
         }
         else if(type == "double")
         {
-            e->set_type(entry_t::ENTRY_TYPE_DOUBLE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_DOUBLE);
         }
         else if(type == "bedouble")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BEDOUBLE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BEDOUBLE);
         }
         else if(type == "ledouble")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LEDOUBLE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LEDOUBLE);
         }
         else if(type == "string")
         {
-            e->set_type(entry_t::ENTRY_TYPE_STRING);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_STRING);
         }
         else if(type == "pstring")
         {
-            e->set_type(entry_t::ENTRY_TYPE_PSTRING);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_PSTRING);
         }
         else if(type == "bestring16")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BESTRING16);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BESTRING16);
         }
         else if(type == "lestring16")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LESTRING16);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LESTRING16);
         }
         else if(type == "search")
         {
-            e->set_type(entry_t::ENTRY_TYPE_SEARCH);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_SEARCH);
         }
         else if(type == "regex")
         {
-            e->set_type(entry_t::ENTRY_TYPE_REGEX);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_REGEX);
         }
         else if(type == "date")
         {
-            e->set_type(entry_t::ENTRY_TYPE_DATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_DATE);
         }
         else if(type == "qdate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_QDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_QDATE);
         }
         else if(type == "ldate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LDATE);
         }
         else if(type == "qldate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_QLDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_QLDATE);
         }
         else if(type == "bedate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BEDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BEDATE);
         }
         else if(type == "beqdate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BEQDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BEQDATE);
         }
         else if(type == "beldate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BELDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BELDATE);
         }
         else if(type == "beqldate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_BEQLDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_BEQLDATE);
         }
         else if(type == "ledate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LEDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LEDATE);
         }
         else if(type == "leqdate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LEQDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LEQDATE);
         }
         else if(type == "leldate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LELDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LELDATE);
         }
         else if(type == "leqldate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_LEQLDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_LEQLDATE);
         }
         else if(type == "medate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_MEDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_MEDATE);
         }
         else if(type == "meldate")
         {
-            e->set_type(entry_t::ENTRY_TYPE_MELDATE);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_MELDATE);
         }
         else if(type == "indirect")
         {
-            e->set_type(entry_t::ENTRY_TYPE_INDIRECT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_INDIRECT);
         }
         else if(type == "default")
         {
-            e->set_type(entry_t::ENTRY_TYPE_DEFAULT);
+            e->set_type(entry_t::type_t::ENTRY_TYPE_DEFAULT);
         }
         else
         {
@@ -1643,54 +1643,54 @@ void parser::parse()
             exit(1);
         }
 
-        token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-        if(token.get_type() == lexer::token_t::TOKEN_TYPE_CHARACTER)
+        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+        if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER)
         {
             switch(token.get_character())
             {
             case '&': // <integer-type> & <integer>
                 switch(e->get_type())
                 {
-                case entry_t::ENTRY_TYPE_BYTE:
-                case entry_t::ENTRY_TYPE_UBYTE:
-                case entry_t::ENTRY_TYPE_SHORT:
-                case entry_t::ENTRY_TYPE_LESHORT:
-                case entry_t::ENTRY_TYPE_BESHORT:
-                case entry_t::ENTRY_TYPE_USHORT:
-                case entry_t::ENTRY_TYPE_ULESHORT:
-                case entry_t::ENTRY_TYPE_UBESHORT:
-                case entry_t::ENTRY_TYPE_LONG:
-                case entry_t::ENTRY_TYPE_LELONG:
-                case entry_t::ENTRY_TYPE_BELONG:
-                case entry_t::ENTRY_TYPE_MELONG:
-                case entry_t::ENTRY_TYPE_ULONG:
-                case entry_t::ENTRY_TYPE_ULELONG:
-                case entry_t::ENTRY_TYPE_UBELONG:
-                case entry_t::ENTRY_TYPE_UMELONG:
-                case entry_t::ENTRY_TYPE_BEID3:
-                case entry_t::ENTRY_TYPE_LEID3:
-                case entry_t::ENTRY_TYPE_UBEID3:
-                case entry_t::ENTRY_TYPE_ULEID3:
-                case entry_t::ENTRY_TYPE_QUAD:
-                case entry_t::ENTRY_TYPE_BEQUAD:
-                case entry_t::ENTRY_TYPE_LEQUAD:
-                case entry_t::ENTRY_TYPE_UQUAD:
-                case entry_t::ENTRY_TYPE_UBEQUAD:
-                case entry_t::ENTRY_TYPE_ULEQUAD:
-                case entry_t::ENTRY_TYPE_DATE:
-                case entry_t::ENTRY_TYPE_QDATE:
-                case entry_t::ENTRY_TYPE_LDATE:
-                case entry_t::ENTRY_TYPE_QLDATE:
-                case entry_t::ENTRY_TYPE_BEDATE:
-                case entry_t::ENTRY_TYPE_BEQDATE:
-                case entry_t::ENTRY_TYPE_BELDATE:
-                case entry_t::ENTRY_TYPE_BEQLDATE:
-                case entry_t::ENTRY_TYPE_LEDATE:
-                case entry_t::ENTRY_TYPE_LEQDATE:
-                case entry_t::ENTRY_TYPE_LELDATE:
-                case entry_t::ENTRY_TYPE_LEQLDATE:
-                case entry_t::ENTRY_TYPE_MEDATE:
-                case entry_t::ENTRY_TYPE_MELDATE:
+                case entry_t::type_t::ENTRY_TYPE_BYTE:
+                case entry_t::type_t::ENTRY_TYPE_UBYTE:
+                case entry_t::type_t::ENTRY_TYPE_SHORT:
+                case entry_t::type_t::ENTRY_TYPE_LESHORT:
+                case entry_t::type_t::ENTRY_TYPE_BESHORT:
+                case entry_t::type_t::ENTRY_TYPE_USHORT:
+                case entry_t::type_t::ENTRY_TYPE_ULESHORT:
+                case entry_t::type_t::ENTRY_TYPE_UBESHORT:
+                case entry_t::type_t::ENTRY_TYPE_LONG:
+                case entry_t::type_t::ENTRY_TYPE_LELONG:
+                case entry_t::type_t::ENTRY_TYPE_BELONG:
+                case entry_t::type_t::ENTRY_TYPE_MELONG:
+                case entry_t::type_t::ENTRY_TYPE_ULONG:
+                case entry_t::type_t::ENTRY_TYPE_ULELONG:
+                case entry_t::type_t::ENTRY_TYPE_UBELONG:
+                case entry_t::type_t::ENTRY_TYPE_UMELONG:
+                case entry_t::type_t::ENTRY_TYPE_BEID3:
+                case entry_t::type_t::ENTRY_TYPE_LEID3:
+                case entry_t::type_t::ENTRY_TYPE_UBEID3:
+                case entry_t::type_t::ENTRY_TYPE_ULEID3:
+                case entry_t::type_t::ENTRY_TYPE_QUAD:
+                case entry_t::type_t::ENTRY_TYPE_BEQUAD:
+                case entry_t::type_t::ENTRY_TYPE_LEQUAD:
+                case entry_t::type_t::ENTRY_TYPE_UQUAD:
+                case entry_t::type_t::ENTRY_TYPE_UBEQUAD:
+                case entry_t::type_t::ENTRY_TYPE_ULEQUAD:
+                case entry_t::type_t::ENTRY_TYPE_DATE:
+                case entry_t::type_t::ENTRY_TYPE_QDATE:
+                case entry_t::type_t::ENTRY_TYPE_LDATE:
+                case entry_t::type_t::ENTRY_TYPE_QLDATE:
+                case entry_t::type_t::ENTRY_TYPE_BEDATE:
+                case entry_t::type_t::ENTRY_TYPE_BEQDATE:
+                case entry_t::type_t::ENTRY_TYPE_BELDATE:
+                case entry_t::type_t::ENTRY_TYPE_BEQLDATE:
+                case entry_t::type_t::ENTRY_TYPE_LEDATE:
+                case entry_t::type_t::ENTRY_TYPE_LEQDATE:
+                case entry_t::type_t::ENTRY_TYPE_LELDATE:
+                case entry_t::type_t::ENTRY_TYPE_LEQLDATE:
+                case entry_t::type_t::ENTRY_TYPE_MEDATE:
+                case entry_t::type_t::ENTRY_TYPE_MELDATE:
                     break;
 
                 default:
@@ -1699,24 +1699,24 @@ void parser::parse()
                     snap::NOTREACHED();
 
                 }
-                token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-                if(token.get_type() != lexer::token_t::TOKEN_TYPE_INTEGER)
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
                 {
                     std::cerr << "error: a type followed by & must next be followed by an integer.\n";
                     exit(1);
                 }
                 e->set_mask(token.get_integer());
-                token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                 break;
 
             case '/': // <string-type> '/' <flags>, or "search" '/' <number>
                 switch(e->get_type())
                 {
-                case entry_t::ENTRY_TYPE_STRING:
-                case entry_t::ENTRY_TYPE_BESTRING16:
-                case entry_t::ENTRY_TYPE_LESTRING16:
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-                    if(token.get_type() != lexer::token_t::TOKEN_TYPE_STRING)
+                case entry_t::type_t::ENTRY_TYPE_STRING:
+                case entry_t::type_t::ENTRY_TYPE_BESTRING16:
+                case entry_t::type_t::ENTRY_TYPE_LESTRING16:
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                    if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_STRING)
                     {
                         std::cerr << "error: a search followed by / must next be followed by a set of flags.\n";
                         exit(1);
@@ -1758,13 +1758,13 @@ void parser::parse()
                             }
                         }
                     }
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                     break;
 
-                case entry_t::ENTRY_TYPE_PSTRING:
+                case entry_t::type_t::ENTRY_TYPE_PSTRING:
                     // only width of the string size is expected here
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-                    if(token.get_type() != lexer::token_t::TOKEN_TYPE_STRING)
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                    if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_STRING)
                     {
                         std::cerr << "error: a search followed by / must next be followed by a set of flags.\n";
                         exit(1);
@@ -1806,28 +1806,28 @@ void parser::parse()
                             }
                         }
                     }
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                     break;
 
-                case entry_t::ENTRY_TYPE_REGEX: // <regex> / <flags>  or  <regex> / <number>
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                case entry_t::type_t::ENTRY_TYPE_REGEX: // <regex> / <flags>  or  <regex> / <number>
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                     // TBD:
                     // I would imagine that both could be used (integer + flags)
                     // but it is not documented so at this point I read one or
                     // the other and that's enough with the existing files.
-                    if(token.get_type() == lexer::token_t::TOKEN_TYPE_INTEGER)
+                    if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
                     {
                         // the number of lines to check the regex against
                         e->set_maxlength(token.get_integer());
-                        token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-                        if(token.get_type() != lexer::token_t::TOKEN_TYPE_CHARACTER
+                        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                        if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
                         || token.get_character() != '/')
                         {
                             // no extra flags
                             break;
                         }
                     }
-                    if(token.get_type() == lexer::token_t::TOKEN_TYPE_STRING)
+                    if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_STRING)
                     {
                         // regex flags are 's' and 'c'
                         std::string flags(token.get_string());
@@ -1855,23 +1855,23 @@ void parser::parse()
                         std::cerr << "error: a search followed by / must next be followed by an integer and/or flags.\n";
                         exit(1);
                     }
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                     break;
 
-                case entry_t::ENTRY_TYPE_SEARCH:
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-                    if(token.get_type() == lexer::token_t::TOKEN_TYPE_INTEGER)
+                case entry_t::type_t::ENTRY_TYPE_SEARCH:
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                    if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
                     {
                         e->set_maxlength(token.get_integer());
-                        token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-                        if(token.get_type() != lexer::token_t::TOKEN_TYPE_CHARACTER
+                        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+                        if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
                         || token.get_character() != '/')
                         {
                             // no extra flags
                             break;
                         }
                     }
-                    if(token.get_type() == lexer::token_t::TOKEN_TYPE_STRING)
+                    if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_STRING)
                     {
                         std::string flags(token.get_string());
                         for(char const *f(flags.c_str()); *f != '\0'; ++f)
@@ -1914,7 +1914,7 @@ void parser::parse()
                         std::cerr << "error: a search followed by / must next be followed by an integer (count) or a string (flags).\n";
                         exit(1);
                     }
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                     break;
 
                 default:
@@ -1928,7 +1928,7 @@ void parser::parse()
             }
         }
 
-        if(token.get_type() != lexer::token_t::TOKEN_TYPE_CHARACTER
+        if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
         || token.get_character() != ' ')
         {
             std::cerr << "error: expected a space or tab after the type.\n";
@@ -1940,65 +1940,65 @@ void parser::parse()
         bool is_float(false);
         switch(e->get_type())
         {
-        case entry_t::ENTRY_TYPE_FLOAT:
-        case entry_t::ENTRY_TYPE_BEFLOAT:
-        case entry_t::ENTRY_TYPE_LEFLOAT:
-        case entry_t::ENTRY_TYPE_DOUBLE:
-        case entry_t::ENTRY_TYPE_BEDOUBLE:
-        case entry_t::ENTRY_TYPE_LEDOUBLE:
+        case entry_t::type_t::ENTRY_TYPE_FLOAT:
+        case entry_t::type_t::ENTRY_TYPE_BEFLOAT:
+        case entry_t::type_t::ENTRY_TYPE_LEFLOAT:
+        case entry_t::type_t::ENTRY_TYPE_DOUBLE:
+        case entry_t::type_t::ENTRY_TYPE_BEDOUBLE:
+        case entry_t::type_t::ENTRY_TYPE_LEDOUBLE:
             is_float = true;
             /*FLOWTHROUGH*/
-        case entry_t::ENTRY_TYPE_BYTE:
-        case entry_t::ENTRY_TYPE_UBYTE:
-        case entry_t::ENTRY_TYPE_SHORT:
-        case entry_t::ENTRY_TYPE_LESHORT:
-        case entry_t::ENTRY_TYPE_BESHORT:
-        case entry_t::ENTRY_TYPE_USHORT:
-        case entry_t::ENTRY_TYPE_ULESHORT:
-        case entry_t::ENTRY_TYPE_UBESHORT:
-        case entry_t::ENTRY_TYPE_LONG:
-        case entry_t::ENTRY_TYPE_LELONG:
-        case entry_t::ENTRY_TYPE_BELONG:
-        case entry_t::ENTRY_TYPE_MELONG:
-        case entry_t::ENTRY_TYPE_ULONG:
-        case entry_t::ENTRY_TYPE_ULELONG:
-        case entry_t::ENTRY_TYPE_UBELONG:
-        case entry_t::ENTRY_TYPE_UMELONG:
-        case entry_t::ENTRY_TYPE_BEID3:
-        case entry_t::ENTRY_TYPE_LEID3:
-        case entry_t::ENTRY_TYPE_UBEID3:
-        case entry_t::ENTRY_TYPE_ULEID3:
-        case entry_t::ENTRY_TYPE_QUAD:
-        case entry_t::ENTRY_TYPE_BEQUAD:
-        case entry_t::ENTRY_TYPE_LEQUAD:
-        case entry_t::ENTRY_TYPE_UQUAD:
-        case entry_t::ENTRY_TYPE_UBEQUAD:
-        case entry_t::ENTRY_TYPE_ULEQUAD:
-        case entry_t::ENTRY_TYPE_DATE:
-        case entry_t::ENTRY_TYPE_QDATE:
-        case entry_t::ENTRY_TYPE_LDATE:
-        case entry_t::ENTRY_TYPE_QLDATE:
-        case entry_t::ENTRY_TYPE_BEDATE:
-        case entry_t::ENTRY_TYPE_BEQDATE:
-        case entry_t::ENTRY_TYPE_BELDATE:
-        case entry_t::ENTRY_TYPE_BEQLDATE:
-        case entry_t::ENTRY_TYPE_LEDATE:
-        case entry_t::ENTRY_TYPE_LEQDATE:
-        case entry_t::ENTRY_TYPE_LELDATE:
-        case entry_t::ENTRY_TYPE_LEQLDATE:
-        case entry_t::ENTRY_TYPE_MEDATE:
-        case entry_t::ENTRY_TYPE_MELDATE:
+        case entry_t::type_t::ENTRY_TYPE_BYTE:
+        case entry_t::type_t::ENTRY_TYPE_UBYTE:
+        case entry_t::type_t::ENTRY_TYPE_SHORT:
+        case entry_t::type_t::ENTRY_TYPE_LESHORT:
+        case entry_t::type_t::ENTRY_TYPE_BESHORT:
+        case entry_t::type_t::ENTRY_TYPE_USHORT:
+        case entry_t::type_t::ENTRY_TYPE_ULESHORT:
+        case entry_t::type_t::ENTRY_TYPE_UBESHORT:
+        case entry_t::type_t::ENTRY_TYPE_LONG:
+        case entry_t::type_t::ENTRY_TYPE_LELONG:
+        case entry_t::type_t::ENTRY_TYPE_BELONG:
+        case entry_t::type_t::ENTRY_TYPE_MELONG:
+        case entry_t::type_t::ENTRY_TYPE_ULONG:
+        case entry_t::type_t::ENTRY_TYPE_ULELONG:
+        case entry_t::type_t::ENTRY_TYPE_UBELONG:
+        case entry_t::type_t::ENTRY_TYPE_UMELONG:
+        case entry_t::type_t::ENTRY_TYPE_BEID3:
+        case entry_t::type_t::ENTRY_TYPE_LEID3:
+        case entry_t::type_t::ENTRY_TYPE_UBEID3:
+        case entry_t::type_t::ENTRY_TYPE_ULEID3:
+        case entry_t::type_t::ENTRY_TYPE_QUAD:
+        case entry_t::type_t::ENTRY_TYPE_BEQUAD:
+        case entry_t::type_t::ENTRY_TYPE_LEQUAD:
+        case entry_t::type_t::ENTRY_TYPE_UQUAD:
+        case entry_t::type_t::ENTRY_TYPE_UBEQUAD:
+        case entry_t::type_t::ENTRY_TYPE_ULEQUAD:
+        case entry_t::type_t::ENTRY_TYPE_DATE:
+        case entry_t::type_t::ENTRY_TYPE_QDATE:
+        case entry_t::type_t::ENTRY_TYPE_LDATE:
+        case entry_t::type_t::ENTRY_TYPE_QLDATE:
+        case entry_t::type_t::ENTRY_TYPE_BEDATE:
+        case entry_t::type_t::ENTRY_TYPE_BEQDATE:
+        case entry_t::type_t::ENTRY_TYPE_BELDATE:
+        case entry_t::type_t::ENTRY_TYPE_BEQLDATE:
+        case entry_t::type_t::ENTRY_TYPE_LEDATE:
+        case entry_t::type_t::ENTRY_TYPE_LEQDATE:
+        case entry_t::type_t::ENTRY_TYPE_LELDATE:
+        case entry_t::type_t::ENTRY_TYPE_LEQLDATE:
+        case entry_t::type_t::ENTRY_TYPE_MEDATE:
+        case entry_t::type_t::ENTRY_TYPE_MELDATE:
             // integers expect a number of flags so we manage these here
-            token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
             // first check whether we have a '!' (must be the very first)
-            if(token.get_type() == lexer::token_t::TOKEN_TYPE_CHARACTER
+            if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
             && token.get_character() == '!')
             {
                 e->set_flags(entry_t::ENTRY_FLAG_NOT);
-                token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
             }
             {
-                bool has_operator(token.get_type() == lexer::token_t::TOKEN_TYPE_CHARACTER);
+                bool has_operator(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_CHARACTER);
                 if(has_operator)
                 {
                     // verify that it is legal with a floating point value if such
@@ -2047,16 +2047,16 @@ void parser::parse()
                         snap::NOTREACHED();
 
                     }
-                    token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+                    token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
                 }
                 // one special case here: "x"
-                if(token.get_type() == lexer::token_t::TOKEN_TYPE_STRING
+                if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_STRING
                 && token.get_string() == "x"
                 && !has_operator)
                 {
                     e->set_flags(entry_t::ENTRY_FLAG_TRUE);
                 }
-                else if(token.get_type() != lexer::token_t::TOKEN_TYPE_INTEGER)
+                else if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_INTEGER)
                 {
                     std::cerr << "error: a number was expected for an entry specifying a number type.\n";
                     exit(1);
@@ -2072,15 +2072,15 @@ void parser::parse()
             }
             break;
 
-        case entry_t::ENTRY_TYPE_STRING:
-        case entry_t::ENTRY_TYPE_PSTRING:
-        case entry_t::ENTRY_TYPE_BESTRING16:
-        case entry_t::ENTRY_TYPE_LESTRING16:
-        case entry_t::ENTRY_TYPE_SEARCH:
+        case entry_t::type_t::ENTRY_TYPE_STRING:
+        case entry_t::type_t::ENTRY_TYPE_PSTRING:
+        case entry_t::type_t::ENTRY_TYPE_BESTRING16:
+        case entry_t::type_t::ENTRY_TYPE_LESTRING16:
+        case entry_t::type_t::ENTRY_TYPE_SEARCH:
             // strings can start with !, !=, !<, !>, =, <, >
             // however, we better read the string as a whole
             {
-                token = f_lexer->get_token(lexer::LEXER_MODE_REGEX);
+                token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_REGEX);
                 std::string str(token.get_string());
                 if(str[0] == '!')
                 {
@@ -2109,20 +2109,20 @@ void parser::parse()
             }
             break;
 
-        case entry_t::ENTRY_TYPE_REGEX:
-            token = f_lexer->get_token(lexer::LEXER_MODE_REGEX);
+        case entry_t::type_t::ENTRY_TYPE_REGEX:
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_REGEX);
             e->set_string(token.get_string());
             break;
 
-        case entry_t::ENTRY_TYPE_INDIRECT:
+        case entry_t::type_t::ENTRY_TYPE_INDIRECT:
             // the indirect may or may not be followed by the 'x' before
             // the message... since we ignore the message we can also
             // ignore the x here
             break;
 
-        case entry_t::ENTRY_TYPE_DEFAULT:
-            token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
-            if(token.get_type() != lexer::token_t::TOKEN_TYPE_STRING
+        case entry_t::type_t::ENTRY_TYPE_DEFAULT:
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
+            if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_STRING
             || token.get_string() != "x")
             {
                 std::cerr << "error: default must always be used with \"x\".\n";
@@ -2131,14 +2131,14 @@ void parser::parse()
             e->set_flags(entry_t::ENTRY_FLAG_TRUE);
             break;
 
-        case entry_t::ENTRY_TYPE_UNKNOWN:
+        case entry_t::type_t::ENTRY_TYPE_UNKNOWN:
             std::cerr << "error: entry type still unknown when defining its value.\n";
             exit(1);
             snap::NOTREACHED();
 
         }
-        token = f_lexer->get_token(lexer::LEXER_MODE_MESSAGE);
-        if(token.get_type() == lexer::token_t::TOKEN_TYPE_STRING)
+        token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_MESSAGE);
+        if(token.get_type() == lexer::token_t::type_t::TOKEN_TYPE_STRING)
         {
             // We don't do anything with the message, but just in case I
             // show here that we'd have to skip the spaces before saving it
@@ -2150,9 +2150,9 @@ void parser::parse()
             //e->set_message(msg);
 
             // we can switch back to normal to read the \n
-            token = f_lexer->get_token(lexer::LEXER_MODE_NORMAL);
+            token = f_lexer->get_token(lexer::mode_t::LEXER_MODE_NORMAL);
         }
-        if(token.get_type() != lexer::token_t::TOKEN_TYPE_CHARACTER
+        if(token.get_type() != lexer::token_t::type_t::TOKEN_TYPE_CHARACTER
         || token.get_character() != '\n')
         {
             std::cerr << "error: expected an optional message and a new line at the end of the line.\n";
@@ -2236,76 +2236,76 @@ void parser::output_entry(size_t start, size_t end)
             typedef void (recursive_output::*output_func_t)(size_t pos);
             static output_func_t const output_by_type[] =
             {
-                [entry_t::ENTRY_TYPE_UNKNOWN] = &recursive_output::output_unknown,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_UNKNOWN)] = &recursive_output::output_unknown,
 
                 // int -- 1 byte
-                [entry_t::ENTRY_TYPE_BYTE] = &recursive_output::output_byte,
-                [entry_t::ENTRY_TYPE_UBYTE] = &recursive_output::output_ubyte,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BYTE)] = &recursive_output::output_byte,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_UBYTE)] = &recursive_output::output_ubyte,
                 // int -- 2 bytes
-                [entry_t::ENTRY_TYPE_SHORT] = &recursive_output::output_short,
-                [entry_t::ENTRY_TYPE_LESHORT] = &recursive_output::output_leshort,
-                [entry_t::ENTRY_TYPE_BESHORT] = &recursive_output::output_beshort,
-                [entry_t::ENTRY_TYPE_USHORT] = &recursive_output::output_ushort,
-                [entry_t::ENTRY_TYPE_ULESHORT] = &recursive_output::output_uleshort,
-                [entry_t::ENTRY_TYPE_UBESHORT] = &recursive_output::output_ubeshort,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_SHORT)] = &recursive_output::output_short,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LESHORT)] = &recursive_output::output_leshort,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BESHORT)] = &recursive_output::output_beshort,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_USHORT)] = &recursive_output::output_ushort,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_ULESHORT)] = &recursive_output::output_uleshort,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_UBESHORT)] = &recursive_output::output_ubeshort,
                 // int -- 4 bytes
-                [entry_t::ENTRY_TYPE_LONG] = &recursive_output::output_long,
-                [entry_t::ENTRY_TYPE_LELONG] = &recursive_output::output_lelong,
-                [entry_t::ENTRY_TYPE_BELONG] = &recursive_output::output_belong,
-                [entry_t::ENTRY_TYPE_MELONG] = &recursive_output::output_melong,
-                [entry_t::ENTRY_TYPE_ULONG] = &recursive_output::output_ulong,
-                [entry_t::ENTRY_TYPE_ULELONG] = &recursive_output::output_ulelong,
-                [entry_t::ENTRY_TYPE_UBELONG] = &recursive_output::output_ubelong,
-                [entry_t::ENTRY_TYPE_UMELONG] = &recursive_output::output_umelong,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LONG)] = &recursive_output::output_long,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LELONG)] = &recursive_output::output_lelong,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BELONG)] = &recursive_output::output_belong,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_MELONG)] = &recursive_output::output_melong,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_ULONG)] = &recursive_output::output_ulong,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_ULELONG)] = &recursive_output::output_ulelong,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_UBELONG)] = &recursive_output::output_ubelong,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_UMELONG)] = &recursive_output::output_umelong,
                 // int -- 4 bytes -- an ID3 size is 32 bits defined as: ((size & 0x0FFFFFFF) * 4)
-                [entry_t::ENTRY_TYPE_BEID3] = &recursive_output::output_beid3,
-                [entry_t::ENTRY_TYPE_LEID3] = &recursive_output::output_leid3,
-                [entry_t::ENTRY_TYPE_UBEID3] = &recursive_output::output_ubeid3,
-                [entry_t::ENTRY_TYPE_ULEID3] = &recursive_output::output_uleid3,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BEID3)] = &recursive_output::output_beid3,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LEID3)] = &recursive_output::output_leid3,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_UBEID3)] = &recursive_output::output_ubeid3,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_ULEID3)] = &recursive_output::output_uleid3,
                 // int -- 8 bytes
-                [entry_t::ENTRY_TYPE_QUAD] = &recursive_output::output_quad,
-                [entry_t::ENTRY_TYPE_BEQUAD] = &recursive_output::output_bequad,
-                [entry_t::ENTRY_TYPE_LEQUAD] = &recursive_output::output_lequad,
-                [entry_t::ENTRY_TYPE_UQUAD] = &recursive_output::output_uquad,
-                [entry_t::ENTRY_TYPE_UBEQUAD] = &recursive_output::output_ubequad,
-                [entry_t::ENTRY_TYPE_ULEQUAD] = &recursive_output::output_ulequad,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_QUAD)] = &recursive_output::output_quad,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BEQUAD)] = &recursive_output::output_bequad,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LEQUAD)] = &recursive_output::output_lequad,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_UQUAD)] = &recursive_output::output_uquad,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_UBEQUAD)] = &recursive_output::output_ubequad,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_ULEQUAD)] = &recursive_output::output_ulequad,
                 // float -- 4 bytes
-                [entry_t::ENTRY_TYPE_FLOAT] = &recursive_output::output_float,
-                [entry_t::ENTRY_TYPE_BEFLOAT] = &recursive_output::output_befloat,
-                [entry_t::ENTRY_TYPE_LEFLOAT] = &recursive_output::output_lefloat,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_FLOAT)] = &recursive_output::output_float,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BEFLOAT)] = &recursive_output::output_befloat,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LEFLOAT)] = &recursive_output::output_lefloat,
                 // float -- 8 bytes
-                [entry_t::ENTRY_TYPE_DOUBLE] = &recursive_output::output_double,
-                [entry_t::ENTRY_TYPE_BEDOUBLE] = &recursive_output::output_bedouble,
-                [entry_t::ENTRY_TYPE_LEDOUBLE] = &recursive_output::output_ledouble,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_DOUBLE)] = &recursive_output::output_double,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BEDOUBLE)] = &recursive_output::output_bedouble,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LEDOUBLE)] = &recursive_output::output_ledouble,
                 // "text" (if value includes characters considered binary bytes then it is considered binary too)
-                [entry_t::ENTRY_TYPE_STRING] = &recursive_output::output_string,
-                [entry_t::ENTRY_TYPE_PSTRING] = &recursive_output::output_pstring,
-                [entry_t::ENTRY_TYPE_BESTRING16] = &recursive_output::output_besearch16,
-                [entry_t::ENTRY_TYPE_LESTRING16] = &recursive_output::output_lesearch16,
-                [entry_t::ENTRY_TYPE_SEARCH] = &recursive_output::output_search,
-                [entry_t::ENTRY_TYPE_REGEX] = &recursive_output::output_regex,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_STRING)] = &recursive_output::output_string,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_PSTRING)] = &recursive_output::output_pstring,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BESTRING16)] = &recursive_output::output_besearch16,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LESTRING16)] = &recursive_output::output_lesearch16,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_SEARCH)] = &recursive_output::output_search,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_REGEX)] = &recursive_output::output_regex,
                 // date
-                [entry_t::ENTRY_TYPE_DATE] = &recursive_output::output_date,
-                [entry_t::ENTRY_TYPE_QDATE] = &recursive_output::output_qdate,
-                [entry_t::ENTRY_TYPE_LDATE] = &recursive_output::output_ldate,
-                [entry_t::ENTRY_TYPE_QLDATE] = &recursive_output::output_qldate,
-                [entry_t::ENTRY_TYPE_BEDATE] = &recursive_output::output_bedate,
-                [entry_t::ENTRY_TYPE_BEQDATE] = &recursive_output::output_beqdate,
-                [entry_t::ENTRY_TYPE_BELDATE] = &recursive_output::output_beldate,
-                [entry_t::ENTRY_TYPE_BEQLDATE] = &recursive_output::output_beqldate,
-                [entry_t::ENTRY_TYPE_LEDATE] = &recursive_output::output_ledate,
-                [entry_t::ENTRY_TYPE_LEQDATE] = &recursive_output::output_leqdate,
-                [entry_t::ENTRY_TYPE_LELDATE] = &recursive_output::output_leldate,
-                [entry_t::ENTRY_TYPE_LEQLDATE] = &recursive_output::output_leqldate,
-                [entry_t::ENTRY_TYPE_MEDATE] = &recursive_output::output_medate,
-                [entry_t::ENTRY_TYPE_MELDATE] = &recursive_output::output_meldate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_DATE)] = &recursive_output::output_date,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_QDATE)] = &recursive_output::output_qdate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LDATE)] = &recursive_output::output_ldate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_QLDATE)] = &recursive_output::output_qldate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BEDATE)] = &recursive_output::output_bedate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BEQDATE)] = &recursive_output::output_beqdate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BELDATE)] = &recursive_output::output_beldate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_BEQLDATE)] = &recursive_output::output_beqldate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LEDATE)] = &recursive_output::output_ledate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LEQDATE)] = &recursive_output::output_leqdate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LELDATE)] = &recursive_output::output_leldate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_LEQLDATE)] = &recursive_output::output_leqldate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_MEDATE)] = &recursive_output::output_medate,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_MELDATE)] = &recursive_output::output_meldate,
                 // special
-                [entry_t::ENTRY_TYPE_INDIRECT] = &recursive_output::output_indirect,
-                [entry_t::ENTRY_TYPE_DEFAULT] = &recursive_output::output_default
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_INDIRECT)] = &recursive_output::output_indirect,
+                [static_cast<int>(entry_t::type_t::ENTRY_TYPE_DEFAULT)] = &recursive_output::output_default
             };
 
             std::cout << "if(";
-            (this->*output_by_type[f_entries[pos]->get_type()])(pos);
+            (this->*output_by_type[static_cast<int>(f_entries[pos]->get_type())])(pos);
             std::cout << ")\n{\n";
         }
 

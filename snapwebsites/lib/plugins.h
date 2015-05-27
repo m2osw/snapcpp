@@ -16,6 +16,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
+#include "snap_exception.h"
+
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_ptr_auto_init.h>
 
@@ -31,27 +33,26 @@ namespace snap
 namespace plugins
 {
 
-class plugin_exception : public std::runtime_error
+class plugin_exception : public snap_exception
 {
 public:
-    plugin_exception(const QString& what_msg) : runtime_error(what_msg.toUtf8().data())
-    {
-    }
+    plugin_exception(char const *        what_msg) : snap_exception("plugin", what_msg) {}
+    plugin_exception(std::string const & what_msg) : snap_exception("plugin", what_msg) {}
+    plugin_exception(QString const &     what_msg) : snap_exception("plugin", what_msg) {}
 };
 
 class plugin_exception_invalid_order : public plugin_exception
 {
 public:
-    plugin_exception_invalid_order(const QString& what_msg)
-        : plugin_exception(what_msg)
-    {
-    }
+    plugin_exception_invalid_order(char const *        what_msg) : plugin_exception(what_msg) {}
+    plugin_exception_invalid_order(std::string const & what_msg) : plugin_exception(what_msg) {}
+    plugin_exception_invalid_order(QString const &     what_msg) : plugin_exception(what_msg) {}
 };
 
 class plugin_signal
 {
 public:
-    plugin_signal(const char *name);
+    plugin_signal(const char * name);
 };
 
 
@@ -83,14 +84,14 @@ typedef std::shared_ptr<plugin>                 plugin_ptr_t;
 typedef QMap<QString, plugin *>                 plugin_list_t;
 typedef controlled_vars::ptr_auto_init<plugin>  plugin_zptr_t;
 
-QStringList             list_all(QString const& plugin_path);
-bool                    load(QString const& plugin_path, plugin_ptr_t server, QStringList const& list_of_plugins);
-QString                 find_plugin_filename(QStringList const& plugin_paths, QString const& name);
-bool                    exists(QString const& name);
-void                    register_plugin(QString const& name, plugin *p);
-plugin *                get_plugin(QString const& name);
-plugin_list_t const&    get_plugin_list();
-bool                    verify_plugin_name(QString const& name);
+QStringList             list_all(QString const & plugin_path);
+bool                    load(QString const & plugin_path, plugin_ptr_t server, QStringList const & list_of_plugins);
+QString                 find_plugin_filename(QStringList const & plugin_paths, QString const & name);
+bool                    exists(QString const & name);
+void                    register_plugin(QString const & name, plugin * p);
+plugin *                get_plugin(QString const & name);
+plugin_list_t const &   get_plugin_list();
+bool                    verify_plugin_name(QString const & name);
 
 /** \brief Initialize a plugin by creating a mini-factory.
  *
@@ -178,11 +179,11 @@ bool                    verify_plugin_name(QString const& name);
         ::snap::server::instance()->signal_listen_bootstrap( \
             boost::bind(&name::on_bootstrap, f_plugin, _1)); } \
     virtual ~plugin_##name##_factory() { delete f_plugin; } \
-    name *instance() { return f_plugin; } \
+    name * instance() { return f_plugin; } \
     virtual int version_major() const { return major; } \
     virtual int version_minor() const { return minor; } \
     virtual QString version() const { return #major "." #minor; } \
-    private: name *f_plugin; \
+    private: name * f_plugin; \
     } g_plugin_##name##_factory;
 
 

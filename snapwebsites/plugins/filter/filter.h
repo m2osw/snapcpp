@@ -28,17 +28,17 @@ namespace filter
 class filter_exception : public snap_exception
 {
 public:
-    filter_exception(char const *       what_msg) : snap_exception("filter", what_msg) {}
-    filter_exception(std::string const& what_msg) : snap_exception("filter", what_msg) {}
-    filter_exception(QString const&     what_msg) : snap_exception("filter", what_msg) {}
+    filter_exception(char const *        what_msg) : snap_exception("filter", what_msg) {}
+    filter_exception(std::string const & what_msg) : snap_exception("filter", what_msg) {}
+    filter_exception(QString const &     what_msg) : snap_exception("filter", what_msg) {}
 };
 
 class filter_exception_invalid_arguement : public filter_exception
 {
 public:
-    filter_exception_invalid_arguement(char const *       what_msg) : filter_exception(what_msg) {}
-    filter_exception_invalid_arguement(std::string const& what_msg) : filter_exception(what_msg) {}
-    filter_exception_invalid_arguement(QString const&     what_msg) : filter_exception(what_msg) {}
+    filter_exception_invalid_arguement(char const *        what_msg) : filter_exception(what_msg) {}
+    filter_exception_invalid_arguement(std::string const & what_msg) : filter_exception(what_msg) {}
+    filter_exception_invalid_arguement(QString const &     what_msg) : filter_exception(what_msg) {}
 };
 
 
@@ -47,7 +47,7 @@ public:
 class filter : public plugins::plugin
 {
 public:
-    enum token_t
+    enum class token_t
     {
         TOK_UNDEFINED,
         TOK_IDENTIFIER,
@@ -66,7 +66,7 @@ public:
         QString                 f_value;
 
         parameter_t()
-            : f_type(TOK_UNDEFINED)
+            : f_type(token_t::TOK_UNDEFINED)
             //, f_name("") -- auto-init
             //, f_value("") -- auto-init
         {
@@ -74,21 +74,21 @@ public:
 
         bool is_null() const
         {
-            return f_type == TOK_UNDEFINED || f_type == TOK_INVALID;
+            return f_type == token_t::TOK_UNDEFINED || f_type == token_t::TOK_INVALID;
         }
 
         void reset()
         {
-            f_type = TOK_INVALID;
+            f_type = token_t::TOK_INVALID;
             f_name = "";
             f_value = "";
         }
 
-        bool operator == (parameter_t const& rhs) const
+        bool operator == (parameter_t const & rhs) const
         {
             return f_name == rhs.f_name;
         }
-        bool operator < (parameter_t const& rhs) const
+        bool operator < (parameter_t const & rhs) const
         {
             return f_name < rhs.f_name;
         }
@@ -97,25 +97,25 @@ public:
         {
             switch(type)
             {
-            case TOK_UNDEFINED:
+            case token_t::TOK_UNDEFINED:
                 return "undefined";
 
-            case TOK_IDENTIFIER:
+            case token_t::TOK_IDENTIFIER:
                 return "identifier";
 
-            case TOK_STRING:
+            case token_t::TOK_STRING:
                 return "string";
 
-            case TOK_INTEGER:
+            case token_t::TOK_INTEGER:
                 return "integer";
 
-            case TOK_REAL:
+            case token_t::TOK_REAL:
                 return "real";
 
-            case TOK_SEPARATOR:
+            case token_t::TOK_SEPARATOR:
                 return "separator";
 
-            case TOK_INVALID:
+            case token_t::TOK_INVALID:
                 return "invalid";
 
             }
@@ -218,7 +218,7 @@ public:
             return valid;
         }
 
-        bool has_arg(QString const& name, int position = -1)
+        bool has_arg(QString const & name, int position = -1)
         {
             QVector<parameter_t>::const_iterator it(f_parameters.end());
             if(!name.isEmpty())
@@ -248,7 +248,7 @@ public:
             return it != f_parameters.end();
         }
 
-        parameter_t get_arg(QString const& name, int position = -1, token_t type = TOK_UNDEFINED)
+        parameter_t get_arg(QString const& name, int position = -1, token_t type = token_t::TOK_UNDEFINED)
         {
             parameter_t const null;
             QVector<parameter_t>::const_iterator it(f_parameters.end());
@@ -286,7 +286,7 @@ public:
                         .arg(name).arg(position));
                 return null;
             }
-            if(type != TOK_UNDEFINED && it->f_type != type)
+            if(type != token_t::TOK_UNDEFINED && it->f_type != type)
             {
                 error(QString("parameter \"%1\" (position: %2) is a %3 not of the expected type: %4.")
                         .arg(name).arg(position).arg(parameter_t::type_name(it->f_type)).arg(parameter_t::type_name(type)));
@@ -295,7 +295,7 @@ public:
             return *it;
         }
 
-        void error(QString const& msg)
+        void error(QString const & msg)
         {
             f_error = true;
             f_replacement = QString("<span class=\"filter-error\"><span class=\"filter-error-word\">error:</span> %1</span>")
@@ -316,16 +316,16 @@ public:
 
     static filter *     instance();
     virtual QString     description() const;
-    static bool         filter_uri(QString& uri);
+    static bool         filter_uri(QString & uri);
 
     void                on_bootstrap(::snap::snap_child *snap);
-    void                on_xss_filter(QDomNode& node, QString const& accepted_tags, QString const& accepted_attributes);
-    void                on_token_filter(content::path_info_t& ipath, QDomDocument& xml);
+    void                on_xss_filter(QDomNode & node, QString const & accepted_tags, QString const & accepted_attributes);
+    void                on_token_filter(content::path_info_t & ipath, QDomDocument & xml);
 
-    static QString      encode_text_for_html(QString const& text);
+    static QString      encode_text_for_html(QString const & text);
 
-    SNAP_SIGNAL(replace_token, (content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, token_info_t& token), (ipath, plugin_owner, xml, token));
-    SNAP_SIGNAL_WITH_MODE(filter_text, (content::path_info_t& ipath, QDomDocument& xml, QString& result, bool& changed), (ipath, xml, result, changed), NEITHER);
+    SNAP_SIGNAL(replace_token, (content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, token_info_t & token), (ipath, plugin_owner, xml, token));
+    SNAP_SIGNAL_WITH_MODE(filter_text, (content::path_info_t & ipath, QDomDocument & xml, QString & result, bool & changed), (ipath, xml, result, changed), NEITHER);
 
 private:
     zpsnap_child_t      f_snap;

@@ -42,12 +42,12 @@ public:
     {
     }
 
-    QCaseInsensitiveString(const QChar *uni, int sz)
+    QCaseInsensitiveString(QChar const * uni, int sz)
         : QString(uni, sz)
     {
     }
 
-    QCaseInsensitiveString(const QChar *uni)
+    QCaseInsensitiveString(QChar const * uni)
         : QString(uni)
     {
     }
@@ -62,81 +62,81 @@ public:
     {
     }
 
-    QCaseInsensitiveString(const QLatin1String& str)
+    QCaseInsensitiveString(QLatin1String const & str)
         : QString(str)
     {
     }
 
-    QCaseInsensitiveString(const QString& other)
+    QCaseInsensitiveString(QString const & other)
         : QString(other)
     {
     }
 
-    QCaseInsensitiveString(const QCaseInsensitiveString& other)
+    QCaseInsensitiveString(QCaseInsensitiveString const & other)
         : QString(other)
     {
     }
 
-    QCaseInsensitiveString(const char *str)
+    QCaseInsensitiveString(char const * str)
         : QString(str)
     {
     }
 
-    QCaseInsensitiveString(const QByteArray &ba)
+    QCaseInsensitiveString(QByteArray const & ba)
         : QString(ba)
     {
     }
 
-    bool operator == (const QString& rhs) const
+    bool operator == (QString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) == 0;
     }
-    bool operator == (const QCaseInsensitiveString& rhs) const
+    bool operator == (QCaseInsensitiveString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) == 0;
     }
 
-    bool operator != (const QString& rhs) const
+    bool operator != (QString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) != 0;
     }
-    bool operator != (const QCaseInsensitiveString& rhs) const
+    bool operator != (QCaseInsensitiveString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) != 0;
     }
 
-    bool operator < (const QString& rhs) const
+    bool operator < (QString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) < 0;
     }
-    bool operator < (const QCaseInsensitiveString& rhs) const
+    bool operator < (QCaseInsensitiveString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) < 0;
     }
 
-    bool operator <= (const QString& rhs) const
+    bool operator <= (QString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) <= 0;
     }
-    bool operator <= (const QCaseInsensitiveString& rhs) const
+    bool operator <= (QCaseInsensitiveString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) <= 0;
     }
 
-    bool operator > (const QString& rhs) const
+    bool operator > (QString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) > 0;
     }
-    bool operator > (const QCaseInsensitiveString& rhs) const
+    bool operator > (QCaseInsensitiveString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) > 0;
     }
 
-    bool operator >= (const QString& rhs) const
+    bool operator >= (QString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) >= 0;
     }
-    bool operator >= (const QCaseInsensitiveString& rhs) const
+    bool operator >= (QCaseInsensitiveString const & rhs) const
     {
         return compare(rhs, Qt::CaseInsensitive) >= 0;
     }

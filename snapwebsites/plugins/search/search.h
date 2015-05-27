@@ -23,11 +23,11 @@ namespace snap
 namespace search
 {
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_SEARCH_STATUS
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 
@@ -42,8 +42,8 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(::snap::snap_child *snap);
-    void                    on_improve_signature(QString const& path, QString& signature);
-    void                    on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    void                    on_improve_signature(QString const & path, QString & signature);
+    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
 
 private:
     void                    content_update(int64_t variables_timestamp);

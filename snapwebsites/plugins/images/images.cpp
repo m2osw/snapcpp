@@ -52,24 +52,24 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_IMAGES_ACTION:
+    case name_t::SNAP_NAME_IMAGES_ACTION:
         return "images";
 
-    case SNAP_NAME_IMAGES_MODIFIED:
+    case name_t::SNAP_NAME_IMAGES_MODIFIED:
         return "images::modified";
 
-    case SNAP_NAME_IMAGES_ROW:
+    case name_t::SNAP_NAME_IMAGES_ROW:
         return "images";
 
-    case SNAP_NAME_IMAGES_SCRIPT:
+    case name_t::SNAP_NAME_IMAGES_SCRIPT:
         return "images::script";
 
-    case SNAP_NAME_IMAGES_SIGNAL_NAME:
+    case name_t::SNAP_NAME_IMAGES_SIGNAL_NAME:
         return "images_udp_signal";
 
     default:
         // invalid index
-        throw snap_logic_exception(QString("invalid SNAP_NAME_OUTPUT_... (%1)").arg(static_cast<int>(name)));
+        throw snap_logic_exception(QString("invalid name_t::SNAP_NAME_OUTPUT_... (%1)").arg(static_cast<int>(name)));
 
     }
     NOTREACHED();
@@ -324,7 +324,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
     if(plugin_info.get_plugin()
     || plugin_info.get_plugin_if_renamed())
     {
-        return VIRTUAL_PATH_INVALID;
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
     content::content *content_plugin(content::content::instance());
@@ -333,7 +333,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
     {
         // if it exists, it's not dynamic so ignore it (this should
         // never happen because it is tested in the path plugin!)
-        return VIRTUAL_PATH_INVALID;
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
     content::path_info_t parent_ipath;
@@ -353,33 +353,33 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
         // so for now, ignore such (and that gives a way for other plugins
         // to support similar capabilities as the images plugin, just at
         // a different level!)
-        return VIRTUAL_PATH_INVALID;
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
     // is the parent an attachment?
-    QString owner(content_table->row(parent_ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
-    if(owner != content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN))
+    QString owner(content_table->row(parent_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+    if(owner != content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN))
     {
         // something is dearly wrong if empty... and if not the attachment
         // plugin, we assume we do not support this path
-        return VIRTUAL_PATH_INVALID;
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
     // verify that the attachment key exists
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     if(!revision_table->exists(parent_ipath.get_revision_key())
-    || !revision_table->row(parent_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
+    || !revision_table->row(parent_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         // again, check whether we have an attachment...
-        return VIRTUAL_PATH_INVALID;
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
     // get the key of that attachment, it should be a file md5
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(parent_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         // no key?!
-        return VIRTUAL_PATH_INVALID;
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
     // the field name is the basename of the ipath preceeded by the
@@ -389,24 +389,24 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
     if(pos <= 0)
     {
         // what the heck happened?!
-        return VIRTUAL_PATH_INVALID;
+        return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
     QString filename(cpath.mid(pos + 1));
-    QString field_name(QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)).arg(filename));
+    QString field_name(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA)).arg(filename));
 
     // Does the file exist at this point?
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
-        return VIRTUAL_PATH_NOT_AVAILABLE;
+        return virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE;
     }
 
     // tell the path plugin that we know how to handle this one
     plugin_info.set_plugin_if_renamed(this, parent_ipath.get_cpath());
     ipath.set_parameter("attachment_field", field_name);
 
-    return VIRTUAL_PATH_READY;
+    return virtual_path_t::VIRTUAL_PATH_READY;
 }
 
 
@@ -418,11 +418,11 @@ void images::on_listener_check(snap_uri const& uri, content::path_info_t& page_i
     path::dynamic_plugin_t info;
     switch(check_virtual_path(page_ipath, info))
     {
-    case VIRTUAL_PATH_READY:
+    case virtual_path_t::VIRTUAL_PATH_READY:
         result.setAttribute("status", "success");
         break;
 
-    case VIRTUAL_PATH_INVALID:
+    case virtual_path_t::VIRTUAL_PATH_INVALID:
         {
             // this is not acceptable
             QDomElement message(doc.createElement("message"));
@@ -433,7 +433,7 @@ void images::on_listener_check(snap_uri const& uri, content::path_info_t& page_i
         }
         break;
 
-    case VIRTUAL_PATH_NOT_AVAILABLE:
+    case virtual_path_t::VIRTUAL_PATH_NOT_AVAILABLE:
         // TODO: enhance this code so we can know whether it is worth
         //       waiting (i.e. if a script runs, we would know what
         //       path will be created and thus immediately know whether
@@ -462,7 +462,7 @@ bool images::on_path_execute(content::path_info_t& ipath)
     if(renamed.isEmpty())
     {
         attachment_ipath = ipath;
-        field_name = content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA);
+        field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
     }
     else
     {
@@ -473,11 +473,11 @@ bool images::on_path_execute(content::path_info_t& ipath)
     }
 
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         // somehow the file key is not available
-        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
                         .arg(field_name)
@@ -491,10 +491,10 @@ bool images::on_path_execute(content::path_info_t& ipath)
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
         // somehow the file data is not available
-        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("The attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\".")
-                        .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
+                        .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA))
                         .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
         NOTREACHED();
     }
@@ -514,7 +514,7 @@ bool images::on_path_execute(content::path_info_t& ipath)
     QByteArray data(file_row->cell(field_name)->value().binaryValue());
 
     // get the attachment MIME type and tweak it if it is a known text format
-    //QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    //QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
     //QString content_type(attachment_mime_type.stringValue());
     //if(content_type == "text/javascript"
     //|| content_type == "text/css"
@@ -601,7 +601,7 @@ void images::on_create_content(content::path_info_t& ipath, QString const& owner
 void images::on_modified_content(content::path_info_t& ipath)
 {
     // check whether an image script is linked to this object
-    links::link_info info(get_name(SNAP_NAME_IMAGES_SCRIPT), false, ipath.get_key(), ipath.get_branch());
+    links::link_info info(get_name(name_t::SNAP_NAME_IMAGES_SCRIPT), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info script_info;
     if(link_ctxt->next_link(script_info))
@@ -621,7 +621,7 @@ void images::on_modified_content(content::path_info_t& ipath)
 
         // check whether we already had an entry for this image in the files
         // table, images row.
-        QtCassandra::QCassandraValue old_date_value(branch_table->row(ipath.get_branch_key())->cell(get_name(SNAP_NAME_IMAGES_MODIFIED))->value());
+        QtCassandra::QCassandraValue old_date_value(branch_table->row(ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_IMAGES_MODIFIED))->value());
         if(!old_date_value.nullValue())
         {
             // not null, there is an old date
@@ -638,7 +638,7 @@ void images::on_modified_content(content::path_info_t& ipath)
             QByteArray old_key;
             QtCassandra::appendInt64Value(old_key, old_date);
             QtCassandra::appendStringValue(old_key, ipath.get_key());
-            files_table->row(get_name(SNAP_NAME_IMAGES_ROW))->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
+            files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW))->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
         }
 
         // we include the date in the key so that way older things get
@@ -650,13 +650,13 @@ void images::on_modified_content(content::path_info_t& ipath)
         QtCassandra::appendInt64Value(key, start_date);
         QtCassandra::appendStringValue(key, ipath.get_key());
         bool const modified(true);
-        files_table->row(get_name(SNAP_NAME_IMAGES_ROW))->cell(key)->setValue(modified);
+        files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW))->cell(key)->setValue(modified);
 
         // save a reference back to the new entry in the files_table
         // (this we keep so we can see when the image modifications were
         // requested and then once done how long it took the system to
         // do the work.)
-        branch_table->row(ipath.get_branch_key())->cell(get_name(SNAP_NAME_IMAGES_MODIFIED))->setValue(start_date);
+        branch_table->row(ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_IMAGES_MODIFIED))->setValue(start_date);
 
         f_ping_backend = true;
     }
@@ -673,7 +673,7 @@ void images::on_attach_to_session()
     if(f_ping_backend)
     {
         // send a PING to the backend
-        f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_IMAGES_ACTION)));
+        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_IMAGES_ACTION)));
     }
 }
 
@@ -702,7 +702,7 @@ void images::on_attach_to_session()
  */
 void images::on_register_backend_action(server::backend_action_map_t& actions)
 {
-    actions[get_name(SNAP_NAME_IMAGES_ACTION)] = this;
+    actions[get_name(name_t::SNAP_NAME_IMAGES_ACTION)] = this;
 }
 
 
@@ -733,9 +733,9 @@ void images::on_versions_libraries(filter::filter::token_info_t& token)
  */
 char const *images::get_signal_name(QString const& action) const
 {
-    if(action == get_name(SNAP_NAME_IMAGES_ACTION))
+    if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
     {
-        return get_name(SNAP_NAME_IMAGES_SIGNAL_NAME);
+        return get_name(name_t::SNAP_NAME_IMAGES_SIGNAL_NAME);
     }
     return backend_action::get_signal_name(action);
 }
@@ -757,7 +757,7 @@ char const *images::get_signal_name(QString const& action) const
  */
 void images::on_backend_action(QString const& action)
 {
-    if(action == get_name(SNAP_NAME_IMAGES_ACTION))
+    if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
     {
         f_backend = dynamic_cast<snap_backend *>(f_snap.get());
         if(!f_backend)
@@ -769,7 +769,7 @@ void images::on_backend_action(QString const& action)
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
-        QString const core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
+        QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
         // loop until stopped
         int64_t more_work(0);
         for(;;)
@@ -834,7 +834,7 @@ int64_t images::transform_images()
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
     files_table->clearCache();
-    QtCassandra::QCassandraRow::pointer_t images_row(files_table->row(get_name(SNAP_NAME_IMAGES_ROW)));
+    QtCassandra::QCassandraRow::pointer_t images_row(files_table->row(get_name(name_t::SNAP_NAME_IMAGES_ROW)));
     QString const site_key(f_snap->get_site_key_with_slash());
 
     // we use a smaller number (100) instead of a larger number (1000)
@@ -970,7 +970,7 @@ bool images::do_image_transformations(QString const& image_key)
     //
 
     // get the images
-    links::link_info info(get_name(SNAP_NAME_IMAGES_SCRIPT), false, image_ipath.get_key(), image_ipath.get_branch());
+    links::link_info info(get_name(name_t::SNAP_NAME_IMAGES_SCRIPT), false, image_ipath.get_key(), image_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info script_info;
     while(link_ctxt->next_link(script_info))
@@ -990,7 +990,7 @@ bool images::do_image_transformations(QString const& image_key)
         QString const script_key(script_info.key());
         content::path_info_t script_ipath;
         script_ipath.set_path(script_key);
-        QString script(revision_table->row(script_ipath.get_revision_key())->cell(get_name(SNAP_NAME_IMAGES_SCRIPT))->value().stringValue());
+        QString script(revision_table->row(script_ipath.get_revision_key())->cell(get_name(name_t::SNAP_NAME_IMAGES_SCRIPT))->value().stringValue());
         if(script.isEmpty())
         {
             // We have a problem here! This is a waste of time.
@@ -1275,7 +1275,7 @@ bool images::func_read(parameters_t& params)
 
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);
-    QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
+    QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
     if(md5.size() != 16)
     {
         // there is no file in this page so we have to skip it
@@ -1290,11 +1290,11 @@ bool images::func_read(parameters_t& params)
     QString field_name;
     if(output_name == "data")
     {
-        field_name = content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA);
+        field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
     }
     else
     {
-        field_name = QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)).arg(output_name);
+        field_name = QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA)).arg(output_name);
     }
     QByteArray image_data(files_table->row(md5)->cell(field_name)->value().binaryValue());
     if(image_data.isEmpty())
@@ -1341,7 +1341,7 @@ bool images::func_write(parameters_t& params)
 
     content::path_info_t ipath;
     ipath.set_path(params.f_params[0]);
-    QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
+    QByteArray md5(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value().binaryValue());
 
     QString const output_name(params.f_params[1]);
     if(output_name == "data")
@@ -1371,7 +1371,7 @@ bool images::func_write(parameters_t& params)
     //else -- TBD: should we err in this case?
     Magick::Blob blob;
     params.f_image_stack.back().write(&blob);
-    QString field_name(QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA)).arg(output_name));
+    QString field_name(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA)).arg(output_name));
     QByteArray array(static_cast<char const *>(blob.data()), static_cast<int>(blob.length()));
 
     files_table->row(md5)->cell(field_name)->setValue(array);

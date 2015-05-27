@@ -91,7 +91,7 @@ void table_model::fetchMore(QModelIndex const & model_index)
         //f_table->clearCache();
         f_rowsRemaining = f_table->readRows( f_rowp );
 
-        int const itemsToFetch( qMin(f_rowCount, f_rowsRemaining) );
+        int32_t const itemsToFetch( qMin(static_cast<int32_t>(f_rowCount), static_cast<int32_t>(f_rowsRemaining)) );
 
         beginInsertRows( QModelIndex(), f_pos, f_pos + itemsToFetch - 1 );
         endInsertRows();

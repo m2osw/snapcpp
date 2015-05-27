@@ -58,108 +58,108 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER:
+    case name_t::SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER:
         return "permissions::action::administer";
 
-    case SNAP_NAME_PERMISSIONS_ACTION_EDIT:
+    case name_t::SNAP_NAME_PERMISSIONS_ACTION_EDIT:
         return "permissions::action::edit";
 
-    case SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE:
+    case name_t::SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE:
         return "action";
 
-    case SNAP_NAME_PERMISSIONS_ACTION_PATH:
+    case name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH:
         return "types/permissions/actions";
 
-    case SNAP_NAME_PERMISSIONS_ACTION_VIEW:
+    case name_t::SNAP_NAME_PERMISSIONS_ACTION_VIEW:
         return "permissions::action::view";
 
-    case SNAP_NAME_PERMISSIONS_ADMINISTER_NAMESPACE:
+    case name_t::SNAP_NAME_PERMISSIONS_ADMINISTER_NAMESPACE:
         return "administer";
 
-    case SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER:
+    case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER:
         return "permissions::direct::action::administer";
 
-    case SNAP_NAME_PERMISSIONS_DIRECT_ACTION_EDIT:
+    case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_EDIT:
         return "permissions::direct::action::edit";
 
-    case SNAP_NAME_PERMISSIONS_DIRECT_ACTION_VIEW:
+    case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_VIEW:
         return "permissions::direct::action::view";
 
-    case SNAP_NAME_PERMISSIONS_DIRECT_GROUP:
+    case name_t::SNAP_NAME_PERMISSIONS_DIRECT_GROUP:
         return "permissions::direct::group";
 
-    case SNAP_NAME_PERMISSIONS_DIRECT_GROUP_RETURNING_REGISTERED_USER:
+    case name_t::SNAP_NAME_PERMISSIONS_DIRECT_GROUP_RETURNING_REGISTERED_USER:
         return "permissions::direct::group::returning_registered_user";
 
-    case SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE:
+    case name_t::SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE:
         return "direct";
 
-    case SNAP_NAME_PERMISSIONS_DYNAMIC:
+    case name_t::SNAP_NAME_PERMISSIONS_DYNAMIC:
         return "permissions::dynamic";
 
-    case SNAP_NAME_PERMISSIONS_EDIT_NAMESPACE:
+    case name_t::SNAP_NAME_PERMISSIONS_EDIT_NAMESPACE:
         return "edit";
 
-    case SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE:
+    case name_t::SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE:
         return "group";
 
-    case SNAP_NAME_PERMISSIONS_GROUPS_PATH:
+    case name_t::SNAP_NAME_PERMISSIONS_GROUPS_PATH:
         return "types/permissions/groups";
 
-    case SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER:
+    case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER:
         return "permissions::link_back::administer";
 
-    case SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT:
+    case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT:
         return "permissions::link_back::edit";
 
-    case SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP:
+    case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP:
         return "permissions::link_back::group";
 
-    case SNAP_NAME_PERMISSIONS_LINK_BACK_NAMESPACE:
+    case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_NAMESPACE:
         return "link_back";
 
-    case SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW:
+    case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW:
         return "permissions::link_back::view";
 
-    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER:
+    case name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER:
         return "permissions::login_status::spammer";
 
-    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR:
+    case name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR:
         return "permissions::login_status::visitor";
 
-    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR:
+    case name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR:
         return "permissions::login_status::returning_visitor";
 
-    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED:
+    case name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED:
         return "permissions::login_status::returning_registered";
 
-    case SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED:
+    case name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED:
         return "permissions::login_status::registered";
 
-    case SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR:
+    case name_t::SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR:
         return "makeadministrator";
 
-    case SNAP_NAME_PERMISSIONS_MAKE_ROOT:
+    case name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT:
         return "makeroot";
 
-    case SNAP_NAME_PERMISSIONS_NAMESPACE:
+    case name_t::SNAP_NAME_PERMISSIONS_NAMESPACE:
         return "permissions";
 
-    case SNAP_NAME_PERMISSIONS_PATH:
+    case name_t::SNAP_NAME_PERMISSIONS_PATH:
         return "types/permissions";
 
-    case SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
+    case name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH:
         return "types/permissions/rights";
 
-    case SNAP_NAME_PERMISSIONS_USERS_PATH:
+    case name_t::SNAP_NAME_PERMISSIONS_USERS_PATH:
         return "types/permissions/users";
 
-    case SNAP_NAME_PERMISSIONS_VIEW_NAMESPACE:
+    case name_t::SNAP_NAME_PERMISSIONS_VIEW_NAMESPACE:
         return "view";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_PERMISSIONS_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_PERMISSIONS_...");
 
     }
     NOTREACHED();
@@ -633,7 +633,7 @@ void permissions::sets_t::add_plugin_permission(const QString & plugin, QString 
 bool permissions::sets_t::is_root() const
 {
     // the top rights type represents the full root user (i.e. all rights)
-    return f_user_rights.contains(get_name(SNAP_NAME_PERMISSIONS_RIGHTS_PATH));
+    return f_user_rights.contains(get_name(name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH));
 }
 
 
@@ -886,13 +886,13 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
     // if spammers are logged in they don't get access to anything anyway
     // (i.e. they are UNDER visitors!)
     QString const site_key(f_snap->get_site_key_with_slash());
-    if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER))
+    if(login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER))
     {
         perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor/visitor/spammer", sets);
     }
     else
     {
-        if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR))
+        if(login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR))
         {
             perms->add_user_rights(site_key + "types/permissions/groups/root/administrator/editor/moderator/author/commenter/registered-user/returning-registered-user/returning-visitor", sets);
         }
@@ -906,7 +906,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
 //std::cout << "  +-> user key = [" << user_key << "]" << std::endl;
 //#endif
             if(user_key.isEmpty()
-            || login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR))
+            || login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR))
             {
                 // in this case the user is an anonymous user and thus we want to
                 // add the anonymous user rights
@@ -928,7 +928,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
                 // should this one NOT be offered to returning users?
                 sets.add_user_right(user_ipath.get_key());
 
-                if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED))
+                if(login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED))
                 {
                     // users who are logged in always have registered-user
                     // rights if nothing else
@@ -938,9 +938,9 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
                     {
                         QString const link_start_name(
                                     QString("%1::%2::%3")
-                                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                                        .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
-                                        .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
+                                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
                         links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
@@ -957,9 +957,9 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
                     {
                         QString const link_start_name(
                                     QString("%1::%2::%3::%4")
-                                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                                        .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
-                                        .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
                                         .arg(sets.get_action()));
                         links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
@@ -985,7 +985,7 @@ bool permissions::get_user_rights_impl(permissions * perms, sets_t & sets)
                     // add assigned groups
                     // by groups limited to returning registered users, not the logged in registered user
                     {
-                        QString const link_start_name(get_name(SNAP_NAME_PERMISSIONS_DIRECT_GROUP_RETURNING_REGISTERED_USER));
+                        QString const link_start_name(get_name(name_t::SNAP_NAME_PERMISSIONS_DIRECT_GROUP_RETURNING_REGISTERED_USER));
                         links::link_info info(link_start_name, false, user_ipath.get_key(), user_ipath.get_branch());
                         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
                         links::link_info right_info;
@@ -1087,7 +1087,7 @@ std::cerr << "from " << user_id << " -> ";
     QString const site_key(f_snap->get_site_key_with_slash());
     QString key(ipath.get_key());
     if(!content_table->exists(key)
-    || !content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
         // if that page does not exist, it may be dynamic, try to go up
         // until we have one name in the path then check that the page
@@ -1112,7 +1112,7 @@ std::cerr << "from " << user_id << " -> ";
             }
         }
         QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
-        char const *dynamic(get_name(SNAP_NAME_PERMISSIONS_DYNAMIC));
+        char const *dynamic(get_name(name_t::SNAP_NAME_PERMISSIONS_DYNAMIC));
         if(!row->exists(dynamic))
         {
             // well, there is a page, but it does not authorize sub-pages
@@ -1138,9 +1138,9 @@ std::cerr << "from " << user_id << " -> ";
         // check local links for this action
         QString const direct_link_start_name(
                         QString("%1::%2::%3::%4")
-                            .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                            .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
-                            .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                            .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                            .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                            .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
                             .arg(sets.get_action()));
         links::link_info info(direct_link_start_name, false, key, page_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
@@ -1160,15 +1160,15 @@ std::cerr << "direct: ";
         // TODO: should we add support for groups directly from a page?
         //QString const direct_link_start_name(
         //                QString("%1::%2::%3")
-        //                    .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-        //                    .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
-        //                    .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)))
+        //                    .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+        //                    .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+        //                    .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)))
     }
 
     {
         // get the content type (content::page_type) and then retrieve
         // the rights directly from that type
-        QString const link_name(get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE));
+        QString const link_name(get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE));
         links::link_info info(link_name, true, key, page_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info content_type_info;
@@ -1181,8 +1181,8 @@ std::cerr << "direct: ";
                 // read from the content type now
                 QString const link_start_name(
                             QString("%1::%2::%3")
-                                .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                                .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
                                 .arg(sets.get_action()));
                 links::link_info perm_info(link_start_name, false, type_ipath.get_key(), type_ipath.get_branch());
                 link_ctxt = links::links::instance()->new_link_context(perm_info);
@@ -1204,8 +1204,8 @@ std::cerr << "page type: ";
                 // finally, check for groups defined in this content type;
                 // groups here function the same way as user groups: they are recursive
                 QString const link_start_name(QString("%1::%2")
-                                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                                        .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
+                                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
                 links::link_info perm_info(link_start_name, false, type_ipath.get_key(), type_ipath.get_branch());
                 link_ctxt = links::links::instance()->new_link_context(perm_info);
                 links::link_info right_info;
@@ -1273,7 +1273,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
     {
         // always emit this error, that is a programmer bug, not a standard
         // user problem that can happen so do not use the err_callback
-        f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                 "Access Denied",
                 "You are not authorized to access our website in this way.",
                 QString("programmer checking permission access with an empty action on page \"%1\".").arg(ipath.get_key()));
@@ -1290,7 +1290,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
         // the signal may set the flag to false to prevent such redirects
         bool redirect_to_login(true);
         permit_redirect_to_login_on_not_allowed(ipath, redirect_to_login);
-        QString const method(f_snap->snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+        QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
         bool const redirect_method(method == "GET" || method == "POST");
 
         users::users *users_plugin(users::users::instance());
@@ -1312,12 +1312,12 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         false,
                         // redirect
                         "/",
-                        snap_child::HTTP_CODE_FOUND);
+                        snap_child::http_code_t::HTTP_CODE_FOUND);
                 }
                 else
                 {
                     // if user does not even have access to the home page...
-                    err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
+                    err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                             "Access Denied",
                             "You are not authorized to access our website.",
                             QString("spammer trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_cpath()),
@@ -1329,7 +1329,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             if(ipath.get_cpath() == "login")
             {
                 // An IP, Agent, etc. based test could get us here...
-                err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
+                err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                         "Access Denied",
                         action != "view"
                             ? QString("You are not authorized to access the login page with action \"%1\".").arg(action)
@@ -1342,7 +1342,7 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
             {
                 // The login page is accessible but we do not want to redirect
                 // on this file (i.e. probably an attachment)
-                err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
+                err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                         "Access Denied",
                         action != "view"
                             ? QString("You are not authorized to access this document with action \"%1\".").arg(action)
@@ -1372,16 +1372,16 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                 false,
                 // redirect
                 "login",
-                snap_child::HTTP_CODE_FOUND);
+                snap_child::http_code_t::HTTP_CODE_FOUND);
             // not reached if path checking
         }
         else
         {
-            if(login_status == get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED) && redirect_to_login && redirect_method)
+            if(login_status == get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED) && redirect_to_login && redirect_method)
             {
                 // allowed if logged in?
                 content::permission_flag allowed_if_logged_in;
-                path::path::instance()->access_allowed(user_path, ipath, action, get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
+                path::path::instance()->access_allowed(user_path, ipath, action, get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED), allowed_if_logged_in);
                 if(allowed_if_logged_in.allowed())
                 {
                     // TODO: find a way to save the data that is about
@@ -1404,14 +1404,14 @@ void permissions::on_validate_action(content::path_info_t & ipath, QString const
                         false,
                         // redirect
                         "verify-credentials",
-                        snap_child::HTTP_CODE_FOUND);
+                        snap_child::http_code_t::HTTP_CODE_FOUND);
                     // not reached if path checking
                     return;
                 }
             }
             // user is already logged in; no redirect even once we support
             // the double password feature
-            err_callback.on_error(snap_child::HTTP_CODE_ACCESS_DENIED,
+            err_callback.on_error(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                     "Access Denied",
                     QString("You are not authorized to apply this action (%1) to this page (%2).").arg(action).arg(ipath.get_key()),
                     QString("user trying to \"%1\" on page \"%2\" with unsufficient rights.").arg(action).arg(ipath.get_key()),
@@ -1455,11 +1455,11 @@ bool permissions::permit_redirect_to_login_on_not_allowed_impl(content::path_inf
  * The exact syntax of the status is not disclosed here. Instead, use one
  * of the available get_name():
  *
- * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER
- * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR
- * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR
- * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED
- * \li SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED
+ * \li name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER
+ * \li name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR
+ * \li name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR
+ * \li name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED
+ * \li name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED
  *
  * \todo
  * The returning visitor is not yet implemented.
@@ -1471,13 +1471,13 @@ QString const & permissions::get_login_status()
     if(f_login_status.isEmpty())
     {
         users::users *users_plugin(users::users::instance());
-        f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
+        f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
         if(!users_plugin->user_is_a_spammer())
         {
             QString const user_path(get_user_path());
             if(user_path.isEmpty())
             {
-                f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
+                f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR);
                 // TODO: determine, once possible, whether the user came on the
                 //       website before (i.e. returning visitor)
                 //       (it is already possible since we have a cookie, just
@@ -1485,11 +1485,11 @@ QString const & permissions::get_login_status()
             }
             else if(users_plugin->user_is_logged_in())
             {
-                f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED);
+                f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED);
             }
             else
             {
-                f_login_status = get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED);
+                f_login_status = get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED);
             }
         }
     }
@@ -1511,7 +1511,7 @@ QString const & permissions::get_user_path()
         f_has_user_path = true;
         users::users *users_plugin(users::users::instance());
         f_user_path = users_plugin->get_user_path();
-        if(f_user_path == users::get_name(users::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
+        if(f_user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
         {
             f_user_path.clear();
         }
@@ -1556,12 +1556,12 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
     // check that the action is defined in the database (i.e. valid)
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
+    QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
     if(!content_table->exists(key))
     {
         // TODO it is rather easy to get here so we need to test whether
         //      the same IP does it over and over again and block them if so
-        f_snap->die(snap_child::HTTP_CODE_ACCESS_DENIED,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_ACCESS_DENIED,
                 "Unknown Action",
                 "The action you are trying to performed is not known by Snap!",
                 QString("permissions::on_access_allowed() was used with action \"%1\".").arg(action));
@@ -1629,7 +1629,7 @@ void permissions::add_user_rights(QString const & group, sets_t & sets)
     // TODO: we probably want to change that "contains()" call with
     //       a "startsWith()" but we need to know whether "group"
     //       may include the protocol, domain name, port...
-    if(group.contains(get_name(SNAP_NAME_PERMISSIONS_RIGHTS_PATH)))
+    if(group.contains(get_name(name_t::SNAP_NAME_PERMISSIONS_RIGHTS_PATH)))
     {
         throw snap_logic_exception("you cannot add rights using add_user_rights(), for those just use sets.add_user_right() directly");
     }
@@ -1669,8 +1669,8 @@ void permissions::recursive_add_user_rights(QString const & group, sets_t & sets
     {
         QString const link_start_name(
                         QString("%1::%2::%3")
-                            .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                            .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                            .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                            .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
                             .arg(sets.get_action()));
         links::link_info info(link_start_name, false, group_ipath.get_key(), group_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
@@ -1685,7 +1685,7 @@ void permissions::recursive_add_user_rights(QString const & group, sets_t & sets
 
     // get all the children and do a recursive call with them all
     {
-        QString const children_name(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN));
+        QString const children_name(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN));
         links::link_info info(children_name, false, group_ipath.get_key(), group_ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
@@ -1761,8 +1761,8 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
         // this is always an immediate action (no "direct" namespace)
         QString const link_start_name(
                     QString("%1::%2::%3")
-                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                        .arg(get_name(SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
+                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE))
                         .arg(sets.get_action()));
         links::link_info info(link_start_name, false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
@@ -1777,7 +1777,7 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
 
     // get all the children and do a recursive call with them all
     {
-        QString const children_name(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN));
+        QString const children_name(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN));
         links::link_info info(children_name, false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info right_info;
@@ -1826,8 +1826,8 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  */
 void permissions::on_register_backend_action(server::backend_action_map_t & actions)
 {
-    actions[get_name(SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)] = this;
-    actions[get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT)] = this;
+    actions[get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)] = this;
+    actions[get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT)] = this;
 }
 
 
@@ -1848,8 +1848,8 @@ void permissions::on_register_backend_action(server::backend_action_map_t & acti
  */
 void permissions::on_backend_action(QString const & action)
 {
-    if(action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)
-    || action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT))
+    if(action == get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)
+    || action == get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT))
     {
         // make specified user root
         QtCassandra::QCassandraTable::pointer_t user_table(users::users::instance()->get_users_table());
@@ -1860,12 +1860,12 @@ void permissions::on_backend_action(QString const & action)
             exit(1);
         }
         QtCassandra::QCassandraRow::pointer_t user_row(user_table->row(email));
-        if(!user_row->exists(users::get_name(users::SNAP_NAME_USERS_IDENTIFIER)))
+        if(!user_row->exists(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER)))
         {
             SNAP_LOG_FATAL() << "error: user \"" << email << "\" was not given an identifier.";
             exit(1);
         }
-        QtCassandra::QCassandraValue identifier_value(user_row->cell(users::get_name(users::SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue identifier_value(user_row->cell(users::get_name(users::name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(identifier_value.nullValue() || identifier_value.size() != sizeof(int64_t))
         {
             SNAP_LOG_FATAL() << "error: user \"" << email << "\" identifier could not be read.";
@@ -1875,20 +1875,20 @@ void permissions::on_backend_action(QString const & action)
 
         QString const site_key(f_snap->get_site_key_with_slash());
         content::path_info_t user_ipath;
-        user_ipath.set_path(QString("%1/%2").arg(users::get_name(users::SNAP_NAME_USERS_PATH)).arg(identifier));
+        user_ipath.set_path(QString("%1/%2").arg(users::get_name(users::name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
         content::path_info_t dpath;
         dpath.set_path(QString("%1/%2")
-                .arg(get_name(SNAP_NAME_PERMISSIONS_GROUPS_PATH))
-                .arg(action == get_name(SNAP_NAME_PERMISSIONS_MAKE_ROOT) ? "root" : "root/administrator"));
+                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_GROUPS_PATH))
+                .arg(action == get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT) ? "root" : "root/administrator"));
 
         // now link that user to that high level permission
         QString const link_name(QString("%1::%2::%3")
-                .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
-                .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
+                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
         bool const source_multi(false);
         links::link_info source(link_name, source_multi, user_ipath.get_key(), user_ipath.get_branch());
-        QString const link_to(SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP);
+        //QString const link_to(get_name(name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP));
         bool const destination_multi(false);
         links::link_info destination(link_name, destination_multi, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
@@ -1918,7 +1918,7 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
     content::path_info_t permission_ipath;
     {
         // create a specific permission for that new company
-        permission_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_PERMISSIONS_USERS_PATH)).arg(identifier));
+        permission_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_PERMISSIONS_USERS_PATH)).arg(identifier));
         permission_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
         permission_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
         permission_ipath.force_locale("xx"); // create the neutral one by default?
@@ -1926,17 +1926,17 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
 
         // create a default the title and body
         QtCassandra::QCassandraRow::pointer_t permission_revision_row(revision_table->row(permission_ipath.get_revision_key()));
-        permission_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+        permission_revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
         // TODO: translate (not too important on this page since it is really not public)
-        permission_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(QString("User #%1 Private Permission Right").arg(identifier));
-        permission_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(QString("This type represents permissions that are 100% specific to this user."));
+        permission_revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("User #%1 Private Permission Right").arg(identifier));
+        permission_revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(QString("This type represents permissions that are 100% specific to this user."));
     }
 
     // second we create the user specific group
     content::path_info_t group_ipath;
     {
         // create a specific permission group for that new user
-        group_ipath.set_path(QString("%1/users/%2").arg(get_name(SNAP_NAME_PERMISSIONS_GROUPS_PATH)).arg(identifier));
+        group_ipath.set_path(QString("%1/users/%2").arg(get_name(name_t::SNAP_NAME_PERMISSIONS_GROUPS_PATH)).arg(identifier));
         group_ipath.force_branch(snap_version::SPECIAL_VERSION_USER_FIRST_BRANCH);
         group_ipath.force_revision(static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_FIRST_REVISION));
         group_ipath.force_locale("xx");
@@ -1944,10 +1944,10 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
 
         // save the title, description, and link to the type
         QtCassandra::QCassandraRow::pointer_t group_revision_row(revision_table->row(group_ipath.get_revision_key()));
-        group_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+        group_revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
         // TODO: translate (not too important on this page since it is really not public)
-        group_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(QString("User #%1 Private Permission Group").arg(identifier));
-        group_revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(QString("This group represents a user private group."));
+        group_revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(QString("User #%1 Private Permission Group").arg(identifier));
+        group_revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(QString("This group represents a user private group."));
     }
 
     // link the permission to the company and the user
@@ -1958,8 +1958,8 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
     //          very confusing on this one since user ipath looks very much
     //          like the user, doesn't it?
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_VIEW));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW));
+        QString const link_name(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_VIEW));
+        QString const link_to(get_name(name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1967,8 +1967,8 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
         links::links::instance()->create_link(source, destination);
     }
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_EDIT));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
+        QString const link_name(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_EDIT));
+        QString const link_to(get_name(name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1976,8 +1976,8 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
         links::links::instance()->create_link(source, destination);
     }
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
+        QString const link_name(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER));
+        QString const link_to(get_name(name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -1988,10 +1988,10 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
     // link the user to his private group right
     {
         QString const link_name(QString("%1::%2::%3")
-                        .arg(get_name(SNAP_NAME_PERMISSIONS_NAMESPACE))
-                        .arg(get_name(SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
-                        .arg(get_name(SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP));
+                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_NAMESPACE))
+                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_DIRECT_NAMESPACE))
+                        .arg(get_name(name_t::SNAP_NAME_PERMISSIONS_GROUP_NAMESPACE)));
+        QString const link_to(get_name(name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
@@ -2005,8 +2005,8 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
     // TBD: should we have a way to prevent the user from editing his
     //      information?
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_VIEW));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW));
+        QString const link_name(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_VIEW));
+        QString const link_to(get_name(name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_VIEW));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
@@ -2014,8 +2014,8 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
         links::links::instance()->create_link(source, destination);
     }
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_EDIT));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
+        QString const link_name(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_EDIT));
+        QString const link_to(get_name(name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
@@ -2023,8 +2023,8 @@ void permissions::on_user_verified(content::path_info_t & ipath, int64_t identif
         links::links::instance()->create_link(source, destination);
     }
     {
-        QString const link_name(get_name(SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER));
-        QString const link_to(get_name(SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
+        QString const link_name(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER));
+        QString const link_to(get_name(name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
         bool const source_unique(false);
         bool const destination_unique(false);
         links::link_info source(link_name, source_unique, permission_ipath.get_key(), permission_ipath.get_branch());
@@ -2046,7 +2046,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     }
     QString const path(sub_results[0].get_string("perms(1)"));
     QString user_path(sub_results[1].get_string("perms(2)"));
-    if(user_path == users::get_name(users::SNAP_NAME_USERS_ANONYMOUS_PATH))
+    if(user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH))
     {
         // permissions for anonymous users is done with an empty user path
         user_path.clear();
@@ -2072,26 +2072,26 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     quiet_error_callback err_callback(content::content::instance()->get_snap(), false);
     path::path::instance()->validate_action(ipath, action, err_callback);
 
-    name_t status_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
+    name_t status_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
     if(status == "spammer")
     {
-        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER;
+        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER;
     }
     else if(status == "visitor")
     {
-        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR;
+        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR;
     }
     else if(status == "returning_visitor")
     {
-        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR;
+        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR;
     }
     else if(status == "returning_registered")
     {
-        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED;
+        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED;
     }
     else if(status == "registered")
     {
-        status_name = SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED;
+        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED;
     }
     else
     {
@@ -2107,7 +2107,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     // save the result
     QtCassandra::QCassandraValue value;
     value.setBoolValue(allowed.allowed());
-    result.set_value(snap_expr::variable_t::EXPR_VARIABLE_TYPE_BOOL, value);
+    result.set_value(snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL, value);
 //std::cerr << "\n***\n*** exit call perms " << (allowed.allowed() ? "allowed!" : "forbidden") << "\n***\n";
 }
 
@@ -2145,21 +2145,21 @@ void permissions::on_generate_header_content(content::path_info_t & ipath, QDomE
             users::users::instance()->get_user_path(),
             ipath,
             "edit",
-            get_name(SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
+            get_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
             can_edit);
     QString const can_edit_page(can_edit.allowed() ? "yes" : "");
 
     FIELD_SEARCH
-        (content::field_search::COMMAND_ELEMENT, metadata)
-        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+        (content::field_search::command_t::COMMAND_ELEMENT, metadata)
+        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
 
         // snap/head/metadata/desc[@type="can_edit"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, can_edit_page)
-        (content::field_search::COMMAND_SAVE, "desc[type=can_edit]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, can_edit_page)
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=can_edit]/data")
 
         // snap/head/metadata/desc[@type="login_status"]/data
-        (content::field_search::COMMAND_DEFAULT_VALUE, get_login_status())
-        (content::field_search::COMMAND_SAVE, "desc[type=login_status]/data")
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, get_login_status())
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=login_status]/data")
 
         // generate!
         ;

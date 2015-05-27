@@ -45,12 +45,12 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_MENU_NAMESPACE:
+    case name_t::SNAP_NAME_MENU_NAMESPACE:
         return "menu";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_MENU_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_MENU_...");
 
     }
     NOTREACHED();

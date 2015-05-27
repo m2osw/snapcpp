@@ -24,7 +24,7 @@ namespace snap
 namespace robotstxt
 {
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_ROBOTSTXT_FORBIDDEN_PATH,
     SNAP_NAME_ROBOTSTXT_FORBIDDEN,
@@ -32,7 +32,7 @@ enum name_t
     SNAP_NAME_ROBOTSTXT_NOFOLLOW,
     SNAP_NAME_ROBOTSTXT_NOINDEX
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 
@@ -78,17 +78,17 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
-    void                on_bootstrap(snap_child *snap);
-    virtual bool        on_path_execute(content::path_info_t& url);
-    void                on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, const QString& ctemplate);
-    virtual void        on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                on_generate_page_content(content::path_info_t& path, QDomElement& page, QDomElement& body, const QString& ctemplate);
+    void                on_bootstrap(snap_child * snap);
+    virtual bool        on_path_execute(content::path_info_t & url);
+    void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, const QString & ctemplate);
+    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
+    void                on_generate_page_content(content::path_info_t & path, QDomElement & page, QDomElement & body, const QString & ctemplate);
 
     SNAP_SIGNAL(generate_robotstxt, (robotstxt *r), (r));
 
-    void        add_robots_txt_field(const QString& value,
-                                     const QString& field = FIELD_NAME_DISALLOW,
-                                     const QString& robot = ROBOT_NAME_ALL,
+    void        add_robots_txt_field(const QString & value,
+                                     const QString & field = FIELD_NAME_DISALLOW,
+                                     const QString & robot = ROBOT_NAME_ALL,
                                      bool unique = false);
 
     void        output() const;
@@ -96,7 +96,7 @@ public:
 private:
     void initial_update(int64_t variables_timestamp);
     void content_update(int64_t variables_timestamp);
-    void define_robots(content::path_info_t& path);
+    void define_robots(content::path_info_t & path);
 
     struct robots_field_t
     {

@@ -387,14 +387,14 @@ public:
                                     QDomXPath();
                                     ~QDomXPath();
 
-    bool                            setXPath(QString const& xpath, bool show_commands = false);
+    bool                            setXPath(QString const & xpath, bool show_commands = false);
     QString                         getXPath() const;
-    void                            setProgram(program_t const& program, bool show_commands = false);
+    void                            setProgram(program_t const & program, bool show_commands = false);
     program_t const&                getProgram() const;
 
-    void                            bindVariable(QString const& name, QString const& value);
-    bool                            hasVariable(QString const& name);
-    QString                         getVariable(QString const& name);
+    void                            bindVariable(QString const & name, QString const & value);
+    bool                            hasVariable(QString const & name);
+    QString                         getVariable(QString const & name);
 
     node_vector_t                   apply(QDomNode node) const;
     node_vector_t                   apply(node_vector_t node) const;

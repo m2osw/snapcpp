@@ -120,16 +120,16 @@ public:
     protocol_t      get_protocol() const;
     int             get_response_code() const;
     std::string     get_http_message() const;
-    bool            has_header(std::string const& name) const;
-    std::string     get_header(std::string const& name) const;
+    bool            has_header(std::string const & name) const;
+    std::string     get_header(std::string const & name) const;
     std::string     get_response() const;
 
-    void            append_original_header(std::string const& header);
+    void            append_original_header(std::string const & header);
     void            set_protocol(protocol_t protocol);
     void            set_response_code(int code);
     void            set_http_message(std::string const& message);
-    void            set_header(std::string const& name, std::string const& value);
-    void            set_response(std::string const& response);
+    void            set_header(std::string const & name, std::string const & value);
+    void            set_response(std::string const & response);
 
 private:
     typedef controlled_vars::limited_auto_enum_init<protocol_t, protocol_t::UNKNOWN, protocol_t::HTTP_1_1, protocol_t::UNKNOWN> zprotocol_t;
@@ -154,13 +154,15 @@ public:
 
     void                        set_keep_alive(bool keep_alive);
 
-    http_response::pointer_t    send_request(http_request const& request);
+    http_response::pointer_t    send_request(http_request const & request);
 
 private:
-    controlled_vars::flbool_t   f_keep_alive;
-    tcp_client_server::bio_client::pointer_t       f_connection;
-    std::string                 f_host;
-    controlled_vars::zint32_t   f_port; // TODO: should probably initialize to -1
+    typedef controlled_vars::auto_init<int32_t, -1>     m1port_t;
+
+    controlled_vars::flbool_t                   f_keep_alive;
+    tcp_client_server::bio_client::pointer_t    f_connection;
+    std::string                                 f_host;
+    m1port_t                                    f_port;
 };
 
 

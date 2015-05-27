@@ -32,25 +32,25 @@ namespace tcp_client_server
 class tcp_client_server_logic_error : public std::logic_error
 {
 public:
-    tcp_client_server_logic_error(std::string const& errmsg) : logic_error(errmsg) {}
+    tcp_client_server_logic_error(std::string const & errmsg) : logic_error(errmsg) {}
 };
 
 class tcp_client_server_runtime_error : public std::runtime_error
 {
 public:
-    tcp_client_server_runtime_error(std::string const& errmsg) : runtime_error(errmsg) {}
+    tcp_client_server_runtime_error(std::string const & errmsg) : runtime_error(errmsg) {}
 };
 
 class tcp_client_server_parameter_error : public tcp_client_server_logic_error
 {
 public:
-    tcp_client_server_parameter_error(std::string const& errmsg) : tcp_client_server_logic_error(errmsg) {}
+    tcp_client_server_parameter_error(std::string const & errmsg) : tcp_client_server_logic_error(errmsg) {}
 };
 
 class tcp_client_server_initialization_error : public tcp_client_server_runtime_error
 {
 public:
-    tcp_client_server_initialization_error(std::string const& errmsg) : tcp_client_server_runtime_error(errmsg) {}
+    tcp_client_server_initialization_error(std::string const & errmsg) : tcp_client_server_runtime_error(errmsg) {}
 };
 
 
@@ -62,7 +62,7 @@ class tcp_client
 public:
     typedef std::shared_ptr<tcp_client>     pointer_t;
 
-                        tcp_client(std::string const& addr, int port);
+                        tcp_client(std::string const & addr, int port);
                         ~tcp_client();
 
     int                 get_socket() const;
@@ -71,9 +71,9 @@ public:
     std::string         get_addr() const;
     std::string         get_client_addr() const;
 
-    int                 read(char *buf, size_t size);
-    int                 read_line(std::string& line);
-    int                 write(char const *buf, size_t size);
+    int                 read(char * buf, size_t size);
+    int                 read_line(std::string & line);
+    int                 write(char const * buf, size_t size);
 
 private:
     int                 f_socket;
@@ -129,7 +129,7 @@ public:
         MODE_ALWAYS_SECURE      // fails if cannot be secure
     };
 
-                        bio_client(std::string const& addr, int port, mode_t mode = mode_t::MODE_PLAIN);
+                        bio_client(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
                         ~bio_client();
 
     int                 get_socket() const;
@@ -138,9 +138,9 @@ public:
     std::string         get_addr() const;
     std::string         get_client_addr() const;
 
-    int                 read(char *buf, size_t size);
-    int                 read_line(std::string& line);
-    int                 write(char const *buf, size_t size);
+    int                 read(char * buf, size_t size);
+    int                 read_line(std::string & line);
+    int                 write(char const * buf, size_t size);
 
 private:
     std::shared_ptr<BIO>        f_bio;

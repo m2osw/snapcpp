@@ -17,11 +17,6 @@
 
 #include "test_plugin_suite.h"
 
-//#include "../messages/messages.h"
-//#include "../users/users.h"
-//#include "../output/output.h"
-
-//#include "not_reached.h"
 #include "log.h"
 
 #include "poison.h"

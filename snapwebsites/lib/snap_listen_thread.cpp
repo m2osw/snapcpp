@@ -22,13 +22,21 @@
 #include <vector>
 #include <algorithm>
 
-// wait for up to 5 minutes (x 60 seconds)
-//
-#define TIMEOUT (5 * 60 * 1000)
-#define BUFSIZE 256
 
 namespace snap
 {
+
+namespace
+{
+
+// wait for up to 5 minutes (x 60 seconds)
+//
+int const g_timeout = 5 * 60 * 1000;
+
+// maximum size of word
+int const g_bufsize = 256;
+
+} // no name namespace
 
 
 snap_listen_thread::snap_listen_thread( udp_server_t udp_server )
@@ -44,15 +52,15 @@ snap_listen_thread::word_t snap_listen_thread::get_word()
 
     if( f_stop_received )
     {
-        return ServerStop;
+        return word_t::WORD_SERVER_STOP;
     }
 
     if( f_word_list.empty() )
     {
-        return Waiting;
+        return word_t::WORD_WAITING;
     }
 
-    const word_t front_word( f_word_list.front() );
+    word_t const front_word( f_word_list.front() );
     f_word_list.pop_front();
     return front_word;
 }
@@ -60,11 +68,11 @@ snap_listen_thread::word_t snap_listen_thread::get_word()
 
 void snap_listen_thread::run()
 {
-    while( true )
+    for(;;)
     {
         // sleep till next PING (but max. 5 minutes)
         //
-        std::string const word( f_server->timed_recv( BUFSIZE, TIMEOUT ) );
+        std::string const word( f_server->timed_recv( g_bufsize, g_timeout ) );
         if( word.empty() )
         {
             continue;
@@ -85,11 +93,11 @@ void snap_listen_thread::run()
             //
             snap_thread::snap_lock lock( f_mutex );
             SNAP_LOG_TRACE("NLOG");
-            f_word_list.push_back( LogReset );
+            f_word_list.push_back( word_t::WORD_LOG_RESET );
         }
         else
         {
-            SNAP_LOG_WARNING() << "snap_listen_thread received an unknown word '" << word << "'";
+            SNAP_LOG_WARNING() << "snap_listen_thread.cpp:snap_listen_thread::run(): received an unknown word '" << word << "'";
         }
     }
 }

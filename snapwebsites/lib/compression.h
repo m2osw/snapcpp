@@ -93,26 +93,26 @@ public:
     class file_t
     {
     public:
-        enum type_t
+        enum class type_t
         {
             FILE_TYPE_REGULAR,
             FILE_TYPE_DIRECTORY
         };
-        typedef controlled_vars::limited_auto_enum_init<type_t, FILE_TYPE_REGULAR, FILE_TYPE_DIRECTORY, FILE_TYPE_REGULAR> safe_type_t;
+        typedef controlled_vars::limited_auto_enum_init<type_t, type_t::FILE_TYPE_REGULAR, type_t::FILE_TYPE_DIRECTORY, type_t::FILE_TYPE_REGULAR> safe_type_t;
 
         void                set_type(type_t type);
-        void                set_data(QByteArray const& data);
-        void                set_filename(QString const& filename);
-        void                set_user(QString const& user, uid_t uid);
-        void                set_group(QString const& group, gid_t gid);
+        void                set_data(QByteArray const & data);
+        void                set_filename(QString const & filename);
+        void                set_user(QString const & user, uid_t uid);
+        void                set_group(QString const & group, gid_t gid);
         void                set_mode(mode_t mode);
         void                set_mtime(time_t mtime);
 
         type_t              get_type() const;
-        QByteArray const&   get_data() const;
-        QString const&      get_filename() const;
-        QString const&      get_user() const;
-        QString const&      get_group() const;
+        QByteArray const &  get_data() const;
+        QString const &     get_filename() const;
+        QString const &     get_user() const;
+        QString const &     get_group() const;
         uid_t               get_uid() const;
         gid_t               get_gid() const;
         mode_t              get_mode() const;
@@ -130,26 +130,26 @@ public:
         time_t              f_mtime;
     };
 
-                        archiver_t(char const *name);
-    virtual             ~archiver_t();
-    void                set_archive(QByteArray const& input);
-    QByteArray          get_archive() const;
-    virtual char const *get_name() const = 0;
-    virtual void        append_file(file_t const& file) = 0;
-    virtual bool        next_file(file_t& file) const = 0;
-    virtual void        rewind_file() = 0;
+                            archiver_t(char const *name);
+    virtual                 ~archiver_t();
+    void                    set_archive(QByteArray const & input);
+    QByteArray              get_archive() const;
+    virtual char const *    get_name() const = 0;
+    virtual void            append_file(file_t const & file) = 0;
+    virtual bool            next_file(file_t & file) const = 0;
+    virtual void            rewind_file() = 0;
 
 protected:
-    QByteArray          f_archive;
+    QByteArray              f_archive;
 };
 
 //void register_compressor(compressor_t *compressor_name); -- automatic at this point
 QStringList compressor_list();
-QByteArray compress(QString& compressor_name, QByteArray const& input, level_t level, bool text);
-QByteArray decompress(QString& compressor_name, QByteArray const& input);
+QByteArray compress(QString & compressor_name, QByteArray const & input, level_t level, bool text);
+QByteArray decompress(QString & compressor_name, QByteArray const & input);
 
 QStringList archiver_list();
-archiver_t *get_archiver(QString const& archiver_name);
+archiver_t * get_archiver(QString const & archiver_name);
 
 } // namespace snap
 } // namespace compression

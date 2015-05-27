@@ -44,33 +44,33 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_SHORTURL_DATE:
+    case name_t::SNAP_NAME_SHORTURL_DATE:
         return "shorturl::date";
 
-    case SNAP_NAME_SHORTURL_HTTP_LINK:
+    case name_t::SNAP_NAME_SHORTURL_HTTP_LINK:
         return "Link";
 
-    case SNAP_NAME_SHORTURL_IDENTIFIER:
+    case name_t::SNAP_NAME_SHORTURL_IDENTIFIER:
         return "shorturl::identifier";
 
-    case SNAP_NAME_SHORTURL_ID_ROW:
+    case name_t::SNAP_NAME_SHORTURL_ID_ROW:
         return "*id_row*";
 
-    case SNAP_NAME_SHORTURL_INDEX_ROW:
+    case name_t::SNAP_NAME_SHORTURL_INDEX_ROW:
         return "*index_row*";
 
-    case SNAP_NAME_SHORTURL_NO_SHORTURL:
+    case name_t::SNAP_NAME_SHORTURL_NO_SHORTURL:
         return "shorturl::no_shorturl";
 
-    case SNAP_NAME_SHORTURL_TABLE:
+    case name_t::SNAP_NAME_SHORTURL_TABLE:
         return "shorturl";
 
-    case SNAP_NAME_SHORTURL_URL:
+    case name_t::SNAP_NAME_SHORTURL_URL:
         return "shorturl::url";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_SHORTURL_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_SHORTURL_...");
 
     }
     NOTREACHED();
@@ -212,7 +212,7 @@ QtCassandra::QCassandraTable::pointer_t shorturl::get_shorturl_table()
 {
     if(!f_shorturl_table)
     {
-        f_shorturl_table = f_snap->create_table(get_name(SNAP_NAME_SHORTURL_TABLE), "Short URL management table.");
+        f_shorturl_table = f_snap->create_table(get_name(name_t::SNAP_NAME_SHORTURL_TABLE), "Short URL management table.");
     }
     return f_shorturl_table;
 }
@@ -269,8 +269,8 @@ void shorturl::on_generate_main_content(content::path_info_t& ipath, QDomElement
             //       because we may have many links and they should all
             //       appear in one "Link: ..." line
             QString const http_link("<" + ipath.get_cpath() + ">; rel=shorturl");
-            f_snap->set_header(get_name(SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
-            f_snap->page_redirect(url, snap_child::HTTP_CODE_FOUND);
+            f_snap->set_header(get_name(name_t::SNAP_NAME_SHORTURL_HTTP_LINK), http_link, snap_child::HEADER_MODE_REDIRECT);
+            f_snap->page_redirect(url, snap_child::http_code_t::HTTP_CODE_FOUND);
             NOTREACHED();
         }
         // else -- warn or something?
@@ -333,7 +333,7 @@ QString shorturl::get_shorturl(uint64_t identifier)
     if(identifier != 0)
     {
         QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
-        QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
+        QString const index(f_snap->get_website_key() + "/" + get_name(name_t::SNAP_NAME_SHORTURL_INDEX_ROW));
         QtCassandra::QCassandraValue identifier_value;
         identifier_value.setUInt64Value(identifier);
         QtCassandra::QCassandraValue url(shorturl_table->row(index)->cell(identifier_value.binaryValue())->value());
@@ -365,15 +365,15 @@ void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomEleme
     content::field_search::search_result_t result;
 
     FIELD_SEARCH
-        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-        (content::field_search::COMMAND_ELEMENT, metadata)
-        (content::field_search::COMMAND_PATH_INFO_GLOBAL, ipath)
+        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+        (content::field_search::command_t::COMMAND_ELEMENT, metadata)
+        (content::field_search::command_t::COMMAND_PATH_INFO_GLOBAL, ipath)
 
         // /snap/head/metadata/desc[@type="shorturl"]/data
-        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_SHORTURL_URL))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_RESULT, result)
-        (content::field_search::COMMAND_SAVE, "desc[type=shorturl]/data")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_SHORTURL_URL))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_RESULT, result)
+        (content::field_search::command_t::COMMAND_SAVE, "desc[type=shorturl]/data")
 
         // generate!
         ;
@@ -381,7 +381,7 @@ void shorturl::on_generate_header_content(content::path_info_t& ipath, QDomEleme
     if(!result.isEmpty())
     {
         QString http_link("<" + result[0].stringValue() + ">; rel=shorturl");
-        f_snap->set_header(get_name(SNAP_NAME_SHORTURL_HTTP_LINK), http_link);
+        f_snap->set_header(get_name(name_t::SNAP_NAME_SHORTURL_HTTP_LINK), http_link);
     }
 }
 
@@ -452,8 +452,8 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
 
     // first generate a site wide unique identifier for that page
     uint64_t identifier(0);
-    QString const id_key(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_ID_ROW));
-    QString const identifier_key(get_name(SNAP_NAME_SHORTURL_IDENTIFIER));
+    QString const id_key(f_snap->get_website_key() + "/" + get_name(name_t::SNAP_NAME_SHORTURL_ID_ROW));
+    QString const identifier_key(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER));
     QtCassandra::QCassandraValue new_identifier;
     new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
@@ -511,17 +511,17 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
     // the parameters we can regenerate only those that were generated before
     // the date of the change
     uint64_t const start_date(f_snap->get_start_date());
-    row->cell(get_name(SNAP_NAME_SHORTURL_DATE))->setValue(start_date);
+    row->cell(get_name(name_t::SNAP_NAME_SHORTURL_DATE))->setValue(start_date);
 
     // TODO allow the user to change the "%1" number parameters
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const shorturl_url(site_key + QString("s/%1").arg(identifier, 0, 36, QChar('0')));
     QtCassandra::QCassandraValue shorturl_value(shorturl_url);
-    row->cell(get_name(SNAP_NAME_SHORTURL_URL))->setValue(shorturl_value);
+    row->cell(get_name(name_t::SNAP_NAME_SHORTURL_URL))->setValue(shorturl_value);
 
     // create an index entry so we can find the entry and redirect the user
     // as required
-    QString const index(f_snap->get_website_key() + "/" + get_name(SNAP_NAME_SHORTURL_INDEX_ROW));
+    QString const index(f_snap->get_website_key() + "/" + get_name(name_t::SNAP_NAME_SHORTURL_INDEX_ROW));
     shorturl_table->row(index)->cell(new_identifier.binaryValue())->setValue(key);
 }
 
@@ -574,7 +574,7 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
     {
         content::path_info_t source(tree.f_pages[idx].f_source);
         QtCassandra::QCassandraRow::pointer_t content_row(content_table->row(source.get_key()));
-        if(content_row->exists(get_name(SNAP_NAME_SHORTURL_URL)))
+        if(content_row->exists(get_name(name_t::SNAP_NAME_SHORTURL_URL)))
         {
             // need a change?
             switch(source_done_state)
@@ -593,12 +593,12 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
                     content::path_info_t destination(tree.f_pages[idx].f_destination);
 
                     // get destination owner
-                    QString const owner(content_table->row(destination.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+                    QString const owner(content_table->row(destination.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
 
                     // get destination type
                     // TODO: this requires the link to have been updated already...
                     QString type("page/public");
-                    links::link_info type_info(content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE), true, destination.get_key(), destination.get_branch());
+                    links::link_info type_info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE), true, destination.get_key(), destination.get_branch());
                     QSharedPointer<links::link_context> type_link_ctxt(links::links::instance()->new_link_context(type_info));
                     links::link_info type_child_info;
                     if(type_link_ctxt->next_link(type_child_info))
@@ -623,12 +623,12 @@ void shorturl::on_page_cloned(content::content::cloned_tree_t const& tree)
                     content::path_info_t destination(tree.f_pages[idx].f_destination);
 
                     QtCassandra::QCassandraTable::pointer_t shorturl_table(get_shorturl_table());
-                    QtCassandra::QCassandraValue identifier_value(content_table->row(destination.get_key())->cell(get_name(SNAP_NAME_SHORTURL_IDENTIFIER))->value());
+                    QtCassandra::QCassandraValue identifier_value(content_table->row(destination.get_key())->cell(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER))->value());
                     
                     // make sure we have a valid identifier
                     if(!identifier_value.nullValue())
                     {
-                        QString const index(QString("%1/%2").arg(f_snap->get_website_key()).arg(get_name(SNAP_NAME_SHORTURL_INDEX_ROW)));
+                        QString const index(QString("%1/%2").arg(f_snap->get_website_key()).arg(get_name(name_t::SNAP_NAME_SHORTURL_INDEX_ROW)));
                         shorturl_table->row(index)->cell(identifier_value.binaryValue())->setValue(destination.get_key());
                     }
                 }

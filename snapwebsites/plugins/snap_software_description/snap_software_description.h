@@ -25,20 +25,20 @@ namespace snap
 namespace snap_software_description
 {
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 
 class snap_software_description_exception : public snap_exception
 {
 public:
-    snap_software_description_exception(char const *       what_msg) : snap_exception("snap_software_description", what_msg) {}
-    snap_software_description_exception(std::string const& what_msg) : snap_exception("snap_software_description", what_msg) {}
-    snap_software_description_exception(QString const&     what_msg) : snap_exception("snap_software_description", what_msg) {}
+    snap_software_description_exception(char const *        what_msg) : snap_exception("snap_software_description", what_msg) {}
+    snap_software_description_exception(std::string const & what_msg) : snap_exception("snap_software_description", what_msg) {}
+    snap_software_description_exception(QString const &     what_msg) : snap_exception("snap_software_description", what_msg) {}
 };
 
 
@@ -54,12 +54,12 @@ public:
                             snap_software_description();
     virtual                 ~snap_software_description();
 
-    static snap_software_description *instance();
+    static snap_software_description * instance();
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
 
-    void                    on_bootstrap(::snap::snap_child *snap);
-    virtual bool            on_path_execute(content::path_info_t& ipath);
+    void                    on_bootstrap(::snap::snap_child * snap);
+    virtual bool            on_path_execute(content::path_info_t & ipath);
 
 private:
     void                    content_update(int64_t variables_timestamp);

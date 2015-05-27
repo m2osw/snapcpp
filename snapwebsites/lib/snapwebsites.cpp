@@ -116,85 +116,85 @@ char const *get_name(name_t name)
     switch(name)
     {
     // Names that are really considered low level
-    case SNAP_NAME_SERVER:
+    case name_t::SNAP_NAME_SERVER:
         return "Snap! Server";
 
-    case SNAP_NAME_CONTEXT:
+    case name_t::SNAP_NAME_CONTEXT:
         return "snap_websites";
 
-    case SNAP_NAME_INDEX: // name used for the domains and websites indexes
+    case name_t::SNAP_NAME_INDEX: // name used for the domains and websites indexes
         return "*index*"; // this is a row name inside the domains/websites tables
 
-    case SNAP_NAME_DOMAINS: // domain/sub-domain canonicalization
+    case name_t::SNAP_NAME_DOMAINS: // domain/sub-domain canonicalization
         return "domains";
 
-    case SNAP_NAME_WEBSITES: // remaining of URL canonicalization
+    case name_t::SNAP_NAME_WEBSITES: // remaining of URL canonicalization
         return "websites";
 
-    case SNAP_NAME_SITES: // website global settings
+    case name_t::SNAP_NAME_SITES: // website global settings
         return "sites";
 
     // names used by CORE (server and snap_child)
-    case SNAP_NAME_CORE_CONTENT_TYPE_HEADER:
+    case name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER:
         return "Content-Type";
 
-    case SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
+    case name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL:
         return "core::administrator_email";
 
-    case SNAP_NAME_CORE_COOKIE_DOMAIN:
+    case name_t::SNAP_NAME_CORE_COOKIE_DOMAIN:
         return "core::cookie_domain";
 
-    case SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE:
+    case name_t::SNAP_NAME_CORE_HTTP_ACCEPT_LANGUAGE:
         return "HTTP_ACCEPT_LANGUAGE";
 
-    case SNAP_NAME_CORE_HTTP_REQUEST_METHOD:
+    case name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD:
         return "REQUEST_METHOD";
 
-    case SNAP_NAME_CORE_HTTP_USER_AGENT:
+    case name_t::SNAP_NAME_CORE_HTTP_USER_AGENT:
         return "HTTP_USER_AGENT";
 
-    case SNAP_NAME_CORE_LAST_UPDATED:
+    case name_t::SNAP_NAME_CORE_LAST_UPDATED:
         return "core::last_updated";
 
-    case SNAP_NAME_CORE_LOCATION_HEADER:
+    case name_t::SNAP_NAME_CORE_LOCATION_HEADER:
         return "Location";
 
-    case SNAP_NAME_CORE_ORIGINAL_RULES:
+    case name_t::SNAP_NAME_CORE_ORIGINAL_RULES:
         return "core::original_rules";
 
-    case SNAP_NAME_CORE_PLUGINS:
+    case name_t::SNAP_NAME_CORE_PLUGINS:
         return "core::plugins";
 
-    case SNAP_NAME_CORE_PLUGIN_THRESHOLD:
+    case name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD:
         return "core::plugin_threshold";
 
-    case SNAP_NAME_CORE_REDIRECT:
+    case name_t::SNAP_NAME_CORE_REDIRECT:
         return "core::redirect";
 
-    case SNAP_NAME_CORE_RULES:
+    case name_t::SNAP_NAME_CORE_RULES:
         return "core::rules";
 
-    case SNAP_NAME_CORE_SERVER_PROTOCOL:
+    case name_t::SNAP_NAME_CORE_SERVER_PROTOCOL:
         return "SERVER_PROTOCOL";
 
-    case SNAP_NAME_CORE_SITE_LONG_NAME:
+    case name_t::SNAP_NAME_CORE_SITE_LONG_NAME:
         return "core::site_long_name";
 
-    case SNAP_NAME_CORE_SITE_NAME:
+    case name_t::SNAP_NAME_CORE_SITE_NAME:
         return "core::site_name";
 
-    case SNAP_NAME_CORE_SITE_READY:
+    case name_t::SNAP_NAME_CORE_SITE_READY:
         return "core::site_ready";
 
-    case SNAP_NAME_CORE_SITE_SHORT_NAME:
+    case name_t::SNAP_NAME_CORE_SITE_SHORT_NAME:
         return "core::site_short_name";
 
-    case SNAP_NAME_CORE_USER_COOKIE_NAME:
+    case name_t::SNAP_NAME_CORE_USER_COOKIE_NAME:
         return "core::user_cookie_name";
 
     default:
         // invalid index
-        throw snap_logic_exception(QString("invalid SNAP_NAME_CORE_... (%1)").arg(static_cast<int>(name)));
+        throw snap_logic_exception(QString("invalid name_t::SNAP_NAME_CORE_... (%1)").arg(static_cast<int>(name)));
 
     }
     NOTREACHED();
@@ -949,7 +949,7 @@ void server::config(int argc, char *argv[])
     {
         // Override output level and force it to be debug
         //
-        logging::setLogOutputLevel( logging::LOG_LEVEL_DEBUG );
+        logging::setLogOutputLevel( logging::log_level_t::LOG_LEVEL_DEBUG );
     }
 }
 
@@ -1069,8 +1069,8 @@ void server::prepare_cassandra()
     context->setHostName(f_parameters["server_name"]);
 
     // create missing tables
-    create_table(context, get_name(SNAP_NAME_DOMAINS),  "List of domain descriptions.");
-    create_table(context, get_name(SNAP_NAME_WEBSITES), "List of website descriptions.");
+    create_table(context, get_name(name_t::SNAP_NAME_DOMAINS),  "List of domain descriptions.");
+    create_table(context, get_name(name_t::SNAP_NAME_WEBSITES), "List of website descriptions.");
 
     // --add-host used?
     if(f_opt->is_defined("add-host"))
@@ -1437,7 +1437,7 @@ void server::listen()
         snap_child_vector_t::size_type max_children(f_children_running.size());
         for(snap_child_vector_t::size_type idx(0); idx < max_children; ++idx)
         {
-            if(f_children_running[idx]->check_status() == snap_child::SNAP_CHILD_STATUS_READY)
+            if(f_children_running[idx]->check_status() == snap_child::status_t::SNAP_CHILD_STATUS_READY)
             {
                 // it's ready, so it can be reused now
                 f_children_waiting.push_back(f_children_running[idx]);
@@ -1458,19 +1458,20 @@ void server::listen()
         {
             switch( f_listen_runner->get_word() )
             {
-            case snap_listen_thread::ServerStop:
+            case snap_listen_thread::word_t::WORD_SERVER_STOP:
                 SNAP_LOG_INFO("Stopping server.");
                 return;
                 break;
 
-            case snap_listen_thread::LogReset:
+            case snap_listen_thread::word_t::WORD_LOG_RESET:
                 SNAP_LOG_INFO("Logging reconfiguration.");
                 logging::reconfigure();
                 break;
 
-            case snap_listen_thread::Waiting:
+            case snap_listen_thread::word_t::WORD_WAITING:
                 // go back and listen some more
                 break;
+
             }
         }
 

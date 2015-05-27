@@ -24,7 +24,7 @@ namespace hashtag
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_HASHTAG_LINK,
     SNAP_NAME_HASHTAG_PATH,
@@ -54,7 +54,7 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    void                on_filter_text(content::path_info_t& ipath, QDomDocument& xml, QString& result, bool& changed);
+    void                on_filter_text(content::path_info_t & ipath, QDomDocument & xml, QString & result, bool & changed);
 
 private:
     void                content_update(int64_t variables_timestamp);

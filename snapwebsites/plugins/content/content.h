@@ -27,7 +27,7 @@ namespace content
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_CONTENT_ACCEPTED,
     SNAP_NAME_CONTENT_ATTACHMENT,
@@ -120,105 +120,105 @@ char const *get_name(name_t name) __attribute__ ((const));
 class content_exception : public snap_exception
 {
 public:
-    content_exception(char const *       what_msg) : snap_exception("content", what_msg) {}
-    content_exception(std::string const& what_msg) : snap_exception("content", what_msg) {}
-    content_exception(QString const&     what_msg) : snap_exception("content", what_msg) {}
+    content_exception(char const *        what_msg) : snap_exception("content", what_msg) {}
+    content_exception(std::string const & what_msg) : snap_exception("content", what_msg) {}
+    content_exception(QString const &     what_msg) : snap_exception("content", what_msg) {}
 };
 
 class content_exception_content_invalid_state : public content_exception
 {
 public:
-    content_exception_content_invalid_state(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_content_invalid_state(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_content_invalid_state(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_content_invalid_state(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_content_invalid_state(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_content_invalid_state(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_content_not_initialized : public content_exception
 {
 public:
-    content_exception_content_not_initialized(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_content_not_initialized(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_content_not_initialized(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_content_not_initialized(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_content_not_initialized(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_content_not_initialized(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_invalid_content_xml : public content_exception
 {
 public:
-    content_exception_invalid_content_xml(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_content_xml(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_content_xml(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_content_xml(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_content_xml(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_content_xml(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_parameter_not_defined : public content_exception
 {
 public:
-    content_exception_parameter_not_defined(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_parameter_not_defined(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_parameter_not_defined(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_parameter_not_defined(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_parameter_not_defined(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_parameter_not_defined(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_content_already_defined : public content_exception
 {
 public:
-    content_exception_content_already_defined(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_content_already_defined(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_content_already_defined(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_content_already_defined(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_content_already_defined(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_content_already_defined(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_circular_dependencies : public content_exception
 {
 public:
-    content_exception_circular_dependencies(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_circular_dependencies(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_circular_dependencies(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_circular_dependencies(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_circular_dependencies(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_circular_dependencies(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_type_mismatch : public content_exception
 {
 public:
-    content_exception_type_mismatch(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_type_mismatch(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_type_mismatch(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_type_mismatch(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_type_mismatch(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_type_mismatch(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_invalid_sequence : public content_exception
 {
 public:
-    content_exception_invalid_sequence(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_sequence(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_sequence(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_sequence(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_sequence(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_sequence(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_invalid_name : public content_exception
 {
 public:
-    content_exception_invalid_name(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_name(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_invalid_name(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_name(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_name(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_invalid_name(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_unexpected_revision_type : public content_exception
 {
 public:
-    content_exception_unexpected_revision_type(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_unexpected_revision_type(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_unexpected_revision_type(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_unexpected_revision_type(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_unexpected_revision_type(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_unexpected_revision_type(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_data_missing : public content_exception
 {
 public:
-    content_exception_data_missing(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_data_missing(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_data_missing(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_data_missing(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_data_missing(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_data_missing(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 class content_exception_io_error : public content_exception
 {
 public:
-    content_exception_io_error(char const *       what_msg) : content_exception(what_msg) {}
-    content_exception_io_error(std::string const& what_msg) : content_exception(what_msg) {}
-    content_exception_io_error(QString const&     what_msg) : content_exception(what_msg) {}
+    content_exception_io_error(char const *        what_msg) : content_exception(what_msg) {}
+    content_exception_io_error(std::string const & what_msg) : content_exception(what_msg) {}
+    content_exception_io_error(QString const &     what_msg) : content_exception(what_msg) {}
 };
 
 
@@ -305,11 +305,11 @@ public:
     class raii_status_t
     {
     public:
-                                    raii_status_t(path_info_t& ipath, status_t now, status_t end);
+                                    raii_status_t(path_info_t & ipath, status_t now, status_t end);
                                     ~raii_status_t();
 
     private:
-        path_info_t&                f_ipath;
+        path_info_t &               f_ipath;
         status_t const              f_end;
     };
 
@@ -318,15 +318,15 @@ public:
 
                                     path_info_t();
 
-    void                            set_path(QString const& path);
-    void                            set_real_path(QString const& path);
+    void                            set_path(QString const & path);
+    void                            set_real_path(QString const & path);
     void                            set_main_page(bool main_page);
-    void                            set_parameter(QString const& name, QString const& value);
+    void                            set_parameter(QString const & name, QString const & value);
 
     void                            force_branch(snap_version::version_number_t branch);
     void                            force_revision(snap_version::version_number_t revision);
-    void                            force_extended_revision(QString const& revision, QString const& filename);
-    void                            force_locale(QString const& locale);
+    void                            force_extended_revision(QString const & revision, QString const & filename);
+    void                            force_locale(QString const & locale);
 
     void                            get_parent(path_info_t & parent_ipath) const;
     void                            get_child(path_info_t & child_ipath, QString const & child) const;
@@ -337,12 +337,12 @@ public:
     QString                         get_cpath() const;
     QString                         get_real_cpath() const;
     bool                            is_main_page() const;
-    QString                         get_parameter(QString const& name) const;
+    QString                         get_parameter(QString const & name) const;
     status_t                        get_status() const;
-    void                            set_status(status_t const& status);
+    void                            set_status(status_t const & status);
 
     bool                            get_working_branch() const;
-    snap_version::version_number_t  get_branch(bool create_new_if_required = false, QString const& locale = "") const;
+    snap_version::version_number_t  get_branch(bool create_new_if_required = false, QString const & locale = "") const;
     bool                            has_branch() const;
     snap_version::version_number_t  get_revision() const;
     bool                            has_revision() const;
@@ -382,7 +382,7 @@ private:
 class field_search
 {
 public:
-    enum command_t
+    enum class command_t
     {
         COMMAND_UNKNOWN,                // (cannot be used)
 
@@ -432,15 +432,15 @@ public:
         COMMAND_RESET,                  // no parameters
         COMMAND_WARNING                 // + warning message
     };
-    typedef controlled_vars::limited_auto_enum_init<command_t, COMMAND_UNKNOWN, COMMAND_DEFAULT_VALUE, COMMAND_UNKNOWN> safe_command_t;
+    typedef controlled_vars::limited_auto_enum_init<command_t, command_t::COMMAND_UNKNOWN, command_t::COMMAND_DEFAULT_VALUE, command_t::COMMAND_UNKNOWN> safe_command_t;
 
-    enum mode_t
+    enum class mode_t : int32_t
     {
         SEARCH_MODE_FIRST,            // default mode: only return first parameter found
         SEARCH_MODE_EACH,             // return a list of QCassandraValue's of all the entire tree
         SEARCH_MODE_PATHS             // return a list of paths (for debug purposes usually)
     };
-    typedef controlled_vars::limited_auto_enum_init<mode_t, SEARCH_MODE_FIRST, SEARCH_MODE_PATHS, SEARCH_MODE_FIRST> safe_mode_t;
+    typedef controlled_vars::limited_auto_enum_init<mode_t, mode_t::SEARCH_MODE_FIRST, mode_t::SEARCH_MODE_PATHS, mode_t::SEARCH_MODE_FIRST> safe_mode_t;
 
     typedef QVector<QtCassandra::QCassandraValue> search_result_t;
     typedef QMap<QString, QString> variables_t;
@@ -450,19 +450,20 @@ public:
     public:
                             cmd_info_t();
                             cmd_info_t(command_t cmd);
-                            cmd_info_t(command_t cmd, QString const& str_value);
+                            cmd_info_t(command_t cmd, QString const & str_value);
                             cmd_info_t(command_t cmd, int64_t int_value);
-                            cmd_info_t(command_t cmd, QtCassandra::QCassandraValue& value);
+                            cmd_info_t(command_t cmd, mode_t const ipath);
+                            cmd_info_t(command_t cmd, QtCassandra::QCassandraValue & value);
                             cmd_info_t(command_t cmd, QDomElement element);
                             cmd_info_t(command_t cmd, QDomDocument doc);
-                            cmd_info_t(command_t cmd, search_result_t& result);
-                            cmd_info_t(command_t cmd, path_info_t const& ipath);
+                            cmd_info_t(command_t cmd, search_result_t & result);
+                            cmd_info_t(command_t cmd, path_info_t const & ipath);
 
         command_t           get_command() const { return f_cmd; }
         QString const       get_string()  const { return f_value.stringValue(); }
-        //int32_t             get_int32() const { return f_value.int32Value(); }
+        int32_t             get_int32() const { return f_value.int32Value(); }
         int64_t             get_int64() const { return f_value.int64Value(); }
-        QtCassandra::QCassandraValue const& get_value() const { return f_value; }
+        QtCassandra::QCassandraValue const & get_value() const { return f_value; }
         QDomElement         get_element() const { return f_element; }
         search_result_t *   get_result() const { return f_result; }
         path_info_t const & get_ipath() const { return f_path_info; }
@@ -476,18 +477,19 @@ public:
     };
     typedef QVector<cmd_info_t> cmd_info_vector_t;
 
-                        field_search(char const *filename, char const *func, int line, snap_child *snap);
+                        field_search(char const * filename, char const * func, int line, snap_child * snap);
                         ~field_search();
 
-    field_search&       operator () (command_t cmd);
-    field_search&       operator () (command_t cmd, char const *str_value);
-    field_search&       operator () (command_t cmd, QString const& str_value);
-    field_search&       operator () (command_t cmd, int64_t int_value);
-    field_search&       operator () (command_t cmd, QtCassandra::QCassandraValue value);
-    field_search&       operator () (command_t cmd, QDomElement element);
-    field_search&       operator () (command_t cmd, QDomDocument doc);
-    field_search&       operator () (command_t cmd, search_result_t& result);
-    field_search&       operator () (command_t cmd, path_info_t& ipath);
+    field_search &      operator () (command_t cmd);
+    field_search &      operator () (command_t cmd, char const * str_value);
+    field_search &      operator () (command_t cmd, QString const & str_value);
+    field_search &      operator () (command_t cmd, int64_t int_value);
+    field_search &      operator () (command_t cmd, mode_t mode);
+    field_search &      operator () (command_t cmd, QtCassandra::QCassandraValue value);
+    field_search &      operator () (command_t cmd, QDomElement element);
+    field_search &      operator () (command_t cmd, QDomDocument doc);
+    field_search &      operator () (command_t cmd, search_result_t & result);
+    field_search &      operator () (command_t cmd, path_info_t & ipath);
 
 private:
     void                run();
@@ -510,42 +512,42 @@ typedef QVector<QString>            dependency_list_t;
 class attachment_file
 {
 public:
-                                    attachment_file(snap_child *snap);
-                                    attachment_file(snap_child *snap, snap_child::post_file_t const& file);
+                                    attachment_file(snap_child * snap);
+                                    attachment_file(snap_child * snap, snap_child::post_file_t const & file);
 
     void                            set_multiple(bool multiple);
-    void                            set_parent_cpath(QString const& cpath);
-    void                            set_field_name(QString const& field_name);
-    void                            set_attachment_cpath(QString const& cpath);
-    void                            set_attachment_owner(QString const& owner);
-    void                            set_attachment_type(QString const& type);
+    void                            set_parent_cpath(QString const & cpath);
+    void                            set_field_name(QString const & field_name);
+    void                            set_attachment_cpath(QString const & cpath);
+    void                            set_attachment_owner(QString const & owner);
+    void                            set_attachment_type(QString const & type);
     void                            set_creation_time(int64_t time);
     void                            set_update_time(int64_t time);
-    void                            set_dependencies(dependency_list_t& dependencies);
+    void                            set_dependencies(dependency_list_t & dependencies);
 
-    void                            set_file_name(QString const& name);
-    void                            set_file_filename(QString const& filename);
-    void                            set_file_mime_type(QString const& mime_type);
-    void                            set_file_original_mime_type(QString const& mime_type);
+    void                            set_file_name(QString const & name);
+    void                            set_file_filename(QString const & filename);
+    void                            set_file_mime_type(QString const & mime_type);
+    void                            set_file_original_mime_type(QString const & mime_type);
     void                            set_file_creation_time(time_t ctime);
     void                            set_file_modification_time(time_t mtime);
-    void                            set_file_data(QByteArray const& data);
+    void                            set_file_data(QByteArray const & data);
     void                            set_file_size(int size);
     void                            set_file_index(int index);
     void                            set_file_image_width(int width);
     void                            set_file_image_height(int height);
 
     bool                            get_multiple() const;
-    snap_child::post_file_t const&  get_file() const;
-    QString const&                  get_parent_cpath() const;
-    QString const&                  get_field_name() const;
-    QString const&                  get_attachment_cpath() const;
-    QString const&                  get_attachment_owner() const;
-    QString const&                  get_attachment_type() const;
+    snap_child::post_file_t const & get_file() const;
+    QString const &                 get_parent_cpath() const;
+    QString const &                 get_field_name() const;
+    QString const &                 get_attachment_cpath() const;
+    QString const &                 get_attachment_owner() const;
+    QString const &                 get_attachment_type() const;
     int64_t                         get_creation_time() const;
     int64_t                         get_update_time() const;
-    dependency_list_t const&        get_dependencies() const;
-    QString const&                  get_name() const;
+    dependency_list_t const &       get_dependencies() const;
+    QString const &                 get_name() const;
 
 private:
     zpsnap_child_t                  f_snap;
@@ -567,15 +569,15 @@ private:
 class permission_flag
 {
 public:
-                    permission_flag() {}
-    bool            allowed() const { return f_allowed; }
-    QString const&  reason() const { return f_reason; }
-    void            not_permitted(QString const& reason = "");
+                        permission_flag() {}
+    bool                allowed() const { return f_allowed; }
+    QString const &     reason() const { return f_reason; }
+    void                not_permitted(QString const & reason = "");
 
 private:
     // prevent copies or a user could reset the flag!
-                    permission_flag(permission_flag const& rhs) = delete;
-                    permission_flag& operator = (permission_flag const& rhs) = delete;
+                        permission_flag(permission_flag const & rhs) = delete;
+    permission_flag &   operator = (permission_flag const & rhs) = delete;
 
     controlled_vars::tbool_t    f_allowed;
     QString                     f_reason;
@@ -589,7 +591,7 @@ private:
 class content : public plugins::plugin, public server::backend_action, public links::links_cloned
 {
 public:
-    enum param_type_t
+    enum class param_type_t
     {
         PARAM_TYPE_STRING,
         PARAM_TYPE_FLOAT32,
@@ -598,15 +600,14 @@ public:
         PARAM_TYPE_INT32,
         PARAM_TYPE_INT64
     };
+    typedef controlled_vars::limited_auto_enum_init<param_type_t, param_type_t::PARAM_TYPE_STRING, param_type_t::PARAM_TYPE_INT64, param_type_t::PARAM_TYPE_STRING> safe_param_type_t;
 
-    enum : signed char
-    {
-        // WARNING: these are saved in the database which is why we directly
-        //          assign values DO NOT CHANGE THE VALUES
-        CONTENT_SECURE_UNDEFINED = -1,  // not checked yet
-        CONTENT_SECURE_INSECURE = 0,    // a plugin said it was not safe to use
-        CONTENT_SECURE_SECURE = 1       // all plugins are go!
-    };
+    // WARNING: these are saved in the database which is why we directly
+    //          assign values DO NOT CHANGE THE VALUES
+    typedef signed char     secure_t;
+    static secure_t const   CONTENT_SECURE_UNDEFINED = -1;  // not checked yet
+    static secure_t const   CONTENT_SECURE_INSECURE  =  0;  // a plugin said it was not safe to use
+    static secure_t const   CONTENT_SECURE_SECURE    =  1;  // all plugins are go!
 
     struct content_attachment
     {
@@ -619,9 +620,7 @@ public:
         dependency_list_t   f_dependencies;
     };
 
-    typedef controlled_vars::limited_auto_enum_init<param_type_t, PARAM_TYPE_STRING, PARAM_TYPE_INT64, PARAM_TYPE_STRING> safe_param_type_t;
-
-    enum param_revision_t
+    enum class param_revision_t
     {
         PARAM_REVISION_GLOBAL,
         PARAM_REVISION_BRANCH,
@@ -652,15 +651,15 @@ public:
 
     struct cloned_tree_t
     {
-        cloned_tree_t(clone_info_t& source, clone_info_t& destination)
+        cloned_tree_t(clone_info_t & source, clone_info_t & destination)
             : f_source(source)
             , f_destination(destination)
             //, f_pages() -- auto-init
         {
         }
 
-        clone_info_t&                           f_source;
-        clone_info_t&                           f_destination;
+        clone_info_t &                          f_source;
+        clone_info_t &                          f_destination;
         cloned_pages_t                          f_pages;
     };
 
@@ -676,74 +675,74 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_branch_table();
     QtCassandra::QCassandraTable::pointer_t get_revision_table();
     QtCassandra::QCassandraTable::pointer_t get_processing_table();
-    QtCassandra::QCassandraValue get_content_parameter(path_info_t& path, QString const& param_name, param_revision_t revision_type);
+    QtCassandra::QCassandraValue get_content_parameter(path_info_t & path, QString const & param_name, param_revision_t revision_type);
 
     // revision control
     snap_child *        get_snap();
-    void                invalid_revision_control(QString const& version);
-    snap_version::version_number_t get_current_branch(QString const& key, bool working_branch);
-    snap_version::version_number_t get_current_user_branch(QString const& key, QString const& locale, bool working_branch);
-    snap_version::version_number_t get_current_revision(QString const& key, snap_version::version_number_t const branch, QString const& locale, bool working_branch);
-    snap_version::version_number_t get_current_revision(QString const& key, QString const& locale, bool working_branch);
-    snap_version::version_number_t get_new_branch(QString const& key, QString const& locale);
-    snap_version::version_number_t get_new_revision(QString const& key, snap_version::version_number_t const branch, QString const& locale, bool repeat, snap_version::version_number_t const old_branch = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED));
-    void                copy_branch(QString const& key, snap_version::version_number_t const source_branch, snap_version::version_number_t const destination_branch);
-    static void         copy_branch_cells_as_is(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, QString const& plugin_namespace);
-    QString             get_branch_key(QString const& key, bool working_branch);
-    void                initialize_branch(QString const& key);
-    QString             generate_branch_key(QString const& key, snap_version::version_number_t branch);
-    void                set_branch(QString const& key, snap_version::version_number_t branch, bool working_branch);
-    QString             set_branch_key(QString const& key, snap_version::version_number_t branch, bool working_branch);
-    QString             get_revision_key(QString const& key, snap_version::version_number_t branch, QString const& locale, bool working_branch);
-    QString             generate_revision_key(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale);
-    QString             generate_revision_key(QString const& key, QString const& revision, QString const& locale);
-    void                set_current_revision(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch);
-    QString             set_revision_key(QString const& key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const& locale, bool working_branch);
-    QString             set_revision_key(QString const& key, snap_version::version_number_t branch, QString const& revision, QString const& locale, bool working_branch);
-    path_info_t         get_path_info(QString const& cpath, bool main_page);
-    QString             get_user_key(QString const& key, snap_version::version_number_t branch, int64_t identifier);
-    virtual void        repair_link_of_cloned_page(QString const& clone, snap_version::version_number_t branch_number, links::link_info const& source, links::link_info const& destination, bool const cloning);
-    bool                clone_page(clone_info_t& source, clone_info_t& destination);
-    bool                move_page(path_info_t& ipath_source, path_info_t& ipath_destination);
-    bool                trash_page(path_info_t& ipath);
+    void                invalid_revision_control(QString const & version);
+    snap_version::version_number_t get_current_branch(QString const & key, bool working_branch);
+    snap_version::version_number_t get_current_user_branch(QString const & key, QString const & locale, bool working_branch);
+    snap_version::version_number_t get_current_revision(QString const & key, snap_version::version_number_t const branch, QString const & locale, bool working_branch);
+    snap_version::version_number_t get_current_revision(QString const & key, QString const & locale, bool working_branch);
+    snap_version::version_number_t get_new_branch(QString const & key, QString const & locale);
+    snap_version::version_number_t get_new_revision(QString const & key, snap_version::version_number_t const branch, QString const & locale, bool repeat, snap_version::version_number_t const old_branch = static_cast<snap_version::basic_version_number_t>(snap_version::SPECIAL_VERSION_UNDEFINED));
+    void                copy_branch(QString const & key, snap_version::version_number_t const source_branch, snap_version::version_number_t const destination_branch);
+    static void         copy_branch_cells_as_is(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, QString const & plugin_namespace);
+    QString             get_branch_key(QString const & key, bool working_branch);
+    void                initialize_branch(QString const & key);
+    QString             generate_branch_key(QString const & key, snap_version::version_number_t branch);
+    void                set_branch(QString const & key, snap_version::version_number_t branch, bool working_branch);
+    QString             set_branch_key(QString const & key, snap_version::version_number_t branch, bool working_branch);
+    QString             get_revision_key(QString const & key, snap_version::version_number_t branch, QString const & locale, bool working_branch);
+    QString             generate_revision_key(QString const & key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const & locale);
+    QString             generate_revision_key(QString const & key, QString const & revision, QString const & locale);
+    void                set_current_revision(QString const & key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const & locale, bool working_branch);
+    QString             set_revision_key(QString const & key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const & locale, bool working_branch);
+    QString             set_revision_key(QString const & key, snap_version::version_number_t branch, QString const & revision, QString const & locale, bool working_branch);
+    path_info_t         get_path_info(QString const & cpath, bool main_page);
+    QString             get_user_key(QString const & key, snap_version::version_number_t branch, int64_t identifier);
+    virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
+    bool                clone_page(clone_info_t & source, clone_info_t & destination);
+    bool                move_page(path_info_t & ipath_source, path_info_t & ipath_destination);
+    bool                trash_page(path_info_t & ipath);
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_execute(QString const& uri_path);
-    //virtual bool        on_path_execute(path_info_t& ipath);
+    void                on_bootstrap(snap_child * snap);
+    void                on_execute(QString const & uri_path);
+    //virtual bool        on_path_execute(path_info_t & ipath);
     void                on_save_content();
-    //virtual void        on_generate_main_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    //void                on_generate_page_content(layout::layout *l, QString const& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    //virtual void        on_generate_main_content(layout::layout * l, QString const & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    //void                on_generate_page_content(layout::layout * l, QString const & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
     void                on_register_backend_action(server::backend_action_map_t& actions);
-    virtual void        on_backend_action(QString const& action);
+    virtual void        on_backend_action(QString const & action);
     void                on_backend_process();
-    void                on_load_file(snap_child::post_file_t& file, bool& found);
-    void                on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure);
+    void                on_load_file(snap_child::post_file_t & file, bool & found);
+    void                on_cell_is_secure(QString const & table, QString const & row, QString const & cell, server::secure_field_flag_t & secure);
 
-    SNAP_SIGNAL(new_content, (path_info_t& path), (path));
-    SNAP_SIGNAL_WITH_MODE(create_content, (path_info_t& path, QString const& owner, QString const& type), (path, owner, type), START_AND_DONE);
-    SNAP_SIGNAL(create_attachment, (attachment_file& file, snap_version::version_number_t branch_number, QString const& locale), (file, branch_number, locale));
-    SNAP_SIGNAL(modified_content, (path_info_t& ipath), (ipath));
-    SNAP_SIGNAL_WITH_MODE(check_attachment_security, (attachment_file const& file, permission_flag& secure, bool const fast), (file, secure, fast), NEITHER);
-    SNAP_SIGNAL(process_attachment, (QByteArray const& key, attachment_file const& file), (key, file));
-    SNAP_SIGNAL(page_cloned, (cloned_tree_t const& tree), (tree));
-    SNAP_SIGNAL(copy_branch_cells, (QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
+    SNAP_SIGNAL(new_content, (path_info_t & path), (path));
+    SNAP_SIGNAL_WITH_MODE(create_content, (path_info_t & path, QString const & owner, QString const & type), (path, owner, type), START_AND_DONE);
+    SNAP_SIGNAL(create_attachment, (attachment_file & file, snap_version::version_number_t branch_number, QString const & locale), (file, branch_number, locale));
+    SNAP_SIGNAL(modified_content, (path_info_t & ipath), (ipath));
+    SNAP_SIGNAL_WITH_MODE(check_attachment_security, (attachment_file const & file, permission_flag & secure, bool const fast), (file, secure, fast), NEITHER);
+    SNAP_SIGNAL(process_attachment, (QByteArray const & key, attachment_file const & file), (key, file));
+    SNAP_SIGNAL(page_cloned, (cloned_tree_t const & tree), (tree));
+    SNAP_SIGNAL(copy_branch_cells, (QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
 
     //void                output() const;
 
     // add content for addition to the database
-    void                add_xml(QString const& plugin_name);
-    void                add_xml_document(QDomDocument& dom, QString const& plugin_name);
-    void                add_content(QString const& path, QString const& plugin_owner);
-    void                add_param(QString const& path, QString const& name, param_revision_t revision_type, QString const& locale, QString const& data);
-    void                set_param_overwrite(QString const& path, const QString& name, bool overwrite);
-    void                set_param_type(QString const& path, const QString& name, param_type_t param_type);
-    void                add_link(QString const& path, links::link_info const& source, links::link_info const& destination);
-    void                add_attachment(QString const& path, content_attachment const& attachment);
-    bool                load_attachment(QString const& key, attachment_file& file, bool load_data = true);
-    void                add_javascript(QDomDocument doc, QString const& name);
-    void                add_css(QDomDocument doc, QString const& name);
+    void                add_xml(QString const & plugin_name);
+    void                add_xml_document(QDomDocument & dom, QString const & plugin_name);
+    void                add_content(QString const & path, QString const & plugin_owner);
+    void                add_param(QString const & path, QString const & name, param_revision_t revision_type, QString const & locale, QString const & data);
+    void                set_param_overwrite(QString const & path, const QString& name, bool overwrite);
+    void                set_param_type(QString const & path, const QString & name, param_type_t param_type);
+    void                add_link(QString const & path, links::link_info const & source, links::link_info const & destination);
+    void                add_attachment(QString const & path, content_attachment const & attachment);
+    bool                load_attachment(QString const & key, attachment_file & file, bool load_data = true);
+    void                add_javascript(QDomDocument doc, QString const & name);
+    void                add_css(QDomDocument doc, QString const & name);
 
-    bool                is_final(QString const& key);
+    bool                is_final(QString const & key);
 
 private:
     // from the <param> tags
@@ -811,7 +810,7 @@ private:
 //{
 //public:
 //    virtual             ~content_box_execute() {} // ensure proper virtual tables
-//    virtual bool        on_content_box_execute(content *c, QString const& path, QDomElement& box) = 0;
+//    virtual bool        on_content_box_execute(content * c, QString const & path, QDomElement & box) = 0;
 //};
 
 

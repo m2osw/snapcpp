@@ -31,10 +31,10 @@ public:
                 snap_backend( server_pointer_t s );
     virtual     ~snap_backend();
 
-    void        create_signal( const std::string& name );
+    void        create_signal( std::string const & name );
 
     bool        is_message_pending() const;
-    bool        pop_message( message_t& message, int const wait_secs = 1 );
+    bool        pop_message( message_t & message, int const wait_secs = 1 );
     bool        get_error() const;
     bool        stop_received() const;
 
@@ -60,7 +60,7 @@ private:
         bool get_error() const;
         bool stop_received() const;
         bool is_message_pending() const;
-        bool pop_message( message_t& message, int const wait_secs );
+        bool pop_message( message_t & message, int const wait_secs );
 
         // from snap_thread::snap_runner
         virtual void run();
@@ -79,8 +79,8 @@ private:
     udp_monitor                 f_monitor;
     snap_thread                 f_thread;
 
-    void                        process_backend_uri(QString const& uri);
-    std::string                 get_signal_name_from_action(QString const& action);
+    void                        process_backend_uri(QString const & uri);
+    std::string                 get_signal_name_from_action(QString const & action);
 };
 
 

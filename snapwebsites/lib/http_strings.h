@@ -40,13 +40,13 @@ public:
         {
         }
 
-        part_t(QString const& name, float level)
+        part_t(QString const & name, float level)
             : f_name(name)
             , f_level(level)
         {
         }
 
-        QString const& get_name() const
+        QString const & get_name() const
         {
             return f_name;
         }
@@ -61,7 +61,7 @@ public:
          * This oeprator overload is used by the different sort
          * algorithm that we can apply against this type.
          */
-        bool operator < (part_t const& rhs) const
+        bool operator < (part_t const & rhs) const
         {
             return f_level < rhs.f_level;
         }
@@ -73,10 +73,10 @@ public:
     };
     typedef QVector<part_t> part_vector_t; // do NOT use a map, we want to keep them in order!
 
-                        WeightedHttpString(const QString& str);
+                        WeightedHttpString(const QString & str);
 
     QString const&      get_string() const { return f_str; }
-    float               get_level(const QString& name);
+    float               get_level(QString const & name);
     part_vector_t const get_parts() const { return f_parts; }
 
 private:

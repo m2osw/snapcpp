@@ -24,7 +24,7 @@ namespace avatar
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_AVATAR_ADMIN_SETTINGS,
     SNAP_NAME_AVATAR_AGE,
@@ -61,7 +61,7 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child *snap);
-    void                on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
+    void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
 
 private:
     void                content_update(int64_t variables_timestamp);

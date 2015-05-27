@@ -50,18 +50,18 @@ controlled_vars::zint32_t        g_message_id;
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+const char * get_name(name_t name)
 {
     switch(name) {
-    case SNAP_NAME_MESSAGES_MESSAGES:
+    case name_t::SNAP_NAME_MESSAGES_MESSAGES:
         return "messages::messages";
 
-    case SNAP_NAME_MESSAGES_WARNING_HEADER:
+    case name_t::SNAP_NAME_MESSAGES_WARNING_HEADER:
         return "Warning";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_MESSAGES_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_MESSAGES_...");
 
     }
     NOTREACHED();
@@ -74,7 +74,7 @@ const char *get_name(name_t name)
  * by the QVector implementation.
  */
 messages::message::message()
-    : f_type(static_cast<int>(MESSAGE_TYPE_ERROR))
+    : f_type(message_type_enum_t::MESSAGE_TYPE_ERROR)
     , f_id(++g_message_id)
     //, f_title("") -- auto-init
     //, f_body("") -- auto-init
@@ -224,7 +224,7 @@ void messages::message::set_widget_name(QString const& widget_name)
 void messages::message::unserialize(QtSerialization::QReader& r)
 {
     QtSerialization::QComposite comp;
-    int32_t type(MESSAGE_TYPE_ERROR);
+    int32_t type(static_cast<int32_t>(static_cast<message_type_enum_t>(message_type_enum_t::MESSAGE_TYPE_ERROR)));
     QtSerialization::QFieldInt32 tag_type(comp, "type", type);
     int32_t id(0);
     QtSerialization::QFieldInt32 tag_id(comp, "id", id);
@@ -232,7 +232,7 @@ void messages::message::unserialize(QtSerialization::QReader& r)
     QtSerialization::QFieldString tag_body(comp, "body", f_body);
     r.read(comp);
 
-    f_type = type;
+    f_type = static_cast<message_type_enum_t>(type);
     f_id = id;
 }
 
@@ -265,7 +265,7 @@ void messages::message::readTag(const QString& name, QtSerialization::QReader& r
 void messages::message::serialize(QtSerialization::QWriter& w) const
 {
     QtSerialization::QWriter::QTag tag(w, "message");
-    QtSerialization::writeTag(w, "type", f_type);
+    QtSerialization::writeTag(w, "type", static_cast<int32_t>(static_cast<message_type_enum_t>(f_type)));
     QtSerialization::writeTag(w, "id", static_cast<int32_t>(f_id));
     QtSerialization::writeTag(w, "title", f_title);
     QtSerialization::writeTag(w, "body", f_body);
@@ -398,7 +398,7 @@ messages::message& messages::set_http_error(snap_child::http_code_t err_code, QS
     ++f_error_count;
 
     // the error code must be valid (i.e. an actual HTTP error!)
-    if(err_code < 400 || err_code > 599)
+    if(static_cast<int>(err_code) < 400 || static_cast<int>(err_code) > 599)
     {
         throw snap_logic_exception("the set_http_error() function was called with an invalid error code number");
     }
@@ -407,7 +407,7 @@ messages::message& messages::set_http_error(snap_child::http_code_t err_code, QS
     snap_child::define_http_name(err_code, err_name);
 
     // log the error
-    logging::log_security_t sec(err_security ? logging::LOG_SECURITY_SECURE : logging::LOG_SECURITY_NONE);
+    logging::log_security_t const sec(err_security ? logging::log_security_t::LOG_SECURITY_SECURE : logging::log_security_t::LOG_SECURITY_NONE);
     SNAP_LOG_FATAL(sec)(err_details)(" (")(err_name)(": ")(err_description)(")");
 
     // Status Header
@@ -415,7 +415,7 @@ messages::message& messages::set_http_error(snap_child::http_code_t err_code, QS
     QString status(QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name));
     f_snap->set_header("Status", status);
 
-    message msg(message::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name), err_description);
+    message msg(message::message_type_enum_t::MESSAGE_TYPE_ERROR, QString("%1 %2").arg(static_cast<int>(err_code)).arg(err_name), err_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }
@@ -451,10 +451,10 @@ messages::message& messages::set_error(QString err_name, const QString& err_desc
     }
 
     // log the error
-    logging::log_security_t sec(err_security ? logging::LOG_SECURITY_SECURE : logging::LOG_SECURITY_NONE);
+    logging::log_security_t sec(err_security ? logging::log_security_t::LOG_SECURITY_SECURE : logging::log_security_t::LOG_SECURITY_NONE);
     SNAP_LOG_ERROR(sec)(err_details)(" (")(err_name)(": ")(err_description)(")");
 
-    message msg(message::MESSAGE_TYPE_ERROR, err_name, err_description);
+    message msg(message::message_type_enum_t::MESSAGE_TYPE_ERROR, err_name, err_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }
@@ -491,7 +491,7 @@ messages::message& messages::set_warning(QString warning_name, const QString& wa
     // log the warning
     SNAP_LOG_WARNING(warning_details)(" (")(warning_name)(": ")(warning_description)(")");
 
-    message msg(message::MESSAGE_TYPE_WARNING, warning_name, warning_description);
+    message msg(message::message_type_enum_t::MESSAGE_TYPE_WARNING, warning_name, warning_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }
@@ -525,7 +525,7 @@ messages::message& messages::set_info(QString info_name, const QString& info_des
 
     SNAP_LOG_INFO("(")(info_name)(": ")(info_description)(")");
 
-    message msg(message::MESSAGE_TYPE_INFO, info_name, info_description);
+    message msg(message::message_type_enum_t::MESSAGE_TYPE_INFO, info_name, info_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }
@@ -559,7 +559,7 @@ messages::message& messages::set_debug(QString debug_name, const QString& debug_
 
     SNAP_LOG_DEBUG("(")(debug_name)(": ")(debug_description)(")");
 
-    message msg(message::MESSAGE_TYPE_DEBUG, debug_name, debug_description);
+    message msg(message::message_type_enum_t::MESSAGE_TYPE_DEBUG, debug_name, debug_description);
     f_messages.push_back(msg);
     return f_messages.last();
 }

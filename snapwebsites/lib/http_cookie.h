@@ -51,41 +51,41 @@ typedef controlled_vars::ptr_auto_init<snap_child>    zpsnap_child_t;
 class http_cookie
 {
 public:
-    enum http_cookie_type_t
+    enum class http_cookie_type_t
     {
         HTTP_COOKIE_TYPE_PERMANENT,
         HTTP_COOKIE_TYPE_SESSION,
         HTTP_COOKIE_TYPE_DELETE
     };
 
-    http_cookie(); // for QMap to work; DO NOT USE!
-    http_cookie(snap_child *snap, QString const& name, QString const& value = "");
+                        http_cookie(); // for QMap to work; DO NOT USE!
+                        http_cookie(snap_child * snap, QString const & name, QString const & value = "");
 
-    void set_value(QString const& value);
-    void set_value(QByteArray const& value);
-    void set_domain(QString const& domain);
-    void set_path(QString const& path);
-    void set_delete();
-    void set_session();
-    void set_expire(QDateTime const& date_time);
-    void set_expire_in(int seconds);
-    void set_secure(bool secure = true);
-    void set_http_only(bool http_only = true);
-    void set_comment(QString const& comment);
-    void set_comment_url(QString const& comment_url);
+    void                set_value(QString const & value);
+    void                set_value(QByteArray const & value);
+    void                set_domain(QString const & domain);
+    void                set_path(QString const & path);
+    void                set_delete();
+    void                set_session();
+    void                set_expire(QDateTime const & date_time);
+    void                set_expire_in(int seconds);
+    void                set_secure(bool secure = true);
+    void                set_http_only(bool http_only = true);
+    void                set_comment(QString const & comment);
+    void                set_comment_url(QString const & comment_url);
 
-    QString const& get_name() const;
-    QByteArray const& get_value() const;
-    http_cookie_type_t get_type() const;
-    QString const& get_domain() const;
-    QString const& get_path() const;
-    QDateTime const& get_expire() const;
-    bool get_secure() const;
-    bool get_http_only() const;
-    QString const& get_comment() const;
-    QString const& get_comment_url() const;
+    QString const &     get_name() const;
+    QByteArray const &  get_value() const;
+    http_cookie_type_t  get_type() const;
+    QString const &     get_domain() const;
+    QString const &     get_path() const;
+    QDateTime const &   get_expire() const;
+    bool                get_secure() const;
+    bool                get_http_only() const;
+    QString const &     get_comment() const;
+    QString const &     get_comment_url() const;
 
-    QString to_http_header() const;
+    QString             to_http_header() const;
 
 private:
     zpsnap_child_t              f_snap;         // the snap child that created this cookie

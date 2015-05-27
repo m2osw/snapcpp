@@ -44,21 +44,21 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_FAVICON_ICON: // icon is in Cassandra
+    case name_t::SNAP_NAME_FAVICON_ICON: // icon is in Cassandra
         return "icon";
 
-    case SNAP_NAME_FAVICON_ICON_PATH:
+    case name_t::SNAP_NAME_FAVICON_ICON_PATH:
         return "favicon::icon::path";
 
-    case SNAP_NAME_FAVICON_IMAGE: // specific image for this page or type
+    case name_t::SNAP_NAME_FAVICON_IMAGE: // specific image for this page or type
         return "content::attachment::favicon::icon::path";
 
-    case SNAP_NAME_FAVICON_SETTINGS:
+    case name_t::SNAP_NAME_FAVICON_SETTINGS:
         return "admin/settings/favicon";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_FAVICON_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_FAVICON_...");
 
     }
     NOTREACHED();
@@ -260,7 +260,7 @@ bool favicon::on_path_execute(content::path_info_t& ipath)
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
     QString const revision_key(ipath.get_revision_key());
     if(!revision_key.isEmpty()
-    && revision_table->row(revision_key)->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
+    && revision_table->row(revision_key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_FILENAME)))
     {
         output(ipath);
         return true;
@@ -279,18 +279,18 @@ void favicon::on_process_form_post(content::path_info_t& ipath, sessions::sessio
     (void) session_info;
 
     if(ipath.get_cpath() == "admin/settings/favicon"
-    && f_snap->postfile_exists(get_name(SNAP_NAME_FAVICON_ICON)))
+    && f_snap->postfile_exists(get_name(name_t::SNAP_NAME_FAVICON_ICON)))
     {
-        snap_child::post_file_t const& file(f_snap->postfile(get_name(SNAP_NAME_FAVICON_ICON)));
+        snap_child::post_file_t const& file(f_snap->postfile(get_name(name_t::SNAP_NAME_FAVICON_ICON)));
         QString const site_key(f_snap->get_site_key_with_slash());
         content::path_info_t spath;
         spath.set_path(ipath.get_cpath() + "/" + file.get_basename());
         content::path_info_t dpath;
         dpath.set_path("types/permissions/rights/administer/website/info");
         // TODO: this "...::direct::action::..." is probably not correct
-        QString const source_link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER));
+        QString const source_link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER));
         bool const source_unique(false);
-        QString const destination_link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
+        QString const destination_link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER));
         bool const destination_unique(false);
         links::link_info source(source_link_name, source_unique, spath.get_key(), spath.get_branch());
         links::link_info destination(destination_link_name, destination_unique, dpath.get_key(), dpath.get_branch());
@@ -326,11 +326,11 @@ void favicon::output(content::path_info_t& ipath)
             // try the site wide settings for an attachment
             FIELD_SEARCH
                 // /admin/settings/favicon/content::attachment::favicon::icon::path
-                (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-                (content::field_search::COMMAND_FIELD_NAME, QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)).arg(get_name(SNAP_NAME_FAVICON_ICON_PATH)))
-                (content::field_search::COMMAND_PATH, get_name(SNAP_NAME_FAVICON_SETTINGS))
-                (content::field_search::COMMAND_SELF)
-                (content::field_search::COMMAND_RESULT, result)
+                (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+                (content::field_search::command_t::COMMAND_FIELD_NAME, QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)).arg(get_name(name_t::SNAP_NAME_FAVICON_ICON_PATH)))
+                (content::field_search::command_t::COMMAND_PATH, get_name(name_t::SNAP_NAME_FAVICON_SETTINGS))
+                (content::field_search::command_t::COMMAND_SELF)
+                (content::field_search::command_t::COMMAND_RESULT, result)
 
                 // generate
                 ;
@@ -347,7 +347,7 @@ void favicon::output(content::path_info_t& ipath)
             QFile file(":/plugins/favicon/snap-favicon.ico");
             if(!file.open(QIODevice::ReadOnly))
             {
-                f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Icon Not Found",
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Icon Not Found",
                         "This website does not have a favorite icon.",
                         "Could not load the default resource favicon \":/plugins/favicon/snap-favicon.ico\".");
                 NOTREACHED();
@@ -440,15 +440,15 @@ void favicon::on_generate_page_content(content::path_info_t& ipath, QDomElement&
     }
 
     FIELD_SEARCH
-        (content::field_search::COMMAND_ELEMENT, body)
-        (content::field_search::COMMAND_CHILD_ELEMENT, "image")
-        (content::field_search::COMMAND_CHILD_ELEMENT, "shortcut")
-        (content::field_search::COMMAND_ELEMENT_ATTR, "type=image/x-icon") // should be vnd.microsoft.icon but that's not supported everywhere yet
-        (content::field_search::COMMAND_ELEMENT_ATTR, "href=" + icon_path)
+        (content::field_search::command_t::COMMAND_ELEMENT, body)
+        (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "image")
+        (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "shortcut")
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "type=image/x-icon") // should be vnd.microsoft.icon but that's not supported everywhere yet
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "href=" + icon_path)
         // TODO retrieve the image sizes from the database so we can
         //      use the real sizes here
-        (content::field_search::COMMAND_ELEMENT_ATTR, "width=16")
-        (content::field_search::COMMAND_ELEMENT_ATTR, "height=16")
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "width=16")
+        (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "height=16")
 
         // generate
         ;
@@ -469,21 +469,21 @@ void favicon::get_icon(content::path_info_t& ipath, content::field_search::searc
     result.clear();
 
     FIELD_SEARCH
-        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-        (content::field_search::COMMAND_PATH_INFO_GLOBAL, ipath)
+        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+        (content::field_search::command_t::COMMAND_PATH_INFO_GLOBAL, ipath)
 
         // /snap/head/metadata/desc[@type="favicon"]/data
-        (content::field_search::COMMAND_FIELD_NAME, get_name(SNAP_NAME_FAVICON_IMAGE))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_IF_FOUND, 1)
-            (content::field_search::COMMAND_LINK, content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE))
-            (content::field_search::COMMAND_SELF)
-            (content::field_search::COMMAND_IF_FOUND, 1)
-            (content::field_search::COMMAND_PARENTS, "types/taxonomy/system/content-types")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, get_name(name_t::SNAP_NAME_FAVICON_IMAGE))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_IF_FOUND, 1)
+            (content::field_search::command_t::COMMAND_LINK, content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE))
+            (content::field_search::command_t::COMMAND_SELF)
+            (content::field_search::command_t::COMMAND_IF_FOUND, 1)
+            (content::field_search::command_t::COMMAND_PARENTS, "types/taxonomy/system/content-types")
             // we cannot check the default here because it
             // cannot be accessed by anonymous visitors
-        (content::field_search::COMMAND_LABEL, 1)
-        (content::field_search::COMMAND_RESULT, result)
+        (content::field_search::command_t::COMMAND_LABEL, 1)
+        (content::field_search::command_t::COMMAND_RESULT, result)
 
         // retrieve!
         ;

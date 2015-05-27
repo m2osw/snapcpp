@@ -25,38 +25,41 @@ namespace snap
 namespace messages
 {
 
-class messages_exception : public snap_exception
-{
-public:
-    messages_exception(char const *       what_msg) : snap_exception("messages", what_msg) {}
-    messages_exception(std::string const& what_msg) : snap_exception("messages", what_msg) {}
-    messages_exception(QString const&     what_msg) : snap_exception("messages", what_msg) {}
-};
-
-class messages_exception_invalid_field_name : public messages_exception
-{
-public:
-    messages_exception_invalid_field_name(char const *       what_msg) : messages_exception(what_msg) {}
-    messages_exception_invalid_field_name(std::string const& what_msg) : messages_exception(what_msg) {}
-    messages_exception_invalid_field_name(QString const&     what_msg) : messages_exception(what_msg) {}
-};
-
-class messages_exception_already_defined : public messages_exception
-{
-public:
-    messages_exception_already_defined(char const *       what_msg) : messages_exception(what_msg) {}
-    messages_exception_already_defined(std::string const& what_msg) : messages_exception(what_msg) {}
-    messages_exception_already_defined(QString const&     what_msg) : messages_exception(what_msg) {}
-};
-
-
-
-enum name_t
+enum class name_t
 {
     SNAP_NAME_MESSAGES_MESSAGES,
     SNAP_NAME_MESSAGES_WARNING_HEADER
 };
 char const *get_name(name_t name) __attribute__ ((const));
+
+
+
+class messages_exception : public snap_exception
+{
+public:
+    messages_exception(char const *        what_msg) : snap_exception("messages", what_msg) {}
+    messages_exception(std::string const & what_msg) : snap_exception("messages", what_msg) {}
+    messages_exception(QString const &     what_msg) : snap_exception("messages", what_msg) {}
+};
+
+class messages_exception_invalid_field_name : public messages_exception
+{
+public:
+    messages_exception_invalid_field_name(char const *        what_msg) : messages_exception(what_msg) {}
+    messages_exception_invalid_field_name(std::string const & what_msg) : messages_exception(what_msg) {}
+    messages_exception_invalid_field_name(QString const &     what_msg) : messages_exception(what_msg) {}
+};
+
+class messages_exception_already_defined : public messages_exception
+{
+public:
+    messages_exception_already_defined(char const *        what_msg) : messages_exception(what_msg) {}
+    messages_exception_already_defined(std::string const & what_msg) : messages_exception(what_msg) {}
+    messages_exception_already_defined(QString const &     what_msg) : messages_exception(what_msg) {}
+};
+
+
+
 
 
 class messages : public plugins::plugin, public QtSerialization::QSerializationObject
@@ -68,31 +71,31 @@ public:
     class message : public QtSerialization::QSerializationObject
     {
     public:
-        enum message_type_enum_t
+        enum class message_type_enum_t
         {
             MESSAGE_TYPE_ERROR,
             MESSAGE_TYPE_WARNING,
             MESSAGE_TYPE_INFO,
             MESSAGE_TYPE_DEBUG
         };
-        typedef controlled_vars::limited_need_init<message_type_enum_t, MESSAGE_TYPE_ERROR, MESSAGE_TYPE_DEBUG> message_type_t;
+        typedef controlled_vars::limited_need_enum_init<message_type_enum_t, message_type_enum_t::MESSAGE_TYPE_ERROR, message_type_enum_t::MESSAGE_TYPE_DEBUG> message_type_t;
 
                             message();
-                            message(message_type_t t, QString const& title, QString const& body);
-                            message(message const& rhs);
+                            message(message_type_t t, QString const & title, QString const & body);
+                            message(message const & rhs);
 
         message_type_enum_t get_type() const;
         int                 get_id() const;
-        QString const&      get_title() const;
-        QString const&      get_body() const;
+        QString const &     get_title() const;
+        QString const &     get_body() const;
 
-        QString const&      get_widget_name() const;
-        void                set_widget_name(QString const& widget_name);
+        QString const &     get_widget_name() const;
+        void                set_widget_name(QString const & widget_name);
 
         // internal functions used to save the data serialized
-        void                unserialize(QtSerialization::QReader& r);
-        virtual void        readTag(QString const& name, QtSerialization::QReader& r);
-        void                serialize(QtSerialization::QWriter& w) const;
+        void                unserialize(QtSerialization::QReader & r);
+        virtual void        readTag(QString const & name, QtSerialization::QReader & r);
+        void                serialize(QtSerialization::QWriter & w) const;
 
     private:
         message_type_t              f_type;
@@ -111,22 +114,22 @@ public:
 
     void                on_bootstrap(snap_child *snap);
 
-    message&            set_http_error(snap_child::http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details, bool err_security);
-    message&            set_error(QString err_name, QString const& err_description, QString const& err_details, bool err_security);
-    message&            set_warning(QString warning_name, QString const& warning_description, QString const& warning_details);
-    message&            set_info(QString info_name, QString const& info_description);
-    message&            set_debug(QString debug_name, QString const& debug_description);
+    message &           set_http_error(snap_child::http_code_t err_code, QString err_name, QString const & err_description, QString const & err_details, bool err_security);
+    message &           set_error(QString err_name, QString const & err_description, QString const & err_details, bool err_security);
+    message &           set_warning(QString warning_name, QString const & warning_description, QString const & warning_details);
+    message &           set_info(QString info_name, QString const & info_description);
+    message &           set_debug(QString debug_name, QString const & debug_description);
 
     void                clear_messages();
-    message const&      get_message(int idx) const;
-    message const&      get_last_message() const;
+    message const &     get_message(int idx) const;
+    message const &     get_last_message() const;
     int                 get_message_count() const;
     int                 get_error_count() const;
     int                 get_warning_count() const;
 
     // "internal" functions used to save the data serialized
-    void                unserialize(QString const& data);
-    virtual void        readTag(QString const& name, QtSerialization::QReader& r);
+    void                unserialize(QString const & data);
+    virtual void        readTag(QString const & name, QtSerialization::QReader & r);
     QString             serialize() const;
 
 private:

@@ -33,7 +33,7 @@
 QHtmlSerializer::QHtmlSerializer(QXmlNamePool namepool, QBuffer *output, bool const is_html)
     : f_namepool(namepool)
     , f_output(output)
-    , f_status(HTML_SERIALIZER_STATUS_READY)
+    , f_status(html_serializer_status_t::HTML_SERIALIZER_STATUS_READY)
     //, f_element_stack() -- auto-init
     , f_is_html(is_html)
 {
@@ -160,11 +160,11 @@ void QHtmlSerializer::endElement()
     }
     if(is_empty)
     {
-        if(f_status != HTML_SERIALIZER_STATUS_ELEMENT_OPEN)
+        if(f_status != html_serializer_status_t::HTML_SERIALIZER_STATUS_ELEMENT_OPEN)
         {
             throw std::runtime_error(QString("data was written inside empty HTML tag \"%1\"").arg(e).toUtf8().data());
         }
-        f_status = HTML_SERIALIZER_STATUS_READY;
+        f_status = html_serializer_status_t::HTML_SERIALIZER_STATUS_READY;
 
         // close empty tag
         // (note that the / is not required, but we want to keep it
@@ -248,7 +248,7 @@ void QHtmlSerializer::startElement(const QXmlName& name)
     }
     element += name.localName(f_namepool);
     f_output->write(element.toUtf8());
-    f_status = HTML_SERIALIZER_STATUS_ELEMENT_OPEN;
+    f_status = html_serializer_status_t::HTML_SERIALIZER_STATUS_ELEMENT_OPEN;
     f_element_stack.push_back(element);
 }
 
@@ -261,9 +261,9 @@ void QHtmlSerializer::startOfSequence()
 
 void QHtmlSerializer::closeElement()
 {
-    if(f_status == HTML_SERIALIZER_STATUS_ELEMENT_OPEN)
+    if(f_status == html_serializer_status_t::HTML_SERIALIZER_STATUS_ELEMENT_OPEN)
     {
-        f_status = HTML_SERIALIZER_STATUS_READY;
+        f_status = html_serializer_status_t::HTML_SERIALIZER_STATUS_READY;
         f_output->write(">");
     }
 }

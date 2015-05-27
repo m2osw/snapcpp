@@ -229,7 +229,7 @@ http_cookie::http_cookie(snap_child *snap, const QString& name, const QString& v
 
     if(f_snap)
     {
-        QtCassandra::QCassandraValue cookie_domain(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_COOKIE_DOMAIN)));
+        QtCassandra::QCassandraValue cookie_domain(f_snap->get_site_parameter(snap::get_name(name_t::SNAP_NAME_CORE_COOKIE_DOMAIN)));
         if(cookie_domain.nullValue())
         {
             // use the fully qualified website domain name
@@ -618,15 +618,15 @@ http_cookie::http_cookie_type_t http_cookie::get_type() const
 {
     if(!f_expire.isValid())
     {
-        return HTTP_COOKIE_TYPE_SESSION;
+        return http_cookie_type_t::HTTP_COOKIE_TYPE_SESSION;
     }
     // TBD -- Utc? or not Utc? As far as I know the cookie date is
     //        in UTC so we need to compare with the UTC current date
     if(f_expire < QDateTime::currentDateTimeUtc())
     {
-        return HTTP_COOKIE_TYPE_DELETE;
+        return http_cookie_type_t::HTTP_COOKIE_TYPE_DELETE;
     }
-    return HTTP_COOKIE_TYPE_PERMANENT;
+    return http_cookie_type_t::HTTP_COOKIE_TYPE_PERMANENT;
 }
 
 
@@ -783,18 +783,18 @@ QString http_cookie::to_http_header() const
 
     switch(get_type())
     {
-    case HTTP_COOKIE_TYPE_PERMANENT:
+    case http_cookie_type_t::HTTP_COOKIE_TYPE_PERMANENT:
         // compute date/time
         // HTTP format generates: Sun, 06 Nov 1994 08:49:37 GMT
         // (see http://tools.ietf.org/html/rfc2616#section-3.3.1)
         result += "; Expires=" + f_expire.toString("ddd, dd MMM yyyy hh:mm:ss GMT");
         break;
 
-    case HTTP_COOKIE_TYPE_SESSION:
+    case http_cookie_type_t::HTTP_COOKIE_TYPE_SESSION:
         // no Expires
         break;
 
-    case HTTP_COOKIE_TYPE_DELETE:
+    case http_cookie_type_t::HTTP_COOKIE_TYPE_DELETE:
         // no need to waste time computing that date
         result += "; Expires=Thu, 01-Jan-1970 00:00:01 GMT";
         break;

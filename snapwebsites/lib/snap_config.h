@@ -31,13 +31,13 @@ public:
                     snap_config();
 
     void            clear();
-    void            set_cmdline_params( parameter_map_t const& params );
-    void            read_config_file( QString const& filename );
+    void            set_cmdline_params( parameter_map_t const & params );
+    void            read_config_file( QString const & filename );
 
-    QString&        operator []( QString const& name );
-    QString         operator []( QString const& name ) const;
+    QString &       operator []( QString const & name );
+    QString         operator []( QString const & name ) const;
 
-    bool            contains( QString const& name ) const;
+    bool            contains( QString const & name ) const;
 
 private:
     parameter_map_t f_parameters;

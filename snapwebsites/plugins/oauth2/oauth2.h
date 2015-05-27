@@ -25,7 +25,7 @@ namespace snap
 namespace oauth2
 {
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_OAUTH2_EMAIL,
     SNAP_NAME_OAUTH2_ENABLE,
@@ -34,16 +34,16 @@ enum name_t
     SNAP_NAME_OAUTH2_SECRET,
     SNAP_NAME_OAUTH2_USER_ENABLE
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 
 class oauth2_exception : public snap_exception
 {
 public:
-    oauth2_exception(char const *       what_msg) : snap_exception("oauth2", what_msg) {}
-    oauth2_exception(std::string const& what_msg) : snap_exception("oauth2", what_msg) {}
-    oauth2_exception(QString const&     what_msg) : snap_exception("oauth2", what_msg) {}
+    oauth2_exception(char const *        what_msg) : snap_exception("oauth2", what_msg) {}
+    oauth2_exception(std::string const & what_msg) : snap_exception("oauth2", what_msg) {}
+    oauth2_exception(QString const &     what_msg) : snap_exception("oauth2", what_msg) {}
 };
 
 
@@ -64,12 +64,12 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(::snap::snap_child *snap);
-    virtual bool            on_path_execute(content::path_info_t& ipath);
-    void                    on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type);
+    virtual bool            on_path_execute(content::path_info_t & ipath);
+    void                    on_create_content(content::path_info_t & ipath, QString const & owner, QString const & type);
     void                    on_process_cookies();
 
-    SNAP_SIGNAL_WITH_MODE(oauth2_authorized, (QString const& application), (application), NEITHER);
-    SNAP_SIGNAL_WITH_MODE(oauth2_authenticated, (QString const& application), (application), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(oauth2_authorized, (QString const & application), (application), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(oauth2_authenticated, (QString const & application), (application), NEITHER);
 
 private:
     void                    content_update(int64_t variables_timestamp);

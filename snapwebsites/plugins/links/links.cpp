@@ -46,21 +46,21 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_LINKS_CREATELINK:
+    case name_t::SNAP_NAME_LINKS_CREATELINK:
         return "createlink";
 
-    case SNAP_NAME_LINKS_DELETELINK:
+    case name_t::SNAP_NAME_LINKS_DELETELINK:
         return "deletelink";
 
-    case SNAP_NAME_LINKS_TABLE: // sorted index of links
+    case name_t::SNAP_NAME_LINKS_TABLE: // sorted index of links
         return "links";
 
-    case SNAP_NAME_LINKS_NAMESPACE:
+    case name_t::SNAP_NAME_LINKS_NAMESPACE:
         return "links";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_LINKS_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_LINKS_...");
 
     }
     NOTREACHED();
@@ -278,7 +278,7 @@ void link_info::verify_name(QString const& vname)
 {
     // the namespace is really only for debug purposes
     // but at this time we'll keep it for security
-    char const *links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+    char const *links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
     QString ns;
     ns.reserve(64);
     bool has_namespace(false);
@@ -520,7 +520,7 @@ bool link_context::next_link(link_info& info)
     // multiple links
     if(f_row)
     {
-        QString links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+        QString links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
         links_namespace += "::";
         QString name(f_info.name());
         if(!name.isEmpty())
@@ -758,7 +758,7 @@ QtCassandra::QCassandraTable::pointer_t links::get_links_table()
     // retrieve links index table if not there yet
     if(!f_links_table)
     {
-        f_links_table = f_snap->create_table(get_name(SNAP_NAME_LINKS_TABLE), "Links index table.");
+        f_links_table = f_snap->create_table(get_name(name_t::SNAP_NAME_LINKS_TABLE), "Links index table.");
     }
     return f_links_table;
 }
@@ -1124,15 +1124,15 @@ void links::delete_link(link_info const& info, int const delete_record_count)
         // the links need to be loaded from the links table and there can
         // be many so we have to loop over the rows we read
 
-        QString const links_namespace(get_name(SNAP_NAME_LINKS_NAMESPACE));
+        QString const links_namespace(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE));
 
         // here we get the row, we do not delete it yet because we need
         // to go through the whole list first
         QtCassandra::QCassandraRow::pointer_t row(f_links_table->row(info.link_key()));
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
         // The columns names are keys (i.e. http://snap.m2osw.com/...)
-        //column_predicate.setStartColumnName(QString("%1::").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
-        //column_predicate.setEndColumnName(QString("%1;").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
+        //column_predicate.setStartColumnName(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+        //column_predicate.setEndColumnName(QString("%1;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
         column_predicate.setCount(delete_record_count);
         column_predicate.setIndex(); // behave like an index
         bool modified(false);
@@ -1304,8 +1304,8 @@ void links::adjust_links_after_cloning(QString const& source_branch, QString con
     snap_version::version_number_t const branch_number(destination_branch.mid(dst_branch_pos + 1).toULong());
 
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
-    column_predicate.setStartColumnName(QString("%1::").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
-    column_predicate.setEndColumnName(QString("%1;").arg(get_name(SNAP_NAME_LINKS_NAMESPACE)));
+    column_predicate.setStartColumnName(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    column_predicate.setEndColumnName(QString("%1;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
     column_predicate.setCount(100);
     column_predicate.setIndex(); // behave like an index
     int const src_branch_pos(source_branch.indexOf('#'));
@@ -1576,8 +1576,8 @@ void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
  */
 void links::on_register_backend_action(server::backend_action_map_t& actions)
 {
-    actions[get_name(SNAP_NAME_LINKS_CREATELINK)] = this;
-    actions[get_name(SNAP_NAME_LINKS_DELETELINK)] = this;
+    actions[get_name(name_t::SNAP_NAME_LINKS_CREATELINK)] = this;
+    actions[get_name(name_t::SNAP_NAME_LINKS_DELETELINK)] = this;
 }
 
 
@@ -1599,7 +1599,7 @@ void links::on_backend_action(QString const& action)
 //std::cerr << " dst: " << f_snap->get_server_parameter("DESTINATION_LINK") << "\n";
 //std::cerr << "  dn: " << f_snap->get_server_parameter("DESTINATION_LINK_NAME") << "\n";
 
-    if(action == get_name(SNAP_NAME_LINKS_CREATELINK))
+    if(action == get_name(name_t::SNAP_NAME_LINKS_CREATELINK))
     {
         // create a link
         QString const mode(f_snap->get_server_parameter("LINK_MODE"));
@@ -1643,7 +1643,7 @@ void links::on_backend_action(QString const& action)
         // everything looked good, attempt the feat
         create_link(source, destination);
     }
-    else if(action == get_name(SNAP_NAME_LINKS_DELETELINK))
+    else if(action == get_name(name_t::SNAP_NAME_LINKS_DELETELINK))
     {
         // delete a link
         QString const mode(f_snap->get_server_parameter("LINK_MODE"));

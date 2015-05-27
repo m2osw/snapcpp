@@ -63,28 +63,28 @@ void QMessageHandler::handleMessage(QtMsgType type, QString const & description,
         f_had_msg = true;
 
         char const *type_msg(nullptr);
-        logging::log_level_t level(logging::LOG_LEVEL_OFF);
+        logging::log_level_t level(logging::log_level_t::LOG_LEVEL_OFF);
         switch(type)
         {
         case QtDebugMsg:
             type_msg = "Debug";
-            level = logging::LOG_LEVEL_DEBUG;
+            level = logging::log_level_t::LOG_LEVEL_DEBUG;
             break;
 
         case QtWarningMsg:
             type_msg = "Warning";
-            level = logging::LOG_LEVEL_WARNING;
+            level = logging::log_level_t::LOG_LEVEL_WARNING;
             break;
 
         case QtCriticalMsg:
             type_msg = "Critical";
-            level = logging::LOG_LEVEL_ERROR;
+            level = logging::log_level_t::LOG_LEVEL_ERROR;
             break;
 
         //case QtFatalMsg:
         default:
             type_msg = "Fatal";
-            level = logging::LOG_LEVEL_FATAL;
+            level = logging::log_level_t::LOG_LEVEL_FATAL;
             break;
 
         }

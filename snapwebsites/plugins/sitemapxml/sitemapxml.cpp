@@ -49,31 +49,31 @@ SNAP_PLUGIN_START(sitemapxml, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+const char * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_SITEMAPXML_COUNT: // in site table, int32
+    case name_t::SNAP_NAME_SITEMAPXML_COUNT: // in site table, int32
         return "sitemapxml::count";
 
-    case SNAP_NAME_SITEMAPXML_FREQUENCY:
+    case name_t::SNAP_NAME_SITEMAPXML_FREQUENCY:
         return "sitemapxml::frequency";
 
-    case SNAP_NAME_SITEMAPXML_INCLUDE:
+    case name_t::SNAP_NAME_SITEMAPXML_INCLUDE:
         return "sitemapxml::include";
 
-    case SNAP_NAME_SITEMAPXML_NAMESPACE:
+    case name_t::SNAP_NAME_SITEMAPXML_NAMESPACE:
         return "sitemapxml";
 
-    case SNAP_NAME_SITEMAPXML_SITEMAP_XML: // in site table, string
+    case name_t::SNAP_NAME_SITEMAPXML_SITEMAP_XML: // in site table, string
         return "sitemapxml::sitemap.xml";
 
-    case SNAP_NAME_SITEMAPXML_PRIORITY: // float
+    case name_t::SNAP_NAME_SITEMAPXML_PRIORITY: // float
         return "sitemapxml::priority";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_SITEMAPXML_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_SITEMAPXML_...");
 
     }
     NOTREACHED();
@@ -101,7 +101,7 @@ sitemapxml::url_info::url_info()
  *
  * \param[in] uri  The URI of the resource being added.
  */
-void sitemapxml::url_info::set_uri(const QString& uri)
+void sitemapxml::url_info::set_uri(QString const & uri)
 {
     f_uri = uri;
 }
@@ -473,7 +473,7 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
     // Try something like this to get the XML sitemaps:
     //       snapbackend -c snapserver.conf
 
-    QtCassandra::QCassandraValue count_value(f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_COUNT)));
+    QtCassandra::QCassandraValue count_value(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_SITEMAPXML_COUNT)));
     if(count_value.nullValue() || 0 == count_value.int32Value())
     {
         // no sitemap available at this point
@@ -490,7 +490,7 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
             // wrong filename!
             return false;
         }
-        sitemap_data = f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML));
+        sitemap_data = f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_SITEMAPXML_SITEMAP_XML));
     }
     else
     {
@@ -514,7 +514,7 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
         if(sitemap_number.size() == 1)
         {
             // send sitemap listing all the available sitemaps
-            sitemap_data = f_snap->get_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML));
+            sitemap_data = f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_SITEMAPXML_SITEMAP_XML));
         }
         else
         {
@@ -606,7 +606,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 
     content::path_info_t include_ipath;
     include_ipath.set_path("types/taxonomy/system/sitemapxml/include");
-    links::link_info xml_sitemap_info(get_name(SNAP_NAME_SITEMAPXML_INCLUDE), false, include_ipath.get_key(), include_ipath.get_branch());
+    links::link_info xml_sitemap_info(get_name(name_t::SNAP_NAME_SITEMAPXML_INCLUDE), false, include_ipath.get_key(), include_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(xml_sitemap_info));
     links::link_info xml_sitemap;
     while(link_ctxt->next_link(xml_sitemap))
@@ -632,7 +632,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
             ( ""            // anonymous user
             , page_ipath    // this page
             , "view"        // can the anonymous user view this page
-            , permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR)    // anonymous users are Visitors
+            , permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR)    // anonymous users are Visitors
             , result        // give me the result here
             );
 
@@ -647,7 +647,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
             url.set_uri(page_key);
 
             // author of the page defined a priority for the sitemap.xml file?
-            QtCassandra::QCassandraValue priority(branch_table->row(page_ipath.get_branch_key())->cell(get_name(SNAP_NAME_SITEMAPXML_PRIORITY))->value());
+            QtCassandra::QCassandraValue priority(branch_table->row(page_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_SITEMAPXML_PRIORITY))->value());
             if(priority.nullValue())
             {
                 // set the site priority to 1.0 for the home page
@@ -664,14 +664,14 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
             }
 
             // use the last modification date from that page
-            QtCassandra::QCassandraValue modified(branch_table->row(page_ipath.get_branch_key())->cell(QString(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED)))->value());
+            QtCassandra::QCassandraValue modified(branch_table->row(page_ipath.get_branch_key())->cell(QString(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED)))->value());
             if(!modified.nullValue())
             {
                 url.set_last_modification(modified.int64Value() / 1000000L); // micro-seconds -> seconds
             }
 
             // XXX ameliorate as we grow this feature
-            QtCassandra::QCassandraValue frequency(branch_table->row(page_ipath.get_branch_key())->cell(get_name(SNAP_NAME_SITEMAPXML_FREQUENCY))->value());
+            QtCassandra::QCassandraValue frequency(branch_table->row(page_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_SITEMAPXML_FREQUENCY))->value());
             if(!frequency.nullValue())
             {
                 QString f(frequency.stringValue());
@@ -736,7 +736,7 @@ void sitemapxml::on_backend_process()
             "\n  Generator: sitemapxml plugin"
             "\n  Creation Date: %1"
             "\n  URL Count: %2"
-            "\n  System: http://snapwebsites.org/\n").arg(f_snap->date_to_string(start_date, f_snap->DATE_FORMAT_HTTP)).arg(f_url_info.size())));
+            "\n  System: http://snapwebsites.org/\n").arg(f_snap->date_to_string(start_date, f_snap->date_format_t::DATE_FORMAT_HTTP)).arg(f_url_info.size())));
     doc.appendChild(comment);
 
     // The stylesheet makes use of a processing instruction entry
@@ -777,7 +777,7 @@ void sitemapxml::on_backend_process()
         {
             QDomElement lastmod(doc.createElement("lastmod"));
             url.appendChild(lastmod);
-            QDomText mod(doc.createTextNode(f_snap->date_to_string(t * 1000000, snap_child::DATE_FORMAT_LONG)));
+            QDomText mod(doc.createTextNode(f_snap->date_to_string(t * 1000000, snap_child::date_format_t::DATE_FORMAT_LONG)));
             lastmod.appendChild(mod);
         }
 
@@ -824,15 +824,15 @@ void sitemapxml::on_backend_process()
     }
 
     // TODO: we need to look into supporting multiple sitemap.xml files
-    f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_COUNT), 1);
-    f_snap->set_site_parameter(get_name(SNAP_NAME_SITEMAPXML_SITEMAP_XML), doc.toString(-1));
+    f_snap->set_site_parameter(get_name(name_t::SNAP_NAME_SITEMAPXML_COUNT), 1);
+    f_snap->set_site_parameter(get_name(name_t::SNAP_NAME_SITEMAPXML_SITEMAP_XML), doc.toString(-1));
 
-    //QString content_table_name(snap::get_name(snap::SNAP_NAME_CONTENT));
+    //QString content_table_name(snap::get_name(snap::name_t::SNAP_NAME_CONTENT));
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     // we also save updated because the user doesn't directly interact with this
     // data and thus content::updated would otherwise never be changed
-    QString content_updated(content::get_name(content::SNAP_NAME_CONTENT_UPDATED));
-    QString content_modified(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED));
+    QString content_updated(content::get_name(content::name_t::SNAP_NAME_CONTENT_UPDATED));
+    QString content_modified(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED));
     QString site_key(f_snap->get_site_key_with_slash());
     QString sitemap_xml(site_key + "sitemap.xml");
     content_table->row(sitemap_xml)->cell(content_updated)->setValue(start_date);
@@ -904,7 +904,7 @@ void sitemapxml::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells
 {
     static_cast<void>(destination_branch);
 
-    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(SNAP_NAME_SITEMAPXML_NAMESPACE));
+    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_SITEMAPXML_NAMESPACE));
 }
 
 

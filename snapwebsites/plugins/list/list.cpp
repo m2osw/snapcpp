@@ -50,84 +50,84 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_LIST_ITEM_KEY_SCRIPT: // compiled
+    case name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT: // compiled
         return "list::item_key_script";
 
-    case SNAP_NAME_LIST_KEY: // list of ordered pages
+    case name_t::SNAP_NAME_LIST_KEY: // list of ordered pages
         return "list::key"; // + "::<list uri>" (cell includes <item sort key>)
 
-    case SNAP_NAME_LIST_LAST_UPDATED:
+    case name_t::SNAP_NAME_LIST_LAST_UPDATED:
         return "list::last_updated";
 
-    case SNAP_NAME_LIST_LINK: // standard link between list and list items
+    case name_t::SNAP_NAME_LIST_LINK: // standard link between list and list items
         return "list::link";
 
-    case SNAP_NAME_LIST_NAME: // name for query string
+    case name_t::SNAP_NAME_LIST_NAME: // name for query string
         return "list::name";
 
-    case SNAP_NAME_LIST_NAMESPACE:
+    case name_t::SNAP_NAME_LIST_NAMESPACE:
         return "list";
 
-    case SNAP_NAME_LIST_NUMBER_OF_ITEMS:
+    case name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS:
         return "list::number_of_items";
 
-    case SNAP_NAME_LIST_ORDERED_PAGES: // list of ordered pages
+    case name_t::SNAP_NAME_LIST_ORDERED_PAGES: // list of ordered pages
         return "list::ordered_pages"; // + "::<item sort key>"
 
-    case SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT: // text format
+    case name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT: // text format
         return "list::original_item_key_script";
 
-    case SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT: // text format
+    case name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT: // text format
         return "list::original_test_script";
 
-    case SNAP_NAME_LIST_PAGE: // query string name "...?page=..."
+    case name_t::SNAP_NAME_LIST_PAGE: // query string name "...?page=..."
         return "page";
 
-    case SNAP_NAME_LIST_PAGELIST: // --action pagelist
+    case name_t::SNAP_NAME_LIST_PAGELIST: // --action pagelist
         return "pagelist";
 
-    case SNAP_NAME_LIST_PAGE_SIZE:
+    case name_t::SNAP_NAME_LIST_PAGE_SIZE:
         return "list::page_size";
 
-    case SNAP_NAME_LIST_PROCESSLIST: // --action processlist
+    case name_t::SNAP_NAME_LIST_PROCESSLIST: // --action processlist
         return "processlist";
 
-    case SNAP_NAME_LIST_RESETLISTS:
+    case name_t::SNAP_NAME_LIST_RESETLISTS:
         return "resetlist";
 
-    case SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
+    case name_t::SNAP_NAME_LIST_SELECTOR: // all, public, children, hand-picked, type=name, ...
         return "list::selector";
 
-    case SNAP_NAME_LIST_SIGNAL_NAME:
+    case name_t::SNAP_NAME_LIST_SIGNAL_NAME:
         return "pagelist_udp_signal";
 
-    case SNAP_NAME_LIST_STANDALONE: // when present in list table as a column name of a site row: signals a website managed as a standalone site
+    case name_t::SNAP_NAME_LIST_STANDALONE: // when present in list table as a column name of a site row: signals a website managed as a standalone site
         return "*standalone*";
 
-    case SNAP_NAME_LIST_STANDALONELIST: // --action standalonelist
+    case name_t::SNAP_NAME_LIST_STANDALONELIST: // --action standalonelist
         return "standalonelist";
 
-    case SNAP_NAME_LIST_TABLE:
+    case name_t::SNAP_NAME_LIST_TABLE:
         return "list";
 
-    case SNAP_NAME_LIST_TABLE_REF:
+    case name_t::SNAP_NAME_LIST_TABLE_REF:
         return "listref";
 
-    case SNAP_NAME_LIST_TAXONOMY_PATH:
+    case name_t::SNAP_NAME_LIST_TAXONOMY_PATH:
         return "types/taxonomy/system/list";
 
-    case SNAP_NAME_LIST_THEME: // filter function
+    case name_t::SNAP_NAME_LIST_THEME: // filter function
         return "list::theme";
 
-    case SNAP_NAME_LIST_TEST_SCRIPT: // compiled
+    case name_t::SNAP_NAME_LIST_TEST_SCRIPT: // compiled
         return "list::test_script";
 
-    case SNAP_NAME_LIST_TYPE:
+    case name_t::SNAP_NAME_LIST_TYPE:
         return "list::type";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_LIST_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_LIST_...");
 
     }
     NOTREACHED();
@@ -267,7 +267,7 @@ QString paging_t::get_list_name() const
 
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        f_list_name = branch_table->row(f_ipath.get_branch_key())->cell(get_name(SNAP_NAME_LIST_NAME))->value().stringValue();
+        f_list_name = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_NAME))->value().stringValue();
     }
     return f_list_name;
 }
@@ -321,7 +321,7 @@ int32_t paging_t::get_maximum_number_of_items() const
  *
  * This function retrieves the total number of items found in a list.
  * This value is defined in the database under the name
- * SNAP_NAME_LIST_NUMBER_OF_ITEMS.
+ * name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS.
  *
  * \note
  * This function always returns a positive number or zero.
@@ -349,7 +349,7 @@ int32_t paging_t::get_number_of_items() const
         // then it will be set to zero
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        f_number_of_items = branch_table->row(f_ipath.get_branch_key())->cell(get_name(SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value();
+        f_number_of_items = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->value().safeInt32Value();
     }
 
     // the count may have been limited by the user
@@ -488,7 +488,7 @@ void paging_t::process_query_string_info()
 {
     // define the query string variable name
     QString const list_name(get_list_name());
-    QString variable_name(get_name(SNAP_NAME_LIST_PAGE));
+    QString variable_name(get_name(name_t::SNAP_NAME_LIST_PAGE));
     if(!list_name.isEmpty())
     {
         variable_name += "-";
@@ -597,7 +597,7 @@ void paging_t::process_query_string_info()
  */
 QString paging_t::generate_query_string_info(int32_t page_offset) const
 {
-    QString result(get_name(SNAP_NAME_LIST_PAGE));
+    QString result(get_name(name_t::SNAP_NAME_LIST_PAGE));
     QString const list_name(get_list_name());
     if(!list_name.isEmpty())
     {
@@ -1067,7 +1067,7 @@ int32_t paging_t::get_total_pages() const
  * number of items per page.
  *
  * By default the number of items in a page is defined using the
- * database SNAP_NAME_LIST_PAGE_SIZE from the branch table. This
+ * database name_t::SNAP_NAME_LIST_PAGE_SIZE from the branch table. This
  * function can be used to force the size of a page and ignore
  * the size defined in the database.
  *
@@ -1105,7 +1105,7 @@ int32_t paging_t::get_page_size() const
     {
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        f_default_page_size = branch_table->row(f_ipath.get_branch_key())->cell(get_name(SNAP_NAME_LIST_PAGE_SIZE))->value().safeInt32Value();
+        f_default_page_size = branch_table->row(f_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_PAGE_SIZE))->value().safeInt32Value();
         if(f_default_page_size < 1)
         {
             // not defined in the database, bump it to 20
@@ -1301,7 +1301,7 @@ QtCassandra::QCassandraTable::pointer_t list::get_list_table()
 {
     if(!f_list_table)
     {
-        f_list_table = f_snap->create_table(get_name(SNAP_NAME_LIST_TABLE), "Website list table.");
+        f_list_table = f_snap->create_table(get_name(name_t::SNAP_NAME_LIST_TABLE), "Website list table.");
     }
     return f_list_table;
 }
@@ -1329,7 +1329,7 @@ QtCassandra::QCassandraTable::pointer_t list::get_listref_table()
 {
     if(!f_listref_table)
     {
-        f_listref_table = f_snap->create_table(get_name(SNAP_NAME_LIST_TABLE_REF), "Website list reference table.");
+        f_listref_table = f_snap->create_table(get_name(name_t::SNAP_NAME_LIST_TABLE_REF), "Website list reference table.");
     }
     return f_listref_table;
 }
@@ -1410,14 +1410,14 @@ void list::on_create_content(content::path_info_t& ipath, QString const& owner, 
     //       and replacing that with the test of the last update is going to
     //       make it a lot faster overall.
     QString const branch_key(ipath.get_branch_key());
-    if(branch_table->row(branch_key)->exists(get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)))
+    if(branch_table->row(branch_key)->exists(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)))
     {
         // zero marks the list as brand new so we use a different
         // algorithm to check the data in that case (i.e. the list of
         // rows in the list table is NOT complete!)
         QString const key(ipath.get_key());
         int64_t const zero(0);
-        branch_table->row(key)->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
+        branch_table->row(key)->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->setValue(zero);
     }
 
     on_modified_content(ipath); // then it is the same as on_modified_content()
@@ -1514,8 +1514,8 @@ void list::on_modified_content(content::path_info_t& ipath)
     content::content *content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QString const branch_key(ipath.get_branch_key());
-    branch_table->row(branch_key)->dropCell(get_name(SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
-    branch_table->row(branch_key)->dropCell(get_name(SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+    branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+    branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
 
     f_ping_backend = true;
 }
@@ -1544,7 +1544,7 @@ void list::on_attach_to_session()
     if(f_ping_backend)
     {
         // send a PING to the backend
-        f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_LIST_PAGELIST)));
+        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
     }
 }
 
@@ -1627,7 +1627,7 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
     QString const branch_key(ipath.get_branch_key());
     QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(branch_key));
 
-    char const *ordered_pages(get_name(SNAP_NAME_LIST_ORDERED_PAGES));
+    char const *ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
     int const len(static_cast<int>(strlen(ordered_pages) + 2));
 
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -1690,10 +1690,10 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
  */
 void list::on_register_backend_action(server::backend_action_map_t& actions)
 {
-    actions[get_name(SNAP_NAME_LIST_PAGELIST)] = this;
-    actions[get_name(SNAP_NAME_LIST_PROCESSLIST)] = this;
-    actions[get_name(SNAP_NAME_LIST_STANDALONELIST)] = this;
-    actions[get_name(SNAP_NAME_LIST_RESETLISTS)] = this;
+    actions[get_name(name_t::SNAP_NAME_LIST_PAGELIST)] = this;
+    actions[get_name(name_t::SNAP_NAME_LIST_PROCESSLIST)] = this;
+    actions[get_name(name_t::SNAP_NAME_LIST_STANDALONELIST)] = this;
+    actions[get_name(name_t::SNAP_NAME_LIST_RESETLISTS)] = this;
 }
 
 
@@ -1703,7 +1703,7 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
  * instead of just "list" because the --list command line option already
  * "allocates" the list action name.
  *
- * See also the SNAP_NAME_LIST_SIGNAL_NAME.
+ * See also the name_t::SNAP_NAME_LIST_SIGNAL_NAME.
  *
  * \param[in] action  The concerned action.
  *
@@ -1711,9 +1711,9 @@ void list::on_register_backend_action(server::backend_action_map_t& actions)
  */
 char const * list::get_signal_name(QString const & action) const
 {
-    if(action == get_name(SNAP_NAME_LIST_PAGELIST))
+    if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
     {
-        return get_name(SNAP_NAME_LIST_SIGNAL_NAME);
+        return get_name(name_t::SNAP_NAME_LIST_SIGNAL_NAME);
     }
     return backend_action::get_signal_name(action);
 }
@@ -1762,7 +1762,7 @@ void list::on_backend_action(QString const& action)
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
 
-    if(action == get_name(SNAP_NAME_LIST_PAGELIST))
+    if(action == get_name(name_t::SNAP_NAME_LIST_PAGELIST))
     {
         snap_backend* backend( dynamic_cast<snap_backend*>(f_snap.get()) );
         if(backend == nullptr)
@@ -1784,7 +1784,7 @@ void list::on_backend_action(QString const& action)
 //return;
 
         QString const site_key(f_snap->get_site_key_with_slash());
-        QString const core_plugin_threshold(get_name(SNAP_NAME_CORE_PLUGIN_THRESHOLD));
+        QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
         // loop until stopped
         for(;;)
         {
@@ -1818,7 +1818,7 @@ void list::on_backend_action(QString const& action)
                                 o != rows.end(); ++o)
                         {
                             // do not work on standalone websites
-                            if(!(*o)->exists(get_name(SNAP_NAME_LIST_STANDALONE)))
+                            if(!(*o)->exists(get_name(name_t::SNAP_NAME_LIST_STANDALONE)))
                             {
                                 f_snap->init_start_date();
                                 QString const key(QString::fromUtf8(o.key().data()));
@@ -1895,22 +1895,22 @@ void list::on_backend_action(QString const& action)
             }
         }
     }
-    else if(action == get_name(SNAP_NAME_LIST_STANDALONELIST))
+    else if(action == get_name(name_t::SNAP_NAME_LIST_STANDALONELIST))
     {
         // mark the site as a standalone website for its list management
         QString const site_key(f_snap->get_site_key_with_slash());
         int8_t const standalone(1);
-        list_table->row(site_key)->cell(get_name(SNAP_NAME_LIST_STANDALONE))->setValue(standalone);
+        list_table->row(site_key)->cell(get_name(name_t::SNAP_NAME_LIST_STANDALONE))->setValue(standalone);
     }
-    else if(action == get_name(SNAP_NAME_LIST_PROCESSLIST))
+    else if(action == get_name(name_t::SNAP_NAME_LIST_PROCESSLIST))
     {
         QString const url(f_snap->get_server_parameter("URL"));
         content::path_info_t ipath;
         ipath.set_path(url);
         on_modified_content(ipath);
-        f_snap->udp_ping(get_signal_name(get_name(SNAP_NAME_LIST_PAGELIST)));
+        f_snap->udp_ping(get_signal_name(get_name(name_t::SNAP_NAME_LIST_PAGELIST)));
     }
-    else if(action == get_name(SNAP_NAME_LIST_RESETLISTS))
+    else if(action == get_name(name_t::SNAP_NAME_LIST_RESETLISTS))
     {
         // go through all the lists and delete the compiled script, this
         // will force the list code to regenerate all the lists; this
@@ -1919,8 +1919,8 @@ void list::on_backend_action(QString const& action)
         int64_t const start_date(f_snap->get_start_date());
         content::path_info_t ipath;
         QString const site_key(f_snap->get_site_key_with_slash());
-        ipath.set_path(site_key + get_name(SNAP_NAME_LIST_TAXONOMY_PATH));
-        links::link_info info(get_name(SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
+        ipath.set_path(site_key + get_name(name_t::SNAP_NAME_LIST_TAXONOMY_PATH));
+        links::link_info info(get_name(name_t::SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
         links::link_info child_info;
         while(link_ctxt->next_link(child_info))
@@ -1928,8 +1928,8 @@ void list::on_backend_action(QString const& action)
             QString const key(child_info.key());
             content::path_info_t list_ipath;
             list_ipath.set_path(key);
-            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
-            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+            branch_table->row(list_ipath.get_branch_key())->dropCell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
         }
     }
     else
@@ -2042,8 +2042,8 @@ int list::generate_new_lists(QString const& site_key)
     int did_work(0);
 
     content::path_info_t ipath;
-    ipath.set_path(site_key + get_name(SNAP_NAME_LIST_TAXONOMY_PATH));
-    links::link_info info(get_name(SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
+    ipath.set_path(site_key + get_name(name_t::SNAP_NAME_LIST_TAXONOMY_PATH));
+    links::link_info info(get_name(name_t::SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
     while(link_ctxt->next_link(child_info))
@@ -2051,14 +2051,14 @@ int list::generate_new_lists(QString const& site_key)
         QString const key(child_info.key());
         content::path_info_t list_ipath;
         list_ipath.set_path(key);
-        QtCassandra::QCassandraValue last_updated(branch_table->row(list_ipath.get_branch_key())->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->value());
+        QtCassandra::QCassandraValue last_updated(branch_table->row(list_ipath.get_branch_key())->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value());
         if(last_updated.nullValue()
         || last_updated.int64Value() == 0)
         {
             SNAP_LOG_TRACE("list plugin working on new list \"")(list_ipath.get_key())("\"");
 
             QtCassandra::QCassandraRow::pointer_t list_row(branch_table->row(list_ipath.get_branch_key()));
-            QString const selector(list_row->cell(get_name(SNAP_NAME_LIST_SELECTOR))->value().stringValue());
+            QString const selector(list_row->cell(get_name(name_t::SNAP_NAME_LIST_SELECTOR))->value().stringValue());
 
             if(selector == "children")
             {
@@ -2094,14 +2094,14 @@ int list::generate_new_lists(QString const& site_key)
                         // what pages should be checked (although the field
                         // is considered mandatory, but we ought to forget
                         // once in a while)
-                        SNAP_LOG_WARNING("Mandatory field \"")(get_name(SNAP_NAME_LIST_SELECTOR))("\" not defined for \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
+                        SNAP_LOG_WARNING("Mandatory field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" not defined for \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
                     }
                     else
                     {
                         // this could happen if you are running different
                         // versions of snap and an old backend hits a new
                         // still unknown selector
-                        SNAP_LOG_WARNING("Field \"")(get_name(SNAP_NAME_LIST_SELECTOR))("\" set to unknown value \"")(selector)("\" in \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
+                        SNAP_LOG_WARNING("Field \"")(get_name(name_t::SNAP_NAME_LIST_SELECTOR))("\" set to unknown value \"")(selector)("\" in \"")(list_ipath.get_key())("\". Using \"all\" as a fallback.");
                     }
                 }
                 did_work |= generate_new_list_for_all_pages(site_key, list_ipath);
@@ -2140,7 +2140,7 @@ int list::generate_new_list_for_all_descendants(content::path_info_t& list_ipath
 {
     int did_work(0);
 
-    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_CHILDREN), false, parent.get_key(), parent.get_branch());
+    links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_CHILDREN), false, parent.get_key(), parent.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
     while(link_ctxt->next_link(child_info))
@@ -2182,7 +2182,7 @@ int list::generate_new_list_for_type(QString const& site_key, content::path_info
 
     content::path_info_t ipath;
     ipath.set_path(QString("%1%2").arg(site_key).arg(type));
-    links::link_info info(content::get_name(content::SNAP_NAME_CONTENT_PAGE), false, ipath.get_key(), ipath.get_branch());
+    links::link_info info(content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
     while(link_ctxt->next_link(child_info))
@@ -2347,41 +2347,41 @@ int list::generate_all_lists_for_page(QString const& site_key, QString const& pa
     int did_work(0);
 
     content::path_info_t ipath;
-    ipath.set_path(site_key + get_name(SNAP_NAME_LIST_TAXONOMY_PATH));
-    links::link_info info(get_name(SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
+    ipath.set_path(site_key + get_name(name_t::SNAP_NAME_LIST_TAXONOMY_PATH));
+    links::link_info info(get_name(name_t::SNAP_NAME_LIST_TYPE), false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info child_info;
     while(link_ctxt->next_link(child_info))
     {
         // Entries are defined with the following:
         //
-        // SNAP_NAME_LIST_ITEM_KEY_SCRIPT
+        // name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT
         //    The script used to generate the item key used to sort items
         //    of the list.
         //
-        // SNAP_NAME_LIST_KEY
+        // name_t::SNAP_NAME_LIST_KEY
         //    list::key::<list key>
         //
         //    The <list key> part is the the ipath.get_key() from the
         //    list page. This way we can find the lists this item is a
         //    part of.
         //
-        // SNAP_NAME_LIST_ORDERED_PAGES
+        // name_t::SNAP_NAME_LIST_ORDERED_PAGES
         //    list::ordered_pages::<item key>
         //
         //    The <item key> part is defined using the
-        //    SNAP_NAME_LIST_ITEM_KEY_SCRIPT script. If not yet defined, use
-        //    SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT to create the compiled
+        //    name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT script. If not yet defined, use
+        //    name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT to create the compiled
         //    script. Note that this script may change under our feet so that
         //    means we'd lose access to the reference. For this reason, the
         //    reference is saved in the item under "list::key::<list key>".
         //
-        // SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT
+        // name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT
         //    This cell includes the original script used to compute the
         //    item key. This script is compiled from the script in the
-        //    SNAP_NAME_LIST_ITEM_KEY_SCRIPT.
+        //    name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT.
         //
-        // SNAP_NAME_LIST_TYPE
+        // name_t::SNAP_NAME_LIST_TYPE
         //    The list type, used for the standard link of a list page to
         //    the list content type.
         //
@@ -2421,7 +2421,7 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
     {
         QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
         if(!content_table->exists(page_ipath.get_key())
-        || !content_table->row(page_ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
+        || !content_table->row(page_ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
         {
             // the page is not ready yet, let it be for a little longer, it will
             // be taken in account by the standard process
@@ -2438,12 +2438,12 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
         }
         QtCassandra::QCassandraRow::pointer_t page_branch_row(branch_table->row(page_ipath.get_branch_key()));
 
-        QString const link_name(get_name(SNAP_NAME_LIST_LINK));
+        QString const link_name(get_name(name_t::SNAP_NAME_LIST_LINK));
 
-        QString const list_key_in_page(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_KEY)).arg(list_ipath.get_key()));
+        QString const list_key_in_page(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_KEY)).arg(list_ipath.get_key()));
         bool const included(run_list_check(list_ipath, page_ipath));
         QString const new_item_key(run_list_item_key(list_ipath, page_ipath));
-        QString const new_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
+        QString const new_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(new_item_key));
         if(included)
         {
             // the check script says to include this item in this list;
@@ -2458,7 +2458,7 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
                 // affects the key and you get a duplicate which is corrected
                 // later--but we probably need to fix duplicates at some point)
                 QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
-                QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
+                QString const current_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
                 if(current_item_key_full != new_item_key_full
                 || !page_branch_row->exists(new_item_key_full))
                 {
@@ -2501,7 +2501,7 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
             if(page_branch_row->exists(list_key_in_page))
             {
                 QtCassandra::QCassandraValue current_item_key(page_branch_row->cell(list_key_in_page)->value());
-                QString const current_item_key_full(QString("%1::%2").arg(get_name(SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
+                QString const current_item_key_full(QString("%1::%2").arg(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES)).arg(current_item_key.stringValue()));
 
                 list_row->dropCell(current_item_key_full, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
                 page_branch_row->dropCell(list_key_in_page, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
@@ -2530,7 +2530,7 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
     //       (i.e. child receives a STOP signal)
     //
     int64_t const start_date(f_snap->get_start_date());
-    list_row->cell(get_name(SNAP_NAME_LIST_LAST_UPDATED))->setValue(start_date);
+    list_row->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->setValue(start_date);
 
     // TODO
     // if we did work, the list size changed so we have to recalculate the
@@ -2544,7 +2544,7 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
     //
     if(did_work != 0)
     {
-        char const *ordered_pages(get_name(SNAP_NAME_LIST_ORDERED_PAGES));
+        char const *ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
 
         int32_t count(0);
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -2566,7 +2566,7 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
             count += cells.size();
         }
 
-        list_row->cell(get_name(SNAP_NAME_LIST_NUMBER_OF_ITEMS))->setValue(count);
+        list_row->cell(get_name(name_t::SNAP_NAME_LIST_NUMBER_OF_ITEMS))->setValue(count);
     }
 
     return did_work;
@@ -2602,10 +2602,10 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
         QByteArray program;
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_TEST_SCRIPT))->value());
+        QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->value());
         if(compiled_script.nullValue())
         {
-            QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
+            QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
             if(script.nullValue())
             {
                 // no list here?!
@@ -2628,7 +2628,7 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
                 }
             }
             // save the result for next time
-            branch_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_TEST_SCRIPT))->setValue(e->serialize());
+            branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT))->setValue(e->serialize());
         }
         else
         {
@@ -2661,7 +2661,7 @@ bool list::run_list_check(content::path_info_t & list_ipath, content::path_info_
     {
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
+        QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT))->value());
         SNAP_LOG_TRACE() << "script [" << script.stringValue() << "] result [" << (result.is_true() ? "true" : "false") << "]";
     }
 #endif
@@ -2693,10 +2693,10 @@ QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_
         QByteArray program;
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
-        QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->value());
+        QtCassandra::QCassandraValue compiled_script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->value());
         if(compiled_script.nullValue())
         {
-            QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT))->value());
+            QtCassandra::QCassandraValue script(branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT))->value());
             if(script.nullValue())
             {
                 // no list here?!
@@ -2719,7 +2719,7 @@ QString list::run_list_item_key(content::path_info_t& list_ipath, content::path_
                 }
             }
             // save the result for next time
-            branch_table->row(branch_key)->cell(get_name(SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->setValue(e->serialize());
+            branch_table->row(branch_key)->cell(get_name(name_t::SNAP_NAME_LIST_ITEM_KEY_SCRIPT))->setValue(e->serialize());
         }
         else
         {
@@ -2785,7 +2785,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         return;
     }
 
-    if(token.is_token(get_name(SNAP_NAME_LIST_THEME)))
+    if(token.is_token(get_name(name_t::SNAP_NAME_LIST_THEME)))
     {
         // list::theme expects one to four parameters
         if(!token.verify_args(1, 4))
@@ -2794,7 +2794,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         }
 
         // Path
-        filter::filter::parameter_t path_param(token.get_arg("path", 0, filter::filter::TOK_STRING));
+        filter::filter::parameter_t path_param(token.get_arg("path", 0, filter::filter::token_t::TOK_STRING));
         if(token.f_error)
         {
             return;
@@ -2810,7 +2810,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         QString theme("qrc:/xsl/list/default"); // default theming, simple <ul>{<li>...</li>}</ul> list
         if(token.has_arg("theme", 1))
         {
-            filter::filter::parameter_t theme_param(token.get_arg("theme", 1, filter::filter::TOK_STRING));
+            filter::filter::parameter_t theme_param(token.get_arg("theme", 1, filter::filter::token_t::TOK_STRING));
             if(token.f_error)
             {
                 return;
@@ -2830,7 +2830,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         int start(0); // start with very first item
         if(token.has_arg("start", 2))
         {
-            filter::filter::parameter_t start_param(token.get_arg("start", 2, filter::filter::TOK_INTEGER));
+            filter::filter::parameter_t start_param(token.get_arg("start", 2, filter::filter::token_t::TOK_INTEGER));
             if(token.f_error)
             {
                 return;
@@ -2855,7 +2855,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         int count(-1); // all items
         if(token.has_arg("count", 3))
         {
-            filter::filter::parameter_t count_param(token.get_arg("count", 3, filter::filter::TOK_INTEGER));
+            filter::filter::parameter_t count_param(token.get_arg("count", 3, filter::filter::token_t::TOK_INTEGER));
             if(token.f_error)
             {
                 return;
@@ -2889,7 +2889,7 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             layout::layout_content *list_content(dynamic_cast<layout::layout_content *>(list_plugin));
             if(list_content == nullptr)
             {
-                f_snap->die(snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                         "Plugin Missing",
                         QString("Plugin \"%1\" does not know how to handle a list assigned to it.").arg(list_plugin->get_plugin_name()),
                         "list::on_replace_token() the plugin does not derive from layout::layout_content.");
@@ -3002,32 +3002,32 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
                     item_root.setAttribute("index", index);
 
                     FIELD_SEARCH
-                        (content::field_search::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
-                        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
+                        (content::field_search::command_t::COMMAND_ELEMENT, snap_dom::get_element(item_doc, "metadata"))
+                        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
 
                         // snap/head/metadata/desc[@type="list_uri"]/data
-                        (content::field_search::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
-                        (content::field_search::COMMAND_SAVE, "desc[type=list_uri]/data")
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_key())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_uri]/data")
 
                         // snap/head/metadata/desc[@type="list_path"]/data
-                        (content::field_search::COMMAND_DEFAULT_VALUE, list_ipath.get_cpath())
-                        (content::field_search::COMMAND_SAVE, "desc[type=list_path]/data")
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, list_ipath.get_cpath())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=list_path]/data")
 
                         // snap/head/metadata/desc[@type="box_uri"]/data
-                        (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_key())
-                        (content::field_search::COMMAND_SAVE, "desc[type=box_uri]/data")
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_key())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_uri]/data")
 
                         // snap/head/metadata/desc[@type="box_path"]/data
-                        (content::field_search::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
-                        (content::field_search::COMMAND_SAVE, "desc[type=box_path]/data")
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, ipath.get_cpath())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=box_path]/data")
 
                         // snap/head/metadata/desc[@type="main_page_uri"]/data
-                        (content::field_search::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
-                        (content::field_search::COMMAND_SAVE, "desc[type=main_page_uri]/data")
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_key())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_uri]/data")
 
                         // snap/head/metadata/desc[@type="main_page_path"]/data
-                        (content::field_search::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
-                        (content::field_search::COMMAND_SAVE, "desc[type=main_page_path]/data")
+                        (content::field_search::command_t::COMMAND_DEFAULT_VALUE, main_ipath.get_cpath())
+                        (content::field_search::command_t::COMMAND_SAVE, "desc[type=main_page_path]/data")
 
                         // retrieve names of all the boxes
                         ;
@@ -3086,9 +3086,9 @@ void list::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCa
         QtCassandra::QCassandraCell::pointer_t source_cell(*nc);
         QByteArray cell_key(source_cell->columnKey());
 
-        if(cell_key == get_name(SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT)
-        || cell_key == get_name(SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)
-        || cell_key == get_name(SNAP_NAME_LIST_SELECTOR))
+        if(cell_key == get_name(name_t::SNAP_NAME_LIST_ORIGINAL_ITEM_KEY_SCRIPT)
+        || cell_key == get_name(name_t::SNAP_NAME_LIST_ORIGINAL_TEST_SCRIPT)
+        || cell_key == get_name(name_t::SNAP_NAME_LIST_SELECTOR))
         {
             has_list = true;
             // copy our fields as is

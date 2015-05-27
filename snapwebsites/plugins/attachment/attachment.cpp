@@ -42,16 +42,16 @@ SNAP_PLUGIN_START(attachment, 1, 0)
  *
  * \return A pointer to the name.
  */
-//char const *get_name(name_t name)
+//char const * get_name(name_t name)
 //{
 //    switch(name)
 //    {
-//    case SNAP_NAME_ATTACHMENT_...:
+//    case name_t::SNAP_NAME_ATTACHMENT_...:
 //        return "attachment::...";
 //
 //    default:
 //        // invalid index
-//        throw snap_logic_exception("invalid SNAP_NAME_ATTACHMENT_...");
+//        throw snap_logic_exception("invalid name_t::SNAP_NAME_ATTACHMENT_...");
 //
 //    }
 //    NOTREACHED();
@@ -213,12 +213,12 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
     attachment_ipath.set_path(cpath);
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
     if(!revision_table->exists(attachment_ipath.get_revision_key())
-    || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT)))
+    || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
         return;
     }
 
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         return;
@@ -226,7 +226,7 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
 
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
     if(!files_table->exists(attachment_key.binaryValue())
-    || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED)))
+    || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED)))
     {
         // TODO: also offer a dynamic version which compress the
         //       file on the fly (but we wouldd have to save it and
@@ -237,7 +237,7 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
 
     // tell the path plugin that we know how to handle this one
     plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
-    ipath.set_parameter("attachment_field", content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED));
+    ipath.set_parameter("attachment_field", content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED));
 }
 
 
@@ -271,7 +271,7 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     if(renamed.isEmpty())
     {
         attachment_ipath = ipath;
-        field_name = content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA);
+        field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
     }
     else
     {
@@ -282,11 +282,11 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     }
 
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         // somehow the file key is not available
-        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\" (maybe renamed \"%3\").")
                         .arg(field_name)
@@ -300,10 +300,10 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     || !files_table->row(attachment_key.binaryValue())->exists(field_name))
     {
         // somehow the file data is not available
-        f_snap->die(snap_child::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Attachment Not Found",
                 QString("Attachment \"%1\" was not found.").arg(ipath.get_key()),
                 QString("Could not find field \"%1\" of file \"%2\".")
-                        .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
+                        .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA))
                         .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
         NOTREACHED();
     }
@@ -320,7 +320,7 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     //f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     // get the attachment MIME type and tweak it if it is a known text format
-    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
     QString content_type(attachment_mime_type.stringValue());
     if(content_type == "text/javascript"
     || content_type == "text/css"
@@ -355,7 +355,7 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
-    char const *attachment_reference(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
+    char const *attachment_reference(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
     QString const content_attachment_reference(QString("%1::").arg(attachment_reference));
     size_t const max_pages(tree.f_pages.size());
     for(size_t idx(0); idx < max_pages; ++idx)
@@ -398,7 +398,7 @@ void attachment::on_page_cloned(content::content::cloned_tree_t const& tree)
 
                     // with that md5 we can access the files table
                     signed char const one(1);
-                    files_table->row(md5)->cell(QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(page_ipath.get_key()))->setValue(one);
+                    files_table->row(md5)->cell(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(page_ipath.get_key()))->setValue(one);
                 }
             }
         }
@@ -412,7 +412,7 @@ void attachment::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells
 
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
 
-    std::string content_attachment_reference(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
+    std::string content_attachment_reference(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_REFERENCE));
     content_attachment_reference += "::";
 
     QtCassandra::QCassandraCells left_cells;
@@ -440,7 +440,7 @@ void attachment::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells
 
             // with that md5 we can access the files table
             signed char const one(1);
-            files_table->row(md5)->cell(QString("%1::%2").arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(ipath.get_key()))->setValue(one);
+            files_table->row(md5)->cell(QString("%1::%2").arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_REFERENCE)).arg(ipath.get_key()))->setValue(one);
         }
         else
         {
@@ -481,12 +481,12 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
             }
 
             // force header to text/html anywa
-            f_snap->set_header(get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", snap_child::HEADER_MODE_EVERYWHERE);
+            f_snap->set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", snap_child::HEADER_MODE_EVERYWHERE);
 
             // get signature, if we are here, we have Cassandra so directly
             // get that value
             QString const site_key(f_snap->get_site_key());
-            QtCassandra::QCassandraValue site_name(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_SITE_NAME)));
+            QtCassandra::QCassandraValue site_name(f_snap->get_site_parameter(snap::get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
             QString signature(QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue()));
             f_snap->improve_signature(f_path, signature);
 
@@ -498,7 +498,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
                             "<title>Snap Server Error</title>"
                             "</head>"
                             "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
-                    .arg(snap::get_name(SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
+                    .arg(snap::get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
                     .arg(static_cast<int>(f_err_code))
                     .arg(f_err_name)
                     .arg(f_err_description)
@@ -533,7 +533,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     //if(renamed.isEmpty())
     {
         attachment_ipath.set_path(path);
-        field_name = content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA);
+        field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
     }
     //else
     //{
@@ -544,7 +544,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     //}
 
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
-    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
         // somehow the file key is not available
@@ -562,7 +562,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         // somehow the file data is not available
         default_err.emit_error(
                 QString("Could not find field \"%1\" of file \"%2\" in files table.")
-                        .arg(content::get_name(content::SNAP_NAME_CONTENT_FILES_DATA))
+                        .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA))
                         .arg(QString::fromAscii(attachment_key.binaryValue().toHex())));
         return;
     }
@@ -581,7 +581,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
     //f_snap->set_header("Content-Transfer-Encoding", "binary");
 
     // get the attachment MIME type and tweak it if it is a known text format
-    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
+    QtCassandra::QCassandraValue attachment_mime_type(file_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_MIME_TYPE))->value());
     QString const content_type(attachment_mime_type.stringValue());
     if(content_type == "text/html")
     {
@@ -673,10 +673,10 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
                 .arg(major_mime_type)
                 .arg(minor_mime_type)
                 .arg(static_cast<int>(err_code)));
-    if(files_table->row(content::get_name(content::SNAP_NAME_CONTENT_ERROR_FILES))->exists(long_name))
+    if(files_table->row(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->exists(long_name))
     {
         // long name exists in the database, use it
-        data = files_table->row(content::get_name(content::SNAP_NAME_CONTENT_ERROR_FILES))->cell(long_name)->value();
+        data = files_table->row(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->cell(long_name)->value();
     }
     else
     {
@@ -691,10 +691,10 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
         {
             data.setBinaryValue(long_rsc_content.readAll());
         }
-        else if(files_table->row(content::get_name(content::SNAP_NAME_CONTENT_ERROR_FILES))->exists(short_name))
+        else if(files_table->row(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->exists(short_name))
         {
             // short name exists in the database, use it
-            data = files_table->row(content::get_name(content::SNAP_NAME_CONTENT_ERROR_FILES))->cell(short_name)->value();
+            data = files_table->row(content::get_name(content::name_t::SNAP_NAME_CONTENT_ERROR_FILES))->cell(short_name)->value();
         }
         else
         {
@@ -725,9 +725,9 @@ void attachment::on_permit_redirect_to_login_on_not_allowed(content::path_info_t
     // to the attachment.)
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     if(content_table->exists(ipath.get_key())
-    && content_table->row(ipath.get_key())->exists(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+    && content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
     {
-        QString const owner(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+        QString const owner(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
         if(owner == get_plugin_name())
         {
             // we own this page (attachment)

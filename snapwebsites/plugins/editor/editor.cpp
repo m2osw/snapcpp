@@ -62,27 +62,27 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_EDITOR_DRAFTS_PATH:
+    case name_t::SNAP_NAME_EDITOR_DRAFTS_PATH:
         return "admin/drafts";
 
-    case SNAP_NAME_EDITOR_LAYOUT:
+    case name_t::SNAP_NAME_EDITOR_LAYOUT:
         return "editor::layout";
 
-    case SNAP_NAME_EDITOR_PAGE:
+    case name_t::SNAP_NAME_EDITOR_PAGE:
         return "editor::page";
 
-    case SNAP_NAME_EDITOR_PAGE_TYPE:
+    case name_t::SNAP_NAME_EDITOR_PAGE_TYPE:
         return "editor::page_type";
 
-    case SNAP_NAME_EDITOR_TYPE_FORMAT_PATH: // a format to generate the path of a page
+    case name_t::SNAP_NAME_EDITOR_TYPE_FORMAT_PATH: // a format to generate the path of a page
         return "editor::type_format_path";
 
-    case SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH:
+    case name_t::SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH:
         return "editor::type_extended_format_path";
 
     default:
         // invalid index
-        throw snap_logic_exception("Invalid SNAP_NAME_EDITOR_...");
+        throw snap_logic_exception("Invalid name_t::SNAP_NAME_EDITOR_...");
 
     }
     NOTREACHED();
@@ -255,14 +255,14 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
         if(action == "edit" || action == "administer")
         {
             sessions::sessions::session_info info;
-            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_FORM);
+            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_FORM);
             info.set_session_id(EDITOR_SESSION_ID_EDIT);
             info.set_plugin_owner(get_plugin_name()); // ourselves
             content::path_info_t main_ipath;
             main_ipath.set_path(f_snap->get_uri().path());
             info.set_page_path(main_ipath.get_key());
             info.set_object_path(ipath.get_key());
-            info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+            info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
             info.set_time_to_live(86400);  // 24 hours
             QString const session(sessions::sessions::instance()->create_session(info));
             int32_t const random(info.get_session_random());
@@ -380,7 +380,7 @@ void editor::on_validate_post_for_widget(content::path_info_t& ipath, sessions::
                     "type does not exist and we do not yet offer a way to auto-create a content type",
                     false
                 ).set_widget_name(widget_name);
-                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
             }
         }
     }
@@ -451,7 +451,7 @@ void editor::process_new_draft()
     // linked to that one page.)
     time_t const start_time(f_snap->get_start_time());
     int64_t const start_date(f_snap->get_start_date());
-    char const *drafts_path(get_name(SNAP_NAME_EDITOR_DRAFTS_PATH));
+    char const *drafts_path(get_name(name_t::SNAP_NAME_EDITOR_DRAFTS_PATH));
     QString const site_key(f_snap->get_site_key_with_slash());
     QString new_draft_key(QString("%1%2/%3").arg(site_key).arg(drafts_path).arg(start_time));
 
@@ -471,7 +471,7 @@ void editor::process_new_draft()
                 // TODO: this error needs to be reported to the administrator(s)
                 //       (especially if it happens often because that means
                 //       robots are working on the website!)
-                f_snap->die(snap_child::HTTP_CODE_CONFLICT,
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_CONFLICT,
                     "Conflict Error", "We could not create a new draft entry for you. Too many other drafts existed already. Please try again later.",
                     "Somehow the server was not able to generated another draft entry.");
                 NOTREACHED();
@@ -480,7 +480,7 @@ void editor::process_new_draft()
         }
         // create that row so the next user will detect it as existing
         // and we can then unlock the parent row
-        content_table->row(new_draft_key)->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+        content_table->row(new_draft_key)->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
     }
 
     // before we go further officially create the content
@@ -499,17 +499,17 @@ void editor::process_new_draft()
     // save the title, description, and link to the type as a "draft type"
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(draft_ipath.get_revision_key()));
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(title);
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_DESCRIPTION))->setValue(page_description);
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(QString("enter page content here ([year])"));
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(start_date);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_DESCRIPTION))->setValue(page_description);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(QString("enter page content here ([year])"));
 
     // link to the type, but not as the official type yet since this page
     // has to have a "draft page" type for a while
     {
-        QString const link_name(get_name(SNAP_NAME_EDITOR_PAGE_TYPE));
+        QString const link_name(get_name(name_t::SNAP_NAME_EDITOR_PAGE_TYPE));
         bool const source_unique(true);
-        QString const link_to(get_name(SNAP_NAME_EDITOR_PAGE));
+        QString const link_to(get_name(name_t::SNAP_NAME_EDITOR_PAGE));
         bool const destination_unique(false);
         content::path_info_t type_ipath;
         QString const type_key(site_key + "types/taxonomy/system/content-types/" + type);
@@ -522,9 +522,9 @@ void editor::process_new_draft()
     // give edit permission of the draft
     // <link name="permissions::view" to="permissions::view" mode="*:*">/types/permissions/rights/view/page/for-spammers</link>
     {
-        QString const link_name(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_ACTION_EDIT));
+        QString const link_name(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_ACTION_EDIT));
         bool const source_unique(false);
-        QString const link_to(permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
+        QString const link_to(permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT));
         bool const destination_unique(false);
         content::path_info_t type_ipath;
         // TBD -- should this includes the type of page?
@@ -537,7 +537,7 @@ void editor::process_new_draft()
 
     // redirect the user to the new page so he can edit it
     QString const qs_action(f_snap->get_server_parameter("qs_action"));
-    f_snap->page_redirect(QString("%1?%2=edit").arg(draft_ipath.get_key()).arg(qs_action), snap_child::HTTP_CODE_FOUND,
+    f_snap->page_redirect(QString("%1?%2=edit").arg(draft_ipath.get_key()).arg(qs_action), snap_child::http_code_t::HTTP_CODE_FOUND,
             "Page was created successfully",
             "Sending you to your new page so that way you can edit it and ultimately publish it.");
     NOTREACHED();
@@ -570,13 +570,13 @@ void editor::on_process_post(QString const& uri_path)
     }
 
     save_mode_t editor_save_mode(string_to_save_mode(f_snap->postenv("_editor_save_mode")));
-    if(editor_save_mode == EDITOR_SAVE_MODE_UNKNOWN)
+    if(editor_save_mode == save_mode_t::EDITOR_SAVE_MODE_UNKNOWN)
     {
         // this could happen between versions (i.e. newer version wants to
         // use a new mode which we did not yet implement in the
         // string_to_save_mode() function.) -- it could be a problem between
         // a server that has a newer version and a server that does not...
-        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                 "Somehow the editor does not understand the Save command sent to the server.",
                 QString("User gave us an unknown save mode (%1).").arg(f_snap->postenv("_editor_save_mode")));
         NOTREACHED();
@@ -590,7 +590,7 @@ void editor::on_process_post(QString const& uri_path)
         // should never happen on a valid user
         // TBD: lose the data in this case? The user browser may have
         //      inadvertedly deleted the session cookie?
-        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                 "The session identification is not valid.",
                 QString("User gave us an unknown session identifier (%1).").arg(editor_full_session));
         NOTREACHED();
@@ -609,44 +609,44 @@ void editor::on_process_post(QString const& uri_path)
     sessions::sessions::instance()->load_session(session_data[0], info, false);
     switch(info.get_session_type())
     {
-    case sessions::sessions::session_info::SESSION_INFO_VALID:
+    case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID:
         // unless we get this value we've got a problem with the session itself
         break;
 
-    case sessions::sessions::session_info::SESSION_INFO_MISSING:
+    case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_MISSING:
         // TBD: We may have a special "trash like draft area" where we can
         // save such data, although someone who waits that long... plus if
         // we have an auto-close, this would not happen anyway
-        f_snap->die(snap_child::HTTP_CODE_GONE,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_GONE,
                     "Editor Session Gone",
                     "It looks like you attempted to submit editor content without first loading it.",
                     "User sent editor content with a session identifier that is not available.");
         NOTREACHED();
         return;
 
-    case sessions::sessions::session_info::SESSION_INFO_OUT_OF_DATE:
+    case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_OUT_OF_DATE:
         // TODO:
         // this is a harsh one! We need to save that data as a Draft, whatever
         // the Save mode we got. That way if the user wanted to keep his
         // data he will be able to do so from the draft (update the message to
         // correspond to the new mode/possibilities!)
-        messages->set_http_error(snap_child::HTTP_CODE_GONE,
+        messages->set_http_error(snap_child::http_code_t::HTTP_CODE_GONE,
                                  "Editor Timeout",
                                  "Sorry! You sent this request back to Snap! way too late. It timed out. Please re-enter your information and re-submit.",
                                  "User did not click the submit button soon enough, the server session timed out.",
                                  true);
-        editor_save_mode = EDITOR_SAVE_MODE_AUTO_DRAFT;
+        editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT;
         break;
 
-    case sessions::sessions::session_info::SESSION_INFO_USED_UP:
+    case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USED_UP:
         // this should not happen because we do not mark editor sessions
         // for one time use
-        messages->set_http_error(snap_child::HTTP_CODE_CONFLICT,
+        messages->set_http_error(snap_child::http_code_t::HTTP_CODE_CONFLICT,
                                  "Editor Already Submitted",
                                  "This editor session was already processed.",
                                  "The user submitted the same session more than once.",
                                  true);
-        editor_save_mode = EDITOR_SAVE_MODE_AUTO_DRAFT;
+        editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT;
         break;
 
     default:
@@ -675,7 +675,7 @@ void editor::on_process_post(QString const& uri_path)
         // verify that the session random number is compatible
         if(info.get_session_random() != session_data[1].toInt())
         {
-            f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                     "The POST request does not correspond to the session that the editor generated.",
                     QString("User POSTed a request with random number %1, but we expected %2.")
                             .arg(info.get_session_random())
@@ -687,11 +687,11 @@ void editor::on_process_post(QString const& uri_path)
         content::path_info_t main_ipath; // at this point main_ipath == ipath but that should get fixed one day
         main_ipath.set_path(f_snap->get_uri().path());
         if(info.get_page_path() != main_ipath.get_key()
-        || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
+        || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
         || info.get_plugin_owner() != get_plugin_name())
         {
             // the path was tempered with? the agent changes between hits?
-            f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Not Acceptable",
                     "The POST request does not correspond to the editor it was defined for.",
                     QString("User POSTed a request against \"%1\" with an incompatible page path (%2) or a different plugin (%3).")
                             .arg(ipath.get_key())
@@ -706,23 +706,23 @@ void editor::on_process_post(QString const& uri_path)
             // adjust the mode for drafts are "special" content
             switch(editor_save_mode)
             {
-            case EDITOR_SAVE_MODE_DRAFT:
-                editor_save_mode = EDITOR_SAVE_MODE_SAVE;
-            case EDITOR_SAVE_MODE_SAVE:
+            case save_mode_t::EDITOR_SAVE_MODE_DRAFT:
+                editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_SAVE;
+            case save_mode_t::EDITOR_SAVE_MODE_SAVE:
                 break;
 
-            case EDITOR_SAVE_MODE_PUBLISH:
-                editor_save_mode = EDITOR_SAVE_MODE_NEW_BRANCH;
-            case EDITOR_SAVE_MODE_NEW_BRANCH: // should not be accessible
+            case save_mode_t::EDITOR_SAVE_MODE_PUBLISH:
+                editor_save_mode = save_mode_t::EDITOR_SAVE_MODE_NEW_BRANCH;
+            case save_mode_t::EDITOR_SAVE_MODE_NEW_BRANCH: // should not be accessible
                 break;
 
-            case EDITOR_SAVE_MODE_AUTO_DRAFT: // TBD
+            case save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT: // TBD
                 break;
 
-            case EDITOR_SAVE_MODE_ATTACHMENT: // no change
+            case save_mode_t::EDITOR_SAVE_MODE_ATTACHMENT: // no change
                 break;
 
-            case EDITOR_SAVE_MODE_UNKNOWN:
+            case save_mode_t::EDITOR_SAVE_MODE_UNKNOWN:
                 // this should never happen
                 throw snap_logic_exception("The UNKNOWN save mode was ignore, yet we have an edit_save_mode set to UNKNOWN.");
 
@@ -732,29 +732,29 @@ void editor::on_process_post(QString const& uri_path)
         // act on the data as per the user's specified mode
         switch(editor_save_mode)
         {
-        case EDITOR_SAVE_MODE_DRAFT:
+        case save_mode_t::EDITOR_SAVE_MODE_DRAFT:
             break;
 
-        case EDITOR_SAVE_MODE_NEW_BRANCH:
+        case save_mode_t::EDITOR_SAVE_MODE_NEW_BRANCH:
             editor_create_new_branch(real_ipath);
             break;
 
-        case EDITOR_SAVE_MODE_SAVE:
+        case save_mode_t::EDITOR_SAVE_MODE_SAVE:
             editor_save(real_ipath, info);
             break;
 
-        case EDITOR_SAVE_MODE_PUBLISH:
+        case save_mode_t::EDITOR_SAVE_MODE_PUBLISH:
             //editor_save(real_ipath, info); -- this will most certainly call the same function with a flag
             break;
 
-        case EDITOR_SAVE_MODE_AUTO_DRAFT:
+        case save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT:
             break;
 
-        case EDITOR_SAVE_MODE_ATTACHMENT:
+        case save_mode_t::EDITOR_SAVE_MODE_ATTACHMENT:
             editor_save_attachment(real_ipath, info, server_access_plugin);
             break;
 
-        case EDITOR_SAVE_MODE_UNKNOWN:
+        case save_mode_t::EDITOR_SAVE_MODE_UNKNOWN:
             // this should never happen
             throw snap_logic_exception("The UNKNOWN save mode was ignore, yet we have an edit_save_mode set to UNKNOWN.");
 
@@ -790,30 +790,30 @@ editor::save_mode_t editor::string_to_save_mode(QString const& mode)
 {
     if(mode == "draft")
     {
-        return EDITOR_SAVE_MODE_DRAFT;
+        return save_mode_t::EDITOR_SAVE_MODE_DRAFT;
     }
     if(mode == "publish")
     {
-        return EDITOR_SAVE_MODE_PUBLISH;
+        return save_mode_t::EDITOR_SAVE_MODE_PUBLISH;
     }
     if(mode == "save")
     {
-        return EDITOR_SAVE_MODE_SAVE;
+        return save_mode_t::EDITOR_SAVE_MODE_SAVE;
     }
     if(mode == "new_branch")
     {
-        return EDITOR_SAVE_MODE_NEW_BRANCH;
+        return save_mode_t::EDITOR_SAVE_MODE_NEW_BRANCH;
     }
     if(mode == "auto_draft")
     {
-        return EDITOR_SAVE_MODE_AUTO_DRAFT;
+        return save_mode_t::EDITOR_SAVE_MODE_AUTO_DRAFT;
     }
     if(mode == "attachment")
     {
-        return EDITOR_SAVE_MODE_ATTACHMENT;
+        return save_mode_t::EDITOR_SAVE_MODE_ATTACHMENT;
     }
 
-    return EDITOR_SAVE_MODE_UNKNOWN;
+    return save_mode_t::EDITOR_SAVE_MODE_UNKNOWN;
 }
 
 
@@ -973,7 +973,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             // the validation process
             sessions::sessions::session_info::session_info_type_t const session_type(info.get_session_type());
             // pretend that everything is fine so far...
-            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_VALID);
+            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID);
             int const errcnt(messages->get_error_count());
             int const warncnt(messages->get_warning_count());
 
@@ -1153,7 +1153,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                             // 64 bit value representing a date in microseconds
                             if(!value.nullValue())
                             {
-                                current_value = f_snap->date_to_string(value.int64Value(), snap_child::DATE_FORMAT_SHORT_US);
+                                current_value = f_snap->date_to_string(value.int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
                             }
                         }
                     }
@@ -1161,7 +1161,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                 }
             }
 
-            if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
+            if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
             {
                 // it was not valid so mark the widgets as errorneous (i.e. so we
                 // can display it with an error message)
@@ -1335,7 +1335,7 @@ void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessi
         if(w == widgets_by_name.end())
         {
             // TBD: should we check each field name BEFORE saving anything?
-            f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE, "Field Name Not Acceptable",
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "Field Name Not Acceptable",
                 QString("Editor widget named \"%1\" is not valid.").arg(names[i]),
                 "Somehow the client sent us a reply with an invalid name.");
             NOTREACHED();
@@ -1425,14 +1425,14 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
     {
         QDomDocument editor_widgets;
         layout::layout *layout_plugin(layout::layout::instance());
-        QString script(layout_plugin->get_layout(ipath, get_name(SNAP_NAME_EDITOR_LAYOUT), true));
+        QString script(layout_plugin->get_layout(ipath, get_name(name_t::SNAP_NAME_EDITOR_LAYOUT), true));
         QStringList const script_parts(script.split("/"));
         if(script_parts.size() == 2)
         {
             if(script_parts[0].isEmpty()
             || script_parts[1].isEmpty())
             {
-                f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
+                f_snap->die(snap_child::http_code_t::HTTP_CODE_CONFLICT, "Conflict Error",
                     QString("Editor layout name \"%1\" is not valid. Names on both sides of the slash (/) must be defined.").arg(script),
                     "The editor layout name is not composed of two valid names separated by a slash (/) but it does contain a slash.");
                 NOTREACHED();
@@ -1441,7 +1441,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
         }
         else if(script_parts.size() != 1)
         {
-            f_snap->die(snap_child::HTTP_CODE_CONFLICT, "Conflict Error",
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_CONFLICT, "Conflict Error",
                 QString("Editor layout name \"%1\" is not valid.").arg(script),
                 "The editor layout name is not composed of exactly one or two names.");
             NOTREACHED();
@@ -1453,7 +1453,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
             // links us to the editor layout)
             QString const layout_name(script_parts.size() == 2
                         ? script_parts[0] // force the layout::layout from the editor::layout
-                        : layout_plugin->get_layout(ipath, layout::get_name(layout::SNAP_NAME_LAYOUT_LAYOUT), false));
+                        : layout_plugin->get_layout(ipath, layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_LAYOUT), false));
             QStringList const names(layout_name.split("/"));
             if(names.size() > 0)
             {
@@ -1595,7 +1595,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             false
                         ).set_widget_name(widget_name);
                         // TODO add another type of error for setup ("programmer") data?
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                     else if(f_snap->postfile_exists(widget_name))
                     {
@@ -1610,7 +1610,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 QString("the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size in \"%1\"").arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                         else if(image_width < width || image_height < height)
                         {
@@ -1621,7 +1621,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 "the user uploaded an image that is too small",
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                     }
                 }
@@ -1643,7 +1643,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             QString("not enough characters in \"%1\"").arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
@@ -1670,7 +1670,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             false
                         ).set_widget_name(widget_name);
                         // TODO add another type of error for setup ("programmer") data?
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                     else if(f_snap->postfile_exists(widget_name))
                     {
@@ -1686,7 +1686,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 QString("the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size of \"%1\"").arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                         else if(image_width > width || image_height > height)
                         {
@@ -1697,7 +1697,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 QString("the user uploaded an image that is too large for \"%1\"").arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                     }
                 }
@@ -1719,7 +1719,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             QString("too many characters in \"%1\"").arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
@@ -1779,7 +1779,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             QString("not enough lines in \"%1\"").arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                     if(max_value != -1 && lines > max_value)
                     {
@@ -1791,7 +1791,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             QString("not enough lines in \"%1\"").arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
@@ -1825,10 +1825,10 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                         {
                             QDomElement root(widget.ownerDocument().documentElement());
                             QString const name(QString("%1::%2::%3")
-                                    .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
+                                    .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
                                     .arg(widget_name)
-                                    .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
-                            QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::PARAM_REVISION_GLOBAL));
+                                    .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
+                            QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::param_revision_t::PARAM_REVISION_GLOBAL));
                             if(cassandra_value.nullValue())
                             {
                                 // not defined!
@@ -1838,7 +1838,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                         QString("no data entered by user in widget \"%1\"").arg(widget_name),
                                         false
                                     ).set_widget_name(widget_name);
-                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                             }
                         }
                     }
@@ -1857,7 +1857,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                         QString("no data entered in widget \"%1\" by user").arg(widget_name),
                                         false
                                     ).set_widget_name(widget_name);
-                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                             }
                         }
                     }
@@ -1873,7 +1873,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                     QString("no data entered in widget \"%1\" by user").arg(widget_name),
                                     false
                                 ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                     }
                 }
@@ -1909,7 +1909,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                         .arg(widget_name).arg(duplicate_of),
                   false
                 ).set_widget_name(widget_name);
-                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
             }
         }
     }
@@ -1969,7 +1969,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 if(email == 0)
                                 {
                                     f_snap->die(
-                                        snap_child::HTTP_CODE_INTERNAL_SERVER_ERROR,
+                                        snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,
                                         "Internal Server Error",
                                         QString("The server could not parse the email filter in \"%1\".").arg(regex_name),
                                         "The email format could not properly be parsed.");
@@ -2043,7 +2043,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                         .arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                         else if(email != -1 && emails.count() > email) // if email is -1 then any number is fine
                         {
@@ -2058,7 +2058,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                         .arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                     }
                     else if(date != 0)
@@ -2086,7 +2086,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                         .arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                         else
                         {
@@ -2104,7 +2104,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                                 .arg(widget_name),
                                         false
                                     ).set_widget_name(widget_name);
-                                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                 }
                                 else
                                 {
@@ -2133,7 +2133,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                                     .arg(widget_name),
                                             false
                                         ).set_widget_name(widget_name);
-                                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                     }
                                     else
                                     {
@@ -2151,7 +2151,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                                             .arg(widget_name),
                                                     false
                                                 ).set_widget_name(widget_name);
-                                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                             }
                                         }
                                         else if(month < 1 || month > 12
@@ -2166,7 +2166,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                                         .arg(widget_name),
                                                 false
                                             ).set_widget_name(widget_name);
-                                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                         }
                                     }
                                 }
@@ -2204,7 +2204,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                                     .arg(widget_name),
                                             false
                                         ).set_widget_name(widget_name);
-                                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                     }
                                     else
                                     {
@@ -2222,7 +2222,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                                         .arg(widget_name),
                                                 false
                                             ).set_widget_name(widget_name);
-                                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                         }
                                     }
                                 }
@@ -2236,7 +2236,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                                 .arg(widget_name),
                                         false
                                     ).set_widget_name(widget_name);
-                                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                                 }
                             }
                         }
@@ -2284,7 +2284,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                         .arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                     }
                 }
@@ -2353,7 +2353,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 QString("unexpected date in \"%1\"").arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
 
                         if(max_time != -1 && date_value > max_time)
@@ -2366,7 +2366,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 QString("unexpected date in \"%1\"").arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                     }
                 }
@@ -2429,7 +2429,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                     QString("unexpected time in \"%1\"").arg(widget_name),
                                     false
                                 ).set_widget_name(widget_name);
-                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                             }
                         }
                         else
@@ -2449,7 +2449,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                     QString("unexpected time in \"%1\"").arg(widget_name),
                                     false
                                 ).set_widget_name(widget_name);
-                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                             }
 
                             if(max_time_value != -1 && time_value > max_time_value)
@@ -2462,7 +2462,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                     QString("unexpected time in \"%1\"").arg(widget_name),
                                     false
                                 ).set_widget_name(widget_name);
-                                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                             }
                         }
                     }
@@ -2495,7 +2495,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                     .arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                     else
                     {
@@ -2529,7 +2529,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                         .arg(widget_name),
                                 false
                             ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                     }
                 }
@@ -2572,7 +2572,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                     .arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
@@ -2600,7 +2600,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                     .arg(widget_name),
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
@@ -2649,8 +2649,8 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
     //            we check the EDITOR page type and not the CONTENT
     //            page type...
     QString type_name;
-    links::link_info info(is_draft ? content::get_name(content::SNAP_NAME_CONTENT_PAGE_TYPE)
-                                   : get_name(SNAP_NAME_EDITOR_PAGE_TYPE),
+    links::link_info info(is_draft ? content::get_name(content::name_t::SNAP_NAME_CONTENT_PAGE_TYPE)
+                                   : get_name(name_t::SNAP_NAME_EDITOR_PAGE_TYPE),
                           false, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(info));
     links::link_info type_info;
@@ -2679,9 +2679,9 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
     // you "lose" the path and "regain" it when you save
     QString type_format("[page-uri]"); // default is just the page URI computed from the title
     QString const type_key(QString("%1types/taxonomy/system/content-types/%2").arg(site_key).arg(type_name));
-    if(content_table->row(type_key)->exists(get_name(SNAP_NAME_EDITOR_TYPE_FORMAT_PATH)))
+    if(content_table->row(type_key)->exists(get_name(name_t::SNAP_NAME_EDITOR_TYPE_FORMAT_PATH)))
     {
-        type_format = content_table->row(type_key)->cell(get_name(SNAP_NAME_EDITOR_TYPE_FORMAT_PATH))->value().stringValue();
+        type_format = content_table->row(type_key)->cell(get_name(name_t::SNAP_NAME_EDITOR_TYPE_FORMAT_PATH))->value().stringValue();
     }
 
     params_map_t params;
@@ -2704,9 +2704,9 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
             {
                 if(extended_type_format.isEmpty())
                 {
-                    if(content_table->row(type_key)->cell(get_name(SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH)))
+                    if(content_table->row(type_key)->cell(get_name(name_t::SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH)))
                     {
-                        extended_type_format = content_table->row(type_key)->cell(get_name(SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH))->value().stringValue();
+                        extended_type_format = content_table->row(type_key)->cell(get_name(name_t::SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH))->value().stringValue();
                     }
                     if(extended_type_format.isEmpty()
                     || extended_type_format == type_format)
@@ -2717,7 +2717,7 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
                 new_key = format_uri(type_format, ipath, page_uri, params);
             }
             if(!content_table->exists(new_key)
-            || !content_table->row(new_key)->exists(content::get_name(content::SNAP_NAME_CONTENT_CREATED)))
+            || !content_table->row(new_key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
             {
                 if(key != new_key)
                 {
@@ -2747,11 +2747,11 @@ void editor::editor_create_new_branch(content::path_info_t& ipath)
         content_plugin->create_content(page_ipath, owner, type_name);
 
         // it was created at the time the draft was created
-        int64_t created_on(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().int64Value());
-        content_table->row(page_ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_on);
+        int64_t created_on(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().int64Value());
+        content_table->row(page_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_on);
 
         // it is being issued now
-        branch_table->row(page_ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_ISSUED))->setValue(f_snap->get_start_date());
+        branch_table->row(page_ipath.get_branch_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ISSUED))->setValue(f_snap->get_start_date());
 
         // copy the last revision
         dbutils::copy_row(revision_table, ipath.get_revision_key(), revision_table, page_ipath.get_revision_key());
@@ -2951,7 +2951,7 @@ bool editor::replace_uri_token_impl(editor_uri_token& token_info)
     //
     // TIME / DATE
     //
-    enum type_t
+    enum class type_t
     {
         TIME_SOURCE_UNKNOWN,
         TIME_SOURCE_NOW,
@@ -2959,159 +2959,159 @@ bool editor::replace_uri_token_impl(editor_uri_token& token_info)
         TIME_SOURCE_MODIFICATION_DATE
     };
     std::string time_format;
-    type_t type(TIME_SOURCE_UNKNOWN);
+    type_t type(type_t::TIME_SOURCE_UNKNOWN);
     if(token_info.f_token == "date")
     {
         time_format = "%Y%m%d";
-        type = TIME_SOURCE_CREATION_DATE;
+        type = type_t::TIME_SOURCE_CREATION_DATE;
     }
     else if(token_info.f_token == "year")
     {
         time_format = "%Y";
-        type = TIME_SOURCE_CREATION_DATE;
+        type = type_t::TIME_SOURCE_CREATION_DATE;
     }
     else if(token_info.f_token == "month")
     {
         time_format = "%m";
-        type = TIME_SOURCE_CREATION_DATE;
+        type = type_t::TIME_SOURCE_CREATION_DATE;
     }
     else if(token_info.f_token == "day")
     {
         time_format = "%d";
-        type = TIME_SOURCE_CREATION_DATE;
+        type = type_t::TIME_SOURCE_CREATION_DATE;
     }
     else if(token_info.f_token == "time")
     {
         time_format = "%H%M%S";
-        type = TIME_SOURCE_CREATION_DATE;
+        type = type_t::TIME_SOURCE_CREATION_DATE;
     }
     else if(token_info.f_token == "hour")
     {
         time_format = "%H";
-        type = TIME_SOURCE_CREATION_DATE;
+        type = type_t::TIME_SOURCE_CREATION_DATE;
     }
     else if(token_info.f_token == "minute")
     {
         time_format = "%M";
-        type = TIME_SOURCE_CREATION_DATE;
+        type = type_t::TIME_SOURCE_CREATION_DATE;
     }
     else if(token_info.f_token == "second")
     {
         time_format = "%S";
-        type = TIME_SOURCE_CREATION_DATE;
+        type = type_t::TIME_SOURCE_CREATION_DATE;
     }
     else if(token_info.f_token == "now")
     {
         time_format = "%Y%m%d";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "now-year")
     {
         time_format = "%Y";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "now-month")
     {
         time_format = "%m";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "now-day")
     {
         time_format = "%d";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "now-time")
     {
         time_format = "%H%M%S";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "now-hour")
     {
         time_format = "%H";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "now-hour")
     {
         time_format = "%H";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "now-minute")
     {
         time_format = "%M";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "now-second")
     {
         time_format = "%S";
-        type = TIME_SOURCE_NOW;
+        type = type_t::TIME_SOURCE_NOW;
     }
     else if(token_info.f_token == "mod")
     {
         time_format = "%Y%m%d";
-        type = TIME_SOURCE_MODIFICATION_DATE;
+        type = type_t::TIME_SOURCE_MODIFICATION_DATE;
     }
     else if(token_info.f_token == "mod-year")
     {
         time_format = "%Y";
-        type = TIME_SOURCE_MODIFICATION_DATE;
+        type = type_t::TIME_SOURCE_MODIFICATION_DATE;
     }
     else if(token_info.f_token == "mod-month")
     {
         time_format = "%m";
-        type = TIME_SOURCE_MODIFICATION_DATE;
+        type = type_t::TIME_SOURCE_MODIFICATION_DATE;
     }
     else if(token_info.f_token == "mod-day")
     {
         time_format = "%d";
-        type = TIME_SOURCE_MODIFICATION_DATE;
+        type = type_t::TIME_SOURCE_MODIFICATION_DATE;
     }
     else if(token_info.f_token == "mod-time")
     {
         time_format = "%H%M%S";
-        type = TIME_SOURCE_MODIFICATION_DATE;
+        type = type_t::TIME_SOURCE_MODIFICATION_DATE;
     }
     else if(token_info.f_token == "mod-hour")
     {
         time_format = "%H";
-        type = TIME_SOURCE_MODIFICATION_DATE;
+        type = type_t::TIME_SOURCE_MODIFICATION_DATE;
     }
     else if(token_info.f_token == "mod-minute")
     {
         time_format = "%M";
-        type = TIME_SOURCE_MODIFICATION_DATE;
+        type = type_t::TIME_SOURCE_MODIFICATION_DATE;
     }
     else if(token_info.f_token == "mod-second")
     {
         time_format = "%S";
-        type = TIME_SOURCE_MODIFICATION_DATE;
+        type = type_t::TIME_SOURCE_MODIFICATION_DATE;
     }
 
-    if(type != TIME_SOURCE_UNKNOWN)
+    if(type != type_t::TIME_SOURCE_UNKNOWN)
     {
         time_t seconds;
         switch(type)
         {
-        case TIME_SOURCE_CREATION_DATE:
+        case type_t::TIME_SOURCE_CREATION_DATE:
             {
                 QString cell_name;
 
                 if(token_info.f_ipath.get_cpath().startsWith("admin/drafts/"))
                 {
-                    cell_name = content::get_name(content::SNAP_NAME_CONTENT_CREATED);
+                    cell_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED);
                 }
                 else
                 {
-                    cell_name = content::get_name(content::SNAP_NAME_CONTENT_ISSUED);
+                    cell_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_ISSUED);
                 }
                 seconds = content_table->row(token_info.f_ipath.get_key())->cell(cell_name)->value().int64Value() / 1000000;
             }
             break;
 
-        case TIME_SOURCE_MODIFICATION_DATE:
-            seconds = branch_table->row(token_info.f_ipath.get_branch_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))->value().int64Value() / 1000000;
+        case type_t::TIME_SOURCE_MODIFICATION_DATE:
+            seconds = branch_table->row(token_info.f_ipath.get_branch_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->value().int64Value() / 1000000;
             break;
 
-        case TIME_SOURCE_NOW:
+        case type_t::TIME_SOURCE_NOW:
             seconds = f_snap->get_start_date() / 1000000;
             break;
 
@@ -3159,7 +3159,7 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
     {
         QString const title(f_snap->postenv("title"));
         // TODO: XSS filter title
-        revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(title);
+        revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(title);
     }
     if(f_snap->postenv_exists("body"))
     {
@@ -3174,7 +3174,7 @@ bool editor::save_editor_fields_impl(content::path_info_t& ipath, QtCassandra::Q
         // add stuff as required by the parse_out_inline_img() -- nothing for now for the body
         parse_out_inline_img(ipath, body, body_widget);
         // TODO: XSS filter body
-        revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(body);
+        revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(body);
     }
 
     return true;
@@ -3500,13 +3500,13 @@ bool editor::save_inline_image(content::path_info_t& ipath, QDomElement img, QSt
  */
 void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
 {
-    enum added_form_file_support_t
+    enum class added_form_file_support_t
     {
         ADDED_FORM_FILE_NONE,
         ADDED_FORM_FILE_NOT_YET,
         ADDED_FORM_FILE_YES
     };
-    static added_form_file_support_t g_added_editor_form_js_css(ADDED_FORM_FILE_NONE);
+    static added_form_file_support_t g_added_editor_form_js_css(added_form_file_support_t::ADDED_FORM_FILE_NONE);
 
     static_cast<void>(ctemplate);
 
@@ -3544,14 +3544,14 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     QString session_identification;
     {
         sessions::sessions::session_info info;
-        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_FORM);
+        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_FORM);
         info.set_session_id(EDITOR_SESSION_ID_EDIT);
         info.set_plugin_owner(get_plugin_name()); // ourselves
         content::path_info_t main_ipath;
         main_ipath.set_path(f_snap->get_uri().path());
         info.set_page_path(main_ipath.get_key());
         info.set_object_path(ipath.get_key());
-        info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+        info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
         info.set_time_to_live(86400);  // 24 hours
         QString const session(sessions::sessions::instance()->create_session(info));
         int32_t const random(info.get_session_random());
@@ -3638,7 +3638,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                 // convert a 64 bit value in micro seconds to a US date
                 if(!value.nullValue())
                 {
-                    current_value = f_snap->date_to_string(value.int64Value(), snap_child::DATE_FORMAT_SHORT_US);
+                    current_value = f_snap->date_to_string(value.int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
                 }
             }
             else if(widget_auto_save == "string"
@@ -3710,7 +3710,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             users::users::instance()->get_user_path(),
             ipath,
             "edit",
-            permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
+            permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
             can_edit);
     QString const can_edit_page(can_edit.allowed() ? "yes" : "");
 
@@ -3749,16 +3749,16 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         QDomElement field_tag(snap_dom::create_element(body, path));
         snap_dom::insert_node_to_xml_doc(field_tag, w);
 
-        if(g_added_editor_form_js_css == ADDED_FORM_FILE_NONE)
+        if(g_added_editor_form_js_css == added_form_file_support_t::ADDED_FORM_FILE_NONE)
         {
-            g_added_editor_form_js_css = ADDED_FORM_FILE_NOT_YET;
+            g_added_editor_form_js_css = added_form_file_support_t::ADDED_FORM_FILE_NOT_YET;
         }
     }
 //std::cerr << "Editor XML [" << doc.toString(-1) << "]\n";
 
-    if(g_added_editor_form_js_css == ADDED_FORM_FILE_NOT_YET)
+    if(g_added_editor_form_js_css == added_form_file_support_t::ADDED_FORM_FILE_NOT_YET)
     {
-        g_added_editor_form_js_css = ADDED_FORM_FILE_YES;
+        g_added_editor_form_js_css = added_form_file_support_t::ADDED_FORM_FILE_YES;
 
         content::content::instance()->add_javascript(doc, "editor");
         content::content::instance()->add_css(doc, "editor");

@@ -25,7 +25,7 @@ namespace favicon
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_FAVICON_ICON,
     SNAP_NAME_FAVICON_ICON_PATH,
@@ -61,17 +61,17 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    virtual bool            on_path_execute(content::path_info_t& url);
-    virtual void            on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    void                    on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    virtual void            on_process_form_post(content::path_info_t& ipath, sessions::sessions::session_info const& session_info);
+    virtual bool            on_path_execute(content::path_info_t & url);
+    virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                    on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+    virtual void            on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & session_info);
 
 private:
     void                    initial_update(int64_t variables_timestamp);
     void                    content_update(int64_t variables_timestamp);
-    void                    output(content::path_info_t& ipath);
-    void                    get_icon(content::path_info_t& cpath, content::field_search::search_result_t& result);
+    void                    output(content::path_info_t & ipath);
+    void                    get_icon(content::path_info_t & cpath, content::field_search::search_result_t & result);
 
     zpsnap_child_t          f_snap;
 };

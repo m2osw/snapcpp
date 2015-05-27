@@ -52,27 +52,27 @@ const char *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_OAUTH2_EMAIL:
+    case name_t::SNAP_NAME_OAUTH2_EMAIL:
         return "oauth2::email";
 
-    case SNAP_NAME_OAUTH2_ENABLE:
+    case name_t::SNAP_NAME_OAUTH2_ENABLE:
         return "oauth2::enable";
 
-    case SNAP_NAME_OAUTH2_IDENTIFIER:
+    case name_t::SNAP_NAME_OAUTH2_IDENTIFIER:
         return "oauth2::identifier";
 
-    case SNAP_NAME_OAUTH2_IDENTIFIERS:
+    case name_t::SNAP_NAME_OAUTH2_IDENTIFIERS:
         return "*oauth2::identifier*";
 
-    case SNAP_NAME_OAUTH2_SECRET:
+    case name_t::SNAP_NAME_OAUTH2_SECRET:
         return "oauth2::secret";
 
-    case SNAP_NAME_OAUTH2_USER_ENABLE:
+    case name_t::SNAP_NAME_OAUTH2_USER_ENABLE:
         return "oauth2::user_enable";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_OAUTH2_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_OAUTH2_...");
 
     }
     NOTREACHED();
@@ -236,8 +236,8 @@ void oauth2::on_create_content(content::path_info_t& ipath, QString const& owner
         }
     };
 
-    secret_t::create(SNAP_NAME_OAUTH2_IDENTIFIER);
-    secret_t::create(SNAP_NAME_OAUTH2_SECRET);
+    secret_t::create(name_t::SNAP_NAME_OAUTH2_IDENTIFIER);
+    secret_t::create(name_t::SNAP_NAME_OAUTH2_SECRET);
 }
 
 
@@ -267,19 +267,19 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
     content::path_info_t settings_ipath;
     settings_ipath.set_path("admin/settings/oauth2");
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(settings_ipath.get_revision_key()));
-    int8_t const enable(revision_row->cell(get_name(SNAP_NAME_OAUTH2_ENABLE))->value().safeSignedCharValue());
+    int8_t const enable(revision_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_ENABLE))->value().safeSignedCharValue());
     if(!enable)
     {
-        f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
                     "Unauthorized Authentication",
                     "This website does not authorize OAuth2 authentications at the moment.",
                     "The OAuth2 system is currently disabled (%1 -> %2).");
         NOTREACHED();
     }
-    QString email(revision_row->cell(get_name(SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
+    QString email(revision_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_EMAIL))->value().stringValue());
     if(email.isEmpty())
     {
-        f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
                     "Invalid Settings",
                     "Your OAuth2 settings do not include a user email for us to log your application in.",
                     "The OAuth2 system is currently \"disabled\" because no user email was specified.");
@@ -298,7 +298,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
     || snap_base64[0].toUpper() != "SNAP")
     {
         require_oauth2_login();
-        f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
                     "Unauthorized Method of Authentication",
                     "We only support the Snap authentication method.",
                     QString("The authorization did not have 2 parts (Snap and Secret) or the first is not \"Snap\" (\"%1\")")
@@ -312,7 +312,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
     if(identifier_secret.size() != 2)
     {
         require_oauth2_login();
-        f_snap->die(snap_child::HTTP_CODE_BAD_REQUEST,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_BAD_REQUEST,
                     "Invalid Authentication",
                     "The authentication identifier and secret codes are expected to include only one colon character.",
                     "The expected authorization \"id:secret\" not available.");
@@ -323,28 +323,28 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
 
     // Check validity (i.e. is the application logged in?)
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
-    QString identifier(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue());
-    QString secret(secret_table->row(settings_ipath.get_key())->cell(get_name(SNAP_NAME_OAUTH2_SECRET))->value().stringValue());
+    QString identifier(secret_table->row(settings_ipath.get_key())->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue());
+    QString secret(secret_table->row(settings_ipath.get_key())->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue());
     if(identifier != identifier_secret[0]
     || secret     != identifier_secret[1])
     {
         // check whether it could be a user instead of the global OAuth2
         bool invalid(true);
-        int8_t const user_enable(revision_row->cell(get_name(SNAP_NAME_OAUTH2_USER_ENABLE))->value().safeSignedCharValue());
+        int8_t const user_enable(revision_row->cell(get_name(name_t::SNAP_NAME_OAUTH2_USER_ENABLE))->value().safeSignedCharValue());
         if(user_enable)
         {
             // in this case we need to determine the secret from the user
             // account which is identifier by "identifier"
             QtCassandra::QCassandraTable::pointer_t users_table(users_plugin->get_users_table());
-            if(users_table->exists(get_name(SNAP_NAME_OAUTH2_IDENTIFIERS))
-            && users_table->row(get_name(SNAP_NAME_OAUTH2_IDENTIFIERS))->exists(identifier_secret[0]))
+            if(users_table->exists(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS))
+            && users_table->row(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS))->exists(identifier_secret[0]))
             {
                 // change the email to that user's email
-                email = users_table->row(get_name(SNAP_NAME_OAUTH2_IDENTIFIERS))->cell(identifier_secret[0])->value().stringValue();
+                email = users_table->row(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIERS))->cell(identifier_secret[0])->value().stringValue();
                 if(users_table->exists(email))
                 {
-                    identifier = users_table->row(email)->cell(get_name(SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue();
-                    secret = users_table->row(email)->cell(get_name(SNAP_NAME_OAUTH2_SECRET))->value().stringValue();
+                    identifier = users_table->row(email)->cell(get_name(name_t::SNAP_NAME_OAUTH2_IDENTIFIER))->value().stringValue();
+                    secret = users_table->row(email)->cell(get_name(name_t::SNAP_NAME_OAUTH2_SECRET))->value().stringValue();
                     invalid = identifier != identifier_secret[0]
                            || secret     != identifier_secret[1];
                 }
@@ -355,7 +355,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
         if(invalid)
         {
             require_oauth2_login();
-            f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                         "Forbidden Authentication",
                         "Your OAuth2 identifier and secret do not match this website OAuth2 information.",
                         QString("Invalid%1%2")
@@ -449,12 +449,12 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
 void oauth2::application_login()
 {
     // prevent login in with the "wrong" methods
-    QString const method(f_snap->snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+    QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
     if(method == "HEAD"
     || method == "TRACE")
     {
         require_oauth2_login();
-        f_snap->die(snap_child::HTTP_CODE_METHOD_NOT_ALLOWED,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_METHOD_NOT_ALLOWED,
                     "Method Not Allowed",
                     "Applications do not accept method HEAD or TRACE.",
                     "Invalid method to access an application page.");
@@ -472,7 +472,7 @@ void oauth2::application_login()
     || session_id[0].toUpper() != "BEARER")
     {
         require_oauth2_login();
-        f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
                 "Permission Denied",
                 "This page requires a Snap-Authorization.",
                 QString("An API page was accessed with any invalid Snap-Authorization field (%1).").arg(authorization));
@@ -493,10 +493,10 @@ void oauth2::application_login()
     sessions::sessions::session_info info;
     sessions::sessions::instance()->load_session(session_key, info, false);
     QString const path(info.get_object_path());
-    if(info.get_session_type() == sessions::sessions::session_info::SESSION_INFO_VALID
+    if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
     && info.get_session_id() == users::users::USERS_SESSION_ID_LOG_IN_SESSION
     //&& info.get_session_random() == random_key.toInt() -- ignored here
-    && info.get_user_agent() == f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
+    && info.get_user_agent() == f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
     && path.left(6) == "/user/"
     && users::users::instance()->authenticated_user(path.mid(6), &info))
     {
@@ -554,7 +554,7 @@ void oauth2::application_login()
     }
 
     require_oauth2_login();
-    f_snap->die(snap_child::HTTP_CODE_UNAUTHORIZED,
+    f_snap->die(snap_child::http_code_t::HTTP_CODE_UNAUTHORIZED,
             "Unauthorized",
             "This page requires a valid Snap-Authorization. If you had such, it may have timed out.",
             "The application session information was not valid and the user could not be authenticated properly.");

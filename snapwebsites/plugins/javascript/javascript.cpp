@@ -69,18 +69,18 @@ SNAP_PLUGIN_START(javascript, 1, 0)
 char const *get_name(name_t name)
 {
     switch(name) {
-    case SNAP_NAME_JAVASCRIPT_MINIMIZED:
+    case name_t::SNAP_NAME_JAVASCRIPT_MINIMIZED:
         return "javascript::minimized";
 
-    case SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED:
+    case name_t::SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED:
         return "javascript::minimized::compressed";
 
-    case SNAP_NAME_JAVASCRIPT_ROW:
+    case name_t::SNAP_NAME_JAVASCRIPT_ROW:
         return "javascripts";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_JAVASCRIPT_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_JAVASCRIPT_...");
 
     }
     NOTREACHED();

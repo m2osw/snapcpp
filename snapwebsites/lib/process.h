@@ -33,49 +33,49 @@ namespace snap
 class snap_process_exception : public snap_exception
 {
 public:
-    snap_process_exception(const char *       whatmsg) : snap_exception("snap_process", whatmsg) {}
-    snap_process_exception(const std::string& whatmsg) : snap_exception("snap_process", whatmsg) {}
-    snap_process_exception(const QString&     whatmsg) : snap_exception("snap_process", whatmsg) {}
+    snap_process_exception(const char *        whatmsg) : snap_exception("snap_process", whatmsg) {}
+    snap_process_exception(const std::string & whatmsg) : snap_exception("snap_process", whatmsg) {}
+    snap_process_exception(const QString &     whatmsg) : snap_exception("snap_process", whatmsg) {}
 };
 
 class snap_process_exception_invalid_mode_error : public snap_process_exception
 {
 public:
-    snap_process_exception_invalid_mode_error(const char *       whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_invalid_mode_error(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_invalid_mode_error(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_invalid_mode_error(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_invalid_mode_error(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_invalid_mode_error(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 class snap_process_exception_already_initialized : public snap_process_exception
 {
 public:
-    snap_process_exception_already_initialized(const char *       whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_already_initialized(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_already_initialized(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_already_initialized(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_already_initialized(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_already_initialized(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 class snap_process_exception_unknown_flag : public snap_process_exception
 {
 public:
-    snap_process_exception_unknown_flag(const char *       whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_unknown_flag(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_unknown_flag(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_unknown_flag(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_unknown_flag(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_unknown_flag(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 class snap_process_exception_openproc : public snap_process_exception
 {
 public:
-    snap_process_exception_openproc(const char *       whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_openproc(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_openproc(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_openproc(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_openproc(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_openproc(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 class snap_process_exception_data_not_available : public snap_process_exception
 {
 public:
-    snap_process_exception_data_not_available(const char *       whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_data_not_available(const std::string& whatmsg) : snap_process_exception(whatmsg) {}
-    snap_process_exception_data_not_available(const QString&     whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_data_not_available(const char *        whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_data_not_available(const std::string & whatmsg) : snap_process_exception(whatmsg) {}
+    snap_process_exception_data_not_available(const QString &     whatmsg) : snap_process_exception(whatmsg) {}
 };
 
 
@@ -85,7 +85,7 @@ class process
 public:
     typedef std::map<std::string, std::string> environment_map_t;
 
-    enum mode_t
+    enum class mode_t
     {
         PROCESS_MODE_COMMAND,
         PROCESS_MODE_INPUT,
@@ -93,16 +93,16 @@ public:
         PROCESS_MODE_INOUT,
         PROCESS_MODE_INOUT_INTERACTIVE
     };
-    typedef controlled_vars::limited_auto_init<mode_t, PROCESS_MODE_COMMAND, PROCESS_MODE_INOUT_INTERACTIVE, PROCESS_MODE_COMMAND> zmode_t;
+    typedef controlled_vars::limited_auto_enum_init<mode_t, mode_t::PROCESS_MODE_COMMAND, mode_t::PROCESS_MODE_INOUT_INTERACTIVE, mode_t::PROCESS_MODE_COMMAND> zmode_t;
 
     class process_output_callback
     {
     public:
-        virtual bool                output_available(process *p, const QByteArray& output) = 0;
+        virtual bool                output_available(process * p, QByteArray const & output) = 0;
     };
     typedef controlled_vars::ptr_auto_init<process_output_callback> zpprocess_output_callback_t;
 
-                                process(const QString& name);
+                                process(QString const & name);
 
     QString const&              get_name() const;
 
@@ -110,25 +110,25 @@ public:
     void                        set_mode(mode_t mode);
     void                        set_forced_environment(bool forced = true);
 
-    void                        set_command(const QString& name);
-    void                        add_argument(const QString& arg);
-    void                        add_environ(const QString& name, const QString& value);
+    void                        set_command(QString const & name);
+    void                        add_argument(QString const & arg);
+    void                        add_environ(QString const & name, QString const & value);
 
     int                         run();
 
     // what is sent to the command stdin
-    void                        set_input(QString const& input);
-    void                        set_input(QByteArray const& input);
+    void                        set_input(QString const & input);
+    void                        set_input(QByteArray const & input);
 
     // what is received from the command stdout
     QString                     get_output(bool reset = false);
     QByteArray                  get_binary_output(bool reset = false);
-    void                        set_output_callback(process_output_callback *callback);
+    void                        set_output_callback(process_output_callback * callback);
 
 private:
     // prevent copies
-                                process(const process& rhs) = delete;
-                                process& operator = (const process& rhs) = delete;
+                                process(process const & rhs) = delete;
+    process &                   operator = (process const & rhs) = delete;
 
     typedef controlled_vars::auto_init<pid_t, 0>    safe_pid_t;
 
@@ -176,10 +176,10 @@ public:
     public:
         pid_t                       get_pid() const;
         pid_t                       get_ppid() const;
-        void                        get_page_faults(unsigned long& major, unsigned long& minor) const;
+        void                        get_page_faults(unsigned long & major, unsigned long & minor) const;
         unsigned                    get_pcpu() const;
         char                        get_status() const;
-        void                        get_times(unsigned long long& utime, unsigned long long& stime, unsigned long long& cutime, unsigned long long& cstime) const;
+        void                        get_times(unsigned long long & utime, unsigned long long & stime, unsigned long long & cutime, unsigned long long & cstime) const;
         long                        get_priority() const;
         long                        get_nice() const;
         long                        get_total_size() const;
@@ -195,8 +195,8 @@ public:
         typedef controlled_vars::auto_init<int32_t, -1>   m1_count_t;
 
                                     proc_info(std::shared_ptr<proc_t> p, int flags);
-                                    proc_info(proc_info const&) = delete;
-        proc_info&                  operator = (proc_info const&) = delete;
+                                    proc_info(proc_info const &) = delete;
+        proc_info&                  operator = (proc_info const &) = delete;
 
         std::shared_ptr<proc_t>     f_proc;
         controlled_vars::zint32_t   f_flags;

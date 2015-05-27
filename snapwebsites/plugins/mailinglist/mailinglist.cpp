@@ -39,7 +39,7 @@ SNAP_PLUGIN_START(mailinglist, 1, 0)
 const char *get_name(name_t name)
 {
     switch(name) {
-    case SNAP_NAME_MAILINGLIST_TABLE:
+    case name_t::SNAP_NAME_MAILINGLIST_TABLE:
         return "mailinglist";
 
     default:
@@ -269,7 +269,7 @@ void mailinglist::content_update(int64_t variables_timestamp)
  */
 QtCassandra::QCassandraTable::pointer_t mailinglist::get_mailinglist_table()
 {
-    return f_snap->create_table(get_name(SNAP_NAME_MAILINGLIST_TABLE), "Mailing list table.");
+    return f_snap->create_table(get_name(name_t::SNAP_NAME_MAILINGLIST_TABLE), "Mailing list table.");
 }
 
 /** \fn void mailinglist::name_to_list(const QString& name, QSharedPointer<list>& emails)

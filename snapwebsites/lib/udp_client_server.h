@@ -29,13 +29,13 @@ namespace udp_client_server
 class udp_client_server_runtime_error : public std::runtime_error
 {
 public:
-    udp_client_server_runtime_error(const std::string& errmsg) : std::runtime_error(errmsg) {}
+    udp_client_server_runtime_error(const std::string & errmsg) : std::runtime_error(errmsg) {}
 };
 
 class udp_client_server_parameter_error : public std::logic_error
 {
 public:
-    udp_client_server_parameter_error(const std::string& errmsg) : std::logic_error(errmsg) {}
+    udp_client_server_parameter_error(const std::string & errmsg) : std::logic_error(errmsg) {}
 };
 
 
@@ -44,14 +44,14 @@ class udp_client
 public:
     typedef std::shared_ptr<udp_client>     pointer_t;
 
-                        udp_client(const std::string& addr, int port);
+                        udp_client(std::string const & addr, int port);
                         ~udp_client();
 
     int                 get_socket() const;
     int                 get_port() const;
     std::string         get_addr() const;
 
-    int                 send(const char *msg, size_t size);
+    int                 send(const char * msg, size_t size);
 
 private:
     int                 f_socket;
@@ -66,15 +66,15 @@ class udp_server
 public:
     typedef std::shared_ptr<udp_server>     pointer_t;
 
-                        udp_server(const std::string& addr, int port);
+                        udp_server(std::string const & addr, int port);
                         ~udp_server();
 
     int                 get_socket() const;
     int                 get_port() const;
     std::string         get_addr() const;
 
-    int                 recv(char *msg, size_t max_size);
-    int                 timed_recv( char *msg, size_t const max_size, int const max_wait_ms );
+    int                 recv(char * msg, size_t max_size);
+    int                 timed_recv( char * msg, size_t const max_size, int const max_wait_ms );
     std::string         timed_recv( int const bufsize, int const max_wait_ms );
 
 private:

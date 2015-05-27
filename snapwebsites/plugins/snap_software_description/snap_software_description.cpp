@@ -27,24 +27,7 @@
 
 #include "snap_software_description.h"
 
-//#include "../users/users.h"
-//#include "../messages/messages.h"
-//#include "../sendmail/sendmail.h"
-//#include "../server_access/server_access.h"
-
 #include "http_strings.h"
-//#include "qstring_stream.h"
-//#include "not_reached.h"
-//#include "log.h"
-
-//#include <iostream>
-//
-//#include <QtCassandra/QCassandraLock.h>
-//
-//#include <openssl/evp.h>
-//#include <openssl/rand.h>
-//#include <boost/static_assert.hpp>
-//#include <QFile>
 
 #include "poison.h"
 
@@ -63,16 +46,16 @@ SNAP_PLUGIN_START(snap_software_description, 1, 0)
  *
  * \return A pointer to the name.
  */
-const char *get_name(name_t name)
+const char * get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE:
+    case name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_ENABLE:
         return "snap_software_description::enable";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_SNAP_SOFTWARE_DESCRIPTION_...");
 
     }
     NOTREACHED();
@@ -115,7 +98,7 @@ snap_software_description::~snap_software_description()
  *
  * \return A pointer to the snap_software_description plugin.
  */
-snap_software_description *snap_software_description::instance()
+snap_software_description * snap_software_description::instance()
 {
     return g_plugin_snap_software_description_factory.instance();
 }
@@ -222,7 +205,7 @@ bool snap_software_description::on_path_execute(content::path_info_t& ipath)
     if(json_level > xml_level)
     {
         // TODO: not implemented yet (use XSLT)
-        f_snap->die(snap_child::HTTP_CODE_NOT_IMPLEMENTED,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_IMPLEMENTED,
                 "Not Implemented",
                 "JSON support not implemented yet.",
                 "We need to implement the XSLT to convert the XML to JSON.");

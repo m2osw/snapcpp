@@ -51,51 +51,51 @@ QString token::to_string() const
 
     switch(f_id)
     {
-    case TOKEN_ID_NONE_ENUM:
+    case token_t::TOKEN_ID_NONE_ENUM:
         result = "<no token>";
         break;
 
-    case TOKEN_ID_INTEGER_ENUM:
+    case token_t::TOKEN_ID_INTEGER_ENUM:
         result = QString("int<%1>").arg(f_value.toInt());
         break;
 
-    case TOKEN_ID_FLOAT_ENUM:
+    case token_t::TOKEN_ID_FLOAT_ENUM:
         result = QString("float<%1>").arg(f_value.toDouble());
         break;
 
-    case TOKEN_ID_IDENTIFIER_ENUM:
+    case token_t::TOKEN_ID_IDENTIFIER_ENUM:
         result = QString("identifier<%1>").arg(f_value.toString());
         break;
 
-    case TOKEN_ID_KEYWORD_ENUM:
+    case token_t::TOKEN_ID_KEYWORD_ENUM:
         result = QString("keyword<%1>").arg(f_value.toString());
         break;
 
-    case TOKEN_ID_STRING_ENUM:
+    case token_t::TOKEN_ID_STRING_ENUM:
         result = QString("string<%1>").arg(f_value.toString());
         break;
 
-    case TOKEN_ID_LITERAL_ENUM:
+    case token_t::TOKEN_ID_LITERAL_ENUM:
         result = QString("literal<%1>").arg(f_value.toString());
         break;
 
-    case TOKEN_ID_EMPTY_ENUM:
+    case token_t::TOKEN_ID_EMPTY_ENUM:
         result = "empty<>";
         break;
 
-    case TOKEN_ID_CHOICES_ENUM:
+    case token_t::TOKEN_ID_CHOICES_ENUM:
         result = QString("choices<...>");//.arg(f_value.toString());
         break;
 
-    case TOKEN_ID_RULES_ENUM:
+    case token_t::TOKEN_ID_RULES_ENUM:
         result += " /* INVALID -- TOKEN_ID_RULES!!! */ ";
         break;
 
-    case TOKEN_ID_NODE_ENUM:
+    case token_t::TOKEN_ID_NODE_ENUM:
         result += " /* INVALID -- TOKEN_ID_RULES!!! */ ";
         break;
 
-    case TOKEN_ID_ERROR_ENUM:
+    case token_t::TOKEN_ID_ERROR_ENUM:
         result += " /* INVALID -- TOKEN_ID_ERROR!!! */ ";
         break;
 
@@ -255,7 +255,7 @@ restart:
         goto restart;
 
     case '+':
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -281,7 +281,7 @@ restart:
         break;
 
     case '-':
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -307,7 +307,7 @@ restart:
         break;
 
     case '*':
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -317,10 +317,10 @@ restart:
             case '/': // invalid C comment end marker
                 // in this case we don't have to restart since we
                 // reached the end of the input
-                f_error_code = static_cast<int>(LEXER_ERROR_INVALID_C_COMMENT);
+                f_error_code = lexer_error_t::LEXER_ERROR_INVALID_C_COMMENT;
                 f_error_message = "comment terminator without introducer";
                 f_error_line = f_line;
-                result.set_id(TOKEN_ID_ERROR_ENUM);
+                result.set_id(token_t::TOKEN_ID_ERROR_ENUM);
                 break;
 
             case '=': // multiply and assign
@@ -351,7 +351,7 @@ restart:
         break;
 
     case '/': // divide
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -368,7 +368,7 @@ restart:
                 }
                 // in this case we don't have to restart since we
                 // reached the end of the input
-                result.set_id(TOKEN_ID_NONE_ENUM);
+                result.set_id(token_t::TOKEN_ID_NONE_ENUM);
                 break;
 
             case '*': // C comment -- skip up to */
@@ -381,10 +381,10 @@ restart:
                     }
                 }
                 // in this case the comment was not terminated
-                f_error_code = static_cast<int>(LEXER_ERROR_INVALID_C_COMMENT);
+                f_error_code = lexer_error_t::LEXER_ERROR_INVALID_C_COMMENT;
                 f_error_message = "comment not terminated";
                 f_error_line = f_line;
-                result.set_id(TOKEN_ID_ERROR_ENUM);
+                result.set_id(token_t::TOKEN_ID_ERROR_ENUM);
                 break;
 
             case '=': // divide and assign
@@ -401,7 +401,7 @@ restart:
         break;
 
     case '%': // modulo
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -422,7 +422,7 @@ restart:
         break;
 
     case '~': // bitwise not
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -443,7 +443,7 @@ restart:
         break;
 
     case '&': // bitwise and
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -478,7 +478,7 @@ restart:
         break;
 
     case '|': // bitwise or
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -513,7 +513,7 @@ restart:
         break;
 
     case '^': // bitwise xor
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -548,7 +548,7 @@ restart:
         break;
 
     case '!': // logical not
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -588,7 +588,7 @@ restart:
         break;
 
     case '?': // ? by itself is used here and there generally similar to C/C++
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -609,7 +609,7 @@ restart:
         break;
 
     case '=': // assign
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -639,7 +639,7 @@ restart:
         break;
 
     case '<': // greater than
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -688,7 +688,7 @@ restart:
         break;
 
     case '>': // less than
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -759,7 +759,7 @@ restart:
         break;
 
     case ':':
-        result.set_id(TOKEN_ID_LITERAL_ENUM);
+        result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
         result.set_value(*f_pos);
         ++f_pos;
         if(f_pos != f_input.end())
@@ -808,14 +808,14 @@ restart:
             }
             if(f_pos == f_input.end())
             {
-                f_error_code = static_cast<int>(LEXER_ERROR_INVALID_STRING);
+                f_error_code = lexer_error_t::LEXER_ERROR_INVALID_STRING;
                 f_error_message = "invalid string";
                 f_error_line = f_line;
-                result.set_id(TOKEN_ID_ERROR_ENUM);
+                result.set_id(token_t::TOKEN_ID_ERROR_ENUM);
             }
             else
             {
-                result.set_id(TOKEN_ID_STRING_ENUM);
+                result.set_id(token_t::TOKEN_ID_STRING_ENUM);
                 result.set_value(QString(start, static_cast<int>(f_pos - start)));
                 ++f_pos; // skip the closing quote
             }
@@ -839,17 +839,17 @@ restart:
             {
                 ++f_pos;
             }
-            result.set_id(TOKEN_ID_INTEGER_ENUM);
+            result.set_id(token_t::TOKEN_ID_INTEGER_ENUM);
             QString value(start, static_cast<int>(f_pos - start));
             result.set_value(value.toULongLong(&ok, 16));
             if(!ok)
             {
                 // as far as I know the only reason it can fail is because
                 // it is too large (since we parsed a valid number!)
-                f_error_code = static_cast<int>(LEXER_ERROR_INVALID_NUMBER);
+                f_error_code = lexer_error_t::LEXER_ERROR_INVALID_NUMBER;
                 f_error_message = "number too large";
                 f_error_line = f_line;
-                result.set_id(TOKEN_ID_ERROR_ENUM);
+                result.set_id(token_t::TOKEN_ID_ERROR_ENUM);
             }
             break;
         }
@@ -885,13 +885,13 @@ restart:
                     ++f_pos;
                 }
                 // TODO: add exponent support
-                result.set_id(TOKEN_ID_FLOAT_ENUM);
+                result.set_id(token_t::TOKEN_ID_FLOAT_ENUM);
                 QString value(start, static_cast<int>(f_pos - start));
                 result.set_value(value.toDouble(&ok));
             }
             else
             {
-                result.set_id(TOKEN_ID_INTEGER_ENUM);
+                result.set_id(token_t::TOKEN_ID_INTEGER_ENUM);
                 QString value(start, static_cast<int>(f_pos - start));
                 result.set_value(value.toULongLong(&ok));
             }
@@ -899,10 +899,10 @@ restart:
             {
                 // as far as I know the only reason it can fail is because
                 // it is too large (since we parsed a valid number!)
-                f_error_code = static_cast<int>(LEXER_ERROR_INVALID_NUMBER);
+                f_error_code = lexer_error_t::LEXER_ERROR_INVALID_NUMBER;
                 f_error_message = "number too large";
                 f_error_line = f_line;
-                result.set_id(TOKEN_ID_ERROR_ENUM);
+                result.set_id(token_t::TOKEN_ID_ERROR_ENUM);
             }
         }
         break;
@@ -927,19 +927,19 @@ restart:
             QString identifier(start, static_cast<int>(f_pos - start));
             if(f_keywords.contains(identifier))
             {
-                result.set_id(TOKEN_ID_KEYWORD_ENUM);
+                result.set_id(token_t::TOKEN_ID_KEYWORD_ENUM);
                 result.set_value(f_keywords[identifier]);
             }
             else
             {
-                result.set_id(TOKEN_ID_IDENTIFIER_ENUM);
+                result.set_id(token_t::TOKEN_ID_IDENTIFIER_ENUM);
                 result.set_value(identifier);
             }
         }
         else
         {
             // in all other cases return a QChar
-            result.set_id(TOKEN_ID_LITERAL_ENUM);
+            result.set_id(token_t::TOKEN_ID_LITERAL_ENUM);
             result.set_value(*f_pos);
             ++f_pos;
         }
@@ -971,7 +971,7 @@ keyword::keyword(lexer& parent, const QString& keyword_identifier, int index_num
 
 
 rule::rule_data_t::rule_data_t()
-    : f_token(TOKEN_ID_NONE_ENUM)
+    : f_token(token_t::TOKEN_ID_NONE_ENUM)
     //, f_value("") -- auto-init
     //, f_keyword() -- auto-init
     , f_choices(nullptr)
@@ -987,7 +987,7 @@ rule::rule_data_t::rule_data_t(rule_data_t const& s)
 }
 
 rule::rule_data_t::rule_data_t(choices& c)
-    : f_token(TOKEN_ID_CHOICES_ENUM)
+    : f_token(token_t::TOKEN_ID_CHOICES_ENUM)
     //, f_value("") -- auto-init
     //, f_keyword() -- auto-init
     , f_choices(&c)
@@ -1003,7 +1003,7 @@ rule::rule_data_t::rule_data_t(token_t token)
 }
 
 rule::rule_data_t::rule_data_t(const QString& value)
-    : f_token(TOKEN_ID_LITERAL_ENUM)
+    : f_token(token_t::TOKEN_ID_LITERAL_ENUM)
     , f_value(value)
     //, f_keyword() -- auto-init
     , f_choices(nullptr)
@@ -1011,7 +1011,7 @@ rule::rule_data_t::rule_data_t(const QString& value)
 }
 
 rule::rule_data_t::rule_data_t(const keyword& k)
-    : f_token(TOKEN_ID_KEYWORD_ENUM)
+    : f_token(token_t::TOKEN_ID_KEYWORD_ENUM)
     //, f_value("") -- auto-init
     , f_keyword(k)
     , f_choices(nullptr)
@@ -1037,7 +1037,7 @@ rule::rule(const rule& r)
 void rule::add_rules(choices& c)
 {
     rule_data_t data(c);
-    data.f_token = TOKEN_ID_RULES_ENUM;
+    data.f_token = token_t::TOKEN_ID_RULES_ENUM;
     f_tokens.push_back(data);
 }
 
@@ -1287,50 +1287,50 @@ QString rule::to_string() const
         const rule_data_t& r(*ri);
         switch(r.f_token)
         {
-        case TOKEN_ID_NONE_ENUM:
+        case token_t::TOKEN_ID_NONE_ENUM:
             result += "\xA4";  // currency sign used as the EOI marker
             break;
 
-        case TOKEN_ID_INTEGER_ENUM:
+        case token_t::TOKEN_ID_INTEGER_ENUM:
             result += "TOKEN_ID_INTEGER";
             break;
 
-        case TOKEN_ID_FLOAT_ENUM:
+        case token_t::TOKEN_ID_FLOAT_ENUM:
             result += "TOKEN_ID_FLOAT";
             break;
 
-        case TOKEN_ID_IDENTIFIER_ENUM:
+        case token_t::TOKEN_ID_IDENTIFIER_ENUM:
             result += "TOKEN_ID_IDENTIFIER";
             break;
 
-        case TOKEN_ID_KEYWORD_ENUM:
+        case token_t::TOKEN_ID_KEYWORD_ENUM:
             result += "keyword_" + r.f_keyword.identifier();
             break;
 
-        case TOKEN_ID_STRING_ENUM:
+        case token_t::TOKEN_ID_STRING_ENUM:
             result += "TOKEN_ID_STRING";
             break;
 
-        case TOKEN_ID_LITERAL_ENUM:
+        case token_t::TOKEN_ID_LITERAL_ENUM:
             result += "\"" + r.f_value + "\"";
             break;
 
-        case TOKEN_ID_EMPTY_ENUM:
+        case token_t::TOKEN_ID_EMPTY_ENUM:
             // put the empty set for empty
             result += "\xF8";
             break;
 
-        case TOKEN_ID_CHOICES_ENUM:
+        case token_t::TOKEN_ID_CHOICES_ENUM:
             // you can select the one with the pointer for debugging
             //result += QString("[0x%1] %2").arg(reinterpret_cast<qulonglong>(r.f_choices), 0, 16).arg(r.f_choices->name());
             result += QString("%2").arg(r.f_choices->name());
             break;
 
-        case TOKEN_ID_NODE_ENUM:
+        case token_t::TOKEN_ID_NODE_ENUM:
             result += " /* INVALID -- TOKEN_ID_NODE!!! */ ";
             break;
 
-        case TOKEN_ID_ERROR_ENUM:
+        case token_t::TOKEN_ID_ERROR_ENUM:
             result += " /* INVALID -- TOKEN_ID_ERROR!!! */ ";
             break;
 
@@ -1415,7 +1415,7 @@ choices& choices::operator >>= (choices& rhs)
 choices& choices::operator >>= (rule& r)
 {
     // in this case there are no choices
-    if(r[0].get_token().get_id() == TOKEN_ID_RULES_ENUM)
+    if(r[0].get_token().get_id() == token_t::TOKEN_ID_RULES_ENUM)
     {
         this->operator = (r[0].get_choices());
     }
@@ -1503,7 +1503,7 @@ rule& operator | (rule& r_left, keyword const& k)
 rule& operator | (rule& r_left, rule& r_right)
 {
     // append to existing list?
-    if(r_left[0].get_token().get_id() == TOKEN_ID_RULES_ENUM)
+    if(r_left[0].get_token().get_id() == token_t::TOKEN_ID_RULES_ENUM)
     {
         r_left[0].get_choices().add_rule(r_right);
         return r_left;
@@ -1852,7 +1852,7 @@ void next_token(parser_state *state, state_array_t& current, state_array_t& free
                 for(int i(0); i < max_choices; ++i)
                 {
                     rule const& r((*state->f_choices)[i]);
-                    if(TOKEN_ID_CHOICES_ENUM == r[0].get_token().get_id()
+                    if(token_t::TOKEN_ID_CHOICES_ENUM == r[0].get_token().get_id()
                     && state->f_choices == &r[0].get_choices())
                     {
                         parser_state *s(parser_state::alloc(free_states, state->f_parent, *state->f_choices, i));
@@ -1948,7 +1948,7 @@ bool grammar::parse(lexer& input, choices& start)
 
                 // only take care of choices in this loop (terminators are
                 // handled in the next loop)
-                if(token_id == TOKEN_ID_CHOICES_ENUM)
+                if(token_id == token_t::TOKEN_ID_CHOICES_ENUM)
                 {
                     // follow the choice by adding all of the rules it points to
                     choices *c(&ref.get_choices());
@@ -1959,7 +1959,7 @@ bool grammar::parse(lexer& input, choices& start)
                         rule::rule_ref const child_ref((*c)[r][0]);
 
                         // recursive?
-                        if(TOKEN_ID_CHOICES_ENUM == child_ref.get_token().get_id()
+                        if(token_t::TOKEN_ID_CHOICES_ENUM == child_ref.get_token().get_id()
                         && &child_ref.get_choices() == c)
                         {
                             // ignore recursive at this level, we take them
@@ -1977,7 +1977,7 @@ bool grammar::parse(lexer& input, choices& start)
                         // the child position is always 0 here (it's a new child)
                         controlled_vars::flbool_t recursive;
 //                        token_t const child_token_id(child_ref.get_token().get_id());
-//                        if(child_token_id == TOKEN_ID_CHOICES_ENUM)
+//                        if(child_token_id == token_t::TOKEN_ID_CHOICES_ENUM)
 //                        {
 //                            // if the new child state starts with a 'choices'
 //                            // and that's a 'choices' we already added
@@ -2026,13 +2026,13 @@ bool grammar::parse(lexer& input, choices& start)
                     current.remove(current.indexOf(state));
                     retry = true;
                 }
-                else if(token_id == TOKEN_ID_EMPTY_ENUM)
+                else if(token_id == token_t::TOKEN_ID_EMPTY_ENUM)
                 {
                     // we have to take care of empty rules here since anything
                     // coming after an empty rule has to be added to the list
                     // of rules here (it is very important because of the
                     // potential for recursive rules)
-                    token t(TOKEN_ID_EMPTY_ENUM);
+                    token t(token_t::TOKEN_ID_EMPTY_ENUM);
                     state->add_token(t);
                     next_token(state, current, free_states);
                     retry = true;
@@ -2067,8 +2067,8 @@ bool grammar::parse(lexer& input, choices& start)
             parser_state *state(*it);
             rule::rule_ref const ref((*state->f_choices)[state->f_rule][state->f_position]);
             token_t const token_id(ref.get_token().get_id());
-            if(token_id == TOKEN_ID_CHOICES_ENUM
-            || token_id == TOKEN_ID_EMPTY_ENUM)
+            if(token_id == token_t::TOKEN_ID_CHOICES_ENUM
+            || token_id == token_t::TOKEN_ID_EMPTY_ENUM)
             {
                 throw snap_logic_exception("this should never happen since the previous for() loop removed all of those!");
             }
@@ -2083,7 +2083,7 @@ bool grammar::parse(lexer& input, choices& start)
                 {
                     switch(token_id)
                     {
-                    case TOKEN_ID_LITERAL_ENUM:
+                    case token_t::TOKEN_ID_LITERAL_ENUM:
                         // a literal must match exactly
                         if(t.get_value().toString() != ref.get_value())
                         {
@@ -2091,7 +2091,7 @@ bool grammar::parse(lexer& input, choices& start)
                         }
                         break;
 
-                    case TOKEN_ID_KEYWORD_ENUM:
+                    case token_t::TOKEN_ID_KEYWORD_ENUM:
                         // a keyword must match exactly
                         if(t.get_value().toInt() != ref.get_keyword().number())
                         {
@@ -2099,14 +2099,14 @@ bool grammar::parse(lexer& input, choices& start)
                         }
                         break;
 
-                    case TOKEN_ID_IDENTIFIER_ENUM:
-                    case TOKEN_ID_STRING_ENUM:
-                    case TOKEN_ID_INTEGER_ENUM:
-                    case TOKEN_ID_FLOAT_ENUM:
+                    case token_t::TOKEN_ID_IDENTIFIER_ENUM:
+                    case token_t::TOKEN_ID_STRING_ENUM:
+                    case token_t::TOKEN_ID_INTEGER_ENUM:
+                    case token_t::TOKEN_ID_FLOAT_ENUM:
                         // this is a match whatever the value
                         break;
 
-                    case TOKEN_ID_NONE_ENUM:
+                    case token_t::TOKEN_ID_NONE_ENUM:
                         // this state is the root state, this means the result
                         // is really the child node of this current state
                         f_result = qSharedPointerDynamicCast<token_node, token>((*state->f_node)[0]);

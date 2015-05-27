@@ -46,18 +46,18 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_QRCODE_DEFAULT_EDGE:
+    case name_t::SNAP_NAME_QRCODE_DEFAULT_EDGE:
         return "qrcode::default_edge";
 
-    case SNAP_NAME_QRCODE_DEFAULT_SCALE:
+    case name_t::SNAP_NAME_QRCODE_DEFAULT_SCALE:
         return "qrcode::default_scale";
 
-    case SNAP_NAME_QRCODE_PRIVATE_ENABLE:
+    case name_t::SNAP_NAME_QRCODE_PRIVATE_ENABLE:
         return "qrcode::private_enable";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_QRCODE_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_QRCODE_...");
 
     }
     NOTREACHED();
@@ -283,7 +283,7 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
         //      (the settings should tell us about that)
         permissions::permissions *permissions_plugin(permissions::permissions::instance());
         QString const& login_status(permissions_plugin->get_login_status());
-        bool const accept_private_pages(settings_row->cell(get_name(SNAP_NAME_QRCODE_PRIVATE_ENABLE))->value().safeSignedCharValue() != 0);
+        bool const accept_private_pages(settings_row->cell(get_name(name_t::SNAP_NAME_QRCODE_PRIVATE_ENABLE))->value().safeSignedCharValue() != 0);
         QString const& user_path(accept_private_pages ? permissions_plugin->get_user_path() : "");
         content::permission_flag allowed;
         path::path::instance()->access_allowed(user_path, page_ipath, "view", login_status, allowed);
@@ -293,10 +293,10 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
             // TODO: check settings to know whether we use the Short URL
             //       also we may want to first test with the full URL...
             if(content_table->exists(page_ipath.get_key())
-            && content_table->row(page_ipath.get_key())->exists(shorturl::get_name(shorturl::SNAP_NAME_SHORTURL_URL)))
+            && content_table->row(page_ipath.get_key())->exists(shorturl::get_name(shorturl::name_t::SNAP_NAME_SHORTURL_URL)))
             {
                 // use the Short URL
-                QString const shorturl(content_table->row(page_ipath.get_key())->cell(shorturl::get_name(shorturl::SNAP_NAME_SHORTURL_URL))->value().stringValue());
+                QString const shorturl(content_table->row(page_ipath.get_key())->cell(shorturl::get_name(shorturl::name_t::SNAP_NAME_SHORTURL_URL))->value().stringValue());
                 std::string shorturl_utf8(shorturl.toUtf8().data());
                 // let administrator choose version, level?
                 std::shared_ptr<QRcode> code(QRcode_encodeString(shorturl_utf8.c_str(), 0, QR_ECLEVEL_H, QR_MODE_8, 1), qrcode_deleter);
@@ -318,7 +318,7 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
                     }
                     if(!scale_ok)
                     {
-                        int8_t s(settings_row->cell(get_name(SNAP_NAME_QRCODE_DEFAULT_SCALE))->value().safeSignedCharValue());
+                        int8_t s(settings_row->cell(get_name(name_t::SNAP_NAME_QRCODE_DEFAULT_SCALE))->value().safeSignedCharValue());
                         if(s > 0)
                         {
                             scale = s;
@@ -344,9 +344,9 @@ bool qrcode::on_path_execute(content::path_info_t& ipath)
                             edge = e;
                         }
                     }
-                    if(!edge_ok && settings_row->exists(get_name(SNAP_NAME_QRCODE_DEFAULT_EDGE)))
+                    if(!edge_ok && settings_row->exists(get_name(name_t::SNAP_NAME_QRCODE_DEFAULT_EDGE)))
                     {
-                        int8_t const e(settings_row->cell(get_name(SNAP_NAME_QRCODE_DEFAULT_EDGE))->value().safeSignedCharValue());
+                        int8_t const e(settings_row->cell(get_name(name_t::SNAP_NAME_QRCODE_DEFAULT_EDGE))->value().safeSignedCharValue());
                         if(e >= 0 && e <= 50)
                         {
                             edge = e;

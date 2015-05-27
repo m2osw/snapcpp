@@ -42,36 +42,35 @@ class QDomNodeModel: public QAbstractXmlNodeModel
 public:
     typedef QVector<QDomNode> Path;
 
-    QDomNodeModel(QXmlNamePool, QDomDocument);
-    virtual ~QDomNodeModel() {}
+                                            QDomNodeModel(QXmlNamePool, QDomDocument);
+    virtual                                 ~QDomNodeModel() {}
 
     // QAbstractXmlNodeModel implementation
-    virtual QUrl baseUri(const QXmlNodeModelIndex& n) const;
-    virtual QXmlNodeModelIndex::DocumentOrder compareOrder(const QXmlNodeModelIndex& ni1,
-                                                           const QXmlNodeModelIndex& ni2) const;
-    virtual QUrl documentUri(const QXmlNodeModelIndex& n) const;
-    virtual QXmlNodeModelIndex elementById(const QXmlName& id) const;
-    virtual QXmlNodeModelIndex::NodeKind kind(const QXmlNodeModelIndex& ni) const;
-    virtual QXmlName name(const QXmlNodeModelIndex& ni) const;
-    virtual QVector<QXmlName> namespaceBindings(const QXmlNodeModelIndex& n) const;
-    virtual QVector<QXmlNodeModelIndex> nodesByIdref(const QXmlName& idref) const;
-    virtual QXmlNodeModelIndex root(const QXmlNodeModelIndex& n) const;
-    virtual QString stringValue(const QXmlNodeModelIndex& n) const;
-    virtual QVariant typedValue(const QXmlNodeModelIndex& node) const;
+    virtual QUrl                            baseUri(QXmlNodeModelIndex const & n) const;
+    virtual QXmlNodeModelIndex::DocumentOrder compareOrder(QXmlNodeModelIndex const & ni1, QXmlNodeModelIndex const & ni2) const;
+    virtual QUrl                            documentUri(QXmlNodeModelIndex const & n) const;
+    virtual QXmlNodeModelIndex              elementById(QXmlName const & id) const;
+    virtual QXmlNodeModelIndex::NodeKind    kind(QXmlNodeModelIndex const & ni) const;
+    virtual QXmlName                        name(QXmlNodeModelIndex const & ni) const;
+    virtual QVector<QXmlName>               namespaceBindings(QXmlNodeModelIndex const & n) const;
+    virtual QVector<QXmlNodeModelIndex>     nodesByIdref(QXmlName const & idref) const;
+    virtual QXmlNodeModelIndex              root(QXmlNodeModelIndex const & n) const;
+    virtual QString                         stringValue(QXmlNodeModelIndex const & n) const;
+    virtual QVariant                        typedValue(QXmlNodeModelIndex const & node) const;
 
-    //virtual QSourceLocation sourceLocation(const QXmlNodeModelIndex& index) const; -- this is not yet virtual
+    //virtual QSourceLocation                 sourceLocation(QXmlNodeModelIndex const & index) const; -- this is not yet virtual
 
-    QXmlNodeModelIndex fromDomNode(const QDomNode& n) const;
-    QDomNode toDomNode(const QXmlNodeModelIndex& ni) const;
+    QXmlNodeModelIndex                      fromDomNode(QDomNode const & n) const;
+    QDomNode                                toDomNode(QXmlNodeModelIndex const & ni) const;
 
 protected:
     // QAbstractXmlNodeModel implementation
-    virtual QVector<QXmlNodeModelIndex> attributes(const QXmlNodeModelIndex& element) const;
-    virtual QXmlNodeModelIndex nextFromSimpleAxis(SimpleAxis axis, const QXmlNodeModelIndex& origin) const;
+    virtual QVector<QXmlNodeModelIndex>     attributes(QXmlNodeModelIndex const & element) const;
+    virtual QXmlNodeModelIndex              nextFromSimpleAxis(SimpleAxis axis, QXmlNodeModelIndex const & origin) const;
 
 private:
-    Path path(const QDomNode& n) const;
-    int childIndex(const QDomNode& n) const;
+    Path path(QDomNode const & n) const;
+    int childIndex(QDomNode const & n) const;
 
     mutable QXmlNamePool f_pool;
     mutable QDomDocument f_doc;

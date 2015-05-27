@@ -25,27 +25,27 @@ namespace attachment
 {
 
 
-//enum name_t
+//enum class name_t
 //{
 //    SNAP_NAME_ATTACHMENT_...
 //};
-//char const *get_name(name_t name) __attribute__ ((const));
+//char const * get_name(name_t name) __attribute__ ((const));
 
 
 class attachment_exception : public snap_exception
 {
 public:
-    attachment_exception(char const *       what_msg) : snap_exception("attachment", what_msg) {}
-    attachment_exception(std::string const& what_msg) : snap_exception("attachment", what_msg) {}
-    attachment_exception(QString const&     what_msg) : snap_exception("attachment", what_msg) {}
+    attachment_exception(char const *        what_msg) : snap_exception("attachment", what_msg) {}
+    attachment_exception(std::string const & what_msg) : snap_exception("attachment", what_msg) {}
+    attachment_exception(QString const &     what_msg) : snap_exception("attachment", what_msg) {}
 };
 
 class attachment_exception_invalid_content_xml : public attachment_exception
 {
 public:
-    attachment_exception_invalid_content_xml(char const *       what_msg) : attachment_exception(what_msg) {}
-    attachment_exception_invalid_content_xml(std::string const& what_msg) : attachment_exception(what_msg) {}
-    attachment_exception_invalid_content_xml(QString const&     what_msg) : attachment_exception(what_msg) {}
+    attachment_exception_invalid_content_xml(char const *        what_msg) : attachment_exception(what_msg) {}
+    attachment_exception_invalid_content_xml(std::string const & what_msg) : attachment_exception(what_msg) {}
+    attachment_exception_invalid_content_xml(QString const &     what_msg) : attachment_exception(what_msg) {}
 };
 
 
@@ -66,13 +66,13 @@ public:
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
-    void                on_bootstrap(snap_child *snap);
-    void                on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    virtual bool        on_path_execute(content::path_info_t& ipath);
-    void                on_page_cloned(content::content::cloned_tree_t const& tree);
-    void                on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
-    virtual void        on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& path);
-    void                on_permit_redirect_to_login_on_not_allowed(content::path_info_t& ipath, bool& redirect_to_login);
+    void                on_bootstrap(snap_child * snap);
+    void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+    virtual bool        on_path_execute(content::path_info_t & ipath);
+    void                on_page_cloned(content::content::cloned_tree_t const & tree);
+    void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+    virtual void        on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path);
+    void                on_permit_redirect_to_login_on_not_allowed(content::path_info_t & ipath, bool & redirect_to_login);
 
 private:
     void                content_update(int64_t variables_timestamp);

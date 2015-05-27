@@ -23,7 +23,7 @@ namespace snap
 namespace sessions
 {
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_SESSIONS_CHECK_FLAGS,
     SNAP_NAME_SESSIONS_DATE,
@@ -40,15 +40,15 @@ enum name_t
     SNAP_NAME_SESSIONS_USED_UP,
     SNAP_NAME_SESSIONS_USER_AGENT
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class sessions_exception : public snap_exception
 {
 public:
-    sessions_exception(char const *       what_msg) : snap_exception("Sessions", what_msg) {}
-    sessions_exception(std::string const& what_msg) : snap_exception("Sessions", what_msg) {}
-    sessions_exception(QString const&     what_msg) : snap_exception("Sessions", what_msg) {}
+    sessions_exception(char const *        what_msg) : snap_exception("Sessions", what_msg) {}
+    sessions_exception(std::string const & what_msg) : snap_exception("Sessions", what_msg) {}
+    sessions_exception(QString const &     what_msg) : snap_exception("Sessions", what_msg) {}
 };
 
 class sessions_exception_invalid_parameter : public sessions_exception
@@ -84,7 +84,7 @@ public:
     class session_info
     {
     public:
-        enum session_info_type_t
+        enum class session_info_type_t : uint32_t
         {
             SESSION_INFO_SECURE,        // think PCI Compliant website (credit card payment, etc.)
             SESSION_INFO_USER,          // a user cookie when logged in
@@ -109,14 +109,14 @@ public:
 
         void set_session_type(session_info_type_t type);
         void set_session_id(session_id_t session_id);
-        void set_session_key(QString const& session_key);
+        void set_session_key(QString const & session_key);
         void set_session_random();
         void set_session_random(int32_t random);
-        void set_plugin_owner(QString const& plugin_owner);
-        void set_page_path(QString const& page_path);
-        void set_page_path(content::path_info_t& page_ipath);
-        void set_object_path(QString const& object_path);
-        void set_user_agent(QString const& user_agent);
+        void set_plugin_owner(QString const & plugin_owner);
+        void set_page_path(QString const & page_path);
+        void set_page_path(content::path_info_t & page_ipath);
+        void set_object_path(QString const & object_path);
+        void set_user_agent(QString const & user_agent);
         void set_time_to_live(int32_t time_to_live);
         void set_time_limit(time_t time_limit);
         void set_login_limit(time_t time_limit);
@@ -143,7 +143,7 @@ public:
 
     private:
         // default to SESSION_INFO_SECURE
-        typedef controlled_vars::limited_auto_init<session_info_type_t, SESSION_INFO_SECURE, SESSION_INFO_USER, SESSION_INFO_SECURE> auto_session_info_type_t;
+        typedef controlled_vars::limited_auto_init<session_info_type_t, session_info_type_t::SESSION_INFO_SECURE, session_info_type_t::SESSION_INFO_USER, session_info_type_t::SESSION_INFO_SECURE> auto_session_info_type_t;
         typedef controlled_vars::auto_init<int32_t, 300> time_to_live_t;
         typedef controlled_vars::auto_init<time_t, 0> ztime_t;
         typedef controlled_vars::auto_init<session_id_t, 0> zsession_id_t;
@@ -171,18 +171,18 @@ public:
     virtual int64_t         do_update(int64_t last_updated);
 
     void                    on_bootstrap(snap_child *snap);
-    void                    on_cell_is_secure(QString const& table, QString const& row, QString const& cell, server::secure_field_flag_t& secure);
+    void                    on_cell_is_secure(QString const & table, QString const & row, QString const & cell, server::secure_field_flag_t & secure);
     void                    clean_session_table(int64_t variables_timestamp);
 
-    virtual void            on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
+    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
 
-    QString                 create_session(session_info& info);
-    void                    save_session(session_info& info, bool const new_random);
-    void                    load_session(QString const& session_id, session_info& info, bool use_once = true);
+    QString                 create_session(session_info & info);
+    void                    save_session(session_info & info, bool const new_random);
+    void                    load_session(QString const & session_id, session_info & info, bool use_once = true);
 
-    void                    attach_to_session(session_info const& info, QString const& name, QString const& data);
-    QString                 detach_from_session(session_info const& info, QString const& name);
-    QString                 get_from_session(session_info const& info, QString const& name);
+    void                    attach_to_session(session_info const & info, QString const & name, QString const & data);
+    QString                 detach_from_session(session_info const & info, QString const & name);
+    QString                 get_from_session(session_info const & info, QString const & name);
 
 private:
     void                    initial_update(int64_t variables_timestamp);

@@ -64,51 +64,51 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_SESSIONS_CHECK_FLAGS:
+    case name_t::SNAP_NAME_SESSIONS_CHECK_FLAGS:
         return "sessions::check_flags";
 
-    case SNAP_NAME_SESSIONS_DATE:
+    case name_t::SNAP_NAME_SESSIONS_DATE:
         return "sessions::date";
 
-    case SNAP_NAME_SESSIONS_ID:
+    case name_t::SNAP_NAME_SESSIONS_ID:
         return "sessions::id";
 
-    case SNAP_NAME_SESSIONS_LOGIN_LIMIT:
+    case name_t::SNAP_NAME_SESSIONS_LOGIN_LIMIT:
         return "sessions::login_limit";
 
-    case SNAP_NAME_SESSIONS_OBJECT_PATH:
+    case name_t::SNAP_NAME_SESSIONS_OBJECT_PATH:
         return "sessions::object_path";
 
-    case SNAP_NAME_SESSIONS_PAGE_PATH:
+    case name_t::SNAP_NAME_SESSIONS_PAGE_PATH:
         return "sessions::page_path";
 
-    case SNAP_NAME_SESSIONS_PLUGIN_OWNER:
+    case name_t::SNAP_NAME_SESSIONS_PLUGIN_OWNER:
         return "sessions::plugin_owner";
 
-    case SNAP_NAME_SESSIONS_RANDOM:
+    case name_t::SNAP_NAME_SESSIONS_RANDOM:
         return "sessions::random";
 
-    case SNAP_NAME_SESSIONS_REMOTE_ADDR:
+    case name_t::SNAP_NAME_SESSIONS_REMOTE_ADDR:
         return "sessions::remote_addr";
 
-    case SNAP_NAME_SESSIONS_TABLE:
+    case name_t::SNAP_NAME_SESSIONS_TABLE:
         return "sessions";
 
-    case SNAP_NAME_SESSIONS_TIME_LIMIT:
+    case name_t::SNAP_NAME_SESSIONS_TIME_LIMIT:
         return "sessions::time_limit";
 
-    case SNAP_NAME_SESSIONS_TIME_TO_LIVE:
+    case name_t::SNAP_NAME_SESSIONS_TIME_TO_LIVE:
         return "sessions::time_to_live";
 
-    case SNAP_NAME_SESSIONS_USED_UP:
+    case name_t::SNAP_NAME_SESSIONS_USED_UP:
         return "sessions::used_up";
 
-    case SNAP_NAME_SESSIONS_USER_AGENT:
+    case name_t::SNAP_NAME_SESSIONS_USER_AGENT:
         return "sessions::user_agent";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_SESSIONS_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_SESSIONS_...");
 
     }
     NOTREACHED();
@@ -805,9 +805,9 @@ int64_t sessions::session_info::get_date() const
  *
  * \return A string representing the type.
  */
-const char *sessions::session_info::session_type_to_string(session_info_type_t type)
+char const * sessions::session_info::session_type_to_string(session_info_type_t type)
 {
-    const char *type_names[] =
+    char const * type_names[] =
     {
         "SESSION_INFO_SECURE",
         "SESSION_INFO_USER",
@@ -818,11 +818,11 @@ const char *sessions::session_info::session_type_to_string(session_info_type_t t
         "SESSION_INFO_USED_UP",
         "SESSION_INFO_INCOMPATIBLE"
     };
-    if(type < 0 || type >= sizeof(type_names) / sizeof(type_names[0]))
+    if(static_cast<uint32_t>(type) >= sizeof(type_names) / sizeof(type_names[0]))
     {
-        throw sessions_exception_invalid_range("type is invalid while calling session_type_to_string()");
+        throw sessions_exception_invalid_range("sessions.cpp: type is invalid while calling session_type_to_string()");
     }
-    return type_names[type];
+    return type_names[static_cast<int>(type)];
 }
 
 
@@ -973,8 +973,8 @@ void sessions::clean_session_table(int64_t variables_timestamp)
 {
     static_cast<void>(variables_timestamp);
 
-    QString const used_up(get_name(SNAP_NAME_SESSIONS_USED_UP));
-    QString const id(get_name(SNAP_NAME_SESSIONS_ID));
+    QString const used_up(get_name(name_t::SNAP_NAME_SESSIONS_USED_UP));
+    QString const id(get_name(name_t::SNAP_NAME_SESSIONS_ID));
 
     QtCassandra::QCassandraTable::pointer_t sessions_table(get_sessions_table());
     QtCassandra::QCassandraRowPredicate row_predicate;
@@ -1029,7 +1029,7 @@ void sessions::clean_session_table(int64_t variables_timestamp)
  */
 QtCassandra::QCassandraTable::pointer_t sessions::get_sessions_table()
 {
-    return f_snap->create_table(get_name(SNAP_NAME_SESSIONS_TABLE), "Sessions table.");
+    return f_snap->create_table(get_name(name_t::SNAP_NAME_SESSIONS_TABLE), "Sessions table.");
 }
 
 
@@ -1139,15 +1139,15 @@ QString sessions::create_session(session_info& info)
     int size(0);
     switch(info.get_session_type())
     {
-    case session_info::SESSION_INFO_SECURE:
+    case session_info::session_info_type_t::SESSION_INFO_SECURE:
         size = 16;
         break;
 
-    case session_info::SESSION_INFO_USER:
+    case session_info::session_info_type_t::SESSION_INFO_USER:
         size = 8;
         break;
 
-    case session_info::SESSION_INFO_FORM:
+    case session_info::session_info_type_t::SESSION_INFO_FORM:
         size = 4;
         break;
 
@@ -1271,41 +1271,41 @@ void sessions::save_session(session_info& info, bool const new_random)
     value.setTtl(static_cast<int32_t>(ttl));
 
     value.setInt32Value(info.get_session_id());
-    row->cell(get_name(SNAP_NAME_SESSIONS_ID))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_ID))->setValue(value);
 
     value.setStringValue(info.get_plugin_owner());
-    row->cell(get_name(SNAP_NAME_SESSIONS_PLUGIN_OWNER))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_PLUGIN_OWNER))->setValue(value);
 
     value.setStringValue(info.get_page_path());
-    row->cell(get_name(SNAP_NAME_SESSIONS_PAGE_PATH))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_PAGE_PATH))->setValue(value);
 
     value.setStringValue(info.get_object_path());
-    row->cell(get_name(SNAP_NAME_SESSIONS_OBJECT_PATH))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_OBJECT_PATH))->setValue(value);
 
     value.setStringValue(info.get_user_agent());
-    row->cell(get_name(SNAP_NAME_SESSIONS_USER_AGENT))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_USER_AGENT))->setValue(value);
 
     value.setInt32Value(info.get_time_to_live());
-    row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_TIME_TO_LIVE))->setValue(value);
 
     value.setInt64Value(timestamp);
     info.set_time_limit(timestamp);
-    row->cell(get_name(SNAP_NAME_SESSIONS_TIME_LIMIT))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_TIME_LIMIT))->setValue(value);
 
     value.setInt64Value(info.get_login_limit());
-    row->cell(get_name(SNAP_NAME_SESSIONS_LOGIN_LIMIT))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_LOGIN_LIMIT))->setValue(value);
 
     value.setInt64Value(f_snap->get_start_date());
-    row->cell(get_name(SNAP_NAME_SESSIONS_DATE))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_DATE))->setValue(value);
 
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-    row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_REMOTE_ADDR))->setValue(value);
 
     value.setInt32Value(info.get_session_random());
-    row->cell(get_name(SNAP_NAME_SESSIONS_RANDOM))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_RANDOM))->setValue(value);
 
     value.setInt64Value(info.add_check_flags(0));
-    row->cell(get_name(SNAP_NAME_SESSIONS_CHECK_FLAGS))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_SESSIONS_CHECK_FLAGS))->setValue(value);
 }
 
 
@@ -1367,7 +1367,7 @@ void sessions::load_session(QString const& session_key, session_info& info, bool
     {
         // if the key doesn't exist it was either tempered with
         // or the database already deleted it (i.e. it timed out)
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
 
@@ -1377,7 +1377,7 @@ void sessions::load_session(QString const& session_key, session_info& info, bool
         // XXX
         // if we get a problem here it's probably something else
         // than a missing row...
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
 
@@ -1386,102 +1386,102 @@ void sessions::load_session(QString const& session_key, session_info& info, bool
 
     QtCassandra::QCassandraValue value;
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_ID))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_ID))->value();
     if(value.nullValue())
     {
         // row timed out between calls
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
     info.set_session_id(value.int32Value());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_PLUGIN_OWNER))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_PLUGIN_OWNER))->value();
     if(value.nullValue())
     {
         // row timed out between calls
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
     info.set_plugin_owner(value.stringValue());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_PAGE_PATH))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_PAGE_PATH))->value();
     info.set_page_path(value.stringValue());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_OBJECT_PATH))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_OBJECT_PATH))->value();
     info.set_object_path(value.stringValue());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_USER_AGENT))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_USER_AGENT))->value();
     info.set_user_agent(value.stringValue());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_CHECK_FLAGS))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_CHECK_FLAGS))->value();
     if(value.nullValue())
     {
         // row timed out between calls
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
     info.set_check_flags(value.int64Value());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_TIME_TO_LIVE))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_TIME_TO_LIVE))->value();
     if(value.nullValue())
     {
         // row timed out between calls
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
     info.set_time_to_live(value.int32Value());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_TIME_LIMIT))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_TIME_LIMIT))->value();
     if(value.nullValue())
     {
         // row timed out between calls
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
     info.set_time_limit(value.int64Value());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_LOGIN_LIMIT))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_LOGIN_LIMIT))->value();
     if(value.nullValue())
     {
         // row timed out between calls
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
     info.set_login_limit(value.int64Value());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_DATE))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_DATE))->value();
     if(value.nullValue())
     {
         // row timed out between calls
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
     info.set_date(value.int64Value());
 
-    value = row->cell(get_name(SNAP_NAME_SESSIONS_RANDOM))->value();
+    value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_RANDOM))->value();
     if(value.nullValue())
     {
         // row timed out between calls
-        info.set_session_type(session_info::SESSION_INFO_MISSING);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_MISSING);
         return;
     }
     info.set_session_random(value.int32Value());
 
     // At this point we don't have a field in the info structure for this one
-    // value = row->cell(get_name(SNAP_NAME_SESSIONS_REMOTE_ADDR))->value();
+    // value = row->cell(get_name(name_t::SNAP_NAME_SESSIONS_REMOTE_ADDR))->value();
 
     int64_t now(f_snap->get_start_time());
     if(info.get_time_limit() < now)
     {
-        info.set_session_type(session_info::SESSION_INFO_OUT_OF_DATE);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_OUT_OF_DATE);
         return;
     }
 
     // check whether the session was already used up
-    QtCassandra::QCassandraValue used_up_value(row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->value());
+    QtCassandra::QCassandraValue used_up_value(row->cell(get_name(name_t::SNAP_NAME_SESSIONS_USED_UP))->value());
     if(!used_up_value.nullValue())
     {
-        info.set_session_type(session_info::SESSION_INFO_USED_UP);
+        info.set_session_type(session_info::session_info_type_t::SESSION_INFO_USED_UP);
         return;
     }
 
@@ -1492,11 +1492,11 @@ void sessions::load_session(QString const& session_key, session_info& info, bool
         // As a side effect, since we just read values with a TTL
         // this 'value' variable already has the expected TTL!
         value.setCharValue(1);
-        row->cell(get_name(SNAP_NAME_SESSIONS_USED_UP))->setValue(value);
+        row->cell(get_name(name_t::SNAP_NAME_SESSIONS_USED_UP))->setValue(value);
     }
 
     // only case when it is valid
-    info.set_session_type(session_info::SESSION_INFO_VALID);
+    info.set_session_type(session_info::session_info_type_t::SESSION_INFO_VALID);
 }
 
 
@@ -1666,7 +1666,7 @@ void sessions::on_cell_is_secure(QString const& table, QString const& row, QStri
     static_cast<void>(row);
     static_cast<void>(cell);
 
-    if(table == get_name(SNAP_NAME_SESSIONS_TABLE))
+    if(table == get_name(name_t::SNAP_NAME_SESSIONS_TABLE))
     {
         secure.mark_as_secure();
     }

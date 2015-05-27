@@ -34,21 +34,21 @@ namespace locale_settings
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_LOCALE_SETTINGS_LOCALE,
     SNAP_NAME_LOCALE_SETTINGS_TIMEZONE,
     SNAP_NAME_LOCALE_SETTINGS_PATH
 };
-char const *get_name(name_t name) __attribute__ ((const));
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 //class locale_settings_exception : public snap_exception
 //{
 //public:
-//    locale_settings_exception(char const *       what_msg) : snap_exception("locale_settings", what_msg) {}
-//    locale_settings_exception(std::string const& what_msg) : snap_exception("locale_settings", what_msg) {}
-//    locale_settings_exception(QString const&     what_msg) : snap_exception("locale_settings", what_msg) {}
+//    locale_settings_exception(char const *        what_msg) : snap_exception("locale_settings", what_msg) {}
+//    locale_settings_exception(std::string const & what_msg) : snap_exception("locale_settings", what_msg) {}
+//    locale_settings_exception(QString const &     what_msg) : snap_exception("locale_settings", what_msg) {}
 //};
 
 
@@ -68,7 +68,7 @@ public:
     virtual QString             description() const;
     virtual int64_t             do_update(int64_t last_updated);
 
-    void                        on_bootstrap(snap_child *snap);
+    void                        on_bootstrap(snap_child * snap);
     void                        on_set_locale();
     void                        on_set_timezone();
 

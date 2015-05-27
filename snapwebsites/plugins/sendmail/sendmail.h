@@ -29,40 +29,7 @@ namespace snap
 namespace sendmail
 {
 
-class sendmail_exception : public snap_exception
-{
-public:
-    sendmail_exception(char const *       what_msg) : snap_exception("sendmail", what_msg) {}
-    sendmail_exception(std::string const& what_msg) : snap_exception("sendmail", what_msg) {}
-    sendmail_exception(QString const&     what_msg) : snap_exception("sendmail", what_msg) {}
-};
-
-class sendmail_exception_no_backend : public sendmail_exception
-{
-public:
-    sendmail_exception_no_backend(char const *       what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_no_backend(std::string const& what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_no_backend(QString const&     what_msg) : sendmail_exception(what_msg) {}
-};
-
-class sendmail_exception_invalid_argument : public sendmail_exception
-{
-public:
-    sendmail_exception_invalid_argument(char const *       what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_invalid_argument(std::string const& what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_invalid_argument(QString const&     what_msg) : sendmail_exception(what_msg) {}
-};
-
-class sendmail_exception_too_many_levels : public sendmail_exception
-{
-public:
-    sendmail_exception_too_many_levels(char const *       what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_too_many_levels(std::string const& what_msg) : sendmail_exception(what_msg) {}
-    sendmail_exception_too_many_levels(QString const&     what_msg) : sendmail_exception(what_msg) {}
-};
-
-
-enum name_t
+enum class name_t
 {
     SNAP_NAME_SENDMAIL,
     SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING,
@@ -111,7 +78,40 @@ enum name_t
     SNAP_NAME_SENDMAIL_X_MSMAIL_PRIORITY,
     SNAP_NAME_SENDMAIL_X_PRIORITY
 };
-const char *get_name(name_t name) __attribute__ ((const));
+const char * get_name(name_t name) __attribute__ ((const));
+
+
+class sendmail_exception : public snap_exception
+{
+public:
+    sendmail_exception(char const *        what_msg) : snap_exception("sendmail", what_msg) {}
+    sendmail_exception(std::string const & what_msg) : snap_exception("sendmail", what_msg) {}
+    sendmail_exception(QString const &     what_msg) : snap_exception("sendmail", what_msg) {}
+};
+
+class sendmail_exception_no_backend : public sendmail_exception
+{
+public:
+    sendmail_exception_no_backend(char const *        what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_no_backend(std::string const & what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_no_backend(QString const &     what_msg) : sendmail_exception(what_msg) {}
+};
+
+class sendmail_exception_invalid_argument : public sendmail_exception
+{
+public:
+    sendmail_exception_invalid_argument(char const *        what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_invalid_argument(std::string const & what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_invalid_argument(QString const &     what_msg) : sendmail_exception(what_msg) {}
+};
+
+class sendmail_exception_too_many_levels : public sendmail_exception
+{
+public:
+    sendmail_exception_too_many_levels(char const *        what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_too_many_levels(std::string const & what_msg) : sendmail_exception(what_msg) {}
+    sendmail_exception_too_many_levels(QString const &     what_msg) : sendmail_exception(what_msg) {}
+};
 
 
 class sendmail : public plugins::plugin
@@ -132,7 +132,7 @@ public:
         typedef QMap<QCaseInsensitiveString, QString>   header_map_t;
         typedef QMap<QString, QString>                  parameter_map_t;
 
-        enum email_priority_t
+        enum class email_priority_t
         {
             EMAIL_PRIORITY_BULK = 1,
             EMAIL_PRIORITY_LOW,
@@ -181,7 +181,7 @@ public:
         void                    set_email_key(QString const & site_key);
         const QString &         get_email_key() const;
         time_t                  get_time() const;
-        void                    set_priority(email_priority_t priority = EMAIL_PRIORITY_NORMAL);
+        void                    set_priority(email_priority_t priority = email_priority_t::EMAIL_PRIORITY_NORMAL);
         void                    set_subject(QString const & subject);
         void                    add_header(QString const & name, QString  const & value);
         QString                 get_header(QString const & name) const;
@@ -218,30 +218,30 @@ public:
     virtual int64_t                         do_update(int64_t last_updated);
     QtCassandra::QCassandraTable::pointer_t get_emails_table();
 
-    void                    on_bootstrap(snap_child *snap);
-    void                    on_register_backend_action(server::backend_action_map_t& actions);
-    void                    on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
-    void                    on_replace_token(content::path_info_t& cpath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
-    void                    on_init_editor_widget(content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row);
-    void                    on_finish_editor_form_processing(content::path_info_t& ipath, bool& succeeded);
+    void                    on_bootstrap(snap_child * snap);
+    void                    on_register_backend_action(server::backend_action_map_t & actions);
+    void                    on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
+    void                    on_replace_token(content::path_info_t & cpath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                    on_init_editor_widget(content::path_info_t  & ipath, QString const  & field_id, QString const  & field_type, QDomElement  & widget, QtCassandra::QCassandraRow::pointer_t row);
+    void                    on_finish_editor_form_processing(content::path_info_t & ipath, bool & succeeded);
 
-    virtual char const *    get_signal_name(QString const& action) const;
-    virtual void            on_backend_action(QString const& action);
-    virtual void            on_generate_main_content(content::path_info_t& path, QDomElement& page, QDomElement& body, QString const& ctemplate);
-    virtual bool            on_path_execute(content::path_info_t& ipath);
+    virtual char const *    get_signal_name(QString const & action) const;
+    virtual void            on_backend_action(QString const & action);
+    virtual void            on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    virtual bool            on_path_execute(content::path_info_t & ipath);
 
-    void                    post_email(email const& e);
+    void                    post_email(email const & e);
     QString                 default_from() const;
 
-    SNAP_SIGNAL_WITH_MODE(filter_email, (email& e), (e), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(filter_email, (email & e), (e), NEITHER);
 
 private:
     void                    content_update(int64_t variables_timestamp);
     void                    process_emails();
-    void                    attach_email(email const& e);
-    void                    attach_user_email(email const& e);
+    void                    attach_email(email const & e);
+    void                    attach_user_email(email const & e);
     void                    run_emails();
-    void                    sendemail(QString const& key, QString const& unique_key);
+    void                    sendemail(QString const & key, QString const & unique_key);
 
     zpsnap_child_t                  f_snap;
     snap_backend::zpsnap_backend_t  f_backend;

@@ -38,65 +38,65 @@ namespace snap
 class snap_thread_exception : public snap_exception
 {
 public:
-    snap_thread_exception(const char *       whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    snap_thread_exception(const std::string& whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    snap_thread_exception(const QString&     whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snap_thread_exception(char const *        whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snap_thread_exception(std::string const & whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    snap_thread_exception(QString const &     whatmsg) : snap_exception("snap_thread", whatmsg) {}
 };
 
 class snap_thread_exception_not_started : public snap_thread_exception
 {
 public:
-    snap_thread_exception_not_started(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_started(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_started(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_started(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_started(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_started(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_in_use_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_in_use_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_in_use_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_in_use_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_in_use_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_in_use_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_in_use_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_not_locked_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_not_locked_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_not_locked_once_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_not_locked_once_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_once_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_not_locked_once_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_once_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_once_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_not_locked_once_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_mutex_failed_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_mutex_failed_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_mutex_failed_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_mutex_failed_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_mutex_failed_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_mutex_failed_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_mutex_failed_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_invalid_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_invalid_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_invalid_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_invalid_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_invalid_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_invalid_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_invalid_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 class snap_thread_exception_system_error : public snap_thread_exception
 {
 public:
-    snap_thread_exception_system_error(const char *       whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_system_error(const std::string& whatmsg) : snap_thread_exception(whatmsg) {}
-    snap_thread_exception_system_error(const QString&     whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_system_error(char const *        whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_system_error(std::string const & whatmsg) : snap_thread_exception(whatmsg) {}
+    snap_thread_exception_system_error(QString const &     whatmsg) : snap_thread_exception(whatmsg) {}
 };
 
 
@@ -132,7 +132,7 @@ public:
     class snap_lock
     {
     public:
-                            snap_lock(snap_mutex& mutex);
+                            snap_lock(snap_mutex & mutex);
                             ~snap_lock();
 
         void                unlock();
@@ -146,7 +146,7 @@ public:
     class snap_runner
     {
     public:
-                            snap_runner(const QString& name);
+                            snap_runner(QString const & name);
         virtual             ~snap_runner();
 
         virtual bool        is_ready() const;
@@ -161,7 +161,7 @@ public:
         friend class snap_thread;
 
         zpthread_t          f_thread;
-        const QString       f_name;
+        QString const       f_name;
     };
     typedef controlled_vars::ptr_auto_init<snap_runner> zprunner_t;
 
@@ -195,7 +195,7 @@ public:
          *
          * \param[in] v  The value to be pushed on the FIFO queue.
          */
-        void push_back(T const& v)
+        void push_back(T const & v)
         {
             snap_lock lock_mutex(*this);
             f_stack.push_back(v);
@@ -234,7 +234,7 @@ public:
          *
          * \return true if a value was popped, false otherwise.
          */
-        bool pop_front(T& v, int64_t const usecs)
+        bool pop_front(T & v, int64_t const usecs)
         {
             snap_lock lock_mutex(*this);
             if(f_stack.empty())
@@ -283,7 +283,7 @@ public:
          */
         bool empty() const
         {
-            snap_lock lock_mutex(const_cast<snap_fifo&>(*this));
+            snap_lock lock_mutex(const_cast<snap_fifo &>(*this));
             return f_stack.empty();
         }
 
@@ -307,7 +307,7 @@ public:
     class snap_thread_life
     {
     public:
-        snap_thread_life( snap_thread* thread )
+        snap_thread_life( snap_thread * const thread )
             : f_thread(thread)
         {
             if(!f_thread)
@@ -334,10 +334,12 @@ public:
         zpthread_t      f_thread;
     };
 
-                                snap_thread(const QString& name, snap_runner *runner);
+                                snap_thread(QString const & name, snap_runner * runner);
                                 ~snap_thread();
+                                snap_thread(snap_thread const & ) = delete;
+                                snap_thread & operator = (snap_thread const & ) = delete;
 
-    const QString&              get_name() const;
+    QString const &             get_name() const;
     bool                        is_running() const;
     bool                        is_stopping() const;
     bool                        start();
@@ -346,15 +348,11 @@ public:
 private:
     typedef controlled_vars::auto_init<pthread_t, -1> m1pthread_t;
 
-    // prevent copies
-                                snap_thread(const snap_thread& rhs);
-                                snap_thread& operator = (const snap_thread& rhs);
-
     // internal function to start the runner
-    friend void *               func_internal_start(void *thread);
+    friend void *               func_internal_start(void * thread);
     void                        internal_run();
 
-    const QString               f_name;
+    QString const               f_name;
     snap_runner *               f_runner;
     mutable snap_mutex          f_mutex;
     controlled_vars::flbool_t   f_running;

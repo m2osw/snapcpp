@@ -189,7 +189,7 @@ void check_lexer()
     const int max = static_cast<int>(sizeof(results) / sizeof(results[0]));
     for(int i = 0; i < max; ++i) {
         snap::parser::token t(l.next_token());
-        if(t.get_id() == snap::parser::TOKEN_ID_ERROR_ENUM) {
+        if(t.get_id() == snap::parser::token_t::TOKEN_ID_ERROR_ENUM) {
             fprintf(stderr, "error: token #%d returned an error\n", i);
             exit(1);
         }
@@ -360,7 +360,7 @@ void set_flag_var(const snap::parser::rule& r, QSharedPointer<snap::parser::toke
 {
     QSharedPointer<snap::parser::token_node> n(qSharedPointerDynamicCast<snap::parser::token_node, snap::parser::token>((*t)[0]));
     QSharedPointer<snap::parser::token_node> o(qSharedPointerDynamicCast<snap::parser::token_node, snap::parser::token>((*t)[5]));
-    bool is_empty = (*o)[0]->get_id() == snap::parser::TOKEN_ID_EMPTY_ENUM;
+    bool is_empty = (*o)[0]->get_id() == snap::parser::token_t::TOKEN_ID_EMPTY_ENUM;
 
 fprintf(stderr, "Checking set_flag_var p1 (%d/%s)", static_cast<int>(t->size()), (*n)[0]->get_value().toString().toUtf8().data());
 QString def;

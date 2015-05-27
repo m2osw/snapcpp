@@ -500,7 +500,7 @@ struct token_t
      * defines a rather large number of function and other
      * names to be used to query an XML document node.
      */
-    enum tok_t
+    enum class tok_t
     {
         TOK_UNDEFINED,
         TOK_INVALID,
@@ -562,7 +562,7 @@ struct token_t
      * which is an undefined token.
      */
     token_t()
-        : f_token(TOK_UNDEFINED)
+        : f_token(tok_t::TOK_UNDEFINED)
         //, f_string("") -- auto-init
         , f_integer(0)
         , f_real(0.0)
@@ -578,7 +578,7 @@ struct token_t
      */
     operator bool ()
     {
-        return f_token != TOK_UNDEFINED;
+        return f_token != tok_t::TOK_UNDEFINED;
     }
 
     /** \brief Test whether the token is undefined.
@@ -590,7 +590,7 @@ struct token_t
      */
     bool operator ! ()
     {
-        return f_token == TOK_UNDEFINED;
+        return f_token == tok_t::TOK_UNDEFINED;
     }
 
     /** \brief Make the token undefined.
@@ -599,7 +599,7 @@ struct token_t
      */
     void reset()
     {
-        f_token = TOK_UNDEFINED;
+        f_token = tok_t::TOK_UNDEFINED;
     }
 
     tok_t           f_token;
@@ -707,7 +707,7 @@ public:
      * since it is necessary here. It could be defined outside too
      * although this way it defines it in a namespace like environment.
      */
-    enum type_t
+    enum class type_t
     {
         ATOMIC_TYPE_UNDEFINED,
 
@@ -725,7 +725,7 @@ public:
         ATOMIC_TYPE_NODE_SET
         //ATOMIC_TYPE_CONTEXT
     };
-    typedef controlled_vars::limited_auto_enum_init<type_t, ATOMIC_TYPE_UNDEFINED, ATOMIC_TYPE_NODE_SET, ATOMIC_TYPE_UNDEFINED> safe_type_t;
+    typedef controlled_vars::limited_auto_enum_init<type_t, type_t::ATOMIC_TYPE_UNDEFINED, type_t::ATOMIC_TYPE_NODE_SET, type_t::ATOMIC_TYPE_UNDEFINED> safe_type_t;
 
     /** \brief Initialize the atomic value.
      *
@@ -735,7 +735,7 @@ public:
      * to true.
      */
     atomic_value_t()
-        : f_type(ATOMIC_TYPE_NULL)
+        : f_type(type_t::ATOMIC_TYPE_NULL)
         //, f_boolean(false) -- not necessary -- not actually used for now
         //, f_integer(0) -- not necessary
         //, f_decimal(0) -- not necessary -- not actually used for now
@@ -763,36 +763,36 @@ public:
     {
         switch(f_type)
         {
-        case ATOMIC_TYPE_NULL:
-        case ATOMIC_TYPE_END_OF_ARGUMENTS:
+        case type_t::ATOMIC_TYPE_NULL:
+        case type_t::ATOMIC_TYPE_END_OF_ARGUMENTS:
             // no data to copy
             break;
 
-        case ATOMIC_TYPE_BOOLEAN:
+        case type_t::ATOMIC_TYPE_BOOLEAN:
             //f_boolean = rhs.f_boolean; // using integer instead for now
-        case ATOMIC_TYPE_INTEGER:
+        case type_t::ATOMIC_TYPE_INTEGER:
             f_integer = rhs.f_integer;
             break;
 
-        case ATOMIC_TYPE_SINGLE:
+        case type_t::ATOMIC_TYPE_SINGLE:
             f_single = rhs.f_single;
             break;
 
-        case ATOMIC_TYPE_DOUBLE:
+        case type_t::ATOMIC_TYPE_DOUBLE:
             f_double = rhs.f_double;
             break;
 
-        case ATOMIC_TYPE_STRING:
+        case type_t::ATOMIC_TYPE_STRING:
             f_string = rhs.f_string;
             break;
 
-        case ATOMIC_TYPE_SET:
-        case ATOMIC_TYPE_NODE_SET:
+        case type_t::ATOMIC_TYPE_SET:
+        case type_t::ATOMIC_TYPE_NODE_SET:
             break;
 
-        //case ATOMIC_TYPE_UNDEFINED:
+        //case type_t::ATOMIC_TYPE_UNDEFINED:
         default:
-            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
         }
     }
@@ -813,36 +813,36 @@ public:
             f_type = rhs.f_type;
             switch(f_type)
             {
-            case ATOMIC_TYPE_NULL:
-            case ATOMIC_TYPE_END_OF_ARGUMENTS:
+            case type_t::ATOMIC_TYPE_NULL:
+            case type_t::ATOMIC_TYPE_END_OF_ARGUMENTS:
                 // no data to copy
                 break;
 
-            case ATOMIC_TYPE_BOOLEAN:
+            case type_t::ATOMIC_TYPE_BOOLEAN:
                 //f_boolean = rhs.f_boolean; // using integer instead for now
-            case ATOMIC_TYPE_INTEGER:
+            case type_t::ATOMIC_TYPE_INTEGER:
                 f_integer = rhs.f_integer;
                 break;
 
-            case ATOMIC_TYPE_SINGLE:
+            case type_t::ATOMIC_TYPE_SINGLE:
                 f_single = rhs.f_single;
                 break;
 
-            case ATOMIC_TYPE_DOUBLE:
+            case type_t::ATOMIC_TYPE_DOUBLE:
                 f_double = rhs.f_double;
                 break;
 
-            case ATOMIC_TYPE_STRING:
+            case type_t::ATOMIC_TYPE_STRING:
                 f_string = rhs.f_string;
                 break;
 
-            case ATOMIC_TYPE_SET:
-            case ATOMIC_TYPE_NODE_SET:
+            case type_t::ATOMIC_TYPE_SET:
+            case type_t::ATOMIC_TYPE_NODE_SET:
                 break;
 
-            //case ATOMIC_TYPE_UNDEFINED:
+            //case type_t::ATOMIC_TYPE_UNDEFINED:
             default:
-                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)));
+                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
             }
         }
@@ -858,7 +858,7 @@ public:
      * function throws a QDomXPathException_WrongType exception.
      *
      * To test whether an atomtic_value_t is NULL, use the getType()
-     * and compare it with ATOMIC_TYPE_NULL.
+     * and compare it with type_t::ATOMIC_TYPE_NULL.
      */
     type_t getType() const
     {
@@ -874,7 +874,7 @@ public:
      */
     void setValue()
     {
-        f_type = ATOMIC_TYPE_NULL;
+        f_type = type_t::ATOMIC_TYPE_NULL;
     }
 
     /** \brief Set the value to End of Arguments.
@@ -887,7 +887,7 @@ public:
      */
     void setEndOfArguments()
     {
-        f_type = ATOMIC_TYPE_END_OF_ARGUMENTS;
+        f_type = type_t::ATOMIC_TYPE_END_OF_ARGUMENTS;
     }
 
     /** \brief Retrieve the value as a Boolean.
@@ -899,7 +899,7 @@ public:
      *
      * \exception QDomXPathException_WrongType
      * This exception is raised if the atomic type is not
-     * ATOMIC_TYPE_BOOLEAN.
+     * type_t::ATOMIC_TYPE_BOOLEAN.
      *
      * \param[in] cast  Whether to cast the value if it is not a Boolean.
      *
@@ -907,33 +907,33 @@ public:
      */
     bool getBooleanValue(bool cast = false) const
     {
-        if(f_type != ATOMIC_TYPE_BOOLEAN)
+        if(f_type != type_t::ATOMIC_TYPE_BOOLEAN)
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Boolean was requested").arg(static_cast<int>(f_type)));
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Boolean was requested").arg(static_cast<int>(static_cast<type_t>(f_type))));
             }
         }
         switch(f_type)
         {
-        case ATOMIC_TYPE_NULL:
+        case type_t::ATOMIC_TYPE_NULL:
             return false;
 
-        case ATOMIC_TYPE_BOOLEAN:
+        case type_t::ATOMIC_TYPE_BOOLEAN:
             //return f_boolean;
-        case ATOMIC_TYPE_INTEGER:
+        case type_t::ATOMIC_TYPE_INTEGER:
             return f_integer != 0;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        case ATOMIC_TYPE_SINGLE:
+        case type_t::ATOMIC_TYPE_SINGLE:
             return 0.0f != f_single;
 
-        case ATOMIC_TYPE_DOUBLE:
+        case type_t::ATOMIC_TYPE_DOUBLE:
             return 0.0 != f_double;
 #pragma GCC diagnostic pop
 
-        case ATOMIC_TYPE_STRING:
+        case type_t::ATOMIC_TYPE_STRING:
             // TODO -- I think this is totally wrong; if I'm correct it
             //         should interpret the string as true or false and
             //         not whether the string is empty (will test later)
@@ -941,7 +941,7 @@ public:
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to Boolean conversion is not implemented").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_NotImplemented(QString("type %1 to Boolean conversion is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
         }
     }
@@ -949,7 +949,7 @@ public:
     /** \brief Set the value to the specified Boolean.
      *
      * This function sets the atomic value to the specified Boolean
-     * and sets the type to ATOMIC_TYPE_BOOLEAN.
+     * and sets the type to type_t::ATOMIC_TYPE_BOOLEAN.
      *
      * All other types are lost after this call.
      *
@@ -957,7 +957,7 @@ public:
      */
     void setValue(const bool b)
     {
-        f_type = ATOMIC_TYPE_BOOLEAN;
+        f_type = type_t::ATOMIC_TYPE_BOOLEAN;
         //f_boolean = b;
         f_integer = b ? 1 : 0;
     }
@@ -971,7 +971,7 @@ public:
      *
      * \exception QDomXPathException_WrongType
      * This exception is raised if the atomic type is not
-     * ATOMIC_TYPE_INTEGER.
+     * type_t::ATOMIC_TYPE_INTEGER.
      *
      * \param[in] cast  Whether to cast the value if it is not an Integer.
      *
@@ -979,37 +979,37 @@ public:
      */
     int64_t getIntegerValue(bool cast = false) const
     {
-        if(f_type != ATOMIC_TYPE_INTEGER)
+        if(f_type != type_t::ATOMIC_TYPE_INTEGER)
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when an Integer was requested").arg(static_cast<int>(f_type)));
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when an Integer was requested").arg(static_cast<int>(static_cast<type_t>(f_type))));
             }
         }
         switch(f_type)
         {
-        case ATOMIC_TYPE_NULL:
+        case type_t::ATOMIC_TYPE_NULL:
             return 0;
 
-        case ATOMIC_TYPE_BOOLEAN:
+        case type_t::ATOMIC_TYPE_BOOLEAN:
             return f_integer != 0 ? 1 : 0;
 
-        case ATOMIC_TYPE_INTEGER:
+        case type_t::ATOMIC_TYPE_INTEGER:
             return f_integer;
 
-        case ATOMIC_TYPE_SINGLE:
+        case type_t::ATOMIC_TYPE_SINGLE:
             return static_cast<int64_t>(floor(f_single));
 
-        case ATOMIC_TYPE_DOUBLE:
+        case type_t::ATOMIC_TYPE_DOUBLE:
             return static_cast<int64_t>(floor(f_double));
 
-        case ATOMIC_TYPE_STRING:
+        case type_t::ATOMIC_TYPE_STRING:
             // TODO -- create a "correct" string to integer convertion
             return static_cast<int64_t>(atol(f_string.toUtf8().data()));
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to integer conversion is not implemented").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_NotImplemented(QString("type %1 to integer conversion is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
         }
     }
@@ -1017,7 +1017,7 @@ public:
     /** \brief Set the value to the specified integer.
      *
      * This function sets the atomic value to the specified integer
-     * and sets the type to ATOMIC_TYPE_INTEGER.
+     * and sets the type to type_t::ATOMIC_TYPE_INTEGER.
      *
      * All other types are lost after this call.
      *
@@ -1025,13 +1025,13 @@ public:
      */
     void setValue(const int64_t integer)
     {
-        f_type = ATOMIC_TYPE_INTEGER;
+        f_type = type_t::ATOMIC_TYPE_INTEGER;
         f_integer = integer;
     }
 
     //void setValue(const QDecimal& decimal)
     //{
-    //    f_type = ATOMIC_TYPE_DECIMAL;
+    //    f_type = type_t::ATOMIC_TYPE_DECIMAL;
     //    f_decimal = decimal;
     //}
 
@@ -1044,7 +1044,7 @@ public:
      *
      * \exception QDomXPathException_WrongType
      * This exception is raised if the atomic type is not
-     * ATOMIC_TYPE_SINGLE.
+     * type_t::ATOMIC_TYPE_SINGLE.
      *
      * \param[in] cast  Whether to cast the value if it is not a Single.
      *
@@ -1052,36 +1052,36 @@ public:
      */
     float getSingleValue(bool cast = false) const
     {
-        if(f_type != ATOMIC_TYPE_SINGLE)
+        if(f_type != type_t::ATOMIC_TYPE_SINGLE)
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Single was requested").arg(static_cast<int>(f_type)));
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Single was requested").arg(static_cast<int>(static_cast<type_t>(f_type))));
             }
         }
         switch(f_type)
         {
-        case ATOMIC_TYPE_NULL:
+        case type_t::ATOMIC_TYPE_NULL:
             return 0.0f;
 
-        case ATOMIC_TYPE_BOOLEAN:
+        case type_t::ATOMIC_TYPE_BOOLEAN:
             return f_integer == 0 ? 0.0f : 1.0f;
 
-        case ATOMIC_TYPE_INTEGER:
+        case type_t::ATOMIC_TYPE_INTEGER:
             return static_cast<float>(f_integer);
 
-        case ATOMIC_TYPE_SINGLE:
+        case type_t::ATOMIC_TYPE_SINGLE:
             return f_single;
 
-        case ATOMIC_TYPE_DOUBLE:
+        case type_t::ATOMIC_TYPE_DOUBLE:
             return static_cast<float>(f_double);
 
-        case ATOMIC_TYPE_STRING:
+        case type_t::ATOMIC_TYPE_STRING:
             return static_cast<float>(atof(f_string.toUtf8().data()));
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to single is not implemented").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_NotImplemented(QString("type %1 to single is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
         }
     }
@@ -1089,7 +1089,7 @@ public:
     /** \brief Set the value to the specified Single.
      *
      * This function sets the atomic value to the specified Single
-     * and sets the type to ATOMIC_TYPE_SINGLE.
+     * and sets the type to type_t::ATOMIC_TYPE_SINGLE.
      *
      * All other types are lost after this call.
      *
@@ -1097,7 +1097,7 @@ public:
      */
     void setValue(const float real)
     {
-        f_type = ATOMIC_TYPE_SINGLE;
+        f_type = type_t::ATOMIC_TYPE_SINGLE;
         f_single = real;
     }
 
@@ -1110,7 +1110,7 @@ public:
      *
      * \exception QDomXPathException_WrongType
      * This exception is raised if the atomic type is not
-     * ATOMIC_TYPE_DOUBLE.
+     * type_t::ATOMIC_TYPE_DOUBLE.
      *
      * \param[in] cast  Whether to cast the value if it is not a Double.
      *
@@ -1118,31 +1118,31 @@ public:
      */
     double getDoubleValue(bool cast = false) const
     {
-        if(f_type != ATOMIC_TYPE_DOUBLE)
+        if(f_type != type_t::ATOMIC_TYPE_DOUBLE)
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Double was requested").arg(static_cast<int>(f_type)));
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Double was requested").arg(static_cast<int>(static_cast<type_t>(f_type))));
             }
         }
         switch(f_type)
         {
-        case ATOMIC_TYPE_NULL:
+        case type_t::ATOMIC_TYPE_NULL:
             return 0.0;
 
-        case ATOMIC_TYPE_BOOLEAN:
+        case type_t::ATOMIC_TYPE_BOOLEAN:
             return f_integer == 0 ? 0.0 : 1.0;
 
-        case ATOMIC_TYPE_INTEGER:
+        case type_t::ATOMIC_TYPE_INTEGER:
             return static_cast<double>(f_integer);
 
-        case ATOMIC_TYPE_SINGLE:
+        case type_t::ATOMIC_TYPE_SINGLE:
             return static_cast<double>(f_single);
 
-        case ATOMIC_TYPE_DOUBLE:
+        case type_t::ATOMIC_TYPE_DOUBLE:
             return f_double;
 
-        case ATOMIC_TYPE_STRING:
+        case type_t::ATOMIC_TYPE_STRING:
             // TODO -- properly convert the string (as per the XPath
             //         documentation) we whouls have an external function
             //         for the purpose so any convertion uses the same code
@@ -1150,7 +1150,7 @@ public:
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to double conversion is not implemented").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_NotImplemented(QString("type %1 to double conversion is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
         }
     }
@@ -1158,7 +1158,7 @@ public:
     /** \brief Set the value to the specified double.
      *
      * This function sets the atomic value to the specified double
-     * and sets the type to ATOMIC_TYPE_DOUBLE.
+     * and sets the type to type_t::ATOMIC_TYPE_DOUBLE.
      *
      * All other types are lost after this call.
      *
@@ -1166,7 +1166,7 @@ public:
      */
     void setValue(const double real)
     {
-        f_type = ATOMIC_TYPE_DOUBLE;
+        f_type = type_t::ATOMIC_TYPE_DOUBLE;
         f_double = real;
     }
 
@@ -1179,7 +1179,7 @@ public:
      *
      * \exception QDomXPathException_WrongType
      * This exception is raised if the atomic type is not
-     * ATOMIC_TYPE_STRING.
+     * type_t::ATOMIC_TYPE_STRING.
      *
      * \param[in] cast  Whether to cast the value if it is not a String.
      *
@@ -1187,36 +1187,36 @@ public:
      */
     QString getStringValue(bool cast = false) const
     {
-        if(f_type != ATOMIC_TYPE_STRING)
+        if(f_type != type_t::ATOMIC_TYPE_STRING)
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a String was requested").arg(static_cast<int>(f_type)));
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a String was requested").arg(static_cast<int>(static_cast<type_t>(f_type))));
             }
         }
         switch(f_type)
         {
-        case ATOMIC_TYPE_NULL:
+        case type_t::ATOMIC_TYPE_NULL:
             return "null";
 
-        case ATOMIC_TYPE_BOOLEAN:
+        case type_t::ATOMIC_TYPE_BOOLEAN:
             return f_integer != 0 ? "true" : "false";
 
-        case ATOMIC_TYPE_INTEGER:
+        case type_t::ATOMIC_TYPE_INTEGER:
             return QString("%1").arg(f_integer);
 
-        case ATOMIC_TYPE_SINGLE:
+        case type_t::ATOMIC_TYPE_SINGLE:
             return QString("%1").arg(f_single);
 
-        case ATOMIC_TYPE_DOUBLE:
+        case type_t::ATOMIC_TYPE_DOUBLE:
             return QString("%1").arg(f_double);
 
-        case ATOMIC_TYPE_STRING:
+        case type_t::ATOMIC_TYPE_STRING:
             return f_string;
 
         default:
             // this should be done in the previous level
-            throw QDomXPathException_NotImplemented(QString("type %1 to string conversion is not implemented").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_NotImplemented(QString("type %1 to string conversion is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
         }
     }
@@ -1224,7 +1224,7 @@ public:
     /** \brief Set the value to the specified string.
      *
      * This function sets the atomic value to the specified string
-     * and sets the type to ATOMIC_TYPE_STRING.
+     * and sets the type to type_t::ATOMIC_TYPE_STRING.
      *
      * All other types are lost after this call.
      *
@@ -1232,14 +1232,14 @@ public:
      */
     void setValue(const QString& str)
     {
-        f_type = ATOMIC_TYPE_STRING;
+        f_type = type_t::ATOMIC_TYPE_STRING;
         f_string = str;
     }
 
     /** \brief Set the value to the specified string.
      *
      * This function sets the atomic value to the specified string
-     * and sets the type to ATOMIC_TYPE_STRING.
+     * and sets the type to type_t::ATOMIC_TYPE_STRING.
      *
      * All other types are lost after this call.
      *
@@ -1247,7 +1247,7 @@ public:
      */
     void setValue(const char *str)
     {
-        f_type = ATOMIC_TYPE_STRING;
+        f_type = type_t::ATOMIC_TYPE_STRING;
         f_string = QString::fromUtf8(str);
     }
 
@@ -1255,7 +1255,7 @@ public:
     /** \brief Set the value to the specified string.
      *
      * This function sets the atomic value to the specified string
-     * and sets the type to ATOMIC_TYPE_STRING.
+     * and sets the type to type_t::ATOMIC_TYPE_STRING.
      *
      * All other types are lost after this call.
      *
@@ -1263,7 +1263,7 @@ public:
      */
     void setValue(const wchar_t *str)
     {
-        f_type = ATOMIC_TYPE_STRING;
+        f_type = type_t::ATOMIC_TYPE_STRING;
         f_string = QString::fromWCharArray(str);
     }
 
@@ -1271,7 +1271,7 @@ public:
     /** \brief Set the value to the specified string.
      *
      * This function sets the atomic value to the specified string
-     * and sets the type to ATOMIC_TYPE_STRING.
+     * and sets the type to type_t::ATOMIC_TYPE_STRING.
      *
      * All other types are lost after this call.
      *
@@ -1279,7 +1279,7 @@ public:
      */
     void setValue(const std::string& str)
     {
-        f_type = ATOMIC_TYPE_STRING;
+        f_type = type_t::ATOMIC_TYPE_STRING;
         f_string = QString::fromUtf8(str.c_str());
     }
 
@@ -1296,6 +1296,24 @@ private:
     controlled_vars::rdouble_t  f_double;
     QString                     f_string;
 };
+
+
+/** \brief Merge two types together to accelerate selections.
+ *
+ * This function is used to merge two types together so we can quickly
+ * select two types through the use of a switch statement.
+ *
+ * \param[in] a  The left type.
+ * \param[in] b  The right type.
+ *
+ * \return The two types merged in an int32_t.
+ */
+static constexpr int32_t merge_types(atomic_value_t::type_t a, atomic_value_t::type_t b)
+{
+    return static_cast<int32_t>(a)
+        | (static_cast<int32_t>(b) << 16);
+}
+
 
 /** \brief An array of atomic value.
  *
@@ -1328,28 +1346,28 @@ public:
     {
         switch(f_type)
         {
-        case ATOMIC_TYPE_NULL:
-        case ATOMIC_TYPE_END_OF_ARGUMENTS:
-        case ATOMIC_TYPE_BOOLEAN:
-        case ATOMIC_TYPE_INTEGER:
-        case ATOMIC_TYPE_SINGLE:
-        case ATOMIC_TYPE_DOUBLE:
-        case ATOMIC_TYPE_STRING:
+        case type_t::ATOMIC_TYPE_NULL:
+        case type_t::ATOMIC_TYPE_END_OF_ARGUMENTS:
+        case type_t::ATOMIC_TYPE_BOOLEAN:
+        case type_t::ATOMIC_TYPE_INTEGER:
+        case type_t::ATOMIC_TYPE_SINGLE:
+        case type_t::ATOMIC_TYPE_DOUBLE:
+        case type_t::ATOMIC_TYPE_STRING:
             // already handled, avoid the default: ...
             break;
 
-        case ATOMIC_TYPE_SET:
+        case type_t::ATOMIC_TYPE_SET:
             f_set = rhs.f_set;
             break;
 
-        case ATOMIC_TYPE_NODE_SET:
+        case type_t::ATOMIC_TYPE_NODE_SET:
             f_node_set = rhs.f_node_set;
             break;
 
         default:
             // this should be done in the previous level
             // (i.e. this line should not be reachable)
-            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
         }
     }
@@ -1370,28 +1388,28 @@ public:
             f_type = rhs.f_type;
             switch(f_type)
             {
-            case ATOMIC_TYPE_NULL:
-            case ATOMIC_TYPE_END_OF_ARGUMENTS:
-            case ATOMIC_TYPE_BOOLEAN:
-            case ATOMIC_TYPE_INTEGER:
-            case ATOMIC_TYPE_SINGLE:
-            case ATOMIC_TYPE_DOUBLE:
-            case ATOMIC_TYPE_STRING:
+            case type_t::ATOMIC_TYPE_NULL:
+            case type_t::ATOMIC_TYPE_END_OF_ARGUMENTS:
+            case type_t::ATOMIC_TYPE_BOOLEAN:
+            case type_t::ATOMIC_TYPE_INTEGER:
+            case type_t::ATOMIC_TYPE_SINGLE:
+            case type_t::ATOMIC_TYPE_DOUBLE:
+            case type_t::ATOMIC_TYPE_STRING:
                 // ignore the result, we return *this below
                 static_cast<void>(atomic_value_t::operator = (rhs));
                 break;
 
-            case ATOMIC_TYPE_SET:
+            case type_t::ATOMIC_TYPE_SET:
                 f_set = rhs.f_set;
                 break;
 
-            case ATOMIC_TYPE_NODE_SET:
+            case type_t::ATOMIC_TYPE_NODE_SET:
                 f_node_set = rhs.f_node_set;
                 break;
 
-            //case ATOMIC_TYPE_UNDEFINED:
+            //case type_t::ATOMIC_TYPE_UNDEFINED:
             default:
-                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(f_type)));
+                throw QDomXPathException_NotImplemented(QString("copying of type %1 is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
             }
         }
@@ -1414,11 +1432,11 @@ public:
         {
             switch(f_type)
             {
-            case ATOMIC_TYPE_SET:
+            case type_t::ATOMIC_TYPE_SET:
                 // TODO -- do proper implementation
                 return !f_set.isEmpty();
 
-            case ATOMIC_TYPE_NODE_SET:
+            case type_t::ATOMIC_TYPE_NODE_SET:
                 // TODO -- do proper implementation
                 return !f_node_set.isEmpty();
 
@@ -1450,11 +1468,11 @@ public:
         {
             switch(f_type)
             {
-            case ATOMIC_TYPE_SET:
+            case type_t::ATOMIC_TYPE_SET:
                 // TODO -- do proper implementation
                 return static_cast<int64_t>(!f_set.isEmpty());
 
-            case ATOMIC_TYPE_NODE_SET:
+            case type_t::ATOMIC_TYPE_NODE_SET:
                 // TODO -- do proper implementation
                 return static_cast<int64_t>(!f_node_set.isEmpty());
 
@@ -1486,11 +1504,11 @@ public:
         {
             switch(f_type)
             {
-            case ATOMIC_TYPE_SET:
+            case type_t::ATOMIC_TYPE_SET:
                 // TODO -- do proper implementation
                 return static_cast<float>(!f_set.isEmpty());
 
-            case ATOMIC_TYPE_NODE_SET:
+            case type_t::ATOMIC_TYPE_NODE_SET:
                 // TODO -- do proper implementation
                 return static_cast<float>(!f_node_set.isEmpty());
 
@@ -1522,11 +1540,11 @@ public:
         {
             switch(f_type)
             {
-            case ATOMIC_TYPE_SET:
+            case type_t::ATOMIC_TYPE_SET:
                 // TODO -- do proper implementation
                 return static_cast<double>(!f_set.isEmpty());
 
-            case ATOMIC_TYPE_NODE_SET:
+            case type_t::ATOMIC_TYPE_NODE_SET:
             {
                 QString str(getStringValue(true));
                 // TODO -- do proper string to double implementation
@@ -1580,11 +1598,11 @@ public:
         {
             switch(f_type)
             {
-            case ATOMIC_TYPE_SET:
+            case type_t::ATOMIC_TYPE_SET:
                 // TODO -- do proper implementation
                 throw QDomXPathException_NotImplemented("cast(atomic set) as string is not implemented");
 
-            case ATOMIC_TYPE_NODE_SET:
+            case type_t::ATOMIC_TYPE_NODE_SET:
                 if(f_node_set.isEmpty())
                 {
                     // no nodes, return an empty string
@@ -1664,33 +1682,33 @@ public:
      */
     atomic_vector_t getSetValue(bool cast = false) const
     {
-        if(f_type != ATOMIC_TYPE_SET)
+        if(f_type != type_t::ATOMIC_TYPE_SET)
         {
             if(!cast)
             {
-                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Set was requested").arg(static_cast<int>(f_type)));
+                throw QDomXPathException_WrongType(QString("atomic type is %1, when a Set was requested").arg(static_cast<int>(static_cast<type_t>(f_type))));
             }
         }
         atomic_vector_t result;
         switch(f_type)
         {
-        case ATOMIC_TYPE_NULL:
+        case type_t::ATOMIC_TYPE_NULL:
             return result; // empty set
 
-        case ATOMIC_TYPE_BOOLEAN:
-        case ATOMIC_TYPE_INTEGER:
-        case ATOMIC_TYPE_SINGLE:
-        case ATOMIC_TYPE_DOUBLE:
-        case ATOMIC_TYPE_STRING:
+        case type_t::ATOMIC_TYPE_BOOLEAN:
+        case type_t::ATOMIC_TYPE_INTEGER:
+        case type_t::ATOMIC_TYPE_SINGLE:
+        case type_t::ATOMIC_TYPE_DOUBLE:
+        case type_t::ATOMIC_TYPE_STRING:
             result.push_back(*this);
             return result;
 
-        case ATOMIC_TYPE_SET:
+        case type_t::ATOMIC_TYPE_SET:
             return f_set;
 
-        case ATOMIC_TYPE_NODE_SET: // TODO -- is that an error or should we return something like the string() of each node
+        case type_t::ATOMIC_TYPE_NODE_SET: // TODO -- is that an error or should we return something like the string() of each node
         default:
-            throw QDomXPathException_NotImplemented(QString("type %1 to set conversion is not implemented").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_NotImplemented(QString("type %1 to set conversion is not implemented").arg(static_cast<int>(static_cast<type_t>(f_type))));
 
         }
     }
@@ -1709,7 +1727,7 @@ public:
      */
     void setValue(atomic_vector_t const& set)
     {
-        f_type = ATOMIC_TYPE_SET;
+        f_type = type_t::ATOMIC_TYPE_SET;
         f_set = set;
     }
 
@@ -1730,9 +1748,9 @@ public:
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     QDomXPath::node_vector_t& getNodeSetValue(bool cast = false) const
     {
-        if(f_type != ATOMIC_TYPE_NODE_SET)
+        if(f_type != type_t::ATOMIC_TYPE_NODE_SET)
         {
-            throw QDomXPathException_WrongType(QString("atomic type is %1, when a Node Set was requested").arg(static_cast<int>(f_type)));
+            throw QDomXPathException_WrongType(QString("atomic type is %1, when a Node Set was requested").arg(static_cast<int>(static_cast<type_t>(f_type))));
         }
         return const_cast<QDomXPath::node_vector_t&>(f_node_set);
     }
@@ -1751,7 +1769,7 @@ public:
      */
     void setValue(const QDomXPath::node_vector_t& node_set)
     {
-        f_type = ATOMIC_TYPE_NODE_SET;
+        f_type = type_t::ATOMIC_TYPE_NODE_SET;
         f_node_set = node_set;
     }
 
@@ -1771,7 +1789,7 @@ public:
      */
     //context_t& getContextValue(bool cast = false) const
     //{
-    //    if(f_type != ATOMIC_TYPE_CONTEXT)
+    //    if(f_type != type_t::ATOMIC_TYPE_CONTEXT)
     //    {
     //        throw QDomXPathException_WrongType(QString("atomic type is %1, when a Context was requested").arg(static_cast<int>(f_type)));
     //    }
@@ -1791,7 +1809,7 @@ public:
      */
     //void setValue(const context_t& context)
     //{
-    //    f_type = ATOMIC_TYPE_CONTEXT;
+    //    f_type = type_t::ATOMIC_TYPE_CONTEXT;
     //    f_context = context;
     //}
 
@@ -1858,7 +1876,7 @@ typedef QVector<function_t> function_vector_t;
  * Note that some internal functions are transformed at compile time to
  * work just like a simple push or some other basic instruction.
  */
-enum internal_func_t
+enum class internal_func_t
 {
     FUNC_UNKNOWN,
     FUNC_AVG,
@@ -2006,7 +2024,7 @@ static const QDomXPath::instruction_t      INST_NEXT_CONTEXT_NODE          = 0x8
 static const QDomXPath::instruction_t      INST_POP_CONTEXT                = 0x8E;
 
 
-enum axis_t
+enum class axis_t
 {
     AXIS_ANCESTOR,
     AXIS_ANCESTOR_OR_SELF,
@@ -2023,7 +2041,7 @@ enum axis_t
     AXIS_SELF
 };
 
-enum node_type_t
+enum class node_type_t
 {
     // XPath 1.0
     NODE_TYPE_COMMENT,
@@ -2124,19 +2142,19 @@ int get_next_program_byte()
  *
  * By default the type of the variant at the top of the stack is not checked.
  * By setting the \p type parameter to something else than
- * ATOMIC_TYPE_UNDEFINED, the function enforces that type for the object
+ * type_t::ATOMIC_TYPE_UNDEFINED, the function enforces that type for the object
  * at the top of the stack.
  *
  * \param[in] type  The type of the variant on the top of the stack.
- *                  Ignore if set to ATOMIC_TYPE_UNDEFINED.
+ *                  Ignore if set to type_t::ATOMIC_TYPE_UNDEFINED.
  */
-void stack_not_empty(atomic_value_t::type_t type = atomic_value_t::ATOMIC_TYPE_UNDEFINED)
+void stack_not_empty(atomic_value_t::type_t type = atomic_value_t::type_t::ATOMIC_TYPE_UNDEFINED)
 {
     if(f_functions.back().f_stack.empty())
     {
         throw QDomXPathException_InternalError("cannot pop anything from an empty stack");
     }
-    if(type != atomic_value_t::ATOMIC_TYPE_UNDEFINED
+    if(type != atomic_value_t::type_t::ATOMIC_TYPE_UNDEFINED
     && f_functions.back().f_stack.back().getType() != type)
     {
         throw QDomXPathException_WrongType(QString("the current type at the top of the stack is not of the right type (expected %1, it is %2)")
@@ -2179,44 +2197,44 @@ variant_t pop_variant_data()
         variant_t v(f_functions.back().f_stack[i]);
         switch(v.getType())
         {
-        case atomic_value_t::ATOMIC_TYPE_UNDEFINED:
+        case atomic_value_t::type_t::ATOMIC_TYPE_UNDEFINED:
             printf(" + Undefined\n");
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_NULL:
+        case atomic_value_t::type_t::ATOMIC_TYPE_NULL:
             printf(" + NULL\n");
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_END_OF_ARGUMENTS:
+        case atomic_value_t::type_t::ATOMIC_TYPE_END_OF_ARGUMENTS:
             printf(" + End of Arguments\n");
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_BOOLEAN:
+        case atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN:
             printf(" + Boolean (%s)\n", (v.getBooleanValue() ? "true" : "false"));
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_INTEGER:
+        case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
             printf(" + Integer (%ld)\n", v.getIntegerValue());
             break;
 
-        //case atomic_value_t::ATOMIC_TYPE_DECIMAL:
-        case atomic_value_t::ATOMIC_TYPE_SINGLE:
+        //case atomic_value_t::type_t::ATOMIC_TYPE_DECIMAL:
+        case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
             printf(" + Single (%g)\n", v.getSingleValue());
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+        case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
             printf(" + Double (%g)\n", v.getDoubleValue());
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_STRING:
+        case atomic_value_t::type_t::ATOMIC_TYPE_STRING:
             printf(" + String (\"%s\")\n", v.getStringValue().toUtf8().data());
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_SET:
+        case atomic_value_t::type_t::ATOMIC_TYPE_SET:
             printf(" + Atomic Set\n");
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_NODE_SET:
+        case atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET:
             printf(" + Node Set\n");
             break;
 
@@ -2288,7 +2306,7 @@ void inst_call()
 #endif
     // get the internal function number (FUNC_...)
     variant_t function_number(pop_variant_data());
-    if(function_number.atomic_value_t::getType() != atomic_value_t::ATOMIC_TYPE_INTEGER)
+    if(function_number.atomic_value_t::getType() != atomic_value_t::type_t::ATOMIC_TYPE_INTEGER)
     {
         throw QDomXPathException_InternalError("INST_CALL expects the first element on the stack to be of type INTEGER");
     }
@@ -2300,7 +2318,7 @@ void inst_call()
     for(int a(1);; ++a)
     {
         variant_t arg(pop_variant_data());
-        if(arg.atomic_value_t::getType() == atomic_value_t::ATOMIC_TYPE_END_OF_ARGUMENTS)
+        if(arg.atomic_value_t::getType() == atomic_value_t::type_t::ATOMIC_TYPE_END_OF_ARGUMENTS)
         {
             // found the end of the argument list
             break;
@@ -2309,21 +2327,21 @@ void inst_call()
     }
 
     // now select the function to run
-    switch(function_number.getIntegerValue())
+    switch(static_cast<internal_func_t>(function_number.getIntegerValue()))
     {
-    case FUNC_AVG:
+    case internal_func_t::FUNC_AVG:
         func_avg(arguments);
         break;
 
-    case FUNC_MAX:
+    case internal_func_t::FUNC_MAX:
         func_max(arguments);
         break;
 
-    case FUNC_MIN:
+    case internal_func_t::FUNC_MIN:
         func_min(arguments);
         break;
 
-    case FUNC_SUM:
+    case internal_func_t::FUNC_SUM:
         func_sum(arguments);
         break;
 
@@ -2366,7 +2384,7 @@ void func_calculate_sum_or_average(variant_vector_t& arguments, bool sum_only)
         variant_t arg(arguments[i]);
         switch(arg.getType())
         {
-        case atomic_value_t::ATOMIC_TYPE_INTEGER:
+        case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
             if(integer)
             {
                 isum += arg.getIntegerValue();
@@ -2375,14 +2393,14 @@ void func_calculate_sum_or_average(variant_vector_t& arguments, bool sum_only)
                 break;
             }
         //case atomic_type_t::ATOMIC_TYPE_DECIMAL:
-        case atomic_value_t::ATOMIC_TYPE_SINGLE:
-        case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+        case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
+        case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
             integer = false;
             dsum += arg.getDoubleValue(true);
             ++count;
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_NODE_SET:
+        case atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET:
             {
                 integer = false;
                 QDomXPath::node_vector_t node_set(arg.getNodeSetValue());
@@ -2451,7 +2469,7 @@ void func_calculate_min_or_max(variant_vector_t& arguments, bool min)
         variant_t arg(arguments[i]);
         switch(arg.getType())
         {
-        case atomic_value_t::ATOMIC_TYPE_INTEGER:
+        case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
             if(integer)
             {
                 int64_t v(arg.getIntegerValue());
@@ -2464,8 +2482,8 @@ void func_calculate_min_or_max(variant_vector_t& arguments, bool min)
                 break;
             }
         //case atomic_type_t::ATOMIC_TYPE_DECIMAL:
-        case atomic_value_t::ATOMIC_TYPE_SINGLE:
-        case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+        case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
+        case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
             integer = false;
             {
                 double v(arg.getDoubleValue(true));
@@ -2477,7 +2495,7 @@ void func_calculate_min_or_max(variant_vector_t& arguments, bool min)
             }
             break;
 
-        case atomic_value_t::ATOMIC_TYPE_NODE_SET:
+        case atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET:
             {
                 integer = false;
                 QDomXPath::node_vector_t node_set(arg.getNodeSetValue());
@@ -3691,15 +3709,15 @@ void inst_increment()
     variant_t value(pop_variant_data());
     switch(value.getType())
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+    case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
         value.atomic_value_t::setValue(value.getIntegerValue() + 1);
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
         value.atomic_value_t::setValue(value.getSingleValue(true) + 1.0f);
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
         value.atomic_value_t::setValue(value.getDoubleValue(true) + 1.0);
         break;
 
@@ -3732,15 +3750,15 @@ void inst_decrement()
     variant_t value(pop_variant_data());
     switch(value.getType())
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+    case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
         value.atomic_value_t::setValue(value.getIntegerValue() + 1);
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
         value.atomic_value_t::setValue(value.getSingleValue(true) + 1);
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
         value.atomic_value_t::setValue(value.getDoubleValue(true) + 1);
         break;
 
@@ -3767,7 +3785,7 @@ void inst_string_length()
     }
 #endif
     variant_t value(pop_variant_data());
-    if(value.getType() != atomic_value_t::ATOMIC_TYPE_STRING)
+    if(value.getType() != atomic_value_t::type_t::ATOMIC_TYPE_STRING)
     {
         throw QDomXPathException_WrongType("the string-length() function only accepts strings");
     }
@@ -3804,15 +3822,15 @@ void inst_ceiling()
     variant_t value(pop_variant_data());
     switch(value.getType())
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+    case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
         // nothing happens
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
         value.atomic_value_t::setValue(ceilf(value.getSingleValue()));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
         value.atomic_value_t::setValue(ceil(value.getDoubleValue()));
         break;
 
@@ -3851,15 +3869,15 @@ void inst_floor()
     variant_t value(pop_variant_data());
     switch(value.getType())
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+    case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
         // nothing happens
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
         value.atomic_value_t::setValue(floorf(value.getSingleValue()));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
         value.atomic_value_t::setValue(floor(value.getDoubleValue()));
         break;
 
@@ -3904,15 +3922,15 @@ void inst_round()
     variant_t value(pop_variant_data());
     switch(value.getType())
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+    case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
         // nothing happens
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
         value.atomic_value_t::setValue(floorf(value.getSingleValue() + 0.5f));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
         value.atomic_value_t::setValue(floor(value.getDoubleValue() + 0.5));
         break;
 
@@ -3945,23 +3963,23 @@ void inst_add()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() + rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(lhs.getSingleValue(true) + rhs.getSingleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) + rhs.getDoubleValue(true));
         break;
 
@@ -3993,23 +4011,23 @@ void inst_subtract()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() - rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(lhs.getSingleValue(true) - rhs.getSingleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) - rhs.getDoubleValue(true));
         break;
 
@@ -4041,15 +4059,15 @@ void inst_negate()
     variant_t result;
     switch(value.getType())
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER:
+    case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
         result.atomic_value_t::setValue(-value.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
         result.atomic_value_t::setValue(-value.getSingleValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
         result.atomic_value_t::setValue(-value.getDoubleValue());
         break;
 
@@ -4081,23 +4099,23 @@ void inst_multiply()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() * rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(lhs.getSingleValue(true) * rhs.getSingleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) * rhs.getDoubleValue(true));
         break;
 
@@ -4130,23 +4148,23 @@ void inst_divide()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) / rhs.getDoubleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(lhs.getSingleValue(true) / rhs.getSingleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) / rhs.getDoubleValue(true));
         break;
 
@@ -4184,17 +4202,17 @@ void inst_idivide()
     }
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getIntegerValue(true) / right_value);
         break;
 
@@ -4227,23 +4245,23 @@ void inst_modulo()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() % rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(fmodf(lhs.getSingleValue(true), rhs.getSingleValue(true)));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(fmod(lhs.getDoubleValue(true), rhs.getDoubleValue(true)));
         break;
 
@@ -4272,7 +4290,7 @@ void inst_not()
     }
 #endif
     variant_t boolean(pop_variant_data());
-    if(boolean.getType() != atomic_value_t::ATOMIC_TYPE_BOOLEAN)
+    if(boolean.getType() != atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN)
     {
         throw QDomXPathException_WrongType("the Not operator can only be applied against a Boolean value");
     }
@@ -4301,8 +4319,8 @@ void inst_and()
 #endif
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
-    if(lhs.getType() != atomic_value_t::ATOMIC_TYPE_BOOLEAN
-    || rhs.getType() != atomic_value_t::ATOMIC_TYPE_BOOLEAN)
+    if(lhs.getType() != atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN
+    || rhs.getType() != atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN)
     {
         throw QDomXPathException_WrongType("the And operator can only be applied against Boolean values");
     }
@@ -4332,8 +4350,8 @@ void inst_or()
 #endif
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
-    if(lhs.getType() != atomic_value_t::ATOMIC_TYPE_BOOLEAN
-    || rhs.getType() != atomic_value_t::ATOMIC_TYPE_BOOLEAN)
+    if(lhs.getType() != atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN
+    || rhs.getType() != atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN)
     {
         throw QDomXPathException_WrongType("the Or operator can only be applied against Boolean values");
     }
@@ -4363,34 +4381,34 @@ void inst_equal()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
         result.atomic_value_t::setValue(lhs.atomic_value_t::getBooleanValue() == rhs.atomic_value_t::getBooleanValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.atomic_value_t::getIntegerValue() == rhs.atomic_value_t::getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(snap::compare_floats(lhs.atomic_value_t::getSingleValue(true), rhs.atomic_value_t::getSingleValue(true)));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(snap::compare_floats(lhs.atomic_value_t::getDoubleValue(true), rhs.atomic_value_t::getDoubleValue(true)));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
-    case atomic_value_t::ATOMIC_TYPE_NODE_SET | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_NODE_SET << 16):
-    case atomic_value_t::ATOMIC_TYPE_NODE_SET | (atomic_value_t::ATOMIC_TYPE_NODE_SET << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING,   atomic_value_t::type_t::ATOMIC_TYPE_STRING):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET, atomic_value_t::type_t::ATOMIC_TYPE_STRING):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING,   atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET, atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET):
         try
         {
             result.atomic_value_t::setValue(lhs.getStringValue(true) == rhs.getStringValue(true));
@@ -4401,28 +4419,28 @@ void inst_equal()
         }
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
         result.atomic_value_t::setValue(true);
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_STRING):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING,  atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING,  atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_STRING):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(false);
         break;
 
@@ -4454,56 +4472,56 @@ void inst_not_equal()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
         result.atomic_value_t::setValue(lhs.getBooleanValue() != rhs.getBooleanValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() != rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(snap::compare_floats(lhs.getSingleValue(true), rhs.getSingleValue(true)));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(snap::compare_floats(lhs.getDoubleValue(true), rhs.getDoubleValue(true)));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING, atomic_value_t::type_t::ATOMIC_TYPE_STRING):
         result.atomic_value_t::setValue(lhs.getStringValue() != rhs.getStringValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
         result.atomic_value_t::setValue(false);
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_STRING):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL,    atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING , atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING,  atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_STRING):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(true);
         break;
 
@@ -4532,35 +4550,35 @@ void inst_less_than()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
         result.atomic_value_t::setValue(lhs.getBooleanValue() < rhs.getBooleanValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() < rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(lhs.getSingleValue(true) < rhs.getSingleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) < rhs.getDoubleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING, atomic_value_t::type_t::ATOMIC_TYPE_STRING):
         result.atomic_value_t::setValue(lhs.getStringValue() < rhs.getStringValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
         result.atomic_value_t::setValue(false);
         break;
 
@@ -4589,35 +4607,35 @@ void inst_less_or_equal()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
         result.atomic_value_t::setValue(lhs.getBooleanValue() <= rhs.getBooleanValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() <= rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(lhs.getSingleValue(true) <= rhs.getSingleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) <= rhs.getDoubleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING, atomic_value_t::type_t::ATOMIC_TYPE_STRING):
         result.atomic_value_t::setValue(lhs.getStringValue() <= rhs.getStringValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
         result.atomic_value_t::setValue(true);
         break;
 
@@ -4646,35 +4664,35 @@ void inst_greater_than()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
         result.atomic_value_t::setValue(lhs.getBooleanValue() > rhs.getBooleanValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() > rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(lhs.getSingleValue(true) > rhs.getSingleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) > rhs.getDoubleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING, atomic_value_t::type_t::ATOMIC_TYPE_STRING):
         result.atomic_value_t::setValue(lhs.getStringValue() > rhs.getStringValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
         result.atomic_value_t::setValue(false);
         break;
 
@@ -4703,35 +4721,35 @@ void inst_greater_or_equal()
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
     variant_t result;
-    switch(lhs.getType() | (rhs.getType() << 16))
+    switch(merge_types(lhs.getType(), rhs.getType()))
     {
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN | (atomic_value_t::ATOMIC_TYPE_BOOLEAN << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN, atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN):
         result.atomic_value_t::setValue(lhs.getBooleanValue() >= rhs.getBooleanValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
         result.atomic_value_t::setValue(lhs.getIntegerValue() >= rhs.getIntegerValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
         result.atomic_value_t::setValue(lhs.getSingleValue(true) >= rhs.getSingleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_INTEGER << 16):
-    case atomic_value_t::ATOMIC_TYPE_INTEGER | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_SINGLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_SINGLE << 16):
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE | (atomic_value_t::ATOMIC_TYPE_DOUBLE << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_INTEGER):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_INTEGER, atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_SINGLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_SINGLE):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE,  atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE):
         result.atomic_value_t::setValue(lhs.getDoubleValue(true) >= rhs.getDoubleValue(true));
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_STRING | (atomic_value_t::ATOMIC_TYPE_STRING << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_STRING, atomic_value_t::type_t::ATOMIC_TYPE_STRING):
         result.atomic_value_t::setValue(lhs.getStringValue() >= rhs.getStringValue());
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NULL | (atomic_value_t::ATOMIC_TYPE_NULL << 16):
+    case merge_types(atomic_value_t::type_t::ATOMIC_TYPE_NULL, atomic_value_t::type_t::ATOMIC_TYPE_NULL):
         result.atomic_value_t::setValue(true);
         break;
 
@@ -4780,8 +4798,8 @@ void inst_merge_sets()
 #endif
     variant_t rhs(pop_variant_data());
     variant_t lhs(pop_variant_data());
-    if(rhs.getType() == atomic_value_t::ATOMIC_TYPE_NODE_SET
-    && lhs.getType() == atomic_value_t::ATOMIC_TYPE_NODE_SET)
+    if(rhs.getType() == atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET
+    && lhs.getType() == atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET)
     {
         QDomXPath::node_vector_t l(lhs.getNodeSetValue());
         QDomXPath::node_vector_t r(rhs.getNodeSetValue());
@@ -4794,8 +4812,8 @@ void inst_merge_sets()
         result.setValue(l);
         f_functions.back().f_stack.push_back(result);
     }
-    else if(rhs.getType() == atomic_value_t::ATOMIC_TYPE_SET
-         && lhs.getType() == atomic_value_t::ATOMIC_TYPE_SET)
+    else if(rhs.getType() == atomic_value_t::type_t::ATOMIC_TYPE_SET
+         && lhs.getType() == atomic_value_t::type_t::ATOMIC_TYPE_SET)
     {
         atomic_vector_t l(lhs.getSetValue());
         atomic_vector_t r(rhs.getSetValue());
@@ -4852,7 +4870,7 @@ void inst_set_position()
     }
 #endif
     variant_t position(pop_variant_data());
-    if(position.getType() != atomic_value_t::ATOMIC_TYPE_INTEGER)
+    if(position.getType() != atomic_value_t::type_t::ATOMIC_TYPE_INTEGER)
     {
         throw QDomXPathException_WrongType("the 'set_position' operator cannot be used with anything else than an integer as its first operand");
     }
@@ -4901,7 +4919,7 @@ void inst_set_node_set()
     }
 #endif
     variant_t node_set(pop_variant_data());
-    if(node_set.getType() != atomic_value_t::ATOMIC_TYPE_NODE_SET)
+    if(node_set.getType() != atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET)
     {
         throw QDomXPathException_WrongType("the 'set_node_set' operator cannot be used with anything else than a node-set");
     }
@@ -4944,7 +4962,7 @@ void inst_set_result()
     }
 #endif
     variant_t result(pop_variant_data());
-    if(result.getType() != atomic_value_t::ATOMIC_TYPE_NODE_SET)
+    if(result.getType() != atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET)
     {
         throw QDomXPathException_WrongType("the 'set_result' operator cannot be used with anything else than a node-set");
     }
@@ -4968,7 +4986,7 @@ void inst_root()
     }
 #endif
     // if empty then it stays that way
-    stack_not_empty(atomic_value_t::ATOMIC_TYPE_NODE_SET);
+    stack_not_empty(atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET);
     QDomXPath::node_vector_t& node_set(f_functions.back().f_stack.back().getNodeSetValue());
     if(!node_set.isEmpty())
     {
@@ -5006,20 +5024,20 @@ void inst_predicate()
     variant_t predicate_result(pop_variant_data());
     switch(predicate_result.getType())
     {
-    case atomic_value_t::ATOMIC_TYPE_BOOLEAN:
-    case atomic_value_t::ATOMIC_TYPE_STRING:
+    case atomic_value_t::type_t::ATOMIC_TYPE_BOOLEAN:
+    case atomic_value_t::type_t::ATOMIC_TYPE_STRING:
         // true or false
         result = predicate_result.getBooleanValue(true);
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_INTEGER:
-    case atomic_value_t::ATOMIC_TYPE_SINGLE:
-    case atomic_value_t::ATOMIC_TYPE_DOUBLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_INTEGER:
+    case atomic_value_t::type_t::ATOMIC_TYPE_SINGLE:
+    case atomic_value_t::type_t::ATOMIC_TYPE_DOUBLE:
         contexts_not_empty();
         result = predicate_result.getIntegerValue(true) == f_functions.back().f_contexts.back().f_position + 1;
         break;
 
-    case atomic_value_t::ATOMIC_TYPE_NODE_SET:
+    case atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET:
         {
             // for a node set, it is considered true only if not empty
             QDomXPath::node_vector_t r(predicate_result.getNodeSetValue());
@@ -5063,7 +5081,7 @@ void inst_create_node_context()
     }
 #endif
     variant_t node_set(pop_variant_data());
-    if(node_set.getType() != atomic_value_t::ATOMIC_TYPE_NODE_SET)
+    if(node_set.getType() != atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET)
     {
         throw QDomXPathException_WrongType("a node set is required to create a node context");
     }
@@ -5086,7 +5104,7 @@ void inst_next_context_node()
     contexts_not_empty();
 
     variant_t expr_result(pop_variant_data());
-    if(expr_result.getType() != atomic_value_t::ATOMIC_TYPE_NODE_SET)
+    if(expr_result.getType() != atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET)
     {
         throw QDomXPathException_WrongType("the 'next_context_node' operation expected the input to be a node-set");
     }
@@ -5181,27 +5199,27 @@ void inst_axis()
     // or the node type enumeration (enum node_type_t)
     variant_t local_part_or_node_type(pop_variant_data());
     QString local_part;
-    node_type_t node_type(NODE_TYPE_ELEMENT);
+    node_type_t node_type(node_type_t::NODE_TYPE_ELEMENT);
 
     // the last parameter is the context node which we cannot pop because
     // it is required to run through all the nodes, we only make use of the
     // context node which is the one we're interested in
     variant_t context_node_variant(pop_variant_data());
-    if(context_node_variant.getType() != atomic_value_t::ATOMIC_TYPE_NODE_SET)
+    if(context_node_variant.getType() != atomic_value_t::type_t::ATOMIC_TYPE_NODE_SET)
     {
         throw QDomXPathException_WrongType("the 4th axis parameters must be a node-set");
     }
-    //stack_not_empty(atomic_value_t::ATOMIC_TYPE_CONTEXT);
+    //stack_not_empty(atomic_value_t::type_t::ATOMIC_TYPE_CONTEXT);
     //context_t& context(f_functions.back().f_stack.back().getContextValue());
     //variant_t context_variant(pop_variant_data());
     //context_t& context(context_variant.getContextValue());
 
-    if(local_part_or_node_type.getType() == atomic_value_t::ATOMIC_TYPE_INTEGER)
+    if(local_part_or_node_type.getType() == atomic_value_t::type_t::ATOMIC_TYPE_INTEGER)
     {
         // we have a node type, thus if not empty the
         // prefix_or_processing_language variable is the
         // language name to match
-        if(axis == AXIS_ATTRIBUTE || axis == AXIS_NAMESPACE)
+        if(axis == axis_t::AXIS_ATTRIBUTE || axis == axis_t::AXIS_NAMESPACE)
         {
             // Note: XPath 2.0 has an 'attribute' NodeType (KindTest) which
             //       means attribute axis would be fine here
@@ -5220,53 +5238,53 @@ void inst_axis()
             local_part = "";
         }
 
-        if(axis == AXIS_ATTRIBUTE)
+        if(axis == axis_t::AXIS_ATTRIBUTE)
         {
             // This is an XPath 2.0 feature
-            node_type = NODE_TYPE_ATTRIBUTE;
+            node_type = node_type_t::NODE_TYPE_ATTRIBUTE;
         }
     }
     const bool any_prefix(prefix == "*");
 
-    // NODE_TYPE_COMMENT
-    // NODE_TYPE_NODE
-    // NODE_TYPE_PROCESSING_INSTRUCTION
-    // NODE_TYPE_TEXT
+    // node_type_t::NODE_TYPE_COMMENT
+    // node_type_t::NODE_TYPE_NODE
+    // node_type_t::NODE_TYPE_PROCESSING_INSTRUCTION
+    // node_type_t::NODE_TYPE_TEXT
     QDomNode::NodeType dom_node_type( QDomNode::ElementNode );
     switch(node_type)
     {
-    case NODE_TYPE_COMMENT:
+    case node_type_t::NODE_TYPE_COMMENT:
         dom_node_type = QDomNode::CommentNode;
         break;
 
-    case NODE_TYPE_NODE: // any node? (BaseNode)
-    case NODE_TYPE_ELEMENT:
+    case node_type_t::NODE_TYPE_NODE: // any node? (BaseNode)
+    case node_type_t::NODE_TYPE_ELEMENT:
         dom_node_type = QDomNode::ElementNode;
         break;
 
-    case NODE_TYPE_PROCESSING_INSTRUCTION:
+    case node_type_t::NODE_TYPE_PROCESSING_INSTRUCTION:
         dom_node_type = QDomNode::ProcessingInstructionNode;
         break;
 
-    case NODE_TYPE_TEXT:
+    case node_type_t::NODE_TYPE_TEXT:
         dom_node_type = QDomNode::TextNode;
         // should include QDomNode::CDATASectionNode
         break;
 
-    case NODE_TYPE_DOCUMENT_NODE:
+    case node_type_t::NODE_TYPE_DOCUMENT_NODE:
         dom_node_type = QDomNode::DocumentNode;
         break;
 
-    case NODE_TYPE_SCHEMA_ELEMENT:
+    case node_type_t::NODE_TYPE_SCHEMA_ELEMENT:
         //dom_node_type = QDomNode::??;
         throw QDomXPathException_NotImplemented("the schema_element node type is not yet implemented");
         break;
 
-    case NODE_TYPE_ATTRIBUTE:
+    case node_type_t::NODE_TYPE_ATTRIBUTE:
         dom_node_type = QDomNode::AttributeNode;
         break;
 
-    case NODE_TYPE_SCHEMA_ATTRIBUTE:
+    case node_type_t::NODE_TYPE_SCHEMA_ATTRIBUTE:
         //dom_node_type = QDomNode::??;
         throw QDomXPathException_NotImplemented("the schema_attribute node type is not yet implemented");
         break;
@@ -5286,11 +5304,11 @@ void inst_axis()
     {
         switch(axis)
         {
-        case AXIS_SELF:
+        case axis_t::AXIS_SELF:
             switch(node_type)
             {
-            case NODE_TYPE_NODE:
-            case NODE_TYPE_ELEMENT:
+            case node_type_t::NODE_TYPE_NODE:
+            case node_type_t::NODE_TYPE_ELEMENT:
                 // as far as I know the type node is considered to be
                 // the same as elements (at least in XPath 1.0)
                 // the local_part & prefix must match for us to keep the node
@@ -5308,11 +5326,11 @@ void inst_axis()
             }
             break;
 
-        case AXIS_PARENT:
+        case axis_t::AXIS_PARENT:
             switch(node_type)
             {
-            case NODE_TYPE_NODE:
-            case NODE_TYPE_ELEMENT:
+            case node_type_t::NODE_TYPE_NODE:
+            case node_type_t::NODE_TYPE_ELEMENT:
                 {
                     // as far as I know the type node is considered to be
                     // the same as elements (at least in XPath 1.0)
@@ -5333,7 +5351,7 @@ void inst_axis()
             }
             break;
 
-        case AXIS_ATTRIBUTE:
+        case axis_t::AXIS_ATTRIBUTE:
 axis_attribute:
             if(local_part.isEmpty())
             {
@@ -5361,17 +5379,17 @@ axis_attribute:
             }
             break;
 
-        case AXIS_ANCESTOR:
-        case AXIS_ANCESTOR_OR_SELF:
+        case axis_t::AXIS_ANCESTOR:
+        case axis_t::AXIS_ANCESTOR_OR_SELF:
             switch(node_type)
             {
-            case NODE_TYPE_NODE:
-            case NODE_TYPE_ELEMENT:
+            case node_type_t::NODE_TYPE_NODE:
+            case node_type_t::NODE_TYPE_ELEMENT:
                 {
                     // as far as I know the type node is considered to be
                     // the same as elements (at least in XPath 1.0)
                     QDomNode node(context_node);
-                    if(axis == AXIS_ANCESTOR)
+                    if(axis == axis_t::AXIS_ANCESTOR)
                     {
                         node = node.parentNode();
                     }
@@ -5394,11 +5412,11 @@ axis_attribute:
             }
             break;
 
-        case AXIS_CHILD:
+        case axis_t::AXIS_CHILD:
             switch(node_type)
             {
-            case NODE_TYPE_NODE:
-            case NODE_TYPE_ELEMENT:
+            case node_type_t::NODE_TYPE_NODE:
+            case node_type_t::NODE_TYPE_ELEMENT:
                 {
                     // as far as I know the type node is considered to be
                     // the same as elements (at least in XPath 1.0)
@@ -5420,11 +5438,11 @@ axis_attribute:
                 }
                 break;
 
-            case NODE_TYPE_ATTRIBUTE:
+            case node_type_t::NODE_TYPE_ATTRIBUTE:
                 goto axis_attribute;
 
-            case NODE_TYPE_COMMENT:
-            case NODE_TYPE_TEXT:
+            case node_type_t::NODE_TYPE_COMMENT:
+            case node_type_t::NODE_TYPE_TEXT:
                 {
                     QDomNode node(context_node.firstChildElement(local_part));
                     while(!node.isNull())
@@ -5440,7 +5458,7 @@ axis_attribute:
                 }
                 break;
 
-            case NODE_TYPE_PROCESSING_INSTRUCTION:
+            case node_type_t::NODE_TYPE_PROCESSING_INSTRUCTION:
                 {
                     QDomNode node(context_node.firstChildElement(local_part));
                     while(!node.isNull())
@@ -5475,17 +5493,17 @@ axis_attribute:
             }
             break;
 
-        case AXIS_DESCENDANT:
-        case AXIS_DESCENDANT_OR_SELF:
+        case axis_t::AXIS_DESCENDANT:
+        case axis_t::AXIS_DESCENDANT_OR_SELF:
             switch(node_type)
             {
-            case NODE_TYPE_NODE:
-            case NODE_TYPE_ELEMENT:
+            case node_type_t::NODE_TYPE_NODE:
+            case node_type_t::NODE_TYPE_ELEMENT:
                 {
                     // as far as I know the type node is considered to be
                     // the same as elements (at least in XPath 1.0)
                     QDomNode node(context_node);
-                    if(axis == AXIS_DESCENDANT_OR_SELF
+                    if(axis == axis_t::AXIS_DESCENDANT_OR_SELF
                     && (local_part.isEmpty() || local_part == context_node.toElement().tagName())
                     && (any_prefix || prefix == context_node.prefix()))
                     {
@@ -5532,7 +5550,7 @@ axis_descendant_done:;
             }
             break;
 
-        case AXIS_NAMESPACE:
+        case axis_t::AXIS_NAMESPACE:
             /*
              * I found the following documentation about namespace nodes on
              * an Oracle website:
@@ -5593,12 +5611,12 @@ axis_descendant_done:;
              */
             throw QDomXPathException_NotImplemented("the namespace axis is not implemented");
 
-        case AXIS_FOLLOWING:
-        case AXIS_FOLLOWING_SIBLING:
+        case axis_t::AXIS_FOLLOWING:
+        case axis_t::AXIS_FOLLOWING_SIBLING:
             switch(node_type)
             {
-            case NODE_TYPE_NODE:
-            case NODE_TYPE_ELEMENT:
+            case node_type_t::NODE_TYPE_NODE:
+            case node_type_t::NODE_TYPE_ELEMENT:
                 {
                     // as far as I know the type node is considered to be
                     // the same as elements (at least in XPath 1.0)
@@ -5614,7 +5632,7 @@ axis_descendant_done:;
                         }
                         node = node.nextSibling();
                     }
-                    if(axis == AXIS_FOLLOWING)
+                    if(axis == axis_t::AXIS_FOLLOWING)
                     {
                         QDomNode next(context_node.parentNode());
                         while(!next.isNull())
@@ -5663,13 +5681,13 @@ axis_descendant_done:;
             }
             break;
 
-        case AXIS_PRECEDING:
-        case AXIS_PRECEDING_SIBLING:
+        case axis_t::AXIS_PRECEDING:
+        case axis_t::AXIS_PRECEDING_SIBLING:
             // WARNING: 'preceding' never include the ancestors
             switch(node_type)
             {
-            case NODE_TYPE_NODE:
-            case NODE_TYPE_ELEMENT:
+            case node_type_t::NODE_TYPE_NODE:
+            case node_type_t::NODE_TYPE_ELEMENT:
                 {
                     // as far as I know the type node is considered to be
                     // the same as elements (at least in XPath 1.0)
@@ -5684,7 +5702,7 @@ axis_descendant_done:;
                         }
                         node = node.previousSibling();
                     }
-                    if(axis == AXIS_PRECEDING)
+                    if(axis == axis_t::AXIS_PRECEDING)
                     {
                         QDomNode previous(context_node.parentNode());
                         while(!previous.isNull())
@@ -5988,40 +6006,40 @@ bool get_token()
         switch(c)
         {
         case '(':
-            f_last_token.f_token = token_t::TOK_OPEN_PARENTHESIS;
+            f_last_token.f_token = token_t::tok_t::TOK_OPEN_PARENTHESIS;
             break;
 
         case ')':
-            f_last_token.f_token = token_t::TOK_CLOSE_PARENTHESIS;
+            f_last_token.f_token = token_t::tok_t::TOK_CLOSE_PARENTHESIS;
             break;
 
         case '[':
-            f_last_token.f_token = token_t::TOK_OPEN_SQUARE_BRACKET;
+            f_last_token.f_token = token_t::tok_t::TOK_OPEN_SQUARE_BRACKET;
             break;
 
         case ']':
-            f_last_token.f_token = token_t::TOK_CLOSE_SQUARE_BRACKET;
+            f_last_token.f_token = token_t::tok_t::TOK_CLOSE_SQUARE_BRACKET;
             break;
 
         case '@':
-            f_last_token.f_token = token_t::TOK_AT;
+            f_last_token.f_token = token_t::tok_t::TOK_AT;
             break;
 
         case ',':
-            f_last_token.f_token = token_t::TOK_COMMA;
+            f_last_token.f_token = token_t::tok_t::TOK_COMMA;
             break;
 
         case ':':
             c = getc();
             if(c == ':')
             {
-                f_last_token.f_token = token_t::TOK_DOUBLE_COLON;
+                f_last_token.f_token = token_t::tok_t::TOK_DOUBLE_COLON;
                 f_last_token.f_string += QChar(c);
             }
             else
             {
                 ungetc(c);
-                f_last_token.f_token = token_t::TOK_COLON;
+                f_last_token.f_token = token_t::tok_t::TOK_COLON;
             }
             break;
 
@@ -6029,41 +6047,41 @@ bool get_token()
             c = getc();
             if(c == '/')
             {
-                f_last_token.f_token = token_t::TOK_DOUBLE_SLASH;
+                f_last_token.f_token = token_t::tok_t::TOK_DOUBLE_SLASH;
                 f_last_token.f_string += QChar(c);
             }
             else
             {
                 ungetc(c);
-                f_last_token.f_token = token_t::TOK_SLASH;
+                f_last_token.f_token = token_t::tok_t::TOK_SLASH;
             }
             break;
 
         case '|':
-            f_last_token.f_token = token_t::TOK_PIPE;
+            f_last_token.f_token = token_t::tok_t::TOK_PIPE;
             break;
 
         case '$':
-            f_last_token.f_token = token_t::TOK_DOLLAR;
+            f_last_token.f_token = token_t::tok_t::TOK_DOLLAR;
             break;
 
         case '+':
-            f_last_token.f_token = token_t::TOK_PLUS;
+            f_last_token.f_token = token_t::tok_t::TOK_PLUS;
             break;
 
         case '-':
-            f_last_token.f_token = token_t::TOK_MINUS;
+            f_last_token.f_token = token_t::tok_t::TOK_MINUS;
             break;
 
         case '=':
-            f_last_token.f_token = token_t::TOK_EQUAL;
+            f_last_token.f_token = token_t::tok_t::TOK_EQUAL;
             break;
 
         case '!':
             c = getc();
             if(c == '=')
             {
-                f_last_token.f_token = token_t::TOK_NOT_EQUAL;
+                f_last_token.f_token = token_t::tok_t::TOK_NOT_EQUAL;
                 f_last_token.f_string += QChar(c);
             }
             else
@@ -6076,13 +6094,13 @@ bool get_token()
             c = getc();
             if(c == '=')
             {
-                f_last_token.f_token = token_t::TOK_LESS_OR_EQUAL;
+                f_last_token.f_token = token_t::tok_t::TOK_LESS_OR_EQUAL;
                 f_last_token.f_string += QChar(c);
             }
             else
             {
                 ungetc(c);
-                f_last_token.f_token = token_t::TOK_LESS_THAN;
+                f_last_token.f_token = token_t::tok_t::TOK_LESS_THAN;
             }
             break;
 
@@ -6090,25 +6108,25 @@ bool get_token()
             c = getc();
             if(c == '=')
             {
-                f_last_token.f_token = token_t::TOK_GREATER_OR_EQUAL;
+                f_last_token.f_token = token_t::tok_t::TOK_GREATER_OR_EQUAL;
                 f_last_token.f_string += QChar(c);
             }
             else
             {
                 ungetc(c);
-                f_last_token.f_token = token_t::TOK_GREATER_THAN;
+                f_last_token.f_token = token_t::tok_t::TOK_GREATER_THAN;
             }
             break;
 
         case '*':
             // '*' can represent a NameTest or the Multiply operator
             // (this is context dependent)
-            f_last_token.f_token = token_t::TOK_ASTERISK;
+            f_last_token.f_token = token_t::tok_t::TOK_ASTERISK;
             break;
 
         case '\'':
         case '"':
-            f_last_token.f_token = token_t::TOK_STRING;
+            f_last_token.f_token = token_t::tok_t::TOK_STRING;
             f_last_token.f_string = ""; // remove the quote
             {
                 char_t quote(c);
@@ -6145,7 +6163,7 @@ bool get_token()
         case '7':
         case '8':
         case '9':
-            f_last_token.f_token = token_t::TOK_INTEGER;
+            f_last_token.f_token = token_t::tok_t::TOK_INTEGER;
             f_last_token.f_integer = c - '0';
             for(;;)
             {
@@ -6170,19 +6188,19 @@ bool get_token()
             {
                 if(c == '.')
                 {
-                    f_last_token.f_token = token_t::TOK_DOUBLE_DOT;
+                    f_last_token.f_token = token_t::tok_t::TOK_DOUBLE_DOT;
                     f_last_token.f_string += QChar(c);
                     break;
                 }
                 else if(c < '0' || c > '9')
                 {
                     ungetc(c);
-                    f_last_token.f_token = token_t::TOK_DOT;
+                    f_last_token.f_token = token_t::tok_t::TOK_DOT;
                     break;
                 }
                 f_last_token.f_string = "0.";
             }
-            f_last_token.f_token = token_t::TOK_REAL;
+            f_last_token.f_token = token_t::tok_t::TOK_REAL;
             { // "protect" frac
                 double frac(1.0);
                 for(;;)
@@ -6255,12 +6273,12 @@ bool get_token()
                 // at this point we return an NCNAME
                 // (NC means No Colon)
                 // what the name represents changes depending on context
-                f_last_token.f_token = token_t::TOK_NCNAME;
+                f_last_token.f_token = token_t::tok_t::TOK_NCNAME;
             }
             else
             {
                 // this won't match anything and thus return and error
-                f_last_token.f_token = token_t::TOK_INVALID;
+                f_last_token.f_token = token_t::tok_t::TOK_INVALID;
             }
             break;
 
@@ -6290,32 +6308,32 @@ bool token_is_operator()
 {
     switch(f_last_token.f_token)
     {
-    case token_t::TOK_NCNAME:
+    case token_t::tok_t::TOK_NCNAME:
         if(f_last_token.f_string == "and")
         {
-            f_last_token.f_token = token_t::TOK_OPERATOR_AND;
+            f_last_token.f_token = token_t::tok_t::TOK_OPERATOR_AND;
         }
         else if(f_last_token.f_string == "or")
         {
-            f_last_token.f_token = token_t::TOK_OPERATOR_OR;
+            f_last_token.f_token = token_t::tok_t::TOK_OPERATOR_OR;
         }
         else if(f_last_token.f_string == "div")
         {
-            f_last_token.f_token = token_t::TOK_OPERATOR_DIV;
+            f_last_token.f_token = token_t::tok_t::TOK_OPERATOR_DIV;
         }
         else if(f_last_token.f_string == "mod")
         {
-            f_last_token.f_token = token_t::TOK_OPERATOR_MOD;
+            f_last_token.f_token = token_t::tok_t::TOK_OPERATOR_MOD;
         }
         else
         {
             return false;
         }
         /*FALLTHROUGH*/
-    case token_t::TOK_OPERATOR_AND:
-    case token_t::TOK_OPERATOR_OR:
-    case token_t::TOK_OPERATOR_MOD:
-    case token_t::TOK_OPERATOR_DIV:
+    case token_t::tok_t::TOK_OPERATOR_AND:
+    case token_t::tok_t::TOK_OPERATOR_OR:
+    case token_t::tok_t::TOK_OPERATOR_MOD:
+    case token_t::tok_t::TOK_OPERATOR_DIV:
         return true;
 
     default:
@@ -6341,32 +6359,32 @@ bool token_is_node_type()
 {
     switch(f_last_token.f_token)
     {
-    case token_t::TOK_NCNAME:
+    case token_t::tok_t::TOK_NCNAME:
         if(f_last_token.f_string == "comment")
         {
-            f_last_token.f_token = token_t::TOK_NODE_TYPE_COMMENT;
+            f_last_token.f_token = token_t::tok_t::TOK_NODE_TYPE_COMMENT;
         }
         else if(f_last_token.f_string == "text")
         {
-            f_last_token.f_token = token_t::TOK_NODE_TYPE_TEXT;
+            f_last_token.f_token = token_t::tok_t::TOK_NODE_TYPE_TEXT;
         }
         else if(f_last_token.f_string == "processing-instruction")
         {
-            f_last_token.f_token = token_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION;
+            f_last_token.f_token = token_t::tok_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION;
         }
         else if(f_last_token.f_string == "node")
         {
-            f_last_token.f_token = token_t::TOK_NODE_TYPE_NODE;
+            f_last_token.f_token = token_t::tok_t::TOK_NODE_TYPE_NODE;
         }
         else
         {
             return false;
         }
         /*FALLTHROUGH*/
-    case token_t::TOK_NODE_TYPE_COMMENT:
-    case token_t::TOK_NODE_TYPE_TEXT:
-    case token_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION:
-    case token_t::TOK_NODE_TYPE_NODE:
+    case token_t::tok_t::TOK_NODE_TYPE_COMMENT:
+    case token_t::tok_t::TOK_NODE_TYPE_TEXT:
+    case token_t::tok_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION:
+    case token_t::tok_t::TOK_NODE_TYPE_NODE:
         return true;
 
     default:
@@ -6398,74 +6416,74 @@ bool token_is_axis_name()
 {
     switch(f_last_token.f_token)
     {
-    case token_t::TOK_NCNAME:
+    case token_t::tok_t::TOK_NCNAME:
         // TODO: add one more level to test the first letter really fast
         if(f_last_token.f_string == "ancestor")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_ANCESTOR;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_ANCESTOR;
         }
         else if(f_last_token.f_string == "ancestor-or-self")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_ANCESTOR_OR_SELF;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_ANCESTOR_OR_SELF;
         }
         else if(f_last_token.f_string == "attribute")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_ATTRIBUTE;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_ATTRIBUTE;
         }
         else if(f_last_token.f_string == "child")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_CHILD;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_CHILD;
         }
         else if(f_last_token.f_string == "descendant")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_DESCENDANT;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_DESCENDANT;
         }
         else if(f_last_token.f_string == "descendant-or-self")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_DESCENDANT_OR_SELF;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_DESCENDANT_OR_SELF;
         }
         else if(f_last_token.f_string == "following")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_FOLLOWING;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_FOLLOWING;
         }
         else if(f_last_token.f_string == "following-sibling")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_FOLLOWING_SIBLING;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_FOLLOWING_SIBLING;
         }
         else if(f_last_token.f_string == "namespace")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_NAMESPACE;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_NAMESPACE;
         }
         else if(f_last_token.f_string == "parent")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_PARENT;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_PARENT;
         }
         else if(f_last_token.f_string == "preceding")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_PRECEDING;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_PRECEDING;
         }
         else if(f_last_token.f_string == "preceding-sibling")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_PRECEDING_SIBLING;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_PRECEDING_SIBLING;
         }
         else if(f_last_token.f_string == "self")
         {
-            f_last_token.f_token = token_t::TOK_AXIS_NAME_SELF;
+            f_last_token.f_token = token_t::tok_t::TOK_AXIS_NAME_SELF;
         }
         /*FALLTHROUGH*/
-    case token_t::TOK_AXIS_NAME_ANCESTOR:
-    case token_t::TOK_AXIS_NAME_ANCESTOR_OR_SELF:
-    case token_t::TOK_AXIS_NAME_ATTRIBUTE:
-    case token_t::TOK_AXIS_NAME_CHILD:
-    case token_t::TOK_AXIS_NAME_DESCENDANT:
-    case token_t::TOK_AXIS_NAME_DESCENDANT_OR_SELF:
-    case token_t::TOK_AXIS_NAME_FOLLOWING:
-    case token_t::TOK_AXIS_NAME_FOLLOWING_SIBLING:
-    case token_t::TOK_AXIS_NAME_NAMESPACE:
-    case token_t::TOK_AXIS_NAME_PARENT:
-    case token_t::TOK_AXIS_NAME_PRECEDING:
-    case token_t::TOK_AXIS_NAME_PRECEDING_SIBLING:
-    case token_t::TOK_AXIS_NAME_SELF:
+    case token_t::tok_t::TOK_AXIS_NAME_ANCESTOR:
+    case token_t::tok_t::TOK_AXIS_NAME_ANCESTOR_OR_SELF:
+    case token_t::tok_t::TOK_AXIS_NAME_ATTRIBUTE:
+    case token_t::tok_t::TOK_AXIS_NAME_CHILD:
+    case token_t::tok_t::TOK_AXIS_NAME_DESCENDANT:
+    case token_t::tok_t::TOK_AXIS_NAME_DESCENDANT_OR_SELF:
+    case token_t::tok_t::TOK_AXIS_NAME_FOLLOWING:
+    case token_t::tok_t::TOK_AXIS_NAME_FOLLOWING_SIBLING:
+    case token_t::tok_t::TOK_AXIS_NAME_NAMESPACE:
+    case token_t::tok_t::TOK_AXIS_NAME_PARENT:
+    case token_t::tok_t::TOK_AXIS_NAME_PRECEDING:
+    case token_t::tok_t::TOK_AXIS_NAME_PRECEDING_SIBLING:
+    case token_t::tok_t::TOK_AXIS_NAME_SELF:
         return true;
 
     default:
@@ -6633,6 +6651,21 @@ void append_push_integer(const int64_t integer)
     }
 }
 
+void append_push_integer(node_type_t const type)
+{
+    append_push_integer(static_cast<int64_t>(type));
+}
+
+void append_push_integer(axis_t const type)
+{
+    append_push_integer(static_cast<int64_t>(type));
+}
+
+void append_push_integer(internal_func_t const type)
+{
+    append_push_integer(static_cast<int64_t>(type));
+}
+
 void append_push_double(double const real)
 {
     int offset(f_program.size());
@@ -6673,21 +6706,21 @@ void append_push_token(const token_t& token)
 {
     switch(token.f_token)
     {
-    case token_t::TOK_ASTERISK:
+    case token_t::tok_t::TOK_ASTERISK:
         append_push_string("*");
         break;
 
-    case token_t::TOK_STRING:
-    case token_t::TOK_PREFIX: // this is like a string
-    case token_t::TOK_NCNAME: // this can be a lie (in case of variable names, it can include a colon)
+    case token_t::tok_t::TOK_STRING:
+    case token_t::tok_t::TOK_PREFIX: // this is like a string
+    case token_t::tok_t::TOK_NCNAME: // this can be a lie (in case of variable names, it can include a colon)
         append_push_string(token.f_string);
         break;
 
-    case token_t::TOK_INTEGER:
+    case token_t::tok_t::TOK_INTEGER:
         append_push_integer(token.f_integer);
         break;
 
-    case token_t::TOK_REAL:
+    case token_t::tok_t::TOK_REAL:
         append_push_double(token.f_real);
         break;
 
@@ -6722,15 +6755,15 @@ void append_axis(const token_t& axis, const token_t& prefix, const token_t& loca
 {
     // if the prefix is marked as "undefined" then we have a NodeType
     // instead of a name
-    if(prefix.f_token == token_t::TOK_UNDEFINED)
+    if(prefix.f_token == token_t::tok_t::TOK_UNDEFINED)
     {
         // Axis '::' NodeType '(' ')'
         switch(local_part.f_token)
         {
-        case token_t::TOK_NODE_TYPE_COMMENT:                 append_push_integer(NODE_TYPE_COMMENT);                 break;
-        case token_t::TOK_NODE_TYPE_NODE:                    append_push_integer(NODE_TYPE_NODE);                    break;
-        case token_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION:  append_push_integer(NODE_TYPE_PROCESSING_INSTRUCTION);  break;
-        case token_t::TOK_NODE_TYPE_TEXT:                    append_push_integer(NODE_TYPE_TEXT);                    break;
+        case token_t::tok_t::TOK_NODE_TYPE_COMMENT:                 append_push_integer(node_type_t::NODE_TYPE_COMMENT);                 break;
+        case token_t::tok_t::TOK_NODE_TYPE_NODE:                    append_push_integer(node_type_t::NODE_TYPE_NODE);                    break;
+        case token_t::tok_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION:  append_push_integer(node_type_t::NODE_TYPE_PROCESSING_INSTRUCTION);  break;
+        case token_t::tok_t::TOK_NODE_TYPE_TEXT:                    append_push_integer(node_type_t::NODE_TYPE_TEXT);                    break;
 
         default:
             throw QDomXPathException_InvalidError("invalid node type");
@@ -6752,19 +6785,19 @@ void append_axis(const token_t& axis, const token_t& prefix, const token_t& loca
  
     switch(axis.f_token)
     {
-    case token_t::TOK_AXIS_NAME_ANCESTOR:           append_push_integer(AXIS_ANCESTOR);             break;
-    case token_t::TOK_AXIS_NAME_ANCESTOR_OR_SELF:   append_push_integer(AXIS_ANCESTOR_OR_SELF);     break;
-    case token_t::TOK_AXIS_NAME_ATTRIBUTE:          append_push_integer(AXIS_ATTRIBUTE);            break;
-    case token_t::TOK_AXIS_NAME_CHILD:              append_push_integer(AXIS_CHILD);                break;
-    case token_t::TOK_AXIS_NAME_DESCENDANT:         append_push_integer(AXIS_DESCENDANT);           break;
-    case token_t::TOK_AXIS_NAME_DESCENDANT_OR_SELF: append_push_integer(AXIS_DESCENDANT_OR_SELF);   break;
-    case token_t::TOK_AXIS_NAME_FOLLOWING:          append_push_integer(AXIS_FOLLOWING);            break;
-    case token_t::TOK_AXIS_NAME_FOLLOWING_SIBLING:  append_push_integer(AXIS_FOLLOWING_SIBLING);    break;
-    case token_t::TOK_AXIS_NAME_NAMESPACE:          append_push_integer(AXIS_NAMESPACE);            break;
-    case token_t::TOK_AXIS_NAME_PARENT:             append_push_integer(AXIS_PARENT);               break;
-    case token_t::TOK_AXIS_NAME_PRECEDING:          append_push_integer(AXIS_PRECEDING);            break;
-    case token_t::TOK_AXIS_NAME_PRECEDING_SIBLING:  append_push_integer(AXIS_PRECEDING_SIBLING);    break;
-    case token_t::TOK_AXIS_NAME_SELF:               append_push_integer(AXIS_SELF);                 break;
+    case token_t::tok_t::TOK_AXIS_NAME_ANCESTOR:           append_push_integer(axis_t::AXIS_ANCESTOR);             break;
+    case token_t::tok_t::TOK_AXIS_NAME_ANCESTOR_OR_SELF:   append_push_integer(axis_t::AXIS_ANCESTOR_OR_SELF);     break;
+    case token_t::tok_t::TOK_AXIS_NAME_ATTRIBUTE:          append_push_integer(axis_t::AXIS_ATTRIBUTE);            break;
+    case token_t::tok_t::TOK_AXIS_NAME_CHILD:              append_push_integer(axis_t::AXIS_CHILD);                break;
+    case token_t::tok_t::TOK_AXIS_NAME_DESCENDANT:         append_push_integer(axis_t::AXIS_DESCENDANT);           break;
+    case token_t::tok_t::TOK_AXIS_NAME_DESCENDANT_OR_SELF: append_push_integer(axis_t::AXIS_DESCENDANT_OR_SELF);   break;
+    case token_t::tok_t::TOK_AXIS_NAME_FOLLOWING:          append_push_integer(axis_t::AXIS_FOLLOWING);            break;
+    case token_t::tok_t::TOK_AXIS_NAME_FOLLOWING_SIBLING:  append_push_integer(axis_t::AXIS_FOLLOWING_SIBLING);    break;
+    case token_t::tok_t::TOK_AXIS_NAME_NAMESPACE:          append_push_integer(axis_t::AXIS_NAMESPACE);            break;
+    case token_t::tok_t::TOK_AXIS_NAME_PARENT:             append_push_integer(axis_t::AXIS_PARENT);               break;
+    case token_t::tok_t::TOK_AXIS_NAME_PRECEDING:          append_push_integer(axis_t::AXIS_PRECEDING);            break;
+    case token_t::tok_t::TOK_AXIS_NAME_PRECEDING_SIBLING:  append_push_integer(axis_t::AXIS_PRECEDING_SIBLING);    break;
+    case token_t::tok_t::TOK_AXIS_NAME_SELF:               append_push_integer(axis_t::AXIS_SELF);                 break;
 
     default:
         throw QDomXPathException_InvalidError("invalid axis type");
@@ -6822,11 +6855,11 @@ void unary_expr()
     int negate(0);
     for(;;)
     {
-        if(f_last_token.f_token == token_t::TOK_MINUS)
+        if(f_last_token.f_token == token_t::tok_t::TOK_MINUS)
         {
             negate ^= 1;
         }
-        else if(f_last_token.f_token != token_t::TOK_PLUS) // XPath 2.0 allows unary '+'
+        else if(f_last_token.f_token != token_t::tok_t::TOK_PLUS) // XPath 2.0 allows unary '+'
         {
             break;
         }
@@ -6847,11 +6880,11 @@ void multiplicative_expr()
         instruction_t inst(INST_END);
         switch(f_last_token.f_token)
         {
-        case token_t::TOK_ASTERISK:
+        case token_t::tok_t::TOK_ASTERISK:
             inst = INST_MULTIPLY;
             break;
 
-        case token_t::TOK_NCNAME:
+        case token_t::tok_t::TOK_NCNAME:
             if(f_last_token.f_string == "div")
             {
                 inst = INST_DIVIDE;
@@ -6888,11 +6921,11 @@ void additive_expr()
         instruction_t inst(INST_END);
         switch(f_last_token.f_token)
         {
-        case token_t::TOK_PLUS:
+        case token_t::tok_t::TOK_PLUS:
             inst = INST_ADD;
             break;
 
-        case token_t::TOK_MINUS:
+        case token_t::tok_t::TOK_MINUS:
             inst = INST_SUBTRACT;
             break;
 
@@ -6914,19 +6947,19 @@ void relational_expr()
         instruction_t inst(INST_END);
         switch(f_last_token.f_token)
         {
-        case token_t::TOK_LESS_THAN:
+        case token_t::tok_t::TOK_LESS_THAN:
             inst = INST_LESS_THAN;
             break;
 
-        case token_t::TOK_LESS_OR_EQUAL:
+        case token_t::tok_t::TOK_LESS_OR_EQUAL:
             inst = INST_LESS_OR_EQUAL;
             break;
 
-        case token_t::TOK_GREATER_THAN:
+        case token_t::tok_t::TOK_GREATER_THAN:
             inst = INST_GREATER_THAN;
             break;
 
-        case token_t::TOK_GREATER_OR_EQUAL:
+        case token_t::tok_t::TOK_GREATER_OR_EQUAL:
             inst = INST_GREATER_OR_EQUAL;
             break;
 
@@ -6948,11 +6981,11 @@ void equality_expr()
         instruction_t inst(INST_END);
         switch(f_last_token.f_token)
         {
-        case token_t::TOK_EQUAL:
+        case token_t::tok_t::TOK_EQUAL:
             inst = INST_EQUAL;
             break;
 
-        case token_t::TOK_NOT_EQUAL:
+        case token_t::tok_t::TOK_NOT_EQUAL:
             inst = INST_NOT_EQUAL;
             break;
 
@@ -6969,7 +7002,7 @@ void equality_expr()
 void and_expr()
 {
     equality_expr();
-    while(f_last_token.f_token == token_t::TOK_NCNAME && f_last_token.f_string == "and")
+    while(f_last_token.f_token == token_t::tok_t::TOK_NCNAME && f_last_token.f_string == "and")
     {
         get_token();
         equality_expr();
@@ -6986,7 +7019,7 @@ void and_expr()
 void or_expr()
 {
     and_expr();
-    while(f_last_token.f_token == token_t::TOK_NCNAME && f_last_token.f_string == "or")
+    while(f_last_token.f_token == token_t::tok_t::TOK_NCNAME && f_last_token.f_string == "or")
     {
         get_token();
         and_expr();
@@ -7037,12 +7070,12 @@ void function_call(token_t prefix_token, token_t local_part)
         case 'c':
             if(local_part.f_string == "ceiling")
             {
-                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token == token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected one parameter for the ceiling() function");
                 }
                 or_expr();
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected exactly one parameter for the ceiling() function");
                 }
@@ -7053,12 +7086,12 @@ void function_call(token_t prefix_token, token_t local_part)
             }
             if(local_part.f_string == "count")
             {
-                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token == token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected one parameter for the count() function");
                 }
                 or_expr();
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected exactly one parameter for the count() function");
                 }
@@ -7073,12 +7106,12 @@ void function_call(token_t prefix_token, token_t local_part)
             if(local_part.f_string == "empty"
             || local_part.f_string == "exists")
             {
-                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token == token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected one parameter for the empty() function");
                 }
                 or_expr();
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected exactly one parameter for the empty() function");
                 }
@@ -7094,7 +7127,7 @@ void function_call(token_t prefix_token, token_t local_part)
         case 'f':
             if(local_part.f_string == "false")
             {
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected ')' immediately for the false() function does not accept parameters");
                 }
@@ -7105,12 +7138,12 @@ void function_call(token_t prefix_token, token_t local_part)
             }
             if(local_part.f_string == "floor")
             {
-                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token == token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected one parameter for the floor() function");
                 }
                 or_expr();
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected exactly one parameter for the floor() function");
                 }
@@ -7124,7 +7157,7 @@ void function_call(token_t prefix_token, token_t local_part)
         case 'l':
             if(local_part.f_string == "last")
             {
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected ')' immediately for the last() function does not accept parameters");
                 }
@@ -7139,12 +7172,12 @@ void function_call(token_t prefix_token, token_t local_part)
         case 'n':
             if(local_part.f_string == "not")
             {
-                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token == token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected one parameter for the not() function");
                 }
                 or_expr();
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected exactly one parameter for the not() function");
                 }
@@ -7158,7 +7191,7 @@ void function_call(token_t prefix_token, token_t local_part)
         case 'p':
             if(local_part.f_string == "position")
             {
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected ')' immediately for the position() function does not accept parameters");
                 }
@@ -7172,12 +7205,12 @@ void function_call(token_t prefix_token, token_t local_part)
         case 'r':
             if(local_part.f_string == "round")
             {
-                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token == token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected one parameter for the round() function");
                 }
                 or_expr();
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected exactly one parameter for the round() function");
                 }
@@ -7192,12 +7225,12 @@ void function_call(token_t prefix_token, token_t local_part)
             if(local_part.f_string == "string-length")
             {
                 // TODO add support for '.' instead of an argument
-                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token == token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected one parameter for the string-length() function");
                 }
                 or_expr();
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected exactly one parameter for the string-length() function");
                 }
@@ -7211,7 +7244,7 @@ void function_call(token_t prefix_token, token_t local_part)
         case 't':
             if(local_part.f_string == "true")
             {
-                if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("expected ')' immediately for the true() function does not accept parameters");
                 }
@@ -7227,17 +7260,17 @@ void function_call(token_t prefix_token, token_t local_part)
 
     int argc(0);
     append_instruction(INST_PUSH_END_OF_ARGUMENTS);
-    if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+    if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
     {
         ++argc;
         or_expr();
-        while(f_last_token.f_token == token_t::TOK_COMMA)
+        while(f_last_token.f_token == token_t::tok_t::TOK_COMMA)
         {
             ++argc;
             get_token();
             or_expr();
         }
-        if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+        if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
         {
             throw QDomXPathException_SyntaxError("expected ')' or ',' in the list of argument to a function call");
         }
@@ -7248,7 +7281,7 @@ void function_call(token_t prefix_token, token_t local_part)
     // by default we expect no parameters
     int min_argc(0);
     int max_argc(0);
-    internal_func_t f(FUNC_UNKNOWN);
+    internal_func_t f(internal_func_t::FUNC_UNKNOWN);
 
     switch(prefix_token.f_string[0].unicode())
     {
@@ -7260,7 +7293,7 @@ void function_call(token_t prefix_token, token_t local_part)
             case 'a':
                 if(local_part.f_string == "avg")
                 {
-                    f = FUNC_AVG;
+                    f = internal_func_t::FUNC_AVG;
                     max_argc = -1; // any number of parameters
                 }
                 break;
@@ -7268,12 +7301,12 @@ void function_call(token_t prefix_token, token_t local_part)
             case 'm':
                 if(local_part.f_string == "max")
                 {
-                    f = FUNC_MAX;
+                    f = internal_func_t::FUNC_MAX;
                     max_argc = -1; // any number of parameters
                 }
                 else if(local_part.f_string == "min")
                 {
-                    f = FUNC_MIN;
+                    f = internal_func_t::FUNC_MIN;
                     max_argc = -1; // any number of parameters
                 }
                 break;
@@ -7281,7 +7314,7 @@ void function_call(token_t prefix_token, token_t local_part)
             case 's':
                 if(local_part.f_string == "sum")
                 {
-                    f = FUNC_SUM;
+                    f = internal_func_t::FUNC_SUM;
                     max_argc = -1; // any number of parameters
                 }
                 break;
@@ -7296,7 +7329,7 @@ void function_call(token_t prefix_token, token_t local_part)
     }
 
     // we do not yet support user defined functions
-    if(f == FUNC_UNKNOWN)
+    if(f == internal_func_t::FUNC_UNKNOWN)
     {
         throw QDomXPathException_UnknownFunctionError(QString("'%1' is not a known function (we may not yet support it...)")
                                                     .arg(prefix_token.f_string + ":" + local_part.f_string));
@@ -7343,7 +7376,7 @@ void predicate()
         append_instruction(INST_SET_VARIABLE);
 
         or_expr();
-        if(f_last_token.f_token != token_t::TOK_CLOSE_SQUARE_BRACKET)
+        if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_SQUARE_BRACKET)
         {
             throw QDomXPathException_SyntaxError("missing ']' to close a Predicate");
         }
@@ -7359,7 +7392,7 @@ void predicate()
 
         get_token();
     }
-    while(f_last_token.f_token == token_t::TOK_OPEN_SQUARE_BRACKET);
+    while(f_last_token.f_token == token_t::tok_t::TOK_OPEN_SQUARE_BRACKET);
 
     append_instruction(INST_GET_NODE_SET);
     append_instruction(INST_POP_CONTEXT); // get rid of the context
@@ -7372,16 +7405,16 @@ void location_path()
     labels_t labels;
 
     QString predicate_variable(f_predicate_variable);
-    bool function_call_valid(f_last_token.f_token == token_t::TOK_NCNAME);
+    bool function_call_valid(f_last_token.f_token == token_t::tok_t::TOK_NCNAME);
     bool first_round(true);
     for(;;)
     {
         bool double_slash(false);
         switch(f_last_token.f_token)
         {
-        case token_t::TOK_DOUBLE_SLASH:
+        case token_t::tok_t::TOK_DOUBLE_SLASH:
             double_slash = true;
-        case token_t::TOK_SLASH:
+        case token_t::tok_t::TOK_SLASH:
             if(first_round)
             {
                 // this is absolute, start from the root
@@ -7421,48 +7454,48 @@ void location_path()
         first_round = false;
         token_t save_token(f_last_token);
         token_t axis_token;
-        axis_token.f_token = double_slash ? token_t::TOK_AXIS_NAME_DESCENDANT : token_t::TOK_AXIS_NAME_CHILD;
+        axis_token.f_token = double_slash ? token_t::tok_t::TOK_AXIS_NAME_DESCENDANT : token_t::tok_t::TOK_AXIS_NAME_CHILD;
         axis_token.f_string = double_slash ? "descendant" : "child";
         token_t prefix_token;
-        prefix_token.f_token = token_t::TOK_PREFIX;
+        prefix_token.f_token = token_t::tok_t::TOK_PREFIX;
         prefix_token.f_string = "*";
         switch(f_last_token.f_token)
         {
-        case token_t::TOK_DOT:
+        case token_t::tok_t::TOK_DOT:
             // self
-            save_token.f_token = token_t::TOK_NCNAME;
+            save_token.f_token = token_t::tok_t::TOK_NCNAME;
             save_token.f_string = "*";
-            axis_token.f_token = token_t::TOK_AXIS_NAME_SELF;
+            axis_token.f_token = token_t::tok_t::TOK_AXIS_NAME_SELF;
             axis_token.f_string = "self";
             accept_predicate = false;
             goto axis_apply;
 
-        case token_t::TOK_DOUBLE_DOT:
+        case token_t::tok_t::TOK_DOUBLE_DOT:
             // parent
-            save_token.f_token = token_t::TOK_NCNAME;
+            save_token.f_token = token_t::tok_t::TOK_NCNAME;
             save_token.f_string = "*";
-            axis_token.f_token = token_t::TOK_AXIS_NAME_PARENT;
+            axis_token.f_token = token_t::tok_t::TOK_AXIS_NAME_PARENT;
             axis_token.f_string = "parent";
             accept_predicate = false;
             goto axis_apply;
 
-        case token_t::TOK_ASTERISK:
+        case token_t::tok_t::TOK_ASTERISK:
             // '*'  -- a name test by itself
             // this is actually the default!
             get_token();
             goto axis_apply;
 
-        case token_t::TOK_AT:
+        case token_t::tok_t::TOK_AT:
             // The '@' is the AbbreviatedAxisSpecifier
             //     '@' NoteTest Predicate*
             //     'attribute' :: NodeTest Predicate*
-            axis_token.f_token = token_t::TOK_AXIS_NAME_ATTRIBUTE;
+            axis_token.f_token = token_t::tok_t::TOK_AXIS_NAME_ATTRIBUTE;
             axis_token.f_string = "attribute";
             goto axis_name_attribute;
 
-        case token_t::TOK_NCNAME:
+        case token_t::tok_t::TOK_NCNAME:
             get_token();
-            if(f_last_token.f_token == token_t::TOK_DOUBLE_COLON)
+            if(f_last_token.f_token == token_t::tok_t::TOK_DOUBLE_COLON)
             {
                 function_call_valid = false;
                 // the NCNAME before '::' is an AxisName
@@ -7476,19 +7509,19 @@ void location_path()
 axis_name_attribute:
                 get_token(); // NodeTest
                 save_token = f_last_token;
-                if(f_last_token.f_token == token_t::TOK_ASTERISK)
+                if(f_last_token.f_token == token_t::tok_t::TOK_ASTERISK)
                 {
                     // no specific prefix or local part
                     get_token();
                     goto axis_apply;
                 }
-                if(f_last_token.f_token != token_t::TOK_NCNAME)
+                if(f_last_token.f_token != token_t::tok_t::TOK_NCNAME)
                 {
                     throw QDomXPathException_SyntaxError("a double colon (::) must be followed by an NCName or '*'");
                 }
                 get_token();
             }
-            if(f_last_token.f_token == token_t::TOK_COLON)
+            if(f_last_token.f_token == token_t::tok_t::TOK_COLON)
             {
                 // namespace ':' NCName
                 // namespace ':' '*'
@@ -7498,11 +7531,11 @@ axis_name_attribute:
                 get_token();
                 switch(save_token.f_token)
                 {
-                case token_t::TOK_ASTERISK:
+                case token_t::tok_t::TOK_ASTERISK:
                     break;
 
-                case token_t::TOK_NCNAME:
-                    if(function_call_valid && f_last_token.f_token == token_t::TOK_OPEN_PARENTHESIS)
+                case token_t::tok_t::TOK_NCNAME:
+                    if(function_call_valid && f_last_token.f_token == token_t::tok_t::TOK_OPEN_PARENTHESIS)
                     {
                         // A function name is a QName which means it can include a prefix
                         //      Prefix ':' LocalPart '(' ... ')'
@@ -7516,7 +7549,7 @@ axis_name_attribute:
 
                 }
             }
-            else if(f_last_token.f_token == token_t::TOK_OPEN_PARENTHESIS)
+            else if(f_last_token.f_token == token_t::tok_t::TOK_OPEN_PARENTHESIS)
             {
                 // in this case we have:
                 //    NodeType '(' [...] ')'
@@ -7538,9 +7571,9 @@ axis_name_attribute:
                 // save the NodeType token
                 save_token.f_token = f_last_token.f_token;
                 get_token();
-                if(f_last_token.f_token == token_t::TOK_STRING)
+                if(f_last_token.f_token == token_t::tok_t::TOK_STRING)
                 {
-                    if(axis_token.f_token != token_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION)
+                    if(axis_token.f_token != token_t::tok_t::TOK_NODE_TYPE_PROCESSING_INSTRUCTION)
                     {
                         throw QDomXPathException_InvalidError("only a processing-instruction NodeType can be given a Literal");
                     }
@@ -7552,11 +7585,11 @@ axis_name_attribute:
                 {
                     axis_token.f_string = "";
                 }
-                if(f_last_token.f_token == token_t::TOK_CLOSE_PARENTHESIS)
+                if(f_last_token.f_token == token_t::tok_t::TOK_CLOSE_PARENTHESIS)
                 {
                     throw QDomXPathException_SyntaxError("missing ')' after the NodeType definition");
                 }
-                prefix_token.f_token = token_t::TOK_UNDEFINED;
+                prefix_token.f_token = token_t::tok_t::TOK_UNDEFINED;
             }
 
 axis_apply:
@@ -7579,7 +7612,7 @@ axis_apply:
                 // save_token (path or '*' or NodeType)
                 append_axis(axis_token, prefix_token, save_token);
 
-                if(accept_predicate && f_last_token.f_token == token_t::TOK_OPEN_SQUARE_BRACKET)
+                if(accept_predicate && f_last_token.f_token == token_t::tok_t::TOK_OPEN_SQUARE_BRACKET)
                 {
                     // process all predicates following this step
                     predicate();
@@ -7620,16 +7653,16 @@ void variable_reference()
 {
     // we arrive here with the '$' as the token
     get_token();
-    if(f_last_token.f_token != token_t::TOK_NCNAME)
+    if(f_last_token.f_token != token_t::tok_t::TOK_NCNAME)
     {
         throw QDomXPathException_SyntaxError("expected a variable name after the '$' sign");
     }
     token_t prefix(f_last_token);
     get_token();
-    if(f_last_token.f_token == token_t::TOK_COLON)
+    if(f_last_token.f_token == token_t::tok_t::TOK_COLON)
     {
         get_token();
-        if(f_last_token.f_token != token_t::TOK_NCNAME)
+        if(f_last_token.f_token != token_t::tok_t::TOK_NCNAME)
         {
             throw QDomXPathException_SyntaxError(QString("expected a variable name after the prefix '%1:' sign").arg(prefix.f_string));
         }
@@ -7647,37 +7680,37 @@ void path_expr()
 {
     switch(f_last_token.f_token)
     {
-    case token_t::TOK_OPEN_PARENTHESIS:
+    case token_t::tok_t::TOK_OPEN_PARENTHESIS:
         // we directly call OrExpr since:
         //     Expr ::= OrExpr
         or_expr();
-        if(f_last_token.f_token != token_t::TOK_CLOSE_PARENTHESIS)
+        if(f_last_token.f_token != token_t::tok_t::TOK_CLOSE_PARENTHESIS)
         {
             throw QDomXPathException_SyntaxError("expected a ')'");
         }
         break;
 
-    case token_t::TOK_INTEGER: // PathExpr => FilterExpr => PrimaryExpr
-    case token_t::TOK_REAL: // PathExpr => FilterExpr => PrimaryExpr
-    case token_t::TOK_STRING: // PathExpr => FilterExpr => PrimaryExpr
+    case token_t::tok_t::TOK_INTEGER: // PathExpr => FilterExpr => PrimaryExpr
+    case token_t::tok_t::TOK_REAL: // PathExpr => FilterExpr => PrimaryExpr
+    case token_t::tok_t::TOK_STRING: // PathExpr => FilterExpr => PrimaryExpr
         append_push_token(f_last_token);
         get_token();
         break;
 
-    case token_t::TOK_DOLLAR:
+    case token_t::tok_t::TOK_DOLLAR:
         variable_reference();
         break;
 
-    case token_t::TOK_SLASH: // PathExpr => LocationPath => AbsolutePath
-    case token_t::TOK_DOUBLE_SLASH: // PathExpr => LocationPath => AbsolutePath
-    case token_t::TOK_NCNAME: // PathExpr => PrimaryExpr => FunctionCall
-    case token_t::TOK_AT: // PathExpr => LocationPath => RelativePath => Step => AxisSpecifier => AbbreviatedAxisSpecifier
-    case token_t::TOK_DOT:
-    case token_t::TOK_DOUBLE_DOT:
+    case token_t::tok_t::TOK_SLASH: // PathExpr => LocationPath => AbsolutePath
+    case token_t::tok_t::TOK_DOUBLE_SLASH: // PathExpr => LocationPath => AbsolutePath
+    case token_t::tok_t::TOK_NCNAME: // PathExpr => PrimaryExpr => FunctionCall
+    case token_t::tok_t::TOK_AT: // PathExpr => LocationPath => RelativePath => Step => AxisSpecifier => AbbreviatedAxisSpecifier
+    case token_t::tok_t::TOK_DOT:
+    case token_t::tok_t::TOK_DOUBLE_DOT:
         location_path();
         break;
 
-    case token_t::TOK_PIPE:
+    case token_t::tok_t::TOK_PIPE:
         // the '|' character is for the caller
         return;
 
@@ -7709,7 +7742,7 @@ void union_expr()
 
     path_expr();
 
-    while(f_last_token.f_token == token_t::TOK_PIPE)
+    while(f_last_token.f_token == token_t::tok_t::TOK_PIPE)
     {
         // skip the pipe
         get_token();

@@ -162,7 +162,7 @@ void connect_cassandra()
 
     // select the Snap! context
     g_cassandra->contexts();
-    QString const context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     g_context = g_cassandra->findContext(context_name);
     if(!g_context)
     {
@@ -220,59 +220,59 @@ void expr(std::string const& expr)
     }
     switch(result.get_type())
     {
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_NULL:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_NULL:
         std::cout << "(null)";
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_BOOL:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BOOL:
         std::cout << "(bool) " << result.get_value().boolValue();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_INT8:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT8:
         std::cout << "(int8) " << result.get_value().signedCharValue();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_UINT8:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT8:
         std::cout << "(uint8) " << result.get_value().unsignedCharValue();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_INT16:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT16:
         std::cout << "(int16) " << result.get_value().int16Value();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_UINT16:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT16:
         std::cout << "(uint16) " << result.get_value().uint16Value();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_INT32:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT32:
         std::cout << "(int32) " << result.get_value().int32Value();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_UINT32:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT32:
         std::cout << "(uint32) " << result.get_value().uint32Value();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_INT64:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_INT64:
         std::cout << "(int64) " << result.get_value().int64Value();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_UINT64:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_UINT64:
         std::cout << "(uint64) " << result.get_value().uint64Value();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_FLOAT:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_FLOAT:
         std::cout << "(float) " << result.get_value().floatValue();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_DOUBLE:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_DOUBLE:
         std::cout << "(double) " << result.get_value().doubleValue();
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_STRING:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING:
         std::cout << "(string) \"" << result.get_value().stringValue() << "\"";
         break;
 
-    case snap::snap_expr::variable_t::EXPR_VARIABLE_TYPE_BINARY:
+    case snap::snap_expr::variable_t::variable_type_t::EXPR_VARIABLE_TYPE_BINARY:
         std::cout << "(binary) ...";
         break;
 

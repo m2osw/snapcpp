@@ -22,7 +22,7 @@ namespace snap
 namespace dom_util
 {
 
-bool get_tag(QString const& tag_name, QDomElement& element, QDomElement& tag, bool create = true);
+bool get_tag(QString const & tag_name, QDomElement & element, QDomElement & tag, bool create = true);
 
 }  // namespace dom_util
 }  // namespace snap

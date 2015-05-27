@@ -322,7 +322,7 @@ void snap_backend::run_backend()
         connect_cassandra();
 
         // define a User-Agent for all backends (should that be a parameter?)
-        f_env[snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)] = "Snap! Backend";
+        f_env[snap::get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)] = "Snap! Backend";
 
         auto p_server = f_server.lock();
         if(!p_server)
@@ -345,7 +345,7 @@ void snap_backend::run_backend()
             bool emit_warning(true);
             for(;;)
             {
-                sites_table = f_context->findTable(get_name(SNAP_NAME_SITES));
+                sites_table = f_context->findTable(get_name(name_t::SNAP_NAME_SITES));
                 if(sites_table)
                 {
                     // table exists, we can move on for now
@@ -420,7 +420,7 @@ void snap_backend::run_backend()
         {
             // if a site exists then it has a "core::last_updated" entry
             QtCassandra::QCassandraColumnNamePredicate::pointer_t column_predicate(new QtCassandra::QCassandraColumnNamePredicate);
-            column_predicate->addColumnName(get_name(SNAP_NAME_CORE_LAST_UPDATED));
+            column_predicate->addColumnName(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
             QtCassandra::QCassandraRowPredicate row_predicate;
             row_predicate.setColumnPredicate(column_predicate);
             for(;;)

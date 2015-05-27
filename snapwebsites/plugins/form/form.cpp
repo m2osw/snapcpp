@@ -66,27 +66,27 @@ char const *get_name(name_t const name)
 {
     switch(name)
     {
-    case SNAP_NAME_FORM_FORM:
+    case name_t::SNAP_NAME_FORM_FORM:
         return "form::form";
 
-    case SNAP_NAME_FORM_NAMESPACE:
+    case name_t::SNAP_NAME_FORM_NAMESPACE:
         return "form";
 
-    case SNAP_NAME_FORM_PATH:
+    case name_t::SNAP_NAME_FORM_PATH:
         return "form::path";
 
-    case SNAP_NAME_FORM_RESOURCE:
+    case name_t::SNAP_NAME_FORM_RESOURCE:
         return "form::resource";
 
-    case SNAP_NAME_FORM_SETTINGS:
+    case name_t::SNAP_NAME_FORM_SETTINGS:
         return "form::settings";
 
-    case SNAP_NAME_FORM_SOURCE:
+    case name_t::SNAP_NAME_FORM_SOURCE:
         return "form::source";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_FORM_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_FORM_...");
 
     }
     NOTREACHED();
@@ -271,7 +271,7 @@ QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocu
     //        users::users::instance()->get_user_path(),
     //        ipath,
     //        "edit",
-    //        permissions::get_name(permissions::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
+    //        permissions::get_name(permissions::name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED),
     //        result);
 
     // IMPORTANT NOTE:
@@ -423,9 +423,9 @@ void form::auto_fill_form(QDomDocument xml_form)
                 {
                     // only the path is saved in the parent for attachments
                     // and that path represents an attachment
-                    name = QString(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
+                    name = QString(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
                             + "::" + name + "::"
-                            + content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END);
+                            + content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END);
                 }
                 if(row->exists(name))
                 {
@@ -750,14 +750,14 @@ QDomDocument const form::load_form(content::path_info_t & ipath, QString const &
             return g_cached_form[csource].f_doc;
         }
         QtCassandra::QCassandraRow::pointer_t row(content_table->row(csource));
-        if(!row->exists(get_name(SNAP_NAME_FORM_FORM)))
+        if(!row->exists(get_name(name_t::SNAP_NAME_FORM_FORM)))
         {
             g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> No form defined at \""
                                                 + source + "\".</span>";
             SNAP_LOG_ERROR("form::load_form() could not find a form at \"" + csource + "\".");
             return g_cached_form[csource].f_doc;
         }
-        QtCassandra::QCassandraValue form_xml(row->cell(get_name(SNAP_NAME_FORM_FORM))->value());
+        QtCassandra::QCassandraValue form_xml(row->cell(get_name(name_t::SNAP_NAME_FORM_FORM))->value());
         if(!g_cached_form[csource].f_doc.setContent(form_xml.binaryValue(), true))
         {
             g_cached_form[csource].f_error = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Form \""
@@ -878,28 +878,28 @@ void form::on_process_post(QString const& uri_path)
     sessions::sessions::instance()->load_session(form_session, info);
     switch(info.get_session_type())
     {
-    case sessions::sessions::session_info::SESSION_INFO_VALID:
+    case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID:
         // unless we get this value we've got a problem with the session itself
         break;
 
-    case sessions::sessions::session_info::SESSION_INFO_MISSING:
-        f_snap->die(snap_child::HTTP_CODE_GONE,
+    case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_MISSING:
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_GONE,
                     "Form Session Gone",
                     "It looks like you attempted to submit a form without first loading it.",
                     "User sent a form with a form session identifier that is not available.");
         NOTREACHED();
         return;
 
-    case sessions::sessions::session_info::SESSION_INFO_OUT_OF_DATE:
-        messages->set_http_error(snap_child::HTTP_CODE_GONE,
+    case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_OUT_OF_DATE:
+        messages->set_http_error(snap_child::http_code_t::HTTP_CODE_GONE,
                     "Form Timeout",
                     "Sorry! You sent this request back to Snap! way too late. It timed out. Please re-enter your information and re-submit.",
                     "User did not click the submit button soon enough, the server session timed out.",
                     true);
         return;
 
-    case sessions::sessions::session_info::SESSION_INFO_USED_UP:
-        messages->set_http_error(snap_child::HTTP_CODE_CONFLICT,
+    case sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USED_UP:
+        messages->set_http_error(snap_child::http_code_t::HTTP_CODE_CONFLICT,
                     "Form Already Submitted",
                     "This form was already processed. If you clicked Reload, this error is expected.",
                     "The user submitted the same form more than once.",
@@ -915,10 +915,10 @@ void form::on_process_post(QString const& uri_path)
     // verify that one of the paths is valid
     // and that the user agent did not change
     if((info.get_page_path() != cpath && info.get_object_path() != cpath)
-    || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
+    || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
     {
         // the path or user agent was tempered with?
-        f_snap->die(snap_child::HTTP_CODE_NOT_ACCEPTABLE,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_ACCEPTABLE,
                 "Not Acceptable",
                 "The request you sent does not seem to correspond to the form it was defined for.",
                 QString("User POSTed a request against form \"%1\" with an incompatible page (%2) or object (%2) path or his user agent changed.")
@@ -935,7 +935,7 @@ void form::on_process_post(QString const& uri_path)
     {
         // we got a problem, that plugin does not exist?!
         // (it could happen assuming someone is removing plugins just before someone else submits a form)
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                 "Forbidden",
                 "The request you just sent is not attached to a currently supported plugin. The plugin may have been uninstalled after you loaded the form.",
                 "Somehow the user posted a form that has a plugin name which is not currently loaded by this website.");
@@ -1070,11 +1070,11 @@ void form::on_process_post(QString const& uri_path)
         // the validation process
         sessions::sessions::session_info::session_info_type_t const save_session_type(info.get_session_type());
         // pretend that everything is fine so far...
-        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_VALID);
+        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID);
         int const errcnt(messages->get_error_count());
         int const warncnt(messages->get_warning_count());
         validate_post_for_widget(ipath, info, widget, widget_name, widget_type, is_secret);
-        if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
+        if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
         {
             // it was not valid so mark the widgets as errorneous (i.e. so we
             // can display it with an error message)
@@ -1131,7 +1131,7 @@ void form::on_process_post(QString const& uri_path)
     }
     // if the previous loop found 1 or more errors, return now
     // (i.e. we do not want to process the data any further in this case)
-    if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
+    if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
     {
         return;
     }
@@ -1196,7 +1196,7 @@ void form::on_process_post(QString const& uri_path)
                 // came from, which means he loses the POST data... Ooops!
                 QString const referrer(f_snap->snapenv("HTTP_REFERER"));
                 f_snap->page_redirect(referrer,
-                    snap_child::HTTP_CODE_SEE_OTHER,
+                    snap_child::http_code_t::HTTP_CODE_SEE_OTHER,
                     "Sending you back to the page you are coming from.",
                     "We are trying to send the user back where he came from because the place we are in now is the box with the submitted form...");
                 NOTREACHED();
@@ -1521,7 +1521,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                         false
                     ).set_widget_name(widget_name);
                     // TODO add another type of error for setup ("programmer") data?
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
                 else if(f_snap->postfile_exists(widget_name))
                 {
@@ -1536,7 +1536,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                             "the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size",
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                     else if(image_width < width || image_height < height)
                     {
@@ -1546,7 +1546,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                             "the user uploaded an image that is too small",
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
@@ -1568,7 +1568,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                         "not enough characters in " + widget_name + " error",
                         false
                     ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
             }
         }
@@ -1589,7 +1589,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                         false
                     ).set_widget_name(widget_name);
                     // TODO add another type of error for setup ("programmer") data?
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
                 else if(f_snap->postfile_exists(widget_name))
                 {
@@ -1605,7 +1605,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                             "the system did not recognize the image as such (width/height are not valid), cannot verify the minimum size",
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                     else if(image_width > width || image_height > height)
                     {
@@ -1615,7 +1615,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                             "the user uploaded an image that is too large",
                             false
                         ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
@@ -1637,7 +1637,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                         "too many characters " + widget_name + " error",
                         false
                     ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
             }
         }
@@ -1662,7 +1662,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                         "not enough lines",
                         false
                     ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
             }
             else if(widget_type == "html-edit")
@@ -1677,7 +1677,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                         "not enough lines in " + widget_name,
                         false
                     ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
             }
         }
@@ -1704,11 +1704,11 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                     {
                         QDomElement root(widget.ownerDocument().documentElement());
                         QString const name(QString("%1::%2::%3::%4")
-                                .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT))
+                                .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))
                                 .arg(root.attribute("owner"))
                                 .arg(widget_name)
-                                .arg(content::get_name(content::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
-                        QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::PARAM_REVISION_GLOBAL));
+                                .arg(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PATH_END)));
+                        QtCassandra::QCassandraValue cassandra_value(content::content::instance()->get_content_parameter(ipath, name, content::content::param_revision_t::PARAM_REVISION_GLOBAL));
                         if(cassandra_value.nullValue())
                         {
                             // not defined!
@@ -1719,7 +1719,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                                     QString("no data entered by user in widget \"%1\"").arg(widget_name),
                                     false
                                 ).set_widget_name(widget_name);
-                            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                         }
                     }
                 }
@@ -1736,7 +1736,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                                 "no data entered in widget \"" + widget_name + "\" by user",
                                 false
                             ).set_widget_name(widget_name);
-                        info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                     }
                 }
             }
@@ -1769,7 +1769,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
               "confirmation widget \"" + widget_name + "\" is not equal to the original \"" + duplicate_of + "\" (i.e. most likely a password confirmation)",
               false
             ).set_widget_name(widget_name);
-            info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
         }
     }
 
@@ -1885,7 +1885,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                     "the value did not match the filter regular expression of " + widget_name,
                     false
                 ).set_widget_name(widget_name);
-                info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
             }
         }
 
@@ -1925,7 +1925,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
                         "widget " + widget_name + " included a filename with an invalid extension",
                         false
                     ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_INCOMPATIBLE);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
             }
         }
@@ -2069,8 +2069,8 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     QDomDocument form_doc;
     QString source;
 
-    bool const resource(token.is_token(get_name(SNAP_NAME_FORM_RESOURCE)));
-    bool const settings(token.is_token(get_name(SNAP_NAME_FORM_SETTINGS)));
+    bool const resource(token.is_token(get_name(name_t::SNAP_NAME_FORM_RESOURCE)));
+    bool const settings(token.is_token(get_name(name_t::SNAP_NAME_FORM_SETTINGS)));
     if(resource || settings)
     {
         if(resource)
@@ -2080,7 +2080,7 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             {
                 return;
             }
-            filter::filter::parameter_t param(token.get_arg("path", 0, filter::filter::TOK_STRING));
+            filter::filter::parameter_t param(token.get_arg("path", 0, filter::filter::token_t::TOK_STRING));
             if(token.f_error)
             {
                 // we're done
@@ -2099,17 +2099,17 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
             source = ":/xml/" + plugin_owner + "/settings-form.xml";
         }
     }
-    else if(token.is_token(get_name(SNAP_NAME_FORM_SOURCE)))
+    else if(token.is_token(get_name(name_t::SNAP_NAME_FORM_SOURCE)))
     {
         // path to form comes from the database
         source = get_source(plugin_owner, ipath);
     }
-    else if(token.is_token(get_name(SNAP_NAME_FORM_PATH)))
+    else if(token.is_token(get_name(name_t::SNAP_NAME_FORM_PATH)))
     {
         if(token.verify_args(1, 1))
         {
             // form::path takes one parameter
-            filter::filter::parameter_t param(token.get_arg("path", 0, filter::filter::TOK_STRING));
+            filter::filter::parameter_t param(token.get_arg("path", 0, filter::filter::token_t::TOK_STRING));
             source = param.f_value;
             if(!source.isEmpty())
             {
@@ -2183,9 +2183,9 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     //
     // initialize the session information
     sessions::sessions::session_info info;
-    info.set_session_type(info.SESSION_INFO_FORM);
+    info.set_session_type(info.session_info_type_t::SESSION_INFO_FORM);
     //info.set_object_path(); -- form sessions are based on paths only, no objects
-    info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+    info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
 
     // 2. Get session identifier and optionally the type
     //
@@ -2203,12 +2203,12 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     else if(session_id_str.startsWith("user/"))
     {
         session_id_str = session_id_str.mid(5);
-        info.set_session_type(info.SESSION_INFO_USER);
+        info.set_session_type(info.session_info_type_t::SESSION_INFO_USER);
     }
     else if(session_id_str.startsWith("secure/"))
     {
         session_id_str = session_id_str.mid(7);
-        info.set_session_type(info.SESSION_INFO_SECURE);
+        info.set_session_type(info.session_info_type_t::SESSION_INFO_SECURE);
     }
     bool ok(false);
     info.set_session_id(session_id_str.toInt(&ok));
@@ -2289,12 +2289,12 @@ QString form::get_source(QString const & owner, content::path_info_t & ipath)
         return QString();
     }
     QtCassandra::QCassandraRow::pointer_t row(branch_table->row(ipath.get_branch_key()));
-    if(!row->exists(get_name(SNAP_NAME_FORM_SOURCE)))
+    if(!row->exists(get_name(name_t::SNAP_NAME_FORM_SOURCE)))
     {
         return QString();
     }
 
-    QString source(row->cell(get_name(SNAP_NAME_FORM_SOURCE))->value().stringValue());
+    QString source(row->cell(get_name(name_t::SNAP_NAME_FORM_SOURCE))->value().stringValue());
     if(source.isEmpty())
     {
         // if empty it is not valid
@@ -2342,7 +2342,7 @@ void form::on_copy_branch_cells(QtCassandra::QCassandraCells& source_cells, QtCa
 {
     static_cast<void>(destination_branch);
 
-    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(SNAP_NAME_FORM_NAMESPACE));
+    content::content::copy_branch_cells_as_is(source_cells, destination_row, get_name(name_t::SNAP_NAME_FORM_NAMESPACE));
 }
 
 

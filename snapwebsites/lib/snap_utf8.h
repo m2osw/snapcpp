@@ -21,8 +21,8 @@ namespace snap
 {
 
 
-bool is_valid_ascii(char const *string);
-bool is_valid_utf8(char const *string);
+bool is_valid_ascii(char const * string);
+bool is_valid_utf8(char const * string);
 
 
 } // namespace snap

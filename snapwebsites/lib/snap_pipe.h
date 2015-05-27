@@ -37,33 +37,33 @@ namespace snap
 class snap_pipe_exception : public snap_exception
 {
 public:
-    snap_pipe_exception(const char *       whatmsg) : snap_exception("snap_pipe", whatmsg) {}
-    snap_pipe_exception(const std::string& whatmsg) : snap_exception("snap_pipe", whatmsg) {}
-    snap_pipe_exception(const QString&     whatmsg) : snap_exception("snap_pipe", whatmsg) {}
+    snap_pipe_exception(const char *        whatmsg) : snap_exception("snap_pipe", whatmsg) {}
+    snap_pipe_exception(const std::string & whatmsg) : snap_exception("snap_pipe", whatmsg) {}
+    snap_pipe_exception(const QString &     whatmsg) : snap_exception("snap_pipe", whatmsg) {}
 };
 
 class snap_pipe_exception_cannot_open : public snap_pipe_exception
 {
 public:
-    snap_pipe_exception_cannot_open(const char *       whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_open(const std::string& whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_open(const QString&     whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_open(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_open(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_open(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
 };
 
 class snap_pipe_exception_cannot_write : public snap_pipe_exception
 {
 public:
-    snap_pipe_exception_cannot_write(const char *       whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_write(const std::string& whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_write(const QString&     whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_write(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_write(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_write(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
 };
 
 class snap_pipe_exception_cannot_read : public snap_pipe_exception
 {
 public:
-    snap_pipe_exception_cannot_read(const char *       whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_read(const std::string& whatmsg) : snap_pipe_exception(whatmsg) {}
-    snap_pipe_exception_cannot_read(const QString&     whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_read(const char *        whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_read(const std::string & whatmsg) : snap_pipe_exception(whatmsg) {}
+    snap_pipe_exception_cannot_read(const QString &     whatmsg) : snap_pipe_exception(whatmsg) {}
 };
 
 
@@ -72,18 +72,22 @@ public:
 class snap_pipe : public std::streambuf
 {
 public:
-    enum mode_t
+    enum class mode_t
     {
         PIPE_MODE_IN,   // you will be writing to the command (<<)
         PIPE_MODE_OUT   // you will be reading from the command (>>)
     };
-    typedef controlled_vars::limited_auto_init<mode_t, PIPE_MODE_IN, PIPE_MODE_OUT, PIPE_MODE_IN> zmode_t;
+    typedef controlled_vars::limited_auto_init<mode_t, mode_t::PIPE_MODE_IN, mode_t::PIPE_MODE_OUT, mode_t::PIPE_MODE_IN> zmode_t;
 
-                                snap_pipe(QString const& command, mode_t mode);
+                                snap_pipe(QString const & command, mode_t mode);
                                 ~snap_pipe();
 
+    // prevent copies
+                                snap_pipe(snap_pipe const & ) = delete;
+    snap_pipe &                 operator = (snap_pipe const & ) = delete;
+
     int                         close_pipe();
-    QString const&              get_command() const;
+    QString const &             get_command() const;
     mode_t                      get_mode() const;
 
 protected:
@@ -93,11 +97,7 @@ protected:
 private:
     typedef controlled_vars::ptr_auto_init<FILE> zpfile_t;
 
-    // prevent copies
-                                snap_pipe(snap_pipe const& rhs) = delete;
-                                snap_pipe& operator = (snap_pipe const& rhs) = delete;
-
-    // you're not expected to use those, see the << and >> operators below
+    // you are not expected to use those
     //int                         write(char const *buf, size_t size);
     //int                         read(char *buf, size_t size);
 
@@ -105,61 +105,6 @@ private:
     zmode_t                     f_mode;
     zpfile_t                    f_file;
 };
-
-
-
-
-
-
-//template<class T>
-//snap::snap_pipe& operator << (snap::snap_pipe& p, T const& value)
-//{
-//    std::stringstream ss;
-//    ss << value;
-//    return p << ss.str();
-//}
-//
-//
-//template<typename T>
-//snap::snap_pipe& operator << (snap::snap_pipe& p, T const *value)
-//{
-//    std::stringstream ss;
-//    ss << *value;
-//    return p << ss.str();
-//}
-//
-//
-//template<>
-//snap::snap_pipe& operator << (snap::snap_pipe& p, QString const& qstr)
-//{
-//    QByteArray buf(qstr.toUtf8());
-//    p.write(buf.data(), buf.size());
-//    return p;
-//}
-//
-//
-//template<>
-//snap::snap_pipe& operator << (snap::snap_pipe& p, QStringRef const& qstr)
-//{
-//    return p << qstr.toString();
-//}
-//
-//
-//template<>
-//inline snap::snap_pipe& operator << (snap::snap_pipe& p, std::string const& str)
-//{
-//    p.write(str.c_str(), str.length());
-//    return p;
-//}
-//
-//
-//template<>
-//inline snap::snap_pipe& operator << (snap::snap_pipe& p, char const *str)
-//{
-//    p.write(str, strlen(str));
-//    return p;
-//}
-
 
 
 } // namespace snap

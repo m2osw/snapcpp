@@ -39,11 +39,11 @@ public:
     // from class snap_thread
     virtual void run();
 
-    enum word_t
+    enum class word_t
     {
-        Waiting,
-        ServerStop,
-        LogReset
+        WORD_WAITING,
+        WORD_SERVER_STOP,
+        WORD_LOG_RESET
     };
     word_t get_word();
 

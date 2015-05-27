@@ -36,7 +36,7 @@ namespace epayment_paypal
 {
 
 
-enum name_t
+enum class name_t
 {
     SNAP_NAME_EPAYMENT_PAYPAL_CANCEL_PLAN_URL,
     SNAP_NAME_EPAYMENT_PAYPAL_CANCEL_URL,
@@ -100,17 +100,17 @@ char const *get_name(name_t name) __attribute__ ((const));
 class epayment_paypal_exception : public snap_exception
 {
 public:
-    epayment_paypal_exception(char const *       what_msg) : snap_exception("epayment_paypal", what_msg) {}
-    epayment_paypal_exception(std::string const& what_msg) : snap_exception("epayment_paypal", what_msg) {}
-    epayment_paypal_exception(QString const&     what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    epayment_paypal_exception(char const *        what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    epayment_paypal_exception(std::string const & what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    epayment_paypal_exception(QString const &     what_msg) : snap_exception("epayment_paypal", what_msg) {}
 };
 
 class epayment_paypal_exception_io_error : public snap_exception
 {
 public:
-    epayment_paypal_exception_io_error(char const *       what_msg) : snap_exception("epayment_paypal", what_msg) {}
-    epayment_paypal_exception_io_error(std::string const& what_msg) : snap_exception("epayment_paypal", what_msg) {}
-    epayment_paypal_exception_io_error(QString const&     what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    epayment_paypal_exception_io_error(char const *        what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    epayment_paypal_exception_io_error(std::string const & what_msg) : snap_exception("epayment_paypal", what_msg) {}
+    epayment_paypal_exception_io_error(QString const &     what_msg) : snap_exception("epayment_paypal", what_msg) {}
 };
 
 
@@ -135,22 +135,22 @@ public:
     QtCassandra::QCassandraTable::pointer_t     get_epayment_paypal_table();
 
     void                        on_bootstrap(snap_child *snap);
-    void                        on_generate_header_content(content::path_info_t& path, QDomElement& header, QDomElement& metadata, QString const& ctemplate);
-    void                        on_process_post(QString const& uri_path);
-    virtual bool                on_path_execute(content::path_info_t& ipath);
-    virtual void                on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, const QString& ctemplate);
-    void                        on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token);
-    void                        on_repeat_payment(content::path_info_t& first_invoice_ipath, content::path_info_t& previous_invoice_ipath, content::path_info_t& new_invoice_ipath);
+    void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
+    void                        on_process_post(QString const & uri_path);
+    virtual bool                on_path_execute(content::path_info_t & ipath);
+    virtual void                on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, const QString & ctemplate);
+    void                        on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+    void                        on_repeat_payment(content::path_info_t & first_invoice_ipath, content::path_info_t & previous_invoice_ipath, content::path_info_t & new_invoice_ipath);
 
 private:
     void                        initial_update(int64_t variables_timestamp);
     void                        content_update(int64_t variables_timestamp);
-    void                        cancel_invoice(QString const& token);
-    bool                        get_oauth2_token(http_client_server::http_client& http, std::string& token_type, std::string& access_token);
-    QString                     get_product_plan(http_client_server::http_client http, std::string const& token_type, std::string const& access_token, epayment::epayment_product const& recurring_product, double const recurring_fee, QString& plan_id);
+    void                        cancel_invoice(QString const & token);
+    bool                        get_oauth2_token(http_client_server::http_client & http, std::string & token_type, std::string & access_token);
+    QString                     get_product_plan(http_client_server::http_client http, std::string const & token_type, std::string const & access_token, epayment::epayment_product const & recurring_product, double const recurring_fee, QString & plan_id);
     bool                        get_debug();
     int8_t                      get_maximum_repeat_failures();
-    std::string                 create_unique_request_id(QString const & main_id);
+    std::string                 create_unique_request_id(QString const  & main_id);
 
     zpsnap_child_t                              f_snap;
     QtCassandra::QCassandraTable::pointer_t     f_epayment_paypal_table;

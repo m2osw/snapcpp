@@ -34,19 +34,19 @@ namespace locale
 {
 
 
-//enum name_t
+//enum class name_t
 //{
 //    SNAP_NAME_LOCALE_NAME
 //};
-//char const *get_name(name_t name) __attribute__ ((const));
+//char const * get_name(name_t name) __attribute__ ((const));
 
 
 //class locale_exception : public snap_exception
 //{
 //public:
-//    locale_exception(char const *       what_msg) : snap_exception("locale", what_msg) {}
-//    locale_exception(std::string const& what_msg) : snap_exception("locale", what_msg) {}
-//    locale_exception(QString const&     what_msg) : snap_exception("locale", what_msg) {}
+//    locale_exception(char const *        what_msg) : snap_exception("locale", what_msg) {}
+//    locale_exception(std::string const & what_msg) : snap_exception("locale", what_msg) {}
+//    locale_exception(QString const &     what_msg) : snap_exception("locale", what_msg) {}
 //};
 
 
@@ -111,14 +111,14 @@ public:
 
     void                        on_bootstrap(snap_child *snap);
 
-    locale_list_t const&        get_locale_list();
-    timezone_list_t const&      get_timezone_list();
+    locale_list_t const &       get_locale_list();
+    timezone_list_t const &     get_timezone_list();
 
     void                        reset_locale();
     QString                     get_current_locale() const;
-    void                        set_current_locale(QString const& new_locale);
+    void                        set_current_locale(QString const & new_locale);
     QString                     get_current_timezone() const;
-    void                        set_current_timezone(QString const& new_timezone);
+    void                        set_current_timezone(QString const & new_timezone);
 
     SNAP_SIGNAL_WITH_MODE(set_locale, (), (), START_AND_DONE);
     SNAP_SIGNAL_WITH_MODE(set_timezone, (), (), START_AND_DONE);

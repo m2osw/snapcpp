@@ -85,153 +85,153 @@ const char *get_name(name_t name)
 {
     switch(name)
     {
-    case SNAP_NAME_USERS_ANONYMOUS_PATH:
+    case name_t::SNAP_NAME_USERS_ANONYMOUS_PATH:
         return "user";
 
-    case SNAP_NAME_USERS_AUTHOR:
+    case name_t::SNAP_NAME_USERS_AUTHOR:
         return "users::author";
 
-    case SNAP_NAME_USERS_AUTHORED_PAGES:
+    case name_t::SNAP_NAME_USERS_AUTHORED_PAGES:
         return "users::authored_pages";
 
-    case SNAP_NAME_USERS_AUTO_PATH:
+    case name_t::SNAP_NAME_USERS_AUTO_PATH:
         return "types/users/auto";
 
-    case SNAP_NAME_USERS_BLACK_LIST:
+    case name_t::SNAP_NAME_USERS_BLACK_LIST:
         return "*black_list*";
 
-    case SNAP_NAME_USERS_BLOCKED_PATH:
+    case name_t::SNAP_NAME_USERS_BLOCKED_PATH:
         return "types/users/blocked";
 
-    case SNAP_NAME_USERS_CHANGING_PASSWORD_KEY:
+    case name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY:
         return "users::changing_password_key";
 
-    case SNAP_NAME_USERS_CREATED_TIME:
+    case name_t::SNAP_NAME_USERS_CREATED_TIME:
         return "users::created_time";
 
-    case SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL:
+    case name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL:
         return "users::forgot_password_email";
 
-    case SNAP_NAME_USERS_FORGOT_PASSWORD_IP:
+    case name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_IP:
         return "users::forgot_password_ip";
 
-    case SNAP_NAME_USERS_FORGOT_PASSWORD_ON:
+    case name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_ON:
         return "users::forgot_password_on";
 
-    case SNAP_NAME_USERS_IDENTIFIER:
+    case name_t::SNAP_NAME_USERS_IDENTIFIER:
         return "users::identifier";
 
-    case SNAP_NAME_USERS_ID_ROW:
+    case name_t::SNAP_NAME_USERS_ID_ROW:
         return "*id_row*";
 
-    case SNAP_NAME_USERS_INDEX_ROW:
+    case name_t::SNAP_NAME_USERS_INDEX_ROW:
         return "*index_row*";
 
-    case SNAP_NAME_USERS_LAST_VERIFICATION_SESSION:
+    case name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION:
         return "users::last_verification_session";
 
-    case SNAP_NAME_USERS_LOCALE: // format locale for dates/numbers
+    case name_t::SNAP_NAME_USERS_LOCALE: // format locale for dates/numbers
         return "users::locale";
 
-    case SNAP_NAME_USERS_LOCALES: // browser/page languages
+    case name_t::SNAP_NAME_USERS_LOCALES: // browser/page languages
         return "users::locales";
 
-    case SNAP_NAME_USERS_LOGIN_IP:
+    case name_t::SNAP_NAME_USERS_LOGIN_IP:
         return "users::login_ip";
 
-    case SNAP_NAME_USERS_LOGIN_ON:
+    case name_t::SNAP_NAME_USERS_LOGIN_ON:
         return "users::login_on";
 
-    case SNAP_NAME_USERS_LOGIN_REFERRER:
+    case name_t::SNAP_NAME_USERS_LOGIN_REFERRER:
         return "users::login_referrer";
 
-    case SNAP_NAME_USERS_LOGOUT_IP:
+    case name_t::SNAP_NAME_USERS_LOGOUT_IP:
         return "users::logout_ip";
 
-    case SNAP_NAME_USERS_LOGOUT_ON:
+    case name_t::SNAP_NAME_USERS_LOGOUT_ON:
         return "users::logout_on";
 
-    case SNAP_NAME_USERS_LONG_SESSIONS:
+    case name_t::SNAP_NAME_USERS_LONG_SESSIONS:
         return "users::long_sessions";
 
-    case SNAP_NAME_USERS_MULTIUSER:
+    case name_t::SNAP_NAME_USERS_MULTIUSER:
         return "users::multiuser";
 
-    case SNAP_NAME_USERS_NAME:
+    case name_t::SNAP_NAME_USERS_NAME:
         return "users::name";
 
-    case SNAP_NAME_USERS_NEW_PATH:
+    case name_t::SNAP_NAME_USERS_NEW_PATH:
         return "types/users/new";
 
-    case SNAP_NAME_USERS_NOT_MAIN_PAGE:
+    case name_t::SNAP_NAME_USERS_NOT_MAIN_PAGE:
         return "users::not_main_page";
 
-    case SNAP_NAME_USERS_ORIGINAL_EMAIL:
+    case name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL:
         return "users::original_email";
 
-    case SNAP_NAME_USERS_ORIGINAL_IP:
+    case name_t::SNAP_NAME_USERS_ORIGINAL_IP:
         return "users::original_ip";
 
-    case SNAP_NAME_USERS_PASSWORD:
+    case name_t::SNAP_NAME_USERS_PASSWORD:
         return "users::password";
 
-    case SNAP_NAME_USERS_PASSWORD_DIGEST:
+    case name_t::SNAP_NAME_USERS_PASSWORD_DIGEST:
         return "users::password::digest";
 
-    case SNAP_NAME_USERS_PASSWORD_PATH:
+    case name_t::SNAP_NAME_USERS_PASSWORD_PATH:
         return "types/users/password";
 
-    case SNAP_NAME_USERS_PASSWORD_SALT:
+    case name_t::SNAP_NAME_USERS_PASSWORD_SALT:
         return "users::password::salt";
 
-    case SNAP_NAME_USERS_PATH:
+    case name_t::SNAP_NAME_USERS_PATH:
         return "user";
 
-    case SNAP_NAME_USERS_PICTURE:
+    case name_t::SNAP_NAME_USERS_PICTURE:
         return "users::picture";
 
-    case SNAP_NAME_USERS_PREVIOUS_LOGIN_IP:
+    case name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_IP:
         return "users::previous_login_ip";
 
-    case SNAP_NAME_USERS_PREVIOUS_LOGIN_ON:
+    case name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_ON:
         return "users::previous_login_on";
 
     // WARNING: We do not use a statically defined name!
     //          To be more secure each Snap! website can use a different
     //          cookie name; possibly one that changes over time and
     //          later by user...
-    //case SNAP_NAME_USERS_SESSION_COOKIE:
+    //case name_t::SNAP_NAME_USERS_SESSION_COOKIE:
     //    // cookie names cannot include ':' so I use "__" to represent
     //    // the namespace separation
     //    return "users__snap_session";
 
-    case SNAP_NAME_USERS_STATUS:
+    case name_t::SNAP_NAME_USERS_STATUS:
         return "users::status";
 
-    case SNAP_NAME_USERS_TABLE:
+    case name_t::SNAP_NAME_USERS_TABLE:
         return "users";
 
-    case SNAP_NAME_USERS_TIMEZONE: // user timezone for dates/calendars
+    case name_t::SNAP_NAME_USERS_TIMEZONE: // user timezone for dates/calendars
         return "users::timezone";
 
-    case SNAP_NAME_USERS_USERNAME:
+    case name_t::SNAP_NAME_USERS_USERNAME:
         return "users::username";
 
-    case SNAP_NAME_USERS_VERIFIED_IP:
+    case name_t::SNAP_NAME_USERS_VERIFIED_IP:
         return "users::verified_ip";
 
-    case SNAP_NAME_USERS_VERIFIED_ON:
+    case name_t::SNAP_NAME_USERS_VERIFIED_ON:
         return "users::verified_on";
 
-    case SNAP_NAME_USERS_VERIFY_EMAIL:
+    case name_t::SNAP_NAME_USERS_VERIFY_EMAIL:
         return "users::verify_email";
 
-    case SNAP_NAME_USERS_WEBSITE_REFERENCE:
+    case name_t::SNAP_NAME_USERS_WEBSITE_REFERENCE:
         return "users::website_reference";
 
     default:
         // invalid index
-        throw snap_logic_exception("invalid SNAP_NAME_USERS_...");
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_USERS_...");
 
     }
     NOTREACHED();
@@ -399,7 +399,7 @@ void users::content_update(int64_t variables_timestamp)
  */
 QtCassandra::QCassandraTable::pointer_t users::get_users_table()
 {
-    return f_snap->create_table(get_name(SNAP_NAME_USERS_TABLE), "Global users table.");
+    return f_snap->create_table(get_name(name_t::SNAP_NAME_USERS_TABLE), "Global users table.");
 }
 
 /** \brief Bootstrap the users.
@@ -456,7 +456,7 @@ void users::on_init()
  */
 QString users::get_user_cookie_name()
 {
-    QString user_cookie_name(f_snap->get_site_parameter(snap::get_name(SNAP_NAME_CORE_USER_COOKIE_NAME)).stringValue());
+    QString user_cookie_name(f_snap->get_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_USER_COOKIE_NAME)).stringValue());
     if(user_cookie_name.isEmpty())
     {
         // user cookie name not yet assigned or reset so a new name
@@ -465,7 +465,7 @@ QString users::get_user_cookie_name()
         int r(RAND_bytes(buf, sizeof(buf)));
         if(r != 1)
         {
-            f_snap->die(snap_child::HTTP_CODE_SERVICE_UNAVAILABLE,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_SERVICE_UNAVAILABLE,
                     "Service Not Available", "The server was not able to generate a safe random number. Please try again in a moment.",
                     "User cookie name could not be generated as the RAND_bytes() function could not generate enough random data");
             NOTREACHED();
@@ -489,7 +489,7 @@ QString users::get_user_cookie_name()
             user_cookie_name += allowed_characters[c];
             user_cookie_name += allowed_characters[d];
         }
-        f_snap->set_site_parameter(snap::get_name(SNAP_NAME_CORE_USER_COOKIE_NAME), user_cookie_name);
+        f_snap->set_site_parameter(snap::get_name(snap::name_t::SNAP_NAME_CORE_USER_COOKIE_NAME), user_cookie_name);
     }
     return user_cookie_name;
 }
@@ -515,7 +515,7 @@ QString users::get_user_cookie_name()
 void users::on_process_cookies()
 {
     // prevent cookies on a set of method that do not require them
-    QString const method(f_snap->snapenv(get_name(SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+    QString const method(f_snap->snapenv(get_name(snap::name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
     if(method == "HEAD"
     || method == "TRACE")
     {
@@ -542,7 +542,7 @@ void users::on_process_cookies()
         sessions::sessions::instance()->load_session(session_key, *f_info, false);
         QString const path(f_info->get_object_path());
         bool authenticated(true);
-        if(f_info->get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID)
+        if(f_info->get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID)
         {
             SNAP_LOG_INFO("cookie refused because session is not marked as valid, ")(static_cast<int>(f_info->get_session_type()));
             authenticated = false;
@@ -565,9 +565,9 @@ void users::on_process_cookies()
             // number to the user. We could also look into a way to allow
             // the previous random for a while longer.
         }
-        if(f_info->get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
+        if(f_info->get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
         {
-            SNAP_LOG_INFO("cookie refused because user agent \"")(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
+            SNAP_LOG_INFO("cookie refused because user agent \"")(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
                             ("\" does not match \"")(f_info->get_user_agent())("\"");
             authenticated = false;
         }
@@ -602,12 +602,12 @@ void users::on_process_cookies()
     if(create_new_session)
     {
         // create a new session
-        f_info->set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
+        f_info->set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USER);
         f_info->set_session_id(USERS_SESSION_ID_LOG_IN_SESSION);
         f_info->set_plugin_owner(get_plugin_name()); // ourselves
         //f_info->set_page_path(); -- default is fine, we do not use the path
         f_info->set_object_path("/user/"); // no user id for the anonymous user
-        f_info->set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+        f_info->set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
         sessions::sessions::instance()->create_session(*f_info);
     }
     else
@@ -720,7 +720,7 @@ bool users::authenticated_user(QString const& key, sessions::sessions::session_i
     // the website may opt out of the long session scheme
     // the following loses the user key if the website
     // administrator said so...
-    QtCassandra::QCassandraValue const long_sessions(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_LONG_SESSIONS)));
+    QtCassandra::QCassandraValue const long_sessions(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_LONG_SESSIONS)));
     if(f_user_logged_in
     || (long_sessions.nullValue() || long_sessions.signedCharValue()))
     {
@@ -771,7 +771,7 @@ void users::user_logout()
     // drop the referrer if there is one, it is a
     // security issue to keep that info on an explicit
     // log out!
-    static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
+    static_cast<void>(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
 
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(f_user_key));
@@ -779,11 +779,11 @@ void users::user_logout()
     // Save the date when the user logged out
     QtCassandra::QCassandraValue value;
     value.setInt64Value(f_snap->get_start_date());
-    row->cell(get_name(SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
 
     // Save the user IP address when logged out
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-    row->cell(get_name(SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
 
     sessions::sessions::instance()->save_session(*f_info, false);
 
@@ -1102,11 +1102,11 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
         }
 
         {   // snap/head/metadata/desc[@type='users::name']/data
-            QtCassandra::QCassandraValue const value(user_row->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
+            QtCassandra::QCassandraValue const value(user_row->cell(get_name(name_t::SNAP_NAME_USERS_USERNAME))->value());
             if(!value.nullValue())
             {
                 QDomElement desc(doc.createElement("desc"));
-                desc.setAttribute("type", get_name(SNAP_NAME_USERS_NAME));
+                desc.setAttribute("type", get_name(name_t::SNAP_NAME_USERS_NAME));
                 metadata.appendChild(desc);
                 QDomElement data(doc.createElement("data"));
                 desc.appendChild(data);
@@ -1116,7 +1116,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
         }
 
         {   // snap/head/metadata/desc[@type='users::created']/data
-            QtCassandra::QCassandraValue const value(user_row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
+            QtCassandra::QCassandraValue const value(user_row->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->value());
             if(!value.nullValue())
             {
                 QDomElement desc(doc.createElement("desc"));
@@ -1143,7 +1143,7 @@ void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& p
     // TODO: add support to retrieve the "author" who last modified this
     //       page (i.e. user reference in the last revision)
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    QString const link_name(get_name(SNAP_NAME_USERS_AUTHOR));
+    QString const link_name(get_name(name_t::SNAP_NAME_USERS_AUTHOR));
     links::link_info author_info(link_name, true, ipath.get_key(), ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(author_info));
     links::link_info user_info;
@@ -1158,11 +1158,11 @@ void users::on_generate_page_content(content::path_info_t& ipath, QDomElement& p
         user_ipath.set_path(user_info.key());
 
         {   // snap/page/body/author[@type="users::name"]/data
-            QtCassandra::QCassandraValue const value(content_table->row(user_ipath.get_key())->cell(get_name(SNAP_NAME_USERS_USERNAME))->value());
+            QtCassandra::QCassandraValue const value(content_table->row(user_ipath.get_key())->cell(get_name(name_t::SNAP_NAME_USERS_USERNAME))->value());
             if(!value.nullValue())
             {
                 QDomElement author(doc.createElement("author"));
-                author.setAttribute("type", get_name(SNAP_NAME_USERS_NAME));
+                author.setAttribute("type", get_name(name_t::SNAP_NAME_USERS_NAME));
                 body.appendChild(author);
                 QDomElement data(doc.createElement("data"));
                 author.appendChild(data);
@@ -1188,20 +1188,20 @@ void users::on_create_content(content::path_info_t& ipath, QString const& owner,
         QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
         if(users_table->exists(f_user_key))
         {
-            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
             if(!value.nullValue())
             {
                 int64_t const identifier(value.int64Value());
                 QString const site_key(f_snap->get_site_key_with_slash());
-                QString const user_key(QString("%1%2/%3").arg(site_key).arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+                QString const user_key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
                 content::path_info_t user_ipath;
                 user_ipath.set_path(user_key);
 
-                QString const link_name(get_name(SNAP_NAME_USERS_AUTHOR));
+                QString const link_name(get_name(name_t::SNAP_NAME_USERS_AUTHOR));
                 bool const source_unique(true);
                 links::link_info source(link_name, source_unique, ipath.get_key(), ipath.get_branch());
-                QString const link_to(get_name(SNAP_NAME_USERS_AUTHORED_PAGES));
+                QString const link_to(get_name(name_t::SNAP_NAME_USERS_AUTHORED_PAGES));
                 bool const destination_multi(false);
                 links::link_info destination(link_to, destination_multi, user_ipath.get_key(), user_ipath.get_branch());
                 links::links::instance()->create_link(source, destination);
@@ -1226,20 +1226,20 @@ void users::prepare_replace_password_form(QDomElement& body)
     if(user_is_logged_in())
     {
         // user is logged in already, send him to his normal password form
-        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER, "Already Logged In", "You are already logged in so you cannot access this page at this time.");
+        f_snap->page_redirect("user/password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER, "Already Logged In", "You are already logged in so you cannot access this page at this time.");
         NOTREACHED();
     }
     if(!f_user_key.isEmpty())
     {
         // user logged in a while back, ask for credentials again
-        f_snap->page_redirect("verify-credentials", snap_child::HTTP_CODE_SEE_OTHER, "Not Enough Permissions", "You are logged in with minimal permissions. To access this page we have to verify your credentials.");
+        f_snap->page_redirect("verify-credentials", snap_child::http_code_t::HTTP_CODE_SEE_OTHER, "Not Enough Permissions", "You are logged in with minimal permissions. To access this page we have to verify your credentials.");
         NOTREACHED();
     }
     if(f_user_changing_password_key.isEmpty())
     {
         // user is not even logged in and he did not follow a valid link
         // XXX the login page is probably the best choice?
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER, "Replace Password Not Possible", "You required to change your password in a way which is not current valid. Please go to log in instead.");
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER, "Replace Password Not Possible", "You required to change your password in a way which is not current valid. Please go to log in instead.");
         NOTREACHED();
     }
 }
@@ -1261,7 +1261,7 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
         // retrieve the logged in user identifier
         if(f_user_key.isEmpty())
         {
-            attach_to_session(get_name(SNAP_NAME_USERS_LOGIN_REFERRER), "user/password");
+            attach_to_session(get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER), "user/password");
 
             messages::messages::instance()->set_error(
                 "Permission Denied",
@@ -1270,7 +1270,7 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
                 false
             );
             // redirect the user to the log in page
-            f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+            f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
         }
         QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
@@ -1285,11 +1285,11 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
                 true
             );
             // redirect the user to the log in page
-            f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+            f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
             return;
         }
-        QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(value.nullValue())
         {
             messages::messages::instance()->set_error(
@@ -1299,7 +1299,7 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
                 true
             );
             // redirect the user to the log in page
-            f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+            f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
             return;
         }
@@ -1324,7 +1324,7 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
         if(!ok)
         {
             // invalid user identifier, generate a 404
-            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                     "User Not Found", "This user does not exist. Please check the URI and make corrections as required.",
                     "User attempt to access user \"" + user_id + "\" which does not look like a valid integer.");
             NOTREACHED();
@@ -1332,11 +1332,11 @@ void users::show_user(content::path_info_t& ipath, QDomElement& page, QDomElemen
 
         // verify that the identifier indeed represents a user
         const QString site_key(f_snap->get_site_key_with_slash());
-        const QString user_key(site_key + get_name(SNAP_NAME_USERS_PATH) + "/" + user_id);
+        const QString user_key(site_key + get_name(name_t::SNAP_NAME_USERS_PATH) + "/" + user_id);
         QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
         if(!content_table->exists(user_key))
         {
-            f_snap->die(snap_child::HTTP_CODE_NOT_FOUND,
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                 "User Not Found",
                 "We could not find an account for user " + user_id + " on this system.",
                 "user account for " + user_id + " does not exist at this point"
@@ -1373,7 +1373,8 @@ void users::prepare_password_form()
     if(f_user_key.isEmpty())
     {
         // user needs to be logged in to edit his password
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN, "Access Denied",
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
+                "Access Denied",
                 "You need to be logged in and have enough permissions to access this page.",
                 "user attempt to change a password without enough permissions.");
         NOTREACHED();
@@ -1394,7 +1395,7 @@ void users::prepare_login_form()
     if(!f_user_key.isEmpty())
     {
         // user is logged in already, just send him to his profile
-        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
@@ -1412,14 +1413,14 @@ void users::prepare_verify_credentials_form()
     // user is an anonymous user, send him to the login form instead
     if(f_user_key.isEmpty())
     {
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
     if(user_is_logged_in())
     {
         // ?!? -- what should we do in this case?
-        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 }
@@ -1471,7 +1472,7 @@ void users::prepare_basic_anonymous_form()
     if(!f_user_key.isEmpty())
     {
         // user is logged in already, just send him to his profile
-        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 }
@@ -1504,7 +1505,7 @@ void users::prepare_forgot_password_form()
             "user tried to get to the forgot_password_form() while logged in.",
             false
         );
-        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 }
@@ -1529,7 +1530,7 @@ void users::prepare_new_password_form()
             "user tried to get to the forgot_password_form() while logged in.",
             false
         );
-        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 }
@@ -1567,12 +1568,12 @@ void users::verify_user(content::path_info_t& ipath)
 
     if(!f_user_key.isEmpty())
     {
-        QtCassandra::QCassandraValue const multiuser(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_MULTIUSER)));
+        QtCassandra::QCassandraValue const multiuser(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_MULTIUSER)));
         if(multiuser.nullValue() || !multiuser.signedCharValue())
         {
             // user is logged in already, just send him to his profile
             // (if logged in he was verified in some way!)
-            f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+            f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             NOTREACHED();
         }
 
@@ -1603,11 +1604,11 @@ void users::verify_user(content::path_info_t& ipath)
         // Save the date when the user logged out
         QtCassandra::QCassandraValue value;
         value.setInt64Value(f_snap->get_start_date());
-        row->cell(get_name(SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_ON))->setValue(value);
 
         // Save the user IP address when logged out
         value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-        row->cell(get_name(SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_LOGOUT_IP))->setValue(value);
 
         f_user_key.clear();
     }
@@ -1620,8 +1621,8 @@ void users::verify_user(content::path_info_t& ipath)
     //       (it happens that people add those by mistake at the end of a URI...)
     session->load_session(session_id, info);
     QString const path(info.get_object_path());
-    if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
-    || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0 && info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)))
+    if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
+    || ((info.add_check_flags(0) & info.CHECK_HTTP_USER_AGENT) != 0 && info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)))
     || path.mid(0, 6) != "/user/")
     {
         // it failed, the session could not be loaded properly
@@ -1639,7 +1640,7 @@ void users::verify_user(content::path_info_t& ipath)
             true
         );
         // redirect the user to the verification form
-        f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
@@ -1656,30 +1657,30 @@ void users::verify_user(content::path_info_t& ipath)
             true
         );
         // redirect the user to the log in page
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
-    QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+    QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
     if(user_identifier.nullValue())
     {
         SNAP_LOG_FATAL("users::verify_user() could not load the user identifier, the row exists but the cell did not make it (")
                         (email)("/")
-                        (get_name(SNAP_NAME_USERS_IDENTIFIER))(").");
+                        (get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))(").");
         // redirect the user to the verification form although it won't work
         // next time either...
-        f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
     int64_t const identifier(user_identifier.int64Value());
     content::path_info_t user_ipath;
-    user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+    user_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
     // before we actually accept this verification code, we must make sure
     // the user is still marked as a new user (he should or the session
     // would be invalid, but for security it is better to check again)
-    links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+    links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
     links::link_info status_info;
     if(!link_ctxt->next_link(status_info))
@@ -1694,13 +1695,13 @@ void users::verify_user(content::path_info_t& ipath)
             true
         );
         // redirect the user to the log in page
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
     // a status link exists...
     QString const site_key(f_snap->get_site_key_with_slash());
-    if(status_info.key() != site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+    if(status_info.key() != site_key + get_name(name_t::SNAP_NAME_USERS_NEW_PATH))
     {
         // This should never happen... because the session should logically
         // prevent it from happening (i.e. the status link should always be
@@ -1712,7 +1713,7 @@ void users::verify_user(content::path_info_t& ipath)
             true
         );
         // redirect the user to the log in page? (XXX should this be the registration page instead?)
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
     // remove the "user/new" status link so the user can now log in
@@ -1722,11 +1723,11 @@ void users::verify_user(content::path_info_t& ipath)
     // Save the date when the user verified
     QtCassandra::QCassandraValue value;
     value.setInt64Value(f_snap->get_start_date());
-    row->cell(get_name(SNAP_NAME_USERS_VERIFIED_ON))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_USERS_VERIFIED_ON))->setValue(value);
 
     // Save the user IP address when verified
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-    row->cell(get_name(SNAP_NAME_USERS_VERIFIED_IP))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_USERS_VERIFIED_IP))->setValue(value);
 
     // tell other plugins that a new user was created and let them add
     // bells and whisles to the new account
@@ -1742,7 +1743,7 @@ void users::verify_user(content::path_info_t& ipath)
         "Verified!",
         "Thank you for taking the time to register an account with us. Your account is now verified! You can now log in with the form below."
     );
-    f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+    f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
     NOTREACHED();
 }
 
@@ -1776,7 +1777,7 @@ void users::verify_password(content::path_info_t& ipath)
         //
         // user is logged in already, just send him to his profile
         // (if logged in he was verified in some way!)
-        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
@@ -1788,8 +1789,8 @@ void users::verify_password(content::path_info_t& ipath)
     //       (it happens that people add those by mistake at the end of a URI...)
     session->load_session(session_id, info);
     const QString path(info.get_object_path());
-    if(info.get_session_type() != sessions::sessions::session_info::SESSION_INFO_VALID
-    || info.get_user_agent() != f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT))
+    if(info.get_session_type() != sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
+    || info.get_user_agent() != f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT))
     || path.mid(0, 6) != "/user/")
     {
         // it failed, the session could not be loaded properly
@@ -1809,7 +1810,7 @@ void users::verify_password(content::path_info_t& ipath)
         // we are likely on the verification link for the new password
         // so we want to send people to the new-password page instead
         // XXX should we avoid the redirect if we're already on that page?
-        f_snap->page_redirect("new-password", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("new-password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
@@ -1827,30 +1828,30 @@ void users::verify_password(content::path_info_t& ipath)
             true
         );
         // redirect the user to the log in page
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
     QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
-    QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+    QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
     if(user_identifier.nullValue())
     {
         SNAP_LOG_FATAL("users::process_new_password_form() could not load the user identifier, the row exists but the cell did not make it (")
                         (email)("/")
-                        (get_name(SNAP_NAME_USERS_IDENTIFIER))(").");
+                        (get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))(").");
         // TODO where to send that user?! have an error page for all of those
         //      "your account is dead, sorry dear..."
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
     int64_t const identifier(user_identifier.int64Value());
     content::path_info_t user_ipath;
-    user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+    user_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
     // before we actually accept this verification code, we must make sure
     // the user is still marked as a new user (he should or the session
     // would be invalid, but for security it is better to check again)
-    links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+    links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
     links::link_info status_info;
     if(!link_ctxt->next_link(status_info))
@@ -1865,13 +1866,13 @@ void users::verify_password(content::path_info_t& ipath)
             true
         );
         // redirect the user to the log in page
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
     // a status link exists... is it the right one?
     QString const site_key(f_snap->get_site_key_with_slash());
-    if(status_info.key() != site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+    if(status_info.key() != site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
     {
         // This should never happen... because the session should logically
         // prevent it from happening (i.e. the status link should always be
@@ -1883,7 +1884,7 @@ void users::verify_password(content::path_info_t& ipath)
             true
         );
         // redirect the user to the log in page? (XXX should this be the registration page instead?)
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
     // remove the "user/password" status link so the user can now log in
@@ -1927,15 +1928,15 @@ void users::send_to_replace_password_page(QString const& email, bool const set_s
     {
         // mark the user with the types/users/password tag
         // (i.e. user requested a new password)
-        QString const link_name(get_name(SNAP_NAME_USERS_STATUS));
+        QString const link_name(get_name(name_t::SNAP_NAME_USERS_STATUS));
         bool const source_unique(true);
         content::path_info_t user_ipath;
         user_ipath.set_path(get_user_path(email));
         links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch());
-        QString const link_to(get_name(SNAP_NAME_USERS_STATUS));
+        QString const link_to(get_name(name_t::SNAP_NAME_USERS_STATUS));
         bool const destination_unique(false);
         content::path_info_t dpath;
-        dpath.set_path(get_name(SNAP_NAME_USERS_PASSWORD_PATH));
+        dpath.set_path(get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH));
         links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
     }
@@ -1943,16 +1944,16 @@ void users::send_to_replace_password_page(QString const& email, bool const set_s
     // Save the date when the user verified
     QtCassandra::QCassandraValue value;
     value.setInt64Value(f_snap->get_start_date());
-    row->cell(get_name(SNAP_NAME_USERS_FORGOT_PASSWORD_ON))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_ON))->setValue(value);
 
     // Save the user IP address when verified
     value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-    row->cell(get_name(SNAP_NAME_USERS_FORGOT_PASSWORD_IP))->setValue(value);
+    row->cell(get_name(name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_IP))->setValue(value);
 
     f_user_changing_password_key = email;
 
     // send the user to the "public" replace password page since he got verified
-    f_snap->page_redirect("user/password/replace", snap_child::HTTP_CODE_SEE_OTHER);
+    f_snap->page_redirect("user/password/replace", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
     NOTREACHED();
 }
 
@@ -1972,11 +1973,11 @@ void users::on_process_form_post(content::path_info_t & ipath, sessions::session
     QString const cpath(ipath.get_cpath());
     if(cpath == "login")
     {
-        process_login_form(LOGIN_MODE_FULL);
+        process_login_form(login_mode_t::LOGIN_MODE_FULL);
     }
     else if(cpath == "verify-credentials")
     {
-        process_login_form(LOGIN_MODE_VERIFICATION);
+        process_login_form(login_mode_t::LOGIN_MODE_VERIFICATION);
     }
     else if(cpath == "register")
     {
@@ -2036,7 +2037,7 @@ void users::process_login_form(login_mode_t login_mode)
 
     // retrieve the row for that user
     QString const key(f_snap->postenv("email"));
-    if(login_mode == LOGIN_MODE_VERIFICATION && f_user_key != key)
+    if(login_mode == login_mode_t::LOGIN_MODE_VERIFICATION && f_user_key != key)
     {
         // XXX we could also automatically log the user out and send him
         //     to the log in screen... (we certainly should do so on the
@@ -2135,34 +2136,34 @@ QString users::login_user(QString const& key, QString const& password, bool& val
         QtCassandra::QCassandraValue value;
 
         // existing users have a unique identifier
-        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(user_identifier.size() != sizeof(int64_t))
         {
             messages::messages::instance()->set_error(
                 "Could Not Log You In",
                 "Somehow your user identifier is not available. Without it we cannot log your in.",
                 QString("users::process_login_form() could not load the user identifier, the row exists but the cell did not make it (%1/%2).")
-                             .arg(key).arg(get_name(SNAP_NAME_USERS_IDENTIFIER)),
+                             .arg(key).arg(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER)),
                 false
             );
-            if(login_mode == LOGIN_MODE_VERIFICATION)
+            if(login_mode == login_mode_t::LOGIN_MODE_VERIFICATION)
             {
                 // force a log out because the user should not be remotely
                 // logged in in any way...
-                f_snap->page_redirect("logout", snap_child::HTTP_CODE_SEE_OTHER);
+                f_snap->page_redirect("logout", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             }
             else
             {
                 // XXX should we redirect to some error page in that regard?
                 //     (i.e. your user account is messed up, please contact us?)
-                f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+                f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
             }
             NOTREACHED();
         }
         user_logged_info_t logged_info;
         logged_info.set_identifier(user_identifier.int64Value());
         logged_info.user_ipath().set_path(QString("%1/%2")
-                .arg(get_name(SNAP_NAME_USERS_PATH))
+                .arg(get_name(name_t::SNAP_NAME_USERS_PATH))
                 .arg(logged_info.get_identifier()));
 
         // although the user exists, as in, has an account on this Snap!
@@ -2176,7 +2177,7 @@ QString users::login_user(QString const& key, QString const& password, bool& val
 
         // before we actually log the user in we must make sure he is
         // not currently blocked or not yet active
-        links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, logged_info.user_ipath().get_key(), logged_info.user_ipath().get_branch());
+        links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, logged_info.user_ipath().get_key(), logged_info.user_ipath().get_branch());
         QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
         links::link_info status_info;
         bool force_redirect_password_change(false);
@@ -2185,25 +2186,25 @@ QString users::login_user(QString const& key, QString const& password, bool& val
         {
             QString const site_key(f_snap->get_site_key_with_slash());
 
-//std::cerr << "***\n*** Current user status on log in is [" << status_info.key() << "] / [" << (site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH)) << "]\n***\n";
+//std::cerr << "***\n*** Current user status on log in is [" << status_info.key() << "] / [" << (site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH)) << "]\n***\n";
             // the status link exists...
             // this means the user is either a new user (not yet verified)
             // or he is blocked
             // either way it means he cannot log in at this time!
-            if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+            if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_NEW_PATH))
             {
                 validation_required = true;
                 return "user's account is not yet active (not yet verified)";
             }
-            else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_BLOCKED_PATH))
+            else if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_BLOCKED_PATH))
             {
                 return "user's account is blocked";
             }
-            else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_AUTO_PATH))
+            else if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_AUTO_PATH))
             {
                 return "user did not register, this is an auto-account only";
             }
-            else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+            else if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
             {
                 if(password.isEmpty())
                 {
@@ -2230,14 +2231,14 @@ QString users::login_user(QString const& key, QString const& password, bool& val
             {
                 // compute the hash of the password
                 // (1) get the digest
-                value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value();
+                value = row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->value();
                 QString const digest(value.stringValue());
 
                 // (2) we need the passord (passed as a parameter now)
                 //QString const password(f_snap->postenv("password"));
 
                 // (3) get the salt in a buffer
-                value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
+                value = row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT))->value();
                 QByteArray const salt(value.binaryValue());
 
                 // (4) compute the expected hash
@@ -2245,7 +2246,7 @@ QString users::login_user(QString const& key, QString const& password, bool& val
                 encrypt_password(digest, password, salt, hash);
 
                 // (5) retrieved the saved hash
-                value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
+                value = row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD))->value();
                 QByteArray const saved_hash(value.binaryValue());
 
                 // (6) compare both hashes
@@ -2279,22 +2280,22 @@ QString users::login_user(QString const& key, QString const& password, bool& val
                 f_user_logged_in = true;
 
                 // Copy the previous login date and IP to the previous fields
-                if(row->exists(get_name(SNAP_NAME_USERS_LOGIN_ON)))
+                if(row->exists(get_name(name_t::SNAP_NAME_USERS_LOGIN_ON)))
                 {
-                    row->cell(get_name(SNAP_NAME_USERS_PREVIOUS_LOGIN_ON))->setValue(row->cell(get_name(SNAP_NAME_USERS_LOGIN_ON))->value());
+                    row->cell(get_name(name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_ON))->setValue(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_ON))->value());
                 }
-                if(row->exists(get_name(SNAP_NAME_USERS_LOGIN_IP)))
+                if(row->exists(get_name(name_t::SNAP_NAME_USERS_LOGIN_IP)))
                 {
-                    row->cell(get_name(SNAP_NAME_USERS_PREVIOUS_LOGIN_IP))->setValue(row->cell(get_name(SNAP_NAME_USERS_LOGIN_IP))->value());
+                    row->cell(get_name(name_t::SNAP_NAME_USERS_PREVIOUS_LOGIN_IP))->setValue(row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_IP))->value());
                 }
 
                 // Save the date when the user logged in
                 value.setInt64Value(f_snap->get_start_date());
-                row->cell(get_name(SNAP_NAME_USERS_LOGIN_ON))->setValue(value);
+                row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_ON))->setValue(value);
 
                 // Save the user IP address when logging in
                 value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-                row->cell(get_name(SNAP_NAME_USERS_LOGIN_IP))->setValue(value);
+                row->cell(get_name(name_t::SNAP_NAME_USERS_LOGIN_IP))->setValue(value);
 
                 // Tell all the other plugins that the user is now logged in
                 // you may specify a URI to where the user should be sent on
@@ -2330,7 +2331,7 @@ QString users::login_user(QString const& key, QString const& password, bool& val
                     {
                         // here we detach from the session since we want to
                         // redirect only once to that page
-                        logged_info.set_uri(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
+                        logged_info.set_uri(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
                         if(logged_info.get_uri().isEmpty())
                         {
                             // User is now logged in, redirect him to his profile
@@ -2340,7 +2341,7 @@ QString users::login_user(QString const& key, QString const& password, bool& val
                             logged_info.set_uri("user/me");
                         }
                     }
-                    f_snap->page_redirect(logged_info.get_uri(), snap_child::HTTP_CODE_SEE_OTHER);
+                    f_snap->page_redirect(logged_info.get_uri(), snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                     NOTREACHED();
                 }
 
@@ -2438,7 +2439,7 @@ void users::process_register_form()
             QString("We sent you an email to \"%1\". In the email there is a link you need to follow to finish your registration.").arg(email)
         );
         // redirect the user to the verification form
-        f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
         break;
 
@@ -2454,7 +2455,7 @@ void users::process_register_form()
 
     case status_t::STATUS_BLOCKED:
         // already exists since we found a valid entry of this user
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                 "Access Denied",
                 "You are not allowed to create an account on this website.",
                 "User is blocked and doesnot have permission to create an account here.");
@@ -2463,7 +2464,7 @@ void users::process_register_form()
 
     default:
         // ???
-        f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                 "Access Denied",
                 "You are not allowed to create an account on this website.",
                 QString("create_user() returned an unexpected status (%1).").arg(static_cast<int>(status)));
@@ -2496,15 +2497,15 @@ void users::process_forgot_password_form()
 
         // existing users have a unique identifier
         // necessary to create the user key below
-        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
             int64_t const identifier(user_identifier.int64Value());
             content::path_info_t user_ipath;
-            user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+            user_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
             // verify the status of this user
-            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+            links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
             links::link_info status_info;
             QString status;
@@ -2516,19 +2517,19 @@ void users::process_forgot_password_form()
             // empty represents ACTIVE
             // or if user already requested for a new password
             QString const site_key(f_snap->get_site_key_with_slash());
-            if(status == "" || status == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+            if(status == "" || status == site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
             {
                 // Only users considered active can request a new password
                 forgot_password_email(email);
 
                 // mark the user with the types/users/password tag
-                QString const link_name(get_name(SNAP_NAME_USERS_STATUS));
+                QString const link_name(get_name(name_t::SNAP_NAME_USERS_STATUS));
                 bool const source_unique(true);
                 links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch());
-                QString const link_to(get_name(SNAP_NAME_USERS_STATUS));
+                QString const link_to(get_name(name_t::SNAP_NAME_USERS_STATUS));
                 bool const destination_unique(false);
                 content::path_info_t dpath;
-                dpath.set_path(get_name(SNAP_NAME_USERS_PASSWORD_PATH));
+                dpath.set_path(get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH));
                 links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
                 links::links::instance()->create_link(source, destination);
 
@@ -2538,7 +2539,7 @@ void users::process_forgot_password_form()
                     "New Verification Email Send",
                     "We just sent you a new verification email. Please check your account and follow the verification link or copy and paste your verification code below."
                 );
-                f_snap->page_redirect("new-password", snap_child::HTTP_CODE_SEE_OTHER);
+                f_snap->page_redirect("new-password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                 NOTREACHED();
             }
             else
@@ -2606,14 +2607,14 @@ void users::process_replace_password_form()
     {
         // user is logged in already, send him to his normal password form
         f_user_changing_password_key.clear();
-        f_snap->page_redirect("user/password", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/password", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
     if(f_user_changing_password_key.isEmpty())
     {
         // user is not logged in and he did not follow a valid link
         // XXX the login page is probably the best choice?
-        f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
@@ -2628,22 +2629,22 @@ void users::process_replace_password_form()
 
         // existing users have a unique identifier
         // necessary to create the user key below
-        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
             int64_t const identifier(user_identifier.int64Value());
             content::path_info_t user_ipath;
-            user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+            user_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
             // verify the status of this user
-            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+            links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
             links::link_info status_info;
             if(link_ctxt->next_link(status_info))
             {
                 // a status link exists...
                 QString const site_key(f_snap->get_site_key_with_slash());
-                if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+                if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
                 {
                     // We are good, save the new password and remove that link
 
@@ -2651,7 +2652,7 @@ void users::process_replace_password_form()
                     QString const password(f_snap->postenv("password"));
                     QByteArray salt;
                     QByteArray hash;
-                    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
+                    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)));
                     if(digest.nullValue())
                     {
                         digest.setStringValue("sha512");
@@ -2662,15 +2663,15 @@ void users::process_replace_password_form()
                     // Save the hashed password (never the original password!)
                     QtCassandra::QCassandraValue value;
                     value.setBinaryValue(hash);
-                    row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
+                    row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD))->setValue(value);
 
                     // Save the password salt (otherwise we couldn't check whether the user
                     // knows his password!)
                     value.setBinaryValue(salt);
-                    row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
+                    row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
 
                     // Also save the digest since it could change en-route
-                    row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
+                    row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
                     // Unlink from the password tag too
                     links::links::instance()->delete_link(user_status_info);
@@ -2704,7 +2705,7 @@ void users::process_replace_password_form()
 
                     // TBD: should we use the saved login redirect instead?
                     //      (if not then we probably want to clear it)
-                    f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+                    f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                     NOTREACHED();
                 }
 
@@ -2740,7 +2741,7 @@ void users::process_replace_password_form()
     );
 
     // XXX the login page is probably the best choice?
-    f_snap->page_redirect("login", snap_child::HTTP_CODE_SEE_OTHER);
+    f_snap->page_redirect("login", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
     NOTREACHED();
 }
 
@@ -2759,7 +2760,7 @@ void users::process_password_form()
     if(f_user_key.isEmpty())
     {
         // user is not even logged in!?
-        f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+        f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
         NOTREACHED();
     }
 
@@ -2775,15 +2776,15 @@ void users::process_password_form()
 
         // existing users have a unique identifier
         // necessary to create the user key below
-        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
             int64_t const identifier(user_identifier.int64Value());
             content::path_info_t user_ipath;
-            user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+            user_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
             // verify the status of this user
-            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+            links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
             bool delete_password_status(false);
             links::link_info status_info;
@@ -2791,17 +2792,17 @@ void users::process_password_form()
             {
                 // a status link exists...
                 QString const site_key(f_snap->get_site_key_with_slash());
-                if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_BLOCKED_PATH)
-                || status_info.key() == site_key + get_name(SNAP_NAME_USERS_AUTO_PATH)
-                || status_info.key() == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+                if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_BLOCKED_PATH)
+                || status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_AUTO_PATH)
+                || status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_NEW_PATH))
                 {
                     // somehow the user is not blocked or marked as auto...
-                    f_snap->die(snap_child::HTTP_CODE_FORBIDDEN,
+                    f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                             "Access Denied", "You need to be logged in and have enough permissions to access this page.",
                             "User attempt to change a password in his account which is currently blocked.");
                     NOTREACHED();
                 }
-                else if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+                else if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
                 {
                     // we will be able to delete this one
                     delete_password_status = true;
@@ -2816,14 +2817,14 @@ void users::process_password_form()
             // knows his password
             //
             // (1) get the digest
-            QtCassandra::QCassandraValue value(row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->value());
+            QtCassandra::QCassandraValue value(row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->value());
             QString const old_digest(value.stringValue());
 
             // (2) we need the passord:
             QString const old_password(f_snap->postenv("old_password"));
 
             // (3) get the salt in a buffer
-            value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->value();
+            value = row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT))->value();
             QByteArray const old_salt(value.binaryValue());
 
             // (4) compute the expected hash
@@ -2831,7 +2832,7 @@ void users::process_password_form()
             encrypt_password(old_digest, old_password, old_salt, old_hash);
 
             // (5) retrieved the saved hashed password
-            value = row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->value();
+            value = row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD))->value();
             QByteArray const saved_hash(value.binaryValue());
 
             // (6) verify that it matches
@@ -2841,7 +2842,7 @@ void users::process_password_form()
                 // The user entered his old password properly
                 // save the new password
                 QString new_password(f_snap->postenv("new_password"));
-                QtCassandra::QCassandraValue new_digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
+                QtCassandra::QCassandraValue new_digest(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)));
                 if(new_digest.nullValue())
                 {
                     new_digest.setStringValue("sha512");
@@ -2853,15 +2854,15 @@ void users::process_password_form()
 
                 // Save the hashed password (never the original password!)
                 value.setBinaryValue(new_hash);
-                row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
+                row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD))->setValue(value);
 
                 // Save the password salt (otherwise we couldn't check whether the user
                 // knows his password!)
                 value.setBinaryValue(new_salt);
-                row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
+                row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
 
                 // also save the digest since it could change en-route
-                row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(new_digest);
+                row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(new_digest);
 
                 // Unlink from the password tag too
                 if(delete_password_status)
@@ -2877,7 +2878,7 @@ void users::process_password_form()
                     "Password Changed",
                     "Your new password was saved. Next time you want to log in, you must use your email with this new password."
                 );
-                QString referrer(sessions::sessions::instance()->detach_from_session(*f_info, get_name(SNAP_NAME_USERS_LOGIN_REFERRER)));
+                QString referrer(sessions::sessions::instance()->detach_from_session(*f_info, get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER)));
                 if(referrer == "user/password")
                 {
                     // ignore the default redirect if it is to this page
@@ -2886,13 +2887,13 @@ void users::process_password_form()
                 if(referrer.isEmpty())
                 {
                     // Redirect user to his profile
-                    f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+                    f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                 }
                 else
                 {
                     // If the user logged in when he needed to still change
                     // his password, then there may very be a referrer path
-                    f_snap->page_redirect(referrer, snap_child::HTTP_CODE_SEE_OTHER);
+                    f_snap->page_redirect(referrer, snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                 }
                 NOTREACHED();
             }
@@ -2925,7 +2926,7 @@ void users::process_password_form()
     );
 
     // XXX the profile page is probably the best choice?
-    f_snap->page_redirect("user/me", snap_child::HTTP_CODE_SEE_OTHER);
+    f_snap->page_redirect("user/me", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
     NOTREACHED();
 }
 
@@ -2952,22 +2953,22 @@ void users::process_verify_resend_form()
 
         // existing users have a unique identifier
         // necessary to create the user key below
-        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const user_identifier(row->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!user_identifier.nullValue())
         {
             int64_t const identifier(user_identifier.int64Value());
             content::path_info_t user_ipath;
-            user_ipath.set_path(QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier));
+            user_ipath.set_path(QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier));
 
             // verify the status of this user
-            links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+            links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
             QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
             links::link_info status_info;
             if(link_ctxt->next_link(status_info))
             {
                 // a status link exists...
                 QString const site_key(f_snap->get_site_key_with_slash());
-                if(status_info.key() == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+                if(status_info.key() == site_key + get_name(name_t::SNAP_NAME_USERS_NEW_PATH))
                 {
                     // Only new users are allowed to get another verification email
                     verify_email(email);
@@ -2977,7 +2978,7 @@ void users::process_verify_resend_form()
                         "New Verification Email Send",
                         "We just sent you a new verification email. Please check your account and follow the verification link or copy and paste your verification code below."
                     );
-                    f_snap->page_redirect("verify", snap_child::HTTP_CODE_SEE_OTHER);
+                    f_snap->page_redirect("verify", snap_child::http_code_t::HTTP_CODE_SEE_OTHER);
                     NOTREACHED();
                 }
 
@@ -3105,7 +3106,7 @@ QString users::get_user_key() const
  *
  * \note
  * To test whether the returned value represents the anonymous user,
- * please make use  of get_name() with SNAP_NAME_USERS_ANONYMOUS_PATH.
+ * please make use  of get_name() with name_t::SNAP_NAME_USERS_ANONYMOUS_PATH.
  *
  * \return The path to the currently logged in user or "user".
  */
@@ -3116,15 +3117,15 @@ QString users::get_user_path() const
         QtCassandra::QCassandraTable::pointer_t users_table(const_cast<users *>(this)->get_users_table());
         if(users_table->exists(f_user_key))
         {
-            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
             if(!value.nullValue())
             {
                 int64_t const identifier(value.int64Value());
-                return QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier);
+                return QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier);
             }
         }
     }
-    return get_name(SNAP_NAME_USERS_ANONYMOUS_PATH);
+    return get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH);
 }
 
 
@@ -3172,7 +3173,7 @@ users::status_t users::user_status(QString const& email, QString& status_key)
     // before we actually accept this verification code, we must make sure
     // the user is still marked as a new user (he should or the session
     // would be invalid, but for security it is better to check again)
-    links::link_info user_status_info(get_name(SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
+    links::link_info user_status_info(get_name(name_t::SNAP_NAME_USERS_STATUS), true, user_ipath.get_key(), user_ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(user_status_info));
     links::link_info status_info;
     if(!link_ctxt->next_link(status_info))
@@ -3185,19 +3186,19 @@ users::status_t users::user_status(QString const& email, QString& status_key)
 
     // a status link exists... check that the user is not marked as a NEW user
     QString const site_key(f_snap->get_site_key_with_slash());
-    if(status_key == site_key + get_name(SNAP_NAME_USERS_NEW_PATH))
+    if(status_key == site_key + get_name(name_t::SNAP_NAME_USERS_NEW_PATH))
     {
         return status_t::STATUS_NEW;
     }
-    if(status_key == site_key + get_name(SNAP_NAME_USERS_BLOCKED_PATH))
+    if(status_key == site_key + get_name(name_t::SNAP_NAME_USERS_BLOCKED_PATH))
     {
         return status_t::STATUS_BLOCKED;
     }
-    if(status_key == site_key + get_name(SNAP_NAME_USERS_AUTO_PATH))
+    if(status_key == site_key + get_name(name_t::SNAP_NAME_USERS_AUTO_PATH))
     {
         return status_t::STATUS_AUTO;
     }
-    if(status_key != site_key + get_name(SNAP_NAME_USERS_PASSWORD_PATH))
+    if(status_key != site_key + get_name(name_t::SNAP_NAME_USERS_PASSWORD_PATH))
     {
         return status_t::STATUS_PASSWORD;
     }
@@ -3285,7 +3286,7 @@ QString users::get_user_email(int64_t const identifier)
     if(identifier > 0)
     {
         QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-        QtCassandra::QCassandraRow::pointer_t row(users_table->row(get_name(SNAP_NAME_USERS_INDEX_ROW)));
+        QtCassandra::QCassandraRow::pointer_t row(users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW)));
 
         QByteArray key;
         QtCassandra::appendInt64Value(key, identifier);
@@ -3315,11 +3316,11 @@ QString users::get_user_path(QString const & email)
     if(users_table->exists(email))
     {
         QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
-        QtCassandra::QCassandraValue const value(users_table->row(email)->cell(get_name(SNAP_NAME_USERS_IDENTIFIER))->value());
+        QtCassandra::QCassandraValue const value(users_table->row(email)->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
         if(!value.nullValue())
         {
             int64_t const identifier(value.int64Value());
-            return QString("%1/%2").arg(get_name(SNAP_NAME_USERS_PATH)).arg(identifier);
+            return QString("%1/%2").arg(get_name(name_t::SNAP_NAME_USERS_PATH)).arg(identifier);
         }
     }
 
@@ -3363,7 +3364,7 @@ users::status_t users::register_user(QString const& email, QString const& passwo
 
     QByteArray salt;
     QByteArray hash;
-    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)));
+    QtCassandra::QCassandraValue digest(f_snap->get_site_parameter(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)));
     if(password == "!")
     {
         // special case; these users cannot log in
@@ -3393,10 +3394,10 @@ users::status_t users::register_user(QString const& email, QString const& passwo
     int64_t identifier(0);
     status_t status(status_t::STATUS_NEW);
     bool new_user(false);
-    QString const id_key(get_name(SNAP_NAME_USERS_ID_ROW));
-    QString const identifier_key(get_name(SNAP_NAME_USERS_IDENTIFIER));
-    QString const email_key(get_name(SNAP_NAME_USERS_ORIGINAL_EMAIL));
-    QString const user_path(get_name(SNAP_NAME_USERS_PATH));
+    QString const id_key(get_name(name_t::SNAP_NAME_USERS_ID_ROW));
+    QString const identifier_key(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER));
+    QString const email_key(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_EMAIL));
+    QString const user_path(get_name(name_t::SNAP_NAME_USERS_PATH));
     QtCassandra::QCassandraValue new_identifier;
     new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
@@ -3517,7 +3518,7 @@ users::status_t users::register_user(QString const& email, QString const& passwo
     uint64_t const created_date(f_snap->get_start_date());
     if(new_user)
     {
-        users_table->row(get_name(SNAP_NAME_USERS_INDEX_ROW))->cell(new_identifier.binaryValue())->setValue(value);
+        users_table->row(get_name(name_t::SNAP_NAME_USERS_INDEX_ROW))->cell(new_identifier.binaryValue())->setValue(value);
 
         // Save the user identifier in his user account so we can easily find
         // the content user for that user account/email
@@ -3525,22 +3526,22 @@ users::status_t users::register_user(QString const& email, QString const& passwo
 
         // Save the hashed password (never the original password!)
         value.setBinaryValue(hash);
-        row->cell(get_name(SNAP_NAME_USERS_PASSWORD))->setValue(value);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD))->setValue(value);
 
         // Save the password salt (otherwise we couldn't check whether the user
         // knows his password!)
         value.setBinaryValue(salt);
-        row->cell(get_name(SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT))->setValue(value);
 
         // also save the digest since it could change en-route
-        row->cell(get_name(SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
         // Save the user IP address when registering
         value.setStringValue(f_snap->snapenv("REMOTE_ADDR"));
-        row->cell(get_name(SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
 
         // Date when the user was created (i.e. now)
-        row->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->setValue(created_date);
+        row->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->setValue(created_date);
     }
 
     // Add a reference back to the website were the user is being added so
@@ -3549,7 +3550,7 @@ users::status_t users::register_user(QString const& email, QString const& passwo
     // the user registered for that website
     QString const site_key(f_snap->get_site_key_with_slash());
     QString const website_reference(QString("%1::%2")
-            .arg(get_name(SNAP_NAME_USERS_WEBSITE_REFERENCE))
+            .arg(get_name(name_t::SNAP_NAME_USERS_WEBSITE_REFERENCE))
             .arg(site_key));
     row->cell(website_reference)->setValue(created_date);
 
@@ -3568,17 +3569,17 @@ users::status_t users::register_user(QString const& email, QString const& passwo
     // mark when the user was created in the branch
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QtCassandra::QCassandraRow::pointer_t branch_row(branch_table->row(user_ipath.get_branch_key()));
-    branch_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+    branch_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
 
     // save a default title and body
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->setValue(created_date);
     // no title or body by default--other plugins could set those to the
     //                              user name or other information
     QString const empty_string;
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_TITLE))->setValue(empty_string);
-    revision_row->cell(content::get_name(content::SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->setValue(empty_string);
+    revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))->setValue(empty_string);
 
     // if already marked as valid, for sure do not mark this user as new!?
     if(status != status_t::STATUS_VALID)
@@ -3589,16 +3590,16 @@ users::status_t users::register_user(QString const& email, QString const& passwo
         // however, we also want to include a link defined as the status
         // at first the user is marked as being new
         // the destination URL is defined in the <link> content
-        QString const link_name(get_name(SNAP_NAME_USERS_STATUS));
+        QString const link_name(get_name(name_t::SNAP_NAME_USERS_STATUS));
         bool const source_unique(true);
         // TODO: determine whether "xx" is the correct locale here (we could also
         //       have "" and a default website language...) -- this is the
         //       language of the profile, not the language of the website...
         links::link_info source(link_name, source_unique, user_ipath.get_key(), user_ipath.get_branch(true, "xx"));
-        QString const link_to(get_name(SNAP_NAME_USERS_STATUS));
+        QString const link_to(get_name(name_t::SNAP_NAME_USERS_STATUS));
         bool const destination_unique(false);
         content::path_info_t dpath;
-        dpath.set_path(get_name(SNAP_NAME_USERS_NEW_PATH));
+        dpath.set_path(get_name(name_t::SNAP_NAME_USERS_NEW_PATH));
         links::link_info destination(link_to, destination_unique, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
     }
@@ -3651,25 +3652,25 @@ void users::verify_email(QString const& email)
     sendmail::sendmail::email e;
 
     // mark priority as High
-    e.set_priority(sendmail::sendmail::email::EMAIL_PRIORITY_HIGH);
+    e.set_priority(sendmail::sendmail::email::email_priority_t::EMAIL_PRIORITY_HIGH);
 
     // destination email address
-    e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
+    e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), email);
 
     // add the email subject and body using a page
     e.set_email_path("admin/email/users/verify");
 
     // verification makes use of a session identifier
     sessions::sessions::session_info info;
-    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
+    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_VERIFY_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
     info.set_object_path("/user/" + email);
-    info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+    info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(86400 * 3);  // 3 days
     QString const session(sessions::sessions::instance()->create_session(info));
-    e.add_parameter(get_name(SNAP_NAME_USERS_VERIFY_EMAIL), session);
+    e.add_parameter(get_name(name_t::SNAP_NAME_USERS_VERIFY_EMAIL), session);
 
     // to allow a "resend" without regenerating a new session, we save
     // the session identifier--since those are short lived, it will anyway
@@ -3679,7 +3680,7 @@ void users::verify_email(QString const& email)
     QtCassandra::QCassandraValue session_value(session);
     int64_t const ttl(86400 * 3 - 86400 / 2); // keep in the database for a little less than the session itself
     session_value.setTtl(ttl);
-    users_table->row(email)->cell(get_name(SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->setValue(session_value);
+    users_table->row(email)->cell(get_name(name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->setValue(session_value);
 
     // send the email
     //
@@ -3720,7 +3721,7 @@ bool users::resend_verification_email(QString const& email)
     {
         return false;
     }
-    QString const session(users_table->row(email)->cell(get_name(SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->value().stringValue());
+    QString const session(users_table->row(email)->cell(get_name(name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))->value().stringValue());
     if(session.isEmpty())
     {
         verify_email(email);
@@ -3730,16 +3731,16 @@ bool users::resend_verification_email(QString const& email)
     sendmail::sendmail::email e;
 
     // mark priority as High
-    e.set_priority(sendmail::sendmail::email::EMAIL_PRIORITY_HIGH);
+    e.set_priority(sendmail::sendmail::email::email_priority_t::EMAIL_PRIORITY_HIGH);
 
     // destination email address
-    e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
+    e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), email);
 
     // add the email subject and body using a page
     e.set_email_path("admin/email/users/verify");
 
     // verification makes use of the existing session identifier
-    e.add_parameter(get_name(SNAP_NAME_USERS_VERIFY_EMAIL), session);
+    e.add_parameter(get_name(name_t::SNAP_NAME_USERS_VERIFY_EMAIL), session);
 
     // send the email
     //
@@ -3764,7 +3765,7 @@ void users::forgot_password_email(QString const& email)
     sendmail::sendmail::email e;
 
     // administrator can define this email address
-    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)));
+    QtCassandra::QCassandraValue from(f_snap->get_site_parameter(get_name(snap::name_t::SNAP_NAME_CORE_ADMINISTRATOR_EMAIL)));
     if(from.nullValue())
     {
         from.setStringValue("contact@snapwebsites.com");
@@ -3772,25 +3773,25 @@ void users::forgot_password_email(QString const& email)
     e.set_from(from.stringValue());
 
     // mark priority as High
-    e.set_priority(sendmail::sendmail::email::EMAIL_PRIORITY_HIGH);
+    e.set_priority(sendmail::sendmail::email::email_priority_t::EMAIL_PRIORITY_HIGH);
 
     // destination email address
-    e.add_header(sendmail::get_name(sendmail::SNAP_NAME_SENDMAIL_TO), email);
+    e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), email);
 
     // add the email subject and body using a page
     e.set_email_path("admin/email/users/forgot-password");
 
     // verification makes use of a session identifier
     sessions::sessions::session_info info;
-    info.set_session_type(sessions::sessions::session_info::SESSION_INFO_USER);
+    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_USER);
     info.set_session_id(USERS_SESSION_ID_FORGOT_PASSWORD_EMAIL);
     info.set_plugin_owner(get_plugin_name()); // ourselves
     //info.set_page_path(); -- default is okay
     info.set_object_path("/user/" + email);
-    info.set_user_agent(f_snap->snapenv(snap::get_name(SNAP_NAME_CORE_HTTP_USER_AGENT)));
+    info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
     info.set_time_to_live(3600 * 8);  // 8 hours
     QString const session(sessions::sessions::instance()->create_session(info));
-    e.add_parameter(get_name(SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL), session);
+    e.add_parameter(get_name(name_t::SNAP_NAME_USERS_FORGOT_PASSWORD_EMAIL), session);
 
     // send the email
     //
@@ -3903,7 +3904,7 @@ QString users::get_from_session(QString const& name) const
  * Call this function instead of
  *
  * \code
- *      attach_to_session( SNAP_NAME_USERS_LOGIN_REFERRER, path );
+ *      attach_to_session( name_t::SNAP_NAME_USERS_LOGIN_REFERRER, path );
  * \endcode
  *
  * This way we can make sure that a certain number of paths never get
@@ -3974,7 +3975,7 @@ void users::set_referrer( QString path )
     // as boxes and other pages that are not expected to become main pages)
     // note that this does not prevent one from going to the page, only
     // the system will not redirect one to such a page
-    QString const link_name(get_name(SNAP_NAME_USERS_NOT_MAIN_PAGE));
+    QString const link_name(get_name(name_t::SNAP_NAME_USERS_NOT_MAIN_PAGE));
     links::link_info not_main_page_info(link_name, true, path, ipath.get_branch());
     QSharedPointer<links::link_context> link_ctxt(links::links::instance()->new_link_context(not_main_page_info));
     links::link_info type_info;
@@ -3988,10 +3989,10 @@ void users::set_referrer( QString path )
     // page; if you send the user on a page that only redirects to /login
     // then the user will end up on his profile (/user/me)
     //
-    char const *loginref_name( get_name(SNAP_NAME_USERS_LOGIN_REFERRER) );
+    char const *loginref_name( get_name(name_t::SNAP_NAME_USERS_LOGIN_REFERRER) );
     if( sessions::sessions::instance()->get_from_session( *f_info, loginref_name ).isEmpty() )
     {
-        SNAP_LOG_DEBUG() << "SNAP_NAME_USERS_LOGIN_REFERRER being set to " << path << " for page path " << f_info->get_page_path();
+        SNAP_LOG_DEBUG() << "name_t::SNAP_NAME_USERS_LOGIN_REFERRER being set to " << path << " for page path " << f_info->get_page_path();
 
         // verify that it is not /login or /logout because those cause
         // real problems!
@@ -4017,7 +4018,7 @@ void users::on_attach_to_session()
 {
     if(!f_user_changing_password_key.isEmpty())
     {
-        attach_to_session(get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY), f_user_changing_password_key);
+        attach_to_session(get_name(name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY), f_user_changing_password_key);
     }
 
     // the messages handling is here because the messages plugin cannot have
@@ -4028,7 +4029,7 @@ void users::on_attach_to_session()
         // note that if we lose those "website" messages,
         // they will still be in our logs
         QString const data(messages_plugin->serialize());
-        attach_to_session(messages::get_name(messages::SNAP_NAME_MESSAGES_MESSAGES), data);
+        attach_to_session(messages::get_name(messages::name_t::SNAP_NAME_MESSAGES_MESSAGES), data);
         messages_plugin->clear_messages();
     }
 }
@@ -4049,11 +4050,11 @@ void users::on_detach_from_session()
     // occurs between the detach and attach, we lose the information!)
     // the concerned function(s) should clear() the variable when
     // officially done with it
-    f_user_changing_password_key = detach_from_session(get_name(SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
+    f_user_changing_password_key = detach_from_session(get_name(name_t::SNAP_NAME_USERS_CHANGING_PASSWORD_KEY));
 
     // the message handling is here because the messages plugin cannot have
     // a dependency on the users plugin which is the one handling the session
-    QString const data(detach_from_session(messages::get_name(messages::SNAP_NAME_MESSAGES_MESSAGES)));
+    QString const data(detach_from_session(messages::get_name(messages::name_t::SNAP_NAME_MESSAGES_MESSAGES)));
     if(!data.isEmpty())
     {
         messages::messages::instance()->unserialize(data);
@@ -4075,7 +4076,7 @@ void users::on_define_locales(QString& locales)
         QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
         if(users_table->exists(f_user_key))
         {
-            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_LOCALES))->value());
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_LOCALES))->value());
             if(!value.nullValue())
             {
                 if(locales.isEmpty())
@@ -4328,7 +4329,7 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
     }
 
     // anything else requires the user to be verified
-    QtCassandra::QCassandraValue const verified_on(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_VERIFIED_ON))->value());
+    QtCassandra::QCassandraValue const verified_on(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_VERIFIED_ON))->value());
     if(verified_on.nullValue())
     {
         // not verified yet
@@ -4338,11 +4339,11 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
     if(token.is_token("users::since"))
     {
         // make sure that the user created and verified his account
-        QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_CREATED_TIME))->value());
+        QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->value());
         int64_t date(value.int64Value());
         token.f_replacement = QString("%1 %2")
-                .arg(f_snap->date_to_string(date, f_snap->DATE_FORMAT_SHORT))
-                .arg(f_snap->date_to_string(date, f_snap->DATE_FORMAT_TIME));
+                .arg(f_snap->date_to_string(date, f_snap->date_format_t::DATE_FORMAT_SHORT))
+                .arg(f_snap->date_to_string(date, f_snap->date_format_t::DATE_FORMAT_TIME));
         // else use was not yet verified
         return;
     }
@@ -4350,7 +4351,7 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
     if(token.is_token("users::picture"))
     {
         // make sure that the user created and verified his account
-        QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(SNAP_NAME_USERS_PICTURE))->value());
+        QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_PICTURE))->value());
         if(!value.nullValue())
         {
             SNAP_LOG_TRACE() << "second is_token(\"users::picture\")";
@@ -4385,7 +4386,7 @@ bool users::user_is_a_spammer()
 {
     // TODO implement the actual test
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
-    char const * const black_list(get_name(SNAP_NAME_USERS_BLACK_LIST));
+    char const * const black_list(get_name(name_t::SNAP_NAME_USERS_BLACK_LIST));
     if(users_table->exists(black_list))
     {
         // the row exists, check the IP
@@ -4470,12 +4471,12 @@ void users::on_cell_is_secure(QString const& table, QString const& row, QString 
 {
     static_cast<void>(row);
 
-    if(table == get_name(SNAP_NAME_USERS_TABLE))
+    if(table == get_name(name_t::SNAP_NAME_USERS_TABLE))
     {
-        if(cell == get_name(SNAP_NAME_USERS_PASSWORD)
-        || cell == get_name(SNAP_NAME_USERS_PASSWORD_DIGEST)
-        || cell == get_name(SNAP_NAME_USERS_PASSWORD_SALT)
-        || cell == get_name(SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))
+        if(cell == get_name(name_t::SNAP_NAME_USERS_PASSWORD)
+        || cell == get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST)
+        || cell == get_name(name_t::SNAP_NAME_USERS_PASSWORD_SALT)
+        || cell == get_name(name_t::SNAP_NAME_USERS_LAST_VERIFICATION_SESSION))
         {
             // password is considered secure
             secure.mark_as_secure();
@@ -4500,7 +4501,7 @@ void users::on_set_locale()
 {
     // we may have a user defined locale
     QString const user_path(get_user_path());
-    if(user_path != get_name(SNAP_NAME_USERS_ANONYMOUS_PATH))
+    if(user_path != get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH))
     {
         content::content *content_plugin(content::content::instance());
         QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
@@ -4509,7 +4510,7 @@ void users::on_set_locale()
         user_ipath.set_path(user_path);
 
         QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
-        QString const user_locale(revision_row->cell(get_name(SNAP_NAME_USERS_LOCALE))->value().stringValue());
+        QString const user_locale(revision_row->cell(get_name(name_t::SNAP_NAME_USERS_LOCALE))->value().stringValue());
         if(!user_locale.isEmpty())
         {
             locale::locale::instance()->set_current_locale(user_locale);
@@ -4543,7 +4544,7 @@ void users::on_set_timezone()
         user_ipath.set_path(user_path);
 
         QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(user_ipath.get_revision_key()));
-        QString const user_timezone(revision_row->cell(get_name(SNAP_NAME_USERS_TIMEZONE))->value().stringValue());
+        QString const user_timezone(revision_row->cell(get_name(name_t::SNAP_NAME_USERS_TIMEZONE))->value().stringValue());
         if(!user_timezone.isEmpty())
         {
             locale::locale::instance()->set_current_timezone(user_timezone);
@@ -4563,10 +4564,10 @@ void users::repair_link_of_cloned_page(QString const& clone, snap_version::versi
 {
     static_cast<void>(cloning);
 
-    if(source.name() == get_name(SNAP_NAME_USERS_AUTHOR)
-    && destination.name() == get_name(SNAP_NAME_USERS_AUTHORED_PAGES))
+    if(source.name() == get_name(name_t::SNAP_NAME_USERS_AUTHOR)
+    && destination.name() == get_name(name_t::SNAP_NAME_USERS_AUTHORED_PAGES))
     {
-        links::link_info src(get_name(SNAP_NAME_USERS_AUTHOR), true, clone, branch_number);
+        links::link_info src(get_name(name_t::SNAP_NAME_USERS_AUTHOR), true, clone, branch_number);
         links::links::instance()->create_link(src, destination);
     }
     // else ...

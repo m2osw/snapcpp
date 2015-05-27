@@ -862,11 +862,11 @@ void snap_layout::add_files()
     {
         // mtimes holds times in seconds, convert to microseconds
         int64_t last_updated(i.value() * 1000000);
-        QtCassandra::QCassandraValue existing_last_updated(table->row(i.key())->cell(snap::get_name(snap::SNAP_NAME_CORE_LAST_UPDATED))->value());
+        QtCassandra::QCassandraValue existing_last_updated(table->row(i.key())->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->value());
         if(existing_last_updated.nullValue()
         || existing_last_updated.int64Value() < last_updated)
         {
-            table->row(i.key())->cell(snap::get_name(snap::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated);
+            table->row(i.key())->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(last_updated);
         }
     }
 }

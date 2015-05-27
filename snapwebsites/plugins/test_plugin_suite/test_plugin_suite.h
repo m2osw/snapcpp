@@ -61,8 +61,8 @@ public:
     typedef QMap<QString, func_t>   test_func_map_t;
 
     bool                            empty() const;
-    void                            add_test(QString const& name, func_t func);
-    test_func_map_t const&          get_tests() const;
+    void                            add_test(QString const & name, func_t func);
+    test_func_map_t const &         get_tests() const;
 
 private:
     mutable test_func_map_t         f_tests;
@@ -76,7 +76,7 @@ private:
  * and test_plugin plugins.
  */
 #define SNAP_TEST_PLUGIN_SUITE_SIGNALS() \
-        void on_list_tests(::snap::test_plugin_suite::test_list_t& tests);
+        void on_list_tests(::snap::test_plugin_suite::test_list_t & tests);
 
 
 /** \brief Declare a test from the test plugin suite.
@@ -128,7 +128,7 @@ private:
  * \param plugin_name  The name of the plugin class.
  */
 #define SNAP_TEST_PLUGIN_SUITE(plugin_name) \
-    void plugin_name::on_list_tests(::snap::test_plugin_suite::test_list_t& tests) \
+    void plugin_name::on_list_tests(::snap::test_plugin_suite::test_list_t & tests) \
     {
 
 
@@ -253,9 +253,9 @@ public:
 
     void                        on_bootstrap(snap_child *snap);
 
-    test_list_t const&          get_test_list() const;
+    test_list_t const &         get_test_list() const;
 
-    SNAP_SIGNAL_WITH_MODE(list_tests, (test_list_t& tests), (tests), NEITHER);
+    SNAP_SIGNAL_WITH_MODE(list_tests, (test_list_t & tests), (tests), NEITHER);
 
 private:
     void                        content_update(int64_t variables_timestamp);

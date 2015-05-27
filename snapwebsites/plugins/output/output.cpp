@@ -29,7 +29,7 @@
 
 SNAP_PLUGIN_START(output, 1, 0)
 
-// using the SNAP_NAME_CONTENT_... for this one.
+// using the name_t::SNAP_NAME_CONTENT_... for this one.
 /* \brief Get a fixed output name.
  *
  * The output plugin makes use of different names in the database. This
@@ -43,12 +43,12 @@ SNAP_PLUGIN_START(output, 1, 0)
 //{
 //    switch(name)
 //    {
-//    case SNAP_NAME_OUTPUT_ACCEPTED:
+//    case name_t::SNAP_NAME_OUTPUT_ACCEPTED:
 //        return "output::accepted";
 //
 //    default:
 //        // invalid index
-//        throw snap_logic_exception("invalid SNAP_NAME_OUTPUT_...");
+//        throw snap_logic_exception("invalid name_t::SNAP_NAME_OUTPUT_...");
 //
 //    }
 //    NOTREACHED();
@@ -164,7 +164,7 @@ void output::content_update(int64_t variables_timestamp)
 
     content::content::instance()->add_xml(get_plugin_name());
 
-    layout::layout::instance()->add_layout_from_resources(content::get_name(content::SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME));
+    layout::layout::instance()->add_layout_from_resources(content::get_name(content::name_t::SNAP_NAME_CONTENT_MINIMAL_LAYOUT_NAME));
 }
 
 
@@ -213,57 +213,57 @@ void output::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
 
     // if the content is the main page then define the titles and body here
     FIELD_SEARCH
-        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-        (content::field_search::COMMAND_ELEMENT, body)
-        (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
+        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+        (content::field_search::command_t::COMMAND_ELEMENT, body)
+        (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
 
         // /snap/page/body/titles
-        (content::field_search::COMMAND_CHILD_ELEMENT, "titles")
+        (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "titles")
         // /snap/page/body/titles/title
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_TITLE))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_IF_FOUND, 1)
-            (content::field_search::COMMAND_PATH, ctemplate)
-            (content::field_search::COMMAND_SELF)
-            (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::COMMAND_LABEL, 1)
-        (content::field_search::COMMAND_SAVE, "title")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_IF_FOUND, 1)
+            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+            (content::field_search::command_t::COMMAND_SELF)
+            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+        (content::field_search::command_t::COMMAND_LABEL, 1)
+        (content::field_search::command_t::COMMAND_SAVE, "title")
         // /snap/page/body/titles/short-title
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_SHORT_TITLE))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_IF_FOUND, 2)
-            (content::field_search::COMMAND_PATH, ctemplate)
-            (content::field_search::COMMAND_SELF)
-            (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::COMMAND_LABEL, 2)
-        (content::field_search::COMMAND_SAVE, "short-title")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_SHORT_TITLE))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_IF_FOUND, 2)
+            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+            (content::field_search::command_t::COMMAND_SELF)
+            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+        (content::field_search::command_t::COMMAND_LABEL, 2)
+        (content::field_search::command_t::COMMAND_SAVE, "short-title")
         // /snap/page/body/titles/long-title
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_LONG_TITLE))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_IF_FOUND, 3)
-            (content::field_search::COMMAND_PATH, ctemplate)
-            (content::field_search::COMMAND_SELF)
-            (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::COMMAND_LABEL, 3)
-        (content::field_search::COMMAND_SAVE, "long-title")
-        (content::field_search::COMMAND_PARENT_ELEMENT)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_LONG_TITLE))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_IF_FOUND, 3)
+            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+            (content::field_search::command_t::COMMAND_SELF)
+            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+        (content::field_search::command_t::COMMAND_LABEL, 3)
+        (content::field_search::command_t::COMMAND_SAVE, "long-title")
+        (content::field_search::command_t::COMMAND_PARENT_ELEMENT)
 
         // /snap/page/body/content
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_BODY))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_IF_FOUND, 10)
-            (content::field_search::COMMAND_PATH, ctemplate)
-            (content::field_search::COMMAND_SELF)
-            (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::COMMAND_LABEL, 10)
-        (content::field_search::COMMAND_SAVE_XML, "content")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_BODY))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_IF_FOUND, 10)
+            (content::field_search::command_t::COMMAND_PATH, ctemplate)
+            (content::field_search::command_t::COMMAND_SELF)
+            (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+        (content::field_search::command_t::COMMAND_LABEL, 10)
+        (content::field_search::command_t::COMMAND_SAVE_XML, "content")
 
         // /snap/page/body/description
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_DESCRIPTION))
-        (content::field_search::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_DESCRIPTION))
+        (content::field_search::command_t::COMMAND_SELF)
         // ignore ctemplate because descriptions should either not be there
         // or be unique to be valid for SEO
-        (content::field_search::COMMAND_SAVE_XML, "description")
+        (content::field_search::command_t::COMMAND_SAVE_XML, "description")
 
         // generate!
         ;
@@ -315,93 +315,93 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     }
 
     FIELD_SEARCH
-        (content::field_search::COMMAND_MODE, content::field_search::SEARCH_MODE_EACH)
-        (content::field_search::COMMAND_ELEMENT, body)
-        (content::field_search::COMMAND_PATH_INFO_GLOBAL, ipath)
+        (content::field_search::command_t::COMMAND_MODE, content::field_search::mode_t::SEARCH_MODE_EACH)
+        (content::field_search::command_t::COMMAND_ELEMENT, body)
+        (content::field_search::command_t::COMMAND_PATH_INFO_GLOBAL, ipath)
 
         // /snap/page/body/page-created
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_CREATED))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "page-created")
-        (content::field_search::COMMAND_WARNING, "field missing")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "page-created")
+        (content::field_search::command_t::COMMAND_WARNING, "field missing")
 
         // /snap/page/body/branch-created
-        (content::field_search::COMMAND_PATH_INFO_BRANCH, ipath)
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_CREATED))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "created")
-        (content::field_search::COMMAND_WARNING, "field missing")
+        (content::field_search::command_t::COMMAND_PATH_INFO_BRANCH, ipath)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "created")
+        (content::field_search::command_t::COMMAND_WARNING, "field missing")
 
         // /snap/page/body/updated
         // XXX should it be mandatory or just use "created" as the default?
         // modified in the branch "converted" to updated
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "updated")
-        (content::field_search::COMMAND_WARNING, "field missing")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "updated")
+        (content::field_search::command_t::COMMAND_WARNING, "field missing")
 
         // /snap/page/body/accepted
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_ACCEPTED))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "accepted")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_ACCEPTED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "accepted")
 
         // /snap/page/body/submitted
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_SUBMITTED))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "submitted")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_SUBMITTED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "submitted")
 
         // /snap/page/body/since
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_SINCE))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "since")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_SINCE))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "since")
 
         // /snap/page/body/until
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_UNTIL))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "until")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_UNTIL))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "until")
 
         // /snap/page/body/copyrighted
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_COPYRIGHTED))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "copyrighted")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_COPYRIGHTED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "copyrighted")
 
         // /snap/page/body/issued
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_ISSUED))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "issued")
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_ISSUED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "issued")
 
         // /snap/page/body/modified
         // XXX should it be mandatory or just use "created" as the default?
-        (content::field_search::COMMAND_PATH_INFO_REVISION, ipath)
-        (content::field_search::COMMAND_FIELD_NAME, content::get_name(content::SNAP_NAME_CONTENT_MODIFIED))
-        (content::field_search::COMMAND_SELF)
-        (content::field_search::COMMAND_SAVE_INT64_DATE, "modified")
-        (content::field_search::COMMAND_WARNING, "field missing")
+        (content::field_search::command_t::COMMAND_PATH_INFO_REVISION, ipath)
+        (content::field_search::command_t::COMMAND_FIELD_NAME, content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))
+        (content::field_search::command_t::COMMAND_SELF)
+        (content::field_search::command_t::COMMAND_SAVE_INT64_DATE, "modified")
+        (content::field_search::command_t::COMMAND_WARNING, "field missing")
 
         // test whether we're dealing with the home page, if not add these links:
         // /snap/page/body/navigation/link[@rel="top"][@title="Index"][@href="<site key>"]
         // /snap/page/body/navigation/link[@rel="up"][@title="Up"][@href="<path/..>"]
-        (content::field_search::COMMAND_DEFAULT_VALUE_OR_NULL, ipath.get_cpath())
-        (content::field_search::COMMAND_IF_NOT_FOUND, 1)
+        (content::field_search::command_t::COMMAND_DEFAULT_VALUE_OR_NULL, ipath.get_cpath())
+        (content::field_search::command_t::COMMAND_IF_NOT_FOUND, 1)
             //(content::field_search::COMMAND_RESET) -- uncomment if we go on with other things
-            (content::field_search::COMMAND_CHILD_ELEMENT, "navigation")
+            (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "navigation")
 
             // Index
-            (content::field_search::COMMAND_CHILD_ELEMENT, "link")
-            (content::field_search::COMMAND_ELEMENT_ATTR, "rel=top")
-            (content::field_search::COMMAND_ELEMENT_ATTR, "title=Index") // TODO: translate
-            (content::field_search::COMMAND_ELEMENT_ATTR, "href=" + f_snap->get_site_key())
-            (content::field_search::COMMAND_PARENT_ELEMENT)
+            (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "link")
+            (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "rel=top")
+            (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "title=Index") // TODO: translate
+            (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "href=" + f_snap->get_site_key())
+            (content::field_search::command_t::COMMAND_PARENT_ELEMENT)
 
             // Up
-            (content::field_search::COMMAND_CHILD_ELEMENT, "link")
-            (content::field_search::COMMAND_ELEMENT_ATTR, "rel=up")
-            (content::field_search::COMMAND_ELEMENT_ATTR, "title=Up") // TODO: translate
-            (content::field_search::COMMAND_ELEMENT_ATTR, "href=" + up)
-            //(content::field_search::COMMAND_PARENT_ELEMENT) -- uncomment if we go on with other things
+            (content::field_search::command_t::COMMAND_CHILD_ELEMENT, "link")
+            (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "rel=up")
+            (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "title=Up") // TODO: translate
+            (content::field_search::command_t::COMMAND_ELEMENT_ATTR, "href=" + up)
+            //(content::field_search::command_t::COMMAND_PARENT_ELEMENT) -- uncomment if we go on with other things
 
-            //(content::field_search::COMMAND_PARENT_ELEMENT) -- uncomment if we go on with other things
-        (content::field_search::COMMAND_LABEL, 1)
+            //(content::field_search::command_t::COMMAND_PARENT_ELEMENT) -- uncomment if we go on with other things
+        (content::field_search::command_t::COMMAND_LABEL, 1)
 
         // generate!
         ;
@@ -432,19 +432,19 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             messages::messages::message const& msg(messages_plugin->get_message(i));
             switch(msg.get_type())
             {
-            case messages::messages::message::MESSAGE_TYPE_ERROR:
+            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_ERROR:
                 type = "error";
                 break;
 
-            case messages::messages::message::MESSAGE_TYPE_WARNING:
+            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_WARNING:
                 type = "warning";
                 break;
 
-            case messages::messages::message::MESSAGE_TYPE_INFO:
+            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_INFO:
                 type = "info";
                 break;
 
-            case messages::messages::message::MESSAGE_TYPE_DEBUG:
+            case messages::messages::message::message_type_enum_t::MESSAGE_TYPE_DEBUG:
                 type = "debug";
                 break;
 
@@ -480,7 +480,7 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         if(errcnt != 0)
         {
             // on errors generate a warning in the header
-            f_snap->set_header(messages::get_name(messages::SNAP_NAME_MESSAGES_WARNING_HEADER),
+            f_snap->set_header(messages::get_name(messages::name_t::SNAP_NAME_MESSAGES_WARNING_HEADER),
                     QString("This page generated %1 error%2")
                             .arg(errcnt).arg(errcnt == 1 ? "" : "s"));
         }
@@ -523,12 +523,12 @@ void output::on_replace_token(content::path_info_t& ipath, QString const& plugin
         {
             content::content *content(content::content::instance());
             QtCassandra::QCassandraTable::pointer_t content_table(content->get_content_table());
-            int64_t const created_date(content_table->row(ipath.get_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
+            int64_t const created_date(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             time_t const unix_time(created_date / 1000000); // transform to seconds
             QString date_format;
             if(token.has_arg("format", 0))
             {
-                filter::filter::parameter_t param(token.get_arg("format", 0, filter::filter::TOK_STRING));
+                filter::filter::parameter_t param(token.get_arg("format", 0, filter::filter::token_t::TOK_STRING));
                 date_format = param.f_value;
             }
             token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
@@ -543,12 +543,12 @@ void output::on_replace_token(content::path_info_t& ipath, QString const& plugin
             // last updated is the date when the last revision was created
             content::content *content(content::content::instance());
             QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
-            int64_t const created_date(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
+            int64_t const created_date(revision_table->row(ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value());
             time_t const unix_time(created_date / 1000000); // transform to seconds
             QString date_format;
             if(token.has_arg("format", 0))
             {
-                filter::filter::parameter_t param(token.get_arg("format", 0, filter::filter::TOK_STRING));
+                filter::filter::parameter_t param(token.get_arg("format", 0, filter::filter::token_t::TOK_STRING));
                 date_format = param.f_value;
             }
             token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
@@ -602,15 +602,15 @@ QString output::phone_to_uri(QString const phone, phone_number_type_t const type
     QString prefix;
     switch(type)
     {
-    case PHONE_NUMBER_TYPE_FAX:
+    case phone_number_type_t::PHONE_NUMBER_TYPE_FAX:
         prefix = "fax";
         break;
         
-    case PHONE_NUMBER_TYPE_SKYPE:
+    case phone_number_type_t::PHONE_NUMBER_TYPE_SKYPE:
         prefix = "callto";
         break;
 
-    case PHONE_NUMBER_TYPE_TELEPHONE:
+    case phone_number_type_t::PHONE_NUMBER_TYPE_TELEPHONE:
         prefix = "tel";
         break;
 

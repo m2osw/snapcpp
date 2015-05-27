@@ -37,16 +37,16 @@ SNAP_PLUGIN_START(mimetype, 1, 0)
  *
  * \return A pointer to the name.
  */
-//char const *get_name(name_t name)
+//char const * get_name(name_t name)
 //{
 //    switch(name)
 //    {
-//    case SNAP_NAME_MIMETYPE_ACCEPTED:
+//    case name_t::SNAP_NAME_MIMETYPE_ACCEPTED:
 //        return "mimetype::accepted";
 //
 //    default:
 //        // invalid index
-//        throw snap_logic_exception("invalid SNAP_NAME_MIMETYPE_...");
+//        throw snap_logic_exception("invalid name_t::SNAP_NAME_MIMETYPE_...");
 //
 //    }
 //    NOTREACHED();

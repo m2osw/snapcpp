@@ -29,33 +29,33 @@ namespace snap_dom
 class snap_dom_exception : public snap_exception
 {
 public:
-    snap_dom_exception(char const *       whatmsg) : snap_exception("snap_dom", whatmsg) {}
-    snap_dom_exception(std::string const& whatmsg) : snap_exception("snap_dom", whatmsg) {}
-    snap_dom_exception(QString const&     whatmsg) : snap_exception("snap_dom", whatmsg) {}
+    snap_dom_exception(char const *        whatmsg) : snap_exception("snap_dom", whatmsg) {}
+    snap_dom_exception(std::string const & whatmsg) : snap_exception("snap_dom", whatmsg) {}
+    snap_dom_exception(QString const &     whatmsg) : snap_exception("snap_dom", whatmsg) {}
 };
 
 
 class snap_dom_exception_element_not_found : public snap_dom_exception
 {
 public:
-    snap_dom_exception_element_not_found(char const *       whatmsg) : snap_dom_exception(whatmsg) {}
-    snap_dom_exception_element_not_found(std::string const& whatmsg) : snap_dom_exception(whatmsg) {}
-    snap_dom_exception_element_not_found(QString const&     whatmsg) : snap_dom_exception(whatmsg) {}
+    snap_dom_exception_element_not_found(char const *        whatmsg) : snap_dom_exception(whatmsg) {}
+    snap_dom_exception_element_not_found(std::string const & whatmsg) : snap_dom_exception(whatmsg) {}
+    snap_dom_exception_element_not_found(QString const &     whatmsg) : snap_dom_exception(whatmsg) {}
 };
 
 
 
-void            insert_html_string_to_xml_doc(QDomNode& child, QString const& xml);
-void            insert_node_to_xml_doc(QDomNode& child, QDomNode const& node);
-void            replace_node_with_html_string(QDomNode& child, QString const& xml);
-void            replace_node_with_elements(QDomNode& replace, QDomNode const& node);
-void            remove_all_children(QDomElement& parent);
-QDomElement     get_element(QDomDocument& doc, QString const& name, bool must_exist = true);
-QDomElement     get_child_element(QDomNode parent, QString const& path);
-QDomElement     create_element(QDomNode parent, QString const& path);
-QString         remove_tags(QString const& html);
-QString         escape(QString const& str);
-QString         unescape(QString const& str);
+void            insert_html_string_to_xml_doc(QDomNode & child, QString const & xml);
+void            insert_node_to_xml_doc(QDomNode & child, QDomNode const & node);
+void            replace_node_with_html_string(QDomNode & child, QString const & xml);
+void            replace_node_with_elements(QDomNode & replace, QDomNode const & node);
+void            remove_all_children(QDomElement & parent);
+QDomElement     get_element(QDomDocument & doc, QString const & name, bool must_exist = true);
+QDomElement     get_child_element(QDomNode parent, QString const & path);
+QDomElement     create_element(QDomNode parent, QString const & path);
+QString         remove_tags(QString const & html);
+QString         escape(QString const & str);
+QString         unescape(QString const & str);
 
 
 } // namespace snap_dom
