@@ -32,9 +32,6 @@
 #################################################################################
 ## Dependencies
 ##
-find_package( Qt4 4.8.1 QUIET REQUIRED QtCore QtNetwork QtXml QtXmlPatterns )
-include( ${QT_USE_FILE} )
-add_definitions( ${QT_DEFINITIONS} )
 
 
 #################################################################################
@@ -58,12 +55,14 @@ add_executable(${PROJECT_NAME}
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwatchdog
+    ${ADVGETOPT_LIBRARIES}
+    ${LOG4CPLUS_LIBRARY}
     ${SNAPWEBSITES_LIBRARIES}
-    #${QTCASSANDRA_LIBRARIES}
-    #${QTSERIALIZATION_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
     #${QT_LIBRARIES}
-    #${THRIFT_LIBRARIES}
-    #${LIBTLD_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    ${LIBTLD_LIBRARIES}
     #dl
 )
 

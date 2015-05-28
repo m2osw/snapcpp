@@ -47,17 +47,16 @@ add_definitions( -DSNAPMANAGER_VERSION=\"${SNAPMANAGER_VERSION_MAJOR}.${SNAPMANA
 ##
 ## Find required packages
 ##
+find_package( AdvGetOpt        REQUIRED )
 find_package( LibTLD           REQUIRED )
+#find_package( log4cplus        REQUIRED )
+find_package( Qt4 4.8.4 QUIET  REQUIRED QtCore QtNetwork QtGui QtWebKit)
 find_package( QtCassandra      REQUIRED )
+find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
 find_package( SnapWebsites     REQUIRED )
 find_package( Thrift           REQUIRED )
-find_package( Qt4 4.8.4 QUIET  REQUIRED 
-    QtCore
-    QtNetwork
-    QtGui
-    QtWebKit
-)
+
 #
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
@@ -90,6 +89,7 @@ include_directories(
     ${PROJECT_BINARY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${LIBTLD_INCLUDE_DIRS}
+    ${LOG4CPLUS_INCLUDE_DIR}
     ${QT_INCLUDES}
     ${SNAPWEBSITES_INCLUDE_DIRS}
 )
@@ -107,8 +107,11 @@ add_executable( ${PROJECT_NAME}
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries( ${PROJECT_NAME}
+    ${ADVGETOPT_LIBRARIES}
+    ${LOG4CPLUS_LIBRARY}
     ${QT_LIBRARIES}
     ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
     ${LIBTLD_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
     ${THRIFT_LIBRARIES}

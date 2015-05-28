@@ -25,5 +25,17 @@ git push origin master
 git commit -i "<filename>"
 
 
+# amend a commit
+# It is not actually possible to update a commit in place. Instead you
+# create an amendment which you can hope will be used as expected.
+# To amend you last commit, just use --amend
+git commit --amend
+
+# If you want to amend an older commit, use -c <id> which you get with
+# a git log (see the long SHA number after the word commit)
+git commit --amend -c 123...123
+
+# Amending also involves merging, somehow.
+
 
 # vim: syntax=sh

@@ -551,7 +551,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
 
     // read all the contexts so the findContext() works
     f_cassandra->contexts();
-    QString const context_name(snap::get_name(snap::SNAP_NAME_CONTEXT));
+    QString const context_name(snap::get_name(snap::name_t::SNAP_NAME_CONTEXT));
     f_context = f_cassandra->findContext(context_name);
     if(!f_context)
     {
@@ -567,7 +567,7 @@ void snap_manager::on_f_cassandraConnectButton_clicked()
     }
 
     // also check for the 2 main tables
-    snap::name_t names[2] = { snap::SNAP_NAME_DOMAINS, snap::SNAP_NAME_WEBSITES /*, snap::SNAP_NAME_SITES*/ };
+    snap::name_t names[2] = { snap::name_t::SNAP_NAME_DOMAINS, snap::name_t::SNAP_NAME_WEBSITES /*, snap::name_t::SNAP_NAME_SITES*/ };
     for(int i = 0; i < 2; ++i)
     {
         QString const table_name(snap::get_name(names[i]));
@@ -658,9 +658,9 @@ void snap_manager::on_f_cassandraDisconnectButton_clicked()
 void snap_manager::reset_domains_index()
 {
     // get the table and delete the index row if it exists
-    QString const domain_table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
+    QString const domain_table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(domain_table_name));
-    QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
     if(table->exists(row_index_name))
     {
         // if the index exists, drop it so we can restart from scratch
@@ -698,13 +698,13 @@ void snap_manager::reset_domains_index()
 
 void snap_manager::reset_websites_index()
 {
-    QString const domain_table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
+    QString const domain_table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
     QtCassandra::QCassandraTable::pointer_t domain_table(f_context->findTable(domain_table_name));
 
     // get the table and delete the index row if it exists
-    QString const table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
     if(table->exists(row_index_name))
     {
         // if the index exists, drop it so we can restart from scratch
@@ -1026,7 +1026,7 @@ void snap_manager::loadDomains()
     // however the index table could be missing...
     f_domain_list->clear();
 
-    QString const table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     if( !table )
     {
@@ -1035,7 +1035,7 @@ void snap_manager::loadDomains()
         return;
     }
 
-    QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
     if(!table->exists(row_index_name))
     {
         // if the index doesn't exist, no rows were ever saved anyway,
@@ -1162,7 +1162,7 @@ void snap_manager::on_domainList_itemClicked(QListWidgetItem *item)
     f_domain_name->setText(f_domain_org_name);
 
     // IMPORTANT: note that f_domain_org_name changed to the item->text() value
-    QString const table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QtCassandra::QCassandraRow::pointer_t row(table->row(f_domain_org_name));
     if(row->exists(QString("core::original_rules")))
@@ -1259,7 +1259,7 @@ void snap_manager::on_domainSave_clicked()
             return;
         }
 
-        QString const table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
+        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
 
         if(name != f_domain_org_name)
@@ -1288,7 +1288,7 @@ void snap_manager::on_domainSave_clicked()
         }
 
         // save in the index
-        QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+        QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
         (*table)[row_index_name][name] = QtCassandra::QCassandraValue();
 
         // it worked
@@ -1351,11 +1351,11 @@ void snap_manager::on_domainDelete_clicked()
         return;
     }
 
-    QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
     // delete all the sub-domains
     {
-        QString const table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
+        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
         if(table->exists(row_index_name))
         {
@@ -1400,7 +1400,7 @@ void snap_manager::on_domainDelete_clicked()
 
     // remove from the list of domains
     {
-        QString const table_name(snap::get_name(snap::SNAP_NAME_DOMAINS));
+        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_DOMAINS));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
         table->dropRow(name);
 
@@ -1436,9 +1436,9 @@ void snap_manager::loadWebsites()
 {
     // we just checked to know whether the table existed so it cannot fail here
     f_website_list->clear();
-    QString const table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
-    QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
     if(!table->exists(row_index_name))
     {
         // if the index doesn't exist, no rows were ever saved anyway,
@@ -1536,7 +1536,7 @@ void snap_manager::on_websiteList_itemClicked(QListWidgetItem *item)
     f_website_name->setText(f_website_org_name);
 
     // IMPORTANT: note that f_website_org_name changed to the item->text() value
-    QString const table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QtCassandra::QCassandraRow::pointer_t row(table->row(f_website_org_name));
     if(row->exists(QString("core::original_rules")))
@@ -1648,7 +1648,7 @@ void snap_manager::on_websiteSave_clicked()
             return;
         }
 
-        QString const table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
+        QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
         QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
 
         if(name != f_website_org_name)
@@ -1677,7 +1677,7 @@ void snap_manager::on_websiteSave_clicked()
         }
 
         // add that one in the index
-        QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+        QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
         (*table)[row_index_name][f_domain_org_name + "::" + name] = QtCassandra::QCassandraValue();
 
         // it worked, save the results
@@ -1731,11 +1731,11 @@ void snap_manager::on_websiteDelete_clicked()
         return;
     }
 
-    QString const table_name(snap::get_name(snap::SNAP_NAME_WEBSITES));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_WEBSITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     table->dropRow(name);
 
-    QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+    QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
     QtCassandra::QCassandraRow::pointer_t row(table->findRow(row_index_name));
     if(row)
     {
@@ -1788,9 +1788,9 @@ void snap_manager::loadSites()
 
     // TBD: we would need to have an "*index*" so we can cleanly search for
     //      the list of sites; so at this point we ignore the filter info
-    //QString const row_index_name(snap::get_name(snap::SNAP_NAME_INDEX)); // "*index*"
+    //QString const row_index_name(snap::get_name(snap::name_t::SNAP_NAME_INDEX)); // "*index*"
 
-    QString const table_name(snap::get_name(snap::SNAP_NAME_SITES));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_SITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QRegExp re; // no filter at this point
     f_table_model.setTable( table, re ); // Can be null, in which case it will blank out the view
@@ -1859,7 +1859,7 @@ void snap_manager::onSitesListCurrentChanged( QModelIndex current, QModelIndex /
     f_sites_name->setText(f_sites_org_name);
 
     // IMPORTANT: note that f_sites_org_name changed to the item->text() value
-    QString const table_name(snap::get_name(snap::SNAP_NAME_SITES));
+    QString const table_name(snap::get_name(snap::name_t::SNAP_NAME_SITES));
     QtCassandra::QCassandraTable::pointer_t table(f_context->findTable(table_name));
     QtCassandra::QCassandraRow::pointer_t   row  (table->row(f_sites_org_name));
     f_row_model.setRow( row );

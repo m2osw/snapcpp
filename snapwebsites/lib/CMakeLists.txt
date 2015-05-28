@@ -37,9 +37,7 @@ set( CMAKE_AUTOMOC TRUE )
 # Put the version in the header file
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/snapwebsites.h.in ${CMAKE_CURRENT_BINARY_DIR}/snapwebsites.h )
 
-find_package( log4cplus REQUIRED )
-find_package( OpenSSL REQUIRED )
-find_package( Qt4 4.8.1 REQUIRED QtCore QtXml QtXmlPatterns )
+
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 

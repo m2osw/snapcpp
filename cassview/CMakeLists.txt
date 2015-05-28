@@ -45,10 +45,6 @@ project(cassview-project)
 
 set( CMAKE_AUTOMOC TRUE )
 
-if( NOT MSVC )
-    add_definitions( -std=c++0x )
-endif()
-
 add_definitions( -DCASSVIEW_VERSION=\"${CASSVIEW_VERSION_MAJOR}.${CASSVIEW_VERSION_MINOR}.${CASSVIEW_VERSION_PATCH}\" )
 
 ## Include support modules
@@ -62,11 +58,16 @@ if( NOT CMAKE_MODULE_PATH )
     message( "Found cmake in ${CMAKE_MODULE_PATH}" )
 endif()
 find_package( SnapCMakeModules REQUIRED )
-find_package( SnapDoxygen      REQUIRED )
+find_package( AdvGetOpt        REQUIRED )
+find_package( log4cplus        REQUIRED )
+find_package( LibTLD           REQUIRED )
+find_package( Qt4 4.8.1        REQUIRED QtCore QtNetwork QtGui )
 find_package( QtCassandra      REQUIRED )
+find_package( QtSerialization  REQUIRED )
+find_package( SnapDoxygen      REQUIRED )
 find_package( SnapWebsites     REQUIRED )
+find_package( Thrift           REQUIRED )
 
-find_package( Qt4 4.8.1 REQUIRED QtCore QtNetwork QtGui )
 include( ${QT_USE_FILE} )
 add_definitions( ${QT_DEFINITIONS} )
 

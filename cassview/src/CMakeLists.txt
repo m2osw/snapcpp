@@ -39,6 +39,12 @@
 ##
 project(cassview)
 
+
+##include_directories(
+##    SYSTEM
+##        ${LOG4CPLUS_INCLUDE_DIR}
+##)
+
 include_directories(
 	"${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_CURRENT_BINARY_DIR}"
@@ -72,9 +78,14 @@ add_executable(${PROJECT_NAME}
 
 # while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
-    ${QTCASSANDRA_LIBRARIES}
+    ${ADVGETOPT_LIBRARIES}
+    ${LOG4CPLUS_LIBRARY}
+    ${LIBTLD_LIBRARIES}
     ${QT_LIBRARIES}
+    ${QTCASSANDRA_LIBRARIES}
+    ${QTSERIALIZATION_LIBRARIES}
     ${SNAPWEBSITES_LIBRARIES}
+    ${THRIFT_LIBRARIES}
 )
 
 install(

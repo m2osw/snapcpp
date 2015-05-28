@@ -53,6 +53,9 @@ cmake_minimum_required(VERSION 2.8)
 
 project( snapwebsites_project )
 
+enable_language( CXX )
+enable_language( C )
+
 ## Include support modules
 ##
 if( NOT CMAKE_MODULE_PATH )
@@ -71,7 +74,10 @@ find_package( Boost            REQUIRED )
 find_package( ControlledVars   REQUIRED )
 find_package( LibTLD           REQUIRED )
 find_package( LibXml2          REQUIRED )
+find_package( log4cplus        REQUIRED )
+find_package( OpenSSL          REQUIRED )
 find_package( ProcPS           REQUIRED )
+find_package( Qt4 4.8.1        REQUIRED QtCore QtXml QtXmlPatterns )
 find_package( QtCassandra      REQUIRED )
 find_package( QtSerialization  REQUIRED )
 find_package( SnapCMakeModules REQUIRED )
