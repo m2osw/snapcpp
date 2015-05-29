@@ -1,0 +1,5 @@
+log4cplus (1.2.0-rc3~trusty) trusty; urgency=high
+
+  * Initial release of packaging.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 29 May 2015 03:34:56 -0700
