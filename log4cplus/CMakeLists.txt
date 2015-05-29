@@ -14,6 +14,15 @@ set (CMAKE_LEGACY_CYGWIN_WIN32 0)
 project (log4cplus)
 cmake_minimum_required (VERSION 2.8.4)
 
+################################################################################
+# Load up necessary modules
+#
+set( CMAKE_MODULE_PATH
+    ${CMAKE_SOURCE_DIR}/snapCMakeModules/Modules
+    ${CMAKE_BINARY_DIR}/dist/share/cmake-2.8/Modules
+)
+find_package( SnapBuild        REQUIRED )
+
 enable_language (CXX)
 include(GNUInstallDirs)
 
