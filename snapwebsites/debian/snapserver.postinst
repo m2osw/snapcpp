@@ -7,7 +7,7 @@
 
 if [ "$1" = "configure" ]
 then
-	# add snapwebsites user and group of not there already
+	# add snapwebsites user and group if not there already
 	#
 	if ! getent group snapwebsites >/dev/null; then
 		addgroup --system snapwebsites
