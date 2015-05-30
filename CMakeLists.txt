@@ -77,6 +77,7 @@ ConfigureMakeProject( PROJECT_NAME zipios )
 
 ConfigureMakeProject( PROJECT_NAME log4cplus
     CONFIG_ARGS
+        -DCMAKE_CXX_FLAGS=-std=c++11
         -DLOG4CPLUS_BUILD_TESTING=OFF
         -DLOG4CPLUS_SINGLE_THREADED=OFF
         -DLOG4CPLUS_QT4=ON
@@ -137,7 +138,6 @@ ConfigureMakeProject( PROJECT_NAME libQtSerialization
 
 ConfigureMakeProject( PROJECT_NAME snapwebsites
     CONFIG_ARGS
-        -DCMAKE_CXX_FLAGS=-std=c++11
         -DTHRIFT_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DLOG4CPLUS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
