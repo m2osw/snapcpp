@@ -55,7 +55,7 @@ function( ConfigureMakeProject )
 	set( SNAP_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Destination installation folder." )
 	if( ARG_DISTFILE_PATH )
 		set( RM_DIR ${SRC_DIR}   )
-		else()
+	else()
 		set( RM_DIR ${BUILD_DIR} )
 	endif()
 
