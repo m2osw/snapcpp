@@ -13,7 +13,7 @@
 	dh $@ --buildsystem=cmake
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release \
+	dh_auto_configure -- \
 		-DCMAKE_CXX_FLAGS=-std=c++11 \
 		-DLOG4CPLUS_BUILD_TESTING=OFF \
 		-DLOG4CPLUS_SINGLE_THREADED=OFF \
