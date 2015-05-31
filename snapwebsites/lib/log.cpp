@@ -49,13 +49,13 @@ namespace
     log4cplus::Logger   g_secure_logger;
 
     enum class logging_type_t
-        { unconfigured_logger
-        , console_logger
-        , file_logger
-        , conffile_logger
-        , syslog_logger
+        { UNCONFIGURED_LOGGER
+        , CONSOLE_LOGGER
+        , FILE_LOGGER
+        , CONFFILE_LOGGER
+        , SYSLOG_LOGGER
         };
-    logging_type_t      g_logging_type( logging_type_t::unconfigured_logger );
+    logging_type_t      g_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
 }
 // no name namespace
 
@@ -69,12 +69,12 @@ namespace
  */
 void unconfigure()
 {
-    if(g_logging_type != logging_type_t::unconfigured_logger )
+    if(g_logging_type != logging_type_t::UNCONFIGURED_LOGGER )
     {
         // shutdown the previous version before re-configuring
         // (this is done after a fork() call.)
         log4cplus::Logger::shutdown();
-        g_logging_type = logging_type_t::unconfigured_logger;
+        g_logging_type = logging_type_t::UNCONFIGURED_LOGGER;
     }
 }
 
@@ -119,7 +119,7 @@ void configureConsole()
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
-    g_logging_type    = logging_type_t::console_logger;
+    g_logging_type    = logging_type_t::CONSOLE_LOGGER;
     g_logger          = log4cplus::Logger::getInstance("snap");
     g_secure_logger   = log4cplus::Logger::getInstance("security");
 
@@ -171,7 +171,7 @@ void configureLogfile( QString const& logfile )
 
     g_log_config_filename.clear();
     g_log_output_filename = logfile;
-    g_logging_type        = logging_type_t::file_logger;
+    g_logging_type        = logging_type_t::FILE_LOGGER;
     g_logger              = log4cplus::Logger::getInstance("snap");
     g_secure_logger       = log4cplus::Logger::getInstance("security");
 
@@ -216,7 +216,7 @@ void configureSysLog()
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
-    g_logging_type    = logging_type_t::syslog_logger;
+    g_logging_type    = logging_type_t::SYSLOG_LOGGER;
     g_logger          = log4cplus::Logger::getInstance("snap");
     g_secure_logger   = log4cplus::Logger::getInstance("security");
 
@@ -262,7 +262,7 @@ void configureConffile(QString const& filename)
     }
 
     g_log_config_filename   = filename;
-    g_logging_type          = logging_type_t::conffile_logger;
+    g_logging_type          = logging_type_t::CONFFILE_LOGGER;
     log4cplus::PropertyConfigurator::doConfigure(LOG4CPLUS_C_STR_TO_TSTRING(filename.toUtf8().data()));
     g_logger                = log4cplus::Logger::getInstance("snap");
     g_secure_logger         = log4cplus::Logger::getInstance("security");
@@ -282,19 +282,19 @@ void reconfigure()
 {
     switch( g_logging_type )
     {
-    case logging_type_t::console_logger:
+    case logging_type_t::CONSOLE_LOGGER:
         configureConsole();
         break;
 
-    case logging_type_t::file_logger:
+    case logging_type_t::FILE_LOGGER:
         configureLogfile( g_log_output_filename );
         break;
 
-    case logging_type_t::conffile_logger:
+    case logging_type_t::CONFFILE_LOGGER:
         configureConffile( g_log_config_filename );
         break;
 
-    case logging_type_t::syslog_logger:
+    case logging_type_t::SYSLOG_LOGGER:
         configureSysLog();
         break;
 
@@ -314,7 +314,7 @@ void reconfigure()
  */
 bool is_configured()
 {
-    return g_logging_type != logging_type_t::unconfigured_logger;
+    return g_logging_type != logging_type_t::UNCONFIGURED_LOGGER;
 }
 
 
@@ -497,9 +497,10 @@ logger::~logger()
     }
 
     // TBD: is the exists() call doing anything for us here?
-    if( (g_logging_type == logging_type_t::unconfigured_logger) || !log4cplus::Logger::exists(log_security_t::LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
+    if( (g_logging_type == logging_type_t::UNCONFIGURED_LOGGER)
+    ||  !log4cplus::Logger::exists(log_security_t::LOG_SECURITY_SECURE == f_security ? "security" : "snap"))
     {
-        // not even configured, return immediately
+        // if not even configured, return immediately
         if(sll != -1)
         {
             if(!f_file)
