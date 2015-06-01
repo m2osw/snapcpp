@@ -561,11 +561,11 @@ snap_init::snap_init( int argc, char *argv[] )
 
     if( f_opt.is_defined( "nolog" ) || f_opt.is_defined( "help" ) )
     {
-        snap::logging::configureConsole();
+        snap::logging::configure_console();
     }
     else
     {
-        snap::logging::configureLogfile( f_opt.get_string("logfile").c_str() );
+        snap::logging::configure_logfile( f_opt.get_string("logfile").c_str() );
     }
 
     f_config.read_config_file( f_opt.get_string("config").c_str() );

@@ -34,10 +34,12 @@
 ##
 install(
     FILES 
-        log.conf
+        log.properties
+        loggingserver.properties
+        logserver.properties
+        snapcgilog.properties
         snapserver.conf
         snapcgi.conf
-        snapcgilog.conf
         snap-apache2.conf
     DESTINATION
         share/snapwebsites/conf

@@ -190,6 +190,8 @@ public:
     bool                is_debug() const { return f_debug; }
     bool                is_foreground() const { return f_foreground; }
     bool                is_backend() const { return f_backend; }
+    bool                is_logging_server() const { return f_using_logging_server; }
+    static size_t       thread_count();
     void                set_default_config_filename(QString const & filename) { f_config_filename = filename; }
     void                config( int argc, char * argv[] );
     QString             get_parameter(QString const & param_name) const;
@@ -263,6 +265,7 @@ private:
     controlled_vars::fbool_t                f_debug;
     controlled_vars::fbool_t                f_foreground;
     controlled_vars::fbool_t                f_backend;
+    controlled_vars::fbool_t                f_using_logging_server;
     QMap<QString, bool>                     f_created_table;
     QString                                 f_config_filename;
 

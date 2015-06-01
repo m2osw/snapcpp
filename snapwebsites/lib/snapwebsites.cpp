@@ -39,6 +39,7 @@
 #include <syslog.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/stat.h>
 
 #include "poison.h"
 
@@ -904,35 +905,40 @@ void server::config(int argc, char *argv[])
     {
         // Override log_config and output only to the console
         //
-        logging::configureConsole();
+        logging::configure_console();
     }
     else if( f_opt->is_defined("logfile") )
     {
         // Override the output logfile specified in the configuration file.
         //
-        logging::configureLogfile( f_opt->get_string( "logfile" ).c_str() );
+        logging::configure_logfile( f_opt->get_string( "logfile" ).c_str() );
     }
     else if( f_opt->is_defined("logconf") )
     {
-        logging::configureConffile( f_opt->get_string( "logconf" ).c_str() );
+        logging::configure_conffile( f_opt->get_string( "logconf" ).c_str() );
     }
     else
     {
         // Read the log configuration file and use it to specify the appenders
-        // and log level.
+        // and log level. If a server version exists and the server is
+        // available then use the loggging server.
         //
-        QString const log_config( f_parameters["log_config"] );
+        QString const log_server( f_parameters["log_server"] );
+        f_using_logging_server = logging::is_loggingserver_available( log_server );
+        QString const log_config( f_using_logging_server
+                                    ? log_server
+                                    : f_parameters["log_config"] );
         if( log_config.isEmpty() )
         {
             // Fall back to output to the console
             //
-            logging::configureConsole();
+            logging::configure_console();
         }
         else
         {
             // Configure the logging system according to the log configuration.
             //
-            logging::configureConffile( f_parameters["log_config"] );
+            logging::configure_conffile( log_config );
         }
     }
 
@@ -949,8 +955,31 @@ void server::config(int argc, char *argv[])
     {
         // Override output level and force it to be debug
         //
-        logging::setLogOutputLevel( logging::log_level_t::LOG_LEVEL_DEBUG );
+        logging::set_log_output_level( logging::log_level_t::LOG_LEVEL_DEBUG );
     }
+}
+
+
+/** \brief Retrieve the number of threads in this process.
+ *
+ * This function counts the total number of threads that this process is
+ * currently running with.
+ *
+ * \todo
+ * We should make sure that the count is 1 before any call to fork().
+ *
+ * \return The number of running threads in this process.
+ */
+size_t server::thread_count()
+{
+    struct stat task;
+
+    if(stat("/proc/self/task", &task) != 0)
+    {
+        return -1;
+    }
+
+    return task.st_nlink - 2;
 }
 
 

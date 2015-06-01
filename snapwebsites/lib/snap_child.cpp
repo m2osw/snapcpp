@@ -39,13 +39,13 @@
 #include <sstream>
 #include <memory>
 
-#include <wait.h>
 #include <errno.h>
-#include <libtld/tld.h>
-#include <stdio.h>
-#include <sys/time.h>
-#include <sys/socket.h>
 #include <signal.h>
+#include <stdio.h>
+#include <wait.h>
+#include <sys/prctl.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 
 #include <QDirIterator>
 #include <QDateTime>
@@ -2572,22 +2572,95 @@ void snap_child::set_locale(QString const& locale)
  * Use this method to fork child processes. If SNAP_NO_FORK is on,
  * then respect the "--nofork" command line option.
  *
- * \return The child PID, 0 if not forking, -1 if an error occurs
+ * The main process should not be running any threads. At this point
+ * we only check and post a warning if the number of threads is not
+ * exactly 1.
+ *
+ * In case the snap logger uses threads (i.e. when using a SocketAppender)
+ * we stop the logger before calling fork() and then we re-establish the
+ * logger on return, whether the fork() worked or not.
+ *
+ * The return value is exactly the same as what the fork() function would
+ * otherwise return.
+ *
+ * \exception snap_logic_exception
+ * This exception is raised if the server weak pointer cannot be locked.
+ *
+ * \return The child PID, 0 for the child process, -1 if an error occurs.
  */
 pid_t snap_child::fork_child()
 {
-#ifdef SNAP_NO_FORK
     server::pointer_t server( f_server.lock() );
     if(!server)
     {
         throw snap_logic_exception("server pointer is nullptr");
     }
+
+#ifdef SNAP_NO_FORK
     if( server->nofork() )
     {
+        // simulate a working for, we return as the child
         return 0;
     }
 #endif
-    return fork();
+
+    // if the logger is using threads, it has to be shutdown (unconfigured)
+    // before we call the fork(); this is a waste of time so we try not to
+    // do it if we can
+    if(server->is_logging_server())
+    {
+        logging::unconfigure();
+    }
+
+    // generate a warning about having more than one thread at this point
+    // (it is a huge potential for a crash or lock up, hence the test)
+    // See: http://snapwebsites.org/journal/2015/06/using-threads-server-uses-fork-they-dont-mix-well
+    // We send the log after we re-established it (See below)
+    size_t const count(server->thread_count());
+
+    pid_t const parent_pid(getpid());
+
+    pid_t const p(fork());
+
+    if(p != 0)
+    {
+        // re-establish the logger if we turned it of before the fork()
+        if(server->is_logging_server())
+        {
+            logging::reconfigure();
+        }
+
+        if(count != 1)
+        {
+            SNAP_LOG_WARNING("The number of thread before the fork() to create a snap_child is ")(count)(" when it should be 1.");
+        }
+    }
+    else
+    {
+        // auto-kill child if parent dies
+        //
+        // TODO: ameliorate by using a SIGUSR1 or SIGUSR2 and implement
+        //       a way for a possible clean exit (i.e. if child is still
+        //       working, give it a chance, then after X seconds, still
+        //       force a kill)
+        //
+        prctl(PR_SET_PDEATHSIG, SIGHUP);
+
+        // always reconfigure the logger in the child
+        logging::reconfigure();
+
+        // it could be that the prctrl() was made after the true parent died...
+        // so we have to test the PID of our parent
+        //
+        if(getppid() != parent_pid)
+        {
+            SNAP_LOG_FATAL("snap_backend::process_backend_uri() lost parent too soon and did not receive SIGHUP; quit immediately.");
+            exit(1);
+            NOTREACHED();
+        }
+    }
+
+    return p;
 }
 
 
@@ -2653,9 +2726,6 @@ bool snap_child::process(int socket)
     try
     {
         f_ready = false;
-
-        // on fork() we lose the configuration so we have to reload it
-        logging::reconfigure();
 
         init_start_date();
 

@@ -34,7 +34,7 @@
 
 int main(int /*argc*/, char * /*argv*/[])
 {
-    snap::logging::configureConsole();
+    snap::logging::configure_console();
 
     SNAP_LOG_INFO("test_snap_exception started!");
     try

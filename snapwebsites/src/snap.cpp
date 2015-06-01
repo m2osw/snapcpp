@@ -69,7 +69,7 @@
 
 namespace
 {
-    const std::vector<std::string> g_configuration_files  =
+    const std::vector<std::string> g_configuration_files =
     {
         "/etc/snapwebsites/snapcgi.conf"//,
         //"~/.snapwebsites/snapcgi.conf"    // TODO: tildes are not supported
@@ -104,8 +104,8 @@ namespace
         {
             '\0',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE | advgetopt::getopt::GETOPT_FLAG_CONFIGURATION_FILE | advgetopt::getopt::GETOPT_FLAG_SHOW_USAGE_ON_ERROR,
-            "logconfig",
-            "/etc/snapwebsites/snapcgilog.conf",
+            "log_config",
+            "/etc/snapwebsites/snapcgilog.properties",
             "Full path of log configuration file",
             advgetopt::getopt::optional_argument
         },
@@ -170,8 +170,9 @@ snap_cgi::snap_cgi( int argc, char *argv[] )
         exit(1);
     }
 
-    std::string logconfig(f_opt.get_string("logconfig"));
-    snap::logging::configureConffile( logconfig.c_str() );
+    // read log_config and setup the logger
+    std::string logconfig(f_opt.get_string("log_config"));
+    snap::logging::configure_conffile( logconfig.c_str() );
 }
 
 snap_cgi::~snap_cgi()
@@ -224,11 +225,13 @@ bool snap_cgi::verify()
                 char c(*p);
                 if(c < '0' || c > '9')
                 {
+                    SNAP_LOG_FATAL("Invalid port (found a character that is not a digit in \"")(snapserver)("\".");
                     throw tcp_client_server::tcp_client_server_parameter_error("the port in the snapserver parameter is not valid: " + snapserver + ".");
                 }
                 f_port = f_port * 10 + c - '0';
                 if(f_port > 65535)
                 {
+                    SNAP_LOG_FATAL("Invalid port (Port number too large in \"")(snapserver)("\".");
                     throw tcp_client_server::tcp_client_server_parameter_error("the port in the snapserver parameter is too large (we only support a number from 0 to 65535): " + snapserver + ".");
                 }
             }
@@ -243,6 +246,7 @@ bool snap_cgi::verify()
     char const *request_method(getenv("REQUEST_METHOD"));
     if(request_method == NULL)
     {
+        SNAP_LOG_FATAL("Request method is not defined.");
         std::cout   << "Status: 405 Method Not Defined"         << std::endl
                     << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                     << "Allow: GET, HEAD, POST"                 << std::endl
@@ -255,6 +259,7 @@ bool snap_cgi::verify()
     && strcmp(request_method, "HEAD") != 0
     && strcmp(request_method, "POST") != 0)
     {
+        SNAP_LOG_FATAL("Request method is \"")(request_method)("\", which we currently refuse.");
         if(strcmp(request_method, "BREW") == 0)
         {
             // see http://tools.ietf.org/html/rfc2324
@@ -283,6 +288,9 @@ int snap_cgi::process()
     char const *request_method( getenv("REQUEST_METHOD") );
     if(request_method == NULL)
     {
+        // the method was already checked before this call so it should always
+        // be defined...
+        SNAP_LOG_FATAL("Method not defined in REQUEST_METHOD.");
         std::cout   << "Status: 405 Method Not Defined"         << std::endl
                     << "Expires: Sat, 1 Jan 2000 00:00:00 GMT"  << std::endl
                     << "Allow: GET, HEAD, POST"                 << std::endl
@@ -387,12 +395,10 @@ int snap_cgi::process()
     //       through as it comes in, but in order to be able to return an
     //       error instead of a broken page, we may want to consider
     //       buffering first?
-    int again(1);
-    bool more(false);
     for(;;)
     {
         char buf[64 * 1024];
-        int r(socket.read(buf, sizeof(buf)));
+        int const r(socket.read(buf, sizeof(buf)));
         if(r > 0)
         {
 //#ifdef _DEBUG
@@ -403,7 +409,7 @@ int snap_cgi::process()
                 // there is not point in calling error() from here because
                 // the connection is probably broken anyway, just report
                 // the problem in to the logger
-                SNAP_LOG_ERROR("an I/O error occurred while sending the response to the client");
+                SNAP_LOG_FATAL("an I/O error occurred while sending the response to the client");
                 return 1;
             }
 
@@ -421,24 +427,13 @@ int snap_cgi::process()
         }
         else if(r == -1)
         {
-#ifdef _DEBUG
-            SNAP_LOG_DEBUG("Done reading from socket.");
-#endif
+            SNAP_LOG_FATAL("an I/O error occurred while reading the response from the server");
             break;
         }
         else if(r == 0)
         {
-            // wait 1 second
-            --again;
-            if(again == 0)
-            {
-                break;
-            }
-            more = true;
-#ifdef _DEBUG
-            SNAP_LOG_DEBUG("Waiting, sleep 1");
-#endif
-            sleep(1);
+			// normal exit
+            break;
         }
     }
     // TODO: handle potential read problems...

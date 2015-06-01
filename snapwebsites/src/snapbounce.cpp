@@ -202,11 +202,11 @@ snap_bounce::snap_bounce( int argc, char *argv[] )
 
     if( f_opt.is_defined( "nolog" ) || f_opt.is_defined( "help" ) )
     {
-        snap::logging::configureConsole();
+        snap::logging::configure_console();
     }
     else
     {
-        snap::logging::configureSysLog();
+        snap::logging::configure_sysLog();
     }
 
     f_config.read_config_file( f_opt.get_string("config").c_str() );

@@ -92,13 +92,16 @@ private:
     mutable controlled_vars::flbool_t   f_ignore;
 };
 
-void configureConsole  ();
-void configureLogfile  ( QString const & logfile  );
-void configureConffile ( QString const & filename );
-void configureSysLog   ();
-void reconfigure       ();
-bool is_configured     ();
-void setLogOutputLevel ( log_level_t level );
+void configure_console          ();
+void configure_logfile          ( QString const & logfile  );
+void configure_conffile         ( QString const & filename );
+void configure_sysLog           ();
+void configure_server           ();
+void unconfigure                ();
+void reconfigure                ();
+bool is_configured              ();
+void set_log_output_level       ( log_level_t level );
+bool is_loggingserver_available ( QString const & logserver );
 
 logger & operator << ( logger & l, QString const &                    msg );
 logger & operator << ( logger & l, std::basic_string<char> const &    msg );

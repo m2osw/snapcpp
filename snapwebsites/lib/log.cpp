@@ -35,6 +35,96 @@
 
 #include "poison.h"
 
+
+/** \file
+ * \brief Handle logging in the Snap environment.
+ *
+ * The snap::logging namespace defines a set of functions and classes used
+ * to setup the snap logger that can be easily accessed with the following
+ * macros:
+ *
+ * \li SNAP_LOG_FATAL -- output what is viewed as fatal error
+ * \li SNAP_LOG_ERROR -- output an error
+ * \li SNAP_LOG_WARNING -- output a warning
+ * \li SNAP_LOG_INFO -- output some information
+ * \li SNAP_LOG_DEBUG -- output debug information
+ * \li SNAP_LOG_TRACE -- output trace information
+ *
+ * The macros should be used so that way you include the filename and line
+ * number of where the message is generated from. That information is then
+ * available to be printed in the logs.
+ *
+ * The macros define a logger object that accepts messages with either the
+ * << operator or the () operator, both of which support null terminated
+ * C strings (char and wchar_t), QString, std::string, std::wstring,
+ * and all basic types (integers and floats).
+ *
+ * The () operator also accepts the security enumeration as input, so you
+ * can change the level to SECURE at any time when you generate a log.
+ *
+ * \code
+ *      SNAP_LOG_INFO("User password is: ")
+ *              (snap::logging::log_security_t::LOG_SECURITY_SECURE)
+ *              (password);
+ *
+ *      SNAP_LOG_FATAL("We could not read resources: ") << filename;
+ * \endcode
+ *
+ * Try to remember that the \\n character is not necessary. The logger
+ * will automatically add a newline at the end of each log message.
+ *
+ * \note
+ * The newer versions of the log4cplus library offer a very similar set
+ * of macros. These macro, though, do not properly check out all of
+ * our flags and levels so you should avoid them for now.
+ *
+ * To setup the logging system, the snapserver makes use of up to three
+ * files:
+ *
+ * \li logserver.properties
+ * \li log.properties
+ * \li loggingserver.properties
+ * \li snapcgilog.properties
+ *
+ * The path and filename of the logserver.properties file is defined
+ * in the snapserver.conf file under the variable name log_server
+ *
+ * \code
+ *      log_server=/etc/snapwebsites/logserver.properties
+ * \endcode
+ *
+ * The loggingserver may not be running so the snapserver first checks
+ * the availability. If available, then it uses it. If it cannot be
+ * found, then it insteads tries with the log.properties file, of more
+ * exactly the file defined in log_config of the snapserver.conf file.
+ *
+ * \code
+ *      log_config=/etc/snapwebsites/log.properties
+ * \endcode
+ *
+ * The loggingserver itself will make use of the loggingserver.properties
+ * file. This is expected to be setup in the script starting the server.
+ * The filename and path are given on the command line:
+ *
+ * \code
+ *      loggingserver 9998 /etc/snapwebsites/loggingserver.properties
+ * \endcode
+ *
+ * The backends run just like the snapserver so they get the same logger
+ * settings.
+ *
+ * The snap.cgi tool, however, has its own setup. It first checks the
+ * command line, and if no configuration is defined on the command
+ * line it uses the log_config=... parameter from the snapcgi.conf
+ * file. The default file is snapcgilog.properties.
+ *
+ * \code
+ *      log_config=/etc/snapwebsites/snapcgilog.properties
+ * \endcode
+ *
+ * \sa log4cplus/include/log4cplus/loggingmacros.h
+ */
+
 namespace snap
 {
 
@@ -56,6 +146,7 @@ namespace
         , SYSLOG_LOGGER
         };
     logging_type_t      g_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
+    logging_type_t      g_last_logging_type( logging_type_t::UNCONFIGURED_LOGGER );
 }
 // no name namespace
 
@@ -73,8 +164,11 @@ void unconfigure()
     {
         // shutdown the previous version before re-configuring
         // (this is done after a fork() call.)
+        //
         log4cplus::Logger::shutdown();
         g_logging_type = logging_type_t::UNCONFIGURED_LOGGER;
+        //g_last_logging_type = ... -- keep the last valid configuration
+        //  type so we can call reconfigure() and get it back "as expected"
     }
 }
 
@@ -102,7 +196,7 @@ void unconfigure()
  * \sa server::config()
  * \sa unconfigure()
  */
-void configureConsole()
+void configure_console()
 {
     unconfigure();
 
@@ -119,13 +213,14 @@ void configureConsole()
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
-    g_logging_type    = logging_type_t::CONSOLE_LOGGER;
-    g_logger          = log4cplus::Logger::getInstance("snap");
-    g_secure_logger   = log4cplus::Logger::getInstance("security");
+    g_logging_type       = logging_type_t::CONSOLE_LOGGER;
+    g_last_logging_type  = logging_type_t::CONSOLE_LOGGER;
+    g_logger             = log4cplus::Logger::getInstance("snap");
+    g_secure_logger      = log4cplus::Logger::getInstance("security");
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
-    setLogOutputLevel( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+    set_log_output_level( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
 }
 
 
@@ -148,7 +243,7 @@ void configureConsole()
  * \sa server::config()
  * \sa unconfigure()
  */
-void configureLogfile( QString const& logfile )
+void configure_logfile( QString const& logfile )
 {
     unconfigure();
 
@@ -172,12 +267,13 @@ void configureLogfile( QString const& logfile )
     g_log_config_filename.clear();
     g_log_output_filename = logfile;
     g_logging_type        = logging_type_t::FILE_LOGGER;
+    g_last_logging_type   = logging_type_t::FILE_LOGGER;
     g_logger              = log4cplus::Logger::getInstance("snap");
     g_secure_logger       = log4cplus::Logger::getInstance("security");
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
-    setLogOutputLevel( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+    set_log_output_level( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
 }
 
 
@@ -201,7 +297,7 @@ void configureLogfile( QString const& logfile )
  * \sa server::config()
  * \sa unconfigure()
  */
-void configureSysLog()
+void configure_sysLog()
 {
     unconfigure();
 
@@ -216,13 +312,14 @@ void configureSysLog()
 
     g_log_config_filename.clear();
     g_log_output_filename.clear();
-    g_logging_type    = logging_type_t::SYSLOG_LOGGER;
-    g_logger          = log4cplus::Logger::getInstance("snap");
-    g_secure_logger   = log4cplus::Logger::getInstance("security");
+    g_logging_type        = logging_type_t::SYSLOG_LOGGER;
+    g_last_logging_type   = logging_type_t::SYSLOG_LOGGER;
+    g_logger              = log4cplus::Logger::getInstance("snap");
+    g_secure_logger       = log4cplus::Logger::getInstance("security");
 
     g_logger.addAppender( appender );
     g_secure_logger.addAppender( appender );
-    setLogOutputLevel( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
+    set_log_output_level( log_level_t::LOG_LEVEL_INFO );        // TODO: This is broken! For some reason log4cplus won't change the threshold level...
 }
 
 
@@ -250,7 +347,7 @@ void configureSysLog()
  * \sa server::config()
  * \sa unconfigure()
  */
-void configureConffile(QString const& filename)
+void configure_conffile(QString const & filename)
 {
     unconfigure();
 
@@ -263,6 +360,7 @@ void configureConffile(QString const& filename)
 
     g_log_config_filename   = filename;
     g_logging_type          = logging_type_t::CONFFILE_LOGGER;
+    g_last_logging_type     = logging_type_t::CONFFILE_LOGGER;
     log4cplus::PropertyConfigurator::doConfigure(LOG4CPLUS_C_STR_TO_TSTRING(filename.toUtf8().data()));
     g_logger                = log4cplus::Logger::getInstance("snap");
     g_secure_logger         = log4cplus::Logger::getInstance("security");
@@ -280,27 +378,29 @@ void configureConffile(QString const& filename)
  */
 void reconfigure()
 {
-    switch( g_logging_type )
+    switch( g_last_logging_type )
     {
     case logging_type_t::CONSOLE_LOGGER:
-        configureConsole();
+        configure_console();
         break;
 
     case logging_type_t::FILE_LOGGER:
-        configureLogfile( g_log_output_filename );
+        configure_logfile( g_log_output_filename );
         break;
 
     case logging_type_t::CONFFILE_LOGGER:
-        configureConffile( g_log_config_filename );
+        configure_conffile( g_log_config_filename );
         break;
 
     case logging_type_t::SYSLOG_LOGGER:
-        configureSysLog();
+        configure_sysLog();
         break;
 
     default:
-        /* do nothing */
+        /* do nearly nothing */
         unconfigure();
+        break;
+
     }
 }
 
@@ -324,7 +424,7 @@ bool is_configured()
  *
  * \todo This is broken! For some reason log4cplus won't change the threshold level using this method.
  */
-void setLogOutputLevel( log_level_t level )
+void set_log_output_level( log_level_t level )
 {
     log4cplus::LogLevel new_level = log4cplus::OFF_LOG_LEVEL;
 
@@ -363,6 +463,92 @@ void setLogOutputLevel( log_level_t level )
     log4cplus::Logger::getRoot().setLogLevel( new_level );
     g_logger.setLogLevel( new_level );
     g_secure_logger.setLogLevel( new_level );
+}
+
+
+/** \brief Check whether the loggingserver is available.
+ *
+ * This function quickly checks whether the loggingserver is running
+ * with "our port".
+ *
+ * If the server is available, then it gets used. This is generally only
+ * checked in the server. Snap children will use the loggingserver if the
+ * Snap server is setup to use the loggingserver.
+ *
+ * \param[in] logserver  The filename (and path) to the logging server
+ *                       appender properties.
+ *
+ * \return true if the logging server is currently running.
+ */
+bool is_loggingserver_available ( QString const & logserver )
+{
+    // Note: if logserver is an empty string, then the properties will
+    //       end up being an empty set; if the file cannot be open,
+    //       the result is the same, no exceptions, just an empty set
+
+    // get the address and port from the logserver.properties file
+    log4cplus::helpers::Properties logserver_properties(logserver.toUtf8().data());
+
+    // check properties that make use of the log4cplus::SocketAppender
+    // these may have any name even if we use "server" by default
+    std::vector<log4cplus::tstring> names(logserver_properties.propertyNames());
+    for(auto & n : names)
+    {
+        // the string must start with "log4cplus.appender."
+        log4cplus::tstring prefix(n.substr(0, 19));
+        if(prefix == "log4cplus.appender.")
+        {
+            log4cplus::tstring name(logserver_properties.getProperty(n));
+            if( name == LOG4CPLUS_TEXT("log4cplus::SocketAppender") )
+            {
+                // this is a server, check for availability
+                //log4cplus::helpers::Properties socket_properties(logserver_properties.getPropertySubset(n + "."));
+                log4cplus::tstring const host(logserver_properties.getProperty(n + LOG4CPLUS_TEXT(".host")));
+                unsigned int port(0);
+                logserver_properties.getUInt(port, n + LOG4CPLUS_TEXT(".port"));
+                //log4cplus::tstring const server_name(logserver_properties.getProperty(n + LOG4CPLUS_TEXT(".ServerName"))); -- not necessary for our test
+
+                if(!host.empty() && port < 65536)
+                {
+                    log4cplus::helpers::Socket socket(host, port);
+                    if(socket.isOpen())
+                    {
+                        log4cplus::helpers::SocketBuffer version_request(sizeof(unsigned int));
+                        // -2 is a version request from the loggingserver executable
+                        version_request.appendInt(static_cast<unsigned int>(-2));
+                        if(socket.write(version_request))
+                        {
+                            // read reply size
+                            log4cplus::helpers::SocketBuffer version_size(sizeof(unsigned int));
+                            if(socket.read(version_size))
+                            {
+                                log4cplus::helpers::SocketBuffer version(version_size.readInt());
+                                if(socket.read(version))
+                                {
+//std::cerr << "*** found server at [" << host << "] and [" << port << "] -> [" << std::string(version.getBuffer(), version.getSize()) << "]\n";
+                                    // this socket appender works
+                                    // TODO: test that the version is compatible?
+                                    //std::string version_str(version.getBuffer(), version.getSize());
+                                    //if(version_str != log4cplus::versionStr) ...
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // if any one socket appender fails, we want to avoid
+                // loggingserver(s); that way we avoid long waits trying to
+                // connect each time we create a new snap_child process
+                return false;
+            }
+        }
+    }
+
+    // all appenders are A-Okay
+    // if all appenders are something else than a socket appender, then
+    // of course we will always return true
+    return true;
 }
 
 
