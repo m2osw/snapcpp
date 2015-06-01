@@ -1,3 +1,9 @@
+controlledvars (1.4.15.234~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Mon, 01 Jun 2015 15:08:10 -0700
+
 controlledvars (1.4.15.233~trusty) trusty; urgency=high
 
   * Nightly build.
