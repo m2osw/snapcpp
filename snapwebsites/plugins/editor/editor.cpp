@@ -942,6 +942,121 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         // path exists in doc then save the data in Cassandra
         QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
         int const max_widgets(widgets.size());
+
+        //
+        // first create a map of all the values
+        // * those the user just sent us
+        // * those in the database
+        //
+        f_post_values.clear();
+        for(int i(0); i < max_widgets; ++i)
+        {
+            QDomElement widget(widgets.at(i).toElement());
+            QString const widget_name(widget.attribute("id"));
+            if(widget_name.isEmpty())
+            {
+                // TODO: the validation of the editor XML data should be
+                //       done with an external tool and not each time it
+                //       gets used here
+                throw snap_logic_exception(QString("ID of a widget on line %1 found in an editor XML document is missing.").arg(widget.lineNumber()));
+            }
+            QString const widget_type(widget.attribute("type"));
+            if(widget_type.isEmpty())
+            {
+                // TODO: the validation of the editor XML data should be
+                //       done with an external tool and not each time it
+                //       gets used here
+                throw snap_logic_exception(QString("TYPE of a widget on line %1 found in an editor XML document is missing.").arg(widget.lineNumber()));
+            }
+
+            if(f_snap->postenv_exists(widget_name))
+            {
+                f_post_values[widget_name] = clean_post_value(widget_type, f_snap->postenv(widget_name));
+            }
+
+            // note: the auto-save may not be turned on, we can still copy
+            //       empty pointers around, it is fast enough
+            bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
+            if(is_secret)
+            {
+                data_row = secret_row;
+            }
+            else
+            {
+                data_row = revision_row;
+            }
+
+            QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
+            if(auto_save || widget_auto_save != "no")
+            {
+                // get the current value from the database
+                QString const field_name(widget.attribute("field"));
+                if(field_name.isEmpty())
+                {
+                    // the field name can be empty if the auto_save is
+                    // true by widget_auto_save says no
+                    if(widget_auto_save != "no")
+                    {
+                        // TODO: the validation of the editor XML data should be
+                        //       done with an external tool and not each time it
+                        //       gets used here
+                        throw snap_logic_exception(QString("FIELD of a widget on line %1 found in an editor XML document is missing. It is required when auto-save is ON.").arg(widget.lineNumber()));
+                    }
+                }
+                else
+                {
+                    QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
+                    if(!value.nullValue())
+                    {
+                        if(widget_auto_save == "int8")
+                        {
+                            int const v(value.signedCharValue());
+                            if(widget_type == "checkmark")
+                            {
+                                if(v == 0)
+                                {
+                                    f_current_values[widget_name] = "0";
+                                }
+                                else
+                                {
+                                    f_current_values[widget_name] = "1";
+                                }
+                            }
+                            else
+                            {
+                                f_current_values[widget_name] = QString("%1").arg(v);
+                            }
+                        }
+                        else if(widget_auto_save == "double"
+                             || widget_auto_save == "float64")
+                        {
+                            double const v(value.doubleValue());
+                            f_current_values[widget_name] = QString("%1").arg(v);
+                        }
+                        else if(widget_auto_save == "string"
+                             || widget_auto_save == "html")
+                        {
+                            // no special handling for empty strings here
+                            f_current_values[widget_name] = value.stringValue();
+                        }
+                        else if(widget_auto_save == "plain")
+                        {
+                            // already as expected in this case
+                            f_current_values[widget_name] = value.stringValue();
+                        }
+                        else if(widget_auto_save == "ms-date-us")
+                        {
+                            // 64 bit value representing a date in microseconds
+                            if(!value.nullValue())
+                            {
+                                f_current_values[widget_name] = f_snap->date_to_string(value.int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         for(int i(0); i < max_widgets; ++i)
         {
             QDomElement widget(widgets.at(i).toElement());
@@ -960,13 +1075,6 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             else
             {
                 data_row = revision_row;
-            }
-
-            if(widget_name.isEmpty())
-            {
-                // TODO: add some more information to this error message so
-                //       we can find the element with the missing ID easily
-                throw snap_logic_exception(QString("ID of a widget on line %1 found in an editor XML document is missing.").arg(widget.lineNumber()));
             }
 
             // now validate using a signal so any plugin can take over
@@ -988,19 +1096,17 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             {
                 // no auto-save, but we still want to check validity if
                 // defined (the "required" flag is not checked...)
-                if(f_snap->postenv_exists(widget_name))
+                if(f_post_values.contains(widget_name))
                 {
-                    QString const post_value(f_snap->postenv(widget_name));
-                    clean_post_value(widget_type, post_value);
-                    validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, post_value, is_secret);
+                    current_value = f_post_values[widget_name];
+                    validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
                 }
             }
             else
             {
-                if(f_snap->postenv_exists(widget_name))
+                if(f_post_values.contains(widget_name))
                 {
-                    QString const post_value(f_snap->postenv(widget_name));
-                    clean_post_value(widget_type, post_value);
+                    QString const post_value(f_post_values[widget_name]);
                     validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, post_value, is_secret);
                     if(widget_auto_save == "int8")
                     {
@@ -1109,54 +1215,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                 {
                     // get the current value from the database to verify the
                     // current value (because it may [still] be wrong)
-                    QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
-                    if(!value.nullValue())
-                    {
-                        if(widget_auto_save == "int8")
-                        {
-                            int const v(value.signedCharValue());
-                            if(widget_type == "checkmark")
-                            {
-                                if(v == 0)
-                                {
-                                    current_value = "0";
-                                }
-                                else
-                                {
-                                    current_value = "1";
-                                }
-                            }
-                            else
-                            {
-                                current_value = QString("%1").arg(v);
-                            }
-                        }
-                        else if(widget_auto_save == "double"
-                             || widget_auto_save == "float64")
-                        {
-                            double const v(value.doubleValue());
-                            current_value = QString("%1").arg(v);
-                        }
-                        else if(widget_auto_save == "string"
-                             || widget_auto_save == "html")
-                        {
-                            // no special handling for empty strings here
-                            current_value = value.stringValue();
-                        }
-                        else if(widget_auto_save == "plain")
-                        {
-                            // already as expected in this case
-                            current_value = value.stringValue();
-                        }
-                        else if(widget_auto_save == "ms-date-us")
-                        {
-                            // 64 bit value representing a date in microseconds
-                            if(!value.nullValue())
-                            {
-                                current_value = f_snap->date_to_string(value.int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
-                            }
-                        }
-                    }
+                    current_value = f_current_values[widget_name];
                     validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
                 }
             }
@@ -1174,7 +1233,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     messages->set_error(
                         "Invalid Content",
                         QString("\"%1\" is not valid for \"%2\".")
-                                .arg(form::form::html_64max(current_value, is_secret)).arg(widget_name),
+                                .arg(form::form::html_64max(current_value, is_secret))
+                                .arg(widget_name),
                         "unspecified error for widget",
                         false
                     ).set_widget_name(widget_name);
@@ -1236,45 +1296,44 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
  *
  * \return The cleaned up value of the widget.
  */
-QString editor::clean_post_value(QString const& widget_type, QString const& value)
+QString editor::clean_post_value(QString const & widget_type, QString value)
 {
     // first trim the value and remove the starting/ending <br> because those
     // are most often improperly added by editors.
-    QString result(value);
 
     // trim at the start
     {
         QRegExp start_re("^(<br */?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+", Qt::CaseInsensitive, QRegExp::RegExp2);
-        if(start_re.indexIn(result) != 0)
+        if(start_re.indexIn(value) != 0)
         {
-            result.remove(0, start_re.matchedLength());
+            value.remove(0, start_re.matchedLength());
         }
     }
 
     // trim at the end
     {
         QRegExp end_re("(<br */?>| |\t|\n|\r|\v|\f|&nbsp;|&#160;|&#xA0;)+$", Qt::CaseInsensitive, QRegExp::RegExp2);
-        int const p(end_re.indexIn(result));
+        int const p(end_re.indexIn(value));
         if(p > 0) // here it cannot be zero or we already removed all the characters
         {
-            result.remove(p, end_re.matchedLength());
+            value.remove(p, end_re.matchedLength());
         }
     }
 
     // a line edit cannot include new line characters
     if(widget_type == "line-edit")
     {
-        result.replace("\n", " ").replace("\r", " ");
+        value.replace("\n", " ").replace("\r", " ");
         QRegExp break_line("<br */?>", Qt::CaseInsensitive, QRegExp::RegExp2);
         for(;;)
         {
-            int const p(break_line.indexIn(result));
+            int const p(break_line.indexIn(value));
             if(p == -1)
             {
                 // done removing all those enries
                 break;
             }
-            result.remove(p, break_line.matchedLength());
+            value.remove(p, break_line.matchedLength());
         }
 
         // TODO: check for any tag that represents a block (i.e. <div>)
@@ -1283,7 +1342,7 @@ QString editor::clean_post_value(QString const& widget_type, QString const& valu
     // TODO: apply XSS filter as required for this user
 
 
-    return result;
+    return value;
 }
 
 
@@ -1539,8 +1598,15 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
  * \code
  *      plugins.editor.value
  *
+ *      // values sent via the AJAX post
+ *      plugins.editor.post_<name>     // the <name> is the id="..." value
+ *
+ *      // current values read from the database
+ *      plugins.editor.current_<name>  // the <name> is the id="..." value
+ *
  *      // for example
- *      var a = ParseInt(plugins.editor.value); return a >= -100 && a <= 100;
+ *      var a = ParseInt(plugins.editor.value);
+ *      return a >= -100 && a <= 100;
  * \endcode
  *
  * \param[in] cpath  The path where the form is defined
@@ -3874,10 +3940,34 @@ int editor::js_property_count() const
 
 QVariant editor::js_property_get(QString const& name) const
 {
+    // the current value
     if(name == "value")
     {
+        // this is one of the post_... or current_... too
         return f_value_to_validate;
     }
+
+    // any one post we received
+    if(name.startsWith("post_"))
+    {
+        QString const post_name(name.mid(5));
+        if(f_post_values.contains(post_name))
+        {
+            return f_post_values[post_name];
+        }
+        return QVariant();
+    }
+
+    if(name.startsWith("current_"))
+    {
+        QString const current_name(name.mid(8));
+        if(f_current_values.contains(current_name))
+        {
+            return f_current_values[current_name];
+        }
+        return QVariant();
+    }
+
     return QVariant();
 }
 
@@ -3888,6 +3978,22 @@ QString editor::js_property_name(int index) const
     {
         return "value";
     }
+    --index;
+
+    // try posts
+    if(index < f_post_values.size())
+    {
+        return f_post_values.keys()[index];
+    }
+    index -= f_post_values.size();
+
+    // try current values
+    if(index < f_current_values.size())
+    {
+        return f_current_values.keys()[index];
+    }
+    //index -= f_current_values.size();
+
     return "";
 }
 
@@ -3898,6 +4004,22 @@ QVariant editor::js_property_get(int index) const
     {
         return f_value_to_validate;
     }
+    --index;
+
+    // try posts
+    if(index < f_post_values.size())
+    {
+        return f_post_values.values()[index];
+    }
+    index -= f_post_values.size();
+
+    // try current values
+    if(index < f_current_values.size())
+    {
+        return f_current_values.values()[index];
+    }
+    //index -= f_current_values.size();
+
     return QVariant();
 }
 

@@ -156,7 +156,7 @@ public:
 
     QString             format_uri(QString const & format, content::path_info_t & ipath, QString const & page_name, params_map_t const & params);
     static save_mode_t  string_to_save_mode(QString const & mode);
-    static QString      clean_post_value(QString const & widget_type, QString const & value);
+    static QString      clean_post_value(QString const & widget_type, QString value);
     void                parse_out_inline_img(content::path_info_t & ipath, QString & body, QDomElement widget);
     QDomDocument        get_editor_widgets(content::path_info_t & ipath);
     void                add_editor_widget_templates(QDomDocument doc);
@@ -179,6 +179,8 @@ public:
     virtual QVariant    js_property_get(int index) const;
 
 private:
+    typedef QMap<QString, QString>      value_map_t;
+
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
     void                editor_save(content::path_info_t & ipath, sessions::sessions::session_info & info);
@@ -186,9 +188,11 @@ private:
     void                editor_create_new_branch(content::path_info_t & ipath);
     bool                save_inline_image(content::path_info_t & ipath, QDomElement img, QString const & src, QString filename, QDomElement widget);
 
-    zpsnap_child_t      f_snap;
-    QDomDocument        f_editor_form;  // XSL from editor-form.xsl + other plugin extensions
-    QString             f_value_to_validate;        // for the JavaScript
+    zpsnap_child_t          f_snap;
+    QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions
+    QString                 f_value_to_validate;    // for the JavaScript
+    value_map_t             f_post_values;          // in part for JavaScript, also caches all the values sent by the user
+    value_map_t             f_current_values;       // in part for JavaScript, also caches all the values sent by the user
 };
 
 } // namespace editor

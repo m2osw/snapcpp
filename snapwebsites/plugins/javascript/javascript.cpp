@@ -577,7 +577,7 @@ QVariant javascript::evaluate_script(QString const& script)
     plugins_class plugins(this, &engine);
     QScriptValue plugins_object(engine.newObject(&plugins));
     engine.globalObject().setProperty("plugins", plugins_object);
-//printf("object name = [%s] (%d)\n", plugins_object.scriptClass()->name().toUtf8().data(), plugins_object.isObject());
+//SNAP_LOG_TRACE("object name = [")(plugins_object.scriptClass()->name())("] (")(plugins_object.isObject())(")\n");
     QScriptValue value(engine.evaluate(program));
     QVariant variant(value.toVariant());
     if(value.isError())
