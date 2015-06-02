@@ -1,6 +1,6 @@
 /** @preserve
  * Name: test-plugin
- * Version: 0.0.1.24
+ * Version: 0.0.1.25
  * Browsers: all
  * Depends: popup (>= 0.1.0.1), server-access (>= 0.0.1.20)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -479,16 +479,25 @@ snapwebsites.TestPluginTest.prototype.ran = function(xml_data)
  * public:
  *      TestPluginManager();
  *
- *      virtual function serverAccessSuccess(result: snapwebsites.ServerAccessCallbacks.ResultData) : Void;
- *      virtual function serverAccessError(result: snapwebsites.ServerAccessCallbacks.ResultData) : Void;
+ *      function runGroup(group_name: string);
+ *      function runNextTest();
+ *      function runTest(test_name: string);
+ *
  *      virtual function serverAccessComplete(result: snapwebsites.ServerAccessCallbacks.ResultData) : Void;
  *
  * private:
+ *      function setupTest_(item: jQuery);
+ *
+ *      groups_: Array of TestPluginGroup;
  *      testsMap_: TestPluginTest;
  *      tests_: Array of TestPluginTest;
- *      groups_: Array of TestPluginGroup;
+ *      testsIndex_: number;
+ *      groupName_: string;
+ *      testName_: string;
  *      serverAccess_: ServerAccess;
  * };
+ *
+ * TestPluginManagerInstance: TestPluginManager;
  * \endcode
  *
  * @return {snapwebsites.TestPluginManager}  The newly created object.
@@ -755,50 +764,6 @@ snapwebsites.TestPluginManager.prototype.runTest = function(test_name) // abstra
 };
 
 
-/*jslint unparam: true */
-/** \brief Function called on AJAX success.
- *
- * This function is called if the remote access was successful. The
- * result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.TestPluginManager.prototype.serverAccessSuccess = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function displays the errors to the client.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.TestPluginManager.prototype.serverAccessError = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
 /** \brief Function called on AJAX completion.
  *
  * This function is called once the whole process is over. It is most
@@ -824,10 +789,8 @@ snapwebsites.TestPluginManager.prototype.serverAccessComplete = function(result)
         this.runNextTest();
     }
 
-    if(!result.will_redirect && result.messages && result.messages.length > 0)
-    {
-        snapwebsites.OutputInstance.displayMessages(result.messages);
-    }
+    // manage messages if any
+    snapwebsites.TestPluginManager.superClass_.serverAccessComplete.call(this, result);
 };
 
 

@@ -1,8 +1,8 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.25
+ * Version: 0.0.1.26
  * Browsers: all
- * Depends: output (>= 0.1.5)
+ * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
  * License: GPL 2.0
  */
@@ -17,6 +17,7 @@
 // @externs $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
 // @externs plugins/output/externs/jquery-extensions.js
 // @js plugins/output/output.js
+// @js plugins/output/popup.js
 // ==/ClosureCompiler==
 //
 
@@ -35,14 +36,20 @@
  *  {
  *  public:
  *      typedef ... ResultData;
+ *      enum UndarkenAction
+ *      {
+ *          UNDARKEN_ALWAYS,
+ *          UNDARKEN_ERROR,
+ *          UNDARKEN_NEVER
+ *      };
  *
  *      function ServerAccessCallbacks();
  *
  *      function setRedirect(result: ResultData, url: string, target: string);
  *
- *      abstract function serverAccessSuccess(result : ResultData) : Void;
- *      abstract function serverAccessError(result : ResultData) : Void;
- *      abstract function serverAccessComplete(result : ResultData) : Void;
+ *      virtual function serverAccessSuccess(result: ResultData) : Void;
+ *      virtual function serverAccessError(result: ResultData) : Void;
+ *      virtual function serverAccessComplete(result: ResultData) : Void;
  *  };
  * \endcode
  *
@@ -79,19 +86,29 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  *
  * The result is saved in a data object which fields are:
  *
- * \li [ESC] result_status -- the AJAX result_status parameter.
- * \li [ES] messages -- XML NodeList object with the error/success messages
- *                      returned in the AJAX response or null.
- * \li [E] error_message -- our own error message, may happen even if the
- *                          AJAX data returned and worked.
- * \li [E] ajax_error_message -- The raw AJAX system error message.
- * \li [ESC] jqxhr -- the original XHR plus a few things adjusted by jQuery.
- * \li [S] result_data -- raw AJAX result string.
- * \li [S] will_redirect -- whether the response includes a redirect request.
- *                          You may set this to false in your callback to
- *                          avoid the redirect.
- * \li [ESC] userdata -- the data passed to the send() function, may be
- *                       set to 'undefined'.
+ * * [ESC] result_status -- the AJAX result_status parameter.
+ * * [ES] messages -- XML NodeList object with the error/success messages
+ *                    returned in the AJAX response or null.
+ * * [E] error_message -- our own error message, may happen even if the
+ *                        AJAX data returned and worked.
+ * * [E] ajax_error_message -- The raw AJAX system error message.
+ * * [ESC] jqxhr -- the original XHR plus a few things adjusted by jQuery.
+ * * [S] result_data -- raw AJAX result string.
+ * * [S] will_redirect -- whether the response includes a redirect request.
+ *                        You may set this to false in your callback to
+ *                        avoid the redirect.
+ * * [C] undarken -- set to snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER
+ *                   by default; may be changed in your serverAccessComplete()
+ *                   function before calling the super version; set to:
+ * ** snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS -- always undarken
+ *    unless the will_redirect flag is true
+ * ** snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR -- undarken if we
+ *    received messages; should be used when you redirect the user when
+ *    no error occurred
+ * ** snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER -- never undarken
+ *    the screen
+ * * [ESC] userdata -- the data passed to the send() function, may be
+ *                     set to 'undefined'.
  *
  * The [ESC] letters stand for:
  *
@@ -110,9 +127,68 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  *            jqxhr: (Object|null),
  *            result_data: string,
  *            will_redirect: boolean,
+ *            undarken: number,
  *            userdata: (Object|null|undefined)}}
  */
 snapwebsites.ServerAccessCallbacks.ResultData;
+
+
+/** \brief Never undarken the screen.
+ *
+ * By default the result.undarken variable member is set to UNDARKEN_NEVER.
+ * This means we do not do anything with the popup.
+ *
+ * If you darken the screen before using an AJAX feature then you want to
+ * undarken the screen on completion. In that case, you serverAccessComplete()
+ * callback implementation should change the undarken value:
+ *
+ * \code
+ *      // change the undarken value
+ *      result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
+ *      // call the super version
+ *      snapwebsites.<your-class>.superClass_.serverAccessComplete.call(this, result);
+ * \endcode
+ *
+ * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS
+ * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR
+ *
+ * @type {number}
+ * @const
+ */
+snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER = 0;
+
+
+/** \brief Always undarken the screen.
+ *
+ * By default the result.undarken variable member is set to UNDARKEN_NEVER.
+ * It can be changedthe UNDARKEN_ALWAYS to always undarken the screen.
+ *
+ * If you redirect the user on success, you may want to consider using
+ * the UNDARKEN_ERROR instead.
+ *
+ * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER
+ * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR
+ *
+ * @type {number}
+ * @const
+ */
+snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS = 1;
+
+
+/** \brief Undarken error in serverAccessComplete().
+ *
+ * By default the result.undarken variable member is set to UNDARKEN_NEVER.
+ * You may change it to UNDARKEN_ERROR so the screen gets undarken only when
+ * a message was received. It is expected that you will redirect the end
+ * user if the undarken stays up on success.
+ *
+ * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER
+ * \sa snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS
+ *
+ * @type {number}
+ * @const
+ */
+snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR = 2; // static const
 
 
 /** \brief Set or change the redirect information of this form.
@@ -226,21 +302,47 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessError = function(result
 /*jslint unparam: false */
 
 
-/*jslint unparam: true */
 /** \brief Function called on completion.
  *
  * This function is called once the whole process is over. It is most
  * often used to do some cleanup.
  *
- * By default this function does nothing.
+ * The default function should be called to display messages. The
+ * function skips on displaying the messages in the event the
+ * will_redirect flag is true since the messages will be displayed
+ * on the resulting page instead.
  *
  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
  *          resulting data with information about the error(s).
  */
 snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(result) // virtual
 {
+// Save in window to allow perusal in Firebug or equivalent
+//#ifdef DEBUG
+//window.result_jqxhr = result.jqxhr;
+//#endif
+
+    var undarken = result.undarken == snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
+
+    if(!result.will_redirect && result.messages && result.messages.length > 0)
+    {
+        snapwebsites.OutputInstance.displayMessages(result.messages);
+
+        // undarken only on errors, if we are to redirect we don't have
+        // to undarken since everything will anyway go away
+        undarken = undarken || result.undarken == snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR;
+    }
+    else if(result.error_message)
+    {
+        // the ServerAccess itself generated an error message
+        snapwebsites.OutputInstance.displayOneMessage("Error", result.error_message);
+    }
+
+    if(!result.will_redirect && undarken)
+    {
+        snapwebsites.PopupInstance.darkenPage(-150, false);
+    }
 };
-/*jslint unparam: false */
 
 
 
@@ -581,6 +683,9 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
             // [S] Whether a redirect will be done on success
             will_redirect: false,
 
+            // [C] What to do in serverAccessComplete() about darken screens
+            undarken: snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER,
+
             // [ESC] A user object
             userdata: opt_userdata
         };
@@ -728,8 +833,6 @@ snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
         results = result.jqxhr.responseXML.getElementsByTagName("result");
         if(results.length === 1 && results[0].childNodes[0].nodeValue === "success")
         {
-//alert("The AJAX succeeded (" + result_status + ")");
-
             // success!
             redirect = result.jqxhr.responseXML.getElementsByTagName("redirect");
             result.will_redirect = redirect.length === 1;
@@ -879,16 +982,12 @@ snapwebsites.ServerAccess.appendQueryString = function(uri, query_string) // sta
  * this callback function.
  *
  * \code
- *  class ServerAccessTimerCallbacks
+ *  class ServerAccessTimerCallbacks : public ServerAccessCallbacks
  *  {
  *  public:
  *      function ServerAccessTimerCallbacks();
  *
- *      abstract function serverAccessSuccess(result: ResultData) : Void;
- *      abstract function serverAccessError(result: ResultData) : Void;
- *      abstract function serverAccessComplete(result: ResultData) : Void;
- *
- *      abstract function serverAccessTimerReady(request_name: string, server_access: ServerAccess) : Void;
+ *      virtual function serverAccessTimerReady(request_name: string, server_access: ServerAccess) : Void;
  *  };
  * \endcode
  *
@@ -916,79 +1015,19 @@ snapwebsites.inherits(snapwebsites.ServerAccessTimerCallbacks, snapwebsites.Serv
 /** \brief Function called whenever the server access timer is ready.
  *
  * This function is called whenever the server access timer times out
- * and thus it is ready for the used to send a new POST to the server.
+ * and thus it is ready to be used to send another POST to the server.
  *
  * Note that on the first call to the ServerAccessTimer.send() function
+ * does not use a timer since the server is considered readilly
+ * available and the send happens immediately.
+ *
+ * By default this base callback function does nothing at this time.
  *
  * @param {string} request_name  The request name passed to the send() function.
  * @param {snapwebsites.ServerAccess} server_access  The server access object
  *                          that the callback is expected to setup.
  */
 snapwebsites.ServerAccessTimerCallbacks.prototype.serverAccessTimerReady = function(request_name, server_access)
-{
-    throw new Error("snapwebsites.ServerAccessTimerCallbacks.serverAccessTimerReady() must be overridden, it is abstract");
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on success.
- *
- * This function is called if the remote access was successful. The
- * result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.ServerAccessTimerCallbacks.prototype.serverAccessSuccess = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.ServerAccessTimerCallbacks.prototype.serverAccessError = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on completion.
- *
- * This function is called once the whole process is over. It is most
- * often used to do some cleanup.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.ServerAccessTimerCallbacks.prototype.serverAccessComplete = function(result) // virtual
 {
 };
 /*jslint unparam: false */
@@ -1142,6 +1181,21 @@ snapwebsites.ServerAccessTimer.prototype.sendAgain_ = false;
 snapwebsites.ServerAccessTimer.prototype.lastRequest_ = 0;
 
 
+/** \brief The current timer.
+ *
+ * The server access timer may create a timer with the setTimeout()
+ * function. This number represents the last setTimeout() that was
+ * created. If it is set to NaN, then the timer is not currently
+ * set.
+ *
+ * Note that only one timer is created at a time.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.ServerAccessTimer.prototype.timer_ = NaN;
+
+
 /** \brief The server access object.
  *
  * When using the timer, this object has to be the one holding the
@@ -1178,47 +1232,46 @@ snapwebsites.ServerAccessTimer.prototype.send = function()
     {
         // as the completion function to send another request
         // (it may require a timer, but we do not know at this point)
+        //
+        // Note: the following is safe because JavaScript is not multithreaded
+        //       even when involving timers
+        //
         this.sendAgain_ = true;
-        // if(isNaN(this.timer_))
-        // {
-        //     if(this.lastRequest_ != 0)
-        //     {
-        //         interval = Date.now() - this.lastRequest_;
-        //         if(interval > this.interval_)
-        //         {
-        //             interval = this.interval_;
-        //         }
-        //     }
-        //     else
-        //     {
-        //         interval = this.interval_;
-        //     }
-        //     this.timer_ = setTimeout(function(){that.sendRequest_();}, interval);
-        //     this.lastRequest_ = Date.now();
-        // }
-        // // else -- the timer is already set, no need to set it again!
     }
     else
     {
         // if we arrive here, this flag should always be false, but just
         // in case, we reset it here
         this.sendAgain_ = false;
+
         if(this.lastRequest_ != 0)
         {
-            interval = Date.now() - this.lastRequest_;
-            if(interval > this.interval_)
+            // make sure to not send a new request if a timer is
+            // already turned on (the processing_ flag should take
+            // care of that, but we cannot be 100% sure)
+            if(isNaN(this.timer_))
             {
-                // enough time spent in between, we can run immediately
-                this.sendRequest_();
-            }
-            else
-            {
-                setTimeout(function(){that.sendRequest_();}, interval);
-                this.lastRequest_ = Date.now();
+                interval = Date.now() - this.lastRequest_;
+                if(interval > this.interval_)
+                {
+                    // enough time spent in between, we can run immediately
+                    this.sendRequest_();
+                }
+                else
+                {
+                    // try again in 'interval' ms
+                    this.timer_ = setTimeout(function()
+                        {
+                            that.timer_ = NaN;
+                            that.sendRequest_();
+                        }, interval);
+                }
+                // else -- there is already one timer, do not add more for now
             }
         }
         else
         {
+            // send request for the first time
             this.sendRequest_();
         }
     }
@@ -1249,6 +1302,7 @@ snapwebsites.ServerAccessTimer.prototype.sendRequest_ = function() // static
     this.timerCallback_.serverAccessTimerReady(this.requestName_, this.serverAccess_);
 
     this.serverAccess_.send();
+    this.lastRequest_ = Date.now();
 };
 
 
@@ -1265,6 +1319,9 @@ snapwebsites.ServerAccessTimer.prototype.sendRequest_ = function() // static
  */
 snapwebsites.ServerAccessTimer.prototype.serverAccessSuccess = function(result) // virtual
 {
+    // we expect the client serverAccessSuccess() to call the super
+    //snapwebsites.ServerAccessTimer.superClass_.serverAccessSuccess.call(this, result);
+
     this.timerCallback_.serverAccessSuccess(result);
 };
 
@@ -1292,6 +1349,9 @@ snapwebsites.ServerAccessTimer.prototype.serverAccessSuccess = function(result) 
  */
 snapwebsites.ServerAccessTimer.prototype.serverAccessError = function(result) // virtual
 {
+    // we expect the client serverAccessError() to call the super
+    //snapwebsites.ServerAccessTimer.superClass_.serverAccessError.call(this, result);
+
     this.timerCallback_.serverAccessError(result);
 };
 
@@ -1308,6 +1368,9 @@ snapwebsites.ServerAccessTimer.prototype.serverAccessError = function(result) //
  */
 snapwebsites.ServerAccessTimer.prototype.serverAccessComplete = function(result) // virtual
 {
+    // we expect the client serverAccessComplete() to call the super
+    //snapwebsites.ServerAccessTimer.superClass_.serverAccessComplete.call(this, result);
+
     this.processing_ = false;
     this.timerCallback_.serverAccessComplete(result);
     if(this.sendAgain_)

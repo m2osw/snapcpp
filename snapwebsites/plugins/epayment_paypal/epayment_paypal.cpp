@@ -310,7 +310,7 @@ int64_t epayment_paypal::do_update(int64_t last_updated)
     SNAP_PLUGIN_UPDATE_INIT();
 
     SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, initial_update);
-    SNAP_PLUGIN_UPDATE(2015, 1, 10, 15, 34, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 6, 1, 17, 33, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }

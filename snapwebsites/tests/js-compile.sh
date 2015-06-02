@@ -12,13 +12,18 @@ OPTIONS="--warning_level VERBOSE"
        # expr is not defined in the jquery definitions
        #plugins/output/jquery-extensions.js
 
+       # This file is empty by default, the system generates the contents
+       # when the user downloads it (it is 100% dynamic, we will have to
+       # check for the cache settings when those get turned on though...)
+       #plugins/ecommerce/ecommerce-cart.js
+
 FILES="plugins/ecommerce/ecommerce.js
        plugins/editor/editor.js
        plugins/epayment/epayment.js
        plugins/epayment_paypal/epayment-paypal.js
        plugins/form/form.js
-       plugins/list/list/list.js
        plugins/listener/listener.js
+       plugins/list/list/list.js
        plugins/locale_widgets/locale-timezone.js
        plugins/output/output.js
        plugins/output/popup.js

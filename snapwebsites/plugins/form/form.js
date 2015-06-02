@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.2.6
+ * Version: 0.0.2.7
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -241,7 +241,7 @@ snapwebsites.Form.prototype.blur_ = function(widget)
  * value of a widget because if it is the background value, this
  * function makes sure to return the empty string.
  *
- * @param {Element} widget  The widget element from which you want to
+ * @param {Array.<Element>|Element} widget  The widget element from which you want to
  *                          retrieve the value.
  *
  * @return {string}  The current value as a string.
@@ -264,8 +264,8 @@ snapwebsites.Form.prototype.getVal = function(widget)
  * of a widget because if it is the empty string, the background
  * value is used instead.
  *
- * @param {Element} widget  The widget element from which you want to
- *                          retrieve the value.
+ * @param {Array.<Element>|Element} widget  The widget element from which
+ *                                          you want to retrieve the value.
  * @param {string|number} value  The value of the text to set the
  *                               input widget.
  */

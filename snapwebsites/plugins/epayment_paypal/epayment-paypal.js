@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment-paypal
- * Version: 0.0.1.16
+ * Version: 0.0.1.17
  * Browsers: all
  * Depends: epayment (>= 0.0.1)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -81,10 +81,6 @@
  *      virtual function getFacilityName() : String;
  *      virtual function getDisplayName() : String;
  *      virtual function getIcon() : String;
- *
- *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
- *      //virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
- *      //virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData);
  *  };
  * \endcode
  *

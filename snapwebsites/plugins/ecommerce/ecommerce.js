@@ -1,6 +1,6 @@
 /** @preserve
  * Name: ecommerce
- * Version: 0.0.1.64
+ * Version: 0.0.1.65
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -1754,9 +1754,6 @@ snapwebsites.eCommerceProduct.prototype.getPrice = function()
  *      function getTotalQuantity() : Number;
  *      function getTotalCosts() : Number;
  *
- *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData) : Void;
- *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData) : Void;
- *      virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData) : Void;
  *      virtual function serverAccessTimerReady(request_name: string, server_access: ServerAccess) : Void;
  *
  * private:
@@ -1824,11 +1821,16 @@ snapwebsites.eCommerceCart = function()
 };
 
 
-/** \brief Mark the eCommerceCart as inheriting from the ServerAccessCallbacks.
+/** \brief Mark the eCommerceCart as inheriting from the ServerAccessTimerCallbacks.
  *
- * This class inherits from the ServerAccessCallbacks, which it uses
+ * This class inherits from the ServerAccessTimerCallbacks, which it uses
  * to send the server changes made by the client to the cart.
+ *
  * In the cart, that feature is pretty much always asynchroneous.
+ *
+ * Remember that the ServerAccessTimerCallbacks is itself derived from the
+ * ServerAccessCallbacks so you get the same set of callbacks plus whatever
+ * the timer adds to the "interface".
  */
 snapwebsites.inherits(snapwebsites.eCommerceCart, snapwebsites.ServerAccessTimerCallbacks);
 
@@ -1847,7 +1849,7 @@ snapwebsites.eCommerceCart.createPopup_ = // static
 
 // WARNING: we have exactly ONE instance of this variable
 //          (i.e. if we were to create more than one Main object
-//          we'd still have ONE instance.)
+//          we would still have ONE instance.)
 
     id: "ecommerce-cart",
     title: "Cart",
@@ -2998,75 +3000,6 @@ snapwebsites.eCommerceCart.prototype.generateProductTableRow_ = function(e, row_
 };
 
 
-/*jslint unparam: true */
-/** \brief Function called on success.
- *
- * This function is called if the remote access was successful. The
- * \p result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- *
- * @final
- */
-snapwebsites.eCommerceCart.prototype.serverAccessSuccess = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- *
- * @final
- */
-snapwebsites.eCommerceCart.prototype.serverAccessError = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on completion.
- *
- * This function is called once the whole process is over. It is most
- * often used to do some cleanup.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- *
- * @final
- */
-snapwebsites.eCommerceCart.prototype.serverAccessComplete = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
 /** \brief The server access timer needs the POST data.
  *
  * This function generates the POST data to be sent to the server.
@@ -3099,7 +3032,7 @@ snapwebsites.eCommerceCart.prototype.serverAccessTimerReady = function(request_n
 
     xml += "</cart>";
 
-    // TODO: I am appending "...?a=view" to the Query String in an unsafe manner
+    // TODO: I have to append "...?a=view" to the Query String in a rather unsafe manner
     server_access.setURI(snapwebsites.castToString(jQuery("link[rel='canonical']").attr("href"), "casting href of the canonical link to a string in snapwebsites.eCommerceCart.serverAccessTimerReady()") + "?a=view");
     server_access.setData({ ecommerce__cart_products: xml });
 };

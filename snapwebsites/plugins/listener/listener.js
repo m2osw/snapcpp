@@ -1,6 +1,6 @@
 /** @preserve
  * Name: listener
- * Version: 0.0.1.14
+ * Version: 0.0.1.15
  * Browsers: all
  * Depends: server-access (>= 0.0.1.16)
  * Copyright: Copyright 2014-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -17,6 +17,7 @@
 // @externs $CLOSURE_COMPILER/contrib/externs/jquery-1.9.js
 // @externs plugins/output/externs/jquery-extensions.js
 // @js plugins/output/output.js
+// @js plugins/output/popup.js
 // @js plugins/server_access/server-access.js
 // ==/ClosureCompiler==
 //
@@ -51,6 +52,36 @@
  *
  * Note that only one of "success" or "error" is called. "complete"
  * is always called, however.
+ *
+ * \code
+ * class ListenerRequest
+ * {
+ * public:
+ *      function ListenerRequest(settings);
+ *      function getURI() : string;
+ *      function setMaxRetry(max_retry: number);
+ *      function setSpeeds(speeds: Array of number);
+ *      function immediate() : boolean;
+ *      function done() : boolean;
+ *      function timeout() : boolean;
+ *      function ready() : boolean;
+ *      function timerTick();
+ *      function setResult(result: Document);
+ *      function getResult() : Document;
+ *      function callCallback(result_status: boolean);
+ *
+ * private:
+ *      uri_: String;
+ *      resultXML_: Document;
+ *      success_: function(ListenerRequest);
+ *      error_: function(ListenerRequest);
+ *      complete_: function(ListenerRequest);
+ *      waitingPeriods_: Array of number;
+ *      maxRetry_: number;
+ *      processedCounter_: number;
+ *      timerCounter_: number;
+ * };
+ * \endcode
  *
  * \note
  * The success and error functions are not mandatory, although they
@@ -453,7 +484,8 @@ snapwebsites.ListenerRequest.prototype.ready = function()
  *
  * \note
  * This function is considered to be an internal function (i.e. only
- * called internally by the listener scripts.)
+ * called internally by the listener scripts.) Yet it cannot be made
+ * private since we do not support the `friend` keyword.
  */
 snapwebsites.ListenerRequest.prototype.timerTick = function()
 {
@@ -573,6 +605,29 @@ snapwebsites.ListenerRequest.prototype.callCallback = function(result_status)
  * One instance of this class is created on load. You should use that
  * instance to add your requests to the Snap! server.
  *
+ * \code
+ * class Listener : public ServerAccessCallbacks
+ * {
+ * public:
+ *      function Listener();
+ *
+ *      virtual function serverAccessSuccess(result: ResultData);
+ *      virtual function serverAccessComplete(result: ResultData);
+ *
+ *      function addRequest(request: ListenerRequest);
+ *
+ * private:
+ *      function processRequests_();
+ *
+ *      requests_: Array of ListenerRequest;
+ *      serverAccess_: ServerAccess;
+ *      processing_: boolean;
+ *      timeoutID_: number;
+ * };
+ *
+ * var ListenerInstance: Listener;
+ * \endcode
+ *
  * \note
  * We expect all plugins that need to listen to something from the server
  * to make use of this interface. This way we avoid duplication, special
@@ -679,7 +734,7 @@ snapwebsites.Listener.prototype.processing_ = false;
  * @type {number}
  * @private
  */
-snapwebsites.Listener.prototype.timeoutID_ = -1;
+snapwebsites.Listener.prototype.timeoutID_ = NaN;
 
 
 /** \brief Function called on AJAX success.
@@ -702,6 +757,8 @@ snapwebsites.Listener.prototype.serverAccessSuccess = function(result) // virtua
         request_status,         // the status of this request
         result_xml,             // the XML data returned for that request
         result_tag;             // the result tag in the XML data returned
+
+    snapwebsites.Listener.superClass_.serverAccessSuccess.call(this, result);
 
     for(idx = 0; idx < data_tags.length; ++idx)
     {
@@ -756,37 +813,6 @@ snapwebsites.Listener.prototype.serverAccessSuccess = function(result) // virtua
 };
 
 
-/*jslint unparam: true */
-/** \brief Function called on AJAX error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function displays the errors to the client.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.Listener.prototype.serverAccessError = function(result) // virtual
-{
-    // TODO: generate an error pop-up type of a thing
-    alert("Your browser failed sending the request to the server...");
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
 /** \brief Function called on AJAX completion.
  *
  * This function is called once the whole process is over. It is most
@@ -802,8 +828,10 @@ snapwebsites.Listener.prototype.serverAccessComplete = function(result) // virtu
 {
     // done processing this set of requests
     this.processing_ = false;
+
+    // manage messages if any
+    snapwebsites.Listener.superClass_.serverAccessComplete.call(this, result);
 };
-/*jslint unparam: false */
 
 
 /** \brief Attach a request to the listener.
@@ -831,7 +859,7 @@ snapwebsites.Listener.prototype.addRequest = function(request)
     this.requests_.push(request);
 
     // only us? (if not we may be processing right now)
-    if(this.timeoutID_ === -1)
+    if(isNaN(this.timeoutID_))
     {
         // note that we already know that no other request is currently
         // running, so we're good here
@@ -907,7 +935,7 @@ snapwebsites.Listener.prototype.processRequests_ = function()
         if(this.requests_.length === 0)
         {
             // no more requests, stop everything
-            this.timeoutID_ = -1;
+            this.timeoutID_ = NaN;
             return;
         }
 

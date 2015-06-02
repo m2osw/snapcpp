@@ -1,6 +1,6 @@
 /** @preserve
  * Name: epayment
- * Version: 0.0.1.26
+ * Version: 0.0.1.27
  * Browsers: all
  * Depends: editor (>= 0.0.3.262)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -117,8 +117,6 @@
  *
  *      abstract function buttonClicked() : String;
  *
- *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
- *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
  *      virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData);
  *
  *  private:
@@ -315,52 +313,6 @@ snapwebsites.ePaymentFacilityBase.prototype.buttonClicked = function() // abstra
 };
 
 
-/*jslint unparam: true */
-/** \brief Function called on success.
- *
- * This function is called if the remote access was successful. The
- * \p result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.ePaymentFacilityBase.prototype.serverAccessSuccess = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.ePaymentFacilityBase.prototype.serverAccessError = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
 /** \brief Function called on completion.
  *
  * This function is called once the whole process is over. It is most
@@ -376,18 +328,9 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
     var that = this,
         result_xml = result.jqxhr.responseXML;
 
-    // if error messages were returned, display them
-    if(!result.will_redirect && result.messages && result.messages.length > 0)
-    {
-        snapwebsites.OutputInstance.displayMessages(result.messages);
-    }
-
-    // in case the facility decided to darken the page
-    // and we did not get a redirect
-    if(!result.will_redirect)
-    {
-        snapwebsites.PopupInstance.darkenPage(-150, false);
-    }
+    // manage messages if any
+    result.undarken = snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
+    snapwebsites.ePaymentFacilityBase.superClass_.serverAccessComplete.call(this, result);
 
     // on errors, it is not unlikely that we get a new cart which
     // we need to replicate in the HTML cart
@@ -436,10 +379,6 @@ snapwebsites.ePaymentFacilityBase.prototype.serverAccessComplete = function(resu
  *      function mainFacilitiesHTML(width: Number, back_button: Boolean) : String;
  *      function sortFacilitiesByPriority() : Void;
  *      function setCartModifiedCallback(callback: Function()) : Void;
- *
- *      virtual function serverAccessSuccess(result: ServerAccessCallbacks.ResultData);
- *      virtual function serverAccessError(result: ServerAccessCallbacks.ResultData);
- *      virtual function serverAccessComplete(result: ServerAccessCallbacks.ResultData);
  *
  *  private:
  *      static function compareFacilities_(a, b) : Number;
@@ -947,69 +886,6 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
             alert("more");
         });
 };
-
-
-/*jslint unparam: true */
-/** \brief Function called on success.
- *
- * This function is called if the remote access was successful. The
- * \p result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.ePayment.prototype.serverAccessSuccess = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.ePayment.prototype.serverAccessError = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on completion.
- *
- * This function is called once the whole process is over. It is most
- * often used to do some cleanup.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.ePayment.prototype.serverAccessComplete = function(result) // virtual
-{
-};
-/*jslint unparam: false */
 
 
 

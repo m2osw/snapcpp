@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.335
+ * Version: 0.0.3.336
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -741,9 +741,6 @@ snapwebsites.EditorSelection =
  *          result: string;
  *      };
  *
- *      virtual function serverAccessSuccess(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
- *      virtual function serverAccessError(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
- *      virtual function serverAccessComplete(result: snapwebsites.ServerAccessCallbacks.ResultData) : void;
  *      abstract function getType() : string;
  *      abstract function preInitializeWidget(widget: Object) : void;
  *      abstract function initializeWidget(editor_widget: Object) : void;
@@ -793,69 +790,6 @@ snapwebsites.inherits(snapwebsites.EditorWidgetTypeBase, snapwebsites.ServerAcce
  * @typedef {{html: string, result: string}}
  */
 snapwebsites.EditorWidgetTypeBase.SaveData;
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX success.
- *
- * This function is called if the remote access was successful. The
- * result object includes a reference to the XML document found in the
- * data sent back from the server.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data.
- */
-snapwebsites.EditorWidgetTypeBase.prototype.serverAccessSuccess = function(result) // virtual
-{
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX error.
- *
- * This function is called if the remote access generated an error.
- * In this case errors include I/O errors, server errors, and application
- * errors. All call this function so you do not have to repeat the same
- * code for each type of error.
- *
- * \li I/O errors -- somehow the AJAX command did not work, maybe the
- *                   domain name is wrong or the URI has a syntax error.
- * \li server errors -- the server received the POST but somehow refused
- *                      it (maybe the request generated a crash.)
- * \li application errors -- the server received the POST and returned an
- *                           HTTP 200 result code, but the result includes
- *                           a set of errors (not enough permissions,
- *                           invalid data, etc.)
- *
- * By default this function displays the errors to the client.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.EditorWidgetTypeBase.prototype.serverAccessError = function(result) // virtual
-{
-    // TODO: generate an error pop-up type of a thing
-    alert("Your browser failed sending the file to the server...");
-};
-/*jslint unparam: false */
-
-
-/*jslint unparam: true */
-/** \brief Function called on AJAX completion.
- *
- * This function is called once the whole process is over. It is most
- * often used to do some cleanup.
- *
- * By default this function does nothing.
- *
- * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
- *          resulting data with information about the error(s).
- */
-snapwebsites.EditorWidgetTypeBase.prototype.serverAccessComplete = function(result) // virtual
-{
-};
-/*jslint unparam: false */
 
 
 /** \brief Retrieve the name of this widget type.
@@ -2915,9 +2849,6 @@ snapwebsites.EditorWidget.prototype.rotateWaitImage_ = function()
  *      function getEditorBase() : EditorBase;
  *      function getFormWidget() : jQuery;
  *      virtual function saveData(mode: string, opt_option: object);
- *      virtual function serverAccessSuccess(result);
- *      virtual function serverAccessError(result);
- *      virtual function serverAccessComplete(result);
  *
  *      static const SAVE_MODE_PUBLISH: string;
  *      static const SAVE_MODE_SAVE: string;
@@ -3815,6 +3746,8 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
     var key,                    // loop index
         modified = false;       // whether some data was modified while saving
 
+    snapwebsites.EditorForm.superClass_.serverAccessSuccess.call(this, result);
+
     // success! so it was saved and now that's the new original value
     // and next "Save" doesn't do anything
     for(key in this.editorWidgets_)
@@ -3843,6 +3776,8 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
     {
         this.saveFunctionOnSuccess_(this, result);
     }
+
+    this.setSaving(false, result.will_redirect);
 };
 
 
@@ -3869,10 +3804,7 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
  */
 snapwebsites.EditorForm.prototype.serverAccessError = function(result) // virtual
 {
-    // TODO: do we have to anything with this error message? We
-    //       should always have messages in the AJAX, but we may reach
-    //       this function for other reasons... messages are displayed
-    //       by the serverAccess directly
+    snapwebsites.EditorForm.superClass_.serverAccessError.call(this, result);
 
     // in case the manager of the form wants to know that an error
     // occured and get the corresponding result information
@@ -3880,6 +3812,8 @@ snapwebsites.EditorForm.prototype.serverAccessError = function(result) // virtua
     {
         this.saveFunctionOnError_(this, result);
     }
+
+    this.setSaving(false, false);
 };
 
 
@@ -3898,22 +3832,8 @@ snapwebsites.EditorForm.prototype.serverAccessComplete = function(result) // vir
     // we do not need that data anymore, release it
     this.savedData_ = null;
 
-    if(!result.will_redirect && result.messages && result.messages.length > 0)
-    {
-        // "clean" programmer error
-        this.setSaving(false, false);
-        snapwebsites.OutputInstance.displayMessages(result.messages);
-    }
-    else if(result.error_message)
-    {
-        // connection failed, a die(), or a crash of the server
-        this.setSaving(false, false);
-        snapwebsites.OutputInstance.displayOneMessage("Error", result.error_message);
-    }
-    else
-    {
-        this.setSaving(false, result.will_redirect);
-    }
+    // manage messages if any
+    snapwebsites.EditorForm.superClass_.serverAccessComplete.call(this, result);
 };
 
 
