@@ -883,7 +883,7 @@ snapwebsites.ePayment.prototype.appendMainFacilities = function(cart_payment, wi
             e.preventDefault();
             e.stopPropagation();
 
-            alert("more");
+            alert("\"More\" not implemented yet");
         });
 };
 

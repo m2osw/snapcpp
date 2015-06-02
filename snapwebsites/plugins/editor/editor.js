@@ -2120,7 +2120,6 @@ snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
     this.widgetContent_ = widget.children(".editor-content");
     if(this.widgetContent_.length == 0)
     {
-        alert("Widget \"" + this.name_ + "\" must define a tag with class \"editor-content\"");
         throw new Error("Widget \"" + this.name_ + "\" must define a tag with class \"editor-content\"");
     }
     // Moved to AFTER the [pre]initialization
@@ -3173,7 +3172,7 @@ snapwebsites.EditorSaveDialog.prototype.create_ = function()
         .click(function(e)
             {
                 e.preventDefault();
-                alert("Save New Branch! (to be implemented)");
+                alert("Save New Branch! (not implemented yet)");
             });
     jQuery("#snap_editor_save_draft")
         .click(function(e)
@@ -3859,7 +3858,9 @@ snapwebsites.EditorForm.prototype.saveData = function(mode, opt_options)
     if(this.isSaving())
     {
         // TODO: translation support
-        alert("You already clicked one of these buttons. Please wait until the save is over.");
+        snapwebsites.OutputInstance.displayOneMessage(
+                "Browser Busy",
+                "You already clicked one of these buttons. Please wait until the save is over.");
         return;
     }
 
@@ -5178,10 +5179,12 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
                 if(w < sizes[0] || h < sizes[1])
                 {
                     // image too small...
-                    // TODO: fix alert with clean error popup
-                    alert("This image is too small. Minimum required is "
-                            + e.target.snapEditorWidget.getWidgetContent().attr("min-sizes")
-                            + ". Please try with a larger image.");
+                    // TODO: translation
+                    snapwebsites.OutputInstance.displayOneMessage(
+                            "Image Too Small",
+                            "This image is too small. Minimum required is "
+                                + e.target.snapEditorWidget.getWidgetContent().attr("min-sizes")
+                                + ". Please try with a larger image.");
                     return;
                 }
             }
@@ -5191,10 +5194,12 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
                 if(w > sizes[0] || h > sizes[1])
                 {
                     // image too large...
-                    // TODO: fix alert with clean error popup
-                    alert("This image is too large. Maximum allowed is "
-                            + e.target.snapEditorWidget.getWidgetContent().attr("max-sizes")
-                            + ". Please try with a smaller image.");
+                    // TODO: translation
+                    snapwebsites.OutputInstance.displayOneMessage(
+                            "Image Too Large",
+                            "This image is too large. Maximum allowed is "
+                                + e.target.snapEditorWidget.getWidgetContent().attr("max-sizes")
+                                + ". Please try with a smaller image.");
                     return;
                 }
             }
@@ -5216,7 +5221,9 @@ snapwebsites.EditorWidgetType.prototype.droppedImageConvert_ = function(e)
                     if(nw > limit_width && nh > limit_height)
                     {
                         // TBD can this happen?
-                        alert("somehow we could not adjust the dimentions of the image properly!?");
+                        snapwebsites.OutputInstance.displayOneMessage(
+                                "Image Too Large",
+                                "somehow we could not adjust the dimentions of this image properly!?");
                     }
                     if(nw > limit_width)
                     {
