@@ -131,21 +131,59 @@ public:
         QString                 f_result;
     };
 
-    class value_info_t
+    class value_to_string_info_t
     {
     public:
-        enum class value_status_t
+        enum class status_t
         {
             WORKING,
             DONE,
             ERROR
         };
 
-                                        value_info_t(content::path_info_t & ipath, QDomElement widget, QString const & data);
+                                        value_to_string_info_t(content::path_info_t & ipath, QDomElement widget, QtCassandra::QCassandraValue const & value);
 
         bool                            is_done() const;
         bool                            is_valid() const;
-        void                            set_status(value_status_t const status = value_status_t::DONE);
+        void                            set_status(status_t const status);
+        content::path_info_t &          get_ipath() const;
+        QDomElement                     get_widget() const;
+        QtCassandra::QCassandraValue const & get_value() const;
+        QString const &                 get_widget_type() const;
+        QString const &                 get_data_type() const;
+        QString const &                 get_type_name() const;
+        void                            set_type_name(QString const & new_type_name);
+        QString &                       result();
+
+    private:
+        status_t                        f_status = status_t::WORKING;
+
+        content::path_info_t &          f_ipath;
+        QDomElement                     f_widget;
+        QtCassandra::QCassandraValue const & f_value;
+
+        mutable QString                 f_widget_type;
+        mutable QString                 f_data_type;
+        QString                         f_type_name = "unknown";
+
+        QString                         f_result;
+    };
+
+    class string_to_value_info_t
+    {
+    public:
+        enum class status_t
+        {
+            WORKING,
+            DONE,
+            ERROR
+        };
+
+                                        string_to_value_info_t(content::path_info_t & ipath, QDomElement widget, QString const & data);
+
+        bool                            is_done() const;
+        bool                            is_valid() const;
+        void                            set_status(status_t const status);
         content::path_info_t &          get_ipath() const;
         QDomElement                     get_widget() const;
         QString const &                 get_data() const;
@@ -156,7 +194,7 @@ public:
         QtCassandra::QCassandraValue &  result();
 
     private:
-        value_status_t                  f_status = value_status_t::WORKING;
+        status_t                        f_status = status_t::WORKING;
 
         content::path_info_t &          f_ipath;
         QDomElement                     f_widget;
@@ -210,7 +248,8 @@ public:
     SNAP_SIGNAL_WITH_MODE(init_editor_widget, (content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row), (ipath, field_id, field_type, widget, row), NEITHER);
     SNAP_SIGNAL_WITH_MODE(new_attachment_saved, (content::attachment_file & the_attachment, QDomElement const & widget, QDomElement const & attachment_tag), (the_attachment, widget, attachment_tag), NEITHER);
     SNAP_SIGNAL_WITH_MODE(finish_editor_form_processing, (content::path_info_t & ipath, bool & succeeded), (ipath, succeeded), NEITHER);
-    SNAP_SIGNAL(string_to_value, (value_info_t & value_info), (value_info));
+    SNAP_SIGNAL(string_to_value, (string_to_value_info_t & value_info), (value_info));
+    SNAP_SIGNAL(value_to_string, (value_to_string_info_t & value_info), (value_info));
 
     // dynamic javascript property support
     virtual int         js_property_count() const;
@@ -224,7 +263,6 @@ private:
 
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
-    bool                value_to_string(QString const & widget_type, QString const & data_type, QtCassandra::QCassandraValue const & value, QString & result);
     void                editor_save(content::path_info_t & ipath, sessions::sessions::session_info & info);
     void                editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access *server_access_plugin);
     void                editor_create_new_branch(content::path_info_t & ipath);

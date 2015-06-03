@@ -92,7 +92,94 @@ char const *get_name(name_t name)
 }
 
 
-editor::value_info_t::value_info_t(content::path_info_t & ipath, QDomElement widget, QString const & data)
+editor::value_to_string_info_t::value_to_string_info_t(content::path_info_t & ipath, QDomElement widget, QtCassandra::QCassandraValue const & value)
+    : f_ipath(ipath)
+    , f_widget(widget)
+    , f_value(value)
+{
+}
+
+
+bool editor::value_to_string_info_t::is_done() const
+{
+    return f_status != status_t::WORKING;
+}
+
+
+bool editor::value_to_string_info_t::is_valid() const
+{
+    return f_status == status_t::DONE;
+}
+
+
+void editor::value_to_string_info_t::set_status(status_t const status)
+{
+    f_status = status;
+}
+
+
+content::path_info_t & editor::value_to_string_info_t::get_ipath() const
+{
+    return f_ipath;
+}
+
+
+QDomElement editor::value_to_string_info_t::get_widget() const
+{
+    return f_widget;
+}
+
+
+QtCassandra::QCassandraValue const & editor::value_to_string_info_t::get_value() const
+{
+    return f_value;
+}
+
+
+QString const & editor::value_to_string_info_t::get_widget_type() const
+{
+    if(f_widget_type.isEmpty())
+    {
+        f_widget_type = f_widget.attribute("type");
+        // emptiness (i.e. invalidity) is checked before this event
+        // is used so we should be just fine here
+    }
+    return f_widget_type;
+}
+
+
+QString const & editor::value_to_string_info_t::get_data_type() const
+{
+    if(f_data_type.isEmpty())
+    {
+        f_data_type = f_widget.attribute("auto-save");
+        // emptiness (i.e. invalidity) is checked before this event
+        // is used so we should be just fine here
+    }
+    return f_data_type;
+}
+
+
+QString const & editor::value_to_string_info_t::get_type_name() const
+{
+    return f_type_name;
+}
+
+
+void editor::value_to_string_info_t::set_type_name(QString const & new_type_name)
+{
+    f_type_name = new_type_name;
+}
+
+
+QString & editor::value_to_string_info_t::result()
+{
+    return f_result;
+}
+
+
+
+editor::string_to_value_info_t::string_to_value_info_t(content::path_info_t & ipath, QDomElement widget, QString const & data)
     : f_ipath(ipath)
     , f_widget(widget)
     , f_data(data)
@@ -125,9 +212,9 @@ editor::value_info_t::value_info_t(content::path_info_t & ipath, QDomElement wid
  * \return true if the value was already handled, which means you should
  *         not process this signal any further.
  */
-bool editor::value_info_t::is_done() const
+bool editor::string_to_value_info_t::is_done() const
 {
-    return f_status != value_status_t::WORKING;
+    return f_status != status_t::WORKING;
 }
 
 
@@ -141,37 +228,37 @@ bool editor::value_info_t::is_done() const
  *
  * \return true if the value entered by the user is considered valid.
  */
-bool editor::value_info_t::is_valid() const
+bool editor::string_to_value_info_t::is_valid() const
 {
-    return f_status == value_status_t::DONE;
+    return f_status == status_t::DONE;
 }
 
 
-void editor::value_info_t::set_status(value_status_t const status)
+void editor::string_to_value_info_t::set_status(status_t const status)
 {
     f_status = status;
 }
 
 
-content::path_info_t & editor::value_info_t::get_ipath() const
+content::path_info_t & editor::string_to_value_info_t::get_ipath() const
 {
     return f_ipath;
 }
 
 
-QDomElement editor::value_info_t::get_widget() const
+QDomElement editor::string_to_value_info_t::get_widget() const
 {
     return f_widget;
 }
 
 
-QString const & editor::value_info_t::get_data() const
+QString const & editor::string_to_value_info_t::get_data() const
 {
     return f_data;
 }
 
 
-QString const & editor::value_info_t::get_widget_type() const
+QString const & editor::string_to_value_info_t::get_widget_type() const
 {
     if(f_widget_type.isEmpty())
     {
@@ -183,7 +270,7 @@ QString const & editor::value_info_t::get_widget_type() const
 }
 
 
-QString const & editor::value_info_t::get_data_type() const
+QString const & editor::string_to_value_info_t::get_data_type() const
 {
     if(f_data_type.isEmpty())
     {
@@ -195,22 +282,25 @@ QString const & editor::value_info_t::get_data_type() const
 }
 
 
-QString const & editor::value_info_t::get_type_name() const
+QString const & editor::string_to_value_info_t::get_type_name() const
 {
     return f_type_name;
 }
 
 
-void editor::value_info_t::set_type_name(QString const & new_type_name)
+void editor::string_to_value_info_t::set_type_name(QString const & new_type_name)
 {
     f_type_name = new_type_name;
 }
 
 
-QtCassandra::QCassandraValue & editor::value_info_t::result()
+QtCassandra::QCassandraValue & editor::string_to_value_info_t::result()
 {
     return f_result;
 }
+
+
+
 
 
 
@@ -954,71 +1044,58 @@ editor::save_mode_t editor::string_to_save_mode(QString const& mode)
  * case on return of false because this function returns false on
  * a null value.
  *
- * \param[in] widget_type  The type of the widget.
- * \param[in] data_type  The type defined in the auto-save attribute.
- * \param[in] value  The value to transform.
- * \param[in,out] result  The resulting string.
+ * \param[in] value_info  A value_to_string_info_t object.
  *
- * \return true if the value was transformed as expected, false if the
- *         value is somehow considered invalid.
+ * \return true if the data_type is not known internally, false when the type
+ *         was managed by this very function
  */
-bool editor::value_to_string(QString const & widget_type, QString const & data_type, QtCassandra::QCassandraValue const & value, QString & result)
+bool editor::value_to_string_impl(value_to_string_info_t & value_info)
 {
-    if(value.nullValue())
+    if(value_info.get_value().nullValue())
     {
         // no value, ignore, do NOT change the result string
+        value_info.set_status(value_to_string_info_t::status_t::ERROR);
         return false;
     }
 
-    if(data_type == "int8")
+    if(value_info.get_data_type() == "int8")
     {
-        int const v(value.signedCharValue());
-        if(widget_type == "checkmark")
+        int const v(value_info.get_value().signedCharValue());
+        if(value_info.get_widget_type() == "checkmark")
         {
-            if(v == 0)
-            {
-                result = "0";
-                return true;
-            }
-            else
-            {
-                result = "1";
-                return true;
-            }
+            value_info.result() = v == 0 ? "0" : "1";
         }
         else
         {
-            result = QString("%1").arg(v);
-            return true;
+            value_info.result() = QString("%1").arg(v);
         }
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
+        return false;
     }
 
-    if(data_type == "double"
-    || data_type == "float64")
+    if(value_info.get_data_type() == "double"
+    || value_info.get_data_type() == "float64")
     {
-        double const v(value.doubleValue());
-        result = QString("%1").arg(v);
-        return true;
+        double const v(value_info.get_value().doubleValue());
+        value_info.result() = QString("%1").arg(v);
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
+        return false;
     }
 
-    if(data_type == "string"
-    || data_type == "html")
+    if(value_info.get_data_type() == "string"
+    || value_info.get_data_type() == "html"
+    || value_info.get_data_type() == "plain")
     {
-        // no special handling for empty strings here
-        result = value.stringValue();
-        return true;
+        // data is already as expected, copy as is
+        value_info.result() = value_info.get_value().stringValue();
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
+        return false;
     }
 
-    if(data_type == "plain")
+    if(value_info.get_data_type() == "ms-date-us")
     {
-        // already as expected in this case
-        result = value.stringValue();
-        return true;
-    }
-
-    if(data_type == "ms-date-us")
-    {
-        result = f_snap->date_to_string(value.int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
+        value_info.result() = f_snap->date_to_string(value_info.get_value().int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
         return true;
     }
 
@@ -1036,7 +1113,7 @@ bool editor::value_to_string(QString const & widget_type, QString const & data_t
  * \return false if the data_type is not known internally, true when the type
  *         was managed by this very function
  */
-bool editor::string_to_value_impl(value_info_t & value_info)
+bool editor::string_to_value_impl(string_to_value_info_t & value_info)
 {
     // the default type name is the raw (technical) data type
     // it may be changed so as to make it clearer to end users
@@ -1058,14 +1135,14 @@ bool editor::string_to_value_impl(value_info_t & value_info)
             int const r(value_info.get_data().toInt(&ok, 10));
             if(!ok || r < 0 || r > 255)
             {
-                value_info.set_status(value_info_t::value_status_t::ERROR);
+                value_info.set_status(string_to_value_info_t::status_t::ERROR);
                 return false;
             }
             c = static_cast<signed char>(r);
         }
 
         value_info.result().setSignedCharValue(c);
-        value_info.set_status(value_info_t::value_status_t::DONE);
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
 
@@ -1080,12 +1157,12 @@ bool editor::string_to_value_impl(value_info_t & value_info)
         dbl = value_info.get_data().toDouble(&ok);
         if(!ok)
         {
-            value_info.set_status(value_info_t::value_status_t::ERROR);
+            value_info.set_status(string_to_value_info_t::status_t::ERROR);
             return false;
         }
 
         value_info.result().setDoubleValue(dbl);
-        value_info.set_status(value_info_t::value_status_t::DONE);
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
 
@@ -1113,7 +1190,7 @@ bool editor::string_to_value_impl(value_info_t & value_info)
         time_info.tm_year = value_info.get_data().mid(6, 4).toInt() - 1900;
         time_t t(mkgmtime(&time_info));
         value_info.result().setInt64Value(t * 1000000); // seconds to microseconds
-        value_info.set_status(value_info_t::value_status_t::DONE);
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
 
@@ -1122,7 +1199,7 @@ bool editor::string_to_value_impl(value_info_t & value_info)
     {
         // no special handling for strings
         value_info.result().setStringValue(value_info.get_data());
-        value_info.set_status(value_info_t::value_status_t::DONE);
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
 
@@ -1141,7 +1218,7 @@ bool editor::string_to_value_impl(value_info_t & value_info)
         QString value(value_info.get_data());
         parse_out_inline_img(value_info.get_ipath(), value, value_info.get_widget());
         value_info.result().setStringValue(value);
-        value_info.set_status(value_info_t::value_status_t::DONE);
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
 
@@ -1153,7 +1230,7 @@ bool editor::string_to_value_impl(value_info_t & value_info)
         // tags if any and then unescape entities which
         // the remove_tags() function does all at once
         value_info.result().setStringValue(snap_dom::remove_tags(value_info.get_data()));
-        value_info.set_status(value_info_t::value_status_t::DONE);
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
 
@@ -1304,14 +1381,42 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     // we have a default value
                     f_default_values[widget_name] = snap_dom::xml_children_to_string(default_tag);
                 }
-                // TODO: detect default values in preset lists
+                else
+                {
+                    QDomElement preset_tag(widget.firstChildElement("preset"));
+                    if(!preset_tag.isNull())
+                    {
+                        for(QDomElement e(preset_tag.firstChildElement("item"));
+                                        !e.isNull();
+                                        e = e.nextSiblingElement())
+                        {
+                            if(e.hasAttribute("default"))
+                            {
+                                // the value of the attribute is not important
+                                // the default value is either the value="..."
+                                // or the child XML data from this item tag
+                                if(e.hasAttribute("value"))
+                                {
+                                    f_default_values[widget_name] = e.attribute("value");
+                                }
+                                else
+                                {
+                                    f_default_values[widget_name] = snap_dom::xml_children_to_string(e);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 // secret values do not get saved in the draft, it would not be safe
                 if(!is_secret && draft_row->exists(field_name))
                 {
                     // get the draft value from the database
-                    QtCassandra::QCassandraValue const value(draft_row->cell(field_name)->value());
-                    value_to_string(widget_type, widget_auto_save, value, f_draft_values[widget_name]);
+                    //
+                    // note that was not converted, we only use strings in
+                    // this row! (dbutil won't work right on these rows!)
+                    f_draft_values[widget_name] = draft_row->cell(field_name)->value().stringValue();
                 }
 
                 if(auto_save || widget_auto_save != "no")
@@ -1328,8 +1433,9 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     // get the current value from the database
                     if(data_row->exists(field_name))
                     {
-                        QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
-                        value_to_string(widget_type, widget_auto_save, value, f_current_values[widget_name]);
+                        value_to_string_info_t value_info(ipath, widget, data_row->cell(field_name)->value());
+                        value_to_string(value_info);
+                        f_current_values[widget_name] = value_info.result();
                     }
                 }
             }
@@ -1427,7 +1533,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
             && !field_name.isEmpty())
             {
-                value_info_t value_info(ipath, widget, current_value);
+                string_to_value_info_t value_info(ipath, widget, current_value);
                 string_to_value(value_info);
                 if(value_info.is_valid())
                 {
@@ -4015,13 +4121,50 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         session_identification = QString("%1/%2").arg(session).arg(random);
     }
 
+    QString const draft_key(ipath.get_draft_key(users::users::instance()->get_user_identifier()));
+
     // now go through all the widgets checking out their path, if the
     // path exists in doc then copy the data somewhere in the doc
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
-    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
     QtCassandra::QCassandraTable::pointer_t secret_table(content_plugin->get_secret_table());
+
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
     QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(ipath.get_key()));
+    QtCassandra::QCassandraRow::pointer_t draft_row(revision_table->row(draft_key));
     QtCassandra::QCassandraRow::pointer_t data_row;
+
+    revision_row->clearCache();
+    secret_row->clearCache();
+    draft_row->clearCache();
+
+    QString action;
+    QDomElement form_mode(snap_dom::get_element(editor_widgets, "mode", false));
+    if(form_mode.hasAttribute("action"))
+    {
+        action = form_mode.attribute("action");
+    }
+    else
+    {
+        QString const qs_action(f_snap->get_server_parameter("qs_action"));
+        snap_uri const& uri(f_snap->get_uri());
+        action = uri.query_option(qs_action);
+    }
+
+    int64_t revision_created(0);
+    if(revision_row->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED)))
+    {
+        revision_created = revision_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value().safeInt64Value();
+    }
+
+    int64_t draft_modified(0);
+    if(draft_row->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED)))
+    {
+        draft_modified = draft_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->value().safeInt64Value();
+    }
+
+    // use the draft if it was modified more recently than the revision
+    bool const use_draft(draft_modified > revision_created && action == "edit");
+
     for(int i(0); i < max_widgets; ++i)
     {
         QDomElement w(widgets.at(i).toElement());
@@ -4033,12 +4176,30 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
         // note: the auto-save may not be turned on, we can still copy
         //       empty pointers around, it is fast enough
+        bool draft_value(false);
         if(is_secret)
         {
+            // secret data is never saved in the draft, so use the secret
+            // row in this case
             data_row = secret_row;
+        }
+        else if(use_draft && !field_name.isEmpty() && draft_row->exists(field_name))
+        {
+            // the draft value exists, use that one because it is more
+            // recent than the revision row data
+            //
+            // note that the POST data still have higher priority, the draft
+            // data is especially if the user closes his browser and comes
+            // back (much) later
+            //
+            data_row = draft_row;
+            draft_value = true;
         }
         else
         {
+            // last chance is the revision row data... if this is not
+            // defined, the system tries with defaults defined in the XML
+            // widget definitions
             data_row = revision_row;
         }
 
@@ -4054,6 +4215,11 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             {
                 // special case of the "editor::session" value
                 current_value = session_identification;
+            }
+            else if(draft_value)
+            {
+                // all draft values are saved as strings
+                current_value = value.stringValue();
             }
             else if(widget_auto_save == "int8")
             {
@@ -4134,19 +4300,6 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             }
         }
         init_editor_widget(ipath, field_id, field_type, w, data_row);
-    }
-
-    QString action;
-    QDomElement form_mode(snap_dom::get_element(editor_widgets, "mode", false));
-    if(form_mode.hasAttribute("action"))
-    {
-        action = form_mode.attribute("action");
-    }
-    else
-    {
-        QString const qs_action(f_snap->get_server_parameter("qs_action"));
-        snap_uri const& uri(f_snap->get_uri());
-        action = uri.query_option(qs_action);
     }
 
     // now process the XML data with the plugin specialized data for
