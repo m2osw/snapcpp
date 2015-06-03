@@ -2867,7 +2867,13 @@ void sendmail::on_replace_token(content::path_info_t& ipath, QString const& plug
             user_email = "/" + result[0].toAttr().value();
         }
         // TODO: change "Snap! Websites" with the name of the website
-        QString anchor_text("unsubscribe from Snap! Websites emails");
+        QString site_name(f_snap->get_site_parameter(get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)).stringValue());
+        if(site_name.isEmpty())
+        {
+            site_name = "Snap! Websites";
+        }
+        // TODO: translation
+        QString anchor_text(QString("unsubscribe from %1 emails").arg(site_name));
         if(token.verify_args(0, 1) && token.f_parameters.size() >= 1)
         {
             filter::filter::parameter_t param(token.get_arg("text", 0, filter::filter::token_t::TOK_STRING));

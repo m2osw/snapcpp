@@ -269,14 +269,15 @@ void filter::on_xss_filter(QDomNode& node,
  * The default filter replace_token event supports the following
  * general tokens:
  *
- * \li [test] -- a simple test token, it inserts "The Test Token Worked"
- *               message, in English.
+ * \li [date(\"format\")] -- date with format as per strftime(); without
+ *                           format, the default depends on the locale
  * \li [select("\<xpath>")] -- select content from the XML document using
  *                             the specified \<xpath>
  * \li [select_text("\<xpath>")] -- select content from the XML document using
  *                                  the specified \<xpath>, output as text
- * \li [date(\"format\")] -- date with format as per strftime(); without
- *                           format, the default depends on the locale
+ * \li [site-name] -- the name of the site as defined in the 'sites' table
+ * \li [test] -- a simple test token, it inserts "The Test Token Worked"
+ *               message, in English.
  * \li [version] -- version of the Snap! C++ server
  * \li [year] -- the 4-digit year when the request started
  *
@@ -393,6 +394,11 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
     else if(token.is_token("version"))
     {
         token.f_replacement = SNAPWEBSITES_VERSION_STRING;
+        return false;
+    }
+    else if(token.is_token("site-name"))
+    {
+        token.f_replacement = f_snap->get_site_parameter(get_name(snap::name_t::SNAP_NAME_CORE_SITE_NAME)).stringValue();
         return false;
     }
 

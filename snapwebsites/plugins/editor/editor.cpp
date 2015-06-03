@@ -1117,6 +1117,11 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
 {
     // the default type name is the raw (technical) data type
     // it may be changed so as to make it clearer to end users
+    if(value_info.get_data_type() == "no")
+    {
+        return false;
+    }
+
     value_info.set_type_name(value_info.get_data_type());
 
     // integer of 8 bits
@@ -1531,7 +1536,8 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             // do not specify a field
             //
             if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
-            && !field_name.isEmpty())
+            && !field_name.isEmpty()
+            && widget_auto_save != "no") // no known data type when auto-save="no"
             {
                 string_to_value_info_t value_info(ipath, widget, current_value);
                 string_to_value(value_info);
@@ -1700,7 +1706,7 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             // (TBD: we most certainly need to support the draft values!!!
             //       because the editor is not sending them back!!!)
             //
-            if(!f_post_values.contains(widget_name))
+            if(!f_post_values.contains(widget_name) || widget_auto_save == "no")
             {
                 continue;
             }

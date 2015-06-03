@@ -5512,7 +5512,7 @@ char const *snap_child::get_running_server_version()
  *
  * \param[in] name  The name of the parameter to retrieve.
  */
-QString snap_child::get_server_parameter(QString const& name)
+QString snap_child::get_server_parameter(QString const & name)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
