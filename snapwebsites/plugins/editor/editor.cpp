@@ -74,6 +74,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_EDITOR_PAGE_TYPE:
         return "editor::page_type";
 
+    case name_t::SNAP_NAME_EDITOR_SESSION:
+        return "editor::session";
+
     case name_t::SNAP_NAME_EDITOR_TYPE_FORMAT_PATH: // a format to generate the path of a page
         return "editor::type_format_path";
 
@@ -88,6 +91,126 @@ char const *get_name(name_t name)
     NOTREACHED();
 }
 
+
+editor::value_info_t::value_info_t(content::path_info_t & ipath, QDomElement widget, QString const & data)
+    : f_ipath(ipath)
+    , f_widget(widget)
+    , f_data(data)
+{
+}
+
+
+/** \brief Check whether the value was already handled.
+ *
+ * Since all signal functions will be called, you need a way to know
+ * whether you still need to do some work on the data. This can be done
+ * using the is_done() function as in:
+ *
+ * \code
+ *      my_plugin::string_to_value(value_info_t & info)
+ *      {
+ *          if(info.is_done())
+ *          {
+ *              return;
+ *          }
+ *
+ *          // manage your own types
+ *          if(info.get_type() == "my_ype")
+ *          {
+ *              ...
+ *          }
+ *      }
+ * \endcode
+ *
+ * \return true if the value was already handled, which means you should
+ *         not process this signal any further.
+ */
+bool editor::value_info_t::is_done() const
+{
+    return f_status != value_status_t::WORKING;
+}
+
+
+/** \brief Check whether the value info is valid.
+ *
+ * On return of the string_to_value() signal, the is_valid() function can
+ * be used to know whether the value was considered valid.
+ *
+ * Note that the function returns false if the status is still WORKING
+ * because that's considered invalid since no one handled the value.
+ *
+ * \return true if the value entered by the user is considered valid.
+ */
+bool editor::value_info_t::is_valid() const
+{
+    return f_status == value_status_t::DONE;
+}
+
+
+void editor::value_info_t::set_status(value_status_t const status)
+{
+    f_status = status;
+}
+
+
+content::path_info_t & editor::value_info_t::get_ipath() const
+{
+    return f_ipath;
+}
+
+
+QDomElement editor::value_info_t::get_widget() const
+{
+    return f_widget;
+}
+
+
+QString const & editor::value_info_t::get_data() const
+{
+    return f_data;
+}
+
+
+QString const & editor::value_info_t::get_widget_type() const
+{
+    if(f_widget_type.isEmpty())
+    {
+        f_widget_type = f_widget.attribute("type");
+        // emptiness (i.e. invalidity) is checked before this event
+        // is used so we should be just fine here
+    }
+    return f_widget_type;
+}
+
+
+QString const & editor::value_info_t::get_data_type() const
+{
+    if(f_data_type.isEmpty())
+    {
+        f_data_type = f_widget.attribute("auto-save");
+        // emptiness (i.e. invalidity) is checked before this event
+        // is used so we should be just fine here
+    }
+    return f_data_type;
+}
+
+
+QString const & editor::value_info_t::get_type_name() const
+{
+    return f_type_name;
+}
+
+
+void editor::value_info_t::set_type_name(QString const & new_type_name)
+{
+    f_type_name = new_type_name;
+}
+
+
+QtCassandra::QCassandraValue & editor::value_info_t::result()
+{
+    return f_result;
+}
 
 
 
@@ -817,6 +940,228 @@ editor::save_mode_t editor::string_to_save_mode(QString const& mode)
 }
 
 
+/** \brief Transform a database value to a string for display.
+ *
+ * This function transforms a database value back to a string as displayed
+ * to end users.
+ *
+ * The value must be valid. Invalid values do not make it in the result
+ * string. In other words, the result string remains unchanged if the
+ * input value is considered invalid.
+ *
+ * \warning
+ * If you consider an emtpy value as valid, then check that special
+ * case on return of false because this function returns false on
+ * a null value.
+ *
+ * \param[in] widget_type  The type of the widget.
+ * \param[in] data_type  The type defined in the auto-save attribute.
+ * \param[in] value  The value to transform.
+ * \param[in,out] result  The resulting string.
+ *
+ * \return true if the value was transformed as expected, false if the
+ *         value is somehow considered invalid.
+ */
+bool editor::value_to_string(QString const & widget_type, QString const & data_type, QtCassandra::QCassandraValue const & value, QString & result)
+{
+    if(value.nullValue())
+    {
+        // no value, ignore, do NOT change the result string
+        return false;
+    }
+
+    if(data_type == "int8")
+    {
+        int const v(value.signedCharValue());
+        if(widget_type == "checkmark")
+        {
+            if(v == 0)
+            {
+                result = "0";
+                return true;
+            }
+            else
+            {
+                result = "1";
+                return true;
+            }
+        }
+        else
+        {
+            result = QString("%1").arg(v);
+            return true;
+        }
+    }
+
+    if(data_type == "double"
+    || data_type == "float64")
+    {
+        double const v(value.doubleValue());
+        result = QString("%1").arg(v);
+        return true;
+    }
+
+    if(data_type == "string"
+    || data_type == "html")
+    {
+        // no special handling for empty strings here
+        result = value.stringValue();
+        return true;
+    }
+
+    if(data_type == "plain")
+    {
+        // already as expected in this case
+        result = value.stringValue();
+        return true;
+    }
+
+    if(data_type == "ms-date-us")
+    {
+        result = f_snap->date_to_string(value.int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
+        return true;
+    }
+
+    return false;
+}
+
+
+/** \brief Transform data to a QCassandraValue.
+ *
+ * This function transforms a value received from a POST into a
+ * QCassandraValue to be saved in the database.
+ *
+ * \param[in] value_info  Information about the widget to be checked.
+ *
+ * \return false if the data_type is not known internally, true when the type
+ *         was managed by this very function
+ */
+bool editor::string_to_value_impl(value_info_t & value_info)
+{
+    // the default type name is the raw (technical) data type
+    // it may be changed so as to make it clearer to end users
+    value_info.set_type_name(value_info.get_data_type());
+
+    // integer of 8 bits
+    if(value_info.get_data_type() == "int8")
+    {
+        value_info.set_type_name("decimal integer");
+
+        signed char c;
+        if(value_info.get_widget_type() == "checkmark")
+        {
+            c = value_info.get_data() == "0" ? 0 : 1;
+        }
+        else
+        {
+            bool ok(false);
+            int const r(value_info.get_data().toInt(&ok, 10));
+            if(!ok || r < 0 || r > 255)
+            {
+                value_info.set_status(value_info_t::value_status_t::ERROR);
+                return false;
+            }
+            c = static_cast<signed char>(r);
+        }
+
+        value_info.result().setSignedCharValue(c);
+        value_info.set_status(value_info_t::value_status_t::DONE);
+        return false;
+    }
+
+    // floating points of 64 bits
+    if(value_info.get_data_type() == "double"
+    || value_info.get_data_type() == "float64")
+    {
+        value_info.set_type_name("decimal number");
+
+        double dbl;
+        bool ok(false);
+        dbl = value_info.get_data().toDouble(&ok);
+        if(!ok)
+        {
+            value_info.set_status(value_info_t::value_status_t::ERROR);
+            return false;
+        }
+
+        value_info.result().setDoubleValue(dbl);
+        value_info.set_status(value_info_t::value_status_t::DONE);
+        return false;
+    }
+
+    // simple US date for now (MM-DD-YYYY), needs to be extended
+    if(value_info.get_data_type() == "ms-date-us")
+    {
+        value_info.set_type_name("date");
+
+        // convert a US date to 64 bit value in micro seconds
+        //
+        // TODO: verify that the date is valid and has a
+        //       proper format for the locale.
+        //
+        //       See the locale plugin...
+        //
+        //       Also we want to have a function in the
+        //       library to do this conversion because many
+        //       different people may end up doing similar
+        //       conversions...
+        //
+        struct tm time_info;
+        memset(&time_info, 0, sizeof(time_info));
+        time_info.tm_mon = value_info.get_data().mid(0, 2).toInt() - 1;
+        time_info.tm_mday = value_info.get_data().mid(3, 2).toInt();
+        time_info.tm_year = value_info.get_data().mid(6, 4).toInt() - 1900;
+        time_t t(mkgmtime(&time_info));
+        value_info.result().setInt64Value(t * 1000000); // seconds to microseconds
+        value_info.set_status(value_info_t::value_status_t::DONE);
+        return false;
+    }
+
+    // a standard string (remember we use UTF-8 everywhere)
+    if(value_info.get_data_type() == "string")
+    {
+        // no special handling for strings
+        value_info.result().setStringValue(value_info.get_data());
+        value_info.set_status(value_info_t::value_status_t::DONE);
+        return false;
+    }
+
+    // full HTML, we do one special trick on that data: we convert
+    // inline images into attachment and replace the href with the
+    // new URI
+    if(value_info.get_data_type() == "html")
+    {
+        value_info.set_type_name("HTML");
+
+        // like a string, but convert inline images too
+        //
+        // TODO: verify that the HTML code is indeed valid HTML
+        //       (valid XML like code and all tags are known)
+        //
+        QString value(value_info.get_data());
+        parse_out_inline_img(value_info.get_ipath(), value, value_info.get_widget());
+        value_info.result().setStringValue(value);
+        value_info.set_status(value_info_t::value_status_t::DONE);
+        return false;
+    }
+
+    if(value_info.get_data_type() == "plain")
+    {
+        value_info.set_type_name("plain text");
+
+        // in case of plain text we want to remove all
+        // tags if any and then unescape entities which
+        // the remove_tags() function does all at once
+        value_info.result().setStringValue(snap_dom::remove_tags(value_info.get_data()));
+        value_info.set_status(value_info_t::value_status_t::DONE);
+        return false;
+    }
+
+    // not an internal data type, let other plugins handle this one
+    return true;
+}
+
+
 /** \brief Save the fields in a new revision.
  *
  * This function ensures that the current revision is copied in a new
@@ -867,63 +1212,20 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     QDomElement on_save(snap_dom::get_element(editor_widgets, "on-save", false));
     bool const auto_save(on_save.isNull() ? true : on_save.attribute("auto-save", "yes") == "yes");
 
-    QtCassandra::QCassandraRow::pointer_t revision_row;
-    QtCassandra::QCassandraRow::pointer_t secret_row;
+    QString const draft_key(ipath.get_draft_key(users::users::instance()->get_user_identifier()));
+
+    // these pointers are used to load existing data
+    // and save new data
+    // it is also shared with various signals
+    QtCassandra::QCassandraRow::pointer_t revision_row(revision_table->row(ipath.get_revision_key()));
+    QtCassandra::QCassandraRow::pointer_t secret_row(secret_table->row(ipath.get_key())); // same key as the content table
+    QtCassandra::QCassandraRow::pointer_t draft_row(revision_table->row(draft_key));
     QtCassandra::QCassandraRow::pointer_t data_row;
-
-    if(auto_save)
-    {
-        // create the new revision and make it current
-        //
-        // TODO: if multiple users approval is required, we cannot make this
-        //       new revision the current revision except if that's the very
-        //       first (although the very first is not created here)
-        //
-
-        // make this newer revision the current one
-        if(switch_branch)
-        {
-            // TODO: test whether that branch already exist (it should not!)
-            content_plugin->copy_branch(key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, branch_number);
-
-            // working branch cannot really stay as the system branch
-            // so force both branches in this case
-            content_plugin->set_branch(key, branch_number, false);
-            content_plugin->set_branch(key, branch_number, true);
-            content_plugin->set_branch_key(key, branch_number, true);
-            content_plugin->set_branch_key(key, branch_number, false);
-        }
-
-        // get the revision number only AFTER the branch was created
-        // TODO: once we have a "save branch" the old_branch parameter needs
-        //       to be corrected (another function anyway?)
-        snap_version::version_number_t revision_number(content_plugin->get_new_revision(key, branch_number, locale, true, switch_branch ? static_cast<snap_version::version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH) : branch_number));
-
-// TODO: add revision manager
-//       the current/working revisions are not correctly handled yet...
-//       we should not force to the latest every time, but for now it's
-//       the way it is
-        if(switch_branch || true)
-        {
-            // in that case we also need to save the new revision accordingly
-            content_plugin->set_current_revision(key, branch_number, revision_number, locale, false);
-            content_plugin->set_revision_key(key, branch_number, revision_number, locale, false);
-        }
-        content_plugin->set_current_revision(key, branch_number, revision_number, locale, true);
-        content_plugin->set_revision_key(key, branch_number, revision_number, locale, true);
-
-        // now save the new data
-        ipath.force_branch(branch_number);
-        ipath.force_revision(revision_number);
-    }
-
-    // these pointers are used in the signal below (save_editor_fields)
-    revision_row = revision_table->row(ipath.get_revision_key());
-    secret_row = secret_table->row(ipath.get_key()); // same key as the content table
 
     // this will get initialized if the row is required
 
     // first load the XML code representing the editor widgets for this page
+    bool modified(false);
     if(!editor_widgets.isNull())
     {
         // a default (data driven) redirect to apply when saving an editor form
@@ -938,125 +1240,31 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
         locale_plugin->set_timezone();
         locale_plugin->set_locale();
 
+        // make sure we do not have any spurious data in there
+        // (other plugins may have forced a read of some fields which
+        // is not actually defined in the database and we could thus
+        // end up with an empty value and exists() returning true!)
+        revision_row->clearCache();
+        secret_row->clearCache();
+        draft_row->clearCache();
+
         // now go through all the widgets checking out their path, if the
         // path exists in doc then save the data in Cassandra
         QDomNodeList widgets(editor_widgets.elementsByTagName("widget"));
         int const max_widgets(widgets.size());
 
+        // ************ 1.
         //
-        // first create a map of all the values
+        // first create maps of all the values available
+        //
         // * those the user just sent us
+        // * those in the draft if the user has one
         // * those in the database
         //
         f_post_values.clear();
-        for(int i(0); i < max_widgets; ++i)
-        {
-            QDomElement widget(widgets.at(i).toElement());
-            QString const widget_name(widget.attribute("id"));
-            if(widget_name.isEmpty())
-            {
-                // TODO: the validation of the editor XML data should be
-                //       done with an external tool and not each time it
-                //       gets used here
-                throw snap_logic_exception(QString("ID of a widget on line %1 found in an editor XML document is missing.").arg(widget.lineNumber()));
-            }
-            QString const widget_type(widget.attribute("type"));
-            if(widget_type.isEmpty())
-            {
-                // TODO: the validation of the editor XML data should be
-                //       done with an external tool and not each time it
-                //       gets used here
-                throw snap_logic_exception(QString("TYPE of a widget on line %1 found in an editor XML document is missing.").arg(widget.lineNumber()));
-            }
-
-            if(f_snap->postenv_exists(widget_name))
-            {
-                f_post_values[widget_name] = clean_post_value(widget_type, f_snap->postenv(widget_name));
-            }
-
-            // note: the auto-save may not be turned on, we can still copy
-            //       empty pointers around, it is fast enough
-            bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
-            if(is_secret)
-            {
-                data_row = secret_row;
-            }
-            else
-            {
-                data_row = revision_row;
-            }
-
-            QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
-            if(auto_save || widget_auto_save != "no")
-            {
-                // get the current value from the database
-                QString const field_name(widget.attribute("field"));
-                if(field_name.isEmpty())
-                {
-                    // the field name can be empty if the auto_save is
-                    // true by widget_auto_save says no
-                    if(widget_auto_save != "no")
-                    {
-                        // TODO: the validation of the editor XML data should be
-                        //       done with an external tool and not each time it
-                        //       gets used here
-                        throw snap_logic_exception(QString("FIELD of a widget on line %1 found in an editor XML document is missing. It is required when auto-save is ON.").arg(widget.lineNumber()));
-                    }
-                }
-                else
-                {
-                    QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
-                    if(!value.nullValue())
-                    {
-                        if(widget_auto_save == "int8")
-                        {
-                            int const v(value.signedCharValue());
-                            if(widget_type == "checkmark")
-                            {
-                                if(v == 0)
-                                {
-                                    f_current_values[widget_name] = "0";
-                                }
-                                else
-                                {
-                                    f_current_values[widget_name] = "1";
-                                }
-                            }
-                            else
-                            {
-                                f_current_values[widget_name] = QString("%1").arg(v);
-                            }
-                        }
-                        else if(widget_auto_save == "double"
-                             || widget_auto_save == "float64")
-                        {
-                            double const v(value.doubleValue());
-                            f_current_values[widget_name] = QString("%1").arg(v);
-                        }
-                        else if(widget_auto_save == "string"
-                             || widget_auto_save == "html")
-                        {
-                            // no special handling for empty strings here
-                            f_current_values[widget_name] = value.stringValue();
-                        }
-                        else if(widget_auto_save == "plain")
-                        {
-                            // already as expected in this case
-                            f_current_values[widget_name] = value.stringValue();
-                        }
-                        else if(widget_auto_save == "ms-date-us")
-                        {
-                            // 64 bit value representing a date in microseconds
-                            if(!value.nullValue())
-                            {
-                                f_current_values[widget_name] = f_snap->date_to_string(value.int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+        f_current_values.clear();
+        f_draft_values.clear();
+        f_default_values.clear();
         for(int i(0); i < max_widgets; ++i)
         {
             QDomElement widget(widgets.at(i).toElement());
@@ -1065,6 +1273,90 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             QString const widget_type(widget.attribute("type"));
             QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
             bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
+
+            // TODO: the following XML validation should be done ONCE with
+            //       an external tool at compile time
+            if(widget_name.isEmpty())
+            {
+                throw snap_logic_exception(QString("ID of a widget on line %1 found in an editor XML document is missing.").arg(widget.lineNumber()));
+            }
+            if(widget_type.isEmpty())
+            {
+                throw snap_logic_exception(QString("TYPE of a widget on line %1 found in an editor XML document is missing.").arg(widget.lineNumber()));
+            }
+            if(field_name.isEmpty() && widget_auto_save != "no")
+            {
+                throw snap_logic_exception(QString("FIELD of a widget on line %1 found in an editor XML document is missing. It is required when auto-save is ON.").arg(widget.lineNumber()));
+            }
+
+            if(f_snap->postenv_exists(widget_name))
+            {
+                f_post_values[widget_name] = clean_post_value(widget_type, f_snap->postenv(widget_name));
+            }
+
+            if(!field_name.isEmpty())
+            {
+                // validation fails if we do not have the default value
+                // and there is one defined so we have to get such now
+                QDomElement default_tag(widget.firstChildElement("default"));
+                if(!default_tag.isNull())
+                {
+                    // we have a default value
+                    f_default_values[widget_name] = snap_dom::xml_children_to_string(default_tag);
+                }
+                // TODO: detect default values in preset lists
+
+                // secret values do not get saved in the draft, it would not be safe
+                if(!is_secret && draft_row->exists(field_name))
+                {
+                    // get the draft value from the database
+                    QtCassandra::QCassandraValue const value(draft_row->cell(field_name)->value());
+                    value_to_string(widget_type, widget_auto_save, value, f_draft_values[widget_name]);
+                }
+
+                if(auto_save || widget_auto_save != "no")
+                {
+                    if(is_secret)
+                    {
+                        data_row = secret_row;
+                    }
+                    else
+                    {
+                        data_row = revision_row;
+                    }
+
+                    // get the current value from the database
+                    if(data_row->exists(field_name))
+                    {
+                        QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
+                        value_to_string(widget_type, widget_auto_save, value, f_current_values[widget_name]);
+                    }
+                }
+            }
+        }
+
+        // ************ 2.
+        //
+        // Second check all the values, if one or more errors occur, we save
+        // the values in the draft row instead of the normal secret/revision
+        // rows; this allows us to reload the data later from the draft instead
+        // of the current revision (we will use the dates to know what to load)
+        //
+        bool has_errors(false);
+        for(int i(0); i < max_widgets; ++i)
+        {
+            QDomElement widget(widgets.at(i).toElement());
+            QString const widget_name(widget.attribute("id"));
+            QString const field_name(widget.attribute("field"));
+            QString const widget_type(widget.attribute("type"));
+            QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
+            bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
+
+            // ignore the session identifier in this case
+            if(field_name == get_name(name_t::SNAP_NAME_EDITOR_SESSION))
+            {
+                continue;
+            }
 
             // note: the auto-save may not be turned on, we can still copy
             //       empty pointers around, it is fast enough
@@ -1082,141 +1374,88 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             sessions::sessions::session_info::session_info_type_t const session_type(info.get_session_type());
             // pretend that everything is fine so far...
             info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID);
-            int const errcnt(messages->get_error_count());
-            int const warncnt(messages->get_warning_count());
 
             QString current_value;
 
-            // note that a POST from the editor only includes fields that
-            // changed (which reduces the size of the transfer); so we have
-            // to check whether the value is available; however, we have to
-            // check for required fields (since we only receive fields that
-            // change, we cannot avoid saving the data)
-            if(!auto_save || widget_auto_save == "no")
+            // the priority is:
+            //
+            // * POST data
+            // * Draft data (TODO: implement the date test)
+            // * Current data (from database, also called current data)
+            // * Default data (from the XML form)
+            //
+            if(f_post_values.contains(widget_name))
             {
-                // no auto-save, but we still want to check validity if
-                // defined (the "required" flag is not checked...)
-                if(f_post_values.contains(widget_name))
-                {
-                    current_value = f_post_values[widget_name];
-                    validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
-                }
+                current_value = f_post_values[widget_name];
             }
-            else
+            else if(f_draft_values.contains(widget_name))
             {
-                if(f_post_values.contains(widget_name))
+                current_value = f_draft_values[widget_name];
+            }
+            else if(f_current_values.contains(widget_name))
+            {
+                current_value = f_current_values[widget_name];
+            }
+            else if(f_default_values.contains(widget_name))
+            {
+                // We do not check the default value because the check
+                // may actually fail on the default value! but the fact
+                // that it is defined proves that we do not have to worry
+                //current_value = f_default_Values[widget_name];
+                continue;
+            }
+            //else -- currently undefined value, if it is required, it will generate an error
+
+            int const errcnt(messages->get_error_count());
+            int const warncnt(messages->get_warning_count());
+
+            //
+            // first do a validation, if that fails, we avoid the
+            // conversion to a QtCassandraValue below
+            //
+            // TODO: change the parameters with a structure?
+            //
+            validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
+
+            //
+            // if no errors occurred in the validation process, then attempt
+            // a conversion
+            //
+            // note that there is no conversion necessary for widgets that
+            // do not specify a field
+            //
+            if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
+            && !field_name.isEmpty())
+            {
+                value_info_t value_info(ipath, widget, current_value);
+                string_to_value(value_info);
+                if(value_info.is_valid())
                 {
-                    QString const post_value(f_post_values[widget_name]);
-                    validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, post_value, is_secret);
-                    if(widget_auto_save == "int8")
+                    // on errors we are not going to make use of these
+                    // values so avoid wasting time on them
+                    if(!has_errors)
                     {
-                        bool ok(false);
-                        signed char c;
-                        if(widget_type == "checkmark")
-                        {
-                            ok = true;
-                            if(post_value == "0")
-                            {
-                                c = 0;
-                            }
-                            else
-                            {
-                                c = 1;
-                            }
-                        }
-                        else
-                        {
-                            c = post_value.toInt(&ok, 10);
-                            if(!ok)
-                            {
-                                messages->set_error(
-                                    "Type Conflict",
-                                    QString("Field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
-                                            .arg(widget_name).arg(post_value),
-                                    "This is probably a hacker if we get the wrong value here. We should never get an invalid integer if checked by JavaScript.",
-                                    false
-                                ).set_widget_name(widget_name);
-                            }
-                        }
-                        // do NOT save the result if it was not considered valid
-                        if(ok)
-                        {
-                            data_row->cell(field_name)->setValue(c);
-                            current_value = QString("%1").arg(c);
-                        }
-                    }
-                    else if(widget_auto_save == "double"
-                         || widget_auto_save == "float64")
-                    {
-                        double dbl;
-                        bool ok(false);
-                        dbl = post_value.toDouble(&ok);
-                        if(!ok)
-                        {
-                            messages->set_error(
-                                "Type Conflict",
-                                QString("Field \"%1\" must be a valid decimal number, \"%2\" is not acceptable.")
-                                        .arg(widget_name).arg(post_value),
-                                "The double number looks wrong to Qt.",
-                                false
-                            ).set_widget_name(widget_name);
-                        }
-                        else
-                        {
-                            data_row->cell(field_name)->setValue(dbl);
-                            current_value = QString("%1").arg(dbl);
-                        }
-                    }
-                    else if(widget_auto_save == "ms-date-us")
-                    {
-                        // convert a US date to 64 bit value in micro seconds
-                        //
-                        // TODO: verify that the date is valid and has a
-                        //       proper format for the locale
-                        //       Also we want to have a function in the
-                        //       library to do this conversion because many
-                        //       different people may end up doing similar
-                        //       conversions...
-                        struct tm time_info;
-                        memset(&time_info, 0, sizeof(time_info));
-                        time_info.tm_mon = post_value.mid(0, 2).toInt() - 1;
-                        time_info.tm_mday = post_value.mid(3, 2).toInt();
-                        time_info.tm_year = post_value.mid(6, 4).toInt() - 1900;
-                        time_t t(mkgmtime(&time_info));
-                        QtCassandra::QCassandraValue v;
-                        v.setInt64Value(t * 1000000); // seconds to microseconds
-                        data_row->cell(field_name)->setValue(v);
-                        current_value = post_value;
-                    }
-                    else if(widget_auto_save == "string")
-                    {
-                        // no special handling for empty strings here
-                        data_row->cell(field_name)->setValue(post_value);
-                        current_value = post_value;
-                    }
-                    else if(widget_auto_save == "html")
-                    {
-                        // like a string, but convert inline images too
-                        QString value(post_value);
-                        parse_out_inline_img(ipath, value, widget);
-                        data_row->cell(field_name)->setValue(value);
-                        current_value = value;
-                    }
-                    else if(widget_auto_save == "plain")
-                    {
-                        // in case of plain text we want to remove all
-                        // tags if any and then unescape entities which
-                        // the remove_tags() function does all at once
-                        current_value = snap_dom::remove_tags(post_value);
-                        data_row->cell(field_name)->setValue(current_value);
+                        // keep a copy of the result on success
+                        f_converted_values[widget_name] = value_info.result();
                     }
                 }
                 else
                 {
-                    // get the current value from the database to verify the
-                    // current value (because it may [still] be wrong)
-                    current_value = f_current_values[widget_name];
-                    validate_editor_post_for_widget(ipath, info, widget, widget_name, widget_type, current_value, is_secret);
+                    QString label(widget.firstChildElement("label").text());
+                    if(label.isEmpty())
+                    {
+                        label = widget_name;
+                    }
+                    messages->set_error(
+                        "Type Conflict",
+                        QString("Field \"%1\" must be a valid %2, \"%3\" is not acceptable.")
+                                .arg(label)
+                                .arg(value_info.get_type_name())
+                                .arg(form::form::html_64max(current_value, is_secret)),
+                        "This could be a hacker unless the JavaScript does not check the value properly, assuming the JavaScript is implemented.",
+                        false
+                    ).set_widget_name(widget_name);
+                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
                 }
             }
 
@@ -1230,11 +1469,16 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     // the plugin marked that it found an error but did not
                     // generate an actual error, do so here with a generic
                     // error message
+                    QString label(widget.firstChildElement("label").text());
+                    if(label.isEmpty())
+                    {
+                        label = widget_name;
+                    }
                     messages->set_error(
                         "Invalid Content",
                         QString("\"%1\" is not valid for \"%2\".")
                                 .arg(form::form::html_64max(current_value, is_secret))
-                                .arg(widget_name),
+                                .arg(label),
                         "unspecified error for widget",
                         false
                     ).set_widget_name(widget_name);
@@ -1260,6 +1504,9 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                 err_tag.appendChild(message_tag);
                 QDomText message_text(editor_widgets.createTextNode(msg.get_body()));
                 message_tag.appendChild(message_text);
+
+                has_errors = true;
+                f_converted_values.clear(); // these are not going to be used
             }
             else
             {
@@ -1273,13 +1520,156 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                 //      form validates properly
             }
         }
+
+        // now we switch to a new revision in the event the data was not
+        // considered erroneous
+        if(!has_errors && auto_save)
+        {
+            // create the new revision and make it current
+            //
+            // TODO: if multiple users approval is required, we cannot make this
+            //       new revision the current revision except if that's the very
+            //       first (although the very first is not created here)
+            //
+
+            // make this newer revision the current one
+            if(switch_branch)
+            {
+                // TODO: test whether that branch already exist (it should not!)
+                content_plugin->copy_branch(key, snap_version::SPECIAL_VERSION_SYSTEM_BRANCH, branch_number);
+
+                // working branch cannot really stay as the system branch
+                // so force both branches in this case
+                content_plugin->set_branch(key, branch_number, false);
+                content_plugin->set_branch(key, branch_number, true);
+                content_plugin->set_branch_key(key, branch_number, true);
+                content_plugin->set_branch_key(key, branch_number, false);
+            }
+
+            // get the revision number only AFTER the branch was created
+            // TODO: once we have a "save branch" the old_branch parameter needs
+            //       to be corrected (another function anyway?)
+            snap_version::version_number_t revision_number(content_plugin->get_new_revision(key, branch_number, locale, true, switch_branch ? static_cast<snap_version::version_number_t>(snap_version::SPECIAL_VERSION_SYSTEM_BRANCH) : branch_number));
+
+// TODO: add revision manager
+//       the current/working revisions are not correctly handled yet...
+//       we should not force to the latest every time, but for now it's
+//       the way it is
+            if(switch_branch || true)
+            {
+                // in that case we also need to save the new revision accordingly
+                content_plugin->set_current_revision(key, branch_number, revision_number, locale, false);
+                content_plugin->set_revision_key(key, branch_number, revision_number, locale, false);
+            }
+            content_plugin->set_current_revision(key, branch_number, revision_number, locale, true);
+            content_plugin->set_revision_key(key, branch_number, revision_number, locale, true);
+
+            // now save the new data
+            ipath.force_branch(branch_number);
+            ipath.force_revision(revision_number);
+
+            // make sure the revision row is using the new key
+            revision_row = revision_table->row(ipath.get_revision_key());
+
+            // the draft and secret rows are not affected
+        }
+
+        // ************ 3.
+        //
+        // Third we save the data to either the secret and revision
+        // rows or the draft row depending on the results of the
+        // previous loop: if an error occurred save in the draft row,
+        // except secret values that get dropped.
+        //
+        for(int i(0); i < max_widgets; ++i)
+        {
+            QDomElement widget(widgets.at(i).toElement());
+            QString const widget_name(widget.attribute("id"));
+            QString const field_name(widget.attribute("field"));
+            QString const widget_type(widget.attribute("type"));
+            QString const widget_auto_save(widget.attribute("auto-save", "string")); // this one is #IMPLIED
+            bool const is_secret(widget.attribute("secret") == "secret"); // true if not "public" which is #IMPLIED
+
+            // if not in the post, totally ignore the value in the save process
+            // (TBD: we most certainly need to support the draft values!!!
+            //       because the editor is not sending them back!!!)
+            //
+            if(!f_post_values.contains(widget_name))
+            {
+                continue;
+            }
+
+            // note: the auto-save may not be turned on, we can still copy
+            //       empty pointers around, it is fast enough
+            if(has_errors)
+            {
+                if(is_secret)
+                {
+                    // drop secret rows on error because we cannot securely
+                    // save them in the revision table; plus it does not
+                    // make sense to memorize secrets that could then be
+                    // sent back to a user years later
+                    continue;
+                }
+
+                // in the draft row we save post data as is (as strings)
+                draft_row->cell(field_name)->setValue(f_post_values[widget_name]);
+            }
+            else
+            {
+                if(is_secret)
+                {
+                    data_row = secret_row;
+                }
+                else
+                {
+                    data_row = revision_row;
+                }
+
+                if(!f_converted_values.contains(widget_name))
+                {
+                    // This is an internal error, all the values should
+                    // have been converted if we reach this line!
+                    throw snap_logic_exception(QString("value for widget named \"%1\" is missing.").arg(widget_name));
+                }
+
+                data_row->cell(field_name)->setValue(f_converted_values[widget_name]);
+            }
+
+            modified = true;
+        }
+
+        if(modified)
+        {
+            if(has_errors)
+            {
+                int64_t const start_date(f_snap->get_start_date());
+                draft_row->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_MODIFIED))->setValue(start_date);
+            }
+            else
+            {
+                // if there was a draft, it got saved so drop it now
+                revision_table->dropRow(draft_key);
+            }
+        }
     }
 
+    //
     // allow each plugin to save special fields (i.e. no auto-save)
+    //
+    // TBD: should we add the draft entry (and whether data was drafted
+    //      or saved as normal)?
+    //
+    // TODO: determine whether the save_editor_fields() should NOT be called
+    //       if no save took place
+    //
     save_editor_fields(ipath, revision_row, secret_row);
 
-    // save the modification date in the branch
-    content_plugin->modified_content(ipath);
+    if(modified)
+    {
+        // save the modification date in the branch
+        content_plugin->modified_content(ipath);
+    }
 }
 
 
@@ -3653,7 +4043,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         }
 
         // get the current value from the database if it exists
-        bool const is_editor_session_field(field_name == "editor::session");
+        bool const is_editor_session_field(field_name == get_name(name_t::SNAP_NAME_EDITOR_SESSION));
         if(!field_name.isEmpty()
         && (is_editor_session_field || data_row->exists(field_name)))
         {
@@ -3943,11 +4333,11 @@ QVariant editor::js_property_get(QString const& name) const
     // the current value
     if(name == "value")
     {
-        // this is one of the post_... or current_... too
+        // this is one of the post_..., draft_..., or current_... too
         return f_value_to_validate;
     }
 
-    // any one post we received
+    // any one post we received?
     if(name.startsWith("post_"))
     {
         QString const post_name(name.mid(5));
@@ -3958,12 +4348,35 @@ QVariant editor::js_property_get(QString const& name) const
         return QVariant();
     }
 
+    // any one post we received?
+    if(name.startsWith("draft_"))
+    {
+        QString const draft_name(name.mid(6));
+        if(f_draft_values.contains(draft_name))
+        {
+            return f_draft_values[draft_name];
+        }
+        return QVariant();
+    }
+
+    // any one database variable?
     if(name.startsWith("current_"))
     {
         QString const current_name(name.mid(8));
         if(f_current_values.contains(current_name))
         {
             return f_current_values[current_name];
+        }
+        return QVariant();
+    }
+
+    // any one XML default value?
+    if(name.startsWith("default_"))
+    {
+        QString const default_name(name.mid(8));
+        if(f_default_values.contains(default_name))
+        {
+            return f_default_values[default_name];
         }
         return QVariant();
     }
@@ -3987,12 +4400,26 @@ QString editor::js_property_name(int index) const
     }
     index -= f_post_values.size();
 
+    // try drafts
+    if(index < f_draft_values.size())
+    {
+        return f_draft_values.keys()[index];
+    }
+    index -= f_draft_values.size();
+
     // try current values
     if(index < f_current_values.size())
     {
         return f_current_values.keys()[index];
     }
-    //index -= f_current_values.size();
+    index -= f_current_values.size();
+
+    // try default values
+    if(index < f_default_values.size())
+    {
+        return f_default_values.keys()[index];
+    }
+    //index -= f_default_values.size();
 
     return "";
 }
@@ -4013,12 +4440,26 @@ QVariant editor::js_property_get(int index) const
     }
     index -= f_post_values.size();
 
+    // try drafts
+    if(index < f_draft_values.size())
+    {
+        return f_draft_values.values()[index];
+    }
+    index -= f_draft_values.size();
+
     // try current values
     if(index < f_current_values.size())
     {
         return f_current_values.values()[index];
     }
-    //index -= f_current_values.size();
+    index -= f_current_values.size();
+
+    // try default values
+    if(index < f_default_values.size())
+    {
+        return f_default_values.values()[index];
+    }
+    //index -= f_default_values.size();
 
     return QVariant();
 }

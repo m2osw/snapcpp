@@ -47,6 +47,8 @@ public:
 
 void            insert_html_string_to_xml_doc(QDomNode & child, QString const & xml);
 void            insert_node_to_xml_doc(QDomNode & child, QDomNode const & node);
+QString         xml_to_string(QDomNode & node);
+QString         xml_children_to_string(QDomNode & node);
 void            replace_node_with_html_string(QDomNode & child, QString const & xml);
 void            replace_node_with_elements(QDomNode & replace, QDomNode const & node);
 void            remove_all_children(QDomElement & parent);

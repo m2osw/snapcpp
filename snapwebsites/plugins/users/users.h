@@ -226,6 +226,7 @@ public:
     QString                 get_user_cookie_name();
     QString                 get_user_key() const;
     QString                 get_user_path() const;
+    int64_t                 get_user_identifier() const;
     bool                    user_is_a_spammer();
     bool                    user_is_logged_in();
     static QString          create_password();

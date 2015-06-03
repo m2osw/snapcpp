@@ -406,9 +406,6 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         // generate!
         ;
 
-//QDomDocument doc(page.ownerDocument());
-//printf("content XML [%s]\n", doc.toString().toUtf8().data());
-
     // go through the list of messages and append them to the body
     //
     // IMPORTANT NOTE: we handle the output of the messages in the output

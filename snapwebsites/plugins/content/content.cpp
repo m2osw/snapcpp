@@ -4016,7 +4016,7 @@ bool path_info_t::get_working_branch() const
 }
 
 
-snap_version::version_number_t path_info_t::get_branch(bool create_new_if_required, QString const& locale) const
+snap_version::version_number_t path_info_t::get_branch(bool create_new_if_required, QString const & locale) const
 {
     if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
     {
@@ -4026,7 +4026,7 @@ snap_version::version_number_t path_info_t::get_branch(bool create_new_if_requir
 
         if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
         {
-            QString const& key(f_real_key.isEmpty() ? f_key : f_real_key);
+            QString const & key(f_real_key.isEmpty() ? f_key : f_real_key);
             f_branch = f_content_plugin->get_current_branch(key, get_working_branch());
             if(create_new_if_required
             && snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
@@ -4189,8 +4189,12 @@ QString path_info_t::get_revision_key() const
     {
         if(snap_version::SPECIAL_VERSION_EXTENDED == f_revision)
         {
-            // if f_revision is set to extended then the branch is already
-            // defined, no need to call get_branch()
+            // if f_revision is set to "extended" then the branch is
+            // not included as a separate number; it is directly part
+            // of the revision string
+            //
+            // this is currently used for .js and .css files
+            //
             f_revision_key = f_content_plugin->generate_revision_key(f_key, f_revision_string, f_locale);
         }
         else
@@ -4237,6 +4241,68 @@ QString path_info_t::get_revision_key() const
 QString path_info_t::get_extended_revision() const
 {
     return f_revision_string;
+}
+
+
+QString path_info_t::get_draft_key(int64_t user_identifier) const
+{
+    if(f_draft_key.isEmpty())
+    {
+        // make sure the branch is defined
+        if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
+        {
+            // when create_new_if_required is set to false, then the locale
+            // parameter is never used; i.e. a draft cannot be created if
+            // we have no branch
+            get_branch(false, "");
+        }
+
+// avoid the warning about the minimum being zero and thus the useless test
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+        if(snap_version::SPECIAL_VERSION_MIN > f_branch
+        || snap_version::SPECIAL_VERSION_MAX_BRANCH_NUMBER < f_branch)
+#pragma GCC diagnostic pop
+        {
+            // the branch is still undefined...
+            throw content_exception_data_missing(QString("get_draft_key() request failed for \"%1\", no branch defined").arg(f_cpath));
+        }
+
+        f_draft_key = QString("%1#user/%2/%3").arg(f_key).arg(user_identifier).arg(f_branch);
+    }
+
+    return f_draft_key;
+}
+
+
+QString path_info_t::get_suggestion_key(int64_t suggestion) const
+{
+    if(f_suggestion_key.isEmpty())
+    {
+        // make sure the branch is defined
+        if(snap_version::SPECIAL_VERSION_UNDEFINED == f_branch)
+        {
+            // when create_new_if_required is set to false, then the locale
+            // parameter is never used; i.e. a draft cannot be created if
+            // we have no branch
+            get_branch(false, "");
+        }
+
+// avoid the warning about the minimum being zero and thus the useless test
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+        if(snap_version::SPECIAL_VERSION_MIN > f_branch
+        || snap_version::SPECIAL_VERSION_MAX_BRANCH_NUMBER < f_branch)
+#pragma GCC diagnostic pop
+        {
+            // the branch is still undefined...
+            throw content_exception_data_missing(QString("get_suggestion_key() request failed for \"%1\", no branch defined").arg(f_cpath));
+        }
+
+        f_suggestion_key = QString("%1#suggestion/%2.%3").arg(f_key).arg(f_branch).arg(suggestion);
+    }
+
+    return f_suggestion_key;
 }
 
 
@@ -5768,28 +5834,6 @@ QString content::set_revision_key(QString const& key, snap_version::version_numb
 }
 
 
-/** \brief Generate a key from a branch and user identifier.
- *
- * This function creates a key from the page key, a branch number, and a
- * user identifier. These keys are used to save drafts. Drafts are not
- * revisioned, however, they are assigned to specific users and the system
- * can detect whether a draft is older than the latest revision of a branch.
- *
- * \todo
- * Move to the user plugin?
- *
- * \param[in] key  The key of the page being handled.
- * \param[in] branch  The branch this draft is linked with.
- * \param[in] identifier  The user identifier.
- *
- * \return The key to the user branch.
- */
-QString content::get_user_key(QString const& key, snap_version::version_number_t branch, int64_t identifier)
-{
-    return QString("%1#user/%2/%3").arg(key).arg(identifier).arg(branch);
-}
-
-
 /** \brief Create a page at the specified path.
  *
  * This function creates a page in the database at the specified path.
@@ -6870,14 +6914,14 @@ bool content::load_attachment(QString const& key, attachment_file& file, bool lo
  *
  * \return true if the event should be propagated.
  */
-bool content::modified_content_impl(path_info_t& ipath)
+bool content::modified_content_impl(path_info_t & ipath)
 {
     QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
     QString const branch_key(ipath.get_branch_key());
     if(!branch_table->exists(branch_key))
     {
         // the row doesn't exist?!
-        SNAP_LOG_WARNING("Page \"")(branch_key)("\" does not exist. We cannot do anything about it being modified.");;
+        SNAP_LOG_WARNING("Page \"")(branch_key)("\" does not exist. We cannot do anything about it being modified.");
         return false;
     }
     QtCassandra::QCassandraRow::pointer_t row(branch_table->row(branch_key));

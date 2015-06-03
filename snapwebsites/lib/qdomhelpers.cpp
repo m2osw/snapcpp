@@ -21,6 +21,7 @@
 #include <iostream>
 
 #include <QStringList>
+#include <QTextStream>
 
 #include "poison.h"
 
@@ -104,6 +105,59 @@ void insert_node_to_xml_doc(QDomNode& child, QDomNode const& node)
 }
 
 
+/** \brief Transform a node into a string including all the tags.
+ *
+ * This function transforms a node to a string. The node is included
+ * in the result.
+ *
+ * \warning
+ * The node element name will appear in the result. If you do not
+ * want the root node tag to appear in the output, use the
+ * xml_children_to_string() instead.
+ *
+ * \param[in] node  The node to transform to a string.
+ *
+ * \return The converted node.
+ *
+ * \sa xml_children_to_string()
+ */
+QString xml_to_string(QDomNode & node)
+{
+    QString buffer;
+    QTextStream stream(&buffer);
+    stream.setCodec("UTF-8");
+    node.save(stream, -1);
+    return buffer;
+}
+
+
+/** \brief Transform a node into a string including all its children.
+ *
+ * This function transforms all the children of a node to a string.
+ * The node itself is not included in the result.
+ *
+ * \param[in] node  The node to transform to a string.
+ *
+ * \return The converted node.
+ *
+ * \sa xml_to_string()
+ */
+QString xml_children_to_string(QDomNode & node)
+{
+    QString buffer;
+    if(node.hasChildNodes())
+    {
+        QTextStream stream(&buffer);
+        stream.setCodec("UTF-8");
+        for(QDomNode n(node.firstChild()); !n.isNull(); n = n.nextSibling())
+        {
+            n.save(stream, 0);
+        }
+    }
+    return buffer;
+}
+
+
 /** \brief Useful function that transforms a QString to XML.
  *
  * When inserting a string in the XML document and that string may include
@@ -113,7 +167,7 @@ void insert_node_to_xml_doc(QDomNode& child, QDomNode const& node)
  * \param[in,out] child  DOM element receiving the result as children nodes.
  * \param[in] xml  The input XML string.
  */
-void replace_node_with_html_string(QDomNode& replace, QString const& xml)
+void replace_node_with_html_string(QDomNode & replace, QString const & xml)
 {
     // parsing the XML can be slow, try to avoid that if possible
     if(xml.contains('<'))

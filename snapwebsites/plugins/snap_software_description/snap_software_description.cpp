@@ -213,7 +213,7 @@ bool snap_software_description::on_path_execute(content::path_info_t& ipath)
     }
     else
     {
-        f_snap->output(doc.toString());
+        f_snap->output(doc.toString(-1));
     }
 
     return true;

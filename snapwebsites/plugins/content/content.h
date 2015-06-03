@@ -350,6 +350,8 @@ public:
     QString                         get_branch_key() const;
     QString                         get_revision_key() const;
     QString                         get_extended_revision() const;
+    QString                         get_draft_key(int64_t user_identifier) const;
+    QString                         get_suggestion_key(int64_t suggestion) const;
 
 private:
     typedef QMap<QString, QString>  parameters_t;
@@ -376,6 +378,8 @@ private:
     mutable QString                         f_locale;
     mutable QString                         f_branch_key;
     mutable QString                         f_revision_key;
+    mutable QString                         f_draft_key;
+    mutable QString                         f_suggestion_key;
 };
 
 
@@ -700,7 +704,6 @@ public:
     QString             set_revision_key(QString const & key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const & locale, bool working_branch);
     QString             set_revision_key(QString const & key, snap_version::version_number_t branch, QString const & revision, QString const & locale, bool working_branch);
     path_info_t         get_path_info(QString const & cpath, bool main_page);
-    QString             get_user_key(QString const & key, snap_version::version_number_t branch, int64_t identifier);
     virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
     bool                clone_page(clone_info_t & source, clone_info_t & destination);
     bool                move_page(path_info_t & ipath_source, path_info_t & ipath_destination);

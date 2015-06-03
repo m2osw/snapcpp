@@ -82,6 +82,7 @@ enum class name_t
     SNAP_NAME_EDITOR_LAYOUT,
     SNAP_NAME_EDITOR_PAGE,
     SNAP_NAME_EDITOR_PAGE_TYPE,
+    SNAP_NAME_EDITOR_SESSION,
     SNAP_NAME_EDITOR_TYPE_EXTENDED_FORMAT_PATH,
     SNAP_NAME_EDITOR_TYPE_FORMAT_PATH
 };
@@ -130,6 +131,44 @@ public:
         QString                 f_result;
     };
 
+    class value_info_t
+    {
+    public:
+        enum class value_status_t
+        {
+            WORKING,
+            DONE,
+            ERROR
+        };
+
+                                        value_info_t(content::path_info_t & ipath, QDomElement widget, QString const & data);
+
+        bool                            is_done() const;
+        bool                            is_valid() const;
+        void                            set_status(value_status_t const status = value_status_t::DONE);
+        content::path_info_t &          get_ipath() const;
+        QDomElement                     get_widget() const;
+        QString const &                 get_data() const;
+        QString const &                 get_widget_type() const;
+        QString const &                 get_data_type() const;
+        QString const &                 get_type_name() const;
+        void                            set_type_name(QString const & new_type_name);
+        QtCassandra::QCassandraValue &  result();
+
+    private:
+        value_status_t                  f_status = value_status_t::WORKING;
+
+        content::path_info_t &          f_ipath;
+        QDomElement                     f_widget;
+        QString const &                 f_data;
+
+        mutable QString                 f_widget_type;
+        mutable QString                 f_data_type;
+        QString                         f_type_name = "unknown";
+
+        QtCassandra::QCassandraValue    f_result;
+    };
+
                         editor();
                         ~editor();
 
@@ -171,6 +210,7 @@ public:
     SNAP_SIGNAL_WITH_MODE(init_editor_widget, (content::path_info_t & ipath, QString const & field_id, QString const & field_type, QDomElement & widget, QtCassandra::QCassandraRow::pointer_t row), (ipath, field_id, field_type, widget, row), NEITHER);
     SNAP_SIGNAL_WITH_MODE(new_attachment_saved, (content::attachment_file & the_attachment, QDomElement const & widget, QDomElement const & attachment_tag), (the_attachment, widget, attachment_tag), NEITHER);
     SNAP_SIGNAL_WITH_MODE(finish_editor_form_processing, (content::path_info_t & ipath, bool & succeeded), (ipath, succeeded), NEITHER);
+    SNAP_SIGNAL(string_to_value, (value_info_t & value_info), (value_info));
 
     // dynamic javascript property support
     virtual int         js_property_count() const;
@@ -180,9 +220,11 @@ public:
 
 private:
     typedef QMap<QString, QString>      value_map_t;
+    typedef QMap<QString, QtCassandra::QCassandraValue>     cassandra_value_map_t;
 
     void                content_update(int64_t variables_timestamp);
     void                process_new_draft();
+    bool                value_to_string(QString const & widget_type, QString const & data_type, QtCassandra::QCassandraValue const & value, QString & result);
     void                editor_save(content::path_info_t & ipath, sessions::sessions::session_info & info);
     void                editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access *server_access_plugin);
     void                editor_create_new_branch(content::path_info_t & ipath);
@@ -190,9 +232,12 @@ private:
 
     zpsnap_child_t          f_snap;
     QDomDocument            f_editor_form;          // XSL from editor-form.xsl + other plugin extensions
-    QString                 f_value_to_validate;    // for the JavaScript
+    QString                 f_value_to_validate;    // for the JavaScript, the value of the field being checked right now (from either the POST, Draft, or Database)
     value_map_t             f_post_values;          // in part for JavaScript, also caches all the values sent by the user
-    value_map_t             f_current_values;       // in part for JavaScript, also caches all the values sent by the user
+    value_map_t             f_current_values;       // in part for JavaScript, also caches all the current values in the database
+    value_map_t             f_draft_values;         // in part for JavaScript, also caches all the values last saved along an error or an auto-save
+    value_map_t             f_default_values;       // validation fails if we do not have the default value
+    cassandra_value_map_t   f_converted_values;     // to avoid converting the values twice
 };
 
 } // namespace editor

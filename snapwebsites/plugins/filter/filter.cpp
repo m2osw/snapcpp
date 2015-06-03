@@ -309,9 +309,6 @@ bool filter::replace_token_impl(content::path_info_t& ipath, QString const& plug
                 QDomXPath dom_xpath;
                 dom_xpath.setXPath(param.f_value);
                 QDomXPath::node_vector_t result(dom_xpath.apply(xml));
-//FILE *o(fopen("/tmp/test.xml", "w"));
-//fprintf(o, "%s\n", xml.toString(-1).toUtf8().data());
-//fclose(o);
                 // at this point we expect the result to be 1 (or 0) entries
                 // if more than 1, ignore the following nodes
                 if(result.size() > 0)

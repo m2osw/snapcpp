@@ -3104,6 +3104,12 @@ QString users::get_user_key() const
  * logged in, the function returns "user" which represents the anonymous
  * user.
  *
+ * \warning
+ * The path returned may NOT be from a logged in user. We may know the
+ * user key (his email address) and yet not have a logged in user. Whether
+ * the user is logged in needs to be checked with the user_is_logged_in()
+ * function.
+ *
  * \note
  * To test whether the returned value represents the anonymous user,
  * please make use  of get_name() with name_t::SNAP_NAME_USERS_ANONYMOUS_PATH.
@@ -3126,6 +3132,37 @@ QString users::get_user_path() const
         }
     }
     return get_name(name_t::SNAP_NAME_USERS_ANONYMOUS_PATH);
+}
+
+
+/** \brief Get the current user identifer.
+ *
+ * This function gets the user identifier. If we do not have the user key
+ * (his email address) then the function returns 0 (i.e. anonymous user).
+ *
+ * \warning
+ * The identifier returned may NOT be from a logged in user. We may know the
+ * user key (his email address) and yet not have a logged in user. Whether
+ * the user is logged in needs to be checked with the user_is_logged_in()
+ * function.
+ *
+ * \return The identifer of the current user.
+ */
+int64_t users::get_user_identifier() const
+{
+    if(!f_user_key.isEmpty())
+    {
+        QtCassandra::QCassandraTable::pointer_t users_table(const_cast<users *>(this)->get_users_table());
+        if(users_table->exists(f_user_key))
+        {
+            QtCassandra::QCassandraValue const value(users_table->row(f_user_key)->cell(get_name(name_t::SNAP_NAME_USERS_IDENTIFIER))->value());
+            if(!value.nullValue())
+            {
+                return value.int64Value();
+            }
+        }
+    }
+    return 0;
 }
 
 
@@ -3219,12 +3256,16 @@ users::status_t users::user_status(QString const& email, QString& status_key)
  * WARNING: This function does NOT return the current user identifier.
  * It returns the identifier of the user path passed as a parameter.
  *
+ * \note
+ * The current user identifier can be retrieved using the get_user_identifier()
+ * function with no parameters.
+ *
  * \param[in] user_path  The path to the user.
  *
  * \return The user identifier if it worked, -1 if the path is invalid
  *         and does not represent a user identifier.
  */
-int64_t users::get_user_identifier(QString const& user_path) const
+int64_t users::get_user_identifier(QString const & user_path) const
 {
     QString const site_key(f_snap->get_site_key_with_slash());
     int pos(0);

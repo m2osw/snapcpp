@@ -614,6 +614,7 @@ void feed::generate_feeds()
                         // print the children as text to a buffer
                         QString buffer;
                         QTextStream stream(&buffer);
+                        stream.setCodec("UTF-8");
                         // write the children to the buffer and then remove them
                         while(e.hasChildNodes())
                         {
