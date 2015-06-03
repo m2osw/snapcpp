@@ -96,10 +96,11 @@ public:
     QString             apply_theme(QDomDocument doc, QString const & xsl, QString const & theme_name);
     void                replace_includes(QString & xsl);
     int64_t             install_layout(QString const & layout_name, int64_t const last_updated);
-    void                add_layout_from_resources(QString const & name);
+    //void                add_layout_from_resources(QString const & name);
     void                extract_js_and_css(QDomDocument & doc, QDomDocument & doc_output);
 
     SNAP_SIGNAL(generate_header_content, (content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, const QString & ctemplate), (ipath, header, metadata, ctemplate));
+    SNAP_SIGNAL_WITH_MODE(add_layout_from_resources, (QString const & name), (name), START_AND_DONE);
     SNAP_SIGNAL_WITH_MODE(generate_page_content, (content::path_info_t & ipath, QDomElement & page, QDomElement & body, const QString & ctemplate), (ipath, page, body, ctemplate), NEITHER);
     SNAP_SIGNAL_WITH_MODE(filtered_content, (content::path_info_t & ipath, QDomDocument & doc, QString const & xsl), (ipath, doc, xsl), NEITHER);
 

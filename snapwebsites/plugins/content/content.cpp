@@ -5873,7 +5873,7 @@ QString content::set_revision_key(QString const& key, snap_version::version_numb
  *
  * \return true if the signal is to be propagated.
  */
-bool content::create_content_impl(path_info_t& ipath, QString const& owner, QString const& type)
+bool content::create_content_impl(path_info_t & ipath, QString const & owner, QString const & type)
 {
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());
@@ -6008,7 +6008,7 @@ bool content::create_content_impl(path_info_t& ipath, QString const& owner, QStr
  * \param[in] owner  The name of the plugin that is to own this page.
  * \param[in] type  The type of page.
  */
-void content::create_content_done(path_info_t& ipath, QString const& owner, QString const& type)
+void content::create_content_done(path_info_t & ipath, QString const & owner, QString const & type)
 {
     static_cast<void>(owner);
     static_cast<void>(type);

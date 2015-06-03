@@ -338,6 +338,7 @@ void editor::on_bootstrap(snap_child *snap)
     SNAP_LISTEN(editor, "server", server, process_post, _1);
     SNAP_LISTEN(editor, "layout", layout::layout, generate_header_content, _1, _2, _3, _4);
     SNAP_LISTEN(editor, "layout", layout::layout, generate_page_content, _1, _2, _3, _4);
+    SNAP_LISTEN(editor, "layout", layout::layout, add_layout_from_resources, _1);
     SNAP_LISTEN(editor, "form", form::form, validate_post_for_widget, _1, _2, _3, _4, _5, _6);
 }
 
@@ -1781,6 +1782,22 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
     {
         // save the modification date in the branch
         content_plugin->modified_content(ipath);
+    }
+}
+
+
+void editor::on_add_layout_from_resources(QString const & name)
+{
+    QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
+
+    {
+        QString const body(QString(":/xml/layout/%1-page.xml").arg(name));
+        QFile file(body);
+        if(file.open(QIODevice::ReadOnly))
+        {
+            QByteArray data(file.readAll());
+            layout_table->row(name)->cell(QString("%1-page").arg(name))->setValue(data);
+        }
     }
 }
 

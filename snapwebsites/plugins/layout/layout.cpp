@@ -1764,21 +1764,9 @@ void layout::on_load_file(snap_child::post_file_t& file, bool& found)
  * \param[in] name  The name of the layout. In most cases it will be the
  *                  same as the name of your plugin.
  */
-void layout::add_layout_from_resources(QString const& name)
+bool layout::add_layout_from_resources_impl(QString const & name)
 {
     QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
-
-    // TODO: we want to add a signal so other plugins can add their own expected pages
-    //       here it would be an editor file
-    {
-        QString const body(QString(":/xml/layout/%1-page.xml").arg(name));
-        QFile file(body);
-        if(file.open(QIODevice::ReadOnly))
-        {
-            QByteArray data(file.readAll());
-            layout_table->row(name)->cell(QString("%1-page").arg(name))->setValue(data);
-        }
-    }
 
     {
         QString const body(QString(":/xsl/layout/%1-body-parser.xsl").arg(name));
@@ -1824,6 +1812,14 @@ void layout::add_layout_from_resources(QString const& name)
         QByteArray data(file.readAll());
         layout_table->row(name)->cell(get_name(name_t::SNAP_NAME_LAYOUT_CONTENT))->setValue(data);
     }
+
+    return true;
+}
+
+
+void layout::add_layout_from_resources_done(QString const & name)
+{
+    QtCassandra::QCassandraTable::pointer_t layout_table(layout::layout::instance()->get_layout_table());
 
     int64_t updated(f_snap->get_start_date());
     layout_table->row(name)->cell(snap::get_name(snap::name_t::SNAP_NAME_CORE_LAST_UPDATED))->setValue(updated);

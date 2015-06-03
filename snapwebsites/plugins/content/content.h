@@ -711,10 +711,7 @@ public:
 
     void                on_bootstrap(snap_child * snap);
     void                on_execute(QString const & uri_path);
-    //virtual bool        on_path_execute(path_info_t & ipath);
     void                on_save_content();
-    //virtual void        on_generate_main_content(layout::layout * l, QString const & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    //void                on_generate_page_content(layout::layout * l, QString const & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
     void                on_register_backend_action(server::backend_action_map_t& actions);
     virtual void        on_backend_action(QString const & action);
     void                on_backend_process();
@@ -729,8 +726,6 @@ public:
     SNAP_SIGNAL(process_attachment, (QByteArray const & key, attachment_file const & file), (key, file));
     SNAP_SIGNAL(page_cloned, (cloned_tree_t const & tree), (tree));
     SNAP_SIGNAL(copy_branch_cells, (QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
-
-    //void                output() const;
 
     // add content for addition to the database
     void                add_xml(QString const & plugin_name);

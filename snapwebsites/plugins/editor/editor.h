@@ -215,18 +215,28 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
     QSharedPointer<QtCassandra::QCassandraTable> get_emails_table();
 
+    // signals
     void                on_bootstrap(snap_child * snap);
     void                on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
-    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
-    virtual bool        on_path_execute(content::path_info_t & ipath);
     void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
     void                on_validate_post_for_widget(content::path_info_t & ipath, sessions::sessions::session_info & info,
                                          QDomElement const & widget, QString const & widget_name,
                                          QString const & widget_type, bool is_secret);
     void                on_process_post(QString const & uri_path);
     void                on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
+    void                on_add_layout_from_resources(QString const & name);
+
+    // layout::layout_content
+    virtual void        on_generate_main_content(content::path_info_t & path, QDomElement & page, QDomElement & body, QString const & ctemplate);
+
+    // layout::layout_boxes
     virtual void        on_generate_boxes_content(content::path_info_t & page_cpath, content::path_info_t & ipath, QDomElement & page, QDomElement & box, QString const & ctemplate);
+
+    // links::links_cloned
     virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
+
+    // path::path_execute
+    virtual bool        on_path_execute(content::path_info_t & ipath);
 
     // form::form_post
     virtual void        on_process_form_post(content::path_info_t & ipath, sessions::sessions::session_info const & info);
