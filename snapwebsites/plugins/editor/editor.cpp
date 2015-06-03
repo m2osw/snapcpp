@@ -1537,38 +1537,49 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
             // do not specify a field
             //
             if(info.get_session_type() == sessions::sessions::session_info::session_info_type_t::SESSION_INFO_VALID
-            && !field_name.isEmpty()
-            && widget_auto_save != "no") // no known data type when auto-save="no"
+            && !field_name.isEmpty()        // no field name, no access to the database at all
+            && widget_auto_save != "no")    // no known data type when auto-save="no", so nothing to convert...
             {
-                string_to_value_info_t value_info(ipath, widget, current_value);
-                string_to_value(value_info);
-                if(value_info.is_valid())
+                if(current_value.isEmpty())    // emptiness invalidity is check by validate_editor_post_for_widget()
                 {
-                    // on errors we are not going to make use of these
-                    // values so avoid wasting time on them
                     if(!has_errors)
                     {
-                        // keep a copy of the result on success
-                        f_converted_values[widget_name] = value_info.result();
+                        // save the empty string as the result
+                        f_converted_values[widget_name] = QString();
                     }
                 }
                 else
                 {
-                    QString label(widget.firstChildElement("label").text());
-                    if(label.isEmpty())
+                    string_to_value_info_t value_info(ipath, widget, current_value);
+                    string_to_value(value_info);
+                    if(value_info.is_valid())
                     {
-                        label = widget_name;
+                        // on errors we are not going to make use of these
+                        // values so avoid wasting time on them
+                        if(!has_errors)
+                        {
+                            // keep a copy of the result on success
+                            f_converted_values[widget_name] = value_info.result();
+                        }
                     }
-                    messages->set_error(
-                        "Type Conflict",
-                        QString("Field \"%1\" must be a valid %2, \"%3\" is not acceptable.")
-                                .arg(label)
-                                .arg(value_info.get_type_name())
-                                .arg(form::form::html_64max(current_value, is_secret)),
-                        "This could be a hacker unless the JavaScript does not check the value properly, assuming the JavaScript is implemented.",
-                        false
-                    ).set_widget_name(widget_name);
-                    info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                    else
+                    {
+                        QString label(widget.firstChildElement("label").text());
+                        if(label.isEmpty())
+                        {
+                            label = widget_name;
+                        }
+                        messages->set_error(
+                            "Type Conflict",
+                            QString("Field \"%1\" must be a valid %2, \"%3\" is not acceptable.")
+                                    .arg(label)
+                                    .arg(value_info.get_type_name())
+                                    .arg(form::form::html_64max(current_value, is_secret)),
+                            "This could be a hacker unless the JavaScript does not check the value properly, assuming the JavaScript is implemented.",
+                            false
+                        ).set_widget_name(widget_name);
+                        info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                    }
                 }
             }
 
