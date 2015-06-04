@@ -35,7 +35,7 @@ private slots:
     void on_action_DeleteColumns_triggered();
     void on_f_connectionBtn_clicked();
     void on_f_applyFilter_clicked();
-    void on_f_refreshFilter_clicked();
+    void on_f_refreshView_clicked();
 
 private:
     typedef QtCassandra::QCassandra::pointer_t cassandra_t;
