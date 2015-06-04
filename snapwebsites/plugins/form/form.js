@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.2.7
+ * Version: 0.0.2.28
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -40,9 +40,10 @@
  */
 snapwebsites.Form = function()
 {
-    var that = this;
+    var focused = false,
+        that = this;
 
-    jQuery("input[type='text']:not([data-background-value='']), input[type='password']:not([data-background-value=''])")
+    jQuery("form input[type='text']:not([data-background-value='']), form input[type='password']:not([data-background-value=''])")
         .focus(function()
             {
                 that.focus_(this);
@@ -55,6 +56,10 @@ snapwebsites.Form = function()
             {
                 that.blur_(this);
             })
+        .on("keyup cut paste", function()
+            {
+                that.restartAutoReset_(this);
+            })
         .each(function(i, e)
             {
                 that.blur_(e);
@@ -63,7 +68,7 @@ snapwebsites.Form = function()
     // At least in Firefox, checkboxes do not reflect the checked="checked"
     // attribute properly on a reload (reload which can happen after a
     // standard POST!); so here we fix the problem in JavaScript
-    jQuery("input[type='checkbox']")
+    jQuery("form input[type='checkbox']")
         .each(function(i, e)
             {
                 var w = jQuery(e),
@@ -100,7 +105,7 @@ snapwebsites.Form = function()
         .submit(function(e)
             {
                 // TODO: verify the data as much as possible before we allow a submit
-                //       also change the default data with "" otherwise we'll be
+                //       also change the default data with "" otherwise we will be
                 //       sending the background-value to the server!?
                 if(that.submitted_)
                 {
@@ -111,6 +116,52 @@ snapwebsites.Form = function()
                     return;
                 }
                 that.submitted_ = true;
+
+                jQuery("form input[type='text']:not([data-background-value='']), form input[type='password']:not([data-background-value=''])")
+                    .each(function(i, widget)
+                        {
+                            that.blur_(widget);
+                        });
+            });
+
+    jQuery("form")
+        .each(function(i, widget)
+            {
+                var w = jQuery(widget),
+                    focus_id = w.attr("focus"),
+                    auto_reset = w.attr("auto-reset"),
+                    timeout_id;
+
+                // this is very problematic, we can really only have one widget with
+                // the focus; at this time we do not know which form is in the main
+                // page and whether it would have a higher priority...
+                if(!focused)
+                {
+                    focused = true;
+                    jQuery("#" + focus_id)
+                        .focus()
+                        .select();
+                }
+
+                // the auto-reset is a number of minutes to wait before
+                // canceling the form completely
+                if(auto_reset > 0) // form times out?
+                {
+                    timeout_id = setTimeout(function()
+                        {
+                            that.autoReset_(w);
+                        },
+                        auto_reset * 60000); // minutes to ms
+                    w.attr("timeout-id", timeout_id);
+                }
+            });
+
+    // after we connected the .submit() callback, we finally enable
+    // the submit buttons
+    jQuery("form input[type='submit'][enable-on-load='enable-on-load']")
+        .each(function(i, e)
+            {
+                jQuery(e).removeAttr("disabled");
             });
 
     return this;
@@ -179,6 +230,8 @@ snapwebsites.Form.prototype.focus_ = function(widget)
     {
         w.attr('type', 'password');
     }
+
+    this.restartAutoReset_(widget);
 };
 
 
@@ -198,6 +251,8 @@ snapwebsites.Form.prototype.change_ = function(widget)
     var w = jQuery(widget);
 
     w.data("edited", w.val() !== "");
+
+    this.restartAutoReset_(widget);
 };
 
 
@@ -217,11 +272,14 @@ snapwebsites.Form.prototype.change_ = function(widget)
  */
 snapwebsites.Form.prototype.blur_ = function(widget)
 {
-    var w = jQuery(widget);
+    var w = jQuery(widget),
+        d = w.prop("disabled"),
+        l;
 
     if(!w.is(":focus"))
     {
-        if(w.val().length === 0)
+        l = w.val().length;
+        if(l === 0 && !d)
         {
             w.val( /** @type string */ (w.data("background-value")))
                 .addClass('input-with-background-value');
@@ -230,6 +288,10 @@ snapwebsites.Form.prototype.blur_ = function(widget)
             {
                 w.attr('type', 'text');
             }
+        }
+        else if(l != 0 && d)
+        {
+            w.val('');
         }
     }
 };
@@ -273,7 +335,7 @@ snapwebsites.Form.prototype.setVal = function(widget, value)
 {
     var w = jQuery(widget);
 
-    if(value || w.is(":focus"))
+    if(value || w.is(":focus") || w.prop("disabled"))
     {
         if(w.hasClass('password-input'))
         {
@@ -292,6 +354,89 @@ snapwebsites.Form.prototype.setVal = function(widget, value)
         }
     }
 };
+
+
+/** \brief Restart the timer of this form.
+ *
+ * Each time the user enters a key or clicks a checkbox or radio button,
+ * the corresponding form timer has to be restarted (i.e. we extend the
+ * timeout back to the full amount.)
+ *
+ * @param {Element} widget  The widget that just got activated.
+ *
+ * @private
+ */
+snapwebsites.Form.prototype.restartAutoReset_ = function(widget)
+{
+    var w = jQuery(widget),
+        f = w.parents("form"),
+        timeout_id = parseFloat(f.attr("timeout-id")),
+        auto_reset = f.attr("auto-reset"),
+        that = this;
+
+    // clear the old one
+    if(!isNaN(timeout_id))
+    {
+        clearTimeout(timeout_id);
+    }
+
+    // setup a new one
+    timeout_id = setTimeout(function()
+        {
+            that.autoReset_(f);
+        },
+        auto_reset * 60000); // minutes to ms
+
+    // save the new id back in the form
+    w.attr("timeout-id", timeout_id);
+};
+
+
+/** \brief Function called once the form times out.
+ *
+ * After a certain amount of time, this function gets called to reset
+ * the form. This is quite important for forms that hold data such
+ * a user name, password, credit card number, etc.
+ *
+ * @param {jQuery} w  The from which timed out.
+ *
+ * @private
+ */
+snapwebsites.Form.prototype.autoReset_ = function(w)
+{
+    var that = this,
+        form_timeout = jQuery.Event("form_timeout",
+        {
+            form: w,
+            minutes: w.attr("auto-reset")
+        });
+
+    // TBD: should we send the existing data to a "draft" like
+    //      store, so we can restore it if the user logs back in?
+
+    // reset so possibly secret data (user name, address, telephone,
+    // password, etc.) get removed
+    w[0].reset();
+
+    // now disable the form so it cannot be submitted anymore
+    jQuery(w).find(":input").attr("disabled", "disabled");
+
+    jQuery(w)
+        .find("input[type='text']:not([data-background-value='']), input[type='password']:not([data-background-value=''])")
+        .each(function(i, widget)
+            {
+                that.blur_(widget);
+            });
+
+    // finally give other scripts a chance to do something about
+    // the form such as hide it or put a button to reload the page
+    // and thus give the user a way to "restore" the form
+    w.trigger(form_timeout);
+
+    // TODO: support a system reload button using AJAX
+};
+
+
 
 // auto-initialize
 jQuery(document).ready(

@@ -427,7 +427,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
         <xsl:attribute name="alt"><xsl:value-of select="help"/></xsl:attribute>
       </xsl:if>
       <xsl:if test="sizes/width"><xsl:attribute name="size"><xsl:value-of select="sizes/width"/></xsl:attribute></xsl:if>
-      <!--xsl:if test="state = 'disabled'"><xsl:attribute name="disabled">disabled</xsl:attribute></xsl:if-->
+      <xsl:if test="not(state = 'disabled')">
+        <xsl:attribute name="enable-on-load">enable-on-load</xsl:attribute>
+      </xsl:if>
       <xsl:attribute name="value"><xsl:value-of select="value"/></xsl:attribute>
     </input>
   </xsl:template>
@@ -504,6 +506,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
           <xsl:if test="(//widget)[@type='file' or @type='image']">
             <xsl:attribute name="enctype">multipart/form-data</xsl:attribute>
           </xsl:if>
+          <xsl:if test="focus/@refid">
+            <!-- force focus in the specified widget -->
+            <xsl:attribute name="focus"><xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/></xsl:attribute>
+          </xsl:if>
+          <!-- WARNING: this is not really an auto-reset; the form becomes
+                        invalid as in the session won't be accepted by the
+                        destination so we want to (1) reset the form to make
+                        sure the data is gone and (2) hide the form because
+                        it cannot be submitted anymore. -->
+          <xsl:if test="auto-reset">
+            <xsl:attribute name="auto-reset"><xsl:value-of select="auto-reset/@minutes"/></xsl:attribute>
+          </xsl:if>
           <!-- see http://stackoverflow.com/questions/153527/setting-the-character-encoding-in-form-submit-for-internet-explorer -->
           <input id="form__iehack" name="form__iehack" type="hidden" value="&#9760;"/>
           <input id="_form_session" name="_form_session" type="hidden" value="{$_form_session}"/>
@@ -519,23 +533,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
               <xsl:apply-templates select="widget"/>
             </xsl:otherwise>
           </xsl:choose>
-          <xsl:if test="focus/@refid">
-            <!-- force focus in the specified widget -->
-            <script type="text/javascript">jQuery("#<xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>").focus();jQuery("#<xsl:value-of select="focus/@refid"/>_<xsl:value-of select="$unique_id"/>").select();</script>
-          </xsl:if>
-          <xsl:if test="auto-reset">
-            <!-- TODO: reset timer each time the user makes a modification
-                       so it does not trigger too soon!
-                       use setTimer() instead too, to avoid infinite loops -->
-            <script type="text/javascript">function auto_reset_<xsl:value-of select="$unique_id"/>(){form_<xsl:value-of select="$unique_id"/>.reset();}window.setInterval(auto_reset_<xsl:value-of select="$unique_id"/>,<xsl:value-of select="auto-reset/@minutes * 60000"/>);</script>
-          </xsl:if>
         </form>
-        <!-- enable buttons after the form is fully loaded to avoid problems (early submissions) -->
-        <xsl:for-each select="//widget[@type='submit']">
-          <xsl:if test="not(state = 'disabled')">
-            <script type="text/javascript">jQuery("#<xsl:value-of select="@id"/>_<xsl:value-of select="$unique_id"/>").removeAttr("disabled");</script>
-          </xsl:if>
-        </xsl:for-each>
       </div>
     </div>
   </xsl:template>
