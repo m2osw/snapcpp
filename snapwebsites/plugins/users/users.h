@@ -50,6 +50,7 @@ enum class name_t
     SNAP_NAME_USERS_LOGOUT_IP,
     SNAP_NAME_USERS_LOGOUT_ON,
     SNAP_NAME_USERS_LONG_SESSIONS,
+    SNAP_NAME_USERS_MODIFIED,
     SNAP_NAME_USERS_MULTIUSER,
     SNAP_NAME_USERS_NAME,
     SNAP_NAME_USERS_NEW_PATH,
@@ -241,8 +242,12 @@ public:
     QString                 login_user(QString const & key, QString const & password, bool & validation_required, login_mode_t login_mode = login_mode_t::LOGIN_MODE_FULL);
     bool                    authenticated_user(QString const & key, sessions::sessions::session_info * info);
     void                    user_logout();
+    void                    save_user_parameter(QString const & email, QString const & field_name, QtCassandra::QCassandraValue const & value);
     void                    save_user_parameter(QString const & email, QString const & field_name, QString const & value);
+    void                    save_user_parameter(QString const & email, QString const & field_name, int64_t const & value);
+    bool                    load_user_parameter(QString const & email, QString const & field_name, QtCassandra::QCassandraValue & value);
     bool                    load_user_parameter(QString const & email, QString const & field_name, QString & value);
+    bool                    load_user_parameter(QString const & email, QString const & field_name, int64_t & value);
 
     int64_t                 get_user_identifier(QString const & user_path) const;
     QString                 get_user_email(QString const & user_path);

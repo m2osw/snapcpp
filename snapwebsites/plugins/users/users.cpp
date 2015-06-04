@@ -154,6 +154,9 @@ const char *get_name(name_t name)
     case name_t::SNAP_NAME_USERS_LONG_SESSIONS:
         return "users::long_sessions";
 
+    case name_t::SNAP_NAME_USERS_MODIFIED:
+        return "users::modified";
+
     case name_t::SNAP_NAME_USERS_MULTIUSER:
         return "users::multiuser";
 
@@ -810,9 +813,38 @@ void users::user_logout()
  *
  * \sa load_user_parameter()
  */
+void users::save_user_parameter(QString const & email, QString const & field_name, QtCassandra::QCassandraValue const & value)
+{
+    int64_t const start_date(f_snap->get_start_date());
+
+    QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
+    QtCassandra::QCassandraRow::pointer_t row(users_table->row(email));
+
+    // mark when we created the user if that is not yet defined
+    if(!row->exists(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME)))
+    {
+        row->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->setValue(start_date);
+    }
+
+    // save the external plugin parameter
+    row->cell(field_name)->setValue(value);
+
+    // mark the user as modified
+    row->cell(get_name(name_t::SNAP_NAME_USERS_MODIFIED))->setValue(start_date);
+}
+
+
 void users::save_user_parameter(QString const & email, QString const & field_name, QString const & value)
 {
-    get_users_table()->row(email)->cell(field_name)->setValue(value);
+    QtCassandra::QCassandraValue v(value);
+    save_user_parameter(email, field_name, v);
+}
+
+
+void users::save_user_parameter(QString const & email, QString const & field_name, int64_t const & value)
+{
+    QtCassandra::QCassandraValue v(value);
+    save_user_parameter(email, field_name, v);
 }
 
 
@@ -835,21 +867,53 @@ void users::save_user_parameter(QString const & email, QString const & field_nam
  *
  * \sa save_user_parameter()
  */
-bool users::load_user_parameter(QString const & email, QString const & field_name, QString & value)
+bool users::load_user_parameter(QString const & email, QString const & field_name, QtCassandra::QCassandraValue & value)
 {
-    value.clear();
+    // reset the input value by default
+    value.setNullValue();
+
+    // make sure that row (a.k.a. user) exists before accessing it
     QtCassandra::QCassandraTable::pointer_t users_table(get_users_table());
     if(!users_table->exists(email))
     {
         return false;
     }
     QtCassandra::QCassandraRow::pointer_t user_row(users_table->row(email));
+
+    // row exists, make sure the user field exists
     if(!user_row->exists(field_name))
     {
         return false;
     }
-    value = user_row->cell(field_name)->value().stringValue();
+
+    // retrieve that parameter
+    value = user_row->cell(field_name)->value();
+
     return true;
+}
+
+
+bool users::load_user_parameter(QString const & email, QString const & field_name, QString & value)
+{
+    QtCassandra::QCassandraValue v;
+    if(load_user_parameter(email, field_name, v))
+    {
+        value = v.stringValue();
+        return true;
+    }
+    return false;
+}
+
+
+bool users::load_user_parameter(QString const & email, QString const & field_name, int64_t & value)
+{
+    QtCassandra::QCassandraValue v;
+    if(load_user_parameter(email, field_name, v))
+    {
+        value = v.safeInt64Value();
+        return true;
+    }
+    return false;
 }
 
 
@@ -1120,7 +1184,7 @@ void users::on_generate_header_content(content::path_info_t& ipath, QDomElement&
             if(!value.nullValue())
             {
                 QDomElement desc(doc.createElement("desc"));
-                desc.setAttribute("type", "users::created");
+                desc.setAttribute("type", "users::created"); // NOTE: in the database it is named "users::created_time"
                 metadata.appendChild(desc);
                 QDomElement data(doc.createElement("data"));
                 desc.appendChild(data);
@@ -2467,7 +2531,7 @@ void users::process_register_form()
         f_snap->die(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
                 "Access Denied",
                 "You are not allowed to create an account on this website.",
-                QString("create_user() returned an unexpected status (%1).").arg(static_cast<int>(status)));
+                QString("register_user() returned an unexpected status (%1).").arg(static_cast<int>(status)));
         NOTREACHED();
         break;
 
@@ -2673,6 +2737,9 @@ void users::process_replace_password_form()
                     // Also save the digest since it could change en-route
                     row->cell(get_name(name_t::SNAP_NAME_USERS_PASSWORD_DIGEST))->setValue(digest);
 
+                    int64_t const start_time(f_snap->get_start_time());
+                    row->cell(get_name(name_t::SNAP_NAME_USERS_MODIFIED))->setValue(start_time);
+
                     // Unlink from the password tag too
                     links::links::instance()->delete_link(user_status_info);
 
@@ -2684,7 +2751,7 @@ void users::process_replace_password_form()
                     //      and ask them when the user request the new password or
                     //      when he comes back in the replace password form
                     f_info->set_object_path("/user/" + f_user_changing_password_key);
-                    f_info->set_login_limit(f_snap->get_start_time() + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
+                    f_info->set_login_limit(start_time + 3600 * 3); // 3 hours (XXX: needs to become a parameter)
                     sessions::sessions::instance()->save_session(*f_info, true); // force a new random session number
 
                     http_cookie cookie(f_snap, get_user_cookie_name(), QString("%1/%2").arg(f_info->get_session_key()).arg(f_info->get_session_random()));
@@ -3582,7 +3649,12 @@ users::status_t users::register_user(QString const& email, QString const& passwo
         row->cell(get_name(name_t::SNAP_NAME_USERS_ORIGINAL_IP))->setValue(value);
 
         // Date when the user was created (i.e. now)
-        row->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->setValue(created_date);
+        // if that field does not exist yet (it could if the user unsubscribe
+        // from a mailing list or something similar)
+        if(!row->exists(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME)))
+        {
+            row->cell(get_name(name_t::SNAP_NAME_USERS_CREATED_TIME))->setValue(created_date);
+        }
     }
 
     // Add a reference back to the website were the user is being added so
@@ -3645,6 +3717,9 @@ users::status_t users::register_user(QString const& email, QString const& passwo
         links::links::instance()->create_link(source, destination);
     }
 
+    // last time the user data was modified
+    row->cell(get_name(name_t::SNAP_NAME_USERS_MODIFIED))->setValue(created_date);
+
     user_registered(user_ipath, identifier);
 
     return status;
@@ -3697,6 +3772,8 @@ void users::verify_email(QString const& email)
 
     // destination email address
     e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), email);
+
+    e.add_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST), "true");
 
     // add the email subject and body using a page
     e.set_email_path("admin/email/users/verify");
@@ -3774,6 +3851,8 @@ bool users::resend_verification_email(QString const& email)
     // mark priority as High
     e.set_priority(sendmail::sendmail::email::email_priority_t::EMAIL_PRIORITY_HIGH);
 
+    e.add_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST), "true");
+
     // destination email address
     e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), email);
 
@@ -3815,6 +3894,8 @@ void users::forgot_password_email(QString const& email)
 
     // mark priority as High
     e.set_priority(sendmail::sendmail::email::email_priority_t::EMAIL_PRIORITY_HIGH);
+
+    e.add_parameter(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST), "true");
 
     // destination email address
     e.add_header(sendmail::get_name(sendmail::name_t::SNAP_NAME_SENDMAIL_TO), email);

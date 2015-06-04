@@ -64,6 +64,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_SENDMAIL:
         return "sendmail";
 
+    case name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST:
+        return "Bypass-Blacklist";
+
     case name_t::SNAP_NAME_SENDMAIL_CONTENT_TRANSFER_ENCODING:
         return "Content-Transfer-Encoding";
 
@@ -115,11 +118,17 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_SENDMAIL_LAYOUT_NAME:
         return "sendmail";
 
+    case name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST:
+        return "angrylist";
+
     case name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST:
         return "blacklist";
 
     case name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST:
         return "orangelist";
+
+    case name_t::SNAP_NAME_SENDMAIL_LEVEL_PURPLELIST:
+        return "purplelist";
 
     case name_t::SNAP_NAME_SENDMAIL_LEVEL_WHITELIST:
         return "whitelist";
@@ -183,6 +192,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_SENDMAIL_TO:
         return "To";
+
+    case name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON:
+        return "sendmail::unsubscribe_on";
 
     case name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_PATH:
         return "unsubscribe";
@@ -1108,11 +1120,11 @@ sendmail::email::email_attachment& sendmail::email::get_attachment(int index) co
  * \param[in] name  A valid parameter name.
  * \param[in] value  The value of this header.
  */
-void sendmail::email::add_parameter(const QString& name, const QString& value)
+void sendmail::email::add_parameter(QString const & name, QString const & value)
 {
     if(name.isEmpty())
     {
-        throw sendmail_exception_invalid_argument("plugins/sendmail/sendmail.cpp:sendmail::email::get_parameter(): Cannot add a parameter with an empty name.");
+        throw sendmail_exception_invalid_argument("plugins/sendmail/sendmail.cpp:sendmail::email::add_parameter(): Cannot add a parameter with an empty name.");
     }
 
     f_parameter[name] = value;
@@ -1132,7 +1144,7 @@ void sendmail::email::add_parameter(const QString& name, const QString& value)
  *
  * \return The current value of that parameter or an empty string if undefined.
  */
-QString sendmail::email::get_parameter(const QString& name) const
+QString sendmail::email::get_parameter(QString const & name) const
 {
     if(name.isEmpty())
     {
@@ -1695,20 +1707,34 @@ void sendmail::on_finish_editor_form_processing(content::path_info_t & ipath, bo
 
         users::users * users_plugin(users::users::instance());
 
+        int64_t const start_date(f_snap->get_start_date());
+
         // always save blacklist in the user parameter
         QString const user_email(f_snap->postenv(get_name(name_t::SNAP_NAME_SENDMAIL_FIELD_EMAIL)));
-        QString const level(f_snap->postenv(get_name(name_t::SNAP_NAME_SENDMAIL_FIELD_LEVEL)));
-        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST))
+        QString level(f_snap->postenv(get_name(name_t::SNAP_NAME_SENDMAIL_FIELD_LEVEL)));
+        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
+        || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
         {
             users_plugin->save_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level);
+            users_plugin->save_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON), start_date);
         }
-        else if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST))
+        else if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST)
+             || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_PURPLELIST))
         {
             // The user may not exist in this website so we cannot hope to
             // set that up there; so instead we use a "special" key
             //    sendmail::unsubscribe_selection::<site-key>
             //
-            users_plugin->save_user_parameter(user_email, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST));
+            if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ORANGELIST))
+            {
+                level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST);
+            }
+            else
+            {
+                level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST);
+            }
+            users_plugin->save_user_parameter(user_email, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level);
+            users_plugin->save_user_parameter(user_email, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_ON), start_date);
         }
 
         if(has_session)
@@ -1977,7 +2003,7 @@ void sendmail::process_emails()
  *
  * \param[in] e  The email to attach to a list of users.
  */
-void sendmail::attach_email(const email& e)
+void sendmail::attach_email(email const & e)
 {
     QString const to(e.get_header(get_name(name_t::SNAP_NAME_SENDMAIL_TO)));
 
@@ -2326,7 +2352,23 @@ void sendmail::sendemail(QString const & key, QString const & unique_key)
     if(users::users::instance()->load_user_parameter(to, get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION), level)
     || users::users::instance()->load_user_parameter(to, QString("%1::%2").arg(get_name(name_t::SNAP_NAME_SENDMAIL_UNSUBSCRIBE_SELECTION)).arg(f_snap->get_site_key()), level))
     {
+        // if the user was put in the Angry List then we have no way
+        // to send any emails... so the user cannot register or change
+        // their password if they have an existing account!
+        //
         if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST))
+        {
+            // plugins can bypass the blacklist for important maintenance
+            // emails (i.e. user registration, password change.)
+            QString const bypass(f_email.get_parameter(get_name(name_t::SNAP_NAME_SENDMAIL_BYPASS_BLACKLIST)));
+            if(bypass == "true")
+            {
+                // allow these emails
+                level = get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_WHITELIST);
+            }
+        }
+        if(level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_BLACKLIST)
+        || level == get_name(name_t::SNAP_NAME_SENDMAIL_LEVEL_ANGRYLIST))
         {
             // marked as "unsubscribed" from all websites
             // so we never send email to that user...

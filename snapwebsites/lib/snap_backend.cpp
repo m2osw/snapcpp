@@ -436,6 +436,7 @@ void snap_backend::run_backend()
                     o != r.end(); ++o)
                 {
                     QString const key(QString::fromUtf8(o.key().data()));
+std::cerr << "*** process backend [" << action << "] with uri = [" << key << "]\n";
                     process_backend_uri(key);
                 }
             }
