@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.2.28
+ * Version: 0.0.2.29
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -120,7 +120,7 @@ snapwebsites.Form = function()
                 jQuery("form input[type='text']:not([data-background-value='']), form input[type='password']:not([data-background-value=''])")
                     .each(function(i, widget)
                         {
-                            that.blur_(widget);
+                            that.focus_(widget);
                         });
             });
 
