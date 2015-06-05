@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.336
+ * Version: 0.0.3.355
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -131,12 +131,12 @@
  *   |     +--------------------+   |          |          |                       |
  *   |            ^                 |          |   +------+-----------+           |
  *   |            | Reference       |          |   |                  |           |
- *   |            |                 |          +---|  EditorFormBase  |           |
+ *   |            |                 |          +---+  EditorFormBase  |           |
  *   |            |   +-------------+------+   |   |                  |           |
  *   |            |   |                    |   |   |                  |           ^
  *   |            |   | EditorWidgetType...|   |   +------------------+           |
  *   |            |   | (i.e. LineEdit,    |   |     ^            ^               |
- *   |            |   | Button, Checkmark) |   |     | Inherit    | Reference     |
+ *   |            |   | Button, Checkmark) |   ^     | Inherit    | Reference     |
  *   |            |   +--------------------+   |     |            |               |
  *   |            |                            |     |     +------+-----------+   |
  *   |     +------+-------------+              |     |     |                  |   |
@@ -901,7 +901,7 @@ snapwebsites.EditorWidgetTypeBase.prototype.resetValue = function(editor_widget)
  * other type, this is why here it is marked as an object.
  *
  * @param {!Object} editor_widget  The concerned widget
- * @param {!Object} value  The value to be saved.
+ * @param {!Object|string|number} value  The value to be saved.
  *
  * @return {boolean}  true if the value got set.
  */
@@ -2072,10 +2072,13 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      final function discard();
  *      function getEditorForm() : EditorForm;
  *      function getEditorBase() : EditorBase;
+ *      function focus() : Void;
+ *      function blur() : Void;
  *      function show() : Void;
  *      function hide() : Void;
  *      function enable(opt_state: boolean) : Void;
  *      function disable() : Void;
+ *      function isEnable() : boolean;
  *      final function getWidget() : jQuery;
  *      final function getWidgetContent() : jQuery;
  *      final function checkForBackgroundValue();
@@ -2111,7 +2114,8 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  */
 snapwebsites.EditorWidget = function(editor_base, editor_form, widget)
 {
-    var type = snapwebsites.castToString(widget.attr("field_type"), "field_type attribute");
+    var type = snapwebsites.castToString(widget.attr("field_type"), "field_type attribute"),
+        that = this;
 
     this.editorBase_ = editor_base;
     this.editorForm_ = editor_form;
@@ -2446,7 +2450,22 @@ snapwebsites.EditorWidget.prototype.getEditorBase = function()
  */
 snapwebsites.EditorWidget.prototype.focus = function()
 {
-    this.widgetContent_.focus();
+    if(this.isEnable())
+    {
+        this.widgetContent_.focus();
+    }
+};
+
+
+/** \brief Remove the focus from this widget if it has it.
+ *
+ * This function removes the focus from this widget if it happened to
+ * be the one with the focus. It is used, for example, when the widget
+ * gets disabled or hidden.
+ */
+snapwebsites.EditorWidget.prototype.blur = function()
+{
+    this.widgetContent_.blur();
 };
 
 
@@ -2515,13 +2534,33 @@ snapwebsites.EditorWidget.prototype.hide = function()
  */
 snapwebsites.EditorWidget.prototype.enable = function(opt_state)
 {
+    var editable = this.widgetContent_.attr("contenteditable");
+
     if(typeof opt_state === "boolean" && !opt_state)
     {
         this.widget_.addClass("disabled");
+
+        // set contenteditable to false so we know we have to restore it later
+        // (but only if it exists)
+        if(typeof editable != "undefined" && editable != "")
+        {
+            this.widgetContent_.attr("contenteditable", "false");
+        }
+
+        // make sure the focus is lost from this widget if it was still here
+        // (it should not now that contenteditable is false)
+        this.blur();
     }
     else
     {
         this.widget_.removeClass("disabled");
+
+        // restore the contenteditable state to true if present
+        if(typeof editable != "undefined" && editable != "")
+        {
+            // restore contenteditable
+            this.widgetContent_.attr("contenteditable", "true");
+        }
     }
 };
 
@@ -2537,6 +2576,18 @@ snapwebsites.EditorWidget.prototype.enable = function(opt_state)
 snapwebsites.EditorWidget.prototype.disable = function()
 {
     this.enable(false);
+};
+
+
+/** \brief Check whether a widget is enable.
+ *
+ * This function checks whether the widget is currently enabled.
+ *
+ * @return {boolean}  true if the widget is enable, false otherwise.
+ */
+snapwebsites.EditorWidget.prototype.isEnable = function()
+{
+    return !this.widget_.hasClass("disabled");
 };
 
 
@@ -2646,17 +2697,55 @@ snapwebsites.EditorWidget.prototype.getValue = function()
 };
 
 
+/** \brief Reset the data of a widget to the last saved value.
+ *
+ * This function copies the originalData_ back in the data of this widget.
+ * This it is restoring the data, it marks the widget as not modified.
+ *
+ * @final
+ *
+ * @return {boolean}  true if the restore succeeded.
+ *
+ * \sa resetValue()
+ * \sa setValue()
+ */
+snapwebsites.EditorWidget.prototype.restoreValue = function()
+{
+    // We cannot directly use the setValue() with the original data
+    // because that data is HTML. However, we can restore the HTML
+    // and then retrieve the resulting value and reapply that to
+    // make sure we are on the right wave length.
+    this.widgetContent_.html(this.originalData_);
+
+    // generate a setValue() which handles all the necessary
+    // special cases
+    return this.setValue(this.getValue(), true);
+};
+
+
 /** \brief Reset the value of the widget.
  *
- * This function resets the value of this widget. This generally only
- * works with widgets that have a form of default value.
+ * This function "resets" the value of this widget when changed is false.
+ * This generally only works with widgets that have a form of default value.
+ * The value itself does not get changed. Instead, the function makes it
+ * look like the widget was not modified.
  *
  * If the parameters 'changed' is set to true then the widget is marked
- * as modified, otherwise the modified flag is not changed.
+ * as modified, otherwise the modified flag is not changed so if it was
+ * already marked modified, it still is.
+ *
+ * To restore the content of a widget to what it was before the last time
+ * it was saved, call the restoreValue() instead.
+ *
+ * \todo
+ * Fix the name of this function because it is not really what you would
+ * otherwise expect.
  *
  * @param {!boolean} changed  Whether to mark the widget as modified.
  *
  * @return {boolean}  true if the value got set.
+ *
+ * \sa restoreValue()
  */
 snapwebsites.EditorWidget.prototype.resetValue = function(changed)
 {
@@ -2669,6 +2758,7 @@ snapwebsites.EditorWidget.prototype.resetValue = function(changed)
     }
     if(changed)
     {
+        // recheck the "was modified" flag
         this.wasModified(true);
     }
     else
@@ -2694,7 +2784,7 @@ snapwebsites.EditorWidget.prototype.resetValue = function(changed)
  * modified, otherwise the modified flag is not changed (it may
  * actually get reset if you restore the value in this way.)
  *
- * @param {!Object} value  The new widget value.
+ * @param {!Object|string|number} value  The new widget value.
  * @param {!boolean} changed  Whether to mark the widget as modified.
  *
  * @return {boolean}  true if the value got set.
@@ -2710,6 +2800,7 @@ snapwebsites.EditorWidget.prototype.setValue = function(value, changed)
     }
     if(changed)
     {
+        // recheck the "was modified" flag
         this.wasModified(true);
     }
     else
@@ -3049,7 +3140,7 @@ snapwebsites.EditorFormBase.prototype.saveData = function(mode, opt_options) // 
  * the Publish button.
  *
  * \code
- * class SaveEditorDialog
+ * class EditorSaveDialog
  * {
  * public:
  *      function setPopup(widget: Element|jQuery, hide_button: boolean := true);
@@ -3058,9 +3149,11 @@ snapwebsites.EditorFormBase.prototype.saveData = function(mode, opt_options) // 
  *      function setStatus(new_status: boolean);
  *
  * private:
- *      var editorForm_: EditorFormBase;
- *      var saveDialogPopup_: jQuery;
  *      function create_();
+ *
+ *      var editorForm_: EditorFormBase;
+ *      var saveDialogPopupAutoHide_: boolean;
+ *      var saveDialogPopup_: jQuery;
  * };
  * \endcode
  *
@@ -3331,6 +3424,8 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function setSaving(new_status: boolean, will_redirect: boolean);
  *      function changed();
  *      function getSaveDialog() : EditorSaveDialog;
+ *      function formTimedout();
+ *      function setTimedoutCallback(f: function(EditorForm));
  *      function newTypeRegistered();
  *      function wasModified(recheck: boolean) : boolean;
  *      function earlyClose() : boolean;
@@ -3338,6 +3433,7 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *
  * private:
  *      function readyWidgets_();
+ *      function readyForm_();
  *
  *      var usedTypes_: Object;                 // map of types necessary to open that form
  *      var session_: string;                   // session identifier
@@ -3595,6 +3691,30 @@ snapwebsites.EditorForm.prototype.savedData_ = null;
  * @private
  */
 snapwebsites.EditorForm.prototype.serverAccess_ = null;
+
+
+/** \brief A callback to call when the form times out.
+ *
+ * This variable holds a reference to a function that the form
+ * timeout function calls whenever the form times out.
+ *
+ * @type {?function(snapwebsites.EditorForm)}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.formTimedoutCallback_ = null;
+
+
+/** \brief The identifier of the timeout used to listen to.
+ *
+ * This number represents the identifier of the timeout object
+ * in use to timeout the form.
+ *
+ * If the timer is not setup, then the value is NaN.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.formTimeoutId_ = NaN;
 
 
 /** \brief Retrieve the editor form name.
@@ -4073,6 +4193,121 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
 };
 
 
+/** \brief Finish up the form initialization.
+ *
+ * This function finishes up the global form initialization.
+ * It includes the following:
+ *
+ * \li Setup the form auto-reset timeout feature.
+ *
+ * @private
+ */
+snapwebsites.EditorForm.prototype.readyForm_ = function()
+{
+    this.resetTimeout(true);
+};
+
+
+/** \brief Reset the timer of this form.
+ *
+ * This function resets the timer of this form if one is setup.
+ * If the \p force flag is set to true, the timer is setup
+ * either way.
+ *
+ * @param {boolean} force  Whether the timer should always be set.
+ */
+snapwebsites.EditorForm.prototype.resetTimeout = function(force)
+{
+    var minutes,
+        that = this;
+
+    if(!isNaN(this.formTimeoutId_))
+    {
+        clearTimeout(this.formTimeoutId_);
+        this.formTimeoutId_ = NaN;
+        force = true;
+    }
+
+    if(force)
+    {
+        // check whether we have a widget named editor::auto_reset, if so, then
+        // setup the auto-reset feature of this form (by default we assume that
+        // the form does not timeout
+        minutes = parseFloat(this.formWidget_.attr("auto-reset"));
+        if(minutes > 0)
+        {
+            this.formTimeoutId_ = setTimeout(function()
+                {
+                    that.formTimedout();
+                },
+                minutes * 60000); // convert minutes to ms
+        }
+    }
+};
+
+
+/** \brief The form just timed out.
+ *
+ * This function is called whenever the form times out.
+ */
+snapwebsites.EditorForm.prototype.formTimedout = function()
+{
+    var key;
+
+    // reset the timer if it is still considered active
+    // (because this function is public and it may be called by a different
+    // mechanism than out internal timer)
+    if(!isNaN(this.formTimeoutId_))
+    {
+        clearTimeout(this.formTimeoutId_);
+        this.formTimeoutId_ = NaN;
+    }
+
+    // first we disable all the widgets, although that does not
+    // disable buttons that the user may have created with
+    // an anchor outside of the editor supported widgets...
+    for(key in this.editorWidgets_)
+    {
+        if(this.editorWidgets_.hasOwnProperty(key))
+        {
+            this.editorWidgets_[key].disable();
+            this.editorWidgets_[key].restoreValue();
+        }
+    }
+
+    // then, if we have a user callback, call it
+    if(this.formTimedoutCallback_)
+    {
+        this.formTimedoutCallback_(this);
+    }
+};
+
+
+/** \brief Set the timed out callback for this form.
+ *
+ * This function is used to setup the timed out callback function.
+ * This function gets called once whenever the form times out.
+ * It gives you a chance to act on your form in a different way
+ * than the default which is to just disable the widgets.
+ *
+ * This is particularly useful if you use buttons that are direct
+ * anchors or if you want to close the popup in which you presented
+ * the form to the end user.
+ *
+ * You may remove the current callback by setting this parameter to
+ * null.
+ *
+ * If it is necessary to trigger more than on event, your function
+ * can generate the necessary event.
+ *
+ * @param {function(snapwebsites.EditorForm)} f  The function to be called.
+ */
+snapwebsites.EditorForm.prototype.setTimedoutCallback = function(f)
+{
+    this.formTimedoutCallback_ = f;
+};
+
+
 /** \brief Check whether all types were registered and if so initialize everything.
  *
  * The function checks whether all the types necessary to initialize
@@ -4151,6 +4386,10 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
         });
 
     this.widgetInitialized_ = true;
+
+    // now that all the widgets were initialized we can ready the
+    // rest of the form
+    this.readyForm_();
 
     // composite widgets may change their children widgets in a way that
     // marks the editor as modified, clear the flag here so we do not get
@@ -4353,6 +4592,7 @@ snapwebsites.Editor = function()
     this.editorForms_ = {};
     this.initUnload_();
     this.attachToForms_();
+    this.initUserActivity_();
 
     return this;
 };
@@ -4452,6 +4692,62 @@ snapwebsites.Editor.prototype.attachToForms_ = function()
 
             that.editorForms_[name] = new snapwebsites.EditorForm(that, that_element, name, session);
         });
+};
+
+
+/** \brief Attach to the EditorForms defined in the DOM.
+ *
+ * This function attaches the editor to the existing editor forms
+ * as defined in the DOM. Editor forms are detected by the fact
+ * that a \<div\> tag has class ".editor-form".
+ *
+ * The function is expected to be called only once.
+ *
+ * @private
+ */
+snapwebsites.Editor.prototype.initUserActivity_ = function()
+{
+    var that = this;
+
+    jQuery("body")
+        .on("keyup keydown cut paste", function()
+            {
+                that.resetFormsTimeout();
+            });
+};
+
+
+/** \brief Resets the timeout of all the forms managed by the editor.
+ *
+ * This function may be called to extend the timers of all the forms
+ * manager by the editor.
+ *
+ * The forms make use of the auto-reset amount of time to setup a timer.
+ * If the timeout is reached, the form gets disabled because the
+ * corresponding session will be void on the server side and thus sending
+ * that form will always fail. By resetting the forms we extend their
+ * use further.
+ *
+ * \todo
+ * This could be really slow for someone typing really fast. We probably
+ * want to limit the number of times we reset the form timers, especially
+ * because the increment is 1 minute.
+ *
+ * \todo
+ * The idea is that we have two timers: one is the total session lifetime
+ * and the other is the form auto-reset, but this is not yet implemented
+ * this way. At this time we just extend the lifetime of the form as if
+ * the session was also being extended.
+ */
+snapwebsites.Editor.prototype.resetFormsTimeout = function()
+{
+    for(key in this.editorForms_)
+    {
+        if(this.editorForms_.hasOwnProperty(key))
+        {
+            this.editorForms_[key].resetTimeout(false);
+        }
+    }
 };
 
 
@@ -5378,10 +5674,13 @@ snapwebsites.EditorWidgetTypeContentEditable.prototype.setupEditButton = functio
             // then remove the hover events
             w.mouseleave().off("mouseenter mouseleave");
 
-            // make the child editable and give it the focus
+            // make the child editable
             // TODO: either select all or at least place the cursor at the
             //       end in some cases...
-            c.attr("contenteditable", "true").focus();
+            c.attr("contenteditable", "true");
+
+            // give the widget focus if not disabled
+            editor_widget.focus();
         });
 
     // this adds the mouseenter and mouseleave events
@@ -6111,7 +6410,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.itemClicked = function(editor_wi
         }
 
         // make that dropdown the currently active object
-        c.focus();
+        editor_widget.focus();
         editor_widget.getEditorBase().setActiveElement(c);
 
         editor_widget.getEditorBase().checkModified(editor_widget);
@@ -6362,7 +6661,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.resetValue = function(widget)
     {
         // if "value" is defined, reset all of that and emit an event
         c.removeAttr("value");
-        c.focus();
+        editor_widget.focus();
         editor_widget.getEditorBase().setActiveElement(c);
 
         // send an event for each change because the user
@@ -6503,7 +6802,7 @@ snapwebsites.EditorWidgetTypeDropdown.prototype.setValue = function(widget, valu
         }
 
         // make that dropdown the currently active object
-        c.focus();
+        editor_widget.focus();
         editor_widget.getEditorBase().setActiveElement(c);
 
         // send an event for each change because the user
@@ -6590,7 +6889,7 @@ snapwebsites.EditorWidgetTypeCheckmark.prototype.initializeWidget = function(wid
                 //
                 //if(editor_widget.getEditorBase().getActiveElement().get() != c)
                 //{
-                    c.focus();
+                    editor_widget.focus();
                 //}
 
                 // tell the editor that something may have changed

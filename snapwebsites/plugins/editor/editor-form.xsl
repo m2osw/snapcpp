@@ -657,7 +657,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </widget>
   </xsl:template>
 
-  <!-- SILENT (a value such as the editor form session identifier which
+  <!-- SILENT (a value such as the editor form auto-reset which
               is not returned to the editor on a Save) -->
   <!-- NOTE: we use a sub-template to allow for composite widgets -->
   <xsl:template name="snap:silent">

@@ -62,6 +62,9 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case name_t::SNAP_NAME_EDITOR_AUTO_RESET:
+        return "editor::auto_reset";
+
     case name_t::SNAP_NAME_EDITOR_DRAFTS_PATH:
         return "admin/drafts";
 
@@ -392,7 +395,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 6, 1, 22, 39, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 6, 5, 0, 16, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -4136,6 +4139,19 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         metadata.appendChild(editor_tag);
     }
 
+    QString auto_reset; // no default value
+    {
+        QDomElement auto_reset_tag(snap_dom::get_element(editor_widgets, "auto-reset", false));
+        auto_reset = auto_reset_tag.attribute("minutes", "-1");
+        bool ok;
+        int auto_reset_int(auto_reset.toInt(&ok));
+        if(!ok || auto_reset_int < 1)
+        {
+            // ignore invalid entries
+            auto_reset.clear();
+        }
+    }
+
     // Define a session identifier (one per form)
     QString session_identification;
     {
@@ -4199,6 +4215,8 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // use the draft if it was modified more recently than the revision
     bool const use_draft(draft_modified > revision_created && action == "edit");
 
+    // check a few things and setup the <value> or <post> and a few other
+    // tags in each widget
     for(int i(0); i < max_widgets; ++i)
     {
         QDomElement w(widgets.at(i).toElement());
@@ -4239,8 +4257,9 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
         // get the current value from the database if it exists
         bool const is_editor_session_field(field_name == get_name(name_t::SNAP_NAME_EDITOR_SESSION));
+        bool const is_editor_auto_reset(field_name == get_name(name_t::SNAP_NAME_EDITOR_AUTO_RESET));
         if(!field_name.isEmpty()
-        && (is_editor_session_field || data_row->exists(field_name)))
+        && (is_editor_session_field || is_editor_auto_reset || data_row->exists(field_name)))
         {
             QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
             QString current_value;
@@ -4249,6 +4268,10 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             {
                 // special case of the "editor::session" value
                 current_value = session_identification;
+            }
+            else if(is_editor_auto_reset)
+            {
+                current_value = auto_reset;
             }
             else if(draft_value)
             {
