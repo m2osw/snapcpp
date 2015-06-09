@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+if test "$1" = "-d"
+then
+	. dev/version
+	rm -f ../BUILD/csspp/doc/csspp-doc-${VERSION}.tar.gz
+	make -C ../BUILD/csspp/ csspp_Documentation
+elif test "$1" = "-t"
+then
+	make -C ../BUILD/csspp/
+	../BUILD/csspp/tests/csspp_tests "$2"
+elif test "$1" = "-i"
+then
+	make -C ../BUILD/csspp install
+else
+	make -C ../BUILD/csspp
+fi
