@@ -91,7 +91,7 @@ add_subdirectory(include)       # public headers
 add_subdirectory(lib)           # csspp library
 #add_subdirectory(src)           # command line tools
 add_subdirectory(tests)         # tests
-#add_subdirectory(doc)           # library API documentation
+add_subdirectory(doc)           # library API documentation
 
 # Local Variables:
 # indent-tabs-mode: nil

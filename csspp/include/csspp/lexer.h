@@ -27,6 +27,8 @@ namespace csspp
 class lexer
 {
 public:
+    typedef std::shared_ptr<lexer>  pointer_t;
+
                             lexer(std::istream & in, position const & pos);
 
     node::pointer_t         next_token();
@@ -35,19 +37,83 @@ public:
     void                    wctomb(wide_char_t const wc, char * mb, size_t max_length);
     std::string             wctomb(wide_char_t const wc);
 
+    static bool constexpr   is_space(wide_char_t c)
+    {
+        // when called '\r' and '\f' were already converted to '\n'
+        return c == ' '
+            || c == '\t'
+            || c == '\n';
+    }
+
+    static bool constexpr   is_non_printable(wide_char_t c)
+    {
+        return c == 0x00
+            || c == 0x08
+            || c == 0x0B
+            || (c >= 0x0E && c <= 0x1F)
+            || c == 0x7F
+            || c == 0xFFFD;
+    }
+
+    static bool constexpr   is_variable(wide_char_t c)
+    {
+        // part of identifier except escape
+        return (c >= '0' && c <= '9')
+            || (c >= 'A' && c <= 'Z')
+            || (c >= 'a' && c <= 'z')
+            || c == '-'
+            || c == '_';
+    }
+
+    static bool constexpr   is_identifier(wide_char_t c)
+    {
+        // part of identifier except escape
+        return (c >= '0' && c <= '9')
+            || (c >= 'A' && c <= 'Z')
+            || (c >= 'a' && c <= 'z')
+            || c == '-'
+            || c == '_'
+            || c >= 0x80;
+    }
+
+    static bool constexpr   is_start_identifier(wide_char_t c)
+    {
+        // start except for the possible escape
+        return (c >= 'A' && c <= 'Z')
+            || (c >= 'a' && c <= 'z')
+            || (c >= 0x80 && c != 0xFFFD)
+            || c == '_';
+    }
+
+    static bool constexpr   is_digit(wide_char_t c)
+    {
+        return c >= '0' && c <= '9';
+    }
+
+    static bool constexpr   is_hex(wide_char_t c)
+    {
+        return (c >= '0' && c <= '9')
+            || (c >= 'A' && c <= 'F')
+            || (c >= 'a' && c <= 'f');
+    }
+
+    static bool constexpr   is_hash_character(wide_char_t c)
+    {
+        return (c >= '0' && c <= '9')
+            || (c >= 'A' && c <= 'Z')
+            || (c >= 'a' && c <= 'z')
+            || c == '-'
+            || c == '_'
+            || (c >= 0x80 && c != 0xFFFD);
+    }
+
+    static int              hex_to_dec(wide_char_t c);
+
 private:
     static size_t const     UNGETSIZ = 16;
 
     wide_char_t             getc();
     void                    ungetc(wide_char_t c);
-    static bool constexpr   is_space(wide_char_t c);
-    static bool constexpr   is_non_printable(wide_char_t c);
-    static bool constexpr   is_identifier(wide_char_t c);
-    static bool constexpr   is_start_identifier(wide_char_t c);
-    static bool constexpr   is_digit(wide_char_t c);
-    static bool constexpr   is_hex(wide_char_t c);
-    static bool constexpr   is_hash_character(wide_char_t c);
-    static int              hex_to_dec(wide_char_t c);
 
     wide_char_t             escape();
     node::pointer_t         identifier(wide_char_t c);
@@ -56,6 +122,7 @@ private:
     node::pointer_t         comment(bool c_comment);
     node::pointer_t         unicode_range(wide_char_t c);
     node::pointer_t         hash();
+    node::pointer_t         variable(wide_char_t c);
 
     std::istream &          f_in;
     position                f_position;

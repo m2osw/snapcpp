@@ -32,12 +32,8 @@
 #include "csspp/lexer.h"
 #include "csspp/unicode_range.h"
 
-//#include <algorithm>
-//#include <fstream>
 #include <sstream>
 
-//#include <stdlib.h>
-//#include <unistd.h>
 #include <string.h>
 
 namespace
@@ -348,6 +344,8 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
             && i != '$'
             && i != '!'
             && i != '|'
+            && i != '&'
+            && i != '~'
             // string
             && i != '"'
             && i != '\''
@@ -746,6 +744,40 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         csspp_test::trace_error::instance().expected_error("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::MULTIPLY));
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // make sure we got the expected error
+        csspp_test::trace_error::instance().expected_error("");
+    }
+
+    // '&' -> REFERENCE
+    {
+        std::stringstream ss;
+        csspp::position pos("test.css");
+        csspp::lexer l(ss, pos);
+        ss << "&";
+
+        // so far, no error
+        csspp_test::trace_error::instance().expected_error("");
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::REFERENCE));
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // make sure we got the expected error
+        csspp_test::trace_error::instance().expected_error("");
+    }
+
+    // '~' -> PRECEDED
+    {
+        std::stringstream ss;
+        csspp::position pos("test.css");
+        csspp::lexer l(ss, pos);
+        ss << "~";
+
+        // so far, no error
+        csspp_test::trace_error::instance().expected_error("");
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::PRECEDED));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
@@ -3035,7 +3067,7 @@ TEST_CASE("Test functions", "[lexer] [identifier] [function]")
 TEST_CASE("Test numbers", "[lexer] [number]")
 {
     // a few simple integers
-    for(int i(-10000); i < 10000; ++i)
+    for(int i(-10000); i <= 10000; ++i)
     {
         std::stringstream ss;
         ss << i;
@@ -3733,7 +3765,7 @@ TEST_CASE("Test dimensions", "[lexer] [number] [dimension] [identifier]")
             "px",       // pixel
             "pt"        // point
         };
-        for(int i(-10000); i < 10000; ++i)
+        for(int i(-10000); i <= 10000; ++i)
         {
             for(size_t j(0); j < sizeof(dimensions) / sizeof(dimensions[0]); ++j)
             {
@@ -3928,7 +3960,7 @@ TEST_CASE("Test dimensions", "[lexer] [number] [dimension] [identifier]")
             "px",       // pixel
             "pt"        // point
         };
-        for(int i(-1000); i < 1000; ++i)
+        for(int i(-1000); i <= 1000; ++i)
         {
             for(size_t j(0); j < sizeof(dimensions) / sizeof(dimensions[0]); ++j)
             {
@@ -4065,7 +4097,7 @@ TEST_CASE("Test percent", "[lexer] [number] [percent]")
 {
     // percent with integers, converts to decimal number anyway
     {
-        for(int i(-10000); i < 10000; ++i)
+        for(int i(-10000); i <= 10000; ++i)
         {
             std::stringstream ss;
             ss << i << "%"
@@ -4093,7 +4125,7 @@ TEST_CASE("Test percent", "[lexer] [number] [percent]")
                 REQUIRE(percent->is(csspp::node_type_t::PERCENT));
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-                REQUIRE(percent->get_decimal_number() == static_cast<double>(abs(i)));
+                REQUIRE(percent->get_decimal_number() == static_cast<double>(abs(i)) / 100.0);
 #pragma GCC diagnostic pop
                 csspp::position const & npos(percent->get_position());
                 REQUIRE(npos.get_filename() == "test.css");
@@ -4235,7 +4267,7 @@ TEST_CASE("Test percent", "[lexer] [number] [percent]")
 
     // percent directly with decimal numbers
     {
-        for(int i(-1000); i < 1000; ++i)
+        for(int i(-1000); i <= 1000; ++i)
         {
             std::stringstream ss;
             ss << (i < 0 ? "-" : "") << abs(i) / 100 << "." << std::setw(2) << std::setfill('0') << abs(i % 100) << "%"
@@ -4259,7 +4291,7 @@ TEST_CASE("Test percent", "[lexer] [number] [percent]")
             {
                 csspp::node::pointer_t percent(l.next_token());
                 REQUIRE(percent->is(csspp::node_type_t::PERCENT));
-                REQUIRE(fabs(percent->get_decimal_number() - abs(i) / 100.0) < 0.00001);
+                REQUIRE(fabs(percent->get_decimal_number() - abs(i) / 10000.0) < 0.00001);
                 csspp::position const & npos(percent->get_position());
                 REQUIRE(npos.get_filename() == "test.css");
                 REQUIRE(npos.get_page() == 1);
@@ -5105,6 +5137,69 @@ TEST_CASE("Test hash", "[lexer] [hash]")
             csspp::node::pointer_t subtract(l.next_token());
             REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
             csspp::position const & npos(subtract->get_position());
+            REQUIRE(npos.get_filename() == "test.css");
+            REQUIRE(npos.get_page() == 1);
+            REQUIRE(npos.get_line() == 1);
+            REQUIRE(npos.get_total_line() == 1);
+        }
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+    }
+
+    // no error left over
+    csspp_test::trace_error::instance().expected_error("");
+}
+
+TEST_CASE("Test variables", "[lexer] [variable]")
+{
+    // test variables
+    for(int i(0); i < 1000; ++i)
+    {
+        std::stringstream ss;
+        csspp::position pos("test.css");
+        csspp::lexer l(ss, pos);
+        std::string word;
+        std::string lword;
+        int size(rand() % 20 + 1);
+        for(int j(0); j < size; ++j)
+        {
+            // only valid characters
+            char c(rand() % (10 + 26 + 26 + 2));
+            if(c < 10)
+            {
+                c += '0';
+                lword += c;
+            }
+            else if(c < 10 + 26)
+            {
+                c += 'A' - 10;
+                lword += c + 0x20;
+            }
+            else if(c < 10 + 26 + 26)
+            {
+                c += 'a' - 10 - 26;
+                lword += c;
+            }
+            else if(c < 10 + 26 + 26 + 1)
+            {
+                c = '-';
+                lword += '_'; // '-' == '_' in variable names
+            }
+            else
+            {
+                c = '_';
+                lword += '_';
+            }
+            word += c;
+        }
+        ss << "$" << word;
+
+        // variable
+        {
+            csspp::node::pointer_t variable(l.next_token());
+            REQUIRE(variable->is(csspp::node_type_t::VARIABLE));
+            REQUIRE(variable->get_string() == lword);
+            csspp::position const & npos(variable->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
             REQUIRE(npos.get_line() == 1);

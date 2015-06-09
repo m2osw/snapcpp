@@ -17,10 +17,11 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "csspp/position.h"
+#include <csspp/error.h>
 
 #include <string>
 #include <memory>
+#include <vector>
 
 namespace csspp
 {
@@ -30,53 +31,58 @@ enum class node_type_t
     UNKNOWN,
 
     // basic token
-    ADD,
+    ADD,                    // for selectors: E + F, F is the next sibling of E
     AT_KEYWORD,
     CDC,
     CDO,
     CLOSE_CURLYBRACKET,
     CLOSE_PARENTHESIS,
     CLOSE_SQUAREBRACKET,
-    COLON,
+    COLON,                  // for selectors: pseudo-class, E:first-child
     COLUMN,
     COMMA,
     COMMENT,
-    DASH_MATCH,
+    DASH_MATCH,             // for selectors: dash match E[land|="en"]
     DECIMAL_NUMBER,
     //DIMENSION, -- DECIMAL_NUMBER and INTEGER with a string are dimensions
     DIVIDE,
     DOLLAR,
     EOF_TOKEN,
-    EQUAL,
+    EQUAL,                  // for selectors: exact match E[foo="bar"]
     EXCLAMATION,
     FUNCTION,
-    GREATER_THAN,
+    GREATER_THAN,           // for selectors: E > F, F is a child of E
     HASH,
     IDENTIFIER,
-    INCLUDE_MATCH,
+    INCLUDE_MATCH,          // for selectors: include match E[foo~="bar"]
     INTEGER,
     MULTIPLY,
-    OPEN_CURLYBRACKET,
-    OPEN_PARENTHESIS,
-    OPEN_SQUAREBRACKET,
+    OPEN_CURLYBRACKET,      // holds the children of '{'
+    OPEN_PARENTHESIS,       // holds the children of '('
+    OPEN_SQUAREBRACKET,     // holds the children of '['
     PERCENT,
-    PERIOD,
-    PREFIX_MATCH,
+    PERIOD,                 // for selectors: E.name, equivalent to E[class~='name']
+    PRECEDED,               // for selectors: E ~ F, F is a sibling after E
+    PREFIX_MATCH,           // for selectors: prefix match E[foo^="bar"]
+    REFERENCE,
     SCOPE,
     SEMICOLON,
     STRING,
-    SUBSTRING_MATCH,
+    SUBSTRING_MATCH,        // for selectors: substring match E[foo*="bar"]
     SUBTRACT,
-    SUFFIX_MATCH,
+    SUFFIX_MATCH,           // for selectors: suffix match E[foo$="bar"]
     UNICODE_RANGE,
     URL,
+    VARIABLE,
     WHITESPACE,
 
     // composed tokens
     CHARSET,                // @charset = @charset <string> ;
+    DECLARATION,            // <id> ':' ...
     FONTFACE,               // @font-face { <declaration-list> }
     KEYFRAME,               // <keyframe-selector> { <declaration-list> }
     KEYFRAMES,              // @keyframes <keyframes-name> { <rule-list> }
+    LIST,                   // bare "token token token ..." until better qualified
     MEDIA,                  // @media <media-query-list> { <stylesheet> }
 
     max_type
@@ -86,11 +92,12 @@ class node
 {
 public:
     typedef std::shared_ptr<node>   pointer_t;
+    typedef std::vector<pointer_t>  list_t;
 
                         node(node_type_t const type, position const & pos);
 
-    node_type_t             get_type() const;
-    bool                    is(node_type_t const type) const;
+    node_type_t         get_type() const;
+    bool                is(node_type_t const type) const;
 
     position const &    get_position() const;
     std::string const & get_string() const;
@@ -100,17 +107,33 @@ public:
     decimal_number_t    get_decimal_number() const;
     void                set_decimal_number(decimal_number_t decimal_number);
 
+    bool                empty() const;
+    size_t              size() const;
+    void                add_child(pointer_t child);
+    void                remove_child(pointer_t child);
+    void                remove_child(size_t idx);
+    pointer_t           get_child(size_t idx) const;
+    pointer_t           get_last_child() const;
+    void                take_over_children_of(pointer_t n);
+
+    void                display(std::ostream & out, uint32_t indent) const;
+
 private:
     node_type_t         f_type = node_type_t::UNKNOWN;
     position            f_position;
     integer_t           f_integer = 0;
     decimal_number_t    f_decimal_number = 0.0;
     std::string         f_string;
+    list_t              f_children;
 };
+
 
 } // namespace csspp
 
 std::ostream & operator << (std::ostream & out, csspp::node_type_t const type);
+std::ostream & operator << (std::ostream & out, csspp::node const & n);
+
+csspp::error & operator << (csspp::error & out, csspp::node_type_t const type);
 
 #endif
 // #ifndef CSSPP_NODE_H

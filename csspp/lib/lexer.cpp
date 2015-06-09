@@ -15,6 +15,41 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Implementation of the CSS Preprocessor lexer.
+ *
+ * The CSS Preprocessor lexer is based on the CSS 3 lexer with extensions to
+ * also support the SASS syntax. For example, a lone '&' is supported by
+ * our lexer as a reference to the outter selectors in order to write an
+ * expression such as:
+ *
+ * \code
+ *      a {
+ *          color: #00f;  // blue when not hovered
+ *
+ *          &:hover {
+ *              color: #f0f;  // purple when hovered
+ *          }
+ *      }
+ * \endcode
+ *
+ * There are a few other extensions too such as support for C++ comments.
+ *
+ * Some tokens are also managed in a slightly different way. For example,
+ * CSS 3 handles the '+' and '-' signs as being part of numbers. In our
+ * lexer, these are separate operator so we can use them in operations
+ * without too much trouble. In the following, -25px is a dimension with
+ * value -25 in CSS 3. For us, it is a DASH followed by a DIMENSION.
+ *
+ * \code
+ *      div.box {
+ *          box: 1000px/3-25px;
+ *      }
+ * \endcode
+ *
+ * \sa \ref lexer_rules
+ */
+
 #include "csspp/lexer.h"
 
 #include "csspp/error.h"
@@ -120,6 +155,9 @@ node::pointer_t lexer::next_token()
             }
             break;
 
+        case '&':
+            return node::pointer_t(new node(node_type_t::REFERENCE, f_start_position));
+
         case '+':
             {
                 // Positive numbers are not tested here, as otherwise defined
@@ -190,9 +228,11 @@ node::pointer_t lexer::next_token()
                 {
                     return node::pointer_t(new node(node_type_t::SUFFIX_MATCH, f_start_position));
                 }
+                if(is_variable(n))
+                {
+                    return variable(n);
+                }
                 ungetc(n);
-                // TBD: should we test for a variable here? or is that a grammar
-                //      trick instead?
                 return node::pointer_t(new node(node_type_t::DOLLAR, f_start_position));
             }
             //NOTREACHED
@@ -205,7 +245,7 @@ node::pointer_t lexer::next_token()
                     return node::pointer_t(new node(node_type_t::INCLUDE_MATCH, f_start_position));
                 }
                 ungetc(n);
-                // character necessary by itself?
+                return node::pointer_t(new node(node_type_t::PRECEDED, f_start_position));
             }
             break;
 
@@ -308,7 +348,7 @@ node::pointer_t lexer::next_token()
                 {
                     return n;
                 }
-                // EOF_TOKEN is not return, we may not be at the end of
+                // EOF_TOKEN is not returned, we may not be at the end of
                 // the input stream, but that identifier was empty; the
                 // identifier() function already generated an error
                 continue;
@@ -602,65 +642,6 @@ void lexer::ungetc(wide_char_t c)
     f_ungetc[f_ungetc_pos] = c;
 
     ++f_ungetc_pos;
-}
-
-bool constexpr lexer::is_space(wide_char_t c)
-{
-    return c == ' '
-        || c == '\t'
-        || c == '\n';
-}
-
-bool constexpr lexer::is_non_printable(wide_char_t c)
-{
-    return c == 0x00
-        || c == 0x08
-        || c == 0x0B
-        || (c >= 0x0E && c <= 0x1F)
-        || c == 0x7F
-        || c == 0xFFFD;
-}
-
-bool constexpr lexer::is_identifier(wide_char_t c)
-{
-    // part of identifier except escape
-    return (c >= '0' && c <= '9')
-        || (c >= 'A' && c <= 'Z')
-        || (c >= 'a' && c <= 'z')
-        || c == '-'
-        || c == '_'
-        || c >= 0x80;
-}
-
-bool constexpr lexer::is_start_identifier(wide_char_t c)
-{
-    // start except for the possible escape
-    return (c >= 'A' && c <= 'Z')
-        || (c >= 'a' && c <= 'z')
-        || (c >= 0x80 && c != 0xFFFD)
-        || c == '_';
-}
-
-bool constexpr lexer::is_digit(wide_char_t c)
-{
-    return c >= '0' && c <= '9';
-}
-
-bool constexpr lexer::is_hex(wide_char_t c)
-{
-    return (c >= '0' && c <= '9')
-        || (c >= 'A' && c <= 'F')
-        || (c >= 'a' && c <= 'f');
-}
-
-bool constexpr lexer::is_hash_character(wide_char_t c)
-{
-    return (c >= '0' && c <= '9')
-        || (c >= 'A' && c <= 'Z')
-        || (c >= 'a' && c <= 'z')
-        || c == '-'
-        || c == '_'
-        || (c >= 0x80 && c != 0xFFFD);
 }
 
 int lexer::hex_to_dec(wide_char_t c)
@@ -1096,7 +1077,12 @@ node::pointer_t lexer::number(wide_char_t c)
         n->set_decimal_number((static_cast<decimal_number_t>(integer)
                             + static_cast<decimal_number_t>(decimal_part) / decimal_frac)
                             * pow(10.0, static_cast<decimal_number_t>(exponent)));
-        if(c != '%')
+        if(c == '%')
+        {
+            // a percent value is generally from 0.0 to 1.0, so convert it now
+            n->set_decimal_number(n->get_decimal_number() / 100.0);
+        }
+        else
         {
             n->set_string(dimension);
         }
@@ -1370,6 +1356,35 @@ node::pointer_t lexer::unicode_range(wide_char_t d)
     node::pointer_t n(new node(node_type_t::UNICODE_RANGE, f_start_position));
     unicode_range_t range(start, end);
     n->set_integer(range.get_range());
+    return n;
+}
+
+node::pointer_t lexer::variable(wide_char_t c)
+{
+    std::string var;
+
+    for(;;)
+    {
+        // SASS accepts '-' and '_' as the same character;
+        // we suggest you use the underscore to be more compatible with
+        // other languages that do not support a '-' in variable names
+        if(c == '-')
+        {
+            c = '_';
+        }
+        var += wctomb(std::tolower(c));
+        c = getc();
+        if(!is_variable(c))
+        {
+            break;
+        }
+    }
+
+    ungetc(c);
+
+    // we got a variable
+    node::pointer_t n(new node(node_type_t::VARIABLE, f_start_position));
+    n->set_string(var);
     return n;
 }
 

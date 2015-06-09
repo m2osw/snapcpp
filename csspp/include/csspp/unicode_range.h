@@ -19,7 +19,7 @@
 
 #include <csspp/csspp.h>
 
-#include <istream>
+#include <string>
 
 namespace csspp
 {

@@ -33,9 +33,11 @@ project(csspp)
 
 add_library( ${PROJECT_NAME} SHARED
     csspp.cpp                                   # Some basics about the library
+    color.cpp                                   # Manager RGBA colors
     error.cpp                                   # Print out error messages
     lexer.cpp                                   # Transform input in tokens
     node.cpp                                    # Holds the data read
+    parser.cpp                                  # Transform tokens in a tree of nodes
     position.cpp                                # Holds the current position
     unicode_range.cpp                           # Handle a Unicode Range value
 )

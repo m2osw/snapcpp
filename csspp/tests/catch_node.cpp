@@ -46,7 +46,7 @@ TEST_CASE("Get all the types", "[csspp]")
     while(w <= csspp::node_type_t::max_type)
     {
         csspp::position pos("test.css");
-    	csspp::node::pointer_t n(new csspp::node(w, pos));
+        csspp::node::pointer_t n(new csspp::node(w, pos));
 
         // verify the type
         REQUIRE(n->get_type() == w);
@@ -99,6 +99,7 @@ TEST_CASE("Get all the types", "[csspp]")
         case csspp::node_type_t::INTEGER:
         case csspp::node_type_t::STRING:
         case csspp::node_type_t::URL:
+        case csspp::node_type_t::VARIABLE:
             n->set_string("test-string");
             REQUIRE(n->get_string() == "test-string");
             break;
@@ -106,6 +107,52 @@ TEST_CASE("Get all the types", "[csspp]")
         default:
             REQUIRE_THROWS_AS(n->set_string("add"), csspp::csspp_exception_logic);
             REQUIRE_THROWS_AS(n->get_string(), csspp::csspp_exception_logic);
+            break;
+
+        }
+
+        // children
+        switch(w)
+        {
+        case csspp::node_type_t::AT_KEYWORD:
+        case csspp::node_type_t::LIST:
+        case csspp::node_type_t::OPEN_SQUAREBRACKET:
+        case csspp::node_type_t::OPEN_CURLYBRACKET:
+        case csspp::node_type_t::OPEN_PARENTHESIS:
+            {
+                // try adding one child
+                REQUIRE(n->empty());
+                REQUIRE(n->size() == 0);
+                REQUIRE_THROWS_AS(n->get_child(0), csspp::csspp_exception_overflow);
+                REQUIRE_THROWS_AS(n->get_last_child(), csspp::csspp_exception_overflow);
+                REQUIRE_THROWS_AS(n->remove_child(0), csspp::csspp_exception_overflow);
+                REQUIRE_THROWS_AS(n->remove_child(n), csspp::csspp_exception_logic);
+                csspp::node::pointer_t child(new csspp::node(csspp::node_type_t::COMMA, n->get_position()));
+                n->add_child(child);
+                REQUIRE(n->size() == 1);
+                REQUIRE_FALSE(n->empty());
+                REQUIRE(n->get_last_child() == child);
+                REQUIRE(n->get_child(0) == child);
+                REQUIRE_THROWS_AS(n->remove_child(n), csspp::csspp_exception_logic);
+                n->remove_child(0);
+                REQUIRE(n->empty());
+                REQUIRE(n->size() == 0);
+                REQUIRE_THROWS_AS(n->get_child(0), csspp::csspp_exception_overflow);
+                REQUIRE_THROWS_AS(n->get_last_child(), csspp::csspp_exception_overflow);
+                REQUIRE_THROWS_AS(n->remove_child(0), csspp::csspp_exception_overflow);
+                REQUIRE_THROWS_AS(n->remove_child(n), csspp::csspp_exception_logic);
+            }
+            break;
+
+        default:
+            REQUIRE_THROWS_AS(n->empty(), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->size(), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->add_child(n), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->remove_child(n), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->remove_child(0), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->get_child(0), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->get_last_child(), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->take_over_children_of(0), csspp::csspp_exception_logic);
             break;
 
         }
@@ -125,7 +172,7 @@ TEST_CASE("Verify type names", "[csspp]")
     while(w <= csspp::node_type_t::max_type)
     {
         csspp::position pos("test.css");
-    	csspp::node::pointer_t n(new csspp::node(w, pos));
+        csspp::node::pointer_t n(new csspp::node(w, pos));
 
         std::stringstream ss;
         ss << n->get_type();
@@ -257,8 +304,16 @@ TEST_CASE("Verify type names", "[csspp]")
             REQUIRE(name == "PERIOD");
             break;
 
+        case csspp::node_type_t::PRECEDED:
+            REQUIRE(name == "PRECEDED");
+            break;
+
         case csspp::node_type_t::PREFIX_MATCH:
             REQUIRE(name == "PREFIX_MATCH");
+            break;
+
+        case csspp::node_type_t::REFERENCE:
+            REQUIRE(name == "REFERENCE");
             break;
 
         case csspp::node_type_t::SCOPE:
@@ -293,12 +348,20 @@ TEST_CASE("Verify type names", "[csspp]")
             REQUIRE(name == "URL");
             break;
 
+        case csspp::node_type_t::VARIABLE:
+            REQUIRE(name == "VARIABLE");
+            break;
+
         case csspp::node_type_t::WHITESPACE:
             REQUIRE(name == "WHITESPACE");
             break;
 
         case csspp::node_type_t::CHARSET:
             REQUIRE(name == "CHARSET");
+            break;
+
+        case csspp::node_type_t::DECLARATION:
+            REQUIRE(name == "DECLARATION");
             break;
 
         case csspp::node_type_t::FONTFACE:
@@ -311,6 +374,10 @@ TEST_CASE("Verify type names", "[csspp]")
 
         case csspp::node_type_t::KEYFRAMES:
             REQUIRE(name == "KEYFRAMES");
+            break;
+
+        case csspp::node_type_t::LIST:
+            REQUIRE(name == "LIST");
             break;
 
         case csspp::node_type_t::MEDIA:

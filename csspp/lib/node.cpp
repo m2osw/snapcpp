@@ -19,6 +19,7 @@
 
 #include <csspp/exceptions.h>
 
+#include <algorithm>
 #include <sstream>
 
 namespace csspp
@@ -77,12 +78,34 @@ void type_supports_string(node_type_t const type)
     case node_type_t::INTEGER:
     case node_type_t::STRING:
     case node_type_t::URL:
+    case node_type_t::VARIABLE:
         break;
 
     default:
         {
             std::stringstream ss;
             ss << "trying to access (read/write) the string of a node of type " << type << ", which does not support strings.";
+            throw csspp_exception_logic(ss.str());
+        }
+
+    }
+}
+
+void type_supports_children(node_type_t const type)
+{
+    switch(type)
+    {
+    case node_type_t::AT_KEYWORD:
+    case node_type_t::LIST:
+    case node_type_t::OPEN_CURLYBRACKET:
+    case node_type_t::OPEN_SQUAREBRACKET:
+    case node_type_t::OPEN_PARENTHESIS:
+        break;
+
+    default:
+        {
+            std::stringstream ss;
+            ss << "trying to access (read/write) the children of a node of type " << type << ", which does not support children.";
             throw csspp_exception_logic(ss.str());
         }
 
@@ -146,6 +169,164 @@ void node::set_decimal_number(decimal_number_t decimal_number)
 {
     type_supports_decimal_number(f_type);
     f_decimal_number = decimal_number;
+}
+
+bool node::empty() const
+{
+    type_supports_children(f_type);
+
+    return f_children.empty();
+}
+
+size_t node::size() const
+{
+    type_supports_children(f_type);
+
+    return f_children.size();
+}
+
+void node::add_child(pointer_t child)
+{
+    type_supports_children(f_type);
+
+    // make sure we totally ignore EOF in a child list
+    // (this dramatically ease the coding of the parser)
+    // also we do not need to save the WHITESPACE tokens
+    if(!child->is(node_type_t::EOF_TOKEN)
+    && !child->is(node_type_t::WHITESPACE))
+    {
+        f_children.push_back(child);
+    }
+}
+
+void node::remove_child(pointer_t child)
+{
+    type_supports_children(f_type);
+
+    auto it(std::find(f_children.begin(), f_children.end(), child));
+    if(it == f_children.end())
+    {
+        throw csspp_exception_logic("remove_child() called with a node which is not a child of this node.");
+    }
+
+    f_children.erase(it);
+}
+
+void node::remove_child(size_t idx)
+{
+    type_supports_children(f_type);
+
+    if(idx >= f_children.size())
+    {
+        throw csspp_exception_overflow("remove_child() called with an index out of range.");
+    }
+
+    f_children.erase(f_children.begin() + idx);
+}
+
+node::pointer_t node::get_child(size_t idx) const
+{
+    type_supports_children(f_type);
+
+    if(idx >= f_children.size())
+    {
+        throw csspp_exception_overflow("get_child() called with an index out of range.");
+    }
+
+    return f_children[idx];
+}
+
+node::pointer_t node::get_last_child() const
+{
+    // if empty, get_child() will throw
+    return get_child(f_children.size() - 1);
+}
+
+void node::take_over_children_of(pointer_t n)
+{
+    type_supports_children(f_type);
+    type_supports_children(n->f_type);
+
+    // children are copied to this node and cleared
+    // in the other node (TBD: should this node have
+    // an empty list of children to start with?)
+    f_children.clear();
+    std::swap(f_children, n->f_children);
+}
+
+void node::display(std::ostream & out, uint32_t indent) const
+{
+    for(uint32_t i(0); i < indent; ++i)
+    {
+        out << " ";
+    }
+    out << f_type;
+
+    switch(f_type)
+    {
+    case node_type_t::AT_KEYWORD:
+    case node_type_t::COMMENT:
+    case node_type_t::DECIMAL_NUMBER:
+    case node_type_t::FUNCTION:
+    case node_type_t::HASH:
+    case node_type_t::IDENTIFIER:
+    case node_type_t::INTEGER:
+    case node_type_t::STRING:
+    case node_type_t::URL:
+    case node_type_t::VARIABLE:
+        out << " \"" << f_string << "\"";
+        break;
+
+    default:
+        break;
+
+    }
+
+    switch(f_type)
+    {
+    case node_type_t::COMMENT:
+    case node_type_t::INTEGER:
+    case node_type_t::UNICODE_RANGE:
+        out << " integer value = " << f_integer;
+        break;
+
+    default:
+        break;
+
+    }
+
+    switch(f_type)
+    {
+    case node_type_t::DECIMAL_NUMBER:
+    case node_type_t::PERCENT:
+        out << " decimal value = " << f_decimal_number;
+        break;
+
+    default:
+        break;
+
+    }
+
+    out << "\n";
+
+    switch(f_type)
+    {
+    case node_type_t::AT_KEYWORD:
+    case node_type_t::LIST:
+    case node_type_t::OPEN_SQUAREBRACKET:
+    case node_type_t::OPEN_CURLYBRACKET:
+    case node_type_t::OPEN_PARENTHESIS:
+        // display the children now
+        for(size_t i(0); i < f_children.size(); ++i)
+        {
+            f_children[i]->display(out, indent + 2); /////////////////////////////////////
+        }
+        break;
+
+    default:
+        break;
+
+    }
 }
 
 } // namespace csspp
@@ -278,8 +459,16 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
         out << "PERIOD";
         break;
 
+    case csspp::node_type_t::PRECEDED:
+        out << "PRECEDED";
+        break;
+
     case csspp::node_type_t::PREFIX_MATCH:
         out << "PREFIX_MATCH";
+        break;
+
+    case csspp::node_type_t::REFERENCE:
+        out << "REFERENCE";
         break;
 
     case csspp::node_type_t::SCOPE:
@@ -314,12 +503,21 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
         out << "URL";
         break;
 
+    case csspp::node_type_t::VARIABLE:
+        out << "VARIABLE";
+        break;
+
     case csspp::node_type_t::WHITESPACE:
         out << "WHITESPACE";
         break;
 
+    // Grammar related nodes (i.e. composed nodes)
     case csspp::node_type_t::CHARSET:
         out << "CHARSET";
+        break;
+
+    case csspp::node_type_t::DECLARATION:
+        out << "DECLARATION";
         break;
 
     case csspp::node_type_t::FONTFACE:
@@ -334,6 +532,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
         out << "KEYFRAMES";
         break;
 
+    case csspp::node_type_t::LIST:
+        out << "LIST";
+        break;
+
     case csspp::node_type_t::MEDIA:
         out << "MEDIA";
         break;
@@ -344,6 +546,20 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
 
     }
 
+    return out;
+}
+
+std::ostream & operator << (std::ostream & out, csspp::node const & n)
+{
+    n.display(out, 0);
+    return out;
+}
+
+csspp::error & operator << (csspp::error & out, csspp::node_type_t const type)
+{
+    std::stringstream ss;
+    ss << type;
+    out << ss.str();
     return out;
 }
 

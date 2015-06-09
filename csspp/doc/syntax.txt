@@ -5,6 +5,8 @@ core. The extensions that we support actually appear in grammar.txt.
 Source: http://www.w3.org/TR/css-syntax-3/
 
 
+# A stylesheet is what appears in a <style> tag hence the support for
+# CDO and CDC tokens
 stylesheet: <empty>
           | stylesheet-list
 
@@ -15,49 +17,59 @@ stylesheet-list: CDO-TOKEN
                | at-rule
                | stylesheet-list stylesheet-list
 
-rule: <empty>
-    | rule-list
+rule-list: <empty>
+         | rule
+         | rule rule-list
 
-rule-list: WHITESPACE-TOKEN
-         | qualified-rule
-         | at-rule
-         | rule-list rule-list
+rule: WHITESPACE-TOKEN
+    | qualified-rule
+    | at-rule
 
-at-rule: AT-KEYWORD-TOKEN component-value block
-       | AT-KEYWORD-TOKEN component-value ';'
+at-rule: AT-KEYWORD-TOKEN component-value-list block
+       | AT-KEYWORD-TOKEN component-value-list ';'
 
-qualified-rule: component-value block
+qualified-rule: component-value-list block
 
 declaration-list: WHITESPACE-TOKEN
                 | WHITESPACE-TOKEN declaration ';' declaration-list
                 | WHITESPACE-TOKEN at-rule declaration-list
 
-declaration: IDENT-TOKEN WHITESPACE-TOKEN ':' component-value
-           | IDENT-TOKEN WHITESPACE-TOKEN ':' component-value !important
+declaration: IDENT-TOKEN WHITESPACE-TOKEN ':' component-value-list
+           | IDENT-TOKEN WHITESPACE-TOKEN ':' component-value-list !important
 
 !important: '!' WHITESPACE-TOKEN IDENT-TOKEN(=="important") WHITESPACE-TOKEN
 
-component-value: <empty>
-               | component-value-list
+component-value-list: <empty>
+                    | component-value
+                    | component-value component-value-list
 
-component-value-list: preserved-token
-                    | {}-block
-                    | ()-block
-                    | []-block
-                    | function-block
-                    | component-value-list component-value-list
+component-value: preserved-token
+               | {}-block
+               | ()-block
+               | []-block
+               | function-block
 
-{}-block: '{' component-value '}'
+preserved-token: ANY-TOKEN except '{', '(', '[', FUNCTION-TOKEN
 
-()-block: '(' component-value ')'
+{}-block: '{' component-value-list '}'
 
-[]-block: '[' component-value ']'
+()-block: '(' component-value-list ')'
 
-function-block: FUNCTION-TOKEN component-value ')'
+[]-block: '[' component-value-list ']'
+
+function-block: FUNCTION-TOKEN component-value-list ')'
 
 // TODO: determine where these are allowed (probably "declaration" identifiers)
+//       unless all tokens can be qualified
 qualified-name: IDENT-TOKEN
               | IDENT-TOKEN '|' IDENT-TOKEN
+
+// Since component values include all tokens as is, we do not need to
+// extend anything to support the SASS syntax. CSS 3 already accepts
+// entries such as:
+//
+//   a { width: 33px; b { height: 43px; } }
+//
 
 
 
