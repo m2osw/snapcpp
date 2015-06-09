@@ -1,3 +1,9 @@
+advgetopt (1.0.15.242~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 09 Jun 2015 03:01:53 -0700
+
 advgetopt (1.0.15.241~trusty) trusty; urgency=high
 
   * Nightly build.
