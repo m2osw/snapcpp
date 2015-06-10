@@ -114,6 +114,12 @@ ConfigureMakeProject( PROJECT_NAME as2js
     DEPENDS snapCMakeModules controlled_vars advgetopt
 )
 
+ConfigureMakeProject( PROJECT_NAME csspp
+    CONFIG_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    DEPENDS snapCMakeModules advgetopt
+)
+
 ConfigureMakeProject( PROJECT_NAME googlerank
     CONFIG_ARGS
         -DCONTROLLEDVARS_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
