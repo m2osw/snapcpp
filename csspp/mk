@@ -8,7 +8,14 @@ then
 elif test "$1" = "-t"
 then
 	make -C ../BUILD/csspp/
-	../BUILD/csspp/tests/csspp_tests "$2"
+	shift
+	TEST="$1"
+	shift
+	if test -n "$TEST"
+	then
+		echo run with \"$TEST\"
+	fi
+	../BUILD/csspp/tests/csspp_tests "$TEST" $*
 elif test "$1" = "-i"
 then
 	make -C ../BUILD/csspp install

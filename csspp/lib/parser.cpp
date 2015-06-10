@@ -57,41 +57,45 @@ namespace csspp
 parser::parser(lexer::pointer_t l)
     : f_lexer(l)
 {
+    next_token();
 }
 
 node::pointer_t parser::stylesheet()
 {
-    return stylesheet(next_token());
+    return stylesheet(f_last_token);
 }
 
 node::pointer_t parser::rule_list()
 {
-    return rule_list(next_token());
+    return rule_list(f_last_token);
 }
 
 node::pointer_t parser::rule()
 {
-    return rule(next_token());
+    return rule(f_last_token);
 }
 
 node::pointer_t parser::declaration_list()
 {
-    return declaration_list(next_token());
+    safe_bool_t safe_declaration(f_declaration);
+
+    return declaration_list(f_last_token);
 }
 
 node::pointer_t parser::component_value_list()
 {
-    return component_value_list(next_token());
+    return component_value_list(f_last_token);
 }
 
 node::pointer_t parser::component_value()
 {
-    return component_value(next_token());
+    return component_value(f_last_token);
 }
 
 node::pointer_t parser::next_token()
 {
     f_last_token = f_lexer->next_token();
+//std::cerr << "*** TOKEN: " << *f_last_token;
     return f_last_token;
 }
 
@@ -99,7 +103,7 @@ node::pointer_t parser::stylesheet(node::pointer_t n)
 {
     node::pointer_t result(new node(node_type_t::LIST, n->get_position()));
 
-    for(; !n->is(node_type_t::EOF_TOKEN); n = next_token())
+    for(; !n->is(node_type_t::EOF_TOKEN); n = f_last_token)
     {
         // completely ignore the CDO and CDC, if the "assembler"
         // wants to output them, it will do so, but otherwise it
@@ -111,8 +115,20 @@ node::pointer_t parser::stylesheet(node::pointer_t n)
         || n->is(node_type_t::CDC)
         || n->is(node_type_t::WHITESPACE))
         {
+            next_token();
             continue;
         }
+
+        if(n->is(node_type_t::CLOSE_CURLYBRACKET)
+        || n->is(node_type_t::CLOSE_SQUAREBRACKET)
+        || n->is(node_type_t::CLOSE_PARENTHESIS))
+        {
+            error::instance() << n->get_position()
+                              << "Unexpected closing block of type: " << n->get_type() << "."
+                              << error_mode_t::ERROR_ERROR;
+            break;
+        }
+
         if(n->is(node_type_t::AT_KEYWORD))
         {
             result->add_child(at_rule(n));
@@ -131,9 +147,10 @@ node::pointer_t parser::rule_list(node::pointer_t n)
 {
     node::pointer_t result(new node(node_type_t::LIST, n->get_position()));
 
-    for(; !n->is(node_type_t::EOF_TOKEN); n = next_token())
+    for(node::pointer_t q; (!q || !q->is(node_type_t::EOF_TOKEN)) && !n->is(node_type_t::EOF_TOKEN); n = f_last_token)
     {
-        result->add_child(rule(n));
+        q = rule(n);
+        result->add_child(q);
     }
 
     return result;
@@ -150,9 +167,20 @@ node::pointer_t parser::rule(node::pointer_t n)
         return node::pointer_t(new node(node_type_t::EOF_TOKEN, n->get_position()));
     }
 
+    if(n->is(node_type_t::CLOSE_CURLYBRACKET)
+    || n->is(node_type_t::CLOSE_SQUAREBRACKET)
+    || n->is(node_type_t::CLOSE_PARENTHESIS))
+    {
+        error::instance() << n->get_position()
+                          << "Unexpected closing block of type: " << n->get_type() << "."
+                          << error_mode_t::ERROR_ERROR;
+        return node::pointer_t(new node(node_type_t::EOF_TOKEN, n->get_position()));
+    }
+
     if(n->is(node_type_t::WHITESPACE))
     {
-        return node::pointer_t(new node(node_type_t::EOF_TOKEN, n->get_position()));
+        // skip potential whitespaces
+        n = next_token();
     }
 
     if(n->is(node_type_t::AT_KEYWORD))
@@ -166,8 +194,10 @@ node::pointer_t parser::rule(node::pointer_t n)
 
 node::pointer_t parser::at_rule(node::pointer_t at_keyword)
 {
+    safe_bool_t stop_on_first_block(f_stop_on_block);
+
     // the '@' was already eaten, it will be our result
-    node::pointer_t n(component_value_list(at_keyword));
+    node::pointer_t n(component_value_list(next_token()));
 
     if(n->empty())
     {
@@ -193,12 +223,31 @@ node::pointer_t parser::at_rule(node::pointer_t at_keyword)
 
 node::pointer_t parser::qualified_rule(node::pointer_t n)
 {
+    if(n->is(node_type_t::EOF_TOKEN))
+    {
+        return n;
+    }
+    if(n->is(node_type_t::SEMICOLON))
+    {
+        // skip the ';' (i.e. ';' in 'foo { blah: 123 };')
+        next_token();
+
+        // it is an error, we just make it clear what error it is because
+        // by default it would otherwise come out as "invalid qualified rule"
+        // which is rather hard to understand here...
+        error::instance() << n->get_position()
+                          << "A qualified rule cannot end a { ... } block with a ';'."
+                          << error_mode_t::ERROR_ERROR;
+        return node::pointer_t(new node(node_type_t::EOF_TOKEN, n->get_position()));
+    }
+
     // a qualified rule is a component value list that
     // ends with a block
     node::pointer_t result(component_value_list(n));
 
     if(result->empty())
     {
+        // I have not been able to reach these lines, somehow...
         error::instance() << n->get_position()
                           << "A qualified rule cannot be empty; you are missing a { ... } block."
                           << error_mode_t::ERROR_ERROR;
@@ -219,6 +268,8 @@ node::pointer_t parser::qualified_rule(node::pointer_t n)
 
 node::pointer_t parser::declaration_list(node::pointer_t n)
 {
+    safe_bool_t safe_declaration(f_declaration);
+
     node::pointer_t result(new node(node_type_t::LIST, n->get_position()));
 
     for(;;)
@@ -233,6 +284,12 @@ node::pointer_t parser::declaration_list(node::pointer_t n)
             result->add_child(declaration(n));
             if(!f_last_token->is(node_type_t::SEMICOLON))
             {
+                // the EOF_TOKEN below generates an error if we
+                // do not remove those spaces ahead of time
+                if(f_last_token->is(node_type_t::WHITESPACE))
+                {
+                    next_token();
+                }
                 break;
             }
             // skip the ';'
@@ -247,6 +304,15 @@ node::pointer_t parser::declaration_list(node::pointer_t n)
         {
             break;
         }
+    }
+
+    if(!f_last_token->is(node_type_t::EOF_TOKEN))
+    {
+        error::instance() << f_last_token->get_position()
+                          << "the end of the stream was not reached in this declaration, we stopped on a "
+                          << f_last_token->get_type()
+                          << "."
+                          << error_mode_t::ERROR_ERROR;
     }
 
     return result;
@@ -273,7 +339,7 @@ node::pointer_t parser::declaration(node::pointer_t identifier)
     }
     else
     {
-        error::instance() << f_last_token->get_position()
+        error::instance() << n->get_position()
                           << "':' missing in your declaration starting with \""
                           << identifier->get_string()
                           << "\"."
@@ -283,7 +349,7 @@ node::pointer_t parser::declaration(node::pointer_t identifier)
     if(!n->is(node_type_t::EXCLAMATION))
     {
         // a component value
-        result->add_child(component_value(n));
+        result->add_child(component_value_list(n));
         n = f_last_token;
     }
 
@@ -311,7 +377,7 @@ node::pointer_t parser::declaration(node::pointer_t identifier)
         }
         else
         {
-            error::instance() << f_last_token->get_position()
+            error::instance() << exclamation->get_position()
                               << "A '!' must be followed by an identifier, got a "
                               << exclamation->get_type()
                               << " instead."
@@ -326,7 +392,7 @@ node::pointer_t parser::component_value_list(node::pointer_t n)
 {
     node::pointer_t result(new node(node_type_t::LIST, n->get_position()));
 
-    for(;; n = next_token())
+    for(;; n = f_last_token)
     {
         // this test is rather ugly... also it kinda breaks the
         // so called 'preserved tokens'
@@ -336,11 +402,18 @@ node::pointer_t parser::component_value_list(node::pointer_t n)
         || n->is(node_type_t::CLOSE_SQUAREBRACKET)
         || n->is(node_type_t::CLOSE_CURLYBRACKET)
         || n->is(node_type_t::AT_KEYWORD)
-        || n->is(node_type_t::EXCLAMATION)
-        || n->is(node_type_t::SEMICOLON)
+        || (f_declaration && n->is(node_type_t::EXCLAMATION))
+        || (f_declaration && n->is(node_type_t::SEMICOLON))
         || n->is(node_type_t::CDO)
         || n->is(node_type_t::CDC))
         {
+            break;
+        }
+        if(n->is(node_type_t::OPEN_CURLYBRACKET))
+        {
+            // in this special case, we read the {}-block and return
+            // (i.e. end of an @-rule, etc.)
+            result->add_child(component_value(n));
             break;
         }
         result->add_child(component_value(n));
@@ -375,13 +448,20 @@ node::pointer_t parser::component_value(node::pointer_t n)
         return block(n, node_type_t::CLOSE_PARENTHESIS);
     }
 
+    next_token();
+
     // n is the token we keep
     return n;
 }
 
 node::pointer_t parser::block(node::pointer_t b, node_type_t closing_token)
 {
-    b->add_child(component_value_list(next_token()));
+    node::pointer_t children(component_value_list(next_token()));
+    b->take_over_children_of(children);
+    if(f_last_token->is(node_type_t::WHITESPACE))
+    {
+        next_token();
+    }
     if(f_last_token->is(closing_token))
     {
         // skip that closing token

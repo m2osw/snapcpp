@@ -35,6 +35,24 @@ typedef int                 line_t;
 typedef int64_t             integer_t;
 typedef double              decimal_number_t;
 
+class safe_bool_t
+{
+public:
+    safe_bool_t(bool & flag)
+        : f_flag(flag)
+    {
+        f_flag = true;
+    }
+
+    ~safe_bool_t()
+    {
+        f_flag = false;
+    }
+
+private:
+    bool &      f_flag;
+};
+
 } // namespace csspp
 #endif
 // #ifndef CSSPP_CSSPP_H

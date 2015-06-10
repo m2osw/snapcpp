@@ -53,7 +53,7 @@ TEST_CASE("Unicode range: start/end equal", "[unicode-range] [code-point]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Unicode range: start/end differ", "[unicode-range] [range]")
@@ -210,7 +210,7 @@ TEST_CASE("Unicode range: start/end differ", "[unicode-range] [range]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Unicode range: 6 x '?'", "[unicode-range] [mask]")
@@ -223,7 +223,7 @@ TEST_CASE("Unicode range: 6 x '?'", "[unicode-range] [mask]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Unicode range: 5 x '?'", "[unicode-range] [mask]")
@@ -244,7 +244,7 @@ TEST_CASE("Unicode range: 5 x '?'", "[unicode-range] [mask]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Unicode range: 4 x '?'", "[unicode-range] [mask]")
@@ -267,7 +267,7 @@ TEST_CASE("Unicode range: 4 x '?'", "[unicode-range] [mask]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Unicode range: 3 x '?'", "[unicode-range] [mask]")
@@ -290,7 +290,7 @@ TEST_CASE("Unicode range: 3 x '?'", "[unicode-range] [mask]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Unicode range: 2 x '?'", "[unicode-range] [mask]")
@@ -313,7 +313,7 @@ TEST_CASE("Unicode range: 2 x '?'", "[unicode-range] [mask]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Unicode range: 1 x '?'", "[unicode-range] [mask]")
@@ -336,7 +336,7 @@ TEST_CASE("Unicode range: 1 x '?'", "[unicode-range] [mask]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Unicode range: invalid start/end values", "[unicode-range] [code-point]")
@@ -347,7 +347,7 @@ TEST_CASE("Unicode range: invalid start/end values", "[unicode-range] [code-poin
     REQUIRE_THROWS_AS(new csspp::unicode_range_t(0x004000, 0x000200), csspp::csspp_exception_overflow);
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 // Local Variables:

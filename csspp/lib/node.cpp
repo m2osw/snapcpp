@@ -20,6 +20,7 @@
 #include <csspp/exceptions.h>
 
 #include <algorithm>
+#include <iostream>
 #include <sstream>
 
 namespace csspp
@@ -72,8 +73,10 @@ void type_supports_string(node_type_t const type)
     case node_type_t::AT_KEYWORD:
     case node_type_t::COMMENT:
     case node_type_t::DECIMAL_NUMBER:
-    case node_type_t::HASH:
+    case node_type_t::DECLARATION:
+    case node_type_t::EXCLAMATION:
     case node_type_t::FUNCTION:
+    case node_type_t::HASH:
     case node_type_t::IDENTIFIER:
     case node_type_t::INTEGER:
     case node_type_t::STRING:
@@ -96,10 +99,12 @@ void type_supports_children(node_type_t const type)
     switch(type)
     {
     case node_type_t::AT_KEYWORD:
+    case node_type_t::DECLARATION:
+    case node_type_t::FUNCTION:
     case node_type_t::LIST:
     case node_type_t::OPEN_CURLYBRACKET:
-    case node_type_t::OPEN_SQUAREBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
+    case node_type_t::OPEN_SQUAREBRACKET:
         break;
 
     default:
@@ -267,6 +272,8 @@ void node::display(std::ostream & out, uint32_t indent) const
     case node_type_t::AT_KEYWORD:
     case node_type_t::COMMENT:
     case node_type_t::DECIMAL_NUMBER:
+    case node_type_t::DECLARATION:
+    case node_type_t::EXCLAMATION:
     case node_type_t::FUNCTION:
     case node_type_t::HASH:
     case node_type_t::IDENTIFIER:
@@ -287,7 +294,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     case node_type_t::COMMENT:
     case node_type_t::INTEGER:
     case node_type_t::UNICODE_RANGE:
-        out << " integer value = " << f_integer;
+        out << " I:" << f_integer;
         break;
 
     default:
@@ -299,7 +306,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     {
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::PERCENT:
-        out << " decimal value = " << f_decimal_number;
+        out << " D:" << f_decimal_number;
         break;
 
     default:
@@ -312,6 +319,9 @@ void node::display(std::ostream & out, uint32_t indent) const
     switch(f_type)
     {
     case node_type_t::AT_KEYWORD:
+    case node_type_t::DECLARATION:
+    case node_type_t::EXCLAMATION:
+    case node_type_t::FUNCTION:
     case node_type_t::LIST:
     case node_type_t::OPEN_SQUAREBRACKET:
     case node_type_t::OPEN_CURLYBRACKET:
@@ -319,7 +329,7 @@ void node::display(std::ostream & out, uint32_t indent) const
         // display the children now
         for(size_t i(0); i < f_children.size(); ++i)
         {
-            f_children[i]->display(out, indent + 2); /////////////////////////////////////
+            f_children[i]->display(out, indent + 2);
         }
         break;
 

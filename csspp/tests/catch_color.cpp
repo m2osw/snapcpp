@@ -188,7 +188,7 @@ char const test_colors[] =
 } // no name namespace
 
 
-TEST_CASE("Invalid colors", "[color]")
+TEST_CASE("Invalid colors", "[color] [invalid]")
 {
     csspp::color c;
     REQUIRE(!c.set_color(""));
@@ -205,7 +205,7 @@ TEST_CASE("Invalid colors", "[color]")
     REQUIRE(!c.set_color("unknown"));
 }
 
-TEST_CASE("Default color", "[color]")
+TEST_CASE("Default color", "[color] [default]")
 {
     csspp::color c;
     REQUIRE(c.get_color() == 0xFF000000);
@@ -221,7 +221,7 @@ TEST_CASE("Default color", "[color]")
     REQUIRE(ca == 255);
 }
 
-TEST_CASE("Verify #XXX colors", "[color]")
+TEST_CASE("Verify #XXX colors", "[color] [parse]")
 {
     for(int i(0); i < 0x1000; ++i)
     {
@@ -251,7 +251,7 @@ TEST_CASE("Verify #XXX colors", "[color]")
     }
 }
 
-TEST_CASE("Verify #XXXXXX colors", "[color]")
+TEST_CASE("Verify #XXXXXX colors", "[color] [parse]")
 {
     for(int i(0); i < 0x1000000; i += rand() % 2000 + 1)
     {
@@ -284,7 +284,7 @@ TEST_CASE("Verify #XXXXXX colors", "[color]")
     }
 }
 
-TEST_CASE("Verify named colors", "[color]")
+TEST_CASE("Verify named colors", "[color] [parse]")
 {
     // we got raw data here, parse it and make sure it is equal to
     // what our library produces
@@ -544,7 +544,7 @@ TEST_CASE("HSLA colors", "[color]")
     REQUIRE(c.get_color() == 0xBF1B1B1B);
 }
 
-TEST_CASE("Color to string", "[color] [string]")
+TEST_CASE("Color to string", "[color] [output]")
 {
     csspp::color c;
 

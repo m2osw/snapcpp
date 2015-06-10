@@ -369,8 +369,13 @@
  * Qualified rules are selectors followed by a block. The selector list can
  * be empty.
  *
+ * \warning
+ * Although it is not clear from the graph, a
+ * <a href="#curlybracket-block">{}-block</a> ends a list of
+ * <a href="#component-value">component-value</a>.
+ *
  * Note that a component value is just whatever preserved token so you
- * can create a field such as a qualified rule:
+ * can create a field with the qualified-rule grammar:
  *
  * \code
  *      IDENTIFIER ':' '{' ... '}'
@@ -737,15 +742,33 @@
  * There is our corresponding YACC-like rule:
  *
  * \code
- * component-value-list: <empty>
- *                     | component-value
- *                     | component-value component-value-list
- *
- * component-value: preserved-token
+ * component-value: <empty>
  *                | {}-block
- *                | ()-block
- *                | []-block
- *                | function-block
+ *                | component-value-list
+ *                | component-value-list {}-block
+ *
+ * component-value-list: component-value-item
+ *                     | component-value-list component-value-item
+ *
+ * component-value-item: preserved-token
+ *                     | ()-block
+ *                     | []-block
+ *                     | function-block
+ * \endcode
+ *
+ * \warning
+ * Notice that our Yacc rule does not follow the declaration of
+ * component-value to the letter. All the other grammar rules expect
+ * a list of component-value which may also be empty. However, the
+ * main difference not conveyed in the graphs is the fact that a
+ * <a href="curlybracket-block">{}-block</a> can only be used at the end
+ * of a list of 'component-value' entries.
+ * (see http://www.w3.org/TR/css-syntax-3/#consume-a-qualified-rule0).
+ * In other words, the following are three 'component-value' entries
+ * and not just one:
+ *
+ * \code
+ *      a { b: c } { d: e } { f: g } ...
  * \endcode
  *
  * \section preserved-token Preserved Token "preserved-token" (CSS 3)
@@ -838,6 +861,13 @@
  * \endhtmlonly
  *
  * Define a sub-block of values.
+ *
+ * \warning
+ * The rules as presented here do not specify how things are
+ * really work: a {}-block is also a terminator rule when it is
+ * found in a <a href="#component-value">component-value</a>.
+ * See http://www.w3.org/TR/css-syntax-3/#consume-a-qualified-rule0
+ * as a reference to that rule.
  *
  * Specifically, curly bracket blocks are used to add any level of
  * declarations within a qualified declaration (a declaration that

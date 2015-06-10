@@ -41,8 +41,16 @@ then
     echo "   --full         run all tests and publish to the world"
     echo
     echo "To run specific tests, use one of the tags defined in the test suite."
-    echo "You may use the list option to see the available tags:"
-    echo "   csspp_tests --list"
+    echo "   '[color]'"
+    echo "   '[csspp]'"
+    echo "   '[error]'"
+    echo "   '[lexer]'"
+    echo "   '[node]'"
+    echo "   '[parser]'"
+    echo "   '[position]'"
+    echo "   '[unicode_range]'"
+    echo "You may use the list option to see the available tests and tags:"
+    echo "   csspp_tests --list-tests"
     exit 1;
 fi
 

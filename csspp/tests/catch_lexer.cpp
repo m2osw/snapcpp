@@ -80,7 +80,7 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
         buf[0] = '?';
         l.wctomb(i, buf, sizeof(buf) / sizeof(buf[0]));
         REQUIRE(buf[0] == '\0'); // make sure we get an empty string on errors
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: surrogate characters cannot be encoded in UTF-8.\n");
+        REQUIRE_ERRORS("test.css(1): error: surrogate characters cannot be encoded in UTF-8.\n");
     }
 
     // page 0 -- error is slightly different
@@ -90,13 +90,13 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
         buf[0] = '?';
         l.wctomb(0xFFFE, buf, sizeof(buf) / sizeof(buf[0]));
         REQUIRE(buf[0] == '\0'); // make sure we get an empty string on errors
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: characters 0xFFFE and 0xFFFF are not valid.\n");
+        REQUIRE_ERRORS("test.css(1): error: characters 0xFFFE and 0xFFFF are not valid.\n");
 
         // test FFFF
         buf[0] = '?';
         l.wctomb(0xFFFF, buf, sizeof(buf) / sizeof(buf[0]));
         REQUIRE(buf[0] == '\0'); // make sure we get an empty string on errors
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: characters 0xFFFE and 0xFFFF are not valid.\n");
+        REQUIRE_ERRORS("test.css(1): error: characters 0xFFFE and 0xFFFF are not valid.\n");
     }
 
     // page 1 to 16
@@ -108,14 +108,14 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
         buf[0] = '?';
         l.wctomb(wc, buf, sizeof(buf) / sizeof(buf[0]));
         REQUIRE(buf[0] == '\0'); // make sure we get an empty string on errors
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: any characters that end with 0xFFFE or 0xFFFF are not valid.\n");
+        REQUIRE_ERRORS("test.css(1): error: any characters that end with 0xFFFE or 0xFFFF are not valid.\n");
 
         // test <page>FFFF
         wc = (page << 16) | 0xFFFF;
         buf[0] = '?';
         l.wctomb(wc, buf, sizeof(buf) / sizeof(buf[0]));
         REQUIRE(buf[0] == '\0'); // make sure we get an empty string on errors
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: any characters that end with 0xFFFE or 0xFFFF are not valid.\n");
+        REQUIRE_ERRORS("test.css(1): error: any characters that end with 0xFFFE or 0xFFFF are not valid.\n");
     }
 
     // test 1,000 characters with a number that's too large
@@ -132,7 +132,7 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
         buf[0] = '?';
         l.wctomb(wc, buf, sizeof(buf) / sizeof(buf[0]));
         REQUIRE(buf[0] == '\0'); // make sure we get an empty string on errors
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: character too large, it cannot be encoded in UTF-8.\n");
+        REQUIRE_ERRORS("test.css(1): error: character too large, it cannot be encoded in UTF-8.\n");
     }
 
     // check that bytes 0xF8 and over generate an error
@@ -148,7 +148,7 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
         REQUIRE(l.mbtowc(buf) == 0xFFFD);
         std::stringstream errmsg;
         errmsg << "test.css(1): error: byte U+" << std::hex << i << " not valid in a UTF-8 stream.\n";
-        csspp_test::trace_error::instance().expected_error(errmsg.str());
+        REQUIRE_ERRORS(errmsg.str());
     }
 
     // continuation bytes at the start
@@ -164,7 +164,7 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
         REQUIRE(l.mbtowc(buf) == 0xFFFD);
         std::stringstream errmsg;
         errmsg << "test.css(1): error: byte U+" << std::hex << i << " not valid to introduce a UTF-8 encoded character.\n";
-        csspp_test::trace_error::instance().expected_error(errmsg.str());
+        REQUIRE_ERRORS(errmsg.str());
     }
 
     // not enough bytes ('\0' too soon)
@@ -176,7 +176,7 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
         REQUIRE(l.mbtowc(buf) == 0xFFFD);
         std::stringstream errmsg;
         errmsg << "test.css(1): error: sequence of bytes too short to represent a valid UTF-8 encoded character.\n";
-        csspp_test::trace_error::instance().expected_error(errmsg.str());
+        REQUIRE_ERRORS(errmsg.str());
     }
 
     // too many bytes ('\0' missing), and
@@ -197,7 +197,7 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
             REQUIRE(l.mbtowc(too_long.c_str()) == 0xFFFD);
             std::stringstream errmsg;
             errmsg << "test.css(1): error: sequence of bytes too long, it cannot represent a valid UTF-8 encoded character.\n";
-            csspp_test::trace_error::instance().expected_error(errmsg.str());
+            REQUIRE_ERRORS(errmsg.str());
         }
 
         // one of the bytes in the sequence is not between 0x80 and 0xBF
@@ -220,12 +220,12 @@ TEST_CASE("Test UTF-8 conversions", "[lexer] [unicode]")
             REQUIRE(l.mbtowc(wrong_sequence.c_str()) == 0xFFFD);
             std::stringstream errmsg;
             errmsg << "test.css(1): error: invalid sequence of bytes, it cannot represent a valid UTF-8 encoded character.\n";
-            csspp_test::trace_error::instance().expected_error(errmsg.str());
+            REQUIRE_ERRORS(errmsg.str());
         }
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test invalid characters", "[lexer] [invalid]")
@@ -238,13 +238,13 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
         ss << l.wctomb(0xFFFD);
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         // EOF
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: invalid input character: U+fffd.\n");
+        REQUIRE_ERRORS("test.css(1): error: invalid input character: U+fffd.\n");
     }
 
     // '\0'
@@ -255,13 +255,13 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
         csspp::lexer l(ss, pos);
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         // EOF
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: invalid input character: U+fffd.\n");
+        REQUIRE_ERRORS("test.css(1): error: invalid input character: U+fffd.\n");
     }
 
     // "<!"
@@ -272,7 +272,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
         csspp::lexer l(ss, pos);
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         // The '<' generate an error (see below)
         // The '!' is returned as EXCLAMATION
@@ -280,7 +280,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: invalid input character: U+3c.\n");
+        REQUIRE_ERRORS("test.css(1): error: invalid input character: U+3c.\n");
     }
 
     // "<!-"
@@ -291,7 +291,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
         csspp::lexer l(ss, pos);
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         // The '<' generate an error (see below)
         // The '!' is returned as EXCLAMATION
@@ -301,7 +301,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: invalid input character: U+3c.\n");
+        REQUIRE_ERRORS("test.css(1): error: invalid input character: U+3c.\n");
     }
 
     // '^', '<', etc.
@@ -357,7 +357,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
             csspp::lexer l(ss, pos);
 
             // so far, no error
-            csspp_test::trace_error::instance().expected_error("");
+            REQUIRE_ERRORS("");
 
             // EOF
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -365,7 +365,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
             // make sure we got the expected error
             std::stringstream errmsg;
             errmsg << "test.css(1): error: invalid input character: U+" << std::hex << static_cast<int>(i) << "." << std::endl;
-            csspp_test::trace_error::instance().expected_error(errmsg.str());
+            REQUIRE_ERRORS(errmsg.str());
         }
     }
 
@@ -385,12 +385,12 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
         csspp::lexer l(ss, pos);
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected errors
-        csspp_test::trace_error::instance().expected_error(
+        REQUIRE_ERRORS(
                 "test.css(1): error: too many follow bytes, it cannot represent a valid UTF-8 character.\n"
                 "test.css(1): error: invalid input character: U+fffd.\n"
             );
@@ -414,7 +414,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
         csspp::lexer l(ss, pos);
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         // comment
         {
@@ -429,7 +429,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
             REQUIRE(npos.get_total_line() == 1);
 
             // make sure we got the expected errors
-            csspp_test::trace_error::instance().expected_error(
+            REQUIRE_ERRORS(
                     "test.css(1): error: too many follow bytes, it cannot represent a valid UTF-8 character.\n"
                     "test.css(1): error: invalid input character: U+fffd.\n"
                 );
@@ -481,7 +481,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
             csspp::lexer l(ss, pos);
 
             // so far, no error
-            csspp_test::trace_error::instance().expected_error("");
+            REQUIRE_ERRORS("");
 
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
@@ -490,7 +490,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
             errmsg << "test.css(1): error: unexpected byte in input buffer: U+"
                    << std::hex << (i == 0xC0 ? 0xFF : i)
                    << ".\ntest.css(1): error: invalid input character: U+fffd.\n";
-            csspp_test::trace_error::instance().expected_error(errmsg.str());
+            REQUIRE_ERRORS(errmsg.str());
         }
 
         // ends with comment and string
@@ -511,7 +511,7 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
             csspp::lexer l(ss, pos);
 
             // so far, no error
-            csspp_test::trace_error::instance().expected_error("");
+            REQUIRE_ERRORS("");
 
             // comment
             {
@@ -557,12 +557,12 @@ TEST_CASE("Test invalid characters", "[lexer] [invalid]")
             errmsg << "test.css(1): error: unexpected byte in input buffer: U+"
                    << std::hex << (i == 0xC0 ? 0xFF : i)
                    << ".\ntest.css(1): error: invalid input character: U+fffd.\n";
-            csspp_test::trace_error::instance().expected_error(errmsg.str());
+            REQUIRE_ERRORS(errmsg.str());
         }
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test simple tokens", "[lexer] [basics]")
@@ -581,13 +581,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
             ss << whitespaces[i];
 
             // so far, no error
-            csspp_test::trace_error::instance().expected_error("");
+            REQUIRE_ERRORS("");
 
             REQUIRE(l.next_token()->is(csspp::node_type_t::WHITESPACE));
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
             // make sure we got the expected error
-            csspp_test::trace_error::instance().expected_error("");
+            REQUIRE_ERRORS("");
         }
 
         // try 1,000 combo of 3 to 12 whitespaces
@@ -604,13 +604,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
             }
 
             // so far, no error
-            csspp_test::trace_error::instance().expected_error("");
+            REQUIRE_ERRORS("");
 
             REQUIRE(l.next_token()->is(csspp::node_type_t::WHITESPACE));
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
             // make sure we got the expected error
-            csspp_test::trace_error::instance().expected_error("");
+            REQUIRE_ERRORS("");
         }
     }
 
@@ -622,13 +622,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "=";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EQUAL));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // ',' -> COMMA
@@ -639,13 +639,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << ",";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::COMMA));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // ':' -> COLON
@@ -656,13 +656,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << ":";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::COLON));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // ';' -> SEMICOLON
@@ -673,13 +673,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << ";";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::SEMICOLON));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '.' -> PERIOD
@@ -690,13 +690,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << ".";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::PERIOD));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '$' -> PERIOD
@@ -707,13 +707,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "$";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::DOLLAR));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '/' -> DIVIDE
@@ -724,13 +724,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "/";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::DIVIDE));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '*' -> MULTIPLY
@@ -741,13 +741,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "*";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::MULTIPLY));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '&' -> REFERENCE
@@ -758,13 +758,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "&";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::REFERENCE));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '~' -> PRECEDED
@@ -775,13 +775,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "~";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::PRECEDED));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '+' -> ADD
@@ -792,13 +792,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "+";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::ADD));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '-' -> SUBTRACT
@@ -809,13 +809,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "-";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::SUBTRACT));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '|' -> SCOPE
@@ -826,13 +826,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "|";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::SCOPE));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '>' -> GREATER_THAN
@@ -843,13 +843,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << ">";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::GREATER_THAN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '(' -> OPEN_PARENTHESIS
@@ -860,13 +860,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "(";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::OPEN_PARENTHESIS));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // ')' -> OPEN_PARENTHESIS
@@ -877,13 +877,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << ")";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::CLOSE_PARENTHESIS));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '{' -> OPEN_CURLYBRACKET
@@ -894,13 +894,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "{";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::OPEN_CURLYBRACKET));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '}' -> OPEN_CURLYBRACKET
@@ -911,13 +911,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "}";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::CLOSE_CURLYBRACKET));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '[' -> OPEN_SQUAREBRACKET
@@ -928,13 +928,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "[";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::OPEN_SQUAREBRACKET));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // ']' -> OPEN_SQUAREBRACKET
@@ -945,13 +945,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "]";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::CLOSE_SQUAREBRACKET));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '<!--' -> CDO
@@ -962,13 +962,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "<!--";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::CDO));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '<!--' -> CDC
@@ -979,13 +979,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "-->";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::CDC));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '^=' -> PREFIX_MATCH
@@ -996,13 +996,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "^=";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::PREFIX_MATCH));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '|=' -> DASH_MATCH
@@ -1013,13 +1013,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "|=";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::DASH_MATCH));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '$=' -> SUFFIX_MATCH
@@ -1030,13 +1030,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "$=";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::SUFFIX_MATCH));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '~=' -> INCLUDE_MATCH
@@ -1047,13 +1047,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "~=";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::INCLUDE_MATCH));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '*=' -> SUBSTRING_MATCH
@@ -1064,13 +1064,13 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "*=";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::SUBSTRING_MATCH));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // '||' -> COLUMN
@@ -1081,17 +1081,17 @@ TEST_CASE("Test simple tokens", "[lexer] [basics]")
         ss << "||";
 
         // so far, no error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::COLUMN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
         // make sure we got the expected error
-        csspp_test::trace_error::instance().expected_error("");
+        REQUIRE_ERRORS("");
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test newline", "[lexer] [comment]")
@@ -1291,7 +1291,7 @@ TEST_CASE("Test newline", "[lexer] [comment]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test C-like comments", "[lexer] [comment]")
@@ -1499,7 +1499,7 @@ TEST_CASE("Test C-like comments", "[lexer] [comment]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test C++ comments", "[lexer] [comment]")
@@ -1792,7 +1792,7 @@ TEST_CASE("Test C++ comments", "[lexer] [comment]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test strings", "[lexer] [string]")
@@ -2018,7 +2018,7 @@ TEST_CASE("Test strings", "[lexer] [string]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: found an unterminated string.\n");
+            REQUIRE_ERRORS("test.css(1): error: found an unterminated string.\n");
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -2042,7 +2042,7 @@ TEST_CASE("Test strings", "[lexer] [string]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: found an unterminated string with an unescaped newline.\n");
+            REQUIRE_ERRORS("test.css(1): error: found an unterminated string with an unescaped newline.\n");
         }
 
         // whitespace
@@ -2136,7 +2136,7 @@ TEST_CASE("Test strings", "[lexer] [string]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: found an unterminated string.\n");
+            REQUIRE_ERRORS("test.css(1): error: found an unterminated string.\n");
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -2182,7 +2182,7 @@ TEST_CASE("Test strings", "[lexer] [string]")
             REQUIRE(npos.get_page() == 1);
             REQUIRE(npos.get_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: invalid character after a \\ character.\n");
+            REQUIRE_ERRORS("test.css(1): error: invalid character after a \\ character.\n");
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -2207,14 +2207,14 @@ TEST_CASE("Test strings", "[lexer] [string]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: escape character too large for Unicode.\n");
+            REQUIRE_ERRORS("test.css(1): error: escape character too large for Unicode.\n");
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test identifiers", "[lexer] [identifier]")
@@ -2331,7 +2331,7 @@ TEST_CASE("Test identifiers", "[lexer] [identifier]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: found an empty identifier.\n");
+            REQUIRE_ERRORS("test.css(1): error: found an empty identifier.\n");
         }
 
         // EOF
@@ -2339,7 +2339,7 @@ TEST_CASE("Test identifiers", "[lexer] [identifier]")
             csspp::node::pointer_t eof(l.next_token());
             REQUIRE(eof->is(csspp::node_type_t::EOF_TOKEN));
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: found an empty identifier.\n");
+            REQUIRE_ERRORS("test.css(1): error: found an empty identifier.\n");
         }
     }
 
@@ -2567,7 +2567,7 @@ TEST_CASE("Test identifiers", "[lexer] [identifier]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: found EOF right after \\.\n");
+            REQUIRE_ERRORS("test.css(1): error: found EOF right after \\.\n");
         }
 
         // EOF
@@ -2607,7 +2607,7 @@ TEST_CASE("Test identifiers", "[lexer] [identifier]")
         // EOF
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
-        csspp_test::trace_error::instance().expected_error(
+        REQUIRE_ERRORS(
                 "test.css(1): error: found EOF right after \\.\n"
                 "test.css(1): error: found an empty identifier.\n"
             );
@@ -2631,7 +2631,7 @@ TEST_CASE("Test identifiers", "[lexer] [identifier]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error(
+            REQUIRE_ERRORS(
                     "test.css(1): error: spurious newline character after a \\ character outside of a string.\n"
                 );
         }
@@ -2744,7 +2744,7 @@ TEST_CASE("Test identifiers", "[lexer] [identifier]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: invalid character after a \\ character.\n");
+            REQUIRE_ERRORS("test.css(1): error: invalid character after a \\ character.\n");
         }
 
         // identifier
@@ -2781,7 +2781,7 @@ TEST_CASE("Test identifiers", "[lexer] [identifier]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: escape character '\\0' is not acceptable in CSS.\n");
+            REQUIRE_ERRORS("test.css(1): error: escape character '\\0' is not acceptable in CSS.\n");
         }
 
         // identifier
@@ -2801,7 +2801,7 @@ TEST_CASE("Test identifiers", "[lexer] [identifier]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test urls", "[lexer] [identifier] [url] [function]")
@@ -2928,7 +2928,7 @@ TEST_CASE("Test urls", "[lexer] [identifier] [url] [function]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error(
+            REQUIRE_ERRORS(
                     "test.css(1): error: found an invalid URL, one with forbidden characters.\n"
                 );
         }
@@ -2987,7 +2987,7 @@ TEST_CASE("Test urls", "[lexer] [identifier] [url] [function]")
                     REQUIRE(npos.get_line() == 1);
                     REQUIRE(npos.get_total_line() == 1);
 
-                    csspp_test::trace_error::instance().expected_error(
+                    REQUIRE_ERRORS(
                             trailing == 0
                                 ? "test.css(1): error: found an invalid URL, one with forbidden characters.\n"
                                 : "test.css(1): error: found an invalid URL, one which includes spaces or has a missing ')'.\n"
@@ -3000,7 +3000,7 @@ TEST_CASE("Test urls", "[lexer] [identifier] [url] [function]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test functions", "[lexer] [identifier] [function]")
@@ -3061,7 +3061,7 @@ TEST_CASE("Test functions", "[lexer] [identifier] [function]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test numbers", "[lexer] [number]")
@@ -3456,7 +3456,7 @@ TEST_CASE("Test numbers", "[lexer] [number]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: integral part too large for a number.\n");
+            REQUIRE_ERRORS("test.css(1): error: integral part too large for a number.\n");
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -3515,7 +3515,7 @@ TEST_CASE("Test numbers", "[lexer] [number]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: fraction too large for a decimal number.\n");
+            REQUIRE_ERRORS("test.css(1): error: fraction too large for a decimal number.\n");
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -3576,7 +3576,7 @@ TEST_CASE("Test numbers", "[lexer] [number]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: decimal number must have at least one digit after the decimal point.\n");
+            REQUIRE_ERRORS("test.css(1): error: decimal number must have at least one digit after the decimal point.\n");
         }
 
         // semi-colon
@@ -3735,7 +3735,7 @@ TEST_CASE("Test numbers", "[lexer] [number]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: exponent too large for a decimal number.\n");
+            REQUIRE_ERRORS("test.css(1): error: exponent too large for a decimal number.\n");
         }
 
         // semi-colon
@@ -3753,7 +3753,7 @@ TEST_CASE("Test numbers", "[lexer] [number]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test dimensions", "[lexer] [number] [dimension] [identifier]")
@@ -4086,11 +4086,11 @@ TEST_CASE("Test dimensions", "[lexer] [number] [dimension] [identifier]")
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
-        csspp_test::trace_error::instance().expected_error("test.css(1): error: spurious newline character after a \\ character outside of a string.\n");
+        REQUIRE_ERRORS("test.css(1): error: spurious newline character after a \\ character outside of a string.\n");
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test percent", "[lexer] [number] [percent]")
@@ -4260,7 +4260,7 @@ TEST_CASE("Test percent", "[lexer] [number] [percent]")
                 csspp::node::pointer_t percent(l.next_token());
                 REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
-                csspp_test::trace_error::instance().expected_error("test.css(1): error: invalid input character: U+25.\n");
+                REQUIRE_ERRORS("test.css(1): error: invalid input character: U+25.\n");
             }
         }
     }
@@ -4352,13 +4352,13 @@ TEST_CASE("Test percent", "[lexer] [number] [percent]")
                 csspp::node::pointer_t percent(l.next_token());
                 REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
 
-                csspp_test::trace_error::instance().expected_error("test.css(1): error: invalid input character: U+25.\n");
+                REQUIRE_ERRORS("test.css(1): error: invalid input character: U+25.\n");
             }
         }
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test unicode range", "[lexer] [unicode]")
@@ -4882,7 +4882,7 @@ TEST_CASE("Test unicode range", "[lexer] [unicode]")
                 REQUIRE(npos.get_line() == 1);
                 REQUIRE(npos.get_total_line() == 1);
 
-                csspp_test::trace_error::instance().expected_error("test.css(1): error: unicode character too large, range is U+000000 to U+10FFFF.\n");
+                REQUIRE_ERRORS("test.css(1): error: unicode character too large, range is U+000000 to U+10FFFF.\n");
             }
 
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -4909,7 +4909,7 @@ TEST_CASE("Test unicode range", "[lexer] [unicode]")
                 REQUIRE(npos.get_line() == 1);
                 REQUIRE(npos.get_total_line() == 1);
 
-                csspp_test::trace_error::instance().expected_error("test.css(1): error: unicode character too large, range is U+000000 to U+10FFFF.\n");
+                REQUIRE_ERRORS("test.css(1): error: unicode character too large, range is U+000000 to U+10FFFF.\n");
             }
 
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -4950,7 +4950,7 @@ TEST_CASE("Test unicode range", "[lexer] [unicode]")
                 REQUIRE(npos.get_line() == 1);
                 REQUIRE(npos.get_total_line() == 1);
 
-                csspp_test::trace_error::instance().expected_error("test.css(1): error: unicode character too large, range is U+000000 to U+10FFFF.\n");
+                REQUIRE_ERRORS("test.css(1): error: unicode character too large, range is U+000000 to U+10FFFF.\n");
             }
 
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
@@ -5016,14 +5016,14 @@ TEST_CASE("Test unicode range", "[lexer] [unicode]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: unicode range cannot have a start character larger than the end character.\n");
+            REQUIRE_ERRORS("test.css(1): error: unicode range cannot have a start character larger than the end character.\n");
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test hash", "[lexer] [hash]")
@@ -5117,7 +5117,7 @@ TEST_CASE("Test hash", "[lexer] [hash]")
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
 
-            csspp_test::trace_error::instance().expected_error("test.css(1): error: escape character '\\0' is not acceptable in CSS.\n");
+            REQUIRE_ERRORS("test.css(1): error: escape character '\\0' is not acceptable in CSS.\n");
         }
 
         // integer
@@ -5147,7 +5147,7 @@ TEST_CASE("Test hash", "[lexer] [hash]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Test variables", "[lexer] [variable]")
@@ -5210,7 +5210,7 @@ TEST_CASE("Test variables", "[lexer] [variable]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 // Local Variables:

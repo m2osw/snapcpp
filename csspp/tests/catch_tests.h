@@ -38,11 +38,13 @@ public:
 
     static trace_error &    instance();
 
-    void                    expected_error(std::string const & msg);
+    void                    expected_error(std::string const & msg, char const * filename, int line);
 
 private:
     std::stringstream       m_error_message;
 };
+
+#define REQUIRE_ERRORS( msg ) ::csspp_test::trace_error::instance().expected_error((msg), __FILE__, __LINE__)
 
 class our_unicode_range_t
 {
@@ -61,6 +63,10 @@ private:
     csspp::wide_char_t      f_start;
     csspp::wide_char_t      f_end;
 };
+
+// this compares two resulting trees, line by line
+void compare(std::string const & generated, std::string const & expected, char const * filename, int line);
+#define REQUIRE_TREES( a, b ) ::csspp_test::compare((a), (b), __FILE__, __LINE__)
 
 } // csspp_test namespace
 #endif

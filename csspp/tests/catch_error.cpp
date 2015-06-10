@@ -77,10 +77,10 @@ TEST_CASE("Error names", "[error]")
     }
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Error messages", "[error]")
+TEST_CASE("Error messages", "[error] [output]")
 {
     csspp::position p("test.css");
 
@@ -89,7 +89,7 @@ TEST_CASE("Error messages", "[error]")
                              << " U+" << csspp::error_mode_t::ERROR_HEX << 123
                              << "."
                              << csspp::error_mode_t::ERROR_FATAL;
-    csspp_test::trace_error::instance().expected_error("test.css(1): fatal: testing errors: 123 U+7b.\n");
+    REQUIRE_ERRORS("test.css(1): fatal: testing errors: 123 U+7b.\n");
 
     int64_t cs(123);
     csspp::error::instance() << p << std::string("testing errors:")
@@ -97,17 +97,17 @@ TEST_CASE("Error messages", "[error]")
                              << " (" << csspp::error_mode_t::ERROR_DEC << 123
                              << ")."
                              << csspp::error_mode_t::ERROR_ERROR;
-    csspp_test::trace_error::instance().expected_error("test.css(1): error: testing errors: U+7b (123).\n");
+    REQUIRE_ERRORS("test.css(1): error: testing errors: U+7b (123).\n");
 
     csspp::error::instance() << p << "testing warnings:"
                              << " U+" << csspp::error_mode_t::ERROR_HEX << 123
                              << " decimal: " << csspp::error_mode_t::ERROR_DEC << 123.25
                              << "."
                              << csspp::error_mode_t::ERROR_WARNING;
-    csspp_test::trace_error::instance().expected_error("test.css(1): warning: testing warnings: U+7b decimal: 123.25.\n");
+    REQUIRE_ERRORS("test.css(1): warning: testing warnings: U+7b decimal: 123.25.\n");
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 // Local Variables:

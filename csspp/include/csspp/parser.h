@@ -52,6 +52,8 @@ private:
 
     lexer::pointer_t        f_lexer;
     node::pointer_t         f_last_token;
+    bool                    f_declaration = false;
+    bool                    f_stop_on_block = false;
 };
 
 } // namespace csspp

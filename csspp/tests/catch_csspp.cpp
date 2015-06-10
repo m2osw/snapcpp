@@ -45,7 +45,7 @@ TEST_CASE("Version string", "[csspp]")
     REQUIRE(csspp::csspp_library_version() == std::string(CSSPP_VERSION));
 
     // no error left over
-    csspp_test::trace_error::instance().expected_error("");
+    REQUIRE_ERRORS("");
 }
 
 // Local Variables:

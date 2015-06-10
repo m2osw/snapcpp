@@ -5,6 +5,15 @@ core. The extensions that we support actually appear in grammar.txt.
 Source: http://www.w3.org/TR/css-syntax-3/
 
 
+##################### CSS Preprocessor Expressions
+
+
+
+
+
+
+##################### CSS 3 Grammar
+
 # A stylesheet is what appears in a <style> tag hence the support for
 # CDO and CDC tokens
 stylesheet: <empty>
@@ -25,7 +34,7 @@ rule: WHITESPACE-TOKEN
     | qualified-rule
     | at-rule
 
-at-rule: AT-KEYWORD-TOKEN component-value-list block
+at-rule: AT-KEYWORD-TOKEN component-value-list {}-block
        | AT-KEYWORD-TOKEN component-value-list ';'
 
 qualified-rule: component-value-list block
@@ -75,8 +84,9 @@ qualified-name: IDENT-TOKEN
 
 
 
+##################### CSS 2.2 Grammar
 
-CSS 2.2 grammar: ( http://dev.w3.org/csswg/css2/grammar.html )
+    http://dev.w3.org/csswg/css2/grammar.html
 
 stylesheet
   : [ CHARSET_SYM STRING ';' ]?

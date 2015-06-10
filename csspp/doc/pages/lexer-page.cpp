@@ -1064,7 +1064,7 @@
  * newline in the string and write that string on multiple lines. In
  * other words, the slash is removed, but not the '\\n' character.
  *
- * \important
+ * \warning
  * Note that the '\\n' is a C/C++ syntax which is not supported by
  * CSS. That is, in CSS '\\n' is equivalent to 'n'.
  *
@@ -1423,7 +1423,7 @@
  *      .45e-7
  * \endcode
  *
- * \important
+ * \warning
  * When a number includes a decimal point or an exponent, it is
  * considered to be a DECIMAL_NUMBER even when that number is
  * otherwise an integer (1.001e4 = 10010 which is an integer.)
@@ -1461,7 +1461,7 @@
  * ('+' or '-') or a \ref digit "DIGIT", then the 'e' is taken as the
  * exponent character.
  *
- * \important
+ * \warning
  * Note that "-" by itself is not a valid identifier. This means a number
  * followed by a dash and another number is clearly a subtraction.
  *

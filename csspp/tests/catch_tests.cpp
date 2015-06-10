@@ -62,10 +62,14 @@ trace_error & trace_error::instance()
     return *g_trace_error;
 }
 
-void trace_error::expected_error(std::string const & msg)
+void trace_error::expected_error(std::string const & msg, char const * filename, int line)
 {
 //std::cerr << "require " << msg << "\n";
 //std::cerr << "got " << m_error_message.str() << "\n";
+    if(m_error_message.str() != msg)
+    {
+        std::cerr << filename << "(" << line << "): error: error messages are not equal.\n";
+    }
     REQUIRE(m_error_message.str() == msg);
     m_error_message.str("");
 }
@@ -105,6 +109,57 @@ csspp::wide_char_t our_unicode_range_t::get_end() const
 csspp::range_value_t our_unicode_range_t::get_range() const
 {
     return f_start + (static_cast<csspp::range_value_t>(f_end) << 32);
+}
+
+void compare(std::string const & generated, std::string const & expected, char const * filename, int line)
+{
+    char const *g(generated.c_str());
+    char const *e(expected.c_str());
+
+    int pos(1);
+    for(; *g != '\0' && *e != '\0'; ++pos)
+    {
+        // one line from the left
+        char const *start;
+        for(start = g; *g != '\n' && *g != '\0'; ++g);
+        std::string gs(start, g - start);
+        if(*g == '\n')
+        {
+            ++g;
+        }
+
+        // one line from the right
+        start = e;
+        for(start = e; *e != '\n' && *e != '\0'; ++e);
+        std::string es(start, e - start);
+        if(*e == '\n')
+        {
+            ++e;
+        }
+
+        if(gs != es)
+        {
+            std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": \"" << gs << "\" != \"" << es << "\".\n";
+        }
+        REQUIRE(gs == es);
+    }
+
+    if(*g != '\0' && *e != '\0')
+    {
+        throw std::logic_error("we reached this line when the previous while() implies at least one of g or e is pointing to '\\0'.");
+    }
+
+    if(*g != '\0')
+    {
+        std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": end of expected reached, still have \"" << g << "\" left in generated.\n";
+    }
+    REQUIRE(*g == '\0');
+
+    if(*e != '\0')
+    {
+        std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": end of generated reached, still have \"" << e << "\" left in expected.\n";
+    }
+    REQUIRE(*e == '\0');
 }
 
 } // csspp_test namespace

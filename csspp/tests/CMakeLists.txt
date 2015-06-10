@@ -46,6 +46,7 @@ add_executable( ${PROJECT_NAME}
     catch_lexer.cpp
     catch_node.cpp
     catch_parser.cpp
+    catch_position.cpp
     catch_unicode_range.cpp
 )
 
