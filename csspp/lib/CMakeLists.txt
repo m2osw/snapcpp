@@ -31,6 +31,14 @@
 
 project(csspp)
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CSSPPConfig.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfig.cmake
+               @ONLY)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CSSPPConfigVersion.cmake.in
+               ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfigVersion.cmake
+               @ONLY)
+
 add_library( ${PROJECT_NAME} SHARED
     csspp.cpp                                   # Some basics about the library
     color.cpp                                   # Manager RGBA colors
@@ -53,6 +61,12 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 
 install(
     TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib
+)
+
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfig.cmake
+          ${CMAKE_CURRENT_BINARY_DIR}/CSSPPConfigVersion.cmake
+    DESTINATION share/cmake/CSSPP
 )
 
 # Local Variables:
