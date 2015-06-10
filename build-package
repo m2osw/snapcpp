@@ -1,0 +1,21 @@
+#!/bin/sh
+echo "Build a package without the full build server:"
+echo "  git pull ..."
+echo "  cd source-dir"
+
+echo "  # Create the source"
+echo "  debuild -S -sa -m'Your Name <name@example.com>'"
+
+echo "  gvim ~/.pbuilderrc"
+echo "  # in this file, add at least this:"
+echo "  #   # copy data instead of using hard links"
+echo "  #   APTCACHEHARDLINK=no"
+
+echo "  # Create the ~/pbuilder/trusty-base.tgz"
+echo "  pbuilder-dist trusty create"
+echo "  pbuilder-dist trusty login --save-after-login"
+echo "  apt-get install lsb-release apt-utils"
+echo "  <type ctrl-d> to exit and save the changes"
+
+echo "  # Create the package"
+echo "  pbuilder-dist trusty build ../package-name_version.dsc"
