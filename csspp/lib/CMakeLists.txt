@@ -42,6 +42,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CSSPPConfigVersion.cmake.in
 add_library( ${PROJECT_NAME} SHARED
     csspp.cpp                                   # Some basics about the library
     color.cpp                                   # Manager RGBA colors
+    compiler.cpp                                # Work on a tree of node to make it CSS compatible
     error.cpp                                   # Print out error messages
     lexer.cpp                                   # Transform input in tokens
     node.cpp                                    # Holds the data read

@@ -259,6 +259,21 @@ void node::take_over_children_of(pointer_t n)
     std::swap(f_children, n->f_children);
 }
 
+void node::set_variable(std::string const & name, pointer_t value)
+{
+    f_variables[name] = value;
+}
+
+node::pointer_t node::get_variable(std::string const & name)
+{
+    auto const it(f_variables.find(name));
+    if(it == f_variables.end())
+    {
+        return pointer_t();
+    }
+    return it->second;
+}
+
 void node::display(std::ostream & out, uint32_t indent) const
 {
     for(uint32_t i(0); i < indent; ++i)

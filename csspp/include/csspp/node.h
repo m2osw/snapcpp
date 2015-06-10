@@ -20,6 +20,7 @@
 #include <csspp/error.h>
 
 #include <string>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -93,7 +94,6 @@ class node
 {
 public:
     typedef std::shared_ptr<node>   pointer_t;
-    typedef std::vector<pointer_t>  list_t;
 
                         node(node_type_t const type, position const & pos);
 
@@ -117,17 +117,25 @@ public:
     pointer_t           get_last_child() const;
     void                take_over_children_of(pointer_t n);
 
+    void                set_variable(std::string const & name, pointer_t value);
+    pointer_t           get_variable(std::string const & name);
+
     void                display(std::ostream & out, uint32_t indent) const;
 
 private:
+    typedef std::vector<pointer_t>                  list_t;
+    typedef std::map<std::string, node::pointer_t>  variable_table_t;
+
     node_type_t         f_type = node_type_t::UNKNOWN;
     position            f_position;
     integer_t           f_integer = 0;
     decimal_number_t    f_decimal_number = 0.0;
     std::string         f_string;
     list_t              f_children;
+    variable_table_t    f_variables;
 };
 
+typedef std::vector<node::pointer_t>    node_vector_t;
 
 } // namespace csspp
 
