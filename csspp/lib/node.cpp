@@ -99,6 +99,7 @@ void type_supports_children(node_type_t const type)
     switch(type)
     {
     case node_type_t::AT_KEYWORD:
+    case node_type_t::COMPONENT_VALUE:
     case node_type_t::DECLARATION:
     case node_type_t::FUNCTION:
     case node_type_t::LIST:
@@ -197,8 +198,7 @@ void node::add_child(pointer_t child)
     // make sure we totally ignore EOF in a child list
     // (this dramatically ease the coding of the parser)
     // also we do not need to save the WHITESPACE tokens
-    if(!child->is(node_type_t::EOF_TOKEN)
-    && !child->is(node_type_t::WHITESPACE))
+    if(!child->is(node_type_t::EOF_TOKEN))
     {
         f_children.push_back(child);
     }
@@ -319,6 +319,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     switch(f_type)
     {
     case node_type_t::AT_KEYWORD:
+    case node_type_t::COMPONENT_VALUE:
     case node_type_t::DECLARATION:
     case node_type_t::EXCLAMATION:
     case node_type_t::FUNCTION:
@@ -524,6 +525,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
     // Grammar related nodes (i.e. composed nodes)
     case csspp::node_type_t::CHARSET:
         out << "CHARSET";
+        break;
+
+    case csspp::node_type_t::COMPONENT_VALUE:
+        out << "COMPONENT_VALUE";
         break;
 
     case csspp::node_type_t::DECLARATION:

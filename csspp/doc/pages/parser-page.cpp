@@ -381,10 +381,23 @@
  *      IDENTIFIER ':' '{' ... '}'
  * \endcode
  *
+ * In order to support the SASS syntax, we have an exception that allows
+ * us to set variables in the "global scope". So the following works:
+ *
+ * \code
+ *      $green: green;
+ * \endcode
+ *
+ * Even when you are in the global scope. This is not a valid rule that
+ * otherwise matches a valid CSS3 qualified rule. Note that a variable
+ * rule can also be terminated by a block since the content of a variable
+ * can be set to an entire block of data.
+ *
  * There is our corresponding YACC-like rule:
  *
  * \code
  *      qualified-rule: component-value-list block
+ *                    | VARIABLE WHITESPACE ':' component-value-list
  * \endcode
  *
  * \section declaration-list Declaration List "declaration-list" (CSS 3)

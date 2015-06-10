@@ -78,6 +78,7 @@ enum class node_type_t
 
     // composed tokens
     CHARSET,                // @charset = @charset <string> ;
+    COMPONENT_VALUE,        // "token token token ..." representing a component-value-list
     DECLARATION,            // <id> ':' ...
     FONTFACE,               // @font-face { <declaration-list> }
     KEYFRAME,               // <keyframe-selector> { <declaration-list> }

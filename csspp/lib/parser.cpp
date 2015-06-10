@@ -140,6 +140,11 @@ node::pointer_t parser::stylesheet(node::pointer_t n)
         }
     }
 
+    if(result->size() == 1)
+    {
+        return result->get_last_child();
+    }
+
     return result;
 }
 
@@ -255,7 +260,8 @@ node::pointer_t parser::qualified_rule(node::pointer_t n)
     else
     {
         node::pointer_t last_child(result->get_last_child());
-        if(!last_child->is(node_type_t::OPEN_CURLYBRACKET))
+        if(!is_variable_set(result)
+        && !last_child->is(node_type_t::OPEN_CURLYBRACKET))
         {
             error::instance() << n->get_position()
                               << "A qualified rule must end with a { ... } block."
@@ -392,6 +398,8 @@ node::pointer_t parser::component_value_list(node::pointer_t n)
 {
     node::pointer_t result(new node(node_type_t::LIST, n->get_position()));
 
+    node::pointer_t list(new node(node_type_t::COMPONENT_VALUE, n->get_position()));
+    result->add_child(list);
     for(;; n = f_last_token)
     {
         // this test is rather ugly... also it kinda breaks the
@@ -403,20 +411,84 @@ node::pointer_t parser::component_value_list(node::pointer_t n)
         || n->is(node_type_t::CLOSE_CURLYBRACKET)
         || n->is(node_type_t::AT_KEYWORD)
         || (f_declaration && n->is(node_type_t::EXCLAMATION))
-        || (f_declaration && n->is(node_type_t::SEMICOLON))
+        || (f_declaration && n->is(node_type_t::SEMICOLON)) // declarations handle the semi-colon differently
         || n->is(node_type_t::CDO)
         || n->is(node_type_t::CDC))
         {
             break;
         }
+
+        if(n->is(node_type_t::SEMICOLON))
+        {
+            next_token();
+
+            // remove leading and trailing whitespace, no need really
+            if(!list->empty() && list->get_child(0)->is(node_type_t::WHITESPACE))
+            {
+                list->remove_child(0);
+            }
+            if(!list->empty() && list->get_last_child()->is(node_type_t::WHITESPACE))
+            {
+                list->remove_child(list->size() - 1);
+            }
+
+            // variables are viewed as a terminator string when ended by a
+            // semicolon; a qualified rule normally requires a block to
+            // end, but we have a special case to allow definition of
+            // variables anywhere
+            if(is_variable_set(list))
+            {
+                break;
+            }
+
+            if(!list->empty())
+            {
+                // move to a new sub-list
+                list.reset(new node(node_type_t::COMPONENT_VALUE, n->get_position()));
+                result->add_child(list);
+            }
+            continue;
+        }
+
+        // remove trailing whitespace before a block, no need
+        if((n->is(node_type_t::OPEN_CURLYBRACKET)
+         || n->is(node_type_t::OPEN_SQUAREBRACKET)
+         || n->is(node_type_t::OPEN_PARENTHESIS))
+        && !list->empty()
+        && list->get_last_child()->is(node_type_t::WHITESPACE))
+        {
+            list->remove_child(list->size() - 1);
+        }
+
         if(n->is(node_type_t::OPEN_CURLYBRACKET))
         {
             // in this special case, we read the {}-block and return
             // (i.e. end of an @-rule, etc.)
-            result->add_child(component_value(n));
+            list->add_child(component_value(n));
             break;
         }
-        result->add_child(component_value(n));
+
+        list->add_child(component_value(n));
+    }
+
+    // remove leading and trailing whitespace, no need really
+    if(!list->empty() && list->get_child(0)->is(node_type_t::WHITESPACE))
+    {
+        list->remove_child(0);
+    }
+    if(!list->empty() && list->get_last_child()->is(node_type_t::WHITESPACE))
+    {
+        list->remove_child(list->size() - 1);
+    }
+
+    if(list->empty())
+    {
+        result->remove_child(list);
+    }
+
+    if(result->size() == 1)
+    {
+        result = result->get_last_child();
     }
 
     return result;
@@ -479,6 +551,20 @@ node::pointer_t parser::block(node::pointer_t b, node_type_t closing_token)
     }
 
     return b;
+}
+
+bool parser::is_variable_set(node::pointer_t n)
+{
+    // a variable set is at least 3 tokens:
+    //    $var:<value>
+    if(n->size() < 3
+    || !n->get_child(0)->is(node_type_t::VARIABLE))
+    {
+        return false;
+    }
+
+    size_t const pos(n->get_child(1)->is(node_type_t::WHITESPACE) ? 2 : 1);
+    return n->get_child(pos)->is(node_type_t::COLON);
 }
 
 } // namespace csspp

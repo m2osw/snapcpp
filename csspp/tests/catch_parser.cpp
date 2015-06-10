@@ -62,16 +62,18 @@ TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
 
         std::stringstream out;
         out << *n;
-        REQUIRE(out.str() ==
+        REQUIRE_TREES(out.str(),
 
-"LIST\n"
-"  LIST\n"
-"    IDENTIFIER \"body\"\n"
-"    OPEN_CURLYBRACKET\n"
-"      IDENTIFIER \"background\"\n"
-"      COLON\n"
-"      IDENTIFIER \"white\"\n"
-"      URL \"/images/background.png\"\n"
+"COMPONENT_VALUE\n"
+"  IDENTIFIER \"body\"\n"
+"  OPEN_CURLYBRACKET\n"
+"    IDENTIFIER \"background\"\n"
+"    WHITESPACE\n"
+"    COLON\n"
+"    WHITESPACE\n"
+"    IDENTIFIER \"white\"\n"
+"    WHITESPACE\n"
+"    URL \"/images/background.png\"\n"
 
             );
 
@@ -93,23 +95,93 @@ TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
 
         std::stringstream out;
         out << *n;
-        REQUIRE(out.str() ==
+        REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"  LIST\n"
+"  COMPONENT_VALUE\n"
 "    IDENTIFIER \"body\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"background\"\n"
+"      WHITESPACE\n"
 "      COLON\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"white\"\n"
+"      WHITESPACE\n"
 "      URL \"/images/background.png\"\n"
-"  LIST\n"
+"  COMPONENT_VALUE\n"
 "    IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"border\"\n"
 "      COLON\n"
+"      WHITESPACE\n"
 "      INTEGER \"px\" I:1\n"
-"      SEMICOLON\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
+
+    // one large rule with semicolons inside
+    {
+        std::stringstream ss;
+        ss << "div\n"
+           << "{\n"
+           << "    background-color: rgba(33, 77, 99, 0.3);\n"
+           << "    color: rgba(0, 3, 5, 0.95);\n"
+           << "    font-style: italic;\n"
+           << "}";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"COMPONENT_VALUE\n"
+"  IDENTIFIER \"div\"\n"
+"  OPEN_CURLYBRACKET\n"
+"    COMPONENT_VALUE\n"
+"      IDENTIFIER \"background-color\"\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      FUNCTION \"rgba\"\n"
+"        INTEGER \"\" I:33\n"
+"        COMMA\n"
+"        WHITESPACE\n"
+"        INTEGER \"\" I:77\n"
+"        COMMA\n"
+"        WHITESPACE\n"
+"        INTEGER \"\" I:99\n"
+"        COMMA\n"
+"        WHITESPACE\n"
+"        DECIMAL_NUMBER \"\" D:0.3\n"
+"    COMPONENT_VALUE\n"
+"      IDENTIFIER \"color\"\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      FUNCTION \"rgba\"\n"
+"        INTEGER \"\" I:0\n"
+"        COMMA\n"
+"        WHITESPACE\n"
+"        INTEGER \"\" I:3\n"
+"        COMMA\n"
+"        WHITESPACE\n"
+"        INTEGER \"\" I:5\n"
+"        COMMA\n"
+"        WHITESPACE\n"
+"        DECIMAL_NUMBER \"\" D:0.95\n"
+"    COMPONENT_VALUE\n"
+"      IDENTIFIER \"font-style\"\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"italic\"\n"
 
             );
 
@@ -229,20 +301,27 @@ TEST_CASE("Simple Rules", "[parser] [rule-list]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"  LIST\n"
+"  COMPONENT_VALUE\n"
 "    IDENTIFIER \"body\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"background\"\n"
+"      WHITESPACE\n"
 "      COLON\n"
+"      WHITESPACE\n"
 "      FUNCTION \"gradient\"\n"
 "        IDENTIFIER \"to\"\n"
+"        WHITESPACE\n"
 "        IDENTIFIER \"bottom\"\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"012\"\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"384513\"\n"
+"        WHITESPACE\n"
 "        PERCENT D:0.75\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"452\"\n"
 
             );
@@ -272,22 +351,23 @@ TEST_CASE("Simple Rules", "[parser] [rule-list]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"  LIST\n"
+"  COMPONENT_VALUE\n"
 "    IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"color\"\n"
 "      COLON\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"blue\"\n"
-"      SEMICOLON\n"
 "  AT_KEYWORD \"media\"\n"
 "    IDENTIFIER \"screen\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"viewport\"\n"
 "      COLON\n"
+"      WHITESPACE\n"
 "      INTEGER \"px\" I:1000\n"
+"      WHITESPACE\n"
 "      INTEGER \"px\" I:500\n"
-"      SEMICOLON\n"
-"  LIST\n"
+"  COMPONENT_VALUE\n"
 "    IDENTIFIER \"div\"\n"
 "    HASH \"op\"\n"
 "    OPEN_CURLYBRACKET\n"
@@ -474,20 +554,27 @@ TEST_CASE("One Simple Rule", "[parser] [rule]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"body\"\n"
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"background\"\n"
+"    WHITESPACE\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    FUNCTION \"gradient\"\n"
 "      IDENTIFIER \"to\"\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"bottom\"\n"
 "      COMMA\n"
+"      WHITESPACE\n"
 "      HASH \"012\"\n"
 "      COMMA\n"
+"      WHITESPACE\n"
 "      HASH \"384513\"\n"
+"      WHITESPACE\n"
 "      PERCENT D:0.75\n"
 "      COMMA\n"
+"      WHITESPACE\n"
 "      HASH \"452\"\n"
 
             );
@@ -513,13 +600,13 @@ TEST_CASE("One Simple Rule", "[parser] [rule]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"div\"\n"
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"color\"\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    IDENTIFIER \"blue\"\n"
-"    SEMICOLON\n"
 
             );
 
@@ -534,9 +621,10 @@ TEST_CASE("One Simple Rule", "[parser] [rule]")
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"viewport\"\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    INTEGER \"px\" I:1000\n"
+"    WHITESPACE\n"
 "    INTEGER \"px\" I:500\n"
-"    SEMICOLON\n"
 
             );
 
@@ -546,7 +634,7 @@ TEST_CASE("One Simple Rule", "[parser] [rule]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"div\"\n"
 "  HASH \"op\"\n"
 "  OPEN_CURLYBRACKET\n"
@@ -623,12 +711,15 @@ TEST_CASE("Invalid One Rule", "[parser] [rule] [invalid]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"body\"\n"
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"background\"\n"
+"    WHITESPACE\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    IDENTIFIER \"white\"\n"
+"    WHITESPACE\n"
 "    URL \"/images/background.png\"\n"
 
             );
@@ -660,7 +751,7 @@ TEST_CASE("Invalid One Rule", "[parser] [rule] [invalid]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"body\"\n"
 "  OPEN_SQUAREBRACKET\n"
 "    IDENTIFIER \"lili\"\n"
@@ -717,13 +808,13 @@ TEST_CASE("Invalid One Rule", "[parser] [rule] [invalid]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"div\"\n"
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"color\"\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    IDENTIFIER \"blue\"\n"
-"    SEMICOLON\n"
 
             );
 
@@ -772,20 +863,27 @@ TEST_CASE("Simple Component Values", "[parser] [component-value]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"body\"\n"
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"background\"\n"
+"    WHITESPACE\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    FUNCTION \"gradient\"\n"
 "      IDENTIFIER \"to\"\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"bottom\"\n"
 "      COMMA\n"
+"      WHITESPACE\n"
 "      HASH \"012\"\n"
 "      COMMA\n"
+"      WHITESPACE\n"
 "      HASH \"384513\"\n"
+"      WHITESPACE\n"
 "      PERCENT D:0.75\n"
 "      COMMA\n"
+"      WHITESPACE\n"
 "      HASH \"452\"\n"
 
             );
@@ -811,13 +909,13 @@ TEST_CASE("Simple Component Values", "[parser] [component-value]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"div\"\n"
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"color\"\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    IDENTIFIER \"blue\"\n"
-"    SEMICOLON\n"
 
             );
 
@@ -832,9 +930,10 @@ TEST_CASE("Simple Component Values", "[parser] [component-value]")
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"viewport\"\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    INTEGER \"px\" I:1000\n"
+"    WHITESPACE\n"
 "    INTEGER \"px\" I:500\n"
-"    SEMICOLON\n"
 
             );
 
@@ -844,7 +943,7 @@ TEST_CASE("Simple Component Values", "[parser] [component-value]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"LIST\n"
+"COMPONENT_VALUE\n"
 "  IDENTIFIER \"div\"\n"
 "  HASH \"op\"\n"
 "  OPEN_CURLYBRACKET\n"
@@ -954,16 +1053,23 @@ TEST_CASE("Simple One Component Value", "[parser] [component-value]")
 
             "OPEN_CURLYBRACKET\n"
             "  IDENTIFIER \"background\"\n"
+            "  WHITESPACE\n"
             "  COLON\n"
+            "  WHITESPACE\n"
             "  FUNCTION \"gradient\"\n"
             "    IDENTIFIER \"to\"\n"
+            "    WHITESPACE\n"
             "    IDENTIFIER \"bottom\"\n"
             "    COMMA\n"
+            "    WHITESPACE\n"
             "    HASH \"012\"\n"
             "    COMMA\n"
+            "    WHITESPACE\n"
             "    HASH \"384513\"\n"
+            "    WHITESPACE\n"
             "    PERCENT D:0.75\n"
             "    COMMA\n"
+            "    WHITESPACE\n"
             "    HASH \"452\"\n",
 
             "WHITESPACE\n",
@@ -979,9 +1085,10 @@ TEST_CASE("Simple One Component Value", "[parser] [component-value]")
             "OPEN_CURLYBRACKET\n"
             "  IDENTIFIER \"viewport\"\n"
             "  COLON\n"
+            "  WHITESPACE\n"
             "  INTEGER \"px\" I:1000\n"
-            "  INTEGER \"px\" I:500\n"
-            "  SEMICOLON\n",
+            "  WHITESPACE\n"
+            "  INTEGER \"px\" I:500\n",
 
             // make sure to keep the following to make sure we got everything
             // through the parser
@@ -1022,7 +1129,9 @@ TEST_CASE("Invalid One Component Value", "[parser] [component-value] [invalid]")
 
             "OPEN_CURLYBRACKET\n"
             "  IDENTIFIER \"background\"\n"
+            "  WHITESPACE\n"
             "  COLON\n"
+            "  WHITESPACE\n"
             "  INTEGER \"\" I:123\n",
 
             // make sure to keep the following to make sure we got everything
@@ -1141,20 +1250,26 @@ TEST_CASE("Simple Declarations", "[parser] [declaration]")
 
 "LIST\n"
 "  DECLARATION \"background\"\n"
-"    LIST\n"
+"    COMPONENT_VALUE\n"
 "      FUNCTION \"gradient\"\n"
 "        IDENTIFIER \"to\"\n"
+"        WHITESPACE\n"
 "        IDENTIFIER \"bottom\"\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"012\"\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"384513\"\n"
+"        WHITESPACE\n"
 "        PERCENT D:0.75\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"452\"\n"
 "      OPEN_CURLYBRACKET\n"
 "        IDENTIFIER \"width\"\n"
 "        COLON\n"
+"        WHITESPACE\n"
 "        INTEGER \"px\" I:300\n"
 
             );
@@ -1186,16 +1301,23 @@ TEST_CASE("Simple Declarations", "[parser] [declaration]")
 "    IDENTIFIER \"capabilities\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"background\"\n"
+"      WHITESPACE\n"
 "      COLON\n"
+"      WHITESPACE\n"
 "      FUNCTION \"gradient\"\n"
 "        IDENTIFIER \"to\"\n"
+"        WHITESPACE\n"
 "        IDENTIFIER \"bottom\"\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"012\"\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"384513\"\n"
+"        WHITESPACE\n"
 "        PERCENT D:0.75\n"
 "        COMMA\n"
+"        WHITESPACE\n"
 "        HASH \"452\"\n"
 
             );
@@ -1224,13 +1346,13 @@ TEST_CASE("Simple Declarations", "[parser] [declaration]")
 
 "LIST\n"
 "  DECLARATION \"a\"\n"
-"    LIST\n"
+"    COMPONENT_VALUE\n"
 "      INTEGER \"px\" I:33\n"
 "  DECLARATION \"b\"\n"
-"    LIST\n"
+"    COMPONENT_VALUE\n"
 "      INTEGER \"px\" I:66\n"
 "  DECLARATION \"c\"\n"
-"    LIST\n"
+"    COMPONENT_VALUE\n"
 "      INTEGER \"px\" I:123\n"
 
             );
@@ -1259,16 +1381,17 @@ TEST_CASE("Simple Declarations", "[parser] [declaration]")
 
 "LIST\n"
 "  DECLARATION \"a\"\n"
-"    LIST\n"
+"    COMPONENT_VALUE\n"
 "      INTEGER \"px\" I:33\n"
 "    EXCLAMATION \"important\"\n"
 "  DECLARATION \"b\"\n"
-"    LIST\n"
+"    COMPONENT_VALUE\n"
 "      INTEGER \"px\" I:66\n"
 "    EXCLAMATION \"global\"\n"
 "  DECLARATION \"c\"\n"
-"    LIST\n"
+"    COMPONENT_VALUE\n"
 "      INTEGER \"px\" I:123\n"
+"      WHITESPACE\n"
 "      INTEGER \"em\" I:55\n"
 "    EXCLAMATION \"import\"\n"
 
@@ -1346,7 +1469,7 @@ TEST_CASE("Multi-line, multi-level stylesheet", "[parser] [rules]")
     {
         std::stringstream ss;
         ss << "body { background : white url( /images/background.png ) }"
-              "div.power-house { !important margin: 0; color: red; }"
+              "div.power-house { !important margin: 0; color: red ; }"
               "a { text-decoration: none; }"
               "$green: #080;"
               "#doll { background-color: $green; &:hover { color: teal; } }"
@@ -1369,74 +1492,94 @@ TEST_CASE("Multi-line, multi-level stylesheet", "[parser] [rules]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"  LIST\n"
+"  COMPONENT_VALUE\n"
 "    IDENTIFIER \"body\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"background\"\n"
+"      WHITESPACE\n"
 "      COLON\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"white\"\n"
+"      WHITESPACE\n"
 "      URL \"/images/background.png\"\n"
-"  LIST\n"
+"  COMPONENT_VALUE\n"
 "    IDENTIFIER \"div\"\n"
 "    PERIOD\n"
 "    IDENTIFIER \"power-house\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      EXCLAMATION \"\"\n"
-"      IDENTIFIER \"important\"\n"
-"      IDENTIFIER \"margin\"\n"
-"      COLON\n"
-"      INTEGER \"\" I:0\n"
-"      SEMICOLON\n"
-"      IDENTIFIER \"color\"\n"
-"      COLON\n"
-"      IDENTIFIER \"red\"\n"
-"      SEMICOLON\n"
-"  LIST\n"
+"      COMPONENT_VALUE\n"
+"        EXCLAMATION \"\"\n"
+"        IDENTIFIER \"important\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"margin\"\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        INTEGER \"\" I:0\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
 "    IDENTIFIER \"a\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"text-decoration\"\n"
 "      COLON\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"none\"\n"
-"      SEMICOLON\n"
-"  LIST\n"
+"  COMPONENT_VALUE\n"
 "    VARIABLE \"green\"\n"
 "    COLON\n"
+"    WHITESPACE\n"
 "    HASH \"080\"\n"
-"    SEMICOLON\n"
+"  COMPONENT_VALUE\n"
 "    HASH \"doll\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      IDENTIFIER \"background-color\"\n"
-"      COLON\n"
-"      VARIABLE \"green\"\n"
-"      SEMICOLON\n"
-"      REFERENCE\n"
-"      COLON\n"
-"      IDENTIFIER \"hover\"\n"
-"      OPEN_CURLYBRACKET\n"
-"        IDENTIFIER \"color\"\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"background-color\"\n"
 "        COLON\n"
-"        IDENTIFIER \"teal\"\n"
-"        SEMICOLON\n"
+"        WHITESPACE\n"
+"        VARIABLE \"green\"\n"
+"      COMPONENT_VALUE\n"
+"        REFERENCE\n"
+"        COLON\n"
+"        IDENTIFIER \"hover\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"color\"\n"
+"          COLON\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"teal\"\n"
 "  AT_KEYWORD \"supports\"\n"
 "    OPEN_PARENTHESIS\n"
 "      IDENTIFIER \"background-color\"\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"and\"\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"border-radius\"\n"
+"    WHITESPACE\n"
 "    IDENTIFIER \"or\"\n"
 "    OPEN_PARENTHESIS\n"
 "      IDENTIFIER \"background-image\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"body\"\n"
+"      WHITESPACE\n"
 "      GREATER_THAN\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"e\"\n"
+"      WHITESPACE\n"
 "      PRECEDED\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"f\"\n"
+"      WHITESPACE\n"
 "      ADD\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"g\"\n"
+"      WHITESPACE\n"
 "      IDENTIFIER \"h\"\n"
 "      OPEN_CURLYBRACKET\n"
 "        IDENTIFIER \"font-style\"\n"
 "        COLON\n"
+"        WHITESPACE\n"
 "        IDENTIFIER \"italic\"\n"
 
             );

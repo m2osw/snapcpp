@@ -117,6 +117,7 @@ TEST_CASE("Node types", "[node] [type]")
         switch(w)
         {
         case csspp::node_type_t::AT_KEYWORD:
+        case csspp::node_type_t::COMPONENT_VALUE:
         case csspp::node_type_t::DECLARATION:
         case csspp::node_type_t::FUNCTION:
         case csspp::node_type_t::LIST:
@@ -391,6 +392,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "CHARSET");
             break;
 
+        case csspp::node_type_t::COMPONENT_VALUE:
+            REQUIRE(name == "COMPONENT_VALUE");
+            break;
+
         case csspp::node_type_t::DECLARATION:
             REQUIRE(name == "DECLARATION");
             break;
@@ -622,6 +627,10 @@ TEST_CASE("Node output", "[node] [output]")
 
         case csspp::node_type_t::CHARSET:
             REQUIRE(name == "CHARSET");
+            break;
+
+        case csspp::node_type_t::COMPONENT_VALUE:
+            REQUIRE(name == "COMPONENT_VALUE");
             break;
 
         case csspp::node_type_t::DECLARATION:
@@ -860,6 +869,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"CHARSET\".\n");
             break;
 
+        case csspp::node_type_t::COMPONENT_VALUE:
+            REQUIRE_ERRORS("test.css(1): error: node name \"COMPONENT_VALUE\".\n");
+            break;
+
         case csspp::node_type_t::DECLARATION:
             REQUIRE_ERRORS("test.css(1): error: node name \"DECLARATION\".\n");
             break;
@@ -936,7 +949,7 @@ TEST_CASE("Print nodes", "[node] [output]")
     std::stringstream ss;
     ss << *root;
 
-    REQUIRE(ss.str() ==
+    REQUIRE_TREES(ss.str(),
 
 "LIST\n"
 "  INTEGER \"\" I:123\n"

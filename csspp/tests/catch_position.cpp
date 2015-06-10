@@ -143,7 +143,7 @@ TEST_CASE("Position counters", "[position] [count]")
 
         for(int i(0); i < 1000; ++i)
         {
-            if(rand() % 1)
+            if(rand() & 1)
             {
                 pos.next_line();
                 ++line;

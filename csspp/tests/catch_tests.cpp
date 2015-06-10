@@ -68,7 +68,7 @@ void trace_error::expected_error(std::string const & msg, char const * filename,
 //std::cerr << "got " << m_error_message.str() << "\n";
     if(m_error_message.str() != msg)
     {
-        std::cerr << filename << "(" << line << "): error: error messages are not equal.\n";
+        std::cerr << filename << "(" << line << "): error: error messages are not equal.\n"; // LCOV_EXCL_LINE
     }
     REQUIRE(m_error_message.str() == msg);
     m_error_message.str("");
@@ -139,25 +139,25 @@ void compare(std::string const & generated, std::string const & expected, char c
 
         if(gs != es)
         {
-            std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": \"" << gs << "\" != \"" << es << "\".\n";
+            std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": \"" << gs << "\" != \"" << es << "\".\n"; // LCOV_EXCL_LINE
         }
         REQUIRE(gs == es);
     }
 
     if(*g != '\0' && *e != '\0')
     {
-        throw std::logic_error("we reached this line when the previous while() implies at least one of g or e is pointing to '\\0'.");
+        throw std::logic_error("we reached this line when the previous while() implies at least one of g or e is pointing to '\\0'."); // LCOV_EXCL_LINE
     }
 
     if(*g != '\0')
     {
-        std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": end of expected reached, still have \"" << g << "\" left in generated.\n";
+        std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": end of expected reached, still have \"" << g << "\" left in generated.\n"; // LCOV_EXCL_LINE
     }
     REQUIRE(*g == '\0');
 
     if(*e != '\0')
     {
-        std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": end of generated reached, still have \"" << e << "\" left in expected.\n";
+        std::cerr << filename << "(" << line << "):error: compare trees: on line " << pos << ": end of generated reached, still have \"" << e << "\" left in expected.\n"; // LCOV_EXCL_LINE
     }
     REQUIRE(*e == '\0');
 }
