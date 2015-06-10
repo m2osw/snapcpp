@@ -58,6 +58,12 @@ public:
     csspp_exception_invalid_token(std::string const & whatmsg) : csspp_exception_runtime(whatmsg) {}
 };
 
+class csspp_exception_unexpected_token : public csspp_exception_runtime
+{
+public:
+    csspp_exception_unexpected_token(std::string const & whatmsg) : csspp_exception_runtime(whatmsg) {}
+};
+
 } // namespace csspp
 #endif
 // #ifndef CSSPP_EXCEPTIONS_H

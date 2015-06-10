@@ -36,7 +36,7 @@ public:
     node::pointer_t         component_value_list();
     node::pointer_t         component_value();
 
-    bool                    is_variable_set(node::pointer_t n);
+    static bool             is_variable_set(node::pointer_t n);
 
 private:
     node::pointer_t         next_token();

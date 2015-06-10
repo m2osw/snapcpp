@@ -116,6 +116,7 @@ public:
     pointer_t           get_child(size_t idx) const;
     pointer_t           get_last_child() const;
     void                take_over_children_of(pointer_t n);
+    void                replace_child(pointer_t o, pointer_t n);
 
     void                set_variable(std::string const & name, pointer_t value);
     pointer_t           get_variable(std::string const & name);

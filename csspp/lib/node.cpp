@@ -259,6 +259,18 @@ void node::take_over_children_of(pointer_t n)
     std::swap(f_children, n->f_children);
 }
 
+void node::replace_child(pointer_t o, pointer_t n)
+{
+    auto it(std::find(f_children.begin(), f_children.end(), o));
+    if(it == f_children.end())
+    {
+        throw csspp_exception_logic("replace_child() called with a node which is not a child of this node.");
+    }
+
+    f_children.insert(it, n);
+    f_children.erase(it);
+}
+
 void node::set_variable(std::string const & name, pointer_t value)
 {
     f_variables[name] = value;
