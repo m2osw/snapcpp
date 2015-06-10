@@ -79,7 +79,6 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/lib
     ${PROJECT_BINARY_DIR}/include
-    #${ADVGETOPT_INCLUDE_DIRS}
     #${CONTROLLEDVARS_INCLUDE_DIRS}
     #${LIBTLD_INCLUDE_DIRS}
 )
@@ -89,7 +88,7 @@ include_directories(
 ##
 add_subdirectory(include)       # public headers
 add_subdirectory(lib)           # csspp library
-#add_subdirectory(src)           # command line tools
+add_subdirectory(src)           # command line tools
 add_subdirectory(tests)         # tests
 add_subdirectory(doc)           # library API documentation
 

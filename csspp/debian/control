@@ -1,8 +1,8 @@
 Source: csspp
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
-Build-Depends: debhelper, cmake, doxygen, graphviz,
-    libadvgetopt-dev (>= 1.0.15.242~trusty), catch (>= 1.0)
+Build-Depends: debhelper, cmake, doxygen, graphviz, catch (>= 1.0)
+    libadvgetopt-dev (>= 1.0.15.242~trusty)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
