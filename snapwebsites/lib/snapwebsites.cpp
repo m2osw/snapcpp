@@ -310,7 +310,7 @@ namespace
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
             "logconf",
             nullptr,
-            "Log configuration file to read from. Overrides log_config in the configuration file.",
+            "Log configuration file to read from. Overrides log_server / log_config in the configuration file.",
             advgetopt::getopt::required_argument
         },
         {
@@ -1192,6 +1192,14 @@ void server::detach()
         return;
     }
 
+    // if the logger is using threads, it has to be shutdown (unconfigured)
+    // before we call the fork(); this is a waste of time so we try not to
+    // do it if we can
+    if(is_logging_server())
+    {
+        logging::unconfigure();
+    }
+
     // detaching using fork()
     pid_t const child_pid(fork());
     if(child_pid == 0)
@@ -1205,6 +1213,7 @@ void server::detach()
 
     if(child_pid == -1)
     {
+        logging::reconfigure();
         SNAP_LOG_FATAL("the server could not fork() a child process to detach itself from your console.");
         exit(1);
     }

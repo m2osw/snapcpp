@@ -155,7 +155,9 @@ namespace
             advgetopt::getopt::optional_argument
         },
         // TODO: We should allow for a log filename definition
-        //       in the snapserver.conf file too
+        //       in the snapserver.conf file too that points
+        //       to a .properties file instead of a direct
+        //       filename!
         {
             'l',
             advgetopt::getopt::GETOPT_FLAG_ENVIRONMENT_VARIABLE,
@@ -324,7 +326,7 @@ bool process::run()
     {
         // child
         //
-        QString const& full_path( get_full_path() );
+        QString const & full_path( get_full_path() );
         QStringList qargs;
         qargs << full_path;
         if(f_debug)
@@ -559,6 +561,8 @@ snap_init::snap_init( int argc, char *argv[] )
         exit(1);
     }
 
+    bool const list( f_opt.is_defined( "list" ) );
+
     if( f_opt.is_defined( "nolog" ) || f_opt.is_defined( "help" ) )
     {
         snap::logging::configure_console();
@@ -566,22 +570,25 @@ snap_init::snap_init( int argc, char *argv[] )
     else
     {
         snap::logging::configure_logfile( f_opt.get_string("logfile").c_str() );
+        if(!list)
+        {
+            SNAP_LOG_INFO("---------------- snapinit manager started");
+        }
     }
 
     f_config.read_config_file( f_opt.get_string("config").c_str() );
     if(!f_config.contains("services"))
     {
-        SNAP_LOG_FATAL() << "the configuration file must list the services to start (services=server,images,pagelist,sendmail)";
+        SNAP_LOG_FATAL() << "the configuration file must list the services to start (i.e. services=server,images,pagelist,sendmail)";
         exit( 1 );
     }
 
-    bool const list( f_opt.is_defined( "list" ) );
     if(list)
     {
         std::cout << "List of services to start on this server:" << std::endl;
     }
-    QString services(f_config["services"]);
-    QStringList service_list(services.split(","));
+    QString const services(f_config["services"]);
+    QStringList const service_list(services.split(","));
     int const max_services(service_list.size());
     for(int idx(0); idx < max_services; ++idx)
     {
@@ -590,13 +597,15 @@ snap_init::snap_init( int argc, char *argv[] )
         {
             // internally we just call it server everywhere else
             // (except the executable, of course)
+            // TODO: we should change that and call it snapserver
+            //       everywhere, I think it is confusing this way
             service = "server";
         }
-        f_services.push_back(service.toStdString());
+        f_services.push_back(service.toUtf8().data());
 
         if(list)
         {
-            std::cout << service.toStdString() << std::endl;
+            std::cout << service << std::endl;
         }
     }
     if(list)
@@ -616,7 +625,11 @@ snap_init::~snap_init()
 void snap_init::create_instance( int argc, char * argv[] )
 {
     f_instance.reset( new snap_init( argc, argv ) );
-    Q_ASSERT(f_instance);
+    if(!f_instance)
+    {
+        // new should throw std::bad_alloc or some other error anyway
+        throw std::runtime_error("snapinit failed to create an instance of a snap_init object");
+    }
 }
 
 
@@ -742,7 +755,7 @@ bool snap_init::verify_process( QString const& name )
 }
 
 
-void snap_init::create_process( QString const& name )
+void snap_init::create_process( QString const & name )
 {
     process::pointer_t p( new process( name ) );
     p->set_path( f_opt.get_string("binary_path").c_str() );

@@ -2736,13 +2736,13 @@ bool snap_child::process(int socket)
         read_environment();         // environment to QMap<>
         setup_uri();                // the raw URI
 
-#ifdef DEBUG
-{
-QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
-QString const agent(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
-SNAP_LOG_TRACE("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
-}
-#endif
+        // keep that one in release so we can at least know of all
+        // the hits to the server
+        {
+            QString const method(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_REQUEST_METHOD)));
+            QString const agent(snapenv(get_name(name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
+            SNAP_LOG_INFO("------------------------------------ new snap_child session (")(method)(" ")(f_uri.get_uri())(") with ")(agent);
+        }
 
         // now we connect to the DB
         // move all possible work that does not required the DB before
@@ -5761,7 +5761,7 @@ bool snap_child::empty_output() const
  * \param[in] data  The data to send to the listener.
  *                  Generally a printable string.
  */
-void snap_child::trace(QString const& data)
+void snap_child::trace(QString const & data)
 {
     trace(std::string(data.toUtf8().data()));
 }
@@ -6645,7 +6645,7 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
             //       function itself.
             if(p != nullptr) // && p->last_modification() > plugin_threshold)
             {
-                trace("Updating plugin \"" + plugin_name + "\"\n");
+                trace(QString("Updating plugin \"%1\"\n").arg(plugin_name));
 
                 // the plugin changed, we want to call do_update() on it!
                 if(p->last_modification() > new_plugin_threshold)
@@ -6666,7 +6666,14 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
                 //            do_update() to make 100% sure we catch all the
                 //            updates every time (using "now" would often mean
                 //            missing many updates!)
-                specific_last_updated.setInt64Value(p->do_update(specific_last_updated.int64Value()));
+                try
+                {
+                    specific_last_updated.setInt64Value(p->do_update(specific_last_updated.int64Value()));
+                }
+                catch(std::exception const &)
+                {
+                    SNAP_LOG_ERROR("Updating ")(plugin_name)(" failed with an exception.");
+                }
                 set_site_parameter(specific_param_name, specific_last_updated);
             }
         }
