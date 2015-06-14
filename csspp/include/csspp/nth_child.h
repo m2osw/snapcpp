@@ -1,5 +1,5 @@
-#ifndef CSSPP_UNICODE_RANGE_H
-#define CSSPP_UNICODE_RANGE_H
+#ifndef CSSPP_NTH_CHILD_H
+#define CSSPP_NTH_CHILD_H
 // CSS Preprocessor
 // Copyright (C) 2015  Made to Order Software Corp.
 //
@@ -17,37 +17,42 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <csspp/csspp.h>
+#include "csspp/csspp.h"
 
 #include <string>
 
 namespace csspp
 {
 
-typedef uint64_t        range_value_t;
+typedef int32_t             repeat_integer_t;
 
-class unicode_range_t
+class nth_child
 {
 public:
-                    unicode_range_t(range_value_t value = 0);
-                    unicode_range_t(wide_char_t start, wide_char_t end);
+                            nth_child(integer_t an_plus_b = 1);
+                            nth_child(repeat_integer_t a, repeat_integer_t b);
+                            nth_child(std::string const & an_plus_b);
 
-    void            set_range(range_value_t range);
-    void            set_range(wide_char_t start, wide_char_t end);
+    void                    set_a(repeat_integer_t a);
+    void                    set_b(repeat_integer_t b);
+    repeat_integer_t        get_a() const;
+    repeat_integer_t        get_b() const;
+    integer_t               get_nth() const;
+    std::string             get_error() const;
 
-    range_value_t   get_range() const;
-    wide_char_t     get_start() const;
-    wide_char_t     get_end() const;
+    bool                    parse(std::string const & an_plus_b);
 
-    std::string     to_string() const;
+    std::string             to_string() const;
 
 private:
-    range_value_t   f_range;
+    std::string             f_error;
+    repeat_integer_t        f_a = 1;
+    repeat_integer_t        f_b = 0;
 };
 
 } // namespace csspp
 #endif
-// #ifndef CSSPP_UNICODE_RANGE_H
+// #ifndef CSSPP_NTH_CHILD_H
 
 // Local Variables:
 // mode: cpp

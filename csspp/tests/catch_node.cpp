@@ -51,14 +51,37 @@ TEST_CASE("Node types", "[node] [type]")
         // verify the type
         REQUIRE(n->get_type() == w);
 
+        // boolean
+        switch(w)
+        {
+        case csspp::node_type_t::BOOLEAN:
+            {
+                bool b(rand() % 1 == 0);
+                n->set_boolean(b);
+                REQUIRE(n->get_boolean() == b);
+            }
+            break;
+
+        default:
+            REQUIRE_THROWS_AS(n->set_boolean(123), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->get_boolean(), csspp::csspp_exception_logic);
+            break;
+
+        }
+
         // integer
         switch(w)
         {
+        case csspp::node_type_t::AN_PLUS_B:
+        case csspp::node_type_t::AT_KEYWORD:
         case csspp::node_type_t::COMMENT:
         case csspp::node_type_t::INTEGER:
         case csspp::node_type_t::UNICODE_RANGE:
-            n->set_integer(123);
-            REQUIRE(n->get_integer() == 123);
+            {
+                csspp::integer_t i(static_cast<csspp::integer_t>(rand()) + (static_cast<csspp::integer_t>(rand()) << 32));
+                n->set_integer(i);
+                REQUIRE(n->get_integer() == i);
+            }
             break;
 
         default:
@@ -99,9 +122,11 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::HASH:
         case csspp::node_type_t::IDENTIFIER:
         case csspp::node_type_t::INTEGER:
+        case csspp::node_type_t::PLACEHOLDER:
         case csspp::node_type_t::STRING:
         case csspp::node_type_t::URL:
         case csspp::node_type_t::VARIABLE:
+        case csspp::node_type_t::VARIABLE_FUNCTION:
             n->set_string("test-string");
             REQUIRE(n->get_string() == "test-string");
             break;
@@ -116,6 +141,7 @@ TEST_CASE("Node types", "[node] [type]")
         // children
         switch(w)
         {
+        case csspp::node_type_t::ARG:
         case csspp::node_type_t::AT_KEYWORD:
         case csspp::node_type_t::COMPONENT_VALUE:
         case csspp::node_type_t::DECLARATION:
@@ -124,6 +150,7 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::OPEN_CURLYBRACKET:
         case csspp::node_type_t::OPEN_PARENTHESIS:
         case csspp::node_type_t::OPEN_SQUAREBRACKET:
+        case csspp::node_type_t::VARIABLE_FUNCTION:
             {
                 // try adding one child
                 REQUIRE(n->empty());
@@ -220,8 +247,20 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "ADD");
             break;
 
+        case csspp::node_type_t::AND:
+            REQUIRE(name == "AND");
+            break;
+
+        case csspp::node_type_t::ASSIGNMENT:
+            REQUIRE(name == "ASSIGNMENT");
+            break;
+
         case csspp::node_type_t::AT_KEYWORD:
             REQUIRE(name == "AT_KEYWORD");
+            break;
+
+        case csspp::node_type_t::BOOLEAN:
+            REQUIRE(name == "BOOLEAN");
             break;
 
         case csspp::node_type_t::CDC:
@@ -248,6 +287,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "COLON");
             break;
 
+        case csspp::node_type_t::COLOR:
+            REQUIRE(name == "COLOR");
+            break;
+
         case csspp::node_type_t::COLUMN:
             REQUIRE(name == "COLUMN");
             break;
@@ -258,6 +301,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
 
         case csspp::node_type_t::COMMENT:
             REQUIRE(name == "COMMENT");
+            break;
+
+        case csspp::node_type_t::CONDITIONAL:
+            REQUIRE(name == "CONDITIONAL");
             break;
 
         case csspp::node_type_t::DASH_MATCH:
@@ -292,6 +339,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "FUNCTION");
             break;
 
+        case csspp::node_type_t::GREATER_EQUAL:
+            REQUIRE(name == "GREATER_EQUAL");
+            break;
+
         case csspp::node_type_t::GREATER_THAN:
             REQUIRE(name == "GREATER_THAN");
             break;
@@ -312,8 +363,24 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "INTEGER");
             break;
 
+        case csspp::node_type_t::LESS_EQUAL:
+            REQUIRE(name == "LESS_EQUAL");
+            break;
+
+        case csspp::node_type_t::LESS_THAN:
+            REQUIRE(name == "LESS_THAN");
+            break;
+
+        case csspp::node_type_t::MODULO:
+            REQUIRE(name == "MODULO");
+            break;
+
         case csspp::node_type_t::MULTIPLY:
             REQUIRE(name == "MULTIPLY");
+            break;
+
+        case csspp::node_type_t::NOT_EQUAL:
+            REQUIRE(name == "NOT_EQUAL");
             break;
 
         case csspp::node_type_t::OPEN_CURLYBRACKET:
@@ -334,6 +401,14 @@ TEST_CASE("Type names", "[node] [type] [output]")
 
         case csspp::node_type_t::PERIOD:
             REQUIRE(name == "PERIOD");
+            break;
+
+        case csspp::node_type_t::PLACEHOLDER:
+            REQUIRE(name == "PLACEHOLDER");
+            break;
+
+        case csspp::node_type_t::POWER:
+            REQUIRE(name == "POWER");
             break;
 
         case csspp::node_type_t::PRECEDED:
@@ -384,12 +459,21 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "VARIABLE");
             break;
 
+        case csspp::node_type_t::VARIABLE_FUNCTION:
+            REQUIRE(name == "VARIABLE_FUNCTION");
+            break;
+
         case csspp::node_type_t::WHITESPACE:
             REQUIRE(name == "WHITESPACE");
             break;
 
-        case csspp::node_type_t::CHARSET:
-            REQUIRE(name == "CHARSET");
+        // second part
+        case csspp::node_type_t::AN_PLUS_B:
+            REQUIRE(name == "AN_PLUS_B");
+            break;
+
+        case csspp::node_type_t::ARG:
+            REQUIRE(name == "ARG");
             break;
 
         case csspp::node_type_t::COMPONENT_VALUE:
@@ -400,24 +484,8 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "DECLARATION");
             break;
 
-        case csspp::node_type_t::FONTFACE:
-            REQUIRE(name == "FONTFACE");
-            break;
-
-        case csspp::node_type_t::KEYFRAME:
-            REQUIRE(name == "KEYFRAME");
-            break;
-
-        case csspp::node_type_t::KEYFRAMES:
-            REQUIRE(name == "KEYFRAMES");
-            break;
-
         case csspp::node_type_t::LIST:
             REQUIRE(name == "LIST");
-            break;
-
-        case csspp::node_type_t::MEDIA:
-            REQUIRE(name == "MEDIA");
             break;
 
         case csspp::node_type_t::max_type:
@@ -457,8 +525,20 @@ TEST_CASE("Node output", "[node] [output]")
             REQUIRE(name == "ADD");
             break;
 
+        case csspp::node_type_t::AND:
+            REQUIRE(name == "AND");
+            break;
+
+        case csspp::node_type_t::ASSIGNMENT:
+            REQUIRE(name == "ASSIGNMENT");
+            break;
+
         case csspp::node_type_t::AT_KEYWORD:
             REQUIRE(name == "AT_KEYWORD");
+            break;
+
+        case csspp::node_type_t::BOOLEAN:
+            REQUIRE(name == "BOOLEAN");
             break;
 
         case csspp::node_type_t::CDC:
@@ -485,6 +565,10 @@ TEST_CASE("Node output", "[node] [output]")
             REQUIRE(name == "COLON");
             break;
 
+        case csspp::node_type_t::COLOR:
+            REQUIRE(name == "COLOR");
+            break;
+
         case csspp::node_type_t::COLUMN:
             REQUIRE(name == "COLUMN");
             break;
@@ -495,6 +579,10 @@ TEST_CASE("Node output", "[node] [output]")
 
         case csspp::node_type_t::COMMENT:
             REQUIRE(name == "COMMENT");
+            break;
+
+        case csspp::node_type_t::CONDITIONAL:
+            REQUIRE(name == "CONDITIONAL");
             break;
 
         case csspp::node_type_t::DASH_MATCH:
@@ -529,6 +617,10 @@ TEST_CASE("Node output", "[node] [output]")
             REQUIRE(name == "FUNCTION");
             break;
 
+        case csspp::node_type_t::GREATER_EQUAL:
+            REQUIRE(name == "GREATER_EQUAL");
+            break;
+
         case csspp::node_type_t::GREATER_THAN:
             REQUIRE(name == "GREATER_THAN");
             break;
@@ -549,8 +641,24 @@ TEST_CASE("Node output", "[node] [output]")
             REQUIRE(name == "INTEGER");
             break;
 
+        case csspp::node_type_t::LESS_EQUAL:
+            REQUIRE(name == "LESS_EQUAL");
+            break;
+
+        case csspp::node_type_t::LESS_THAN:
+            REQUIRE(name == "LESS_THAN");
+            break;
+
+        case csspp::node_type_t::MODULO:
+            REQUIRE(name == "MODULO");
+            break;
+
         case csspp::node_type_t::MULTIPLY:
             REQUIRE(name == "MULTIPLY");
+            break;
+
+        case csspp::node_type_t::NOT_EQUAL:
+            REQUIRE(name == "NOT_EQUAL");
             break;
 
         case csspp::node_type_t::OPEN_CURLYBRACKET:
@@ -571,6 +679,14 @@ TEST_CASE("Node output", "[node] [output]")
 
         case csspp::node_type_t::PERIOD:
             REQUIRE(name == "PERIOD");
+            break;
+
+        case csspp::node_type_t::PLACEHOLDER:
+            REQUIRE(name == "PLACEHOLDER");
+            break;
+
+        case csspp::node_type_t::POWER:
+            REQUIRE(name == "POWER");
             break;
 
         case csspp::node_type_t::PRECEDED:
@@ -621,12 +737,21 @@ TEST_CASE("Node output", "[node] [output]")
             REQUIRE(name == "VARIABLE");
             break;
 
+        case csspp::node_type_t::VARIABLE_FUNCTION:
+            REQUIRE(name == "VARIABLE_FUNCTION");
+            break;
+
         case csspp::node_type_t::WHITESPACE:
             REQUIRE(name == "WHITESPACE");
             break;
 
-        case csspp::node_type_t::CHARSET:
-            REQUIRE(name == "CHARSET");
+        // second part
+        case csspp::node_type_t::AN_PLUS_B:
+            REQUIRE(name == "AN_PLUS_B");
+            break;
+
+        case csspp::node_type_t::ARG:
+            REQUIRE(name == "ARG");
             break;
 
         case csspp::node_type_t::COMPONENT_VALUE:
@@ -637,24 +762,8 @@ TEST_CASE("Node output", "[node] [output]")
             REQUIRE(name == "DECLARATION");
             break;
 
-        case csspp::node_type_t::FONTFACE:
-            REQUIRE(name == "FONTFACE");
-            break;
-
-        case csspp::node_type_t::KEYFRAME:
-            REQUIRE(name == "KEYFRAME");
-            break;
-
-        case csspp::node_type_t::KEYFRAMES:
-            REQUIRE(name == "KEYFRAMES");
-            break;
-
         case csspp::node_type_t::LIST:
             REQUIRE(name == "LIST");
-            break;
-
-        case csspp::node_type_t::MEDIA:
-            REQUIRE(name == "MEDIA");
             break;
 
         case csspp::node_type_t::max_type:
@@ -697,8 +806,20 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"ADD\".\n");
             break;
 
+        case csspp::node_type_t::AND:
+            REQUIRE_ERRORS("test.css(1): error: node name \"AND\".\n");
+            break;
+
+        case csspp::node_type_t::ASSIGNMENT:
+            REQUIRE_ERRORS("test.css(1): error: node name \"ASSIGNMENT\".\n");
+            break;
+
         case csspp::node_type_t::AT_KEYWORD:
             REQUIRE_ERRORS("test.css(1): error: node name \"AT_KEYWORD\".\n");
+            break;
+
+        case csspp::node_type_t::BOOLEAN:
+            REQUIRE_ERRORS("test.css(1): error: node name \"BOOLEAN\".\n");
             break;
 
         case csspp::node_type_t::CDC:
@@ -725,6 +846,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"COLON\".\n");
             break;
 
+        case csspp::node_type_t::COLOR:
+            REQUIRE_ERRORS("test.css(1): error: node name \"COLOR\".\n");
+            break;
+
         case csspp::node_type_t::COLUMN:
             REQUIRE_ERRORS("test.css(1): error: node name \"COLUMN\".\n");
             break;
@@ -735,6 +860,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
 
         case csspp::node_type_t::COMMENT:
             REQUIRE_ERRORS("test.css(1): error: node name \"COMMENT\".\n");
+            break;
+
+        case csspp::node_type_t::CONDITIONAL:
+            REQUIRE_ERRORS("test.css(1): error: node name \"CONDITIONAL\".\n");
             break;
 
         case csspp::node_type_t::DASH_MATCH:
@@ -769,6 +898,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"FUNCTION\".\n");
             break;
 
+        case csspp::node_type_t::GREATER_EQUAL:
+            REQUIRE_ERRORS("test.css(1): error: node name \"GREATER_EQUAL\".\n");
+            break;
+
         case csspp::node_type_t::GREATER_THAN:
             REQUIRE_ERRORS("test.css(1): error: node name \"GREATER_THAN\".\n");
             break;
@@ -789,8 +922,24 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"INTEGER\".\n");
             break;
 
+        case csspp::node_type_t::LESS_EQUAL:
+            REQUIRE_ERRORS("test.css(1): error: node name \"LESS_EQUAL\".\n");
+            break;
+
+        case csspp::node_type_t::LESS_THAN:
+            REQUIRE_ERRORS("test.css(1): error: node name \"LESS_THAN\".\n");
+            break;
+
+        case csspp::node_type_t::MODULO:
+            REQUIRE_ERRORS("test.css(1): error: node name \"MODULO\".\n");
+            break;
+
         case csspp::node_type_t::MULTIPLY:
             REQUIRE_ERRORS("test.css(1): error: node name \"MULTIPLY\".\n");
+            break;
+
+        case csspp::node_type_t::NOT_EQUAL:
+            REQUIRE_ERRORS("test.css(1): error: node name \"NOT_EQUAL\".\n");
             break;
 
         case csspp::node_type_t::OPEN_CURLYBRACKET:
@@ -811,6 +960,14 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
 
         case csspp::node_type_t::PERIOD:
             REQUIRE_ERRORS("test.css(1): error: node name \"PERIOD\".\n");
+            break;
+
+        case csspp::node_type_t::PLACEHOLDER:
+            REQUIRE_ERRORS("test.css(1): error: node name \"PLACEHOLDER\".\n");
+            break;
+
+        case csspp::node_type_t::POWER:
+            REQUIRE_ERRORS("test.css(1): error: node name \"POWER\".\n");
             break;
 
         case csspp::node_type_t::PRECEDED:
@@ -861,12 +1018,21 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"VARIABLE\".\n");
             break;
 
+        case csspp::node_type_t::VARIABLE_FUNCTION:
+            REQUIRE_ERRORS("test.css(1): error: node name \"VARIABLE_FUNCTION\".\n");
+            break;
+
         case csspp::node_type_t::WHITESPACE:
             REQUIRE_ERRORS("test.css(1): error: node name \"WHITESPACE\".\n");
             break;
 
-        case csspp::node_type_t::CHARSET:
-            REQUIRE_ERRORS("test.css(1): error: node name \"CHARSET\".\n");
+        // second part
+        case csspp::node_type_t::AN_PLUS_B:
+            REQUIRE_ERRORS("test.css(1): error: node name \"AN_PLUS_B\".\n");
+            break;
+
+        case csspp::node_type_t::ARG:
+            REQUIRE_ERRORS("test.css(1): error: node name \"ARG\".\n");
             break;
 
         case csspp::node_type_t::COMPONENT_VALUE:
@@ -877,24 +1043,8 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"DECLARATION\".\n");
             break;
 
-        case csspp::node_type_t::FONTFACE:
-            REQUIRE_ERRORS("test.css(1): error: node name \"FONTFACE\".\n");
-            break;
-
-        case csspp::node_type_t::KEYFRAME:
-            REQUIRE_ERRORS("test.css(1): error: node name \"KEYFRAME\".\n");
-            break;
-
-        case csspp::node_type_t::KEYFRAMES:
-            REQUIRE_ERRORS("test.css(1): error: node name \"KEYFRAMES\".\n");
-            break;
-
         case csspp::node_type_t::LIST:
             REQUIRE_ERRORS("test.css(1): error: node name \"LIST\".\n");
-            break;
-
-        case csspp::node_type_t::MEDIA:
-            REQUIRE_ERRORS("test.css(1): error: node name \"MEDIA\".\n");
             break;
 
         case csspp::node_type_t::max_type:
@@ -955,7 +1105,7 @@ TEST_CASE("Print nodes", "[node] [output]")
 "  INTEGER \"\" I:123\n"
 "  STRING \"bear\"\n"
 "  DECIMAL_NUMBER \"\" D:100\n"
-"  AT_KEYWORD \"@-char\"\n"
+"  AT_KEYWORD \"@-char\" I:0\n"
 "    INTEGER \"\" I:409\n"
 "    STRING \"rabbit\"\n"
 "    DECIMAL_NUMBER \"\" D:208\n"

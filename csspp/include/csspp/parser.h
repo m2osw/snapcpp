@@ -19,8 +19,6 @@
 
 #include "csspp/lexer.h"
 
-#include <istream>
-
 namespace csspp
 {
 
@@ -36,7 +34,8 @@ public:
     node::pointer_t         component_value_list();
     node::pointer_t         component_value();
 
-    static bool             is_variable_set(node::pointer_t n);
+    static bool             is_variable_set(node::pointer_t n, bool with_block);
+    static bool             is_nested_declaration(node::pointer_t n);
 
 private:
     node::pointer_t         next_token();
@@ -48,14 +47,12 @@ private:
     node::pointer_t         qualified_rule(node::pointer_t n);
     node::pointer_t         declaration_list(node::pointer_t n);
     node::pointer_t         declaration(node::pointer_t identifier);
-    node::pointer_t         component_value_list(node::pointer_t n);
+    node::pointer_t         component_value_list(node::pointer_t n, int flags);
     node::pointer_t         component_value(node::pointer_t n);
     node::pointer_t         block(node::pointer_t block, node_type_t closing_token);
 
     lexer::pointer_t        f_lexer;
     node::pointer_t         f_last_token;
-    bool                    f_declaration = false;
-    bool                    f_stop_on_block = false;
 };
 
 } // namespace csspp

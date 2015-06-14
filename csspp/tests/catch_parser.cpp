@@ -64,16 +64,17 @@ TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"COMPONENT_VALUE\n"
-"  IDENTIFIER \"body\"\n"
-"  OPEN_CURLYBRACKET\n"
-"    IDENTIFIER \"background\"\n"
-"    WHITESPACE\n"
-"    COLON\n"
-"    WHITESPACE\n"
-"    IDENTIFIER \"white\"\n"
-"    WHITESPACE\n"
-"    URL \"/images/background.png\"\n"
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"background\"\n"
+"      WHITESPACE\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"white\"\n"
+"      WHITESPACE\n"
+"      URL \"/images/background.png\"\n"
 
             );
 
@@ -144,44 +145,215 @@ TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"COMPONENT_VALUE\n"
-"  IDENTIFIER \"div\"\n"
-"  OPEN_CURLYBRACKET\n"
-"    COMPONENT_VALUE\n"
-"      IDENTIFIER \"background-color\"\n"
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"background-color\"\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        FUNCTION \"rgba\"\n"
+"          INTEGER \"\" I:33\n"
+"          COMMA\n"
+"          WHITESPACE\n"
+"          INTEGER \"\" I:77\n"
+"          COMMA\n"
+"          WHITESPACE\n"
+"          INTEGER \"\" I:99\n"
+"          COMMA\n"
+"          WHITESPACE\n"
+"          DECIMAL_NUMBER \"\" D:0.3\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        FUNCTION \"rgba\"\n"
+"          INTEGER \"\" I:0\n"
+"          COMMA\n"
+"          WHITESPACE\n"
+"          INTEGER \"\" I:3\n"
+"          COMMA\n"
+"          WHITESPACE\n"
+"          INTEGER \"\" I:5\n"
+"          COMMA\n"
+"          WHITESPACE\n"
+"          DECIMAL_NUMBER \"\" D:0.95\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"font-style\"\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"italic\"\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
+
+    // a comment, a simple rule, a comment
+    {
+        std::stringstream ss;
+        ss << "// $Id: ...$\n"
+           << "div { border: 1px; }\n"
+           << "/* @preserve Copyright (c) 2015  Made to Order Software Corp. */";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"border\"\n"
 "      COLON\n"
 "      WHITESPACE\n"
-"      FUNCTION \"rgba\"\n"
-"        INTEGER \"\" I:33\n"
-"        COMMA\n"
-"        WHITESPACE\n"
-"        INTEGER \"\" I:77\n"
-"        COMMA\n"
-"        WHITESPACE\n"
-"        INTEGER \"\" I:99\n"
-"        COMMA\n"
-"        WHITESPACE\n"
-"        DECIMAL_NUMBER \"\" D:0.3\n"
-"    COMPONENT_VALUE\n"
-"      IDENTIFIER \"color\"\n"
+"      INTEGER \"px\" I:1\n"
+"  COMMENT \"@preserve Copyright (c) 2015  Made to Order Software Corp.\" I:1\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
+
+    // one empty C-like comment
+    {
+        std::stringstream ss;
+        ss << "div { /**/ border: 1px; /**/ }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"border\"\n"
 "      COLON\n"
 "      WHITESPACE\n"
-"      FUNCTION \"rgba\"\n"
-"        INTEGER \"\" I:0\n"
-"        COMMA\n"
-"        WHITESPACE\n"
-"        INTEGER \"\" I:3\n"
-"        COMMA\n"
-"        WHITESPACE\n"
-"        INTEGER \"\" I:5\n"
-"        COMMA\n"
-"        WHITESPACE\n"
-"        DECIMAL_NUMBER \"\" D:0.95\n"
-"    COMPONENT_VALUE\n"
-"      IDENTIFIER \"font-style\"\n"
+"      INTEGER \"px\" I:1\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
+
+    // multiple empty C-like comments
+    {
+        std::stringstream ss;
+        ss << "div { /**/ /**/ /**/ border: 1px; /**/ /**/ /**/ }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"border\"\n"
 "      COLON\n"
 "      WHITESPACE\n"
-"      IDENTIFIER \"italic\"\n"
+"      INTEGER \"px\" I:1\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
+
+    // cascading fields
+    {
+        std::stringstream ss;
+        ss << "div {\n"
+           << "  font: { family: ivory; size: 16pt; style: italic };\n"
+           << "  border: { color: #112389; width: 1px } /**/ ;\n"
+           << "  color: /* text color */ white;\n"
+           << "}";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Result is: [" << *n << "]\n";
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"font\"\n"
+"        COLON\n"
+"        OPEN_CURLYBRACKET\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"family\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"ivory\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"size\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            INTEGER \"pt\" I:16\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"style\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"italic\"\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"border\"\n"
+"        COLON\n"
+"        OPEN_CURLYBRACKET\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"color\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            HASH \"112389\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"width\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:1\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"white\"\n"
 
             );
 
@@ -201,7 +373,6 @@ TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
 
         csspp::parser p(l);
 
-        // rule list does not like <!-- and -->
         csspp::node::pointer_t n(p.stylesheet());
 
 //std::cerr << "Result is: [" << *n << "]\n";
@@ -220,7 +391,6 @@ TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
 
         csspp::parser p(l);
 
-        // rule list does not like <!-- and -->
         csspp::node::pointer_t n(p.stylesheet());
 
 //std::cerr << "Result is: [" << *n << "]\n";
@@ -242,7 +412,6 @@ TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
 
         csspp::parser p(l);
 
-        // rule list does not like <!-- and -->
         csspp::node::pointer_t n(p.stylesheet());
 
 //std::cerr << "Result is: [" << *n << "]\n";
@@ -264,7 +433,6 @@ TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
 
         csspp::parser p(l);
 
-        // rule list does not like <!-- and -->
         csspp::node::pointer_t n(p.stylesheet());
 
 //std::cerr << "Result is: [" << *n << "]\n";
@@ -358,7 +526,7 @@ TEST_CASE("Simple Rules", "[parser] [rule-list]")
 "      COLON\n"
 "      WHITESPACE\n"
 "      IDENTIFIER \"blue\"\n"
-"  AT_KEYWORD \"media\"\n"
+"  AT_KEYWORD \"media\" I:0\n"
 "    IDENTIFIER \"screen\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"viewport\"\n"
@@ -384,6 +552,39 @@ TEST_CASE("Simple Rules", "[parser] [rule-list]")
 
         // no error left over
         REQUIRE_ERRORS("");
+    }
+}
+
+TEST_CASE("Nested Rules", "[parser] [rule-list]")
+{
+    // at rule inside another at rule
+    {
+        std::stringstream ss;
+        ss << "@if true { @message \"blah\"; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.rule_list());
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"if\" I:0\n"
+"    IDENTIFIER \"true\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      AT_KEYWORD \"message\" I:0\n"
+"        STRING \"blah\"\n"
+
+            );
     }
 }
 
@@ -616,7 +817,7 @@ TEST_CASE("One Simple Rule", "[parser] [rule]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"AT_KEYWORD \"media\"\n"
+"AT_KEYWORD \"media\" I:0\n"
 "  IDENTIFIER \"screen\"\n"
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"viewport\"\n"
@@ -925,7 +1126,7 @@ TEST_CASE("Simple Component Values", "[parser] [component-value]")
         out << *n;
         REQUIRE_TREES(out.str(),
 
-"AT_KEYWORD \"media\"\n"
+"AT_KEYWORD \"media\" I:0\n"
 "  IDENTIFIER \"screen\"\n"
 "  OPEN_CURLYBRACKET\n"
 "    IDENTIFIER \"viewport\"\n"
@@ -1074,7 +1275,7 @@ TEST_CASE("Simple One Component Value", "[parser] [component-value]")
 
             "WHITESPACE\n",
 
-            "AT_KEYWORD \"media\"\n",
+            "AT_KEYWORD \"media\" I:0\n",
 
             "WHITESPACE\n",
 
@@ -1297,7 +1498,7 @@ TEST_CASE("Simple Declarations", "[parser] [declaration]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"  AT_KEYWORD \"enhanced\"\n"
+"  AT_KEYWORD \"enhanced\" I:0\n"
 "    IDENTIFIER \"capabilities\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      IDENTIFIER \"background\"\n"
@@ -1549,7 +1750,7 @@ TEST_CASE("Multi-line, multi-level stylesheet", "[parser] [rules]")
 "          COLON\n"
 "          WHITESPACE\n"
 "          IDENTIFIER \"teal\"\n"
-"  AT_KEYWORD \"supports\"\n"
+"  AT_KEYWORD \"supports\" I:0\n"
 "    OPEN_PARENTHESIS\n"
 "      IDENTIFIER \"background-color\"\n"
 "      WHITESPACE\n"

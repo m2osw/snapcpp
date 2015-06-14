@@ -19,7 +19,6 @@
 
 #include "csspp/csspp.h"
 
-#include <cstdint>
 #include <string>
 
 namespace csspp

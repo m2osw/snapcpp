@@ -91,16 +91,43 @@ node::pointer_t lexer::next_token()
             return node::pointer_t(new node(node_type_t::COMMA, f_start_position));
 
         case ':':
-            return node::pointer_t(new node(node_type_t::COLON, f_start_position));
+            {
+                wide_char_t const n(getc());
+                if(n == '=')
+                {
+                    return node::pointer_t(new node(node_type_t::ASSIGNMENT, f_start_position));
+                }
+                ungetc(n);
+                return node::pointer_t(new node(node_type_t::COLON, f_start_position));
+            }
 
         case ';':
             return node::pointer_t(new node(node_type_t::SEMICOLON, f_start_position));
 
         case '!':
-            return node::pointer_t(new node(node_type_t::EXCLAMATION, f_start_position));
+            {
+                wide_char_t const n(getc());
+                if(n == '=')
+                {
+                    return node::pointer_t(new node(node_type_t::NOT_EQUAL, f_start_position));
+                }
+                ungetc(n);
+                return node::pointer_t(new node(node_type_t::EXCLAMATION, f_start_position));
+            }
+
+        case '?':
+            return node::pointer_t(new node(node_type_t::CONDITIONAL, f_start_position));
 
         case '>':
-            return node::pointer_t(new node(node_type_t::GREATER_THAN, f_start_position));
+            {
+                wide_char_t const n(getc());
+                if(n == '=')
+                {
+                    return node::pointer_t(new node(node_type_t::GREATER_EQUAL, f_start_position));
+                }
+                ungetc(n);
+                return node::pointer_t(new node(node_type_t::GREATER_THAN, f_start_position));
+            }
 
         case '(':
             return node::pointer_t(new node(node_type_t::OPEN_PARENTHESIS, f_start_position));
@@ -133,6 +160,17 @@ node::pointer_t lexer::next_token()
             }
             //NOTREACHED
 
+        case '&':
+            {
+                wide_char_t const n(getc());
+                if(n == '&')
+                {
+                    return node::pointer_t(new node(node_type_t::AND, f_start_position));
+                }
+                ungetc(n);
+                return node::pointer_t(new node(node_type_t::REFERENCE, f_start_position));
+            }
+
         case '<':
             {
                 wide_char_t const n(getc());
@@ -150,13 +188,14 @@ node::pointer_t lexer::next_token()
                     }
                     ungetc(p);
                 }
+                else if(n == '=')
+                {
+                    return node::pointer_t(new node(node_type_t::LESS_EQUAL, f_start_position));
+                }
                 ungetc(n);
-                // character necessary by itself?
+                return node::pointer_t(new node(node_type_t::LESS_THAN, f_start_position));
             }
             break;
-
-        case '&':
-            return node::pointer_t(new node(node_type_t::REFERENCE, f_start_position));
 
         case '+':
             {
@@ -256,6 +295,10 @@ node::pointer_t lexer::next_token()
                 {
                     return node::pointer_t(new node(node_type_t::SUBSTRING_MATCH, f_start_position));
                 }
+                if(n == '*')
+                {
+                    return node::pointer_t(new node(node_type_t::POWER, f_start_position));
+                }
                 ungetc(n);
                 return node::pointer_t(new node(node_type_t::MULTIPLY, f_start_position));
             }
@@ -293,11 +336,23 @@ node::pointer_t lexer::next_token()
                 wide_char_t const n(getc());
                 if(n == '*')
                 {
-                    return comment(true);
+                    node::pointer_t cn(comment(true));
+                    if(cn)
+                    {
+                        return cn;
+                    }
+                    // silently let it go
+                    continue;
                 }
                 else if(n == '/')
                 {
-                    return comment(false);
+                    node::pointer_t cn(comment(false));
+                    if(cn)
+                    {
+                        return cn;
+                    }
+                    // silently let it go
+                    continue;
                 }
                 ungetc(n);
                 return node::pointer_t(new node(node_type_t::DIVIDE, f_start_position));
@@ -338,8 +393,24 @@ node::pointer_t lexer::next_token()
             return number(c);
 
         case '#':
-            return hash();
+            {
+                node::pointer_t n(hash());
+                if(n)
+                {
+                    return n;
+                }
+                continue;
+            }
 
+        case '%':
+            {
+                wide_char_t const n(getc());
+                if(!is_start_identifier(n))
+                {
+                    return node::pointer_t(new node(node_type_t::MODULO, f_start_position));
+                }
+                ungetc(n);
+            }
         case '\\':
         case '@':
             {
@@ -728,7 +799,12 @@ node::pointer_t lexer::identifier(wide_char_t c)
     std::string id;
     node_type_t type(node_type_t::IDENTIFIER);
 
-    if(c == '@')
+    if(c == '%')
+    {
+        type = node_type_t::PLACEHOLDER;
+        c = getc();
+    }
+    else if(c == '@')
     {
         type = node_type_t::AT_KEYWORD;
         c = getc();
@@ -1119,6 +1195,12 @@ node::pointer_t lexer::hash()
         str += wctomb(c);
     }
 
+    if(str.empty())
+    {
+        error::instance() << f_start_position << "'#' by itself is not valid." << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+    }
+
     node::pointer_t n(new node(node_type_t::HASH, f_start_position));
     n->set_string(str);
     return n;
@@ -1262,13 +1344,19 @@ node::pointer_t lexer::comment(bool c_comment)
         str.pop_back();
     }
 
-    // comments are kept by default, but only those marked with the
+    //
+    // comments are kept only if marked with the special @-keyword:
     //   @preserve
-    // are output in the final version
-    node::pointer_t n(new node(node_type_t::COMMENT, f_start_position));
-    n->set_string(str);
-    n->set_integer(c_comment ? 1 : 0); // make sure to keep the type of comment
-    return n;
+    //
+    if(str.find("@preserve") != std::string::npos)
+    {
+        node::pointer_t n(new node(node_type_t::COMMENT, f_start_position));
+        n->set_string(str);
+        n->set_integer(c_comment ? 1 : 0); // make sure to keep the type of comment
+        return n;
+    }
+
+    return node::pointer_t();
 }
 
 node::pointer_t lexer::unicode_range(wide_char_t d)
@@ -1380,10 +1468,22 @@ node::pointer_t lexer::variable(wide_char_t c)
         }
     }
 
-    ungetc(c);
+    node::pointer_t n;
+
+    if(c == '(')
+    {
+        // in this case we have a function call
+        // functions can be defined using @mixin func(...) { ... }
+        n.reset(new node(node_type_t::VARIABLE_FUNCTION, f_start_position));
+    }
+    else
+    {
+        ungetc(c);
+
+        n.reset(new node(node_type_t::VARIABLE, f_start_position));
+    }
 
     // we got a variable
-    node::pointer_t n(new node(node_type_t::VARIABLE, f_start_position));
     n->set_string(var);
     return n;
 }

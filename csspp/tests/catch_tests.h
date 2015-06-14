@@ -38,10 +38,13 @@ public:
 
     static trace_error &    instance();
 
+    void                    set_verbose();
+
     void                    expected_error(std::string const & msg, char const * filename, int line);
 
 private:
     std::stringstream       m_error_message;
+    bool                    m_verbose = false;
 };
 
 #define REQUIRE_ERRORS( msg ) ::csspp_test::trace_error::instance().expected_error((msg), __FILE__, __LINE__)
@@ -67,6 +70,8 @@ private:
 // this compares two resulting trees, line by line
 void compare(std::string const & generated, std::string const & expected, char const * filename, int line);
 #define REQUIRE_TREES( a, b ) ::csspp_test::compare((a), (b), __FILE__, __LINE__)
+
+std::string get_script_path();
 
 } // csspp_test namespace
 #endif

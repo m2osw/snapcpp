@@ -79,6 +79,7 @@ export ADVGETOPT_INCLUDE_DIR=$SOURCE_PATH/../BUILD/dist/include
 export ADVGETOPT_LIBRARY=$SOURCE_PATH/../BUILD/dist/lib
 cmake -DCMAKE_INSTALL_PREFIX:PATH="$SOURCE_PATH/$BUILD_PATH/dist" \
       -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_MODULE_PATH=$SOURCE_PATH/../snapCMakeModules/Modules \
       -Dcsspp_project_COVERAGE:BOOL=ON \
           ../../..
 echo
@@ -111,7 +112,7 @@ else
         # Do it all, but not published
         tests/csspp_tests
     else
-        tests/csspp_tests $1
+        tests/csspp_tests "$1"
     fi
     # just in case, remove the log file if there is one
     rm -f test_log.txt

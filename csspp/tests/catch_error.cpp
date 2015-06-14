@@ -51,6 +51,10 @@ TEST_CASE("Error names", "[error]")
 
         switch(e)
         {
+        case csspp::error_mode_t::ERROR_DEBUG:
+            REQUIRE(name == "debug");
+            break;
+
         case csspp::error_mode_t::ERROR_DEC:
             REQUIRE(name == "dec");
             break;
@@ -65,6 +69,10 @@ TEST_CASE("Error names", "[error]")
 
         case csspp::error_mode_t::ERROR_HEX:
             REQUIRE(name == "hex");
+            break;
+
+        case csspp::error_mode_t::ERROR_INFO:
+            REQUIRE(name == "info");
             break;
 
         case csspp::error_mode_t::ERROR_WARNING:

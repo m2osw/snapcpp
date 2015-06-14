@@ -1681,8 +1681,11 @@
  *
  * \note
  * The lexer makes use of the csspp::unicode_range_t class to record these
- * values in a \ref unicode-range "UNICODE_RANGE" node. The range is compressed and saved
- * in one 64 bit number.
+ * values in a \ref unicode-range "UNICODE_RANGE" node. The range is
+ * then compressed and saved in one 64 bit number.
+ *
+ * A Unicode range is used by @font-face definitions to limit the number
+ * of characters to be loaded for a page.
  *
  * \section include-match Include Match "INCLUDE_MATCH" (CSS 3)
  *

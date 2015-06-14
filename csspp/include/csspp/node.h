@@ -19,7 +19,6 @@
 
 #include <csspp/error.h>
 
-#include <string>
 #include <map>
 #include <memory>
 #include <vector>
@@ -27,22 +26,34 @@
 namespace csspp
 {
 
+enum boolean_t
+{
+    INVALID = -1,
+    FALSE = 0,
+    TRUE = 1
+};
+
 enum class node_type_t
 {
     UNKNOWN,
 
     // basic token
     ADD,                    // for selectors: E + F, F is the next sibling of E
+    AND,
+    ASSIGNMENT,
     AT_KEYWORD,
+    BOOLEAN,
     CDC,
     CDO,
     CLOSE_CURLYBRACKET,
     CLOSE_PARENTHESIS,
     CLOSE_SQUAREBRACKET,
     COLON,                  // for selectors: pseudo-class, E:first-child
+    COLOR,                  // in expressions, #RGB or rgb(R,G,B)
     COLUMN,
     COMMA,
     COMMENT,
+    CONDITIONAL,
     DASH_MATCH,             // for selectors: dash match E[land|="en"]
     DECIMAL_NUMBER,
     //DIMENSION, -- DECIMAL_NUMBER and INTEGER with a string are dimensions
@@ -52,21 +63,28 @@ enum class node_type_t
     EQUAL,                  // for selectors: exact match E[foo="bar"]
     EXCLAMATION,
     FUNCTION,
+    GREATER_EQUAL,
     GREATER_THAN,           // for selectors: E > F, F is a child of E
     HASH,
     IDENTIFIER,
     INCLUDE_MATCH,          // for selectors: include match E[foo~="bar"]
     INTEGER,
-    MULTIPLY,
+    LESS_EQUAL,
+    LESS_THAN,
+    MODULO,
+    MULTIPLY,               // for selectors: '*'
+    NOT_EQUAL,
     OPEN_CURLYBRACKET,      // holds the children of '{'
     OPEN_PARENTHESIS,       // holds the children of '('
     OPEN_SQUAREBRACKET,     // holds the children of '['
     PERCENT,
     PERIOD,                 // for selectors: E.name, equivalent to E[class~='name']
+    PLACEHOLDER,            // extended selectors: E %name or E%name
+    POWER,
     PRECEDED,               // for selectors: E ~ F, F is a sibling after E
     PREFIX_MATCH,           // for selectors: prefix match E[foo^="bar"]
     REFERENCE,
-    SCOPE,
+    SCOPE,                  // '|' used in 'ns|E'
     SEMICOLON,
     STRING,
     SUBSTRING_MATCH,        // for selectors: substring match E[foo*="bar"]
@@ -75,42 +93,53 @@ enum class node_type_t
     UNICODE_RANGE,
     URL,
     VARIABLE,
+    VARIABLE_FUNCTION,
     WHITESPACE,
 
     // composed tokens
-    CHARSET,                // @charset = @charset <string> ;
+    AN_PLUS_B,              // An+B for nth-child() functions
+    ARG,                    // broken up comma separated elements end up in lists of arguments (for functions and qualified rule selectors)
     COMPONENT_VALUE,        // "token token token ..." representing a component-value-list
     DECLARATION,            // <id> ':' ...
-    FONTFACE,               // @font-face { <declaration-list> }
-    KEYFRAME,               // <keyframe-selector> { <declaration-list> }
-    KEYFRAMES,              // @keyframes <keyframes-name> { <rule-list> }
     LIST,                   // bare "token token token ..." until better qualified
-    MEDIA,                  // @media <media-query-list> { <stylesheet> }
 
     max_type
 };
+
+// useful for quick switchs
+int32_t constexpr mix_node_types(node_type_t a, node_type_t b)
+{
+    return static_cast<int32_t>(a) * 65536 + static_cast<int32_t>(b);
+}
 
 class node
 {
 public:
     typedef std::shared_ptr<node>   pointer_t;
+    static size_t const             npos = static_cast<size_t>(-1);
 
                         node(node_type_t const type, position const & pos);
 
     node_type_t         get_type() const;
     bool                is(node_type_t const type) const;
+    boolean_t           to_boolean() const;
 
     position const &    get_position() const;
     std::string const & get_string() const;
     void                set_string(std::string const & str);
     integer_t           get_integer() const;
     void                set_integer(integer_t integer);
+    bool                get_boolean() const;
+    void                set_boolean(bool integer);
     decimal_number_t    get_decimal_number() const;
     void                set_decimal_number(decimal_number_t decimal_number);
 
     bool                empty() const;
+    void                clear();
     size_t              size() const;
+    size_t              child_position(pointer_t child);
     void                add_child(pointer_t child);
+    void                insert_child(size_t idx, pointer_t child);
     void                remove_child(pointer_t child);
     void                remove_child(size_t idx);
     pointer_t           get_child(size_t idx) const;
@@ -118,9 +147,11 @@ public:
     void                take_over_children_of(pointer_t n);
     void                replace_child(pointer_t o, pointer_t n);
 
+    void                reset_variables();
     void                set_variable(std::string const & name, pointer_t value);
     pointer_t           get_variable(std::string const & name);
 
+    std::string         to_string() const;
     void                display(std::ostream & out, uint32_t indent) const;
 
 private:
@@ -129,6 +160,7 @@ private:
 
     node_type_t         f_type = node_type_t::UNKNOWN;
     position            f_position;
+    bool                f_boolean = false;
     integer_t           f_integer = 0;
     decimal_number_t    f_decimal_number = 0.0;
     std::string         f_string;

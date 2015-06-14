@@ -115,7 +115,7 @@ wide_char_t unicode_range_t::get_end() const
     return range_to_end(f_range);
 }
 
-std::string unicode_range_t::to_string()
+std::string unicode_range_t::to_string() const
 {
     wide_char_t start(range_to_start(f_range));
     wide_char_t end(range_to_end(f_range));

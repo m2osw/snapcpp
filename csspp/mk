@@ -10,12 +10,12 @@ then
 	make -C ../BUILD/csspp/
 	shift
 	TEST="$1"
-	shift
 	if test -n "$TEST"
 	then
+		shift
 		echo run with \"$TEST\"
 	fi
-	../BUILD/csspp/tests/csspp_tests "$TEST" $*
+	../BUILD/csspp/tests/csspp_tests --scripts scripts "$TEST" $*
 elif test "$1" = "-i"
 then
 	make -C ../BUILD/csspp install

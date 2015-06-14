@@ -41,6 +41,7 @@ add_executable( ${PROJECT_NAME}
     catch_tests.cpp
 
     catch_color.cpp
+    catch_compiler.cpp
     catch_csspp.cpp
     catch_error.cpp
     catch_lexer.cpp

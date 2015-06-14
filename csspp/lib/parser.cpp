@@ -54,6 +54,14 @@
 namespace csspp
 {
 
+namespace
+{
+
+int const component_value_flag_return_on_semi_colon  = 0x0001;
+int const component_value_flag_return_on_exclamation = 0x0002;
+
+} // no name namespace
+
 parser::parser(lexer::pointer_t l)
     : f_lexer(l)
 {
@@ -77,14 +85,12 @@ node::pointer_t parser::rule()
 
 node::pointer_t parser::declaration_list()
 {
-    safe_bool_t safe_declaration(f_declaration);
-
     return declaration_list(f_last_token);
 }
 
 node::pointer_t parser::component_value_list()
 {
-    return component_value_list(f_last_token);
+    return component_value_list(f_last_token, component_value_flag_return_on_semi_colon);
 }
 
 node::pointer_t parser::component_value()
@@ -129,7 +135,12 @@ node::pointer_t parser::stylesheet(node::pointer_t n)
             break;
         }
 
-        if(n->is(node_type_t::AT_KEYWORD))
+        if(n->is(node_type_t::COMMENT))
+        {
+            result->add_child(n);
+            next_token();
+        }
+        else if(n->is(node_type_t::AT_KEYWORD))
         {
             result->add_child(at_rule(n));
         }
@@ -140,11 +151,9 @@ node::pointer_t parser::stylesheet(node::pointer_t n)
         }
     }
 
-    if(result->size() == 1)
-    {
-        return result->get_last_child();
-    }
-
+    // we always return the LIST because it starts with @import (or rather
+    // is just one @import) or $var then it needs to be replaced and we
+    // could not do that if those were root nodes
     return result;
 }
 
@@ -199,10 +208,8 @@ node::pointer_t parser::rule(node::pointer_t n)
 
 node::pointer_t parser::at_rule(node::pointer_t at_keyword)
 {
-    safe_bool_t stop_on_first_block(f_stop_on_block);
-
     // the '@' was already eaten, it will be our result
-    node::pointer_t n(component_value_list(next_token()));
+    node::pointer_t n(component_value_list(next_token(), component_value_flag_return_on_semi_colon));
 
     if(n->empty())
     {
@@ -213,8 +220,11 @@ node::pointer_t parser::at_rule(node::pointer_t at_keyword)
     else
     {
         node::pointer_t last_child(n->get_last_child());
-        if(!last_child->is(node_type_t::OPEN_CURLYBRACKET)
-        && !last_child->is(node_type_t::SEMICOLON))
+        if(f_last_token->is(node_type_t::SEMICOLON))
+        {
+            next_token();
+        }
+        else if(!last_child->is(node_type_t::OPEN_CURLYBRACKET))
         {
             error::instance() << at_keyword->get_position()
                               << "At '@' command must end with a block or a ';'."
@@ -248,7 +258,7 @@ node::pointer_t parser::qualified_rule(node::pointer_t n)
 
     // a qualified rule is a component value list that
     // ends with a block
-    node::pointer_t result(component_value_list(n));
+    node::pointer_t result(component_value_list(n, 0));
 
     if(result->empty())
     {
@@ -260,7 +270,7 @@ node::pointer_t parser::qualified_rule(node::pointer_t n)
     else
     {
         node::pointer_t last_child(result->get_last_child());
-        if(!is_variable_set(result)
+        if(!is_variable_set(result, false)
         && !last_child->is(node_type_t::OPEN_CURLYBRACKET))
         {
             error::instance() << n->get_position()
@@ -274,8 +284,6 @@ node::pointer_t parser::qualified_rule(node::pointer_t n)
 
 node::pointer_t parser::declaration_list(node::pointer_t n)
 {
-    safe_bool_t safe_declaration(f_declaration);
-
     node::pointer_t result(new node(node_type_t::LIST, n->get_position()));
 
     for(;;)
@@ -355,7 +363,7 @@ node::pointer_t parser::declaration(node::pointer_t identifier)
     if(!n->is(node_type_t::EXCLAMATION))
     {
         // a component value
-        result->add_child(component_value_list(n));
+        result->add_child(component_value_list(n, component_value_flag_return_on_semi_colon | component_value_flag_return_on_exclamation));
         n = f_last_token;
     }
 
@@ -394,7 +402,7 @@ node::pointer_t parser::declaration(node::pointer_t identifier)
     return result;
 }
 
-node::pointer_t parser::component_value_list(node::pointer_t n)
+node::pointer_t parser::component_value_list(node::pointer_t n, int flags)
 {
     node::pointer_t result(new node(node_type_t::LIST, n->get_position()));
 
@@ -409,13 +417,18 @@ node::pointer_t parser::component_value_list(node::pointer_t n)
         || n->is(node_type_t::CLOSE_PARENTHESIS)
         || n->is(node_type_t::CLOSE_SQUAREBRACKET)
         || n->is(node_type_t::CLOSE_CURLYBRACKET)
-        || n->is(node_type_t::AT_KEYWORD)
-        || (f_declaration && n->is(node_type_t::EXCLAMATION))
-        || (f_declaration && n->is(node_type_t::SEMICOLON)) // declarations handle the semi-colon differently
+        || ((flags & component_value_flag_return_on_semi_colon) && n->is(node_type_t::SEMICOLON)) // declarations handle the semi-colon differently
+        || ((flags & component_value_flag_return_on_exclamation) != 0 && n->is(node_type_t::EXCLAMATION))
         || n->is(node_type_t::CDO)
         || n->is(node_type_t::CDC))
         {
             break;
+        }
+
+        if(n->is(node_type_t::AT_KEYWORD))
+        {
+            list->add_child(at_rule(n));
+            continue;
         }
 
         if(n->is(node_type_t::SEMICOLON))
@@ -423,11 +436,11 @@ node::pointer_t parser::component_value_list(node::pointer_t n)
             next_token();
 
             // remove leading and trailing whitespace, no need really
-            if(!list->empty() && list->get_child(0)->is(node_type_t::WHITESPACE))
+            while(!list->empty() && list->get_child(0)->is(node_type_t::WHITESPACE))
             {
                 list->remove_child(0);
             }
-            if(!list->empty() && list->get_last_child()->is(node_type_t::WHITESPACE))
+            while(!list->empty() && list->get_last_child()->is(node_type_t::WHITESPACE))
             {
                 list->remove_child(list->size() - 1);
             }
@@ -436,7 +449,7 @@ node::pointer_t parser::component_value_list(node::pointer_t n)
             // semicolon; a qualified rule normally requires a block to
             // end, but we have a special case to allow definition of
             // variables anywhere
-            if(is_variable_set(list))
+            if(is_variable_set(list, false))
             {
                 break;
             }
@@ -464,11 +477,54 @@ node::pointer_t parser::component_value_list(node::pointer_t n)
         {
             // in this special case, we read the {}-block and return
             // (i.e. end of an @-rule, etc.)
+            //
+            // however, to support the full SASS syntax we need to
+            // support two special cases:
+            //
+            //    $var: { some-value: here; };
+            //    font: { family: strange; style: italic };
+            //
+            // For those special entries, we must avoid returning
+            // when we find a block (darn! this grammar...)
+            //
+            // Note that the second test is done after we read the block
+            // since the presence of the block is checked in case of the
+            // nested declaration.
+            //
             list->add_child(component_value(n));
-            break;
-        }
 
-        list->add_child(component_value(n));
+            // remove leading and trailing whitespace, no need really
+            // (to make sure the tests below work as expected)
+            if(!list->empty() && list->get_child(0)->is(node_type_t::WHITESPACE))
+            {
+                list->remove_child(0);
+            }
+
+            // return or that were sub-definitions?
+            if(!is_variable_set(list, true)
+            && !is_nested_declaration(list))
+            {
+                break;
+            }
+
+            while(f_last_token->is(node_type_t::WHITESPACE))
+            {
+                next_token();
+            }
+
+            if(!f_last_token->is(node_type_t::SEMICOLON))
+            {
+                // blocks defining a variable or a nested declaration
+                // must be followed by a semi-colon or we have an error
+                error::instance() << list->get_child(0)->get_position()
+                                  << "Variable set to a block and a nested property block must end with a semicolon (;) after said block."
+                                  << error_mode_t::ERROR_ERROR;
+            }
+        }
+        else
+        {
+            list->add_child(component_value(n));
+        }
     }
 
     // remove leading and trailing whitespace, no need really
@@ -508,13 +564,9 @@ node::pointer_t parser::component_value(node::pointer_t n)
         return block(n, node_type_t::CLOSE_SQUAREBRACKET);
     }
 
-    if(n->is(node_type_t::OPEN_PARENTHESIS))
-    {
-        // parse a block up to ')'
-        return block(n, node_type_t::CLOSE_PARENTHESIS);
-    }
-
-    if(n->is(node_type_t::FUNCTION))
+    if(n->is(node_type_t::OPEN_PARENTHESIS)
+    || n->is(node_type_t::FUNCTION)
+    || n->is(node_type_t::VARIABLE_FUNCTION))
     {
         // parse a block up to ')'
         return block(n, node_type_t::CLOSE_PARENTHESIS);
@@ -528,7 +580,7 @@ node::pointer_t parser::component_value(node::pointer_t n)
 
 node::pointer_t parser::block(node::pointer_t b, node_type_t closing_token)
 {
-    node::pointer_t children(component_value_list(next_token()));
+    node::pointer_t children(component_value_list(next_token(), 0));
     b->take_over_children_of(children);
     if(f_last_token->is(node_type_t::WHITESPACE))
     {
@@ -553,7 +605,7 @@ node::pointer_t parser::block(node::pointer_t b, node_type_t closing_token)
     return b;
 }
 
-bool parser::is_variable_set(node::pointer_t n)
+bool parser::is_variable_set(node::pointer_t n, bool with_block)
 {
     // a variable set is at least 3 tokens:
     //    $var:<value>
@@ -563,8 +615,52 @@ bool parser::is_variable_set(node::pointer_t n)
         return false;
     }
 
-    size_t const pos(n->get_child(1)->is(node_type_t::WHITESPACE) ? 2 : 1);
-    return n->get_child(pos)->is(node_type_t::COLON);
+    size_t pos(n->get_child(1)->is(node_type_t::WHITESPACE) ? 2 : 1);
+    if(!n->get_child(pos)->is(node_type_t::COLON))
+    {
+        return false;
+    }
+
+    if(!with_block)
+    {
+        // in this case the shorthand is enough: $var ':'
+        return true;
+    }
+
+    // WARNING: from here the size needs to be checked since the list may
+    //          be smaller than what we are looking for in it
+
+    // in this case we need to have: $var ':' '{'
+    ++pos;
+    if(pos < n->size() && n->get_child(pos)->is(node_type_t::WHITESPACE))
+    {
+        ++pos;
+    }
+
+    return pos < n->size() && n->get_child(pos)->is(node_type_t::OPEN_CURLYBRACKET);
+}
+
+bool parser::is_nested_declaration(node::pointer_t n)
+{
+    // a declaration with a sub-block
+    //    field: '{' ... '}' ';'
+    if(n->size() < 3
+    || !n->get_child(0)->is(node_type_t::IDENTIFIER))
+    {
+        return false;
+    }
+
+    size_t pos(n->get_child(1)->is(node_type_t::WHITESPACE) ? 2 : 1);
+    if(!n->get_child(pos)->is(node_type_t::COLON))
+    {
+        return false;
+    }
+    ++pos;
+    if(n->get_child(pos)->is(node_type_t::WHITESPACE))
+    {
+        ++pos;
+    }
+    return n->get_child(pos)->is(node_type_t::OPEN_CURLYBRACKET);
 }
 
 } // namespace csspp

@@ -19,15 +19,13 @@
 
 #include "csspp/node.h"
 
-#include <istream>
-
 namespace csspp
 {
 
 class compiler
 {
 public:
-                            compiler();
+                            compiler(bool validating = false);
 
     node::pointer_t         get_root() const;
     void                    set_root(node::pointer_t root);
@@ -37,18 +35,68 @@ public:
 
     void                    compile();
 
+    std::string             find_file(std::string const & script_name);
+
 private:
-    typedef std::vector<std::string>        string_vector_t;
+    friend class safe_parents_t;
+    friend class safe_compiler_state_t;
+
+    typedef std::vector<std::string>                string_vector_t;
+    typedef std::map<std::string, node::pointer_t>  validator_script_vector_t;
+
+    class compiler_state_t
+    {
+    public:
+        void                        set_root(node::pointer_t root);
+        node::pointer_t             get_root() const;
+
+        void                        push_parent(node::pointer_t parent);
+        void                        pop_parent();
+        bool                        empty_parents() const;
+        node::pointer_t             get_current_parent() const;
+        node::pointer_t             get_previous_parent() const;
+        node::pointer_t             find_parent_by_type(node_type_t type) const;
+        node::pointer_t             find_parent_by_type(node_type_t type, node::pointer_t starting_here) const;
+
+    private:
+        node::pointer_t             f_root;
+        node_vector_t               f_parents;
+    };
 
     void                    compile(node::pointer_t n);
     void                    compile_component_value(node::pointer_t n);
     void                    compile_qualified_rule(node::pointer_t n);
-    void                    compile_variable(node::pointer_t n);
     void                    compile_declaration(node::pointer_t n);
+    void                    compile_at_keyword(node::pointer_t n);
+    node::pointer_t         compile_expression(node::pointer_t n, bool skip_whitespace);
 
-    node::pointer_t         f_root;
-    string_vector_t         f_paths;
-    node_vector_t           f_parents;
+    void                    replace_import(node::pointer_t n, size_t & idx);
+    void                    handle_mixin(node::pointer_t n);
+
+    void                    replace_variables(node::pointer_t n);
+    void                    set_variable(node::pointer_t n);
+    node::pointer_t         get_variable(node::pointer_t n);
+
+    bool                    argify(node::pointer_t n);
+
+    bool                    selector_attribute_check(node::pointer_t n);
+    bool                    selector_simple_term(node::pointer_t n, size_t & pos);
+    bool                    selector_term(node::pointer_t n, size_t & pos);
+    bool                    selector_list(node::pointer_t n, size_t & pos);
+    bool                    parse_selector(node::pointer_t n);
+
+    void                    set_validation_script(std::string const & script_name);
+    void                    add_validation_variable(std::string const & variable_name, node::pointer_t value);
+    bool                    run_validation(bool check_only);
+
+    string_vector_t             f_paths;
+
+    compiler_state_t            f_state;
+    bool                        f_empty_on_undefined_variable = false;
+
+    validator_script_vector_t   f_validator_scripts;            // caching scripts
+    node::pointer_t             f_current_validation_script;    // last script selected by set_validator_script()
+    bool                        f_compiler_validating = false;
 };
 
 } // namespace csspp

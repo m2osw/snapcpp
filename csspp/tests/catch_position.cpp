@@ -147,7 +147,6 @@ TEST_CASE("Position counters", "[position] [count]")
             {
                 pos.next_line();
                 ++line;
-                ++page;
                 ++total_line;
             }
             else

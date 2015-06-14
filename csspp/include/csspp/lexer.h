@@ -19,8 +19,6 @@
 
 #include "csspp/node.h"
 
-#include <istream>
-
 namespace csspp
 {
 
@@ -37,7 +35,7 @@ public:
     void                    wctomb(wide_char_t const wc, char * mb, size_t max_length);
     std::string             wctomb(wide_char_t const wc);
 
-    static bool constexpr   is_space(wide_char_t c)
+    static bool constexpr is_space(wide_char_t c)
     {
         // when called '\r' and '\f' were already converted to '\n'
         return c == ' '
@@ -45,7 +43,7 @@ public:
             || c == '\n';
     }
 
-    static bool constexpr   is_non_printable(wide_char_t c)
+    static bool constexpr is_non_printable(wide_char_t c)
     {
         return c == 0x00
             || c == 0x08
@@ -55,7 +53,7 @@ public:
             || c == 0xFFFD;
     }
 
-    static bool constexpr   is_variable(wide_char_t c)
+    static bool constexpr is_variable(wide_char_t c)
     {
         // part of identifier except escape
         return (c >= '0' && c <= '9')
@@ -65,7 +63,7 @@ public:
             || c == '_';
     }
 
-    static bool constexpr   is_identifier(wide_char_t c)
+    static bool constexpr is_identifier(wide_char_t c)
     {
         // part of identifier except escape
         return (c >= '0' && c <= '9')
@@ -76,7 +74,7 @@ public:
             || c >= 0x80;
     }
 
-    static bool constexpr   is_start_identifier(wide_char_t c)
+    static bool constexpr is_start_identifier(wide_char_t c)
     {
         // start except for the possible escape
         return (c >= 'A' && c <= 'Z')
@@ -85,19 +83,19 @@ public:
             || c == '_';
     }
 
-    static bool constexpr   is_digit(wide_char_t c)
+    static bool constexpr is_digit(wide_char_t c)
     {
         return c >= '0' && c <= '9';
     }
 
-    static bool constexpr   is_hex(wide_char_t c)
+    static bool constexpr is_hex(wide_char_t c)
     {
         return (c >= '0' && c <= '9')
             || (c >= 'A' && c <= 'F')
             || (c >= 'a' && c <= 'f');
     }
 
-    static bool constexpr   is_hash_character(wide_char_t c)
+    static bool constexpr is_hash_character(wide_char_t c)
     {
         return (c >= '0' && c <= '9')
             || (c >= 'A' && c <= 'Z')

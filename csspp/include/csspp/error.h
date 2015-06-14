@@ -27,12 +27,16 @@ namespace csspp
 
 enum class error_mode_t
 {
+    ERROR_DEBUG,
     ERROR_DEC,
     ERROR_ERROR,
     ERROR_FATAL,
     ERROR_HEX,
+    ERROR_INFO,
     ERROR_WARNING
 };
+
+typedef uint32_t            error_count_t;
 
 class error
 {
@@ -40,7 +44,19 @@ public:
                             error();
 
     static error &          instance();
+    std::ostream &          get_error_stream() const;
     void                    set_error_stream(std::ostream & err_stream);
+
+    void                    set_count_warnings_as_errors();
+
+    error_count_t           get_error_count() const;
+    void                    set_error_count(error_count_t count);
+    error_count_t           get_warning_count() const;
+    void                    set_warning_count(error_count_t count);
+
+    void                    set_show_debug(bool show_debug);
+
+    void                    set_verbose();
 
     error &                 operator << (position const & pos);
     error &                 operator << (error_mode_t mode);
@@ -56,6 +72,45 @@ private:
     position                f_position;
     std::stringstream       f_message;
     std::ostream *          f_error = nullptr;
+    error_count_t           f_error_count = 0;
+    error_count_t           f_warning_count = 0;
+    bool                    f_warnings_as_errors = false;
+    bool                    f_show_debug = false;
+    bool                    f_verbose = false;
+};
+
+class safe_error_t
+{
+public:
+    safe_error_t();
+    ~safe_error_t();
+
+private:
+    error_count_t           f_error_count;
+    error_count_t           f_warning_count;
+};
+
+class safe_error_stream_t
+{
+public:
+    safe_error_stream_t(std::ostream & err_stream);
+    ~safe_error_stream_t();
+
+private:
+    std::ostream *          f_error = nullptr;
+};
+
+class error_happened_t
+{
+public:
+                            error_happened_t();
+
+    bool                    error_happened() const;
+    bool                    warning_happened() const;
+
+private:
+    error_count_t           f_error_count;
+    error_count_t           f_warning_count;
 };
 
 } // namespace csspp

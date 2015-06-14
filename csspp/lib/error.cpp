@@ -53,9 +53,49 @@ error & error::instance()
     return *g_error;
 }
 
+std::ostream & error::get_error_stream() const
+{
+    return *f_error;
+}
+
 void error::set_error_stream(std::ostream & err_stream)
 {
     f_error = &err_stream;
+}
+
+void error::set_count_warnings_as_errors()
+{
+    f_warnings_as_errors = true;
+}
+
+error_count_t error::get_error_count() const
+{
+    return f_error_count;
+}
+
+void error::set_error_count(error_count_t count)
+{
+    f_error_count = count;
+}
+
+error_count_t error::get_warning_count() const
+{
+    return f_warning_count;
+}
+
+void error::set_warning_count(error_count_t count)
+{
+    f_warning_count = count;
+}
+
+void error::set_show_debug(bool show_debug)
+{
+    f_show_debug = show_debug;
+}
+
+void error::set_verbose()
+{
+    f_verbose = true;
 }
 
 error & error::operator << (position const & pos)
@@ -74,7 +114,30 @@ error & error::operator << (error_mode_t mode)
 
     case error_mode_t::ERROR_FATAL:
     case error_mode_t::ERROR_ERROR:
+        ++f_error_count;
+        goto print_error;
+
     case error_mode_t::ERROR_WARNING:
+        if(f_warnings_as_errors)
+        {
+            // count warnings just like if they were errors
+            ++f_error_count;
+        }
+        else
+        {
+            ++f_warning_count;
+        }
+        goto print_error;
+
+    case error_mode_t::ERROR_DEBUG:
+        if(!f_show_debug)
+        {
+            break;
+        }
+        /*FALLTHROUGH*/
+    case error_mode_t::ERROR_INFO:
+
+print_error:
         // print the error now
         // (show the page number?)
         {
@@ -83,6 +146,15 @@ error & error::operator << (error_mode_t mode)
                  << "(" << f_position.get_line() << "): " << mode << ": "
                  << f_message.str()
                  << std::endl;
+
+            // for debug purposes, otherwise errors are always hidden!
+            if(f_verbose)
+            {
+                std::cerr << "ERROR CONSOLE OUTPUT -- " << f_position.get_filename()
+                          << "(" << f_position.get_line() << "): " << mode << ": "
+                          << f_message.str()
+                          << std::endl;
+            }
         }
         break;
 
@@ -132,12 +204,55 @@ void error::reset()
     f_message << std::dec;
 }
 
+safe_error_t::safe_error_t()
+    : f_error_count(error::instance().get_error_count())
+    , f_warning_count(error::instance().get_warning_count())
+{
+}
+
+safe_error_t::~safe_error_t()
+{
+    error::instance().set_error_count(f_error_count);
+    error::instance().set_warning_count(f_warning_count);
+}
+
+safe_error_stream_t::safe_error_stream_t(std::ostream & err_stream)
+    : f_error(&error::instance().get_error_stream())
+{
+    error::instance().set_error_stream(err_stream);
+}
+
+safe_error_stream_t::~safe_error_stream_t()
+{
+    error::instance().set_error_stream(*f_error);
+}
+
+error_happened_t::error_happened_t()
+    : f_error_count(error::instance().get_error_count())
+    , f_warning_count(error::instance().get_warning_count())
+{
+}
+
+bool error_happened_t::error_happened() const
+{
+    return f_error_count != error::instance().get_error_count();
+}
+
+bool error_happened_t::warning_happened() const
+{
+    return f_warning_count != error::instance().get_warning_count();
+}
+
 } // namespace csspp
 
 std::ostream & operator << (std::ostream & out, csspp::error_mode_t const type)
 {
     switch(type)
     {
+    case csspp::error_mode_t::ERROR_DEBUG:
+        out << "debug";
+        break;
+
     case csspp::error_mode_t::ERROR_DEC:
         out << "dec";
         break;
@@ -148,6 +263,10 @@ std::ostream & operator << (std::ostream & out, csspp::error_mode_t const type)
 
     case csspp::error_mode_t::ERROR_FATAL:
         out << "fatal";
+        break;
+
+    case csspp::error_mode_t::ERROR_INFO:
+        out << "info";
         break;
 
     case csspp::error_mode_t::ERROR_HEX:

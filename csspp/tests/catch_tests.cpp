@@ -48,6 +48,8 @@ trace_error * g_trace_error;
 
 }
 
+std::string g_script_path;
+
 trace_error::trace_error()
 {
     csspp::error::instance().set_error_stream(m_error_message);
@@ -64,8 +66,8 @@ trace_error & trace_error::instance()
 
 void trace_error::expected_error(std::string const & msg, char const * filename, int line)
 {
-//std::cerr << "require " << msg << "\n";
-//std::cerr << "got " << m_error_message.str() << "\n";
+//std::cerr << "require " << msg;
+//std::cerr << "    got " << m_error_message.str();
     if(m_error_message.str() != msg)
     {
         std::cerr << filename << "(" << line << "): error: error messages are not equal.\n"; // LCOV_EXCL_LINE
@@ -162,6 +164,11 @@ void compare(std::string const & generated, std::string const & expected, char c
     REQUIRE(*e == '\0');
 }
 
+std::string get_script_path()
+{
+    return g_script_path;
+}
+
 } // csspp_test namespace
 
 int main(int argc, char *argv[])
@@ -196,6 +203,30 @@ int main(int argc, char *argv[])
             }
             seed = atoll(argv[i + 1]); // LCOV_EXCL_LINE
             // remove the --seed and <value>
+            argc -= 2; // LCOV_EXCL_LINE
+            for(int j(i); j < argc; ++j) // LCOV_EXCL_LINE
+            {
+                argv[j] = argv[j + 2]; // LCOV_EXCL_LINE
+            }
+        }
+        else if(strcmp(argv[i], "--show-errors") == 0)
+        {
+            csspp::error::instance().set_verbose();
+            argc -= 1; // LCOV_EXCL_LINE
+            for(int j(i); j < argc; ++j) // LCOV_EXCL_LINE
+            {
+                argv[j] = argv[j + 1]; // LCOV_EXCL_LINE
+            }
+        }
+        else if(strcmp(argv[i], "--scripts") == 0)
+        {
+            if(i + 1 >= argc)
+            {
+                std::cerr << "error: --seed need to be followed by the actual seed." << std::endl; // LCOV_EXCL_LINE
+                exit(1); // LCOV_EXCL_LINE
+            }
+            csspp_test::g_script_path = argv[i + 1];
+            // remove the --scripts and <value>
             argc -= 2; // LCOV_EXCL_LINE
             for(int j(i); j < argc; ++j) // LCOV_EXCL_LINE
             {

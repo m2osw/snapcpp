@@ -46,6 +46,7 @@ add_library( ${PROJECT_NAME} SHARED
     error.cpp                                   # Print out error messages
     lexer.cpp                                   # Transform input in tokens
     node.cpp                                    # Holds the data read
+    nth_child.cpp                               # Manage An+B
     parser.cpp                                  # Transform tokens in a tree of nodes
     position.cpp                                # Holds the current position
     unicode_range.cpp                           # Handle a Unicode Range value
