@@ -1,3 +1,33 @@
+snapwebsites (0.1.71.18~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 14 Jun 2015 03:01:59 -0700
+
+snapwebsites (0.1.71.17~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sat, 13 Jun 2015 03:01:35 -0700
+
+snapwebsites (0.1.71.16~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Fri, 12 Jun 2015 03:01:53 -0700
+
+snapwebsites (0.1.71.15~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 11 Jun 2015 03:02:04 -0700
+
+snapwebsites (0.1.71.14~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 11 Jun 2015 01:30:45 -0700
+
 snapwebsites (0.1.71.13~trusty) trusty; urgency=high
 
   * Nightly build.
