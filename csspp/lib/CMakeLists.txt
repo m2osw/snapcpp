@@ -44,6 +44,7 @@ add_library( ${PROJECT_NAME} SHARED
     color.cpp                                   # Manager RGBA colors
     compiler.cpp                                # Work on a tree of node to make it CSS compatible
     error.cpp                                   # Print out error messages
+    expression.cpp                              # Reduce expressions
     lexer.cpp                                   # Transform input in tokens
     node.cpp                                    # Holds the data read
     nth_child.cpp                               # Manage An+B

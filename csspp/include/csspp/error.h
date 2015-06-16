@@ -47,7 +47,7 @@ public:
     std::ostream &          get_error_stream() const;
     void                    set_error_stream(std::ostream & err_stream);
 
-    void                    set_count_warnings_as_errors();
+    void                    set_count_warnings_as_errors(bool warnings_as_errors);
 
     error_count_t           get_error_count() const;
     void                    set_error_count(error_count_t count);
@@ -56,7 +56,7 @@ public:
 
     void                    set_show_debug(bool show_debug);
 
-    void                    set_verbose();
+    void                    set_verbose(bool status);
 
     error &                 operator << (position const & pos);
     error &                 operator << (error_mode_t mode);

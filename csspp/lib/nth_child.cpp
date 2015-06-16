@@ -58,14 +58,14 @@ namespace csspp
 namespace
 {
 
-int const shift_a = 0;
-int const shift_b = 32;
+int const g_shift_a = 0;
+int const g_shift_b = 32;
 
 } // no name namespace
 
 nth_child::nth_child(integer_t an_plus_b)
-    : f_a(static_cast<repeat_integer_t>(an_plus_b >> shift_a))
-    , f_b(static_cast<repeat_integer_t>(an_plus_b >> shift_b))
+    : f_a(static_cast<repeat_integer_t>(an_plus_b >> g_shift_a))
+    , f_b(static_cast<repeat_integer_t>(an_plus_b >> g_shift_b))
 {
 }
 
@@ -103,7 +103,7 @@ repeat_integer_t nth_child::get_b() const
 
 integer_t nth_child::get_nth() const
 {
-    return ((static_cast<integer_t>(f_a) & 0xFFFFFFFF) << shift_a) | ((static_cast<integer_t>(f_b) & 0xFFFFFFFF) << shift_b);
+    return ((static_cast<integer_t>(f_a) & 0xFFFFFFFF) << g_shift_a) | ((static_cast<integer_t>(f_b) & 0xFFFFFFFF) << g_shift_b);
 }
 
 std::string nth_child::get_error() const
@@ -142,17 +142,14 @@ bool nth_child::parse(std::string const & an_plus_b)
                 return c;
             }
 
-            while(f_pos < f_in.length())
+            if(f_pos < f_in.length())
             {
                 // TBD: as far as I know, we have no need to test
                 //      whether we have UTF-8 characters in this
                 //      case
                 wide_char_t const c(f_in[f_pos]);
                 ++f_pos;
-                if(c != ' ')
-                {
-                    return c;
-                }
+                return c;
             }
             return EOF;
         }
@@ -166,7 +163,13 @@ bool nth_child::parse(std::string const & an_plus_b)
         {
             value = 0;
 
-            wide_char_t c(getc());
+            // read the next non-space character
+            wide_char_t c;
+            do
+            {
+                c = getc();
+            }
+            while(c == ' ');
 
             switch(c)
             {
@@ -224,7 +227,7 @@ bool nth_child::parse(std::string const & an_plus_b)
                     c = getc();
                     if(c == 'd' || c == 'D')
                     {
-                        return token_t::EVEN;
+                        return token_t::ODD;
                     }
                 }
                 break;
@@ -275,7 +278,7 @@ bool nth_child::parse(std::string const & an_plus_b)
         {
             return true;
         }
-        f_error = "'even' cannot be followed by anything else in an An+B expression.";
+        f_error = "'odd' cannot be followed by anything else in an An+B expression.";
         return false;
     }
 
@@ -311,7 +314,7 @@ bool nth_child::parse(std::string const & an_plus_b)
     if(token != in_t::token_t::N)
     {
         // first number must be followed by 'n'
-        f_error = "the first number has to be followed by the 'n' character.";
+        f_error = "The first number has to be followed by the 'n' character.";
         return false;
     }
 
@@ -328,7 +331,7 @@ bool nth_child::parse(std::string const & an_plus_b)
     else
     {
         // the sign is mandatory between An and B
-        f_error = "a sign (+ or -) is expected between the 'An' and the 'B' parts in 'An+B'.";
+        f_error = "A sign (+ or -) is expected between the 'An' and the 'B' parts in 'An+B'.";
         return false;
     }
 
@@ -354,25 +357,29 @@ bool nth_child::parse(std::string const & an_plus_b)
 
 std::string nth_child::to_string() const
 {
+    // TODO: add code to reduce these because B should always be between 0 and A - 1
+    //       and A can always be positive (but I need to do some testing.)
     if(f_a == 2 && f_b == 0)
     {
-        // 2n+0 (although "2n" would be shorter...)
-        return "even";
+        // 2n+0 or "2n", which is shorter than "even"
+        return "2n";
     }
     if(f_a == 2 && f_b == 1)
     {
-        // 2n+1
+        // 2n+1 or "odd"
         return "odd";
+    }
+
+    // we return f_b in priority because of a and b are zero "0"
+    // is shorter than "0n"
+    if(f_a == 0)
+    {
+        return std::to_string(f_b);
     }
 
     if(f_b == 0)
     {
         return std::to_string(f_a) + "n";
-    }
-
-    if(f_a == 0)
-    {
-        return std::to_string(f_b);
     }
 
     return std::to_string(f_a) + "n" + (f_b >= 0 ? "+" : "") + std::to_string(f_b);

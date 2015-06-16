@@ -66,14 +66,23 @@ trace_error & trace_error::instance()
 
 void trace_error::expected_error(std::string const & msg, char const * filename, int line)
 {
-//std::cerr << "require " << msg;
-//std::cerr << "    got " << m_error_message.str();
-    if(m_error_message.str() != msg)
+    std::string e(m_error_message.str());
+    m_error_message.str("");
+
+    std::string::size_type pos(e.find("/scripts"));
+    if(pos != std::string::npos)
     {
+        e = e.substr(pos + 1);
+    }
+
+//std::cerr << "require " << msg << "\n";
+//std::cerr << "    got " << e << "\n";
+    if(e != msg)
+    {
+        // print a message otherwise filename & line get lost
         std::cerr << filename << "(" << line << "): error: error messages are not equal.\n"; // LCOV_EXCL_LINE
     }
-    REQUIRE(m_error_message.str() == msg);
-    m_error_message.str("");
+    REQUIRE(e == msg);
 }
 
 our_unicode_range_t::our_unicode_range_t(csspp::wide_char_t start, csspp::wide_char_t end)
@@ -211,7 +220,7 @@ int main(int argc, char *argv[])
         }
         else if(strcmp(argv[i], "--show-errors") == 0)
         {
-            csspp::error::instance().set_verbose();
+            csspp::error::instance().set_verbose(true);
             argc -= 1; // LCOV_EXCL_LINE
             for(int j(i); j < argc; ++j) // LCOV_EXCL_LINE
             {
@@ -222,7 +231,7 @@ int main(int argc, char *argv[])
         {
             if(i + 1 >= argc)
             {
-                std::cerr << "error: --seed need to be followed by the actual seed." << std::endl; // LCOV_EXCL_LINE
+                std::cerr << "error: --scripts need to be followed by the actual seed." << std::endl; // LCOV_EXCL_LINE
                 exit(1); // LCOV_EXCL_LINE
             }
             csspp_test::g_script_path = argv[i + 1];
@@ -246,7 +255,10 @@ int main(int argc, char *argv[])
     {
         std::cout << std::endl // LCOV_EXCL_LINE
                   << "WARNING: at this point we hack the main() to add the following options:" << std::endl // LCOV_EXCL_LINE
+                  << "  --scripts <path> a path to the system scripts to run against the tests" << std::endl // LCOV_EXCL_LINE
                   << "  --seed <seed>    to force the seed at the start of the process to a specific value (i.e. to reproduce the exact same test over and over again)" << std::endl // LCOV_EXCL_LINE
+                  << "  --show-errors    request for the errors to always be printed in std::cerr" << std::endl // LCOV_EXCL_LINE
+                  << "  --version        print out the version of this test and exit with 0" << std::endl // LCOV_EXCL_LINE
                   << std::endl; // LCOV_EXCL_LINE
     }
 

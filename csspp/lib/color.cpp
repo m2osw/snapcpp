@@ -476,10 +476,11 @@ std::string color::to_string() const
         }
 
         // when alpha is specified we have to use the rgba() function
+        safe_precision_t safe(2);
         return "rgba(" + std::to_string(static_cast<int>(f_red))
                  + "," + std::to_string(static_cast<int>(f_green))
                  + "," + std::to_string(static_cast<int>(f_blue))
-                 + "," + std::to_string(static_cast<int>(f_alpha)) + ")";
+                 + "," + decimal_number_to_string(static_cast<int>(f_alpha) / 255.0) + ")";
     }
 }
 

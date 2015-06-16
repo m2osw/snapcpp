@@ -59,6 +59,7 @@ TEST_CASE("Node types", "[node] [type]")
                 bool b(rand() % 1 == 0);
                 n->set_boolean(b);
                 REQUIRE(n->get_boolean() == b);
+                REQUIRE(n->to_boolean() == (b ? csspp::boolean_t::TRUE : csspp::boolean_t::FALSE));
             }
             break;
 
@@ -75,12 +76,21 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::AN_PLUS_B:
         case csspp::node_type_t::AT_KEYWORD:
         case csspp::node_type_t::COMMENT:
+        case csspp::node_type_t::COLOR:
         case csspp::node_type_t::INTEGER:
         case csspp::node_type_t::UNICODE_RANGE:
             {
+                if(w == csspp::node_type_t::INTEGER)
+                {
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+                }
                 csspp::integer_t i(static_cast<csspp::integer_t>(rand()) + (static_cast<csspp::integer_t>(rand()) << 32));
                 n->set_integer(i);
                 REQUIRE(n->get_integer() == i);
+                if(w == csspp::node_type_t::INTEGER)
+                {
+                    REQUIRE(n->to_boolean() == (i != 0 ? csspp::boolean_t::TRUE : csspp::boolean_t::FALSE));
+                }
             }
             break;
 
@@ -96,11 +106,13 @@ TEST_CASE("Node types", "[node] [type]")
         {
         case csspp::node_type_t::DECIMAL_NUMBER:
         case csspp::node_type_t::PERCENT:
+            REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
             n->set_decimal_number(123.456);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             REQUIRE(n->get_decimal_number() == 123.456);
 #pragma GCC diagnostic pop
+            REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
             break;
 
         default:
@@ -127,8 +139,16 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::URL:
         case csspp::node_type_t::VARIABLE:
         case csspp::node_type_t::VARIABLE_FUNCTION:
+            if(w == csspp::node_type_t::STRING)
+            {
+                REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+            }
             n->set_string("test-string");
             REQUIRE(n->get_string() == "test-string");
+            if(w == csspp::node_type_t::STRING)
+            {
+                REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+            }
             break;
 
         default:
@@ -153,6 +173,10 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::VARIABLE_FUNCTION:
             {
                 // try adding one child
+                if(w == csspp::node_type_t::LIST)
+                {
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+                }
                 REQUIRE(n->empty());
                 REQUIRE(n->size() == 0);
                 REQUIRE_THROWS_AS(n->get_child(0), csspp::csspp_exception_overflow);
@@ -162,8 +186,15 @@ TEST_CASE("Node types", "[node] [type]")
 
                 csspp::node::pointer_t child1(new csspp::node(csspp::node_type_t::COMMA, n->get_position()));
                 csspp::node::pointer_t child2(new csspp::node(csspp::node_type_t::EXCLAMATION, n->get_position()));
+                csspp::node::pointer_t eof_token(new csspp::node(csspp::node_type_t::EOF_TOKEN, n->get_position()));
+                csspp::node::pointer_t whitespace1(new csspp::node(csspp::node_type_t::WHITESPACE, n->get_position()));
+                csspp::node::pointer_t whitespace2(new csspp::node(csspp::node_type_t::WHITESPACE, n->get_position()));
 
                 n->add_child(child1);
+                if(w == csspp::node_type_t::LIST)
+                {
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+                }
                 REQUIRE(n->size() == 1);
                 REQUIRE_FALSE(n->empty());
                 REQUIRE(n->get_last_child() == child1);
@@ -171,6 +202,10 @@ TEST_CASE("Node types", "[node] [type]")
                 REQUIRE_THROWS_AS(n->remove_child(n), csspp::csspp_exception_logic);
 
                 n->add_child(child2);
+                if(w == csspp::node_type_t::LIST)
+                {
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+                }
                 REQUIRE(n->size() == 2);
                 REQUIRE_FALSE(n->empty());
                 REQUIRE(n->get_last_child() == child2);
@@ -194,18 +229,66 @@ TEST_CASE("Node types", "[node] [type]")
                 }
 
                 // fully empty again, all fails like follow
+                if(w == csspp::node_type_t::LIST)
+                {
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+                }
                 REQUIRE(n->empty());
                 REQUIRE(n->size() == 0);
                 REQUIRE_THROWS_AS(n->get_child(0), csspp::csspp_exception_overflow);
                 REQUIRE_THROWS_AS(n->get_last_child(), csspp::csspp_exception_overflow);
                 REQUIRE_THROWS_AS(n->remove_child(0), csspp::csspp_exception_overflow);
                 REQUIRE_THROWS_AS(n->remove_child(n), csspp::csspp_exception_logic);
+
+                // test a few more things
+                n->add_child(child1);
+                REQUIRE(n->size() == 1);
+                n->insert_child(1, whitespace1);
+                REQUIRE(n->size() == 2);
+                n->add_child(whitespace2); // ignore two whitespaces in a row
+                REQUIRE(n->size() == 2);
+                n->insert_child(0, child2);
+                REQUIRE(n->size() == 3);
+                n->add_child(eof_token);  // never add EOF_TOKEN
+                REQUIRE(n->size() == 3);
+                REQUIRE(n->get_child(0) == child2);
+                REQUIRE(n->get_child(1) == child1);
+                REQUIRE(n->get_child(2) == whitespace1);
+                REQUIRE(n->child_position(child1) == 1);
+                REQUIRE(n->child_position(child2) == 0);
+                REQUIRE(n->child_position(whitespace1) == 2);
+                REQUIRE(n->child_position(whitespace2) == csspp::node::npos);
+                REQUIRE(n->child_position(eof_token) == csspp::node::npos);
+                n->clear();
+                REQUIRE(n->size() == 0);
+                REQUIRE(n->child_position(child1) == csspp::node::npos);
+                REQUIRE(n->child_position(child2) == csspp::node::npos);
+                REQUIRE(n->child_position(whitespace1) == csspp::node::npos);
+                REQUIRE(n->child_position(whitespace2) == csspp::node::npos);
+                REQUIRE(n->child_position(eof_token) == csspp::node::npos);
+
+                // test the replace
+                n->add_child(child1);
+                REQUIRE(n->size() == 1);
+                REQUIRE(n->get_child(0) == child1);
+                n->replace_child(child1, child2);
+                REQUIRE(n->size() == 1);
+                REQUIRE(n->get_child(0) == child2);
+
+                csspp::node::pointer_t list(new csspp::node(csspp::node_type_t::LIST, n->get_position()));
+                n->add_child(child1);
+                list->take_over_children_of(n);
+                REQUIRE(n->size() == 0);
+                REQUIRE(list->size() == 2);
+                REQUIRE(list->get_child(0) == child2);
+                REQUIRE(list->get_child(1) == child1);
             }
             break;
 
         default:
             REQUIRE_THROWS_AS(n->empty(), csspp::csspp_exception_logic);
             REQUIRE_THROWS_AS(n->size(), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->clear(), csspp::csspp_exception_logic);
             REQUIRE_THROWS_AS(n->add_child(n), csspp::csspp_exception_logic);
             REQUIRE_THROWS_AS(n->remove_child(n), csspp::csspp_exception_logic);
             REQUIRE_THROWS_AS(n->remove_child(0), csspp::csspp_exception_logic);
@@ -216,8 +299,141 @@ TEST_CASE("Node types", "[node] [type]")
 
         }
 
+        // all invalid node types for to_boolean()
+        switch(w)
+        {
+        case csspp::node_type_t::BOOLEAN:
+        case csspp::node_type_t::DECIMAL_NUMBER:
+        case csspp::node_type_t::INTEGER:
+        case csspp::node_type_t::LIST:
+        case csspp::node_type_t::PERCENT:
+        case csspp::node_type_t::STRING:
+            break;
+
+        default:
+            REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+            break;
+
+        }
+
         // move to the next type
         w = static_cast<csspp::node_type_t>(static_cast<int>(w) + 1);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Invalid Tree Handling", "[node] [invalid]")
+{
+    // replace with an invalid child
+    {
+        csspp::position pos("test.css");
+        csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::LIST, pos));
+
+        csspp::node::pointer_t child1(new csspp::node(csspp::node_type_t::INTEGER, pos));
+        child1->set_integer(33);
+        csspp::node::pointer_t child2(new csspp::node(csspp::node_type_t::STRING, pos));
+        child2->set_string("hello!");
+
+        n->add_child(child1);
+
+        // child2, child1 are inverted
+        REQUIRE_THROWS_AS(n->replace_child(child2, child1), csspp::csspp_exception_logic);
+    }
+
+    // insert with invalid index
+    {
+        csspp::position pos("test.css");
+        csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::LIST, pos));
+
+        csspp::node::pointer_t child1(new csspp::node(csspp::node_type_t::INTEGER, pos));
+        child1->set_integer(345);
+        csspp::node::pointer_t child2(new csspp::node(csspp::node_type_t::STRING, pos));
+        child2->set_string("world.");
+
+        n->insert_child(0, child1);
+
+        // insert index can be 0 or 1, anything else and it is an overflow
+        for(int i(-100); i < 0; ++i)
+        {
+            REQUIRE_THROWS_AS(n->insert_child(i, child2), csspp::csspp_exception_overflow);
+        }
+        for(int i(2); i <= 100; ++i)
+        {
+            REQUIRE_THROWS_AS(n->insert_child(i, child2), csspp::csspp_exception_overflow);
+        }
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("True and False", "[node] [type] [output]")
+{
+    // we expect the test suite to be compiled with the exact same version
+    {
+        csspp::position pos("test.css");
+        csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::IDENTIFIER, pos));
+
+        REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+
+        n->set_string("true");
+        REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+
+        n->set_string("false");
+        REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+
+        n->set_string("other");
+        REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+
+        // fortuitious...
+        n->set_string("invalid");
+        REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Node Variables", "[node] [variable]")
+{
+    // we expect the test suite to be compiled with the exact same version
+    {
+        csspp::position pos("test.css");
+        csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::LIST, pos));
+
+        csspp::node::pointer_t t[21];
+        for(int i(-10); i <= 10; ++i)
+        {
+            std::string nb(std::to_string(i));
+            t[i + 10].reset(new csspp::node(csspp::node_type_t::IDENTIFIER, pos));
+            t[i + 10]->set_string("test" + nb);
+
+            n->set_variable("t" + nb, t[i + 10]);
+            REQUIRE(n->get_variable("t" + nb) == t[i + 10]);
+        }
+
+        // check contents again
+        for(int i(-10); i <= 10; ++i)
+        {
+            std::string nb(std::to_string(i));
+
+            csspp::node::pointer_t p(n->get_variable("t" + nb));
+            REQUIRE(p == t[i + 10]);
+            REQUIRE(p->get_string() == "test" + nb);
+        }
+
+        n->clear_variables();
+
+        // all are gone now!
+        for(int i(-10); i <= 10; ++i)
+        {
+            std::string nb(std::to_string(i));
+
+            csspp::node::pointer_t p(n->get_variable("t" + nb));
+            REQUIRE(!p);
+        }
     }
 
     // no error left over
@@ -780,6 +996,473 @@ TEST_CASE("Node output", "[node] [output]")
     REQUIRE_ERRORS("");
 }
 
+TEST_CASE("Node to string", "[node] [type] [output]")
+{
+    // we expect the test suite to be compiled with the exact same version
+    for(int flags(0); flags < 4; ++flags)
+    {
+        csspp::node_type_t w(csspp::node_type_t::UNKNOWN);
+        while(w <= csspp::node_type_t::max_type)
+        {
+            csspp::position pos("test.css");
+            csspp::node::pointer_t n(new csspp::node(w, pos));
+
+            switch(w)
+            {
+            case csspp::node_type_t::ADD:
+                REQUIRE(n->to_string(flags) == "+");
+                break;
+
+            case csspp::node_type_t::AND:
+                REQUIRE(n->to_string(flags) == "&&");
+                break;
+
+            case csspp::node_type_t::ASSIGNMENT:
+                REQUIRE(n->to_string(flags) == ":=");
+                break;
+
+            case csspp::node_type_t::AT_KEYWORD:
+                REQUIRE(n->to_string(flags) == "@");
+                n->set_string("test");
+                REQUIRE(n->to_string(flags) == "@test");
+                break;
+
+            case csspp::node_type_t::BOOLEAN:
+                REQUIRE(n->to_string(flags) == "false");
+                n->set_boolean(true);
+                REQUIRE(n->to_string(flags) == "true");
+                break;
+
+            case csspp::node_type_t::COLON:
+                REQUIRE(n->to_string(flags) == ":");
+                break;
+
+            case csspp::node_type_t::COLOR:
+                REQUIRE(n->to_string(flags) == "transparent");
+                n->set_integer(0xffff3258);
+                REQUIRE(n->to_string(flags) == "#5832ff");
+                n->set_integer(0x7fff3258);
+                REQUIRE(n->to_string(flags) == "rgba(88,50,255,0.5)");
+                break;
+
+            case csspp::node_type_t::COLUMN:
+                REQUIRE(n->to_string(flags) == "||");
+                break;
+
+            case csspp::node_type_t::COMMA:
+                REQUIRE(n->to_string(flags) == ",");
+                break;
+
+            case csspp::node_type_t::COMMENT:
+                // once we remove the @preserve, this could happen
+                REQUIRE(n->to_string(flags) == "");
+                n->set_string("the comment");
+                REQUIRE(n->to_string(flags) == "// the comment\n");
+                n->set_string("the comment\non two lines");
+                REQUIRE(n->to_string(flags) == "// the comment\n// on two lines\n");
+                n->set_integer(1);
+                n->set_string("the C-like comment\non two lines");
+                REQUIRE(n->to_string(flags) == "/* the C-like comment\non two lines */");
+                break;
+
+            case csspp::node_type_t::CONDITIONAL:
+                REQUIRE(n->to_string(flags) == "?");
+                break;
+
+            case csspp::node_type_t::DASH_MATCH:
+                REQUIRE(n->to_string(flags) == "|=");
+                break;
+
+            case csspp::node_type_t::DECIMAL_NUMBER:
+                REQUIRE(n->to_string(flags) == "0");
+                n->set_string("em");
+                REQUIRE(n->to_string(flags) == "0em");
+                n->set_decimal_number(1.25);
+                REQUIRE(n->to_string(flags) == "1.25em");
+                break;
+
+            case csspp::node_type_t::DIVIDE:
+                REQUIRE(n->to_string(flags) == " / ");
+                break;
+
+            case csspp::node_type_t::DOLLAR:
+                REQUIRE(n->to_string(flags) == "$");
+                break;
+
+            case csspp::node_type_t::EQUAL:
+                REQUIRE(n->to_string(flags) == "=");
+                break;
+
+            case csspp::node_type_t::EXCLAMATION:
+                REQUIRE(n->to_string(flags) == "!");
+                break;
+
+            case csspp::node_type_t::FUNCTION:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "()");
+
+                    // test with an actual function
+                    n->set_string("rgba");
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(1.0);
+                    n->add_child(p);
+                    REQUIRE(n->to_string(flags) == "rgba(0,0,0,1)");
+                }
+                break;
+
+            case csspp::node_type_t::GREATER_EQUAL:
+                REQUIRE(n->to_string(flags) == ">=");
+                break;
+
+            case csspp::node_type_t::GREATER_THAN:
+                REQUIRE(n->to_string(flags) == ">");
+                break;
+
+            case csspp::node_type_t::HASH:
+                REQUIRE(n->to_string(flags) == "#");
+                n->set_string("random");
+                REQUIRE(n->to_string(flags) == "#random");
+                break;
+
+            case csspp::node_type_t::IDENTIFIER:
+                REQUIRE(n->to_string(flags) == "");
+                n->set_string("an identifier in CSS can be absolutely anything!");
+                REQUIRE(n->to_string(flags) == "an identifier in CSS can be absolutely anything!");
+                break;
+
+            case csspp::node_type_t::INCLUDE_MATCH:
+                REQUIRE(n->to_string(flags) == "~=");
+                break;
+
+            case csspp::node_type_t::INTEGER:
+                {
+                    REQUIRE(n->to_string(flags) == "0");
+                    csspp::integer_t i(static_cast<csspp::integer_t>(rand()) + (static_cast<csspp::integer_t>(rand()) << 32));
+                    n->set_integer(i);
+                    REQUIRE(n->to_string(flags) == std::to_string(i));
+                    n->set_string("px");
+                    REQUIRE(n->to_string(flags) == std::to_string(i) + "px");
+                }
+                break;
+
+            case csspp::node_type_t::LESS_EQUAL:
+                REQUIRE(n->to_string(flags) == "<=");
+                break;
+
+            case csspp::node_type_t::LESS_THAN:
+                REQUIRE(n->to_string(flags) == "<");
+                break;
+
+            case csspp::node_type_t::MODULO:
+                REQUIRE(n->to_string(flags) == " % ");
+                break;
+
+            case csspp::node_type_t::MULTIPLY:
+                REQUIRE(n->to_string(flags) == "*");
+                break;
+
+            case csspp::node_type_t::NOT_EQUAL:
+                REQUIRE(n->to_string(flags) == "!=");
+                break;
+
+            case csspp::node_type_t::OPEN_CURLYBRACKET:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "{}");
+
+                    // test with an actual function
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(7);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::MODULO, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(52);
+                    n->add_child(p);
+                    REQUIRE(n->to_string(flags) == "{7 % 52}");
+                }
+                break;
+
+            case csspp::node_type_t::OPEN_PARENTHESIS:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "()");
+
+                    // test with an actual function
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(17);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::MULTIPLY, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(502);
+                    n->add_child(p);
+                    REQUIRE(n->to_string(flags) == "(17*502)");
+                }
+                break;
+
+            case csspp::node_type_t::OPEN_SQUAREBRACKET:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "[]");
+
+                    // test with an actual function
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(5);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DIVIDE, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(152);
+                    n->add_child(p);
+                    REQUIRE(n->to_string(flags) == "[5 / 152]");
+                }
+                break;
+
+            case csspp::node_type_t::PERCENT:
+                REQUIRE(n->to_string(flags) == "0%");
+                n->set_decimal_number(1.25);
+                REQUIRE(n->to_string(flags) == "1.25%");
+                break;
+
+            case csspp::node_type_t::PERIOD:
+                REQUIRE(n->to_string(flags) == ".");
+                break;
+
+            case csspp::node_type_t::PLACEHOLDER:
+                REQUIRE(n->to_string(flags) == "%");
+                n->set_string("the-name-of-the-placeholder");
+                REQUIRE(n->to_string(flags) == "%the-name-of-the-placeholder");
+                break;
+
+            case csspp::node_type_t::POWER:
+                REQUIRE(n->to_string(flags) == "**");
+                break;
+
+            case csspp::node_type_t::PRECEDED:
+                REQUIRE(n->to_string(flags) == "~");
+                break;
+
+            case csspp::node_type_t::PREFIX_MATCH:
+                REQUIRE(n->to_string(flags) == "^=");
+                break;
+
+            case csspp::node_type_t::REFERENCE:
+                REQUIRE(n->to_string(flags) == "&");
+                break;
+
+            case csspp::node_type_t::SCOPE:
+                REQUIRE(n->to_string(flags) == "|");
+                break;
+
+            case csspp::node_type_t::SEMICOLON:
+                REQUIRE(n->to_string(flags) == ";");
+                break;
+
+            case csspp::node_type_t::STRING:
+                REQUIRE(n->to_string(flags) == "\"\"");
+                n->set_string("whatever string content we'd want really...");
+                REQUIRE(n->to_string(flags) == "\"whatever string content we'd want really...\"");
+                n->set_string("yet if we have one quote like this: \" then the other is used to quote the string");
+                REQUIRE(n->to_string(flags) == "'yet if we have one quote like this: \" then the other is used to quote the string'");
+                n->set_string("counter: ''''' > \"\"\"");
+                REQUIRE(n->to_string(flags) == "\"counter: ''''' > \\\"\\\"\\\"\"");
+                n->set_string("counter: ''' < \"\"\"\"\"");
+                REQUIRE(n->to_string(flags) == "'counter: \\'\\'\\' < \"\"\"\"\"'");
+                break;
+
+            case csspp::node_type_t::SUBSTRING_MATCH:
+                REQUIRE(n->to_string(flags) == "*=");
+                break;
+
+            case csspp::node_type_t::SUBTRACT:
+                REQUIRE(n->to_string(flags) == "-");
+                break;
+
+            case csspp::node_type_t::SUFFIX_MATCH:
+                REQUIRE(n->to_string(flags) == "$=");
+                break;
+
+            case csspp::node_type_t::UNICODE_RANGE:
+                REQUIRE(n->to_string(flags) == "U+0");
+                n->set_integer(0x00004FFF00004000);
+                REQUIRE(n->to_string(flags) == "U+4???");
+                break;
+
+            case csspp::node_type_t::URL:
+                REQUIRE(n->to_string(flags) == "url()");
+                n->set_string("http://this.should.be/a/valid/url");
+                REQUIRE(n->to_string(flags) == "url(http://this.should.be/a/valid/url)");
+                break;
+
+            case csspp::node_type_t::VARIABLE:
+                REQUIRE(n->to_string(flags) == "$");
+                n->set_string("varname");
+                REQUIRE(n->to_string(flags) == "$varname");
+                break;
+
+            case csspp::node_type_t::VARIABLE_FUNCTION:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "$()");
+
+                    // test with an actual function
+                    n->set_string("my_function");
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("colorful");
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(33);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(1.0);
+                    n->add_child(p);
+                    REQUIRE(n->to_string(flags) == "$my_function(0,\"colorful\",33,1)");
+                }
+                break;
+
+            case csspp::node_type_t::WHITESPACE:
+                REQUIRE(n->to_string(flags) == " ");
+                break;
+
+            // second part
+            case csspp::node_type_t::AN_PLUS_B:
+                REQUIRE(n->to_string(flags) == "0");
+                n->set_integer(0x0000000500000003);
+                REQUIRE(n->to_string(flags) == "3n+5");
+                break;
+
+            case csspp::node_type_t::ARG:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "");
+
+                    // test with an actual function
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::ADD, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(33);
+                    n->add_child(p);
+                    REQUIRE(n->to_string(flags) == "0+33");
+                }
+                break;
+
+            case csspp::node_type_t::COMPONENT_VALUE:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "");
+
+                    // test with an actual function
+                    csspp::node::pointer_t a(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    n->add_child(a);
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    a->add_child(p);
+
+                    a.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    n->add_child(a);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("orange");
+                    a->add_child(p);
+
+                    a.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    n->add_child(a);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(33);
+                    a->add_child(p);
+
+                    REQUIRE(n->to_string(flags) == "0,\"orange\",33");
+
+                    // test with an actual function but not argified
+                    n->clear();
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(111);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::COMMA, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("purple");
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::COMMA, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(301);
+                    n->add_child(p);
+
+                    REQUIRE(n->to_string(flags) == "111,\"purple\",301");
+                }
+                break;
+
+            case csspp::node_type_t::DECLARATION:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "");
+
+                    // test with an actual function
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::WHITESPACE, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::SUBTRACT, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::WHITESPACE, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(33);
+                    n->add_child(p);
+                    REQUIRE(n->to_string(flags) == "0 - 33");
+                }
+                break;
+
+            case csspp::node_type_t::LIST:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "");
+
+                    // test with an actual function
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(3.22);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::WHITESPACE, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::POWER, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::WHITESPACE, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(5.3);
+                    n->add_child(p);
+                    REQUIRE(n->to_string(flags) == "3.22 ** 5.3");
+                }
+                break;
+
+            // anything else is an error
+            default:
+                // other node types generate a throw
+                REQUIRE_THROWS_AS(n->to_string(flags), csspp::csspp_exception_logic);
+                break;
+
+            }
+
+            // move to the next type
+            w = static_cast<csspp::node_type_t>(static_cast<int>(w) + 1);
+        }
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
 TEST_CASE("Error with node names", "[node] [type] [output]")
 {
     // we expect the test suite to be compiled with the exact same version
@@ -1082,7 +1765,14 @@ TEST_CASE("Print nodes", "[node] [output]")
 
         csspp::node::pointer_t child(new csspp::node(csspp::node_type_t::AT_KEYWORD, pos));
         child->set_string("@-char");
+        csspp::node::pointer_t var(new csspp::node(csspp::node_type_t::IDENTIFIER, pos));
+        var->set_string("colorous");
+        child->set_variable("test", var);
         root->add_child(child);
+
+            csspp::node::pointer_t boolean(new csspp::node(csspp::node_type_t::BOOLEAN, pos));
+            boolean->set_boolean(true);
+            child->add_child(boolean);
 
             csspp::node::pointer_t integer2(new csspp::node(csspp::node_type_t::INTEGER, pos));
             integer2->set_integer(409);
@@ -1096,6 +1786,10 @@ TEST_CASE("Print nodes", "[node] [output]")
             decimal_number2->set_decimal_number(208.0);
             child->add_child(decimal_number2);
 
+            csspp::node::pointer_t an_plus_b(new csspp::node(csspp::node_type_t::AN_PLUS_B, pos));
+            an_plus_b->set_integer(0x0000000700000003);
+            child->add_child(an_plus_b);
+
     std::stringstream ss;
     ss << *root;
 
@@ -1106,9 +1800,13 @@ TEST_CASE("Print nodes", "[node] [output]")
 "  STRING \"bear\"\n"
 "  DECIMAL_NUMBER \"\" D:100\n"
 "  AT_KEYWORD \"@-char\" I:0\n"
+"      V:test\n"
+"        IDENTIFIER \"colorous\"\n"
+"    BOOLEAN B:true\n"
 "    INTEGER \"\" I:409\n"
 "    STRING \"rabbit\"\n"
 "    DECIMAL_NUMBER \"\" D:208\n"
+"    AN_PLUS_B S:3n+7\n"
 
         );
 

@@ -17,6 +17,7 @@
 
 #include <csspp/node.h>
 
+#include <csspp/color.h>
 #include <csspp/exceptions.h>
 #include <csspp/nth_child.h>
 #include <csspp/unicode_range.h>
@@ -28,6 +29,10 @@
 namespace csspp
 {
 
+// make sure we have a copy (catch makes it a requirement probably because
+// of template use)
+size_t const node::npos;
+
 namespace
 {
 
@@ -37,6 +42,7 @@ void type_supports_integer(node_type_t const type)
     {
     case node_type_t::AN_PLUS_B:
     case node_type_t::AT_KEYWORD:
+    case node_type_t::COLOR:
     case node_type_t::COMMENT:
     case node_type_t::INTEGER:
     case node_type_t::UNICODE_RANGE:
@@ -57,6 +63,7 @@ void type_supports_boolean(node_type_t const type)
     switch(type)
     {
     case node_type_t::BOOLEAN:
+    case node_type_t::OPEN_CURLYBRACKET:
         break;
 
     default:
@@ -283,7 +290,7 @@ size_t node::child_position(pointer_t child)
     auto it(std::find(f_children.begin(), f_children.end(), child));
     if(it == f_children.end())
     {
-        return static_cast<size_t>(-1);
+        return npos;
     }
 
     return it - f_children.begin();
@@ -394,11 +401,12 @@ void node::replace_child(pointer_t o, pointer_t n)
         throw csspp_exception_logic("replace_child() called with a node which is not a child of this node.");
     }
 
+    size_t const pos(it - f_children.begin());
     f_children.insert(it, n);
-    f_children.erase(it);
+    f_children.erase(f_children.begin() + pos + 1);
 }
 
-void node::reset_variables()
+void node::clear_variables()
 {
     f_variables.clear();
 }
@@ -418,7 +426,7 @@ node::pointer_t node::get_variable(std::string const & name)
     return it->second;
 }
 
-std::string node::to_string() const
+std::string node::to_string(int flags) const
 {
     std::stringstream out;
 
@@ -428,12 +436,32 @@ std::string node::to_string() const
         out << "+";
         break;
 
+    case node_type_t::AND:
+        out << "&&";
+        break;
+
+    case node_type_t::ASSIGNMENT:
+        out << ":=";
+        break;
+
     case node_type_t::AT_KEYWORD:
         out << "@" << f_string;
         break;
 
+    case node_type_t::BOOLEAN:
+        out << (f_boolean ? "true" : "false");
+        break;
+
     case node_type_t::COLON:
         out << ":";
+        break;
+
+    case node_type_t::COLOR:
+        {
+            color c;
+            c.set_color(f_integer);
+            out << c.to_string();
+        }
         break;
 
     case node_type_t::COLUMN:
@@ -457,19 +485,23 @@ std::string node::to_string() const
             std::string::size_type end(f_string.find('\n'));
             while(end != std::string::npos)
             {
-                out << "// " << f_string.substr(start, end - start);
+                out << "// " << f_string.substr(start, end - start) << std::endl;
                 start = end + 1;
                 end = f_string.find('\n', start);
             }
             if(start < f_string.size())
             {
-                out << "// " << f_string.substr(start);
+                out << "// " << f_string.substr(start) << std::endl;
             }
         }
         else
         {
             out << "/* " << f_string << " */";
         }
+        break;
+
+    case node_type_t::CONDITIONAL:
+        out << '?';
         break;
 
     case node_type_t::DASH_MATCH:
@@ -482,36 +514,60 @@ std::string node::to_string() const
         break;
 
     case node_type_t::DIVIDE:
-        out << "/";
+        if((flags & g_to_string_flag_add_spaces) != 0)
+        {
+            out << " / ";
+        }
+        else
+        {
+            out << "/";
+        }
         break;
 
     case node_type_t::DOLLAR:
-        out << "$";
+        out << '$';
         break;
 
     case node_type_t::EQUAL:
-        out << "=";
+        out << '=';
         break;
 
     case node_type_t::EXCLAMATION:
-        out << "!";
+        out << '!';
         break;
 
+    case node_type_t::VARIABLE_FUNCTION:
+        out << '$';
     case node_type_t::FUNCTION:
-        out << f_string << "(";
-        for(auto c : f_children)
         {
-            out << c->to_string();
+            out << f_string << "(";
+            bool first(true);
+            for(auto c : f_children)
+            {
+                if(first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    out << ",";
+                }
+                out << c->to_string(flags);
+            }
+            out << ")";
         }
-        out << ")";
         break;
 
-    case node_type_t::GREATER_THAN:
+    case node_type_t::GREATER_EQUAL:
         out << ">=";
         break;
 
+    case node_type_t::GREATER_THAN:
+        out << ">";
+        break;
+
     case node_type_t::HASH:
-        out << "#";
+        out << "#" << f_string;
         break;
 
     case node_type_t::IDENTIFIER:
@@ -527,15 +583,38 @@ std::string node::to_string() const
         out << f_integer << f_string;
         break;
 
+    case node_type_t::LESS_EQUAL:
+        out << "<=";
+        break;
+
+    case node_type_t::LESS_THAN:
+        out << "<";
+        break;
+
+    case node_type_t::MODULO:
+        if((flags & g_to_string_flag_add_spaces) != 0)
+        {
+            out << " % ";
+        }
+        else
+        {
+            out << "%";
+        }
+        break;
+
     case node_type_t::MULTIPLY:
         out << "*";
+        break;
+
+    case node_type_t::NOT_EQUAL:
+        out << "!=";
         break;
 
     case node_type_t::OPEN_CURLYBRACKET:
         out << "{";
         for(auto c : f_children)
         {
-            out << c->to_string();
+            out << c->to_string(flags);
         }
         out << "}";
         break;
@@ -544,7 +623,7 @@ std::string node::to_string() const
         out << "(";
         for(auto c : f_children)
         {
-            out << c->to_string();
+            out << c->to_string(flags);
         }
         out << ")";
         break;
@@ -553,13 +632,13 @@ std::string node::to_string() const
         out << "[";
         for(auto c : f_children)
         {
-            out << c->to_string();
+            out << c->to_string(flags);
         }
         out << "]";
         break;
 
     case node_type_t::PERCENT:
-        out << f_integer << "%";
+        out << decimal_number_to_string(f_decimal_number) << "%";
         break;
 
     case node_type_t::PERIOD:
@@ -567,7 +646,11 @@ std::string node::to_string() const
         break;
 
     case node_type_t::PLACEHOLDER:
-        out << "%";
+        out << "%" << f_string;
+        break;
+
+    case node_type_t::POWER:
+        out << "**";
         break;
 
     case node_type_t::PRECEDED:
@@ -591,7 +674,64 @@ std::string node::to_string() const
         break;
 
     case node_type_t::STRING:
-        out << f_string;
+        if((flags & g_to_string_flag_show_quotes) != 0)
+        {
+            int sq(0);
+            int dq(0);
+            for(char const *s(f_string.c_str()); *s != '\0'; ++s)
+            {
+                if(*s == '\'')
+                {
+                    ++sq;
+                }
+                else if(*s == '"')
+                {
+                    ++dq;
+                }
+            }
+            if(sq >= dq)
+            {
+                // use " in this case
+                out << '"';
+                for(char const *s(f_string.c_str()); *s != '\0'; ++s)
+                {
+                    if(*s == '"')
+                    {
+                        out << "\\\"";
+                    }
+                    else
+                    {
+                        out << *s;
+                    }
+                }
+                out << '"';
+            }
+            else
+            {
+                // use ' in this case
+                out << '\'';
+                for(char const *s(f_string.c_str()); *s != '\0'; ++s)
+                {
+                    if(*s == '\'')
+                    {
+                        out << "\\'";
+                    }
+                    else
+                    {
+                        out << *s;
+                    }
+                }
+                out << '\'';
+            }
+        }
+        else
+        {
+            // for errors and other messages we do not want the quotes
+            for(char const *s(f_string.c_str()); *s != '\0'; ++s)
+            {
+                out << *s;
+            }
+        }
         break;
 
     case node_type_t::SUBSTRING_MATCH:
@@ -619,7 +759,7 @@ std::string node::to_string() const
         break;
 
     case node_type_t::VARIABLE:
-        out << "$" << f_string;
+        out << '$' << f_string;
         break;
 
     case node_type_t::WHITESPACE:
@@ -628,19 +768,28 @@ std::string node::to_string() const
         break;
 
     case node_type_t::COMPONENT_VALUE:
-        for(auto c : f_children)
         {
-            if(c->is(node_type_t::ARG))
+            bool first(true);
+            for(auto c : f_children)
             {
-                out << c->to_string();
-                if(c != f_children.back()) // don't add a ',' on the last entry
+                if(c->is(node_type_t::ARG))
                 {
-                    out << ",";
+                    if(first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        out << ",";
+                    }
+                    out << c->to_string(flags);
                 }
-            }
-            else
-            {
-                out << c->to_string();
+                else
+                {
+                    // this should not happen unless we did not argify yet
+                    // and in that case commas are inline
+                    out << c->to_string(flags);
+                }
             }
         }
         break;
@@ -657,11 +806,18 @@ std::string node::to_string() const
     case node_type_t::LIST:
         for(auto c : f_children)
         {
-            out << c->to_string();
+            out << c->to_string(flags);
         }
         break;
 
-    default:
+    case node_type_t::UNKNOWN:
+    case node_type_t::CDC:
+    case node_type_t::CDO:
+    case node_type_t::CLOSE_CURLYBRACKET:
+    case node_type_t::CLOSE_PARENTHESIS:
+    case node_type_t::CLOSE_SQUAREBRACKET:
+    case node_type_t::EOF_TOKEN:
+    case node_type_t::max_type:
         // many of the nodes are not expected in a valid tree being compiled
         // all of those will generate this exception
         throw csspp_exception_logic("unexpected token in to_string() call.");
@@ -691,9 +847,11 @@ void node::display(std::ostream & out, uint32_t indent) const
     case node_type_t::HASH:
     case node_type_t::IDENTIFIER:
     case node_type_t::INTEGER:
+    case node_type_t::PLACEHOLDER:
     case node_type_t::STRING:
     case node_type_t::URL:
     case node_type_t::VARIABLE:
+    case node_type_t::VARIABLE_FUNCTION:
         out << " \"" << f_string << "\"";
         break;
 
@@ -774,6 +932,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     case node_type_t::OPEN_SQUAREBRACKET:
     case node_type_t::OPEN_CURLYBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
+    case node_type_t::VARIABLE_FUNCTION:
         // display the children now
         for(size_t i(0); i < f_children.size(); ++i)
         {

@@ -118,6 +118,9 @@ public:
     typedef std::shared_ptr<node>   pointer_t;
     static size_t const             npos = static_cast<size_t>(-1);
 
+    static int const                g_to_string_flag_show_quotes = 0x01;
+    static int const                g_to_string_flag_add_spaces  = 0x02;
+
                         node(node_type_t const type, position const & pos);
 
     node_type_t         get_type() const;
@@ -147,11 +150,11 @@ public:
     void                take_over_children_of(pointer_t n);
     void                replace_child(pointer_t o, pointer_t n);
 
-    void                reset_variables();
+    void                clear_variables();
     void                set_variable(std::string const & name, pointer_t value);
     pointer_t           get_variable(std::string const & name);
 
-    std::string         to_string() const;
+    std::string         to_string(int flags) const;
     void                display(std::ostream & out, uint32_t indent) const;
 
 private:

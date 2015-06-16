@@ -687,8 +687,12 @@ TEST_CASE("Color to string", "[color] [output]")
             case 0x0000ff:
             case 0x008080:
             case 0x00ffff:
-                valid = false;
-                break;
+                // since we randomize the colors we test this is rather
+                // unlikely (we could test all the colors too, but that
+                // 16 million so a tad bit slow, that being said, I tried
+                // once just in case)
+                valid = false; // LCOV_EXCL_LINE
+                break;         // LCOV_EXCL_LINE
 
             default:
                 valid = (r >> 4) != (r & 15)
@@ -728,11 +732,12 @@ TEST_CASE("Color to string", "[color] [output]")
         csspp::color_component_t const a((rand() % 254) + 1);  // avoid 0 and 255
 
         c.set_color(r, g, b, a);
+        csspp::safe_precision_t precision(2);
         std::stringstream ss;
         ss << "rgba(" << static_cast<int>(r)
                << "," << static_cast<int>(g)
                << "," << static_cast<int>(b)
-               << "," << static_cast<int>(a)
+               << "," << csspp::decimal_number_to_string(static_cast<int>(a) / 255.0)
                << ")";
         REQUIRE(c.to_string() == ss.str());
     }

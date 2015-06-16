@@ -63,9 +63,9 @@ void error::set_error_stream(std::ostream & err_stream)
     f_error = &err_stream;
 }
 
-void error::set_count_warnings_as_errors()
+void error::set_count_warnings_as_errors(bool warnings_as_errors)
 {
-    f_warnings_as_errors = true;
+    f_warnings_as_errors = warnings_as_errors;
 }
 
 error_count_t error::get_error_count() const
@@ -93,9 +93,9 @@ void error::set_show_debug(bool show_debug)
     f_show_debug = show_debug;
 }
 
-void error::set_verbose()
+void error::set_verbose(bool status)
 {
-    f_verbose = true;
+    f_verbose = status;
 }
 
 error & error::operator << (position const & pos)

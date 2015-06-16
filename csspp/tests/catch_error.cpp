@@ -33,13 +33,6 @@
 
 #include <string.h>
 
-namespace
-{
-
-
-} // no name namespace
-
-
 TEST_CASE("Error names", "[error]")
 {
     csspp::error_mode_t e(csspp::error_mode_t::ERROR_DEC);
@@ -90,32 +83,207 @@ TEST_CASE("Error names", "[error]")
 
 TEST_CASE("Error messages", "[error] [output]")
 {
+    csspp::error_count_t error_count(csspp::error::instance().get_error_count());
+    csspp::error_count_t warning_count(csspp::error::instance().get_warning_count());
+
     csspp::position p("test.css");
 
-    csspp::error::instance() << p << "testing errors: "
-                             << 123
-                             << " U+" << csspp::error_mode_t::ERROR_HEX << 123
-                             << "."
-                             << csspp::error_mode_t::ERROR_FATAL;
-    REQUIRE_ERRORS("test.css(1): fatal: testing errors: 123 U+7b.\n");
+    {
+        csspp::error_happened_t happened;
 
-    int64_t cs(123);
-    csspp::error::instance() << p << std::string("testing errors:")
-                             << " U+" << csspp::error_mode_t::ERROR_HEX << cs
-                             << " (" << csspp::error_mode_t::ERROR_DEC << 123
-                             << ")."
-                             << csspp::error_mode_t::ERROR_ERROR;
-    REQUIRE_ERRORS("test.css(1): error: testing errors: U+7b (123).\n");
+        csspp::error::instance() << p << "testing errors: "
+                                 << 123
+                                 << " U+" << csspp::error_mode_t::ERROR_HEX << 123
+                                 << "."
+                                 << csspp::error_mode_t::ERROR_FATAL;
+        REQUIRE_ERRORS("test.css(1): fatal: testing errors: 123 U+7b.\n");
+        ++error_count;
+        REQUIRE(error_count == csspp::error::instance().get_error_count());
+        REQUIRE(warning_count == csspp::error::instance().get_warning_count());
 
-    csspp::error::instance() << p << "testing warnings:"
-                             << " U+" << csspp::error_mode_t::ERROR_HEX << 123
-                             << " decimal: " << csspp::error_mode_t::ERROR_DEC << 123.25
-                             << "."
-                             << csspp::error_mode_t::ERROR_WARNING;
-    REQUIRE_ERRORS("test.css(1): warning: testing warnings: U+7b decimal: 123.25.\n");
+        REQUIRE(happened.error_happened());
+        REQUIRE_FALSE(happened.warning_happened());
+    }
+
+    {
+        csspp::error_happened_t happened;
+
+        int64_t cs(83);
+        csspp::error::instance() << p << std::string("testing errors:")
+                                 << " U+" << csspp::error_mode_t::ERROR_HEX << cs
+                                 << " (" << csspp::error_mode_t::ERROR_DEC << 133
+                                 << ")."
+                                 << csspp::error_mode_t::ERROR_ERROR;
+        REQUIRE_ERRORS("test.css(1): error: testing errors: U+53 (133).\n");
+        ++error_count;
+        REQUIRE(error_count == csspp::error::instance().get_error_count());
+        REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+
+        REQUIRE(happened.error_happened());
+        REQUIRE_FALSE(happened.warning_happened());
+    }
+
+    {
+        csspp::safe_error_t safe_error;
+
+        {
+            csspp::error_happened_t happened;
+
+            csspp::error::instance() << p << "testing warnings:"
+                                     << " U+" << csspp::error_mode_t::ERROR_HEX << 123
+                                     << " decimal: " << csspp::error_mode_t::ERROR_DEC << 123.25
+                                     << "."
+                                     << csspp::error_mode_t::ERROR_WARNING;
+            REQUIRE_ERRORS("test.css(1): warning: testing warnings: U+7b decimal: 123.25.\n");
+            ++warning_count;
+            REQUIRE(error_count == csspp::error::instance().get_error_count());
+            REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+
+            REQUIRE_FALSE(happened.error_happened());
+            REQUIRE(happened.warning_happened());
+        }
+
+        {
+            csspp::error_happened_t happened;
+
+            csspp::error::instance().set_count_warnings_as_errors(true);
+            csspp::error::instance() << p << "testing warnings:"
+                                     << " U+" << csspp::error_mode_t::ERROR_HEX << 123
+                                     << " decimal: " << csspp::error_mode_t::ERROR_DEC << 123.25
+                                     << "."
+                                     << csspp::error_mode_t::ERROR_WARNING;
+            REQUIRE_ERRORS("test.css(1): warning: testing warnings: U+7b decimal: 123.25.\n");
+            ++error_count;
+            REQUIRE(error_count == csspp::error::instance().get_error_count());
+            REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+            csspp::error::instance().set_count_warnings_as_errors(false);
+
+            REQUIRE(happened.error_happened());
+            REQUIRE_FALSE(happened.warning_happened());
+        }
+
+        {
+            csspp::error_happened_t happened;
+
+            csspp::error::instance() << p << "testing warnings:"
+                                     << " U+" << csspp::error_mode_t::ERROR_HEX << 123
+                                     << " decimal: " << csspp::error_mode_t::ERROR_DEC << 123.25
+                                     << "."
+                                     << csspp::error_mode_t::ERROR_WARNING;
+            REQUIRE_ERRORS("test.css(1): warning: testing warnings: U+7b decimal: 123.25.\n");
+            ++warning_count;
+            REQUIRE(error_count == csspp::error::instance().get_error_count());
+            REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+
+            REQUIRE_FALSE(happened.error_happened());
+            REQUIRE(happened.warning_happened());
+        }
+    }
+    // the safe_error restores the counters to what they were before the '{'
+    --error_count;
+    warning_count -= 2;
+    REQUIRE(error_count == csspp::error::instance().get_error_count());
+    REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+
+    {
+        csspp::error_happened_t happened;
+
+        csspp::error::instance() << p << "testing info:"
+                                 << " U+" << csspp::error_mode_t::ERROR_HEX << 120
+                                 << " decimal: " << csspp::error_mode_t::ERROR_DEC << 213.25
+                                 << "."
+                                 << csspp::error_mode_t::ERROR_INFO;
+        REQUIRE_ERRORS("test.css(1): info: testing info: U+78 decimal: 213.25.\n");
+        REQUIRE(error_count == csspp::error::instance().get_error_count());
+        REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+
+        REQUIRE_FALSE(happened.error_happened());
+        REQUIRE_FALSE(happened.warning_happened());
+    }
+
+    {
+        csspp::error_happened_t happened;
+
+        csspp::error::instance() << p << "testing debug:"
+                                 << " U+" << csspp::error_mode_t::ERROR_HEX << 112
+                                 << " decimal: " << csspp::error_mode_t::ERROR_DEC << 13.25
+                                 << "."
+                                 << csspp::error_mode_t::ERROR_DEBUG;
+        REQUIRE_ERRORS("");
+        REQUIRE(error_count == csspp::error::instance().get_error_count());
+        REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+
+        REQUIRE_FALSE(happened.error_happened());
+        REQUIRE_FALSE(happened.warning_happened());
+    }
+
+    {
+        csspp::error_happened_t happened;
+
+        csspp::error::instance().set_show_debug(true);
+        csspp::error::instance() << p << "testing debug:"
+                                 << " U+" << csspp::error_mode_t::ERROR_HEX << 112
+                                 << " decimal: " << csspp::error_mode_t::ERROR_DEC << 13.25
+                                 << "."
+                                 << csspp::error_mode_t::ERROR_DEBUG;
+        REQUIRE_ERRORS("test.css(1): debug: testing debug: U+70 decimal: 13.25.\n");
+        REQUIRE(error_count == csspp::error::instance().get_error_count());
+        REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+        csspp::error::instance().set_show_debug(false);
+
+        REQUIRE_FALSE(happened.error_happened());
+        REQUIRE_FALSE(happened.warning_happened());
+    }
+
+    {
+        csspp::error_happened_t happened;
+
+        csspp::error::instance() << p << "testing debug:"
+                                 << " U+" << csspp::error_mode_t::ERROR_HEX << 112
+                                 << " decimal: " << csspp::error_mode_t::ERROR_DEC << 13.25
+                                 << "."
+                                 << csspp::error_mode_t::ERROR_DEBUG;
+        REQUIRE_ERRORS("");
+        REQUIRE(error_count == csspp::error::instance().get_error_count());
+        REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+
+        REQUIRE_FALSE(happened.error_happened());
+        REQUIRE_FALSE(happened.warning_happened());
+    }
+
+    {
+        csspp::error_happened_t happened;
+
+        csspp::error::instance().set_verbose(true);
+        csspp::error::instance() << p << "verbose message to debug the compiler."
+                                 << csspp::error_mode_t::ERROR_INFO;
+        REQUIRE_ERRORS("test.css(1): info: verbose message to debug the compiler.\n");
+        REQUIRE(error_count == csspp::error::instance().get_error_count());
+        REQUIRE(warning_count == csspp::error::instance().get_warning_count());
+
+        REQUIRE_FALSE(happened.error_happened());
+        REQUIRE_FALSE(happened.warning_happened());
+
+        csspp::error::instance().set_verbose(false);
+    }
 
     // no error left over
     REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Error strean", "[error] [stream]")
+{
+    {
+        std::stringstream ss;
+        std::ostream & errout(csspp::error::instance().get_error_stream());
+        REQUIRE(&errout != &ss);
+        {
+            csspp::safe_error_stream_t safe_stream(ss);
+            REQUIRE(&csspp::error::instance().get_error_stream() == &ss);
+        }
+        REQUIRE(&csspp::error::instance().get_error_stream() != &ss);
+        REQUIRE(&csspp::error::instance().get_error_stream() == &errout);
+    }
 }
 
 // Local Variables:

@@ -27,9 +27,9 @@
 #include "csspp/compiler.h"
 
 #include "csspp/exceptions.h"
+#include "csspp/expression.h"
 #include "csspp/nth_child.h"
 #include "csspp/parser.h"
-//#include "csspp/unicode_range.h"
 
 #include <cmath>
 #include <fstream>
@@ -43,1340 +43,9 @@ namespace csspp
 namespace
 {
 
-class expression_t
-{
-public:
-    // no current on startup
-    expression_t(node::pointer_t n, bool skip_whitespace)
-        : f_node(n)
-        , f_skip_whitespace(skip_whitespace)
-    {
-        if(!f_node)
-        {
-            throw csspp_exception_logic("compiler.cpp:expression_t(): contructor called with a null pointer.");
-        }
-    }
-
-    // basic state handling
-    void mark_start()
-    {
-        f_start = f_pos;
-    }
-
-    void replace_with_result(node::pointer_t result)
-    {
-        if(f_start == static_cast<size_t>(-1))
-        {
-            throw csspp_exception_logic("compiler.cpp:expression_t(): replace_with_result() cannot be called if mark_start() was never called.");
-        }
-
-        // f_pos may point to a tag right after the end of the previous
-        // expression; expressions may be separated by WHITESPACE tokens
-        // too so we have to restore them if they appear at the end of
-        // the epxression we just worked on (i.e. we cannot eat a WHITESPACE
-        // in an expression.)
-        if(!f_current->is(node_type_t::EOF_TOKEN) && f_pos > 0)
-        {
-            --f_pos;
-            if(f_node->get_child(f_pos)->is(node_type_t::WHITESPACE))
-            {
-                --f_pos;
-            }
-        }
-
-        // this "reduces" the expression with its result
-        while(f_pos > f_start)
-        {
-            --f_pos;
-            f_node->remove_child(f_pos);
-        }
-        f_node->insert_child(f_pos, result);
-        ++f_pos;
-        f_start = f_pos;
-    }
-
-    void next()
-    {
-        if(f_pos >= f_node->size())
-        {
-            if(!f_current || !f_current->is(node_type_t::EOF_TOKEN))
-            {
-                f_current.reset(new node(node_type_t::EOF_TOKEN, f_node->get_position()));
-            }
-        }
-        else
-        {
-            f_current = f_node->get_child(f_pos);
-            ++f_pos;
-            while(f_skip_whitespace
-               && f_pos < f_node->size()
-               && f_node->get_child(f_pos)->is(node_type_t::WHITESPACE))
-            {
-                ++f_pos;
-            }
-        }
-    }
-
-    node::pointer_t current() const
-    {
-        return f_current;
-    }
-
-    static boolean_t boolean(node::pointer_t n)
-    {
-        boolean_t const result(n->to_boolean());
-        if(result == boolean_t::INVALID)
-        {
-            error::instance() << n->get_position()
-                    << "a boolean expression was expected."
-                    << error_mode_t::ERROR_ERROR;
-        }
-        return result;
-    }
-
-    // expression parsing
-    node::pointer_t expression_list()
-    {
-        node::pointer_t result(assignment());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        if(f_current->is(node_type_t::COMMA))
-        {
-            // create a list only if we have at least one comma?
-            node::pointer_t item(result);
-            result.reset(new node(node_type_t::LIST, item->get_position()));
-            result->add_child(item);
-
-            while(f_current->is(node_type_t::COMMA))
-            {
-                // skip the ','
-                next();
-
-                item = assignment();
-                result->add_child(item);
-            }
-        }
-
-        return result;
-    }
-
-    node::pointer_t assignment()
-    {
-        // assignment: conditional
-        //           | IDENTIFIER ':=' conditional
-
-        node::pointer_t result(conditional());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        if(result->is(node_type_t::IDENTIFIER)
-        && f_current->is(node_type_t::ASSIGNMENT))
-        {
-            next();
-
-            node::pointer_t value(conditional());
-            f_variables[result->get_string()] = value;
-
-            // the return value of an assignment is the value of
-            // the variable
-            result = value;
-        }
-
-        return result;
-    }
-
-    node::pointer_t conditional()
-    {
-        // conditional: logical_or
-        //            | conditional '?' expression_list ':' logical_or
-
-        // note: we also support if(expr, expr, expr)
-
-        node::pointer_t result(logical_or());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        while(f_current->is(node_type_t::CONDITIONAL))
-        {
-            // skip the '?'
-            next();
-
-            // TODO: avoid calculating both sides.
-            node::pointer_t result_true(expression_list());
-            if(!result_true)
-            {
-                return node::pointer_t();
-            }
-
-            if(!f_current->is(node_type_t::COLON))
-            {
-                error::instance() << f_current->get_position()
-                        << "a mandatory ':' was expected after a '?' first expression."
-                        << error_mode_t::ERROR_ERROR;
-                return node::pointer_t();
-            }
-
-            // skip the ':'
-            next();
-
-            node::pointer_t result_false(logical_or());
-            if(!result_false)
-            {
-                return node::pointer_t();
-            }
-
-            // select the right result
-            int const r(boolean(result));
-            if(r < 0)
-            {
-                return node::pointer_t();
-            }
-            result = r == 0 ? result_false : result_true;
-        }
-
-        return result;
-    }
-
-    node::pointer_t logical_or()
-    {
-        // logical_or: logical_and
-        //           | logical_or IDENTIFIER (='or') logical_and
-        //           | logical_or '||' logical_and
-
-        node::pointer_t result(logical_and());
-        if(!result)
-        {
-            return false;
-        }
-
-        while((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "or")
-           || f_current->is(node_type_t::COLUMN))
-        {
-            position pos(f_current->get_position());
-
-            // skip the OR
-            next();
-
-            node::pointer_t rhs(logical_and());
-            if(!rhs)
-            {
-                return false;
-            }
-
-            // apply the OR
-            int const lr(boolean(result));
-            int const rr(boolean(rhs));
-            result.reset(new node(node_type_t::BOOLEAN, pos));
-            result->set_boolean(lr || rr);
-        }
-
-        return result;
-    }
-
-    node::pointer_t logical_and()
-    {
-        // logical_and: equality
-        //            | logical_and IDENTIFIER (='and') equality
-        //            | logical_and '&&' equality
-
-        node::pointer_t result(equality());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        while((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "and")
-           || f_current->is(node_type_t::AND))
-        {
-            position pos(f_current->get_position());
-
-            // skip the AND
-            next();
-
-            node::pointer_t rhs(equality());
-            if(!rhs)
-            {
-                return node::pointer_t();
-            }
-
-            // apply the AND
-            int const lr(boolean(result));
-            int const rr(boolean(rhs));
-            result.reset(new node(node_type_t::BOOLEAN, pos));
-            result->set_boolean(lr && rr);
-        }
-
-        return result;
-    }
-
-    node_type_t equality_operator(node::pointer_t n)
-    {
-        switch(n->get_type())
-        {
-        // return type as is
-        case node_type_t::EQUAL:
-            if(f_pos + 1 < f_node->size())
-            {
-                if(f_node->get_child(f_pos + 1)->is(node_type_t::EQUAL))
-                {
-                    // we accept '==' with a warning (for SASS compatibility
-                    // skip the first '=' here
-                    next();
-                    error::instance() << n->get_position()
-                            << "we accepted '==' instead of '=' in an expression, you probably want to change the operator to just '='."
-                            << error_mode_t::ERROR_WARNING;
-                }
-            }
-            return node_type_t::EQUAL;
-
-        case node_type_t::NOT_EQUAL:
-        case node_type_t::INCLUDE_MATCH:
-        case node_type_t::PREFIX_MATCH:
-        case node_type_t::SUFFIX_MATCH:
-        case node_type_t::SUBSTRING_MATCH:
-        case node_type_t::DASH_MATCH:
-            return n->get_type();
-
-        case node_type_t::IDENTIFIER:
-            {
-                if(n->get_string() == "not-equal")
-                {
-                    return node_type_t::NOT_EQUAL;
-                }
-            }
-            /*PASSTHROUGH*/
-        default:
-            return node_type_t::UNKNOWN;
-
-        }
-    }
-
-    bool is_equal(node::pointer_t lhs, node::pointer_t rhs)
-    {
-        switch(mix_node_types(lhs->get_type(), rhs->get_type()))
-        {
-        case mix_node_types(node_type_t::BOOLEAN, node_type_t::BOOLEAN):
-            return lhs->get_boolean() == rhs->get_boolean();
-
-        case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-            // TBD: should we generate an error if these are not
-            //      equivalent dimensions?
-            return lhs->get_integer() == rhs->get_integer();
-
-        case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-            // TBD: should we generate an error if these are not
-            //      equivalent dimensions?
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            return lhs->get_decimal_number() == rhs->get_decimal_number();
-#pragma GCC diagnostic pop
-
-        case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            return lhs->get_decimal_number() == rhs->get_decimal_number();
-#pragma GCC diagnostic pop
-
-        case mix_node_types(node_type_t::STRING, node_type_t::STRING):
-            return lhs->get_string() == rhs->get_string();
-
-        }
-
-        error::instance() << lhs->get_position()
-                << "incompatible types between "
-                << lhs->get_type()
-                << " and "
-                << rhs->get_type()
-                << " for operator '==', '!=', '<=', or '>='."
-                << error_mode_t::ERROR_ERROR;
-        return false;
-    }
-
-    bool is_less_than(node::pointer_t lhs, node::pointer_t rhs)
-    {
-        switch(mix_node_types(lhs->get_type(), rhs->get_type()))
-        {
-        case mix_node_types(node_type_t::BOOLEAN, node_type_t::BOOLEAN):
-            return lhs->get_boolean() < rhs->get_boolean();
-
-        case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-            // TBD: should we generate an error if these are not
-            //      equivalent dimensions?
-            return lhs->get_integer() < rhs->get_integer();
-
-        case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-            // TBD: should we generate an error if these are not
-            //      equivalent dimensions?
-            return lhs->get_decimal_number() < rhs->get_decimal_number();
-
-        case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
-            return lhs->get_decimal_number() < rhs->get_decimal_number();
-
-        case mix_node_types(node_type_t::STRING, node_type_t::STRING):
-            return lhs->get_string() < rhs->get_string();
-
-        }
-
-        error::instance() << lhs->get_position()
-                << "incompatible types between "
-                << lhs->get_type()
-                << " and "
-                << rhs->get_type()
-                << " for operator '<', '<=', '>', or '>='."
-                << error_mode_t::ERROR_ERROR;
-        return false;
-    }
-
-    bool match(node_type_t op, node::pointer_t lhs, node::pointer_t rhs)
-    {
-        std::string s;
-        std::string l;
-
-        switch(mix_node_types(lhs->get_type(), rhs->get_type()))
-        {
-        case mix_node_types(node_type_t::STRING, node_type_t::STRING):
-            s = lhs->get_string();
-            l = rhs->get_string();
-            break;
-
-        default:
-            error::instance() << f_current->get_position()
-                    << "incompatible types between "
-                    << lhs->get_type()
-                    << " and "
-                    << rhs->get_type()
-                    << " for operator '~='."
-                    << error_mode_t::ERROR_ERROR;
-            return lhs->get_string() == rhs->get_string();
-
-        }
-
-        switch(op)
-        {
-        case node_type_t::INCLUDE_MATCH:
-            l = " " + l + " ";
-            s = " " + s + " ";
-            break;
-
-        case node_type_t::PREFIX_MATCH:
-            if(l.length() < s.length())
-            {
-                return false;
-            }
-            return s == l.substr(0, s.length());
-
-        case node_type_t::SUFFIX_MATCH:
-            if(l.length() < s.length())
-            {
-                return false;
-            }
-            return s == l.substr(l.length() - s.length());
-
-        case node_type_t::SUBSTRING_MATCH:
-            break;
-
-        case node_type_t::DASH_MATCH:
-            l = "-" + l + "-";
-            s = "-" + s + "-";
-            break;
-
-        default:
-            throw csspp_exception_logic("compiler.cpp:include_match(): called with an invalid operator."); // LCOV_EXCL_LINE
-
-        }
-
-        return l.find(s) != std::string::npos;
-    }
-
-    node::pointer_t equality()
-    {
-        // equality: relational
-        //         | equality '=' relational
-        //         | equality '!=' relational
-        //         | equality '~=' relational
-        //         | equality '^=' relational
-        //         | equality '$=' relational
-        //         | equality '*=' relational
-        //         | equality '|=' relational
-
-        node::pointer_t result(relational());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        node_type_t op(equality_operator(f_current));
-        while(op != node_type_t::UNKNOWN)
-        {
-            position pos(f_current->get_position());
-
-            // skip the equality operator
-            next();
-
-            node::pointer_t rhs(relational());
-            if(!rhs)
-            {
-                return false;
-            }
-
-            // apply the equality operation
-            bool boolean_result(false);
-            switch(op)
-            {
-            case node_type_t::EQUAL:
-                boolean_result = is_equal(result, rhs);
-                break;
-
-            case node_type_t::NOT_EQUAL:
-                boolean_result = !is_equal(result, rhs);
-                break;
-
-            case node_type_t::INCLUDE_MATCH:
-            case node_type_t::PREFIX_MATCH:
-            case node_type_t::SUFFIX_MATCH:
-            case node_type_t::SUBSTRING_MATCH:
-            case node_type_t::DASH_MATCH:
-                boolean_result = match(op, result, rhs);
-                break;
-
-            default:
-                throw csspp_exception_logic("compiler.cpp:equality(): unexpected operator in 'op'."); // LCOV_EXCL_LINE
-
-            }
-            result.reset(new node(node_type_t::BOOLEAN, pos));
-            result->set_boolean(boolean_result);
-
-            op = equality_operator(f_current);
-        }
-
-        return result;
-    }
-
-    node_type_t relational_operator(node::pointer_t n)
-    {
-        switch(n->get_type())
-        {
-        case node_type_t::LESS_THAN:
-        case node_type_t::LESS_EQUAL:
-        case node_type_t::GREATER_THAN:
-        case node_type_t::GREATER_EQUAL:
-            return n->get_type();
-
-        default:
-            return node_type_t::UNKNOWN;
-
-        }
-    }
-
-    node::pointer_t relational()
-    {
-        // relational: additive
-        //           | relational '<' additive
-        //           | relational '<=' additive
-        //           | relational '>' additive
-        //           | relational '>=' additive
-
-        node::pointer_t result(additive());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        node_type_t op(relational_operator(f_current));
-        while(op != node_type_t::UNKNOWN)
-        {
-            position pos(f_current->get_position());
-
-            // skip the relational operator
-            next();
-
-            node::pointer_t rhs(additive());
-            if(!rhs)
-            {
-                return node::pointer_t();
-            }
-
-            // apply the equality operation
-            bool boolean_result(false);
-            switch(op)
-            {
-            case node_type_t::LESS_THAN:
-                boolean_result = is_less_than(result, rhs);
-                break;
-
-            case node_type_t::LESS_EQUAL:
-                boolean_result = is_less_than(result, rhs) && is_equal(result, rhs);
-                break;
-
-            case node_type_t::GREATER_THAN:
-                boolean_result = !is_less_than(result, rhs) && !is_equal(result, rhs);
-                break;
-
-            case node_type_t::GREATER_EQUAL:
-                boolean_result = !is_less_than(result, rhs);
-                break;
-
-            default:
-                throw csspp_exception_logic("compiler.cpp:relational(): unexpected operator in 'op'."); // LCOV_EXCL_LINE
-
-            }
-            result.reset(new node(node_type_t::BOOLEAN, pos));
-            result->set_boolean(boolean_result);
-
-            op = relational_operator(f_current);
-        }
-
-        return result;
-    }
-
-    node_type_t additive_operator(node::pointer_t n)
-    {
-        switch(n->get_type())
-        {
-        case node_type_t::ADD:
-        case node_type_t::SUBTRACT:
-            return n->get_type();
-
-        default:
-            return node_type_t::UNKNOWN;
-
-        }
-    }
-
-    node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
-    {
-        node_type_t type(node_type_t::UNKNOWN);
-        integer_t ai;
-        integer_t bi;
-        decimal_number_t af;
-        decimal_number_t bf;
-
-        switch(mix_node_types(lhs->get_type(), rhs->get_type()))
-        {
-        case mix_node_types(node_type_t::STRING, node_type_t::STRING):
-            if(subtract)
-            {
-                error::instance() << f_current->get_position()
-                        << "incompatible types between "
-                        << lhs->get_type()
-                        << " and "
-                        << rhs->get_type()
-                        << " for operator '-'."
-                        << error_mode_t::ERROR_ERROR;
-                return node::pointer_t();
-            }
-            // string concatenation
-            lhs->set_string(lhs->get_string() + rhs->get_string());
-            return lhs;
-
-        case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-            // TODO: test that the dimensions are compatible
-            ai = lhs->get_integer();
-            bi = rhs->get_integer();
-            type = node_type_t::INTEGER;
-            break;
-
-        case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-            // TODO: test that the dimensions are compatible
-            af = lhs->get_decimal_number();
-            bf = rhs->get_decimal_number();
-            type = node_type_t::DECIMAL_NUMBER;
-            break;
-
-        case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
-            af = lhs->get_decimal_number();
-            bf = rhs->get_decimal_number();
-            type = node_type_t::PERCENT;
-            break;
-
-        default:
-            {
-                node_type_t lt(lhs->get_type());
-                node_type_t rt(rhs->get_type());
-
-                error::instance() << f_current->get_position()
-                        << "incompatible types between "
-                        << lt
-                        << (lt == node_type_t::IDENTIFIER || lt == node_type_t::STRING ? " (" + lhs->get_string() + ")" : "")
-                        << " and "
-                        << rt
-                        << (rt == node_type_t::IDENTIFIER || rt == node_type_t::STRING ? " (" + rhs->get_string() + ")" : "")
-                        << " for operator '"
-                        << (subtract ? "-" : "+")
-                        << "'."
-                        << error_mode_t::ERROR_ERROR;
-                return node::pointer_t();
-            }
-
-        }
-
-        node::pointer_t result(new node(type, lhs->get_position()));
-        if(type != node_type_t::PERCENT)
-        {
-            // do not lose the dimension
-            result->set_string(lhs->get_string());
-        }
-
-        switch(type)
-        {
-        case node_type_t::INTEGER:
-            if(subtract)
-            {
-                result->set_integer(ai - bi);
-            }
-            else
-            {
-                result->set_integer(ai + bi);
-            }
-            break;
-
-        case node_type_t::DECIMAL_NUMBER:
-        case node_type_t::PERCENT:
-            if(subtract)
-            {
-                result->set_decimal_number(af - bf);
-            }
-            else
-            {
-                result->set_decimal_number(af + bf);
-            }
-            break;
-
-        default:
-            {
-                node_type_t lt(lhs->get_type());
-                node_type_t rt(rhs->get_type());
-
-                error::instance() << f_current->get_position()
-                        << "incompatible types between "
-                        << lt
-                        << (lt == node_type_t::IDENTIFIER || lt == node_type_t::STRING ? " (" + lhs->get_string() + ")" : "")
-                        << " and "
-                        << rt
-                        << (rt == node_type_t::IDENTIFIER || rt == node_type_t::STRING ? " (" + rhs->get_string() + ")" : "")
-                        << " for operator '"
-                        << (subtract ? "-" : "+")
-                        << "'."
-                        << error_mode_t::ERROR_ERROR;
-                return node::pointer_t();
-            }
-
-        }
-
-        return result;
-    }
-
-    node::pointer_t additive()
-    {
-        //  additive: multiplicative
-        //          | additive '+' multiplicative
-        //          | additive '-' multiplicative
-
-        node::pointer_t result(multiplicative());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        node_type_t op(additive_operator(f_current));
-        while(op != node_type_t::UNKNOWN)
-        {
-            // skip the additive operator
-            next();
-
-            node::pointer_t rhs(multiplicative());
-            if(!rhs)
-            {
-                return node::pointer_t();
-            }
-
-            // apply the additive operation
-            result = add(result, rhs, op == node_type_t::SUBTRACT);
-            if(!result)
-            {
-                return node::pointer_t();
-            }
-
-            op = additive_operator(f_current);
-        }
-
-        return result;
-    }
-
-    node_type_t multiplicative_operator(node::pointer_t n)
-    {
-        switch(n->get_type())
-        {
-        case node_type_t::IDENTIFIER:
-            if(n->get_string() == "mul")
-            {
-                return node_type_t::MULTIPLY;
-            }
-            if(n->get_string() == "div")
-            {
-                return node_type_t::DIVIDE;
-            }
-            if(n->get_string() == "mod")
-            {
-                return node_type_t::MODULO;
-            }
-            break;
-
-        case node_type_t::MULTIPLY:
-        case node_type_t::DIVIDE:
-        case node_type_t::MODULO:
-            return n->get_type();
-
-        default:
-            break;
-
-        }
-
-        return node_type_t::UNKNOWN;
-    }
-
-    node::pointer_t multiply(node_type_t op, node::pointer_t lhs, node::pointer_t rhs)
-    {
-        node_type_t type(node_type_t::INTEGER);
-        integer_t ai(0);
-        integer_t bi(0);
-        decimal_number_t af(0.0);
-        decimal_number_t bf(0.0);
-
-        switch(mix_node_types(lhs->get_type(), rhs->get_type()))
-        {
-        case mix_node_types(node_type_t::INTEGER, node_type_t::STRING):
-            std::swap(lhs, rhs);
-        case mix_node_types(node_type_t::STRING, node_type_t::INTEGER):
-            if(op != node_type_t::MULTIPLY)
-            {
-                error::instance() << lhs->get_position()
-                        << "incompatible types between "
-                        << lhs->get_type()
-                        << " and "
-                        << rhs->get_type()
-                        << " for operator '/' or '%'."
-                        << error_mode_t::ERROR_ERROR;
-                return node::pointer_t();
-            }
-            else
-            {
-                integer_t count(rhs->get_integer());
-                if(count < 0)
-                {
-                    error::instance() << lhs->get_position()
-                            << "string * integer requires that the integer not be negative ("
-                            << rhs->get_integer()
-                            << ")."
-                            << error_mode_t::ERROR_ERROR;
-                    return node::pointer_t();
-                }
-                std::string result;
-                for(; count > 0; --count)
-                {
-                    result += lhs->get_string();
-                }
-                lhs->set_string(result);
-            }
-            return lhs;
-
-        case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-            // TODO: test that the dimensions are compatible
-            ai = lhs->get_integer();
-            bi = rhs->get_integer();
-            type = node_type_t::INTEGER;
-            break;
-
-        case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-            // TODO: test that the dimensions are compatible
-            ai = lhs->get_integer();
-            bi = rhs->get_integer();
-            type = node_type_t::DECIMAL_NUMBER;
-            break;
-
-        case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
-            ai = lhs->get_integer();
-            bi = rhs->get_integer();
-            type = node_type_t::DECIMAL_NUMBER;
-            break;
-
-        default:
-            error::instance() << f_current->get_position()
-                    << "incompatible types between "
-                    << lhs->get_type()
-                    << " and "
-                    << rhs->get_type()
-                    << " for operators '*', '/', or '%'."
-                    << error_mode_t::ERROR_ERROR;
-            return node::pointer_t();
-
-        }
-
-        node::pointer_t result(new node(type, lhs->get_position()));
-        if(type != node_type_t::PERCENT)
-        {
-            // do not lose the dimension
-            result->set_string(lhs->get_string());
-        }
-
-        switch(type)
-        {
-        case node_type_t::INTEGER:
-            switch(op)
-            {
-            case node_type_t::MULTIPLY:
-                result->set_integer(ai * bi);
-                break;
-
-            case node_type_t::DIVIDE:
-                result->set_integer(ai / bi);
-                break;
-
-            case node_type_t::MODULO:
-                result->set_integer(ai % bi);
-                break;
-
-            default:
-                throw csspp_exception_logic("compiler.cpp:multiply(): unexpected operator."); // LCOV_EXCL_LINE
-
-            }
-            break;
-
-        case node_type_t::DECIMAL_NUMBER:
-        case node_type_t::PERCENT:
-            switch(op)
-            {
-            case node_type_t::MULTIPLY:
-                result->set_decimal_number(af * bf);
-                break;
-
-            case node_type_t::DIVIDE:
-                result->set_decimal_number(af / bf);
-                break;
-
-            case node_type_t::MODULO:
-                result->set_decimal_number(fmod(af, bf));
-                break;
-
-            default:
-                throw csspp_exception_logic("compiler.cpp:multiply(): unexpected operator."); // LCOV_EXCL_LINE
-
-            }
-            break;
-
-        default:
-            error::instance() << f_current->get_position()
-                    << "incompatible types between "
-                    << lhs->get_type()
-                    << " and "
-                    << rhs->get_type()
-                    << " for operator "
-                    << op
-                    << "."
-                    << error_mode_t::ERROR_ERROR;
-            return node::pointer_t();
-
-        }
-
-        return result;
-    }
-
-    node::pointer_t multiplicative()
-    {
-        // multiplicative: power
-        //               | multiplicative '*' power
-        //               | multiplicative '/' power
-        //               | multiplicative '%' power
-
-        node::pointer_t result(power());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        node_type_t op(multiplicative_operator(f_current));
-        while(op != node_type_t::UNKNOWN)
-        {
-            // skip the multiplicative operator
-            next();
-
-            node::pointer_t rhs(power());
-            if(!rhs)
-            {
-                return false;
-            }
-
-            // apply the multiplicative operation
-            result = multiply(op, result, rhs);
-            if(!result)
-            {
-                return node::pointer_t();
-            }
-
-            op = multiplicative_operator(f_current);
-        }
-
-        return result;
-    }
-
-    node::pointer_t apply_power(node::pointer_t lhs, node::pointer_t rhs)
-    {
-        node::pointer_t result(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
-
-        switch(mix_node_types(lhs->get_type(), rhs->get_type()))
-        {
-        case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-            // TODO: how to handle dimension?
-            result->set_string(lhs->get_string());
-            result->set_decimal_number(pow(lhs->get_integer(), rhs->get_integer()));
-            break;
-
-        case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-            // TODO: how to handle dimension?
-            result->set_string(lhs->get_string());
-            result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_decimal_number()));
-            break;
-
-        case mix_node_types(node_type_t::POWER, node_type_t::POWER):
-            result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_decimal_number()));
-            break;
-
-        default:
-            error::instance() << f_current->get_position()
-                    << "incompatible types between "
-                    << lhs->get_type()
-                    << " and "
-                    << rhs->get_type()
-                    << " for operator '**'."
-                    << error_mode_t::ERROR_ERROR;
-            return node::pointer_t();
-
-        }
-
-        return result;
-    }
-
-    node::pointer_t power()
-    {
-        // power: post
-        //      | post '**' post
-
-        node::pointer_t result(post());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        node_type_t op(multiplicative_operator(f_current));
-        while((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "pow")
-           || f_current->is(node_type_t::POWER))
-        {
-            position pos(f_current->get_position());
-
-            // skip the power operator
-            next();
-
-            node::pointer_t rhs(post());
-            if(!rhs)
-            {
-                return false;
-            }
-
-            // apply the power operation
-            result = apply_power(result, rhs);
-            if(!result)
-            {
-                return node::pointer_t();
-            }
-
-            op = multiplicative_operator(f_current);
-        }
-
-        return result;
-    }
-
-    node::pointer_t post()
-    {
-        // post: unary
-        //     | post '[' expression ']'
-        //     | post '.' IDENTIFIER
-
-        node::pointer_t result(unary());
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        for(;;)
-        {
-            if(f_current->is(node_type_t::OPEN_SQUAREBRACKET))
-            {
-                // compile the index expression
-                expression_t index(f_current, true);
-                index.next();
-                node::pointer_t i(index.expression_list());
-                if(!i)
-                {
-                    return node::pointer_t();
-                }
-
-                // skip the '['
-                next();
-
-                if(i->is(node_type_t::INTEGER))
-                {
-                    if(result->is(node_type_t::LIST))
-                    {
-                        // index is 1 based (not like in C/C++)
-                        integer_t const idx(i->get_integer());
-                        if(static_cast<size_t>(idx) > result->size())
-                        {
-                            error::instance() << f_current->get_position()
-                                    << "index "
-                                    << idx
-                                    << " is out of range. The allowed range is 1 to "
-                                    << static_cast<int>(result->size())
-                                    << "."
-                                    << error_mode_t::ERROR_ERROR;
-                            return node::pointer_t();
-                        }
-                        result = result->get_child(idx - 1);
-                    }
-                    else
-                    {
-                        error::instance() << f_current->get_position()
-                                << "unsupported type "
-                                << result->get_type()
-                                << " for the 'list[<index>]' operation."
-                                << error_mode_t::ERROR_ERROR;
-                        return node::pointer_t();
-                    }
-                }
-                else if(i->is(node_type_t::STRING))
-                {
-                    f_current = i;
-                    goto field_index;
-                }
-                else
-                {
-                    return node::pointer_t();
-                }
-            }
-            else if(f_current->is(node_type_t::PERIOD))
-            {
-                // skip the '.'
-                next();
-
-                if(!f_current->is(node_type_t::IDENTIFIER))
-                {
-                    error::instance() << f_current->get_position()
-                            << "only an identifier is expected after a '.'."
-                            << error_mode_t::ERROR_ERROR;
-                    return node::pointer_t();
-                }
-
-field_index:
-                if(result->is(node_type_t::LIST))
-                {
-                    // index is 1 based (not like in C/C++)
-                    std::string idx(f_current->get_string());
-                    // TODO: what are we indexing against?
-                    error::instance() << f_current->get_position()
-                            << "unsupported type "
-                            << result->get_type()
-                            << " for the 'map[<string>]' operation."
-                            << error_mode_t::ERROR_ERROR;
-                    return node::pointer_t();
-                }
-                else
-                {
-                    error::instance() << f_current->get_position()
-                            << "unsupported type "
-                            << result->get_type()
-                            << " for the 'map[<string>]' operation."
-                            << error_mode_t::ERROR_ERROR;
-                    return node::pointer_t();
-                }
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    node::pointer_t unary()
-    {
-        // unary: IDENTIFIER
-        //      | INTEGER
-        //      | DECIMAL_NUMBER
-        //      | STRING
-        //      | PERCENT
-        //      | FUNCTION expression_list ')'
-        //      | '(' expression_list ')'
-        //      | '+' power
-        //      | '-' power
-        //      | '!' power
-
-        switch(f_current->get_type())
-        {
-        case node_type_t::IDENTIFIER:
-        case node_type_t::INTEGER:
-        case node_type_t::DECIMAL_NUMBER:
-        case node_type_t::STRING:
-        case node_type_t::PERCENT:
-            {
-                node::pointer_t result(f_current);
-                // skip that token
-                next();
-                return result;
-            }
-
-        case node_type_t::FUNCTION:
-            {
-                node::pointer_t func(f_current);
-
-                // skip the '<func>('
-                next();
-
-                // calculate the arguments
-                expression_t args_expr(f_current, true);
-                args_expr.next();
-                node::pointer_t args(args_expr.expression_list());
-
-                return excecute_function(func, args);
-            }
-            break;
-
-        case node_type_t::OPEN_PARENTHESIS:
-            {
-                // skip the '('
-                next();
-
-                // calculate the result of the sub-expression
-                expression_t group(f_current, true);
-                group.next();
-                return group.expression_list();
-            }
-
-        case node_type_t::ADD:
-            // completely ignore the '+' because we assume that
-            // '+<anything>' <=> '<anything>'
-
-            // skip the '+'
-            next();
-            return power();
-
-        case node_type_t::SUBTRACT:
-            {
-                // skip the '-'
-                next();
-
-                node::pointer_t result(power());
-                switch(result->get_type())
-                {
-                case node_type_t::INTEGER:
-                    result->set_integer(-result->get_integer());
-                    return result;
-
-                case node_type_t::DECIMAL_NUMBER:
-                case node_type_t::PERCENT:
-                    result->set_decimal_number(-result->get_decimal_number());
-                    return result;
-
-                default:
-                    error::instance() << f_current->get_position()
-                            << "unsupported type "
-                            << result->get_type()
-                            << " for operator '-'."
-                            << error_mode_t::ERROR_ERROR;
-                    return node::pointer_t();
-
-                }
-            }
-            /*NOTREACHED*/
-
-        case node_type_t::EXCLAMATION:
-            {
-                // skip the '!'
-                next();
-
-                node::pointer_t result(power());
-                int const r(boolean(result));
-                if(r < 0)
-                {
-                    return node::pointer_t();
-                }
-                // make sure the result is a boolean
-                if(!result->is(node_type_t::BOOLEAN))
-                {
-                    result.reset(new node(node_type_t::BOOLEAN, result->get_position()));
-                }
-                result->set_boolean(r == 0 ? true : false);
-                return result;
-            }
-            /*NOTREACHED*/
-
-        default:
-            error::instance() << f_current->get_position()
-                    << "unsupported type "
-                    << f_current->get_type()
-                    << " as a unary expression token."
-                    << error_mode_t::ERROR_ERROR;
-            return node::pointer_t();
-
-        }
-    }
-
-    node::pointer_t excecute_function(node::pointer_t func, node::pointer_t args)
-    {
-        std::string const function_name(func->get_string());
-
-        if(function_name == "if")
-        {
-            // if(condition, if-true, if-false)
-            if(args->size() == 3)
-            {
-                int const r(boolean(args->get_child(0)));
-                if(r == 0 || r == 1)
-                {
-                    return args->get_child(r + 1);
-                }
-            }
-            else
-            {
-                error::instance() << f_current->get_position()
-                        << "if() expects exactly 3 arguments."
-                        << error_mode_t::ERROR_ERROR;
-            }
-            return node::pointer_t();
-        }
-
-        // "unknown" functions have to be left alone since these maybe
-        // CSS functions that we do not want to transform (we already
-        // worked on their arguments.)
-        return func;
-    }
-
-private:
-    typedef std::map<std::string, node::pointer_t>  variable_vector_t;
-
-    node::pointer_t     f_node;
-    size_t              f_pos = 0;
-    size_t              f_start = static_cast<size_t>(-1);
-    node::pointer_t     f_current;
-    variable_vector_t   f_variables;
-    bool                f_skip_whitespace = false;
-};
+integer_t const g_if_or_else_undefined    = 0;
+integer_t const g_if_or_else_false_so_far = 1;
+integer_t const g_if_or_else_executed     = 2;
 
 } // no name namespace
 
@@ -1503,6 +172,23 @@ node::pointer_t compiler::compiler_state_t::find_parent_by_type(node_type_t type
     return node::pointer_t();
 }
 
+node::pointer_t compiler::compiler_state_t::find_selector() const
+{
+    node::pointer_t s(find_parent_by_type(node_type_t::OPEN_CURLYBRACKET));
+    while(s)
+    {
+        // is this marked as a selector?
+        if(s->get_boolean())
+        {
+            return s;
+        }
+        s = find_parent_by_type(node_type_t::OPEN_CURLYBRACKET, s);
+    }
+
+    // if nothing else return the root
+    return f_root;
+}
+
 compiler::compiler(bool validating)
     : f_compiler_validating(validating)
 {
@@ -1538,10 +224,17 @@ void compiler::compile()
     // also for the variables to work appropriately, we immediately handle
     // the @import and @mixins since both may define additional variables.
     //
+//std::cerr << "************* COMPILING:\n" << *f_state.get_root() << "-----------------\n";
+    mark_selectors(f_state.get_root());
+    if(!f_state.empty_parents())
+    {
+        throw csspp_exception_logic("compiler.cpp: the stack of parents must always be empty before mark_selectors() returns."); // LCOV_EXCL_LINE
+    }
+
     replace_variables(f_state.get_root());
     if(!f_state.empty_parents())
     {
-        throw csspp_exception_logic("compiler.cpp: the stack of parents must always be empty before compile() returns"); // LCOV_EXCL_LINE
+        throw csspp_exception_logic("compiler.cpp: the stack of parents must always be empty before replace_variables() returns."); // LCOV_EXCL_LINE
     }
 
     compile(f_state.get_root());
@@ -1582,12 +275,12 @@ void compiler::compile(node::pointer_t n)
         compile_component_value(n);
         break;
 
-    case node_type_t::COMMENT:
-        // passthrough tokens
-        break;
-
     case node_type_t::AT_KEYWORD:
         compile_at_keyword(n);
+        break;
+
+    case node_type_t::COMMENT:
+        // passthrough tokens
         break;
 
     default:
@@ -1674,6 +367,26 @@ void compiler::compile_qualified_rule(node::pointer_t n)
         // an error occurred, forget this entry and move on
         return;
     }
+
+    // compile the block contents
+    node::pointer_t brackets(n->get_last_child());
+    if(!brackets->empty()
+    && brackets->get_child(0)->is(node_type_t::COMPONENT_VALUE))
+    {
+        safe_parents_t safe_parents(f_state, brackets);
+        size_t max_children(brackets->size());
+        for(size_t idx(0); idx < max_children; ++idx)
+        {
+            safe_parents_t safe_sub_parents(f_state, brackets->get_child(idx));
+            compile_component_value(brackets->get_child(idx));
+        }
+    }
+    else
+    {
+        // only one value, this is a component value by itself
+        safe_parents_t safe_parents(f_state, brackets);
+        compile_component_value(brackets);
+    }
 }
 
 void compiler::compile_declaration(node::pointer_t n)
@@ -1708,6 +421,14 @@ void compiler::compile_declaration(node::pointer_t n)
     }
     n->remove_child(1);
 
+    // no need to keep the next whitespace if there is one,
+    // plus we often do not expect such at the start of a
+    // list like we are about to generate.
+    if(n->get_child(1)->is(node_type_t::WHITESPACE))
+    {
+        n->remove_child(1);
+    }
+
     // create a declaration to replace the identifier
     node::pointer_t declaration(new node(node_type_t::DECLARATION, n->get_position()));
     declaration->set_string(identifier->get_string());
@@ -1717,240 +438,91 @@ void compiler::compile_declaration(node::pointer_t n)
     size_t const max_children(n->size());
     for(size_t i(1); i < max_children; ++i)
     {
-        declaration->add_child(n->get_child(i));
+        // since we are removing the children, we always seemingly
+        // copy child 1...
+        declaration->add_child(n->get_child(1));
+        n->remove_child(1);
     }
 
     // now replace that identifier by its declaration in the parent
-    f_state.get_current_parent()->replace_child(identifier, declaration);
+    if(n->is(node_type_t::COMPONENT_VALUE))
+    {
+        // replace the COMPONENT_VALUE instead of the identifier
+        // (this happens when a component value has multiple entries)
+        f_state.get_previous_parent()->replace_child(n, declaration);
+    }
+    else
+    {
+        n->replace_child(identifier, declaration);
+    }
 }
 
 void compiler::compile_at_keyword(node::pointer_t n)
 {
     std::string const at(n->get_string());
 
-    // @<id> [expression] '{' ... '}'
-    //
-    // Note that the expression is optional and we do not want to
-    // "compile" if no expression is defined
-    node::pointer_t expr;
-    if(n->size() > 0
-    && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
-    {
-        if(at == "else"
-        && n->get_child(0)->is(node_type_t::IDENTIFIER)
-        && n->get_child(0)->get_string() == "if")
-        {
-            // this is a very special case of the:
-            //    @else if expr '{' ... '}'
-            n->remove_child(0);
-            if(!n->empty() && n->get_child(0)->is(node_type_t::WHITESPACE))
-            {
-                // this should always happen because otherwise we are missing
-                // the actual expression!
-                n->remove_child(0);
-            }
-            if(n->size() == 1)
-            {
-                error::instance() << n->get_position()
-                        << "'@else if ...' is missing an expression or a block"
-                        << error_mode_t::ERROR_ERROR;
-                return;
-            }
-        }
-        expr = compile_expression(n, true);
-    }
-
-//std::cerr << "------ RESULT:\n" << *expr;
-
-    //n->replace_child(n->get_child(0), expr);
+    node::pointer_t parent(f_state.get_previous_parent());
+    node::pointer_t expr(!n->empty() && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET) ? n->get_child(0) : node::pointer_t());
 
     if(at == "error")
     {
+        parent->remove_child(n);
+
         error::instance() << n->get_position()
-                << (expr ? expr->to_string() : std::string("@error reached"))
+                << (expr ? expr->to_string(0) : std::string("@error reached"))
                 << error_mode_t::ERROR_ERROR;
         return;
     }
 
-    if(n->get_string() == "warning")
+    if(at == "warning")
     {
+        parent->remove_child(n);
+
         error::instance() << n->get_position()
-                << (expr ? expr->to_string() : std::string("@warning reached"))
+                << (expr ? expr->to_string(0) : std::string("@warning reached"))
                 << error_mode_t::ERROR_WARNING;
         return;
     }
 
-    if(n->get_string() == "info"
-    || n->get_string() == "message")
+    if(at == "info"
+    || at == "message")
     {
+        parent->remove_child(n);
+
         error::instance() << n->get_position()
-                << (expr ? expr->to_string() : std::string("@message reached"))
+                << (expr ? expr->to_string(0) : std::string("@message reached"))
                 << error_mode_t::ERROR_INFO;
         return;
     }
 
-    if(n->get_string() == "debug")
+    if(at == "debug")
     {
+        parent->remove_child(n);
+
         error::instance() << n->get_position()
-                << (expr ? expr->to_string() : std::string("@debug reached"))
+                << (expr ? expr->to_string(0) : std::string("@debug reached"))
                 << error_mode_t::ERROR_DEBUG;
         return;
     }
 
-    if(n->get_string() == "if")
-    {
-        // find this @-keyword in the parent and remove it
-        node::pointer_t parent(f_state.get_previous_parent());
-        size_t idx(parent->child_position(n));
-        if(idx == node::npos)
-        {
-            throw csspp_exception_logic("compiler.cpp: somehow a child node was not found in its parent."); // LCOV_EXCL_LINE
-        }
-        parent->remove_child(idx);
-
-        // make sure that we got a valid syntax
-        if(n->size() != 2 || !expr)
-        {
-            error::instance() << n->get_position()
-                    << "@if is expected to have exactly 2 parameters: an expression and a block. This @if has "
-                    << static_cast<int>(n->size())
-                    << " parameters."
-                    << error_mode_t::ERROR_ERROR;
-            return;
-        }
-
-        boolean_t const r(expression_t::boolean(expr));
-        if(r == boolean_t::TRUE)
-        {
-            // TRUE, we need the data which we put in the stream
-            // at the position of the @if as if the @if and
-            // expression never existed
-            node::pointer_t block(n->get_child(1));
-            size_t const max_children(block->size());
-            for(size_t j(0); j < max_children; ++j, ++idx)
-            {
-                parent->insert_child(idx, block->get_child(j));
-            }
-        }
-
-        // FALSE or INVALID, we remove the block to avoid
-        // executing it since we do not know whether it should
-        // be executed or not; also we mark the next block as
-        // "true" if it is an '@else' or '@else if'
-        if(idx < parent->size())
-        {
-            node::pointer_t next(parent->get_child(idx));
-            if(next->is(node_type_t::AT_KEYWORD)
-            && next->get_string() == "else")
-            {
-                // mark that the @else is at the right place
-                // (i.e. an @else with integer == 0 is an error)
-                next->set_integer(r == boolean_t::TRUE ? 2 : 1);
-            }
-        }
-
-        return;
-    }
-
-    if(n->get_string() == "else")
-    {
-        // find this @-keyword in the parent and remove it
-        node::pointer_t parent(f_state.get_previous_parent());
-        size_t idx(parent->child_position(n));
-        if(idx == node::npos)
-        {
-            throw csspp_exception_logic("compiler.cpp: somehow a child node was not found in its parent."); // LCOV_EXCL_LINE
-        }
-        parent->remove_child(idx);
-
-        // if this @else is not marked with a 1 or 2 then there was no @if
-        // or @else if ... before it
-        int status(n->get_integer());
-        if(status == 0)
-        {
-            error::instance() << n->get_position()
-                    << "a standalone @else is not legal, it has to be preceeded by a @if ... or @else if ..."
-                    << error_mode_t::ERROR_ERROR;
-            return;
-        }
-
-        // when the @if (or last @else if) was FALSE, we are TRUE
-        // however, if the status is 2, that means one of the previous
-        // @if or @else if was TRUE so everything else is FALSE
-        boolean_t r(status == 1 ? boolean_t::TRUE : boolean_t::FALSE);
-        if(n->size() != 1)
-        {
-            if(n->size() != 2 || !expr)
-            {
-                error::instance() << n->get_position()
-                        << "'@else { ... }' is expected to have 1 parameter, '@else if ... { ... }' is expected to have 2 parameters. This @else has "
-                        << static_cast<int>(n->size())
-                        << " parameters."
-                        << error_mode_t::ERROR_ERROR;
-                return;
-            }
-
-            // as long as status == 1 we have not yet found a match
-            // (i.e. the @if was false and any @else if were all false
-            // so far) so we check the expression of this very @else if
-            // to know whether to go on or not
-            if(status == 1)
-            {
-                r = expression_t::boolean(expr);
-            }
-        }
-
-        if(r == boolean_t::TRUE)
-        {
-            status = 2;
-
-            // TRUE, we need the data which we put in the stream
-            // at the position of the @if as if the @if and
-            // expression never existed
-            node::pointer_t block(n->get_child(n->size() == 1 ? 0 : 1));
-            size_t const max_children(block->size());
-            for(size_t j(0); j < max_children; ++j, ++idx)
-            {
-                parent->insert_child(idx, block->get_child(j));
-            }
-        }
-
-        // FALSE or INVALID, we remove the block to avoid
-        // executing it since we do not know whether it should
-        // be executed or not; also we mark the next block as
-        // "true" if it is an '@else' or '@else if'
-        if(idx < parent->size())
-        {
-            node::pointer_t next(parent->get_child(idx));
-            if(next->is(node_type_t::AT_KEYWORD)
-            && next->get_string() == "else")
-            {
-                if(n->size() == 1)
-                {
-                    error::instance() << n->get_position()
-                            << "'@else { ... }' cannot follow another '@else { ... }'. Maybe you are missing an 'if expr'?"
-                            << error_mode_t::ERROR_ERROR;
-                    return;
-                }
-
-                // mark that the @else is at the right place and whether
-                // it may be TRUE (1) or not (2); our status already shows
-                // what it can be:
-                next->set_integer(status);
-            }
-        }
-
-        return;
-    }
 }
 
-node::pointer_t compiler::compile_expression(node::pointer_t n, bool skip_whitespace)
+node::pointer_t compiler::compile_expression(node::pointer_t n, bool skip_whitespace, bool list_of_expressions)
 {
     // expression: conditional
-    expression_t expr(n, skip_whitespace);
+    expression expr(n, skip_whitespace);
     expr.mark_start();
     expr.next();
-    node::pointer_t result(expr.conditional());
+    node::pointer_t result;
+    if(list_of_expressions)
+    {
+        // result is a list: a, b, c, ...
+        result = expr.conditional();
+    }
+    else
+    {
+        result = expr.conditional();
+    }
     if(result)
     {
         expr.replace_with_result(result);
@@ -1958,49 +530,32 @@ node::pointer_t compiler::compile_expression(node::pointer_t n, bool skip_whites
     return result;
 }
 
-void compiler::replace_import(node::pointer_t n, size_t & idx)
+void compiler::replace_import(node::pointer_t parent, node::pointer_t import, node::pointer_t expr, size_t & idx)
 {
-    // node 'n' is the @import itself
+    static_cast<void>(import);
+
     //
-    // the name of the script is whatever follows the @import which
-    // has to be exactly one string
+    // WARNING: we do NOT support the SASS extension of multiple entries
+    //          within one @import because it is not CSS 2 or CSS 3
+    //          compatible
     //
-    // (TBD--would an identifier be valid here?)
+
+    // node 'import' is the @import itself
+    //
+    //   @import string | url() [ media-list ] ';'
     //
 
-    // an @import may have a list of filenames to import
-    // so we have to argify() and then manage each ARG one by one
-
-    node::pointer_t import(n->get_child(0));
-
-    argify(import);
-
-    node::pointer_t list(new node(node_type_t::LIST, n->get_position()));
-
-    size_t const max_children(import->size());
-    for(size_t i(0); i < max_children; ++i)
+    // we only support arguments with one string
+    // (@import accepts strings and url() as their first parameter)
+    //
+    if(expr && expr->size() == 1
+    && expr->is(node_type_t::STRING))
     {
-        node::pointer_t arg(import->get_child(i));
-
-        // we only support arguments with one string
-        if(arg->size() != 1)
-        {
-            // leave it in the final CSS; definitly not for us
-            continue;
-        }
-
-        // make sure we indeed have a string
-        node::pointer_t child(n->get_child(0));
-        if(!child->is(node_type_t::STRING))
-        {
-            // TODO: is this an error?
-            continue;
-        }
+        std::string const script_name(expr->get_string());
 
         // TODO: add code to avoid testing with filenames that represent URIs
 
         // search the corresponding file
-        std::string const script_name(child->get_string());
         std::string filename(find_file(script_name));
         if(filename.empty())
         {
@@ -2011,63 +566,63 @@ void compiler::replace_import(node::pointer_t n, size_t & idx)
             }
         }
 
-        // still not found, ignore
-        if(filename.empty())
+        // if still not found, we ignore
+        if(!filename.empty())
         {
-            continue;
-        }
+            // found an SCSS include, we remove that @import and replace
+            // it (see below) with data as loaded from that file
+            //
+            // idx will not be incremented as a result
+            //
+            parent->remove_child(idx);
 
-        // remove that entry since we are managing it
-        import->remove_child(i);
-        --i;
+            // position object for this file
+            position pos(filename);
 
-        // position object for this file
-        position pos(filename);
+            // TODO: do the necessary to avoid recursive @import
 
-        // TODO: do the necessary to avoid multiple @import
+            // we found a file, load it and return it
+            std::ifstream in;
+            in.open(filename);
+            if(!in)
+            {
+                // the script may not really allow reading even though
+                // access() just told us otherwise
+                error::instance() << pos
+                        << "validation script \""
+                        << script_name
+                        << "\" could not be opened."
+                        << error_mode_t::ERROR_ERROR;
+            }
+            else
+            {
+                // the file got loaded, parse it and return the root node
+                error_happened_t old_count;
 
-        // we found a file, load it and return it
-        std::ifstream in;
-        in.open(filename);
-        if(!in)
-        {
-            // the script may not really allow reading even though
-            // access() just told us otherwise
-            error::instance() << pos
-                    << "validation script \""
-                    << script_name
-                    << "\" could not be opened."
-                    << error_mode_t::ERROR_FATAL;
-        }
-        else
-        {
-            // the file got loaded, parse it and return the root node
-            lexer::pointer_t l(new lexer(in, pos));
-            parser p(l);
-            list->add_child(p.stylesheet());
-        }
-    }
+                lexer::pointer_t l(new lexer(in, pos));
+                parser p(l);
+                node::pointer_t list(p.stylesheet());
 
-    if(import->empty())
-    {
-        // this was CSS Preprocessor @import files only so we want to
-        // remove it from the parent node
-        n->remove_child(import);
-    }
-    else
-    {
-        // skip the import, it was managed
-        ++idx;
-    }
+                if(!old_count.error_happened())
+                {
+                    // copy valid results at 'idx' which will then be
+                    // checked as if it had been part of that script
+                    // all along
+                    //
+                    size_t const max_results(list->size());
+                    for(size_t i(0), j(idx); i < max_results; ++i, ++j)
+                    {
+                        parent->insert_child(j, list->get_child(i));
+                    }
+                }
+            }
 
-    if(!list->empty())
-    {
-        size_t const max_results(list->size());
-        for(size_t i(0), j(idx); i < max_results; ++i, ++j)
-        {
-            n->insert_child(j, list->get_child(i));
+            // in this case we managed the entry fully
+            return;
         }
     }
+
+    ++idx;
 }
 
 void compiler::handle_mixin(node::pointer_t n)
@@ -2095,11 +650,7 @@ void compiler::handle_mixin(node::pointer_t n)
         // this is just like a variable
         //
         // search the parents for the node where the variable will be set
-        node::pointer_t var_holder(f_state.find_parent_by_type(node_type_t::OPEN_CURLYBRACKET));
-        if(!var_holder)
-        {
-            var_holder = f_state.get_root();
-        }
+        node::pointer_t var_holder(f_state.find_selector());
 
         // save the variable
         var_holder->set_variable(name->get_string(), block);
@@ -2153,6 +704,55 @@ void compiler::handle_mixin(node::pointer_t n)
         error::instance() << n->get_position()
                 << "a @mixin expects either an identifier or a function as its first parameter."
                 << error_mode_t::ERROR_ERROR;
+    }
+}
+
+void compiler::mark_selectors(node::pointer_t n)
+{
+    safe_parents_t safe_parents(f_state, n);
+
+    switch(n->get_type())
+    {
+    case node_type_t::AT_KEYWORD:
+    //case node_type_t::ARG:
+    case node_type_t::COMPONENT_VALUE:
+    case node_type_t::DECLARATION:
+    case node_type_t::LIST:
+    case node_type_t::OPEN_CURLYBRACKET:
+        {
+            // there are the few cases we can have here:
+            //
+            //   $variable ':' '{' ... '}'
+            //   <field-prefix> ':' '{' ... '}'
+            //   <selector-list> '{' ... '}' <-- this is the one we're interested in
+            //   $variable ':' ...
+            //   <field-name> ':' ...
+            //
+
+            if(!n->empty()
+            && !parser::is_variable_set(n, true)                        // $variable ':' '{' ... '}'
+            && !parser::is_nested_declaration(n)                        // <field-prefix> ':' '{' ... '}'
+            && n->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET)) // <selector-list> '{' ... '}'
+            {
+                // this is a selector list followed by a block of
+                // definitions and sub-blocks
+                n->get_last_child()->set_boolean(true); // accept variables
+            }
+
+            // replace all $<var> references with the corresponding value
+            for(size_t idx(0); idx < n->size(); ++idx)
+            {
+                // recursive call to handle all children in the
+                // entire tree
+                mark_selectors(n->get_child(idx));
+            }
+        }
+        break;
+
+    default:
+        // other nodes are not of interest here
+        break;
+
     }
 }
 
@@ -2224,7 +824,6 @@ void compiler::replace_variables(node::pointer_t n)
                     // entire tree
                     switch(child->get_type())
                     {
-                    case node_type_t::AT_KEYWORD:
                     case node_type_t::ARG:
                     case node_type_t::COMPONENT_VALUE:
                     case node_type_t::DECLARATION:
@@ -2234,34 +833,13 @@ void compiler::replace_variables(node::pointer_t n)
                     case node_type_t::OPEN_PARENTHESIS:
                     case node_type_t::OPEN_SQUAREBRACKET:
                         replace_variables(child);
+                        ++idx;
+                        break;
 
-                        // handle @import and @mixins from the parent node
-                        if(child->is(node_type_t::AT_KEYWORD))
-                        {
-                            std::string const at_keyword(child->get_string());
-                            if(at_keyword == "import")
-                            {
-                                replace_import(n, idx);
-                            }
-                            else if(at_keyword == "mixin")
-                            {
-                                // mixins are handled like variables or
-                                // function declarations, so we always
-                                // remove them
-                                //
-                                n->remove_child(child);
-
-                                handle_mixin(child);
-                            }
-                            else
-                            {
-                                ++idx;
-                            }
-                        }
-                        else
-                        {
-                            ++idx;
-                        }
+                    case node_type_t::AT_KEYWORD:
+                        // handle @import, @mixins, @if, etc.
+                        replace_variables(child);
+                        replace_at_keyword(n, child, idx);
                         break;
 
                     default:
@@ -2322,7 +900,7 @@ void compiler::set_variable(node::pointer_t n)
     // context (i.e. not here)
 
     // search the parents for the node where the variable will be set
-    node::pointer_t var_holder(f_state.find_parent_by_type(node_type_t::OPEN_CURLYBRACKET));
+    node::pointer_t var_holder(f_state.find_selector());
     if(!var_holder)
     {
         var_holder = f_state.get_root();
@@ -2340,10 +918,15 @@ node::pointer_t compiler::get_variable(node::pointer_t n)
     node::pointer_t var_holder(f_state.find_parent_by_type(node_type_t::OPEN_CURLYBRACKET));
     while(var_holder)
     {
-        node::pointer_t value(var_holder->get_variable(variable_name));
-        if(value)
+        // we verify that the variable holder is a selector curly bracket
+        // (if not we won't have variables defined in there anyway)
+        if(var_holder->get_boolean())
         {
-            return value;
+            node::pointer_t value(var_holder->get_variable(variable_name));
+            if(value)
+            {
+                return value;
+            }
         }
         var_holder = f_state.find_parent_by_type(node_type_t::OPEN_CURLYBRACKET, var_holder);
     }
@@ -2374,6 +957,281 @@ node::pointer_t compiler::get_variable(node::pointer_t n)
     return fake;
 }
 
+void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, size_t & idx)
+{
+    // @<id> [expression] '{' ... '}'
+    //
+    // Note that the expression is optional.
+    //
+    // All the @-keyword that are used to control the flow of the
+    // SCSS file are to be handled here; these include:
+    //
+    //  @else       -- changes what happens (i.e. sets a variable)
+    //  @if         -- changes what happens (i.e. sets a variable)
+    //  @import     -- changes input code
+    //  @include    -- same as $var or $var(args)
+    //  @mixin      -- changes variables
+    //
+    std::string const at(n->get_string());
+
+    node::pointer_t expr;
+    if(!n->empty()
+    && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
+    {
+        if(at == "else"
+        && n->get_child(0)->is(node_type_t::IDENTIFIER)
+        && n->get_child(0)->get_string() == "if")
+        {
+            // this is a very special case of the:
+            //
+            //    @else if expr '{' ... '}'
+            //
+            // (this is from SASS, if it had been me, I would have used
+            // @elseif or @else-if and not @else if ...)
+            //
+            n->remove_child(0);
+            if(!n->empty() && n->get_child(0)->is(node_type_t::WHITESPACE))
+            {
+                // this should always happen because otherwise we are missing
+                // the actual expression!
+                n->remove_child(0);
+            }
+            if(n->size() == 1)
+            {
+                error::instance() << n->get_position()
+                        << "'@else if ...' is missing an expression or a block"
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+        }
+        expr = compile_expression(n, true, false);
+    }
+
+    if(at == "import")
+    {
+        replace_import(parent, n, expr, idx);
+        return;
+    }
+
+    if(at == "mixin")
+    {
+        // mixins are handled like variables or
+        // function declarations, so we always
+        // remove them
+        //
+        parent->remove_child(idx);
+        handle_mixin(n);
+        return;
+    }
+
+    if(at == "if")
+    {
+        // get the position of the @if in its parent so we can insert new
+        // data at that position if necessary
+        //
+        parent->remove_child(idx);
+        replace_if(parent, n, expr, idx);
+        return;
+    }
+
+    if(at == "else")
+    {
+        // remove the @else from the parent
+        parent->remove_child(idx);
+        replace_else(parent, n, expr, idx);
+        return;
+    }
+
+    if(at == "include")
+    {
+        // this is SASS support, a more explicit way to insert a variable
+        // I guess...
+        parent->remove_child(idx);
+
+        if(n->empty())
+        {
+            error::instance() << n->get_position()
+                    << "@include is expected to be followed by an IDENTIFIER naming the variable/mixin to include."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        node::pointer_t id(n->get_child(0));
+        if(!id->is(node_type_t::IDENTIFIER))
+        {
+            error::instance() << n->get_position()
+                    << "@include is expected to be followed by an IDENTIFIER naming the variable/mixin to include."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        // search for the variable and replace this 'child' with
+        // the contents of the variable
+        node::pointer_t value(get_variable(id));
+        switch(value->get_type())
+        {
+        case node_type_t::LIST:
+        case node_type_t::OPEN_CURLYBRACKET:
+        case node_type_t::OPEN_PARENTHESIS:
+        case node_type_t::OPEN_SQUAREBRACKET:
+            // in this case we insert the children of 'value'
+            // instead of the value itself
+            {
+                size_t const max_children(value->size());
+                for(size_t j(0), i(idx); j < max_children; ++j, ++i)
+                {
+                    n->insert_child(i, value->get_child(j));
+                }
+            }
+            break;
+
+        case node_type_t::WHITESPACE:
+            // whitespaces by themselves do not get re-included,
+            // which may be a big mistake but at this point
+            // it seems wise to do so
+            break;
+
+        default:
+            n->insert_child(idx, value);
+            break;
+
+        }
+        return;
+    }
+
+    // in all other cases the @-keyword is kept as is
+    ++idx;
+}
+
+void compiler::replace_if(node::pointer_t parent, node::pointer_t n, node::pointer_t expr, size_t idx)
+{
+    // make sure that we got a valid syntax
+    if(n->size() != 2 || !expr)
+    {
+        error::instance() << n->get_position()
+                << "@if is expected to have exactly 2 parameters: an expression and a block. This @if has "
+                << static_cast<int>(n->size())
+                << " parameters."
+                << error_mode_t::ERROR_ERROR;
+        return;
+    }
+
+    boolean_t const r(expression::boolean(expr));
+    if(r == boolean_t::TRUE)
+    {
+        // TRUE, we need the data which we put in the stream
+        // at the position of the @if as if the @if and
+        // expression never existed
+        node::pointer_t block(n->get_child(1));
+        size_t const max_children(block->size());
+        for(size_t j(0); j < max_children; ++j, ++idx)
+        {
+            parent->insert_child(idx, block->get_child(j));
+        }
+    }
+
+    // we want to mark the next block as valid if it is an
+    // '@else' or '@else if' and can possibly be inserted
+    if(idx < parent->size())
+    {
+        node::pointer_t next(parent->get_child(idx));
+        if(next->is(node_type_t::AT_KEYWORD)
+        && next->get_string() == "else")
+        {
+            // mark that the @else is at the right place
+            // (i.e. an @else with integer == 0 is an error)
+            next->set_integer(r == boolean_t::TRUE ? g_if_or_else_executed : g_if_or_else_false_so_far);
+        }
+    }
+}
+
+void compiler::replace_else(node::pointer_t parent, node::pointer_t n, node::pointer_t expr, size_t idx)
+{
+    // if this '@else' is still marked with 'g_if_or_else_undefined'
+    // then there was no '@if' or '@else if' before it which is an error
+    //
+    int status(n->get_integer());
+    if(status == g_if_or_else_undefined)
+    {
+        error::instance() << n->get_position()
+                << "a standalone @else is not legal, it has to be preceeded by a @if ... or @else if ..."
+                << error_mode_t::ERROR_ERROR;
+        return;
+    }
+
+    //
+    // when the '@if' or any '@else if' all had a 'false' expression,
+    // we are 'true' here; once one of the '@if' / '@else if' is 'true'
+    // then we start with 'r = false'
+    //
+    boolean_t r(status == g_if_or_else_false_so_far ? boolean_t::TRUE : boolean_t::FALSE);
+    if(n->size() != 1)
+    {
+        if(n->size() != 2 || !expr)
+        {
+            error::instance() << n->get_position()
+                    << "'@else { ... }' is expected to have 1 parameter, '@else if ... { ... }' is expected to have 2 parameters. This @else has "
+                    << static_cast<int>(n->size())
+                    << " parameters."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        // as long as 'status == g_if_or_else_false_so_far' we have
+        // not yet found a match (i.e. the starting '@if' was false
+        // and any '@else if' were all false so far) so we check the
+        // expression of this very '@else if' to know whether to go
+        // on or not; r is TRUE when the status allows us to check
+        // the next expression
+        if(r == boolean_t::TRUE)
+        {
+            r = expression::boolean(expr);
+        }
+    }
+
+    if(r == boolean_t::TRUE)
+    {
+        status = g_if_or_else_executed;
+
+        // TRUE, we need the data which we put in the stream
+        // at the position of the @if as if the @if and
+        // expression never existed
+        node::pointer_t block(n->get_child(n->size() == 1 ? 0 : 1));
+        size_t const max_children(block->size());
+        for(size_t j(0); j < max_children; ++j, ++idx)
+        {
+            parent->insert_child(idx, block->get_child(j));
+        }
+    }
+
+    // FALSE or INVALID, we remove the block to avoid
+    // executing it since we do not know whether it should
+    // be executed or not; also we mark the next block as
+    // "true" if it is an '@else' or '@else if'
+    if(idx < parent->size())
+    {
+        node::pointer_t next(parent->get_child(idx));
+        if(next->is(node_type_t::AT_KEYWORD)
+        && next->get_string() == "else")
+        {
+            if(n->size() == 1)
+            {
+                error::instance() << n->get_position()
+                        << "'@else { ... }' cannot follow another '@else { ... }'. Maybe you are missing an 'if expr'?"
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+
+            // mark that the '@else' is at the right place and whether
+            // it may be 'true' (g_if_or_else_false_so_far) or not
+            // (g_if_or_else_executed); our status already shows
+            // what it can be
+            //
+            next->set_integer(status);
+        }
+    }
+}
+
 bool compiler::argify(node::pointer_t n)
 {
     size_t const max_children(n->size());
@@ -2401,7 +1259,7 @@ bool compiler::argify(node::pointer_t n)
             {
                 // make sure to remove any WHITESPACE appearing just
                 // before a comma
-                if(!arg->empty() && arg->get_last_child()->is(node_type_t::WHITESPACE))
+                while(!arg->empty() && arg->get_last_child()->is(node_type_t::WHITESPACE))
                 {
                     arg->remove_child(arg->get_last_child());
                 }
@@ -2516,7 +1374,10 @@ bool compiler::selector_attribute_check(node::pointer_t n)
             n->remove_child(pos);
             if(pos >= n->size())
             {
-                break;
+                // we actually are not expected to ever have a WHITESPACE
+                // at the end of a block so we cannot hit this line, but
+                // we keep it, just in case we were wrong...
+                break; // LCOV_EXCL_LINE
             }
             term = n->get_child(pos);
         }
@@ -2633,6 +1494,8 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
         ++pos;
         if(pos >= n->size())
         {
+            // this is caught by the selector_term() when reading the '::'
+            // so we cannot reach this time; keeping just in case though...
             error::instance() << n->get_position()
                     << "a selector list cannot end with a standalone ':'."
                     << error_mode_t::ERROR_ERROR;
@@ -2674,7 +1537,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
                     std::string an_b;
                     for(size_t idx(0); idx < max_children; ++idx)
                     {
-                        an_b += term->get_child(idx)->to_string();
+                        an_b += term->get_child(idx)->to_string(node::g_to_string_flag_show_quotes);
                     }
                     // TODO...
                     nth_child nc;
@@ -2725,12 +1588,41 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
                         term = term->get_child(0);
                         if(term->is(node_type_t::IDENTIFIER))
                         {
-                            if(term->get_string().find('-') == std::string::npos)
+                            std::string lang(term->get_string());
+                            std::string country;
+                            std::string::size_type char_pos(lang.find('-'));
+                            if(char_pos != std::string::npos)
                             {
-                                error::instance() << term->get_position()
-                                        << "a lang() function selector expects an identifier without a '-'."
-                                        << error_mode_t::ERROR_ERROR;
+                                country = lang.substr(char_pos + 1);
+                                lang = lang.substr(0, char_pos);
+                                char_pos = country.find('-');
+                                if(char_pos != std::string::npos)
+                                {
+                                    // remove whatever other information that
+                                    // we will ignore in our validations
+                                    country = country.substr(0, char_pos);
+                                }
+                            }
+                            // check the language (mandatory)
+                            node::pointer_t language_name(new node(node_type_t::STRING, term->get_position()));
+                            language_name->set_string(lang);
+                            set_validation_script("languages");
+                            add_validation_variable("language_name", language_name);
+                            if(!run_validation(false))
+                            {
                                 return false;
+                            }
+                            if(!country.empty())
+                            {
+                                // check the country (optional)
+                                node::pointer_t country_name(new node(node_type_t::STRING, term->get_position()));
+                                country_name->set_string(country);
+                                set_validation_script("countries");
+                                add_validation_variable("country_name", country_name);
+                                if(!run_validation(false))
+                                {
+                                    return false;
+                                }
                             }
                         }
                         else
@@ -2788,9 +1680,15 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
                 << error_mode_t::ERROR_ERROR;
         return false;
 
+    case node_type_t::FUNCTION:
+        error::instance() << n->get_position()
+                << "found function \"" << term->get_string() << "()\", which may be a valid selector token but only if immediately preceeded by a ':' (simple term)."
+                << error_mode_t::ERROR_ERROR;
+        return false;
+
     default:
         error::instance() << n->get_position()
-                << "found token " << term->get_type() << ", which is not a valid selector token."
+                << "found token " << term->get_type() << ", which is not a valid selector token (simple term)."
                 << error_mode_t::ERROR_ERROR;
         return false;
 
@@ -2818,6 +1716,9 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
         break;
 
     case node_type_t::COLON:
+        // ':' FUNCTION (="not") is a term and has to be managed here
+        // '::' IDENTIFIER is a term and not a simple term (it cannot
+        //                 appear inside a :not() function.)
         ++pos;
         if(pos >= n->size())
         {
@@ -2837,6 +1738,9 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
             // ':' FUNCTION component-value-list ')'
             if(term->get_string() == "not")
             {
+                // skip FUNCTION
+                ++pos;
+
                 // special handling, the :not() is considered to be
                 // a complex selector and as such has to be handled
                 // right here; the parameters must represent one valid
@@ -2856,36 +1760,40 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
             break;
 
         case node_type_t::COLON:
-            // '::' IDENTIFIER -- pseudo elements
-            ++pos;
-            if(pos >= n->size())
             {
-                error::instance() << n->get_position()
-                        << "a selector list cannot end with a '::'."
-                        << error_mode_t::ERROR_ERROR;
-                return false;
-            }
-            term = n->get_child(pos);
-            if(!term->is(node_type_t::IDENTIFIER))
-            {
-                error::instance() << n->get_position()
-                        << "a pseudo element name (defined after a '::' in a list of selectors) must be defined using an identifier."
-                        << error_mode_t::ERROR_ERROR;
-                return false;
-            }
-            // only a few pseudo element names exist, do a validation
-            set_validation_script("pseudo-elements");
-            add_validation_variable("pseudo_name", term);
-            if(!run_validation(false))
-            {
-                return false;
+                // '::' IDENTIFIER -- pseudo elements
+                ++pos;
+                if(pos >= n->size())
+                {
+                    error::instance() << n->get_position()
+                            << "a selector list cannot end with a '::'."
+                            << error_mode_t::ERROR_ERROR;
+                    return false;
+                }
+                term = n->get_child(pos);
+                if(!term->is(node_type_t::IDENTIFIER))
+                {
+                    error::instance() << n->get_position()
+                            << "a pseudo element name (defined after a '::' in a list of selectors) must be defined using an identifier."
+                            << error_mode_t::ERROR_ERROR;
+                    return false;
+                }
+                // only a few pseudo element names exist, do a validation
+                node::pointer_t pseudo_element(new node(node_type_t::STRING, term->get_position()));
+                pseudo_element->set_string(term->get_string());
+                set_validation_script("pseudo-elements");
+                add_validation_variable("pseudo_name", pseudo_element);
+                if(!run_validation(false))
+                {
+                    return false;
+                }
             }
             break;
 
         default:
             // invalid selector list
             error::instance() << n->get_position()
-                    << "a ':' selector must be followed by an identifier or a function, a " << n->get_type() << " was found instead."
+                    << "a ':' selector must be followed by an identifier or a function, a " << term->get_type() << " was found instead."
                     << error_mode_t::ERROR_ERROR;
             return false;
 
@@ -2908,9 +1816,15 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
                 << error_mode_t::ERROR_ERROR;
         return false;
 
+    case node_type_t::FUNCTION:
+        error::instance() << n->get_position()
+                << "found function \"" << term->get_string() << "()\", which may be a valid selector token but only if immediately preceeded by a ':' (term)."
+                << error_mode_t::ERROR_ERROR;
+        return false;
+
     default:
         error::instance() << n->get_position()
-                << "found token " << term->get_type() << ", which is not a valid selector token."
+                << "found token " << term->get_type() << ", which is not a valid selector token (term)."
                 << error_mode_t::ERROR_ERROR;
         return false;
 
@@ -3117,7 +2031,7 @@ void compiler::set_validation_script(std::string const & script_name)
     }
 
     f_current_validation_script = script;
-    script->reset_variables();
+    script->clear_variables();
 }
 
 void compiler::add_validation_variable(std::string const & variable_name, node::pointer_t value)

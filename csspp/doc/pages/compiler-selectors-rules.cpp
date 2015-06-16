@@ -55,6 +55,41 @@
  *
  * http://www.w3.org/TR/selectors/
  *
+ * * List of pseudo-functions
+ * ** :nth-child()
+ * ** :nth-last-child()
+ * ** :nth-of-type()
+ * ** :nth-last-of-type()
+ * ** :lang()
+ * ** :not()
+ * * List of pseudo-classes
+ * ** :root
+ * ** :first-child
+ * ** :last-child
+ * ** :first-of-type
+ * ** :last-of-type
+ * ** :only-child
+ * ** :only-of-type
+ * ** :empty
+ * ** :link
+ * ** :visited
+ * ** :active
+ * ** :hover
+ * ** :focus
+ * ** :target
+ * ** :enabled
+ * ** :disabled
+ * ** :checked
+ * * List of pseudo-elements
+ * ** ::first-line
+ * ** ::first-letter
+ * ** ::before
+ * ** ::after
+ *
+ * \note
+ * The :not() function is considered to be a term ("complex term") because
+ * it cannot be used within itself (so :not(:not(...)) is not allowed.)
+ *
  * There is a more yacc like grammar definition:
  *
  * \code

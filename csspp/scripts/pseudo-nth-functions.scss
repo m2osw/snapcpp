@@ -18,7 +18,7 @@
 @if $pseudo_name != "nth-child"
 and $pseudo_name != "nth-last-child"
 and $pseudo_name != "nth-of-type"
-and $pseudo_name != "nth-of-last-type" {
+and $pseudo_name != "nth-last-of-type" {
     @error $pseudo_name + " is not a valid name for a pseudo nth-function; CSS only supports nth-child(), nth-last-child(), nth-of-type(), nth-of-last-type().";
 }
 

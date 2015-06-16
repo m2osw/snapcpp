@@ -5460,6 +5460,7 @@ TEST_CASE("Placeholders", "[lexer] [hash]")
         ss << '%';
         int count(rand() % 30 + 1);
         std::string word;
+        std::string lword;
         for(int j(0); j < count; ++j)
         {
             csspp::wide_char_t c(0);
@@ -5482,6 +5483,7 @@ TEST_CASE("Placeholders", "[lexer] [hash]")
                 }
             }
             word += l.wctomb(c);
+            lword += l.wctomb(std::tolower(c));
         }
         ss << word;
 
@@ -5489,7 +5491,7 @@ TEST_CASE("Placeholders", "[lexer] [hash]")
         {
             csspp::node::pointer_t identifier(l.next_token());
             REQUIRE(identifier->is(csspp::node_type_t::PLACEHOLDER));
-            REQUIRE(identifier->get_string() == word);
+            REQUIRE(identifier->get_string() == lword);
             csspp::position const & npos(identifier->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);

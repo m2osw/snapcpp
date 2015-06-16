@@ -610,7 +610,8 @@ bool parser::is_variable_set(node::pointer_t n, bool with_block)
     // a variable set is at least 3 tokens:
     //    $var:<value>
     if(n->size() < 3
-    || !n->get_child(0)->is(node_type_t::VARIABLE))
+    || (!n->get_child(0)->is(node_type_t::VARIABLE)
+     && !n->get_child(0)->is(node_type_t::VARIABLE_FUNCTION)))
     {
         return false;
     }
@@ -658,7 +659,11 @@ bool parser::is_nested_declaration(node::pointer_t n)
     ++pos;
     if(n->get_child(pos)->is(node_type_t::WHITESPACE))
     {
-        ++pos;
+        // although we test this special case, there isn't a way to
+        // reach this line without actually building a tree of nodes
+        // by hand and adding a WHITESPACE "at the wrong place" which
+        // we dot not currently test (TODO)
+        ++pos; // LCOV_EXCL_LINE
     }
     return n->get_child(pos)->is(node_type_t::OPEN_CURLYBRACKET);
 }

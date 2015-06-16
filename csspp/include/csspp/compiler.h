@@ -57,6 +57,7 @@ private:
         node::pointer_t             get_previous_parent() const;
         node::pointer_t             find_parent_by_type(node_type_t type) const;
         node::pointer_t             find_parent_by_type(node_type_t type, node::pointer_t starting_here) const;
+        node::pointer_t             find_selector() const;
 
     private:
         node::pointer_t             f_root;
@@ -68,11 +69,15 @@ private:
     void                    compile_qualified_rule(node::pointer_t n);
     void                    compile_declaration(node::pointer_t n);
     void                    compile_at_keyword(node::pointer_t n);
-    node::pointer_t         compile_expression(node::pointer_t n, bool skip_whitespace);
+    node::pointer_t         compile_expression(node::pointer_t n, bool skip_whitespace, bool list_of_expressions);
 
-    void                    replace_import(node::pointer_t n, size_t & idx);
+    void                    replace_import(node::pointer_t parent, node::pointer_t import, node::pointer_t expr, size_t & idx);
+    void                    replace_at_keyword(node::pointer_t parent, node::pointer_t n, size_t & idx);
+    void                    replace_if(node::pointer_t parent, node::pointer_t n, node::pointer_t expr, size_t idx);
+    void                    replace_else(node::pointer_t parent, node::pointer_t n, node::pointer_t expr, size_t idx);
     void                    handle_mixin(node::pointer_t n);
 
+    void                    mark_selectors(node::pointer_t n);
     void                    replace_variables(node::pointer_t n);
     void                    set_variable(node::pointer_t n);
     node::pointer_t         get_variable(node::pointer_t n);

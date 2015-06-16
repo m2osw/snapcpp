@@ -1790,6 +1790,326 @@ TEST_CASE("Multi-line, multi-level stylesheet", "[parser] [rules]")
     REQUIRE_ERRORS("");
 }
 
+TEST_CASE("Is Variable Set", "[parser] [variable] [invalid]")
+{
+    // simple test with a value + value (SASS compatible)
+    {
+        std::stringstream ss;
+        ss << "$a: 33px;";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    VARIABLE \"a\"\n"
+"    COLON\n"
+"    WHITESPACE\n"
+"    INTEGER \"px\" I:33\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE(csspp::parser::is_variable_set(var, false));
+        REQUIRE_FALSE(csspp::parser::is_variable_set(var, true));
+    }
+
+    // case were we actually use a variable to define a selector
+    // this is not a variable set
+    {
+        std::stringstream ss;
+        ss << "$a .cute { color: red; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    VARIABLE \"a\"\n"
+"    WHITESPACE\n"
+"    PERIOD\n"
+"    IDENTIFIER \"cute\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"color\"\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"red\"\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_variable_set(var, false));
+        REQUIRE_FALSE(csspp::parser::is_variable_set(var, true));
+    }
+
+    // test with a variable block
+    {
+        std::stringstream ss;
+        ss << "$a: { color: red; };";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    VARIABLE \"a\"\n"
+"    COLON\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"color\"\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"red\"\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE(csspp::parser::is_variable_set(var, false));
+        REQUIRE(csspp::parser::is_variable_set(var, true));
+    }
+
+    // test with the missing ';'
+    {
+        std::stringstream ss;
+        ss << "$a: { color: red; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // the ';' at the end is missing
+        REQUIRE_ERRORS("test.css(1): error: Variable set to a block and a nested property block must end with a semicolon (;) after said block.\n");
+    }
+
+    // simple test with a value + value (SASS compatible)
+    {
+        std::stringstream ss;
+        ss << "$a($arg1): 33px;";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    VARIABLE_FUNCTION \"a\"\n"
+"      VARIABLE \"arg1\"\n"
+"    COLON\n"
+"    WHITESPACE\n"
+"    INTEGER \"px\" I:33\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE(csspp::parser::is_variable_set(var, false));
+        REQUIRE_FALSE(csspp::parser::is_variable_set(var, true));
+    }
+
+    // case were we actually use a variable to define a selector
+    // this is not a variable set
+    {
+        std::stringstream ss;
+        ss << "$a(33) .cute { color: red; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    VARIABLE_FUNCTION \"a\"\n"
+"      INTEGER \"\" I:33\n"
+"    WHITESPACE\n"
+"    PERIOD\n"
+"    IDENTIFIER \"cute\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"color\"\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"red\"\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_variable_set(var, false));
+        REQUIRE_FALSE(csspp::parser::is_variable_set(var, true));
+    }
+
+    // test with a variable block
+    {
+        std::stringstream ss;
+        ss << "$a($arg1): { color: red; };";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    VARIABLE_FUNCTION \"a\"\n"
+"      VARIABLE \"arg1\"\n"
+"    COLON\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"color\"\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"red\"\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE(csspp::parser::is_variable_set(var, false));
+        REQUIRE(csspp::parser::is_variable_set(var, true));
+    }
+
+    // test with the missing ';'
+    {
+        std::stringstream ss;
+        ss << "$a($arg1): { color: red; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // the ';' at the end is missing
+        REQUIRE_ERRORS("test.css(1): error: Variable set to a block and a nested property block must end with a semicolon (;) after said block.\n");
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Is Nested Declaration", "[parser] [variable] [invalid]")
+{
+    // simple test with a value + value (SASS compatible)
+    {
+        std::stringstream ss;
+        ss << "width : { color : red } ;";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"width\"\n"
+"    WHITESPACE\n"
+"    COLON\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"color\"\n"
+"      WHITESPACE\n"
+"      COLON\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"red\"\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE(csspp::parser::is_nested_declaration(var));
+    }
+
+    // a nested block must end with a ';'
+    {
+        std::stringstream ss;
+        ss << "width : { color : red }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("test.css(1): error: Variable set to a block and a nested property block must end with a semicolon (;) after said block.\n");
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
 // Local Variables:
 // mode: cpp
 // indent-tabs-mode: nil
