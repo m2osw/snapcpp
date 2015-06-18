@@ -55,16 +55,24 @@ TEST_CASE("Node types", "[node] [type]")
         switch(w)
         {
         case csspp::node_type_t::BOOLEAN:
+        case csspp::node_type_t::OPEN_CURLYBRACKET:
             {
                 bool b(rand() % 1 == 0);
                 n->set_boolean(b);
                 REQUIRE(n->get_boolean() == b);
-                REQUIRE(n->to_boolean() == (b ? csspp::boolean_t::TRUE : csspp::boolean_t::FALSE));
+                if(w == csspp::node_type_t::OPEN_CURLYBRACKET)
+                {
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+                }
+                else
+                {
+                    REQUIRE(n->to_boolean() == (b ? csspp::boolean_t::TRUE : csspp::boolean_t::FALSE));
+                }
             }
             break;
 
         default:
-            REQUIRE_THROWS_AS(n->set_boolean(123), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->set_boolean(true), csspp::csspp_exception_logic);
             REQUIRE_THROWS_AS(n->get_boolean(), csspp::csspp_exception_logic);
             break;
 
@@ -154,6 +162,62 @@ TEST_CASE("Node types", "[node] [type]")
         default:
             REQUIRE_THROWS_AS(n->set_string("add"), csspp::csspp_exception_logic);
             REQUIRE_THROWS_AS(n->get_string(), csspp::csspp_exception_logic);
+            break;
+
+        }
+
+        // font metrics
+        switch(w)
+        {
+        case csspp::node_type_t::FONT_METRICS:
+            n->set_font_size(12.5);
+            n->set_dim1("px");
+            n->set_line_height(24.3);
+            n->set_dim2("%");
+            //REQUIRE(n->get_string() == "px/%"); -- we do not allow get_string()
+            //REQUIRE(n->get_integer() == 12.5 as a double); -- we do not allow get_integer()
+            //REQUIRE(n->get_decimal_number() == 24.3); -- we do not allow get_decimal_number()
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            REQUIRE(n->get_font_size() == 12.5);
+            REQUIRE(n->get_dim1() == "px");
+            REQUIRE(n->get_line_height() == 24.3);
+            REQUIRE(n->get_dim2() == "%");
+#pragma GCC diagnostic pop
+
+            // dimensions require a few more tests
+            n->set_dim2("deg");  // chane dim2
+            REQUIRE(n->get_dim1() == "px");
+            REQUIRE(n->get_dim2() == "deg");
+            n->set_dim2("");  // remove dim2
+            REQUIRE(n->get_dim1() == "px");
+            REQUIRE(n->get_dim2() == "");
+            n->set_dim1("");  // remove dim1
+            REQUIRE(n->get_dim1() == "");
+            REQUIRE(n->get_dim2() == "");
+            n->set_dim2("em"); // set dim2 without a dim1
+            REQUIRE(n->get_dim1() == "");
+            REQUIRE(n->get_dim2() == "em");
+            n->set_dim1("px"); // set a dim1 with a dim2
+            REQUIRE(n->get_dim1() == "px");
+            REQUIRE(n->get_dim2() == "em");
+            n->set_dim1("");  // remove dim1 with a dim2
+            REQUIRE(n->get_dim1() == "");
+            REQUIRE(n->get_dim2() == "em");
+            n->set_dim2("");  // remove dim2 without a dim1
+            REQUIRE(n->get_dim1() == "");
+            REQUIRE(n->get_dim2() == "");
+            break;
+
+        default:
+            REQUIRE_THROWS_AS(n->set_font_size(12.5), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->get_font_size(), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->set_line_height(24.3), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->get_line_height(), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->set_dim1("px"), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->get_dim1(), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->set_dim2("%"), csspp::csspp_exception_logic);
+            REQUIRE_THROWS_AS(n->get_dim2(), csspp::csspp_exception_logic);
             break;
 
         }
@@ -551,6 +615,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "EXCLAMATION");
             break;
 
+        case csspp::node_type_t::FONT_METRICS:
+            REQUIRE(name == "FONT_METRICS");
+            break;
+
         case csspp::node_type_t::FUNCTION:
             REQUIRE(name == "FUNCTION");
             break;
@@ -829,6 +897,10 @@ TEST_CASE("Node output", "[node] [output]")
             REQUIRE(name == "EXCLAMATION");
             break;
 
+        case csspp::node_type_t::FONT_METRICS:
+            REQUIRE(name == "FONT_METRICS");
+            break;
+
         case csspp::node_type_t::FUNCTION:
             REQUIRE(name == "FUNCTION");
             break;
@@ -1082,7 +1154,14 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                 break;
 
             case csspp::node_type_t::DIVIDE:
-                REQUIRE(n->to_string(flags) == " / ");
+                if((flags & csspp::node::g_to_string_flag_add_spaces) != 0)
+                {
+                    REQUIRE(n->to_string(flags) == " / ");
+                }
+                else
+                {
+                    REQUIRE(n->to_string(flags) == "/");
+                }
                 break;
 
             case csspp::node_type_t::DOLLAR:
@@ -1095,6 +1174,15 @@ TEST_CASE("Node to string", "[node] [type] [output]")
 
             case csspp::node_type_t::EXCLAMATION:
                 REQUIRE(n->to_string(flags) == "!");
+                break;
+
+            case csspp::node_type_t::FONT_METRICS:
+                REQUIRE(n->to_string(flags) ==
+                          csspp::decimal_number_to_string(n->get_font_size())
+                        + n->get_dim1()
+                        + "/"
+                        + csspp::decimal_number_to_string(n->get_line_height())
+                        + n->get_dim2());
                 break;
 
             case csspp::node_type_t::FUNCTION:
@@ -1161,7 +1249,14 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                 break;
 
             case csspp::node_type_t::MODULO:
-                REQUIRE(n->to_string(flags) == " % ");
+                if((flags & csspp::node::g_to_string_flag_add_spaces) != 0)
+                {
+                    REQUIRE(n->to_string(flags) == " % ");
+                }
+                else
+                {
+                    REQUIRE(n->to_string(flags) == "%");
+                }
                 break;
 
             case csspp::node_type_t::MULTIPLY:
@@ -1186,7 +1281,14 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
                     p->set_integer(52);
                     n->add_child(p);
-                    REQUIRE(n->to_string(flags) == "{7 % 52}");
+                    if((flags & csspp::node::g_to_string_flag_add_spaces) != 0)
+                    {
+                        REQUIRE(n->to_string(flags) == "{7 % 52}");
+                    }
+                    else
+                    {
+                        REQUIRE(n->to_string(flags) == "{7%52}");
+                    }
                 }
                 break;
 
@@ -1222,7 +1324,14 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
                     p->set_integer(152);
                     n->add_child(p);
-                    REQUIRE(n->to_string(flags) == "[5 / 152]");
+                    if((flags & csspp::node::g_to_string_flag_add_spaces) != 0)
+                    {
+                        REQUIRE(n->to_string(flags) == "[5 / 152]");
+                    }
+                    else
+                    {
+                        REQUIRE(n->to_string(flags) == "[5/152]");
+                    }
                 }
                 break;
 
@@ -1267,15 +1376,59 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                 break;
 
             case csspp::node_type_t::STRING:
-                REQUIRE(n->to_string(flags) == "\"\"");
+                // with an empty string
+                if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                {
+                    REQUIRE(n->to_string(flags) == "\"\"");
+                }
+                else
+                {
+                    REQUIRE(n->to_string(flags) == "");
+                }
+
+                // with a ' in the string
                 n->set_string("whatever string content we'd want really...");
-                REQUIRE(n->to_string(flags) == "\"whatever string content we'd want really...\"");
+                if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                {
+                    REQUIRE(n->to_string(flags) == "\"whatever string content we'd want really...\"");
+                }
+                else
+                {
+                    REQUIRE(n->to_string(flags) == "whatever string content we'd want really...");
+                }
+
+                // with a " in the string
                 n->set_string("yet if we have one quote like this: \" then the other is used to quote the string");
-                REQUIRE(n->to_string(flags) == "'yet if we have one quote like this: \" then the other is used to quote the string'");
+                if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                {
+                    REQUIRE(n->to_string(flags) == "'yet if we have one quote like this: \" then the other is used to quote the string'");
+                }
+                else
+                {
+                    REQUIRE(n->to_string(flags) == "yet if we have one quote like this: \" then the other is used to quote the string");
+                }
+
+                // with both ' and ", more '
                 n->set_string("counter: ''''' > \"\"\"");
-                REQUIRE(n->to_string(flags) == "\"counter: ''''' > \\\"\\\"\\\"\"");
+                if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                {
+                    REQUIRE(n->to_string(flags) == "\"counter: ''''' > \\\"\\\"\\\"\"");
+                }
+                else
+                {
+                    REQUIRE(n->to_string(flags) == "counter: ''''' > \"\"\"");
+                }
+
+                // with both ' and ", more "
                 n->set_string("counter: ''' < \"\"\"\"\"");
-                REQUIRE(n->to_string(flags) == "'counter: \\'\\'\\' < \"\"\"\"\"'");
+                if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                {
+                    REQUIRE(n->to_string(flags) == "'counter: \\'\\'\\' < \"\"\"\"\"'");
+                }
+                else
+                {
+                    REQUIRE(n->to_string(flags) == "counter: ''' < \"\"\"\"\"");
+                }
                 break;
 
             case csspp::node_type_t::SUBSTRING_MATCH:
@@ -1326,7 +1479,14 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
                     p->set_decimal_number(1.0);
                     n->add_child(p);
-                    REQUIRE(n->to_string(flags) == "$my_function(0,\"colorful\",33,1)");
+                    if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                    {
+                        REQUIRE(n->to_string(flags) == "$my_function(0,\"colorful\",33,1)");
+                    }
+                    else
+                    {
+                        REQUIRE(n->to_string(flags) == "$my_function(0,colorful,33,1)");
+                    }
                 }
                 break;
 
@@ -1381,7 +1541,14 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p->set_integer(33);
                     a->add_child(p);
 
-                    REQUIRE(n->to_string(flags) == "0,\"orange\",33");
+                    if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                    {
+                        REQUIRE(n->to_string(flags) == "0,\"orange\",33");
+                    }
+                    else
+                    {
+                        REQUIRE(n->to_string(flags) == "0,orange,33");
+                    }
 
                     // test with an actual function but not argified
                     n->clear();
@@ -1399,7 +1566,14 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p->set_integer(301);
                     n->add_child(p);
 
-                    REQUIRE(n->to_string(flags) == "111,\"purple\",301");
+                    if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                    {
+                        REQUIRE(n->to_string(flags) == "111,\"purple\",301");
+                    }
+                    else
+                    {
+                        REQUIRE(n->to_string(flags) == "111,purple,301");
+                    }
                 }
                 break;
 
@@ -1575,6 +1749,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
 
         case csspp::node_type_t::EXCLAMATION:
             REQUIRE_ERRORS("test.css(1): error: node name \"EXCLAMATION\".\n");
+            break;
+
+        case csspp::node_type_t::FONT_METRICS:
+            REQUIRE_ERRORS("test.css(1): error: node name \"FONT_METRICS\".\n");
             break;
 
         case csspp::node_type_t::FUNCTION:
@@ -1790,6 +1968,10 @@ TEST_CASE("Print nodes", "[node] [output]")
             an_plus_b->set_integer(0x0000000700000003);
             child->add_child(an_plus_b);
 
+            csspp::node::pointer_t color(new csspp::node(csspp::node_type_t::COLOR, pos));
+            color->set_integer(0xFF783411);
+            child->add_child(color);
+
     std::stringstream ss;
     ss << *root;
 
@@ -1807,8 +1989,41 @@ TEST_CASE("Print nodes", "[node] [output]")
 "    STRING \"rabbit\"\n"
 "    DECIMAL_NUMBER \"\" D:208\n"
 "    AN_PLUS_B S:3n+7\n"
+"    COLOR H:ff783411\n"
 
         );
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Font Metrics", "[node] [output]")
+{
+    // create a tree of nodes, then print it to exercise all the possible
+    // cases of the display() function
+    csspp::position pos("font-metrics.css");
+    csspp::node::pointer_t font_metrics(new csspp::node(csspp::node_type_t::FONT_METRICS, pos));
+
+    for(int i(0); i < 100; ++i)
+    {
+        csspp::decimal_number_t const size(static_cast<csspp::decimal_number_t>(rand() % 1000) / 10.0);
+        font_metrics->set_font_size(size);
+        REQUIRE((font_metrics->get_font_size() - size) < 0.0001);
+
+        csspp::decimal_number_t const height(static_cast<csspp::decimal_number_t>(rand() % 1000) / 10.0);
+        font_metrics->set_line_height(height);
+        REQUIRE((font_metrics->get_line_height() - height) < 0.0001);
+
+        // line height has no effect on the font size
+        REQUIRE((font_metrics->get_font_size() - size) < 0.0001);
+
+        // to see that font size has no effect on line height...
+        csspp::decimal_number_t const size2(static_cast<csspp::decimal_number_t>(rand() % 1000) / 10.0);
+        font_metrics->set_font_size(size2);
+        REQUIRE((font_metrics->get_font_size() - size2) < 0.0001);
+
+        REQUIRE((font_metrics->get_line_height() - height) < 0.0001);
+    }
 
     // no error left over
     REQUIRE_ERRORS("");

@@ -26,6 +26,7 @@ class expression
 {
 public:
                         expression(node::pointer_t n, bool skip_whitespace);
+    bool                end_of_nodes();
     void                mark_start();
     void                replace_with_result(node::pointer_t result);
     void                next();

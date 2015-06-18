@@ -62,6 +62,7 @@ enum class node_type_t
     EOF_TOKEN,
     EQUAL,                  // for selectors: exact match E[foo="bar"]
     EXCLAMATION,
+    FONT_METRICS,           // 12px/14px (font-size/line-height)
     FUNCTION,
     GREATER_EQUAL,
     GREATER_THAN,           // for selectors: E > F, F is a child of E
@@ -123,6 +124,8 @@ public:
 
                         node(node_type_t const type, position const & pos);
 
+    pointer_t           clone() const;
+
     node_type_t         get_type() const;
     bool                is(node_type_t const type) const;
     boolean_t           to_boolean() const;
@@ -136,6 +139,14 @@ public:
     void                set_boolean(bool integer);
     decimal_number_t    get_decimal_number() const;
     void                set_decimal_number(decimal_number_t decimal_number);
+    decimal_number_t    get_font_size() const;
+    void                set_font_size(decimal_number_t font_size);
+    decimal_number_t    get_line_height() const;
+    void                set_line_height(decimal_number_t line_height);
+    std::string         get_dim1() const;
+    void                set_dim1(std::string const & font_size);
+    std::string         get_dim2() const;
+    void                set_dim2(std::string const & line_height);
 
     bool                empty() const;
     void                clear();

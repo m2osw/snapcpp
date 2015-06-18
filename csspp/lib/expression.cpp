@@ -26,7 +26,7 @@
 
 #include "csspp/expression.h"
 
-//#include "csspp/error.h"
+#include "csspp/color.h"
 #include "csspp/exceptions.h"
 //#include "csspp/unicode_range.h"
 
@@ -47,6 +47,11 @@ expression::expression(node::pointer_t n, bool skip_whitespace)
 }
 
 // basic state handling
+bool expression::end_of_nodes()
+{
+    return f_pos >= f_node->size();
+}
+
 void expression::mark_start()
 {
     f_start = f_pos;
@@ -66,8 +71,15 @@ void expression::replace_with_result(node::pointer_t result)
     // in an expression.)
     if(!f_current->is(node_type_t::EOF_TOKEN) && f_pos > 0)
     {
-        --f_pos;
-        if(f_node->get_child(f_pos)->is(node_type_t::WHITESPACE))
+        while(f_pos > 0)
+        {
+            --f_pos;
+            if(f_node->get_child(f_pos) == f_current)
+            {
+                break;
+            }
+        }
+        if(f_pos > 0 && f_node->get_child(f_pos - 1)->is(node_type_t::WHITESPACE))
         {
             --f_pos;
         }
@@ -1232,6 +1244,7 @@ node::pointer_t expression::unary()
     //      | DECIMAL_NUMBER
     //      | STRING
     //      | PERCENT
+    //      | HASH (-> COLOR)
     //      | FUNCTION argument_list ')' -- including url()
     //      | '(' expression_list ')'
     //      | '+' power
@@ -1335,6 +1348,31 @@ node::pointer_t expression::unary()
             }
             result->set_boolean(r == 0 ? true : false);
             return result;
+        }
+        /*NOTREACHED*/
+
+    case node_type_t::HASH:
+        // a '#...' in an expression is expected to be a valid color
+        {
+            color hash;
+            if(!hash.set_color(f_current->get_string()))
+            {
+                error::instance() << f_current->get_position()
+                        << "the color in #"
+                        << f_current->get_string()
+                        << " is not valid."
+                        << error_mode_t::ERROR_ERROR;
+
+                // skip the HASH
+                next();
+                return node::pointer_t();
+            }
+            node::pointer_t color_node(new node(node_type_t::COLOR, f_current->get_position()));
+            color_node->set_integer(hash.get_color());
+
+            // skip the HASH
+            next();
+            return color_node;
         }
         /*NOTREACHED*/
 

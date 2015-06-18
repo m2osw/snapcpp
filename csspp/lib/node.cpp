@@ -36,6 +36,12 @@ size_t const node::npos;
 namespace
 {
 
+union convert_t
+{
+    integer_t           f_int;
+    decimal_number_t    f_flt;
+};
+
 void type_supports_integer(node_type_t const type)
 {
     switch(type)
@@ -124,6 +130,22 @@ void type_supports_string(node_type_t const type)
     }
 }
 
+void type_supports_font_metrics(node_type_t const type)
+{
+    switch(type)
+    {
+    case node_type_t::FONT_METRICS:
+        break;
+
+    default:
+        {
+            std::stringstream ss;
+            ss << "trying to access (read/write) the line height of a node of type " << type << ", which does not support line heights.";
+            throw csspp_exception_logic(ss.str());
+        }
+    }
+}
+
 void type_supports_children(node_type_t const type)
 {
     switch(type)
@@ -156,6 +178,30 @@ node::node(node_type_t const type, position const & pos)
     : f_type(type)
     , f_position(pos)
 {
+}
+
+node::pointer_t node::clone() const
+{
+    // create the clone
+    pointer_t result(new node(f_type, f_position));
+
+    // copy the other simple values
+    result->f_boolean = f_boolean;
+    result->f_integer = f_integer;
+    result->f_decimal_number = f_decimal_number;
+    result->f_string = f_string;
+
+    for(auto c : f_children)
+    {
+        result->f_children.push_back(c->clone());
+    }
+
+    for(auto v : f_variables)
+    {
+        result->f_variables[v.first] = v.second->clone();
+    }
+
+    return result;
 }
 
 node_type_t node::get_type() const
@@ -260,6 +306,123 @@ void node::set_decimal_number(decimal_number_t decimal_number)
 {
     type_supports_decimal_number(f_type);
     f_decimal_number = decimal_number;
+}
+
+decimal_number_t node::get_font_size() const
+{
+    type_supports_font_metrics(f_type);
+
+    return f_decimal_number;
+}
+
+void node::set_font_size(decimal_number_t font_size)
+{
+    type_supports_font_metrics(f_type);
+
+    f_decimal_number = font_size;
+}
+
+decimal_number_t node::get_line_height() const
+{
+    type_supports_font_metrics(f_type);
+
+    convert_t c;
+    c.f_int = f_integer;
+    return c.f_flt;
+}
+
+void node::set_line_height(decimal_number_t line_height)
+{
+    type_supports_font_metrics(f_type);
+
+    convert_t c;
+    c.f_flt = line_height;
+    f_integer = c.f_int;
+}
+
+std::string node::get_dim1() const
+{
+    type_supports_font_metrics(f_type);
+
+    std::string::size_type pos(f_string.find('/'));
+    if(pos == std::string::npos)
+    {
+        return f_string;
+    }
+    else
+    {
+        return f_string.substr(0, pos);
+    }
+}
+
+void node::set_dim1(std::string const & dimension)
+{
+    type_supports_font_metrics(f_type);
+
+    if(f_string.empty())
+    {
+        f_string = dimension;
+    }
+    else
+    {
+        std::string::size_type pos(f_string.find('/'));
+        if(pos == std::string::npos)
+        {
+            f_string = dimension;
+        }
+        else
+        {
+            f_string = dimension + f_string.substr(pos);
+        }
+    }
+}
+
+std::string node::get_dim2() const
+{
+    type_supports_font_metrics(f_type);
+
+    std::string::size_type pos(f_string.find('/'));
+    if(pos == std::string::npos)
+    {
+        return "";
+    }
+    else
+    {
+        return f_string.substr(pos + 1);
+    }
+}
+
+void node::set_dim2(std::string const & dimension)
+{
+    type_supports_font_metrics(f_type);
+
+    if(dimension.empty())
+    {
+        std::string::size_type pos(f_string.find('/'));
+        if(pos != std::string::npos)
+        {
+            // remove the '/...'
+            f_string = f_string.substr(0, pos);
+        }
+        return;
+    }
+
+    if(f_string.empty())
+    {
+        f_string = "/" + dimension;
+    }
+    else
+    {
+        std::string::size_type pos(f_string.find('/'));
+        if(pos == std::string::npos)
+        {
+            f_string += "/" + dimension;
+        }
+        else
+        {
+            f_string = f_string.substr(0, pos + 1) + dimension;
+        }
+    }
 }
 
 bool node::empty() const
@@ -398,6 +561,10 @@ void node::replace_child(pointer_t o, pointer_t n)
     auto it(std::find(f_children.begin(), f_children.end(), o));
     if(it == f_children.end())
     {
+//std::cerr << "------------ Node being replaced:\n" << *o
+//          << "------------ Node to replace with:\n" << *n
+//          << "------------ This node:\n" << *this
+//          << "+++++++++++++++++++++++++++++++++++++++\n";
         throw csspp_exception_logic("replace_child() called with a node which is not a child of this node.");
     }
 
@@ -534,6 +701,12 @@ std::string node::to_string(int flags) const
 
     case node_type_t::EXCLAMATION:
         out << '!';
+        break;
+
+    case node_type_t::FONT_METRICS:
+        // this is a mouthful!
+        out << decimal_number_to_string(get_font_size()) << get_dim1()
+            << "/" << decimal_number_to_string(get_line_height()) << get_dim2();
         break;
 
     case node_type_t::VARIABLE_FUNCTION:
@@ -887,6 +1060,17 @@ void node::display(std::ostream & out, uint32_t indent) const
 
     switch(f_type)
     {
+    case node_type_t::COLOR:
+        out << " H:" << std::hex << f_integer << std::dec;
+        break;
+
+    default:
+        break;
+
+    }
+
+    switch(f_type)
+    {
     case node_type_t::AN_PLUS_B:
         {
             nth_child const an_b(f_integer);
@@ -1046,6 +1230,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
 
     case csspp::node_type_t::EXCLAMATION:
         out << "EXCLAMATION";
+        break;
+
+    case csspp::node_type_t::FONT_METRICS:
+        out << "FONT_METRICS";
         break;
 
     case csspp::node_type_t::FUNCTION:

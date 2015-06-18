@@ -55,9 +55,8 @@ private:
         bool                        empty_parents() const;
         node::pointer_t             get_current_parent() const;
         node::pointer_t             get_previous_parent() const;
-        node::pointer_t             find_parent_by_type(node_type_t type) const;
-        node::pointer_t             find_parent_by_type(node_type_t type, node::pointer_t starting_here) const;
-        node::pointer_t             find_selector() const;
+        node::pointer_t             get_variable(std::string const & variable_name) const;
+        void                        set_variable(node::pointer_t variable, node::pointer_t value, bool global) const;
 
     private:
         node::pointer_t             f_root;
@@ -79,8 +78,8 @@ private:
 
     void                    mark_selectors(node::pointer_t n);
     void                    replace_variables(node::pointer_t n);
+    void                    replace_variable(node::pointer_t parent, node::pointer_t n, size_t & idx);
     void                    set_variable(node::pointer_t n);
-    node::pointer_t         get_variable(node::pointer_t n);
 
     bool                    argify(node::pointer_t n);
 

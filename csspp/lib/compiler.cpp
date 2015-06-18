@@ -133,60 +133,63 @@ node::pointer_t compiler::compiler_state_t::get_previous_parent() const
     return f_parents[f_parents.size() - 2];
 }
 
-node::pointer_t compiler::compiler_state_t::find_parent_by_type(node_type_t type) const
+node::pointer_t compiler::compiler_state_t::get_variable(std::string const & variable_name) const
 {
     size_t pos(f_parents.size());
     while(pos > 0)
     {
         --pos;
-        if(f_parents[pos]->is(type))
+        node::pointer_t s(f_parents[pos]);
+        switch(s->get_type())
         {
-            return f_parents[pos];
-        }
-    }
-
-    return node::pointer_t();
-}
-
-node::pointer_t compiler::compiler_state_t::find_parent_by_type(node_type_t type, node::pointer_t starting_here) const
-{
-    size_t pos(f_parents.size());
-    while(pos > 0)
-    {
-        --pos;
-        if(f_parents[pos] == starting_here)
-        {
+        case node_type_t::OPEN_CURLYBRACKET:
+            if(s->get_boolean())
+            {
+                node::pointer_t value(s->get_variable(variable_name));
+                if(value)
+                {
+                    return value;
+                }
+            }
             break;
+
+        default:
+            break;
+
         }
     }
 
-    while(pos > 0)
-    {
-        --pos;
-        if(f_parents[pos]->is(type))
-        {
-            return f_parents[pos];
-        }
-    }
-
-    return node::pointer_t();
+    return f_root->get_variable(variable_name);
 }
 
-node::pointer_t compiler::compiler_state_t::find_selector() const
+void compiler::compiler_state_t::set_variable(node::pointer_t name, node::pointer_t value, bool global) const
 {
-    node::pointer_t s(find_parent_by_type(node_type_t::OPEN_CURLYBRACKET));
-    while(s)
+    // the name is used in a map to quickly save/retrieve variables
+    // so we save the variable / mixin definitions in a list saved
+    // along the value of this variable
+    std::string const variable_name(name->get_string());
+    node::pointer_t v(new node(node_type_t::LIST, value->get_position()));
+    v->add_child(name);
+    v->add_child(value);
+
+    if(!global)
     {
-        // is this marked as a selector?
-        if(s->get_boolean())
+        size_t pos(f_parents.size());
+        while(pos > 0)
         {
-            return s;
+            --pos;
+            node::pointer_t s(f_parents[pos]);
+            if(s->is(node_type_t::OPEN_CURLYBRACKET)
+            && s->get_boolean())
+            {
+                s->set_variable(variable_name, v);
+                return;
+            }
         }
-        s = find_parent_by_type(node_type_t::OPEN_CURLYBRACKET, s);
     }
 
-    // if nothing else return the root
-    return f_root;
+    // if nothing else make it a global variable
+    f_root->set_variable(variable_name, v);
 }
 
 compiler::compiler(bool validating)
@@ -398,7 +401,7 @@ void compiler::compile_declaration(node::pointer_t n)
     if(!identifier->is(node_type_t::IDENTIFIER))
     {
         error::instance() << n->get_position()
-                << "expected an identifier to start a declaration value; got a: " << n->get_type() << " instead."
+                << "expected an identifier to start a declaration value; got a: " << identifier->get_type() << " instead."
                 << error_mode_t::ERROR_ERROR;
         return;
     }
@@ -454,6 +457,67 @@ void compiler::compile_declaration(node::pointer_t n)
     else
     {
         n->replace_child(identifier, declaration);
+    }
+    // now the declaration is part of the stack of parents
+    safe_parents_t safe_declaration_parent(f_state, declaration);
+
+    // apply the expression parser on the parameters
+    // TODO: test something a lot better, right now it does not look correct...
+    bool compile_declaration_items(true);
+    for(size_t i(0); i < declaration->size(); ++i)
+    {
+        node::pointer_t item(declaration->get_child(i));
+        switch(item->get_type())
+        {
+        case node_type_t::OPEN_CURLYBRACKET:
+        case node_type_t::COMPONENT_VALUE:
+            compile_declaration_items = false;
+            break;
+
+        // is the following possible at all? (without someone breaking the
+        // node tree on purpose, of course...)
+            //throw csspp_exception_logic("compiler.cpp: found a COMPONENT_VALUE directly under our declaration object."); // LCOV_EXCL_LINE
+
+        default:
+            break;
+
+        }
+    }
+    if(compile_declaration_items)
+    {
+        compile_expression(declaration, true, true);
+    }
+
+    // finally compile the parameters of the declaration
+    for(size_t i(0); i < declaration->size(); ++i)
+    {
+        node::pointer_t item(declaration->get_child(i));
+        safe_parents_t safe_parents(f_state, item);
+        switch(item->get_type())
+        {
+        case node_type_t::OPEN_CURLYBRACKET:
+            // nested declarations, this {}-block includes sub-field names
+            // (i.e. names that will be added this this declaration after a
+            // dash (-) and with the name of the fields appearing here)
+            for(size_t j(0); j < item->size(); ++j)
+            {
+                node::pointer_t component(item->get_child(j));
+                safe_parents_t safe_grand_parents(f_state, component);
+                compile_component_value(component);
+            }
+            break;
+
+        case node_type_t::COMPONENT_VALUE:
+            compile_component_value(item);
+            break;
+
+        default:
+            //error::instance() << n->get_position()
+            //        << "found a node of type " << item->get_type() << " in a declaration."
+            //        << error_mode_t::ERROR_ERROR;
+            break;
+
+        }
     }
 }
 
@@ -516,16 +580,40 @@ node::pointer_t compiler::compile_expression(node::pointer_t n, bool skip_whites
     node::pointer_t result;
     if(list_of_expressions)
     {
-        // result is a list: a, b, c, ...
-        result = expr.conditional();
+        // result is a list: a b c ...
+        for(;;)
+        {
+            result = expr.conditional();
+            if(result)
+            {
+                expr.replace_with_result(result);
+            }
+            if(expr.end_of_nodes())
+            {
+                return result;
+            }
+            expr.next();
+            // keep one whitespace between expressions if such exists
+            if(expr.current()->is(node_type_t::WHITESPACE))
+            {
+                if(expr.end_of_nodes())
+                {
+                    // TODO: list of nodes ends with WHITESPACE
+                    return result;
+                }
+                expr.mark_start();
+                expr.next();
+            }
+        }
+        /*NOTREACHED*/
     }
     else
     {
         result = expr.conditional();
-    }
-    if(result)
-    {
-        expr.replace_with_result(result);
+        if(result)
+        {
+            expr.replace_with_result(result);
+        }
     }
     return result;
 }
@@ -537,7 +625,7 @@ void compiler::replace_import(node::pointer_t parent, node::pointer_t import, no
     //
     // WARNING: we do NOT support the SASS extension of multiple entries
     //          within one @import because it is not CSS 2 or CSS 3
-    //          compatible
+    //          compatible, not even remotely
     //
 
     // node 'import' is the @import itself
@@ -548,6 +636,7 @@ void compiler::replace_import(node::pointer_t parent, node::pointer_t import, no
     // we only support arguments with one string
     // (@import accepts strings and url() as their first parameter)
     //
+std::cerr << "replace @import!?\n" << *expr << "----------------------\n";
     if(expr && expr->size() == 1
     && expr->is(node_type_t::STRING))
     {
@@ -567,6 +656,7 @@ void compiler::replace_import(node::pointer_t parent, node::pointer_t import, no
         }
 
         // if still not found, we ignore
+std::cerr << "found file [" << filename << "]\n";
         if(!filename.empty())
         {
             // found an SCSS include, we remove that @import and replace
@@ -648,12 +738,12 @@ void compiler::handle_mixin(node::pointer_t n)
     if(name->is(node_type_t::IDENTIFIER))
     {
         // this is just like a variable
-        //
-        // search the parents for the node where the variable will be set
-        node::pointer_t var_holder(f_state.find_selector());
-
-        // save the variable
-        var_holder->set_variable(name->get_string(), block);
+        // TODO: is it always global? I think it is for @mixin...
+        if(name->is(node_type_t::VARIABLE_FUNCTION))
+        {
+            argify(name);
+        }
+        f_state.set_variable(name, block, true);
     }
     else if(name->is(node_type_t::FUNCTION))
     {
@@ -771,6 +861,7 @@ void compiler::replace_variables(node::pointer_t n)
     case node_type_t::OPEN_CURLYBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
     case node_type_t::OPEN_SQUAREBRACKET:
+    case node_type_t::VARIABLE_FUNCTION:
         {
             // handle a special case which SETs a variable and cannot
             // get the first $<var> replaced
@@ -778,7 +869,11 @@ void compiler::replace_variables(node::pointer_t n)
                               && parser::is_variable_set(n, false));
 
             // replace all $<var> references with the corresponding value
-            size_t idx(is_variable_set ? 1 : 0);
+            size_t idx(is_variable_set
+                    ? (n->get_child(0)->is(node_type_t::VARIABLE_FUNCTION)
+                        ? n->size() // completely ignore
+                        : 1)        // do not replace <var> in $<var>:
+                    : 0);           // replace everything
             while(idx < n->size())
             {
                 node::pointer_t child(n->get_child(idx));
@@ -788,35 +883,19 @@ void compiler::replace_variables(node::pointer_t n)
 
                     // search for the variable and replace this 'child' with
                     // the contents of the variable
-                    node::pointer_t value(get_variable(child));
-                    switch(value->get_type())
-                    {
-                    case node_type_t::LIST:
-                    case node_type_t::OPEN_CURLYBRACKET:
-                    case node_type_t::OPEN_PARENTHESIS:
-                    case node_type_t::OPEN_SQUAREBRACKET:
-                        // in this case we insert the children of 'value'
-                        // instead of the value itself
-                        {
-                            size_t const max_children(value->size());
-                            for(size_t j(0), i(idx); j < max_children; ++j, ++i)
-                            {
-                                n->insert_child(i, value->get_child(j));
-                            }
-                        }
-                        break;
+                    replace_variable(n, child, idx);
+                }
+                else if(child->is(node_type_t::VARIABLE_FUNCTION))
+                {
+                    // we need to first replace variables in the parameters
+                    // if the function
+                    replace_variables(child);
 
-                    case node_type_t::WHITESPACE:
-                        // whitespaces by themselves do not get re-included,
-                        // which may be a big mistake but at this point
-                        // it seems wise to do so
-                        break;
+                    n->remove_child(idx);
 
-                    default:
-                        n->insert_child(idx, value);
-                        break;
-
-                    }
+                    // search for the variable and replace this 'child' with
+                    // the contents of the variable
+                    replace_variable(n, child, idx);
                 }
                 else
                 {
@@ -833,7 +912,12 @@ void compiler::replace_variables(node::pointer_t n)
                     case node_type_t::OPEN_PARENTHESIS:
                     case node_type_t::OPEN_SQUAREBRACKET:
                         replace_variables(child);
-                        ++idx;
+
+                        // skip that child if still present
+                        if(child == n->get_child(idx))
+                        {
+                            ++idx;
+                        }
                         break;
 
                     case node_type_t::AT_KEYWORD:
@@ -856,13 +940,193 @@ void compiler::replace_variables(node::pointer_t n)
             {
                 // this is enough to get the variable removed
                 // from COMPONENT_VALUE
-                set_variable(n->get_child(0));
+                set_variable(n);
             }
         }
         break;
 
     default:
         // other nodes are not of interest here
+        break;
+
+    }
+}
+
+void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_t & idx)
+{
+    std::string const & variable_name(n->get_string());
+
+    // search the parents for the node where the variable will be set
+    node::pointer_t value(f_state.get_variable(variable_name));
+    if(!value)
+    {
+        // no variable with that name found, generate an error?
+        if(!f_empty_on_undefined_variable)
+        {
+            error::instance() << n->get_position()
+                    << "variable named \""
+                    << variable_name
+                    << "\" is not set."
+                    << error_mode_t::ERROR_ERROR;
+        }
+        return;
+    }
+
+    // internal validity check
+    if(!value->is(node_type_t::LIST)
+    || value->size() != 2)
+    {
+        throw csspp_exception_logic("compiler.cpp:compiler::replace_variable(): all variable values must be two sub-values in a LIST, the first item being the variable."); // LCOV_EXCL_LINE
+    }
+
+    node::pointer_t var(value->get_child(0));
+    node::pointer_t val(value->get_child(1));
+
+    if(var->is(node_type_t::FUNCTION)
+    || var->is(node_type_t::VARIABLE_FUNCTION))
+    {
+        if(!n->is(node_type_t::VARIABLE_FUNCTION))
+        {
+            error::instance() << n->get_position()
+                    << "variable named \""
+                    << variable_name
+                    << "\" is not a function and it cannot be referenced as such."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+        // we need to apply the function...
+        argify(n);
+
+        node::pointer_t root(new node(node_type_t::LIST, val->get_position()));
+        root->add_child(val->clone());
+        size_t const max_children(var->size());
+        size_t const max_input(n->size());
+        for(size_t i(0); i < max_children; ++i)
+        {
+            node::pointer_t arg(var->get_child(i));
+            if(!arg->is(node_type_t::ARG))
+            {
+                // function declaration is invalid!
+                throw csspp_exception_logic("compiler.cpp:compiler::replace_variable(): VARIABLE_FUNCTION children are not all ARG nodes."); // LCOV_EXCL_LINE
+            }
+            if(arg->empty())
+            {
+                throw csspp_exception_logic("compiler.cpp:compiler::replace_variable(): ARG is empty."); // LCOV_EXCL_LINE
+            }
+            node::pointer_t arg_name(arg->get_child(0));
+            if(!arg_name->is(node_type_t::VARIABLE))
+            {
+                throw csspp_exception_logic("compiler.cpp:compiler::replace_variable(): ARG first child is not a VARIABLE."); // LCOV_EXCL_LINE
+            }
+            if(i >= max_input)
+            {
+                // user did not specify this value, check whether we have
+                // an optional value
+                if(arg->size() > 1)
+                {
+                    // use default value
+                    node::pointer_t default_param(arg->clone());
+                    default_param->remove_child(0);  // remove the variable name
+                    node::pointer_t param_value(new node(node_type_t::LIST, arg->get_position()));
+                    param_value->add_child(arg_name);
+                    param_value->add_child(default_param);
+                    root->set_variable(arg_name->get_string(), param_value);
+                }
+                else
+                {
+                    // value is missing
+                    error::instance() << n->get_position()
+                            << "missing function variable named \""
+                            << arg_name->get_string()
+                            << "\" when calling "
+                            << variable_name
+                            << "() or using @include "
+                            << variable_name
+                            << "();)."
+                            << error_mode_t::ERROR_ERROR;
+                    return;
+                }
+            }
+            else
+            {
+                // copy user provided value
+                node::pointer_t user_param(n->get_child(i));
+                if(!user_param->is(node_type_t::ARG))
+                {
+                    throw csspp_exception_logic("compiler.cpp:compiler::replace_variable(): user parameter is not an ARG."); // LCOV_EXCL_LINE
+                }
+                if(user_param->size() == 1)
+                {
+                    user_param = user_param->get_child(0);
+                }
+                else
+                {
+                    // is that really correct?
+                    // we may need a component_value instead...
+                    node::pointer_t list(new node(node_type_t::LIST, user_param->get_position()));
+                    list->take_over_children_of(user_param);
+                    user_param = list;
+                }
+                node::pointer_t param_value(new node(node_type_t::LIST, user_param->get_position()));
+                param_value->add_child(arg_name);
+                param_value->add_child(user_param->clone());
+                root->set_variable(arg_name->get_string(), param_value);
+            }
+        }
+
+        compiler c;
+        c.set_root(root);
+        c.f_paths = f_paths;
+        c.f_empty_on_undefined_variable = f_empty_on_undefined_variable;
+        c.mark_selectors(root);
+        c.replace_variables(root);
+
+        // ready to be inserted in the parent
+        val = root;
+    }
+    else
+    {
+        if(n->is(node_type_t::VARIABLE_FUNCTION))
+        {
+            error::instance() << n->get_position()
+                    << "variable named \""
+                    << variable_name
+                    << "\" is a function and it can only be referenced with a function ($"
+                    << variable_name
+                    << "() or @include "
+                    << variable_name
+                    << ";)."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+    }
+
+    switch(val->get_type())
+    {
+    case node_type_t::LIST:
+    case node_type_t::OPEN_CURLYBRACKET:
+    case node_type_t::OPEN_PARENTHESIS:
+    case node_type_t::OPEN_SQUAREBRACKET:
+        // in this case we insert the children of 'val'
+        // instead of the value itself
+        {
+            size_t const max_children(val->size());
+            for(size_t j(0), i(idx); j < max_children; ++j, ++i)
+            {
+                parent->insert_child(i, val->get_child(j)->clone());
+            }
+        }
+        break;
+
+    case node_type_t::WHITESPACE:
+        // whitespaces by themselves do not get re-included,
+        // which may be a big mistake but at this point
+        // it seems wise to do so (plus I don't think it can
+        // happen anyway...)
+        break;
+
+    default:
+        parent->insert_child(idx, val->clone());
         break;
 
     }
@@ -879,7 +1143,6 @@ void compiler::set_variable(node::pointer_t n)
     f_state.get_previous_parent()->remove_child(n);
 
     node::pointer_t var(n->get_child(0));
-    std::string const & variable_name(var->get_string());
 
     n->remove_child(0);     // remove the VARIABLE
     if(n->get_child(0)->is(node_type_t::WHITESPACE))
@@ -891,70 +1154,134 @@ void compiler::set_variable(node::pointer_t n)
         throw csspp_exception_logic("compiler.cpp: somehow a variable set is not exactly IDENTIFIER WHITESPACE* ':'."); // LCOV_EXCL_LINE
     }
     n->remove_child(0);     // remove the COLON
+    if(!n->empty()
+    && n->get_child(0)->is(node_type_t::WHITESPACE))
+    {
+        // remove WHITESPACE at the beginning of a variable content
+        n->remove_child(0);
+    }
+
+    // check whether we have a "!global" at the end of the value
+    // if so remove it and set global to true
+    bool global(false);
+    size_t pos(n->size());
+    if(pos >= 2)
+    {
+        --pos;
+        node::pointer_t last(n->get_child(pos));
+        if(last->is(node_type_t::IDENTIFIER)
+        && last->get_string() == "global")
+        {
+            --pos;
+            last = n->get_child(pos);
+            if(last->is(node_type_t::WHITESPACE))
+            {
+                if(pos > 0)
+                {
+                    --pos;
+                    last = n->get_child(pos);
+                }
+            }
+            if(last->is(node_type_t::EXCLAMATION))
+            {
+                global = true;
+                while(pos < n->size())
+                {
+                    n->remove_child(pos);
+                }
+            }
+        }
+    }
 
     // rename the node from COMPONENT_VALUE to a plain LIST
-    node::pointer_t list(new node(node_type_t::LIST, n->get_position()));
-    list->take_over_children_of(n);
+    node::pointer_t list;
+    if(n->size() == 1)
+    {
+        list = n->get_child(0);
+    }
+    else
+    {
+        list.reset(new node(node_type_t::LIST, n->get_position()));
+        list->take_over_children_of(n);
+    }
 
     // now the value of the variable is 'list'; it will get compiled once in
     // context (i.e. not here)
 
     // search the parents for the node where the variable will be set
-    node::pointer_t var_holder(f_state.find_selector());
-    if(!var_holder)
+    if(var->is(node_type_t::VARIABLE_FUNCTION))
     {
-        var_holder = f_state.get_root();
-    }
-
-    // save the variable
-    var_holder->set_variable(variable_name, list);
-}
-
-node::pointer_t compiler::get_variable(node::pointer_t n)
-{
-    std::string const & variable_name(n->get_string());
-
-    // search the parents for the node where the variable will be set
-    node::pointer_t var_holder(f_state.find_parent_by_type(node_type_t::OPEN_CURLYBRACKET));
-    while(var_holder)
-    {
-        // we verify that the variable holder is a selector curly bracket
-        // (if not we won't have variables defined in there anyway)
-        if(var_holder->get_boolean())
+        if(argify(var))
         {
-            node::pointer_t value(var_holder->get_variable(variable_name));
-            if(value)
+            // TODO: verify that the list of arguments is valid (i.e. $var
+            // or $var: <default-value>)
+            bool optional(false);
+            size_t const max_children(var->size());
+            for(size_t i(0); i < max_children; ++i)
             {
-                return value;
+                node::pointer_t arg(var->get_child(i));
+                if(!arg->is(node_type_t::ARG))
+                {
+                    throw csspp_exception_logic("compiler.cpp:compiler::set_variable(): an argument is not an ARG node."); // LCOV_EXCL_LINE
+                }
+                if(arg->empty())
+                {
+                    throw csspp_exception_logic("compiler.cpp:compiler::set_variable(): an argument has no children."); // LCOV_EXCL_LINE
+                }
+                node::pointer_t param_var(arg->get_child(0));
+                if(param_var->is(node_type_t::VARIABLE))
+                {
+                    size_t const arg_size(arg->size());
+                    if(arg_size > 1)
+                    {
+                        if(arg->get_child(1)->is(node_type_t::WHITESPACE))
+                        {
+                            arg->remove_child(1);
+                        }
+                        if(arg->size() > 1
+                        && arg->get_child(1)->is(node_type_t::COLON))
+                        {
+                            optional = true;
+                            arg->remove_child(1);
+                            if(arg->size() > 1
+                            && arg->get_child(1)->is(node_type_t::WHITESPACE))
+                            {
+                                arg->remove_child(1);
+                            }
+                            // so now we have $arg <optional-value> and no whitespaces or colon
+                        }
+                        else
+                        {
+                            error::instance() << n->get_position()
+                                    << "function declarations expect variable with optional parameters to use a ':' after the variable name and before the optional value."
+                                    << error_mode_t::ERROR_ERROR;
+                        }
+                    }
+                    else
+                    {
+                        // TODO: I think that the last parameter, if it ends with "...", is not required to have an optional value?
+                        if(optional)
+                        {
+                            error::instance() << n->get_position()
+                                    << "function declarations with optional parameters must make all parameters optional from the first one that is given an optional value up to the end of the list of arguments."
+                                    << error_mode_t::ERROR_ERROR;
+                        }
+                    }
+                }
+                else
+                {
+                    error::instance() << n->get_position()
+                            << "function declarations expect variables for each of their arguments, not a "
+                            << param_var->get_type()
+                            << "."
+                            << error_mode_t::ERROR_ERROR;
+                }
             }
         }
-        var_holder = f_state.find_parent_by_type(node_type_t::OPEN_CURLYBRACKET, var_holder);
     }
 
-    // if not found yet, check the root node too
-    {
-        node::pointer_t value(f_state.get_root()->get_variable(variable_name));
-        if(value)
-        {
-            return value;
-        }
-    }
-
-    if(f_empty_on_undefined_variable)
-    {
-        // returning "empty"...
-        return node::pointer_t(new node(node_type_t::WHITESPACE, n->get_position()));
-    }
-
-    error::instance() << n->get_position()
-            << "variable named \""
-            << variable_name
-            << "\" is not set."
-            << error_mode_t::ERROR_ERROR;
-
-    node::pointer_t fake(new node(node_type_t::IDENTIFIER, n->get_position()));
-    fake->set_string("<undefined-variable(\"" + variable_name + "\")>");
-    return fake;
+    // now save all of that in the best place
+    f_state.set_variable(var, list, global);
 }
 
 void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, size_t & idx)
@@ -1067,35 +1394,7 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
 
         // search for the variable and replace this 'child' with
         // the contents of the variable
-        node::pointer_t value(get_variable(id));
-        switch(value->get_type())
-        {
-        case node_type_t::LIST:
-        case node_type_t::OPEN_CURLYBRACKET:
-        case node_type_t::OPEN_PARENTHESIS:
-        case node_type_t::OPEN_SQUAREBRACKET:
-            // in this case we insert the children of 'value'
-            // instead of the value itself
-            {
-                size_t const max_children(value->size());
-                for(size_t j(0), i(idx); j < max_children; ++j, ++i)
-                {
-                    n->insert_child(i, value->get_child(j));
-                }
-            }
-            break;
-
-        case node_type_t::WHITESPACE:
-            // whitespaces by themselves do not get re-included,
-            // which may be a big mistake but at this point
-            // it seems wise to do so
-            break;
-
-        default:
-            n->insert_child(idx, value);
-            break;
-
-        }
+        replace_variable(n, id, idx);
         return;
     }
 
@@ -1995,8 +2294,11 @@ void compiler::set_validation_script(std::string const & script_name)
 
     node::pointer_t script;
 
-    auto cache(f_validator_scripts.find(filename));
-    if(cache == f_validator_scripts.end())
+    // TODO: review whether a cache would be useful, at this point
+    //       it does not work because the compiler is destructive.
+    //       maybe use node::clone() to make a copy of the cache?
+    //auto cache(f_validator_scripts.find(filename));
+    //if(cache == f_validator_scripts.end())
     {
         position pos(filename);
 
@@ -2006,12 +2308,16 @@ void compiler::set_validation_script(std::string const & script_name)
         if(!in)
         {
             // a validation script should always be available, right?
-            error::instance() << pos
-                    << "validation script \""
-                    << script_name
-                    << "\" could not be opened."
-                    << error_mode_t::ERROR_FATAL;
-            throw csspp_exception_exit(1);
+            //
+            // At this point I do not see how to write a test to hit
+            // these lines (i.e. have a file that's accessible in
+            // read mode, but cannot be opened)
+            error::instance() << pos                        // LCOV_EXCL_LINE
+                    << "validation script \""               // LCOV_EXCL_LINE
+                    << script_name                          // LCOV_EXCL_LINE
+                    << "\" could not be opened."            // LCOV_EXCL_LINE
+                    << error_mode_t::ERROR_FATAL;           // LCOV_EXCL_LINE
+            throw csspp_exception_exit(1);                  // LCOV_EXCL_LINE
         }
 
         lexer::pointer_t l(new lexer(in, pos));
@@ -2022,13 +2328,13 @@ void compiler::set_validation_script(std::string const & script_name)
         //       so then we have to generate a FATAL error here
 
         // cache the script
-        f_validator_scripts[filename] = script;
+        //f_validator_scripts[filename] = script;
 //std::cerr << "script " << filename << " is:\n" << *script;
     }
-    else
-    {
-        script = cache->second;
-    }
+    //else
+    //{
+    //    script = cache->second;
+    //}
 
     f_current_validation_script = script;
     script->clear_variables();
@@ -2041,7 +2347,13 @@ void compiler::add_validation_variable(std::string const & variable_name, node::
         throw csspp_exception_logic("compiler.cpp: somehow add_validation_variable() was called without a current validation script set."); // LCOV_EXCL_LINE
     }
 
-    f_current_validation_script->set_variable(variable_name, value);
+    node::pointer_t var(new node(node_type_t::VARIABLE, value->get_position()));
+    var->set_string(variable_name);
+    node::pointer_t v(new node(node_type_t::LIST, value->get_position()));
+    v->add_child(var);
+    v->add_child(value);
+
+    f_current_validation_script->set_variable(variable_name, v);
 }
 
 bool compiler::run_validation(bool check_only)
