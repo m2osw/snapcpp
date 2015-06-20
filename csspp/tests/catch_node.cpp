@@ -667,6 +667,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "NOT_EQUAL");
             break;
 
+        case csspp::node_type_t::NULL_TOKEN:
+            REQUIRE(name == "NULL_TOKEN");
+            break;
+
         case csspp::node_type_t::OPEN_CURLYBRACKET:
             REQUIRE(name == "OPEN_CURLYBRACKET");
             break;
@@ -947,6 +951,10 @@ TEST_CASE("Node output", "[node] [output]")
 
         case csspp::node_type_t::NOT_EQUAL:
             REQUIRE(name == "NOT_EQUAL");
+            break;
+
+        case csspp::node_type_t::NULL_TOKEN:
+            REQUIRE(name == "NULL_TOKEN");
             break;
 
         case csspp::node_type_t::OPEN_CURLYBRACKET:
@@ -1265,6 +1273,10 @@ TEST_CASE("Node to string", "[node] [type] [output]")
 
             case csspp::node_type_t::NOT_EQUAL:
                 REQUIRE(n->to_string(flags) == "!=");
+                break;
+
+            case csspp::node_type_t::NULL_TOKEN:
+                REQUIRE(n->to_string(flags) == "");
                 break;
 
             case csspp::node_type_t::OPEN_CURLYBRACKET:
@@ -1803,6 +1815,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"NOT_EQUAL\".\n");
             break;
 
+        case csspp::node_type_t::NULL_TOKEN:
+            REQUIRE_ERRORS("test.css(1): error: node name \"NULL_TOKEN\".\n");
+            break;
+
         case csspp::node_type_t::OPEN_CURLYBRACKET:
             REQUIRE_ERRORS("test.css(1): error: node name \"OPEN_CURLYBRACKET\".\n");
             break;
@@ -1974,6 +1990,30 @@ TEST_CASE("Print nodes", "[node] [output]")
 
     std::stringstream ss;
     ss << *root;
+
+    REQUIRE_TREES(ss.str(),
+
+"LIST\n"
+"  INTEGER \"\" I:123\n"
+"  STRING \"bear\"\n"
+"  DECIMAL_NUMBER \"\" D:100\n"
+"  AT_KEYWORD \"@-char\" I:0\n"
+"      V:test\n"
+"        IDENTIFIER \"colorous\"\n"
+"    BOOLEAN B:true\n"
+"    INTEGER \"\" I:409\n"
+"    STRING \"rabbit\"\n"
+"    DECIMAL_NUMBER \"\" D:208\n"
+"    AN_PLUS_B S:3n+7\n"
+"    COLOR H:ff783411\n"
+
+        );
+
+    // also test a clone() and see that the clone is a 1:1 an equivalent
+    csspp::node::pointer_t p(root->clone());
+
+    std::stringstream ss2;
+    ss2 << *p;
 
     REQUIRE_TREES(ss.str(),
 

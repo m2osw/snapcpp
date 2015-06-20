@@ -1508,6 +1508,33 @@ TEST_CASE("C-like comments", "[lexer] [comment]")
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
     }
 
+    // an unterminated simple comment
+    {
+        std::stringstream ss;
+        ss << "/* test simple comment @preserve";
+        csspp::position pos("test.css");
+        csspp::lexer l(ss, pos);
+
+        // comment
+        {
+            csspp::node::pointer_t comment(l.next_token());
+            REQUIRE(comment->is(csspp::node_type_t::COMMENT));
+            REQUIRE(comment->get_string() == "test simple comment @preserve");
+            REQUIRE(comment->get_integer() == 1); // C-like comment
+            csspp::position const & npos(comment->get_position());
+            REQUIRE(npos.get_filename() == "test.css");
+            REQUIRE(npos.get_page() == 1);
+            REQUIRE(npos.get_line() == 1);
+            REQUIRE(npos.get_total_line() == 1);
+        }
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        REQUIRE_ERRORS("test.css(1): error: unclosed C-like comment at the end of your document.\n");
+    }
+
     // a comment on multiple lines
     {
         std::stringstream ss;

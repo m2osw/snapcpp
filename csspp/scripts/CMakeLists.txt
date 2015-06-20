@@ -32,11 +32,20 @@
 
 project(csspp_scripts)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.scss.in ${CMAKE_CURRENT_BINARY_DIR}/version.scss)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/system/version.scss.in
+    ${CMAKE_CURRENT_BINARY_DIR}/system/version.scss
+)
 
 install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DESTINATION lib/csspp/scripts
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DESTINATION lib/csspp
+    FILES_MATCHING PATTERN "*.scss"
+)
+
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/system/version.scss
+    DESTINATION lib/csspp/scripts/system
 )
 
 # Local Variables:

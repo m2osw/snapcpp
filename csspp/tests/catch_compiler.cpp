@@ -29,6 +29,7 @@
 #include "csspp/compiler.h"
 #include "csspp/parser.h"
 
+#include <fstream>
 #include <sstream>
 
 #include <string.h>
@@ -57,8 +58,10 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(false);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -67,6 +70,22 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
+"    V:_csspp_major\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_major\"\n"
+"        INTEGER \"\" I:1\n"
+"    V:_csspp_minor\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_minor\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_patch\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_patch\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_version\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_version\"\n"
+"        STRING \"1.0.0\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"body\"\n"
@@ -106,6 +125,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "        WHITESPACE\n"
 "        URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\"\" I:1\n"
+"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
 
@@ -120,7 +140,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         std::stringstream ss;
         ss << "/* testing compile */"
            << "body,a[q]>b[p=\"344.5\"]+c[z=33]~d[e],html *[ff=fire] *.blue { background:white url(/images/background.png) }"
-           << "/* @preserver test \"Compile Simple Stylesheet\" */";
+           << "/* @preserver test \"Compile Simple Stylesheet\" with version #{$_csspp_major}.#{$_csspp_minor} */";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -133,8 +153,10 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(false);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -143,6 +165,22 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
+"    V:_csspp_major\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_major\"\n"
+"        INTEGER \"\" I:1\n"
+"    V:_csspp_minor\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_minor\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_patch\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_patch\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_version\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_version\"\n"
+"        STRING \"1.0.0\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"body\"\n"
@@ -181,7 +219,8 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "        IDENTIFIER \"white\"\n"
 "        WHITESPACE\n"
 "        URL \"/images/background.png\"\n"
-"  COMMENT \"@preserver test \"Compile Simple Stylesheet\"\" I:1\n"
+"  COMMENT \"@preserver test \"Compile Simple Stylesheet\" with version 1.0\" I:1\n"
+"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
 
@@ -217,7 +256,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
         csspp::compiler c;
         c.set_root(n);
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -311,7 +350,7 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
         csspp::compiler c;
         c.set_root(n);
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -338,7 +377,7 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
         csspp::compiler c;
         c.set_root(n);
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -365,7 +404,7 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
         csspp::compiler c;
         c.set_root(n);
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -811,7 +850,7 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
         csspp::compiler c;
         c.set_root(n);
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -4760,7 +4799,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -4817,7 +4856,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -4876,7 +4915,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -4947,7 +4986,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -4989,7 +5028,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5031,7 +5070,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5073,7 +5112,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5170,7 +5209,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5212,7 +5251,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5262,7 +5301,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5304,7 +5343,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5359,7 +5398,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5399,7 +5438,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             csspp::compiler c;
             c.set_root(n);
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5451,13 +5490,14 @@ TEST_CASE("Undefined Paths", "[compiler] [invalid]")
         c.clear_paths();
         // c.add_path(...); -- check system default
 //c.add_path(csspp_test::get_script_path());
+//c.add_path(csspp_test::get_version_script_path());
 
         std::stringstream ignore;
         csspp::safe_error_stream_t safe_output(ignore);
 
         try
         {
-            c.compile();
+            c.compile(true);
 
             // in case the system scripts are there, we want to check
             // that the result is fine
@@ -5480,7 +5520,7 @@ TEST_CASE("Undefined Paths", "[compiler] [invalid]")
         }
         catch(csspp::csspp_exception_exit const &)
         {
-            REQUIRE(ignore.str() == "pseudo-nth-functions(1): fatal: validation script \"pseudo-nth-functions\" was not found.\n");
+            REQUIRE(ignore.str() == "validation/pseudo-nth-functions(1): fatal: validation script \"validation/pseudo-nth-functions\" was not found.\n");
         }
 
         REQUIRE(c.get_root() == n);
@@ -5525,8 +5565,9 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // no error left over
         REQUIRE_ERRORS("");
@@ -5653,8 +5694,9 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
             c.set_root(n);
             c.clear_paths();
             c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5724,8 +5766,9 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
             c.set_root(n);
             c.clear_paths();
             c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -5779,8 +5822,9 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
             c.set_root(n);
             c.clear_paths();
             c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
 
-            c.compile();
+            c.compile(true);
 
             // no error left over
             REQUIRE_ERRORS("");
@@ -5835,8 +5879,9 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // no error left over
         REQUIRE_ERRORS("");
@@ -5890,8 +5935,9 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // no error left over
         REQUIRE_ERRORS("");
@@ -5945,8 +5991,9 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // no error left over
         REQUIRE_ERRORS("");
@@ -6008,8 +6055,9 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -6062,8 +6110,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: the scope operator (|) requires a right hand side identifier or '*'.\n");
 
@@ -6088,8 +6137,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: the right hand side of a scope operator (|) must be an identifier or '*'.\n");
 
@@ -6114,8 +6164,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a scope selector (|) must be followed by an identifier or '*'.\n");
 
@@ -6140,8 +6191,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: the right hand side of a scope operator (|) must be an identifier or '*'.\n");
 
@@ -6166,8 +6218,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a selector list cannot end with a standalone ':'.\n");
 
@@ -6192,10 +6245,11 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
-        REQUIRE_ERRORS("scripts/pseudo-classes.scss(35): error: unknown is not a valid name for a pseudo class; CSS only supports root, first-child, last-child, first-of-type, last-of-type, only-child, only-of-type, empty, link, visitived, active, hover, focus, target, enabled, disabled, and checked. (functions are not included in this list since you did not use '(' at the end of the word.)\n");
+        REQUIRE_ERRORS("scripts/validation/pseudo-classes.scss(35): error: unknown is not a valid name for a pseudo class; CSS only supports root, first-child, last-child, first-of-type, last-of-type, only-child, only-of-type, empty, link, visitived, active, hover, focus, target, enabled, disabled, and checked. (functions are not included in this list since you did not use '(' at the end of the word.)\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -6218,10 +6272,11 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
-        REQUIRE_ERRORS("scripts/pseudo-functions.scss(20): error: unknown is not a valid name for a pseudo function; CSS only supports lang() and not().\n");
+        REQUIRE_ERRORS("scripts/validation/pseudo-functions.scss(20): error: unknown is not a valid name for a pseudo function; CSS only supports lang() and not().\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -6244,8 +6299,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a ':' selector must be followed by an identifier or a function, a PERIOD was found instead.\n");
 
@@ -6270,8 +6326,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token GREATER_THAN, which is expected to be followed by another selector term.\n");
 
@@ -6296,8 +6353,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token INTEGER, which is not a valid selector token (simple term).\n");
 
@@ -6322,8 +6380,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found function \"func()\", which may be a valid selector token but only if immediately preceeded by a ':' (simple term).\n");
 
@@ -6348,8 +6407,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token GREATER_THAN, which cannot be used to start a selector expression.\n");
 
@@ -6374,8 +6434,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token ADD, which cannot be used to start a selector expression.\n");
 
@@ -6400,8 +6461,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token PRECEDED, which cannot be used to start a selector expression.\n");
 
@@ -6426,8 +6488,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a selector list cannot end with a standalone ':'.\n");
 
@@ -6452,8 +6515,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a selector list cannot end with a standalone '.'.\n");
 
@@ -6478,8 +6542,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a class selector (after a period: '.') must be an identifier.\n");
 
@@ -6504,8 +6569,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: The first number has to be followed by the 'n' character.\n");
 
@@ -6530,8 +6596,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: the :not() selector does not accept an inner :not().\n");
 
@@ -6556,8 +6623,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a ':' selector must be followed by an identifier or a function, a FUNCTION was found instead.\n");
 
@@ -6582,8 +6650,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -6610,12 +6679,13 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("scripts/languages.scss(154): error: notalanguagename is not a valid language name for :lang().\n");
+        REQUIRE_ERRORS("scripts/validation/languages.scss(154): error: notalanguagename is not a valid language name for :lang().\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -6638,12 +6708,13 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("scripts/languages.scss(154): error: stillnotalanguagename is not a valid language name for :lang().\n");
+        REQUIRE_ERRORS("scripts/validation/languages.scss(154): error: stillnotalanguagename is not a valid language name for :lang().\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -6666,12 +6737,13 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("scripts/countries.scss(267): error: withaninvalidcountry is not a valid country name for :lang().\n");
+        REQUIRE_ERRORS("scripts/validation/countries.scss(267): error: withaninvalidcountry is not a valid country name for :lang().\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -6694,8 +6766,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -6722,8 +6795,9 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -6764,8 +6838,9 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // no error left over
         REQUIRE_ERRORS("");
@@ -6817,8 +6892,9 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // no error left over
         REQUIRE_ERRORS("");
@@ -6878,8 +6954,9 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // no error left over
         REQUIRE_ERRORS("");
@@ -6934,8 +7011,9 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // no error left over
         REQUIRE_ERRORS("");
@@ -7002,8 +7080,9 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
             c.set_root(n);
             c.clear_paths();
             c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
 
-            c.compile();
+            c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -7053,8 +7132,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a selector list cannot end with a '::'.\n");
 
@@ -7079,10 +7159,11 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
-        REQUIRE_ERRORS("scripts/pseudo-elements.scss(22): error: unknown is not a valid name for a pseudo element; CSS only supports first-line, first-letter, before, and after.\n");
+        REQUIRE_ERRORS("scripts/validation/pseudo-elements.scss(22): error: unknown is not a valid name for a pseudo element; CSS only supports first-line, first-letter, before, and after.\n");
     }
 
     // '::' must be followed an IDENTIFIER
@@ -7103,8 +7184,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a pseudo element name (defined after a '::' in a list of selectors) must be defined using an identifier.\n");
 
@@ -7129,8 +7211,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token GREATER_THAN, which cannot be used to start a selector expression.\n");
 
@@ -7155,8 +7238,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token ADD, which cannot be used to start a selector expression.\n");
 
@@ -7181,8 +7265,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token PRECEDED, which cannot be used to start a selector expression.\n");
 
@@ -7207,8 +7292,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found function \"func()\", which may be a valid selector token but only if immediately preceeded by a ':' (term).\n");
 
@@ -7233,8 +7319,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token INTEGER, which is not a valid selector token (term).\n");
 
@@ -7259,8 +7346,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token DECIMAL_NUMBER, which is not a valid selector token (term).\n");
 
@@ -7285,8 +7373,9 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: found token PERCENT, which is not a valid selector token (term).\n");
 
@@ -7318,8 +7407,9 @@ TEST_CASE("Invalid Node", "[compiler] [invalid]")
             c.set_root(n);
             c.clear_paths();
             c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
 
-            REQUIRE_THROWS_AS(c.compile(), csspp::csspp_exception_unexpected_token);
+            REQUIRE_THROWS_AS(c.compile(true), csspp::csspp_exception_unexpected_token);
 
             REQUIRE(c.get_root() == n);
         }
@@ -7343,8 +7433,9 @@ TEST_CASE("Invalid Node", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: a qualified rule without selectors is not valid.\n");
 
@@ -7371,8 +7462,9 @@ TEST_CASE("Invalid Node", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: expected a ':' after the identifier of this declaration value; got a: COMPONENT_VALUE instead.\n");
 
@@ -7397,8 +7489,9 @@ TEST_CASE("Invalid Node", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: expected an identifier to start a declaration value; got a: ADD instead.\n");
 
@@ -7429,8 +7522,9 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -7479,8 +7573,9 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -7538,8 +7633,9 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -7611,8 +7707,9 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 //        c.set_root(n);
 //        c.clear_paths();
 //        c.add_path(csspp_test::get_script_path());
+//        c.add_path(csspp_test::get_version_script_path());
 //
-//        c.compile();
+//        c.compile(true);
 //
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 //
@@ -7666,7 +7763,7 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Advanced Variable", "[compiler] [invalid]")
+TEST_CASE("Advanced Variables", "[compiler] [variable]")
 {
     // define a variable function with a parameter
     {
@@ -7687,8 +7784,9 @@ TEST_CASE("Advanced Variable", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -7735,11 +7833,2013 @@ TEST_CASE("Advanced Variable", "[compiler] [invalid]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"margin\"\n"
+"        DECLARATION \"left\"\n"
+"          INTEGER \"px\" I:317\n"
+"        DECLARATION \"top\"\n"
+"          INTEGER \"px\" I:8\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // define a variable function with a parameter and more spaces
+    {
+        std::stringstream ss;
+        ss << "$m( $width, $border : 1px ) : { left: $width + 51px / 3; top: $border + 5px };"
+           << " div { margin: $m(300px, 3px); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:m\n"
+"      LIST\n"
+"        VARIABLE_FUNCTION \"m\"\n"
+"          ARG\n"
+"            VARIABLE \"width\"\n"
+"          ARG\n"
+"            VARIABLE \"border\"\n"
+"            INTEGER \"px\" I:1\n"
 "        OPEN_CURLYBRACKET\n"
-"          DECLARATION \"left\"\n"
-"            INTEGER \"px\" I:317\n"
-"          DECLARATION \"top\"\n"
-"            INTEGER \"px\" I:8\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"left\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            VARIABLE \"width\"\n"
+"            WHITESPACE\n"
+"            ADD\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:51\n"
+"            WHITESPACE\n"
+"            DIVIDE\n"
+"            WHITESPACE\n"
+"            INTEGER \"\" I:3\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"top\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            VARIABLE \"border\"\n"
+"            WHITESPACE\n"
+"            ADD\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:5\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"margin\"\n"
+"        DECLARATION \"left\"\n"
+"          INTEGER \"px\" I:317\n"
+"        DECLARATION \"top\"\n"
+"          INTEGER \"px\" I:8\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test a variable function default parameter
+    {
+        std::stringstream ss;
+        ss << "$m( $width, $border: 1px ) : { left: $width + 51px / 3; top: $border + 5px };"
+           << " div { margin: $m(300px); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:m\n"
+"      LIST\n"
+"        VARIABLE_FUNCTION \"m\"\n"
+"          ARG\n"
+"            VARIABLE \"width\"\n"
+"          ARG\n"
+"            VARIABLE \"border\"\n"
+"            INTEGER \"px\" I:1\n"
+"        OPEN_CURLYBRACKET\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"left\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            VARIABLE \"width\"\n"
+"            WHITESPACE\n"
+"            ADD\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:51\n"
+"            WHITESPACE\n"
+"            DIVIDE\n"
+"            WHITESPACE\n"
+"            INTEGER \"\" I:3\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"top\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            VARIABLE \"border\"\n"
+"            WHITESPACE\n"
+"            ADD\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:5\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"margin\"\n"
+"        DECLARATION \"left\"\n"
+"          INTEGER \"px\" I:317\n"
+"        DECLARATION \"top\"\n"
+"          INTEGER \"px\" I:6\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a multi value default
+    {
+        std::stringstream ss;
+        ss << "$m( $width, $border: 1px 3px ) : { left: $width + 51px / 3; top: $border };"
+           << " div { margin: $m(300px); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:m\n"
+"      LIST\n"
+"        VARIABLE_FUNCTION \"m\"\n"
+"          ARG\n"
+"            VARIABLE \"width\"\n"
+"          ARG\n"
+"            VARIABLE \"border\"\n"
+"            INTEGER \"px\" I:1\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:3\n"
+"        OPEN_CURLYBRACKET\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"left\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            VARIABLE \"width\"\n"
+"            WHITESPACE\n"
+"            ADD\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:51\n"
+"            WHITESPACE\n"
+"            DIVIDE\n"
+"            WHITESPACE\n"
+"            INTEGER \"\" I:3\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"top\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            VARIABLE \"border\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"margin\"\n"
+"        DECLARATION \"left\"\n"
+"          INTEGER \"px\" I:317\n"
+"        DECLARATION \"top\"\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          INTEGER \"px\" I:3\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a variable function with multiple fields copied
+    {
+        std::stringstream ss;
+        ss << "$m( $border ) : { $border };"
+           << " br { border: $m(3px 1px 2px 4px); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:m\n"
+"      LIST\n"
+"        VARIABLE_FUNCTION \"m\"\n"
+"          ARG\n"
+"            VARIABLE \"border\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          VARIABLE \"border\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"br\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:3\n"
+"        WHITESPACE\n"
+"        INTEGER \"px\" I:1\n"
+"        WHITESPACE\n"
+"        INTEGER \"px\" I:2\n"
+"        WHITESPACE\n"
+"        INTEGER \"px\" I:4\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test a default variable
+    {
+        std::stringstream ss;
+        ss << "$m : 300px;\n"
+           << "$m : 53px !default;\n"
+           << "div { margin: $m; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:m\n"
+"      LIST\n"
+"        VARIABLE \"m\"\n"
+"        INTEGER \"px\" I:300\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"margin\"\n"
+"        INTEGER \"px\" I:300\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test a variable inside a qualified rule {}-block
+    {
+        std::stringstream ss;
+        ss << "div { $size: 300px;\n"
+           << " entry: {\n"
+           << "   width: $size;\n"
+           << "   height: $size * 3 / 4;\n"
+           << " };\n"
+           << " junior: $size + 13px;\n"
+           << "}";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"        V:size\n"
+"          LIST\n"
+"            VARIABLE \"size\"\n"
+"            INTEGER \"px\" I:300\n"
+"      DECLARATION \"entry\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"width\"\n"
+"            INTEGER \"px\" I:300\n"
+"          DECLARATION \"height\"\n"
+"            INTEGER \"px\" I:225\n"
+"      DECLARATION \"junior\"\n"
+"        INTEGER \"px\" I:313\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test that blocks define locations to save variables as expected
+    {
+        std::stringstream ss;
+        ss << "$size: 100px;\n"
+           << "div { $size: 300px;\n"
+           << " entry: {\n"
+           << "   $size: 50px;\n"
+           << "   width: $size;\n"
+           << "   height: $size * 3 / 4;\n"
+           << " };\n"
+           << " junior: $size + 13px;\n"
+           << "}\n"
+           << "section { diameter: $size }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:size\n"
+"      LIST\n"
+"        VARIABLE \"size\"\n"
+"        INTEGER \"px\" I:100\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"        V:size\n"
+"          LIST\n"
+"            VARIABLE \"size\"\n"
+"            INTEGER \"px\" I:300\n"
+"      DECLARATION \"entry\"\n"
+"        OPEN_CURLYBRACKET\n"
+"            V:size\n"
+"              LIST\n"
+"                VARIABLE \"size\"\n"
+"                INTEGER \"px\" I:50\n"
+"          DECLARATION \"width\"\n"
+"            INTEGER \"px\" I:50\n"
+"          DECLARATION \"height\"\n"
+"            INTEGER \"px\" I:37\n"
+"      DECLARATION \"junior\"\n"
+"        INTEGER \"px\" I:313\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"section\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"diameter\"\n"
+"        INTEGER \"px\" I:100\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test that !global forces definitions to be global
+    {
+        std::stringstream ss;
+        ss << "$size: 100px;\n"
+           << "div { $size: 300px !global;\n"
+           << "  entry: {\n"
+           << "    $size: 50px ! global;\n"
+           << "    width: $size;\n"
+           << "    height: $size * 3 / 4;\n"
+           << "  };\n"
+           << "  junior: $size + 13px;\n"
+           << "}\n"
+           << "section { diameter: $size }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:size\n"
+"      LIST\n"
+"        VARIABLE \"size\"\n"
+"        INTEGER \"px\" I:50\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"entry\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"width\"\n"
+"            INTEGER \"px\" I:50\n"
+"          DECLARATION \"height\"\n"
+"            INTEGER \"px\" I:37\n"
+"      DECLARATION \"junior\"\n"
+"        INTEGER \"px\" I:63\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"section\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"diameter\"\n"
+"        INTEGER \"px\" I:50\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test that !default prevents redefinitions of existing variables
+    {
+        std::stringstream ss;
+        ss << "$size: 100px;\n"
+           << "div { $size: 300px !default;\n"
+           << "  entry: {\n"
+           << "    $size: 50px ! default;\n"
+           << "    width: $size;\n"
+           << "    height: $size * 3 / 4;\n"
+           << "  };\n"
+           << "  junior: $size + 13px;\n"
+           << "}\n"
+           << "section { diameter: $size }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:size\n"
+"      LIST\n"
+"        VARIABLE \"size\"\n"
+"        INTEGER \"px\" I:100\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"entry\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"width\"\n"
+"            INTEGER \"px\" I:100\n"
+"          DECLARATION \"height\"\n"
+"            INTEGER \"px\" I:75\n"
+"      DECLARATION \"junior\"\n"
+"        INTEGER \"px\" I:113\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"section\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"diameter\"\n"
+"        INTEGER \"px\" I:100\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test a null variable
+    {
+        std::stringstream ss;
+        ss << "$empty-variable: null;\n"
+           << "div { border: 1px solid $empty-variable; }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:empty_variable\n"
+"      LIST\n"
+"        VARIABLE \"empty_variable\"\n"
+"        NULL_TOKEN\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:1\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test inexistant variable when 'accept empty' flag is ON
+    {
+        std::stringstream ss;
+        ss << "div { border: 1px solid $undefined; }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:1\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test @include instead of $blah
+    {
+        std::stringstream ss;
+        ss << "$var: { div { border: 1px solid #ffe093; } };"
+           << "@include var;\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE \"var\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"div\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            IDENTIFIER \"border\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:1\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"solid\"\n"
+"            WHITESPACE\n"
+"            HASH \"ffe093\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:1\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+"        WHITESPACE\n"
+"        COLOR H:ff93e0ff\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test @include with a function definition
+    {
+        std::stringstream ss;
+        ss << "$var($width): { div { border: $width solid #ffe093; } };"
+           << "@include var(7px);\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE_FUNCTION \"var\"\n"
+"          ARG\n"
+"            VARIABLE \"width\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"div\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            IDENTIFIER \"border\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            VARIABLE \"width\"\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"solid\"\n"
+"            WHITESPACE\n"
+"            HASH \"ffe093\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:7\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+"        WHITESPACE\n"
+"        COLOR H:ff93e0ff\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test @include with @mixin
+    {
+        std::stringstream ss;
+        ss << "@mixin nice-button { div { border: 3px solid #ffe093; } }"
+           << "@include nice-button;\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:nice-button\n"
+"      LIST\n"
+"        IDENTIFIER \"nice-button\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"div\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            IDENTIFIER \"border\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:3\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"solid\"\n"
+"            WHITESPACE\n"
+"            HASH \"ffe093\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:3\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+"        WHITESPACE\n"
+"        COLOR H:ff93e0ff\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test @include with @mixin
+    {
+        std::stringstream ss;
+        ss << "@mixin var($width) { div { border: $width solid #ffe093; } }"
+           << "@include var(7px);\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        FUNCTION \"var\"\n"
+"          ARG\n"
+"            VARIABLE \"width\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"div\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            IDENTIFIER \"border\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            VARIABLE \"width\"\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"solid\"\n"
+"            WHITESPACE\n"
+"            HASH \"ffe093\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:7\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+"        WHITESPACE\n"
+"        COLOR H:ff93e0ff\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test $var with @mixin definition
+    {
+        std::stringstream ss;
+        ss << "@mixin var { 1px solid #ff0000 }"
+           << "div {border:$var}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        IDENTIFIER \"var\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          HASH \"ff0000\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:1\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+"        WHITESPACE\n"
+"        COLOR H:ff0000ff\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test $var with @mixin definition
+    {
+        std::stringstream ss;
+        ss << "@mixin var { rock.paper#scissors }"
+           << "$var {border:blue}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        IDENTIFIER \"var\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"rock\"\n"
+"          PERIOD\n"
+"          IDENTIFIER \"paper\"\n"
+"          HASH \"scissors\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"rock\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"paper\"\n"
+"      HASH \"scissors\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        IDENTIFIER \"blue\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test $var with @mixin definition
+    {
+        std::stringstream ss;
+        ss << "@mixin var { rock.paper#scissors{border:blue} }"
+           << "div {$var}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        IDENTIFIER \"var\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"rock\"\n"
+"          PERIOD\n"
+"          IDENTIFIER \"paper\"\n"
+"          HASH \"scissors\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            IDENTIFIER \"border\"\n"
+"            COLON\n"
+"            IDENTIFIER \"blue\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      COMPONENT_VALUE\n"
+"        ARG\n"
+"          IDENTIFIER \"rock\"\n"
+"          PERIOD\n"
+"          IDENTIFIER \"paper\"\n"
+"          HASH \"scissors\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"border\"\n"
+"            IDENTIFIER \"blue\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test $var with @mixin definition
+    {
+        std::stringstream ss;
+        ss << "@mixin var { border : 1px solid #eeeeee }"
+           << "div {$var}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        IDENTIFIER \"var\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"border\"\n"
+"          WHITESPACE\n"
+"          COLON\n"
+"          WHITESPACE\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          HASH \"eeeeee\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:1\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+"        WHITESPACE\n"
+"        COLOR H:ffeeeeee\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test $var with @mixin definition
+    {
+        std::stringstream ss;
+        ss << "@mixin var{border:1px solid #eeeeee}"
+           << "div{$var}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        IDENTIFIER \"var\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          IDENTIFIER \"border\"\n"
+"          COLON\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          HASH \"eeeeee\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        INTEGER \"px\" I:1\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+"        WHITESPACE\n"
+"        COLOR H:ffeeeeee\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test $var with @mixin definition
+    {
+        char const * start[] =
+        {
+            "*",            "MULTIPLY\n",
+            "[foo='bar']",  "OPEN_SQUAREBRACKET\n            IDENTIFIER \"foo\"\n            EQUAL\n            STRING \"bar\"\n",
+            ".color",       "PERIOD\n          IDENTIFIER \"color\"\n",
+            "&:hover",      "REFERENCE\n          COLON\n          IDENTIFIER \"hover\"\n",
+            "#peculiar",    "HASH \"peculiar\"\n"
+        };
+
+        for(size_t i(0); i < sizeof(start) / sizeof(start[0]); i += 2)
+        {
+
+            std::stringstream ss;
+            ss << "@mixin var{" << start[i] << " div p{color:#eeeeee}}"
+               << "div{$var}\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+            // no errors so far
+            REQUIRE_ERRORS("");
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.clear_paths();
+            c.set_empty_on_undefined_variable(true);
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+            REQUIRE_ERRORS("");
+
+            std::stringstream out;
+            out << *n;
+
+            std::stringstream expected;
+            expected <<
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        IDENTIFIER \"var\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          " << start[i + 1] <<
+"          WHITESPACE\n"
+"          IDENTIFIER \"div\"\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"p\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            IDENTIFIER \"color\"\n"
+"            COLON\n"
+"            HASH \"eeeeee\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      COMPONENT_VALUE\n"
+"        ARG\n"
+"          " << start[i + 1] <<
+"          WHITESPACE\n"
+"          IDENTIFIER \"div\"\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"p\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"color\"\n"
+"            COLOR H:ffeeeeee\n";
+
+            REQUIRE_TREES(out.str(), expected.str());
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
+{
+    // undefined variable with whitespace before
+    {
+        std::stringstream ss;
+        ss << "div { margin: $m; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: variable named \"m\" is not set.\n"
+                "test.css(1): error: somehow a declaration list is missing fields, this happens if you used an invalid variable.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // undefined variable without whitespace
+    {
+        std::stringstream ss;
+        ss << "div{margin:$m;}";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: variable named \"m\" is not set.\n"
+                "test.css(1): error: somehow a declaration list is missing fields, this happens if you used an invalid variable.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // variable type mismatch (func/var)
+    {
+        std::stringstream ss;
+        ss << "$m($p): $p / 3;"
+           << "div { margin: $m; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: variable named \"m\" is not a function and it cannot be referenced as such.\n"
+                "test.css(1): error: somehow a declaration list is missing fields, this happens if you used an invalid variable.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // variable type mismatch (var/func)
+    {
+        std::stringstream ss;
+        ss << "$m: 3px;"
+           << "div { margin: $m(6px); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: variable named \"m\" is a function and it can only be referenced with a function ($m() or @include m;).\n"
+                "test.css(1): error: somehow a declaration list is missing fields, this happens if you used an invalid variable.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // variable is missing in function call
+    {
+        std::stringstream ss;
+        ss << "$sum($a1, $a2, $a3): $a1 + $a2 + $a3;"
+           << "div { margin: $sum(6px, 309px); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: missing function variable named \"a3\" when calling sum() or using @include sum();).\n"
+                "test.css(1): error: somehow a declaration list is missing fields, this happens if you used an invalid variable.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // variable parameter is not a variable
+    {
+        std::stringstream ss;
+        ss << "$sum(a1): $a1;"
+           << "div { margin: $sum(6px); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: function declarations expect variables for each of their arguments, not a IDENTIFIER.\n"
+                //"test.css(1): error: function declaration requires all parameters to be variables, IDENTIFIER is not acceptable.\n" -- removed not useful
+                "test.css(1): error: somehow a declaration list is missing fields, this happens if you used an invalid variable.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // missing value for optional parameter
+    {
+        std::stringstream ss;
+        ss << "$sum($a1, $a2: 3px, $a3): ($a1+$a2)/$a3;"
+           << "div { margin: $sum(6px, 7px, 3); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: function declarations with optional parameters must make all parameters optional from the first one that is given an optional value up to the end of the list of arguments.\n"
+                "test.css(1): error: unsupported type LIST as a unary expression token.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // missing ':' to define the optional value
+    {
+        std::stringstream ss;
+        ss << "$sum($a1, $a2 3px, $a3): ($a1+$a2)/$a3;"
+           << "div { margin: $sum(6px, 7px, 3); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: function declarations expect variable with optional parameters to use a ':' after the variable name and before the optional value.\n"
+                "test.css(1): error: unsupported type LIST as a unary expression token.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test @include with something else than an identifier or function
+    {
+        std::stringstream ss;
+        ss << "@include url(invalid/token/for/include);\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: @include is expected to be followed by an IDENTIFIER or a FUNCTION naming the variable/mixin to include.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test @include with something else than an identifier or function
+    {
+        std::stringstream ss;
+        ss << "$empty:null;\n"
+           << "$empty{color:pink;}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(2): error: a qualified rule without selectors is not valid.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @mixin with one parameter
+    {
+        std::stringstream ss;
+        ss << "@mixin nice-button;";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a @mixin definition expects exactly two parameters: an identifier or function and a {}-block.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @mixin with one parameter
+    {
+        std::stringstream ss;
+        ss << "@mixin { div { border: 3px solid #ffe093; } }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a @mixin definition expects exactly two parameters: an identifier or function and a {}-block.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @mixin with too many entries (i.e. "color" " " "#ff3241")
+    {
+        std::stringstream ss;
+        ss << "@mixin color #ff3241;";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a @mixin definition expects exactly two parameters: an identifier or function and a {}-block.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @mixin not with a {}-block
+    {
+        std::stringstream ss;
+        ss << "@mixin color#ff3241;";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a @mixin definition expects a {}-block as its second parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @mixin not with a IDENTIFIER or FUNCTION as first parameter
+    {
+        std::stringstream ss;
+        ss << "@mixin #ff3241 { color: full; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a @mixin expects either an IDENTIFIER or a FUNCTION as its first parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @mixin with VARIABLE generates an special error
+    {
+        std::stringstream ss;
+        ss << "@mixin $var { color: full; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a @mixin must use an IDENTIFIER or FUNCTION and no a VARIABLE or VARIABLE_FUNCTION.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @mixin with VARIABLE generates an special error
+    {
+        std::stringstream ss;
+        ss << "@mixin $var($a1, $a2) { color: $a1 + $a2 / 2.5; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a @mixin must use an IDENTIFIER or FUNCTION and no a VARIABLE or VARIABLE_FUNCTION.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("At-Keyword Ignored", "[compiler] [at-keyword]")
+{
+    // make sure @<not supported> is left alone as expected by CSS 3
+    {
+        std::stringstream ss;
+        ss << "@unknown \"This works?\";";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"unknown\" I:0\n"
+"    STRING \"This works?\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // make sure @<not supported> is left alone as expected by CSS 3
+    {
+        std::stringstream ss;
+        ss << "@unknown \"Question?\" { this one has a block }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"unknown\" I:0\n"
+"    STRING \"Question?\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      IDENTIFIER \"this\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"one\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"has\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"a\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"block\"\n"
 
             );
 
@@ -7750,7 +9850,7 @@ TEST_CASE("Advanced Variable", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword Messages", "[compiler] [invalid]")
+TEST_CASE("At-Keyword Messages", "[compiler] [output]")
 {
     // generate an error with @error
     {
@@ -7770,8 +9870,9 @@ TEST_CASE("At-Keyword Messages", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): error: This is an error.\n");
 
@@ -7796,8 +9897,9 @@ TEST_CASE("At-Keyword Messages", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): warning: This is a warning.\n");
 
@@ -7822,8 +9924,9 @@ TEST_CASE("At-Keyword Messages", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): info: This is an info message.\n");
 
@@ -7848,8 +9951,9 @@ TEST_CASE("At-Keyword Messages", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         REQUIRE_ERRORS("test.css(1): info: This is an info message.\n");
 
@@ -7874,8 +9978,9 @@ TEST_CASE("At-Keyword Messages", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
-        c.compile();
+        c.compile(true);
 
         // by default debug messages do not make it to the output
         REQUIRE_ERRORS("");
@@ -7901,12 +10006,860 @@ TEST_CASE("At-Keyword Messages", "[compiler] [invalid]")
         c.set_root(n);
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
 
         csspp::error::instance().set_show_debug(true);
-        c.compile();
+        c.compile(true);
         csspp::error::instance().set_show_debug(false);
 
         REQUIRE_ERRORS("test.css(1): debug: This is a debug message.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
+{
+    // script with @if / @else if / @else keywords
+    {
+        std::stringstream ss;
+        ss << "$var: true;\n"
+           << "@if $var { @message \"Got here! (1)\" ; }\n"
+           << "@else if $var { @message \"Got here! (2)\";}\n"
+           << "@else{@message\"Got here! (3)\";}\n"
+           << "ul { list: cross; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(2): info: Got here! (1)\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE \"var\"\n"
+"        IDENTIFIER \"true\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"ul\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"list\"\n"
+"        IDENTIFIER \"cross\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // script with @if / @else if / @else keywords
+    {
+        std::stringstream ss;
+        ss << "$var: 2;\n"
+           << "@if $var = 1 { @message \"Got here! (1)\" ; }\n"
+           << "@else if $var = 2 { @message \"Got here! (2)\";}\n"
+           << "@else{@message\"Got here! (3)\";}\n"
+           << "ul { list: cross; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(3): info: Got here! (2)\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE \"var\"\n"
+"        INTEGER \"\" I:2\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"ul\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"list\"\n"
+"        IDENTIFIER \"cross\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // script with @if / @else if / @else keywords
+    {
+        std::stringstream ss;
+        ss << "$var: -192;\n"
+           << "@if $var = 1 { @message \"Got here! (1)\" ; }\n"
+           << "@else if $var = 2 { @message \"Got here! (2)\";}\n"
+           << "@else{@message\"Got here! (3)\";}\n"
+           << "ul { list: cross; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(4): info: Got here! (3)\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE \"var\"\n"
+"        LIST\n"
+"          SUBTRACT\n"
+"          INTEGER \"\" I:192\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"ul\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"list\"\n"
+"        IDENTIFIER \"cross\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
+{
+    // script with @if / @else if / @else keywords
+    // invalid "@else if" which includes an expression
+    {
+        std::stringstream ss;
+        ss << "$var: false;\n"
+           << "@if { @message \"Got here! (1)\" ; }\n"
+           << "@else if { @message \"Got here! (2)\";}\n"
+           << "@else{@message\"Got here! (3)\";}\n"
+           << "ul { list: cross; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(2): error: @if is expected to have exactly 2 parameters: an expression and a block. This @if has 1 parameters.\n"
+                "test.css(3): error: '@else if ...' is missing an expression or a block.\n"
+                "test.css(3): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
+                "test.css(4): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
+            );
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:_csspp_major\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_major\"\n"
+"        INTEGER \"\" I:1\n"
+"    V:_csspp_minor\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_minor\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_patch\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_patch\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_version\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_version\"\n"
+"        STRING \"1.0.0\"\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE \"var\"\n"
+"        IDENTIFIER \"false\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"ul\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"list\"\n"
+"        IDENTIFIER \"cross\"\n"
+"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // script with @if / @else if / @else keywords
+    // invalid "@else if" which includes an expression
+    {
+        std::stringstream ss;
+        ss << "$var: false;\n"
+           << "@if $var { @message \"Got here! (1)\" ; }\n"
+           << "@else if + { @message \"Got here! (2)\";}\n"
+           << "@else{@message\"Got here! (3)\";}\n"
+           << "ul { list: cross; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(3): error: unsupported type OPEN_CURLYBRACKET as a unary expression token.\n"
+                "test.css(3): error: '@else { ... }' is expected to have 1 parameter, '@else if ... { ... }' is expected to have 2 parameters. This @else has 2 parameters.\n"
+                "test.css(4): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
+            );
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE \"var\"\n"
+"        IDENTIFIER \"false\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"ul\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"list\"\n"
+"        IDENTIFIER \"cross\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // script with @if / @else if / @else keywords
+    // invalid "@else" which includes an expression
+    {
+        std::stringstream ss;
+        ss << "$var: false;\n"
+           << "@if $var { @message \"Got here! (1)\" ; }\n"
+           << "@else if $var { @message \"Got here! (2)\";}\n"
+           << "@else $var {@message\"Got here! (3)\";}\n"   // TODO: this doesn't get caught?!
+           << "ul { list: cross; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(""
+                //"test.css(3): error: '@else if ...' is missing an expression or a block.\n"
+                //"test.css(3): error: '@else { ... }' cannot follow another '@else { ... }'. Maybe you are missing an 'if expr'?\n"
+                //"test.css(4): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
+                //"test.css(3): info: Got here! (2)\n"
+            );
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE \"var\"\n"
+"        IDENTIFIER \"false\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"ul\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"list\"\n"
+"        IDENTIFIER \"cross\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // script with @if / @else if / @else keywords
+    // spurious "@else"
+    {
+        std::stringstream ss;
+        ss << "$var: false;\n"
+           << "@if $var { @message \"Got here! (1)\" ; }\n"
+           << "@else if $var { @message \"Got here! (2)\";}\n"
+           << "@else {@message\"Got here! (3)\";}\n"
+           << "@else { @message\"Spurious! (4)\";}\n"
+           << "ul { list: cross; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(""
+                "test.css(4): error: '@else { ... }' cannot follow another '@else { ... }'. Maybe you are missing an 'if expr'?\n"
+                "test.css(5): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
+                "test.css(4): info: Got here! (3)\n"
+            );
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        VARIABLE \"var\"\n"
+"        IDENTIFIER \"false\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"ul\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"list\"\n"
+"        IDENTIFIER \"cross\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("User @import", "[compiler] [at-keyword]")
+{
+    // @import with a valid URL
+    {
+        // write a file (in a block so it gets flushed and closed)
+        {
+            std::ofstream importing;
+            importing.open("importing.scss");
+            REQUIRE(!!importing);
+            importing << "/* @preserve this worked! {$_csspp_version} */";
+        }
+        std::stringstream ss;
+        ss << "@import url(file://"
+           << get_current_dir_name()
+           << "/importing.scss);";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:_csspp_major\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_major\"\n"
+"        INTEGER \"\" I:1\n"
+"    V:_csspp_minor\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_minor\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_patch\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_patch\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_version\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_version\"\n"
+"        STRING \"1.0.0\"\n"
+"  COMMENT \"@preserve this worked! 1.0.0\" I:1\n"
+"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+
+            );
+
+        unlink("importing.scss");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @import with a valid path as a URL (thus not recognized as a file://)
+    {
+        std::stringstream ss;
+        ss << "@import url(system/version);";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"import\" I:0\n"
+"    URL \"system/version\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @import with a valid path as a URL (thus not recognized as a file://)
+    {
+        std::stringstream ss;
+        ss << "@import 'http://csspp.org/css/special.css';";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"import\" I:0\n"
+"    STRING \"http://csspp.org/css/special.css\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Invalid @import", "[compiler] [at-keyword] [invalid]")
+{
+    // @import with URL representing a an inexistant file
+    {
+        std::stringstream ss;
+        ss << "@import url(file:///this/shall/not/exist/anywhere/on/your/drive);";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("test.css(1): info: @import uri(/this/shall/not/exist/anywhere/on/your/drive); left alone by the CSS Preprocessor, no matching file found.\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"import\" I:0\n"
+"    URL \"file:///this/shall/not/exist/anywhere/on/your/drive\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @import with URL representing a an inexistant file
+    {
+        std::stringstream ss;
+        ss << "@import url(file://this/shall/not/exist/either/on/your/drive);";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("test.css(1): info: @import uri(/this/shall/not/exist/either/on/your/drive); left alone by the CSS Preprocessor, no matching file found.\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"import\" I:0\n"
+"    URL \"file://this/shall/not/exist/either/on/your/drive\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @import with a string that includes a URL
+    {
+        std::stringstream ss;
+        ss << "@import \"file://this/shall/not/ever/exist/on/your/drive\";";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("test.css(1): info: @import \"/this/shall/not/ever/exist/on/your/drive\"; left alone by the CSS Preprocessor, no matching file found.\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"import\" I:0\n"
+"    STRING \"file://this/shall/not/ever/exist/on/your/drive\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @import with a string that includes a URL
+    {
+        std::stringstream ss;
+        ss << "@import \"include/a/file:///in/the/filename/but/still/a/regular/filename\";";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("test.css(1): info: @import \"include/a/file:///in/the/filename/but/still/a/regular/filename\"; left alone by the CSS Preprocessor, no matching file found.\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"import\" I:0\n"
+"    STRING \"include/a/file:///in/the/filename/but/still/a/regular/filename\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // @import a script named "" (empty string!)
+    {
+        std::stringstream ss;
+        ss << "@import \"\";";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS("test.css(1): error: @import \"\"; and @import url(); are not valid.\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"import\" I:0\n"
+"    STRING \"\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
+{
+    // variable is not defined
+    {
+        std::stringstream ss;
+        ss << "/* @preserve this variable is #{$unknown} */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): warning: variable named \"unknown\", used in a comment, is not set.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // variable is not defined
+    {
+        std::stringstream ss;
+        ss << "$func($arg): { color: $arg + #010101; };\n"
+           << "/* @preserve this variable is #{$func(#030303)} */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(2): warning: variable named \"func\", is a function which is not supported in a comment.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // variable is not defined
+    {
+        std::stringstream ss;
+        ss << "$simple_var: { color: #0568FF + #010101; };\n"
+           << "/* @preserve this variable is #{$simple_var(#030303)} */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(2): warning: variable named \"simple_var\", is not a function, yet you referenced it as such (and functions are not yet supported in comments).\n"
+            );
 
         REQUIRE(c.get_root() == n);
     }
@@ -7944,7 +10897,7 @@ TEST_CASE("At-Keyword Messages", "[compiler] [invalid]")
 //        c.clear_paths();
 //        c.add_path(".");
 //
-//        REQUIRE_THROWS_AS(c.compile(), csspp::csspp_exception_exit);
+//        REQUIRE_THROWS_AS(c.compile(true), csspp::csspp_exception_exit);
 //
 //        // TODO: use an RAII class instead
 //        rmdir("pseudo-nth-functions.scss"); // in case you run more than once

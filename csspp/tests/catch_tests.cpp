@@ -49,6 +49,7 @@ trace_error * g_trace_error;
 }
 
 std::string g_script_path;
+std::string g_version_script_path;
 
 trace_error::trace_error()
 {
@@ -178,6 +179,11 @@ std::string get_script_path()
     return g_script_path;
 }
 
+std::string get_version_script_path()
+{
+    return g_version_script_path;
+}
+
 } // csspp_test namespace
 
 int main(int argc, char *argv[])
@@ -197,7 +203,7 @@ int main(int argc, char *argv[])
 
     unsigned int seed(static_cast<unsigned int>(time(nullptr)));
     bool help(false);
-    for(int i(1); i < argc; ++i)
+    for(int i(1); i < argc;)
     {
         if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
         {
@@ -231,11 +237,26 @@ int main(int argc, char *argv[])
         {
             if(i + 1 >= argc)
             {
-                std::cerr << "error: --scripts need to be followed by the actual seed." << std::endl; // LCOV_EXCL_LINE
+                std::cerr << "error: --scripts need to be followed by a path." << std::endl; // LCOV_EXCL_LINE
                 exit(1); // LCOV_EXCL_LINE
             }
             csspp_test::g_script_path = argv[i + 1];
             // remove the --scripts and <value>
+            argc -= 2; // LCOV_EXCL_LINE
+            for(int j(i); j < argc; ++j) // LCOV_EXCL_LINE
+            {
+                argv[j] = argv[j + 2]; // LCOV_EXCL_LINE
+            }
+        }
+        else if(strcmp(argv[i], "--version-script") == 0)
+        {
+            if(i + 1 >= argc)
+            {
+                std::cerr << "error: --version-script need to be followed by a path." << std::endl; // LCOV_EXCL_LINE
+                exit(1); // LCOV_EXCL_LINE
+            }
+            csspp_test::g_version_script_path = argv[i + 1];
+            // remove the --version-script and <value>
             argc -= 2; // LCOV_EXCL_LINE
             for(int j(i); j < argc; ++j) // LCOV_EXCL_LINE
             {
@@ -247,6 +268,10 @@ int main(int argc, char *argv[])
             std::cout << CSSPP_VERSION << std::endl;
             exit(0);
         }
+        else
+        {
+            ++i;
+        }
     }
     srand(seed);
     std::cout << csspp_test::g_progname << "[" << getpid() << "]" << ": version " << CSSPP_VERSION << ", seed is " << seed << std::endl;
@@ -255,10 +280,11 @@ int main(int argc, char *argv[])
     {
         std::cout << std::endl // LCOV_EXCL_LINE
                   << "WARNING: at this point we hack the main() to add the following options:" << std::endl // LCOV_EXCL_LINE
-                  << "  --scripts <path> a path to the system scripts to run against the tests" << std::endl // LCOV_EXCL_LINE
-                  << "  --seed <seed>    to force the seed at the start of the process to a specific value (i.e. to reproduce the exact same test over and over again)" << std::endl // LCOV_EXCL_LINE
-                  << "  --show-errors    request for the errors to always be printed in std::cerr" << std::endl // LCOV_EXCL_LINE
-                  << "  --version        print out the version of this test and exit with 0" << std::endl // LCOV_EXCL_LINE
+                  << "  --scripts <path>          a path to the system scripts to run against the tests" << std::endl // LCOV_EXCL_LINE
+                  << "  --seed <seed>             to force the seed at the start of the process to a specific value (i.e. to reproduce the exact same test over and over again)" << std::endl // LCOV_EXCL_LINE
+                  << "  --show-errors             request for the errors to always be printed in std::cerr" << std::endl // LCOV_EXCL_LINE
+                  << "  --version                 print out the version of this test and exit with 0" << std::endl // LCOV_EXCL_LINE
+                  << "  --version-script <path>   a path to the system version script" << std::endl // LCOV_EXCL_LINE
                   << std::endl; // LCOV_EXCL_LINE
     }
 

@@ -42,13 +42,15 @@ then
     echo
     echo "To run specific tests, use one of the tags defined in the test suite."
     echo "   '[color]'"
+    echo "   '[compiler]'"
     echo "   '[csspp]'"
     echo "   '[error]'"
     echo "   '[lexer]'"
     echo "   '[node]'"
+    echo "   '[nth-child]'"
     echo "   '[parser]'"
     echo "   '[position]'"
-    echo "   '[unicode_range]'"
+    echo "   '[unicode-range]'"
     echo "You may use the list option to see the available tests and tags:"
     echo "   csspp_tests --list-tests"
     exit 1;
@@ -102,7 +104,7 @@ then
     echo "Start running the tests on `date`" >test_log.txt
     echo >>test_log.txt
     # --success generates way too much output for HTML
-    tests/csspp_tests --scripts $SOURCE_PATH/scripts --durations yes 2>&1 | tee -a test_log.txt; test ${PIPESTATUS[0]} -eq 0
+    tests/csspp_tests --scripts $SOURCE_PATH/scripts --version-script scripts --durations yes 2>&1 | tee -a test_log.txt; test ${PIPESTATUS[0]} -eq 0
     echo >>test_log.txt
     echo "Finished running the tests on `date`" >>test_log.txt
 else
@@ -110,9 +112,9 @@ else
     if test "$1" == "--all" -o -z "$1"
     then
         # Do it all, but not published
-        tests/csspp_tests --scripts $SOURCE_PATH/scripts
+        tests/csspp_tests --scripts $SOURCE_PATH/scripts --version-script scripts
     else
-        tests/csspp_tests --scripts $SOURCE_PATH/scripts "$1"
+        tests/csspp_tests --scripts $SOURCE_PATH/scripts --version-script scripts "$1"
     fi
     # just in case, remove the log file if there is one
     rm -f test_log.txt

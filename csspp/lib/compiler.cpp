@@ -112,16 +112,6 @@ bool compiler::compiler_state_t::empty_parents() const
     return f_parents.empty();
 }
 
-node::pointer_t compiler::compiler_state_t::get_current_parent() const
-{
-    if(f_parents.empty())
-    {
-        throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::get_current_parent(): no parents available."); // LCOV_EXCL_LINE
-    }
-
-    return f_parents.back();
-}
-
 node::pointer_t compiler::compiler_state_t::get_previous_parent() const
 {
     if(f_parents.size() < 2)
@@ -208,6 +198,11 @@ void compiler::set_root(node::pointer_t root)
     f_state.set_root(root);
 }
 
+void compiler::set_empty_on_undefined_variable(bool empty_on_undefined_variable)
+{
+    f_empty_on_undefined_variable = empty_on_undefined_variable;
+}
+
 void compiler::clear_paths()
 {
     f_paths.clear();
@@ -218,16 +213,27 @@ void compiler::add_path(std::string const & path)
     f_paths.push_back(path);
 }
 
-void compiler::compile()
+void compiler::compile(bool bare)
 {
+    if(!f_state.get_root())
+    {
+        throw csspp_exception_logic("compiler.cpp: compiler::compile(): compile() called without a root node pointer, call set_root() first."); // LCOV_EXCL_LINE
+    }
+
     // before we compile anything we want to transform all the variables
     // with their verbatim contents; otherwise the compiler would be way
     // more complex for nothing...
     //
-    // also for the variables to work appropriately, we immediately handle
+    // Also for the variables to work properly, we immediately handle
     // the @import and @mixins since both may define additional variables.
+    // Similarly, we handle control flow (@if, @else, @include, ...)
     //
 //std::cerr << "************* COMPILING:\n" << *f_state.get_root() << "-----------------\n";
+    if(!bare)
+    {
+        add_header_and_footer();
+    }
+
     mark_selectors(f_state.get_root());
     if(!f_state.empty_parents())
     {
@@ -244,6 +250,33 @@ void compiler::compile()
     if(!f_state.empty_parents())
     {
         throw csspp_exception_logic("compiler.cpp: the stack of parents must always be empty before compile() returns"); // LCOV_EXCL_LINE
+    }
+}
+
+void compiler::add_header_and_footer()
+{
+    // the header is @import "scripts/init.scss"
+    //
+    {
+        position pos("header.scss");
+        node::pointer_t header(new node(node_type_t::AT_KEYWORD, pos));
+        header->set_string("import");
+        node::pointer_t header_string(new node(node_type_t::STRING, pos));
+        header_string->set_string("system/init.scss");
+        header->add_child(header_string);
+        f_state.get_root()->insert_child(0, header);
+    }
+
+    // the footer is @import "script/close.scss"
+    //
+    {
+        position pos("footer.scss");
+        node::pointer_t footer(new node(node_type_t::AT_KEYWORD, pos));
+        footer->set_string("import");
+        node::pointer_t footer_string(new node(node_type_t::STRING, pos));
+        footer_string->set_string("system/close.scss");
+        footer->add_child(footer_string);
+        f_state.get_root()->add_child(footer);
     }
 }
 
@@ -310,10 +343,8 @@ void compiler::compile_component_value(node::pointer_t n)
     if(n->empty())
     {
         // we have a problem, we should already have had an error
-        // somewhere? (TBD)
-        // I think we can get those if all there was in a component
-        // value were variables
-        return;
+        // somewhere?
+        return;     // LCOV_EXCL_LINE
     }
 
     // $variable ':' '{' ... '}'
@@ -424,12 +455,28 @@ void compiler::compile_declaration(node::pointer_t n)
     }
     n->remove_child(1);
 
+    if(n->size() < 2)
+    {
+        error::instance() << n->get_position()
+                << "somehow a declaration list is missing fields, this happens if you used an invalid variable."
+                << error_mode_t::ERROR_ERROR;
+        return;
+    }
+
     // no need to keep the next whitespace if there is one,
     // plus we often do not expect such at the start of a
     // list like we are about to generate.
     if(n->get_child(1)->is(node_type_t::WHITESPACE))
     {
         n->remove_child(1);
+    }
+
+    if(n->size() < 2)
+    {
+        error::instance() << n->get_position()
+                << "somehow a declaration list is missing fields, this happens if you used an invalid variable."
+                << error_mode_t::ERROR_ERROR;
+        return;
     }
 
     // create a declaration to replace the identifier
@@ -599,7 +646,7 @@ node::pointer_t compiler::compile_expression(node::pointer_t n, bool skip_whites
                 if(expr.end_of_nodes())
                 {
                     // TODO: list of nodes ends with WHITESPACE
-                    return result;
+                    return result;    // LCOV_EXCL_LINE
                 }
                 expr.mark_start();
                 expr.next();
@@ -636,17 +683,73 @@ void compiler::replace_import(node::pointer_t parent, node::pointer_t import, no
     // we only support arguments with one string
     // (@import accepts strings and url() as their first parameter)
     //
-std::cerr << "replace @import!?\n" << *expr << "----------------------\n";
-    if(expr && expr->size() == 1
-    && expr->is(node_type_t::STRING))
+//std::cerr << "replace @import!?\n";
+//if(expr) std::cerr << *expr;
+//std::cerr << "----------------------\n";
+    if(expr
+    && (expr->is(node_type_t::STRING)
+     || expr->is(node_type_t::URL)))
     {
-        std::string const script_name(expr->get_string());
+        std::string script_name(expr->get_string());
 
-        // TODO: add code to avoid testing with filenames that represent URIs
+        if(expr->is(node_type_t::URL))
+        {
+            // we only support URIs that start with "file://"
+            if(script_name.substr(0, 7) == "file://")
+            {
+                script_name = script_name.substr(7);
+                if(script_name.empty()
+                || script_name[0] != '/')
+                {
+                    script_name = "/" + script_name;
+                }
+            }
+            else
+            {
+                // not a type of URI we support
+                ++idx;
+                return;
+            }
+        }
+        else
+        {
+            // TODO: add code to avoid testing with filenames that represent URIs
+            std::string::size_type pos(script_name.find(':'));
+            if(pos != std::string::npos
+            && script_name.substr(pos, 3) == "://")
+            {
+                std::string const protocol(script_name.substr(0, pos));
+                auto s(protocol.c_str());
+                for(; *s != '\0'; ++s)
+                {
+                    if((*s < 'a' || *s > 'z')
+                    && (*s < 'A' || *s > 'Z'))
+                    {
+                        break;
+                    }
+                }
+                if(*s == '\0')
+                {
+                    if(protocol != "file")
+                    {
+                        ++idx;
+                        return;
+                    }
+                    script_name = script_name.substr(7);
+                    if(script_name.empty()
+                    || script_name[0] != '/')
+                    {
+                        script_name = "/" + script_name;
+                    }
+                }
+                //else -- not a valid protocol, so we assume it is
+                //        a weird filename and use it as is
+            }
+        }
 
         // search the corresponding file
         std::string filename(find_file(script_name));
-        if(filename.empty())
+        if(filename.empty() && script_name.length() > 5)
         {
             if(script_name.substr(script_name.size() - 5) != ".scss")
             {
@@ -656,7 +759,6 @@ std::cerr << "replace @import!?\n" << *expr << "----------------------\n";
         }
 
         // if still not found, we ignore
-std::cerr << "found file [" << filename << "]\n";
         if(!filename.empty())
         {
             // found an SCSS include, we remove that @import and replace
@@ -678,11 +780,11 @@ std::cerr << "found file [" << filename << "]\n";
             {
                 // the script may not really allow reading even though
                 // access() just told us otherwise
-                error::instance() << pos
-                        << "validation script \""
-                        << script_name
-                        << "\" could not be opened."
-                        << error_mode_t::ERROR_ERROR;
+                error::instance() << pos                    // LCOV_EXCL_LINE
+                        << "validation script \""           // LCOV_EXCL_LINE
+                        << script_name                      // LCOV_EXCL_LINE
+                        << "\" could not be opened."        // LCOV_EXCL_LINE
+                        << error_mode_t::ERROR_ERROR;       // LCOV_EXCL_LINE
             }
             else
             {
@@ -710,6 +812,28 @@ std::cerr << "found file [" << filename << "]\n";
             // in this case we managed the entry fully
             return;
         }
+        else if(script_name.empty())
+        {
+            error::instance() << expr->get_position()
+                    << "@import \"\"; and @import url(); are not valid."
+                    << error_mode_t::ERROR_ERROR;
+        }
+        else if(expr->is(node_type_t::URL))
+        {
+            error::instance() << expr->get_position()
+                    << "@import uri("
+                    << script_name
+                    << "); left alone by the CSS Preprocessor, no matching file found."
+                    << error_mode_t::ERROR_INFO;
+        }
+        else
+        {
+            error::instance() << expr->get_position()
+                    << "@import \""
+                    << script_name
+                    << "\"; left alone by the CSS Preprocessor, no matching file found."
+                    << error_mode_t::ERROR_INFO;
+        }
     }
 
     ++idx;
@@ -726,7 +850,7 @@ void compiler::handle_mixin(node::pointer_t n)
     }
 
     node::pointer_t block(n->get_child(1));
-    if(block->is(node_type_t::OPEN_CURLYBRACKET))
+    if(!block->is(node_type_t::OPEN_CURLYBRACKET))
     {
         error::instance() << n->get_position()
                 << "a @mixin definition expects a {}-block as its second parameter."
@@ -735,64 +859,44 @@ void compiler::handle_mixin(node::pointer_t n)
     }
 
     node::pointer_t name(n->get_child(0));
+
+    // @mixin and @include do not accept $var[()] as a variable name
+    // we make the error explicit
+    if(name->is(node_type_t::VARIABLE)
+    || name->is(node_type_t::VARIABLE_FUNCTION))
+    {
+        error::instance() << n->get_position()
+                << "a @mixin must use an IDENTIFIER or FUNCTION and no a VARIABLE or VARIABLE_FUNCTION."
+                << error_mode_t::ERROR_ERROR;
+        return;
+    }
+
+    // TODO: Are @mixin always global?
     if(name->is(node_type_t::IDENTIFIER))
     {
         // this is just like a variable
-        // TODO: is it always global? I think it is for @mixin...
-        if(name->is(node_type_t::VARIABLE_FUNCTION))
-        {
-            argify(name);
-        }
+        //
+        // Note: here we are creating a variable with "name" IDENTIFIER
+        // instead of VARIABLE as otherwise expected by the standard
+        // variable handling
+        //
         f_state.set_variable(name, block, true);
     }
     else if(name->is(node_type_t::FUNCTION))
     {
-        // this is a function declaration, it includes a list of arguments
-        // which we want to check, and if valid we save it in the root node
-        argify(name);
+        // parse the arguments and then save the result
+        prepare_function_arguments(name);
 
-        size_t const max_children(name->size());
-        for(size_t idx(0); idx < max_children; ++idx)
-        {
-            node::pointer_t arg(name->get_child(idx));
-            if(!arg->is(node_type_t::ARG))
-            {
-                error::instance() << n->get_position()
-                        << "a @mixin list of arguments is expected to be only ARG objects."
-                        << error_mode_t::ERROR_ERROR;
-                return;
-            }
-            if(arg->size() != 1)
-            {
-                error::instance() << n->get_position()
-                        << "a @mixin list of arguments is expected to be composed of exactly one identifier per argument."
-                        << error_mode_t::ERROR_ERROR;
-                return;
-            }
-            node::pointer_t a(arg->get_child(0));
-            if(!a->is(node_type_t::IDENTIFIER))
-            {
-                error::instance() << n->get_position()
-                        << "a @mixin list of arguments is expected to be composed of identifiers only."
-                        << error_mode_t::ERROR_ERROR;
-                return;
-            }
-            std::string const arg_name(a->get_string());
-            if(arg_name.length() > 3
-            && arg_name.substr(arg_name.length() - 3) == "..."
-            && idx + 1 != max_children)
-            {
-                error::instance() << n->get_position()
-                        << "only the last identifier of a @mixin list of arguments may end with '...'."
-                        << error_mode_t::ERROR_ERROR;
-                return;
-            }
-        }
+        // Note: here we are creating a variable with "name" FUNCTION
+        // instead of VARIABLE_FUNCTION as otherwise expected by the
+        // standard variable handling
+        //
+        f_state.set_variable(name, block, true);
     }
     else
     {
         error::instance() << n->get_position()
-                << "a @mixin expects either an identifier or a function as its first parameter."
+                << "a @mixin expects either an IDENTIFIER or a FUNCTION as its first parameter."
                 << error_mode_t::ERROR_ERROR;
     }
 }
@@ -813,15 +917,14 @@ void compiler::mark_selectors(node::pointer_t n)
             // there are the few cases we can have here:
             //
             //   $variable ':' '{' ... '}'
-            //   <field-prefix> ':' '{' ... '}'
-            //   <selector-list> '{' ... '}' <-- this is the one we're interested in
+            //   <field-prefix> ':' '{' ... '}' <-- this is one we're interested in (nested fields)
+            //   <selector-list> '{' ... '}'    <-- this is one we're interested in (regular qualified rule)
             //   $variable ':' ...
             //   <field-name> ':' ...
             //
 
             if(!n->empty()
-            && !parser::is_variable_set(n, true)                        // $variable ':' '{' ... '}'
-            && !parser::is_nested_declaration(n)                        // <field-prefix> ':' '{' ... '}'
+            && !parser::is_variable_set(n, true)                        // ! $variable ':' '{' ... '}'
             && n->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET)) // <selector-list> '{' ... '}'
             {
                 // this is a selector list followed by a block of
@@ -904,6 +1007,7 @@ void compiler::replace_variables(node::pointer_t n)
                     switch(child->get_type())
                     {
                     case node_type_t::ARG:
+                    case node_type_t::COMMENT:
                     case node_type_t::COMPONENT_VALUE:
                     case node_type_t::DECLARATION:
                     case node_type_t::FUNCTION:
@@ -922,7 +1026,6 @@ void compiler::replace_variables(node::pointer_t n)
 
                     case node_type_t::AT_KEYWORD:
                         // handle @import, @mixins, @if, etc.
-                        replace_variables(child);
                         replace_at_keyword(n, child, idx);
                         break;
 
@@ -943,6 +1046,10 @@ void compiler::replace_variables(node::pointer_t n)
                 set_variable(n);
             }
         }
+        break;
+
+    case node_type_t::COMMENT:
+        replace_variables_in_comment(n);
         break;
 
     default:
@@ -985,7 +1092,8 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
     if(var->is(node_type_t::FUNCTION)
     || var->is(node_type_t::VARIABLE_FUNCTION))
     {
-        if(!n->is(node_type_t::VARIABLE_FUNCTION))
+        if(!n->is(node_type_t::VARIABLE_FUNCTION)
+        && !n->is(node_type_t::FUNCTION))
         {
             error::instance() << n->get_position()
                     << "variable named \""
@@ -1016,7 +1124,13 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
             node::pointer_t arg_name(arg->get_child(0));
             if(!arg_name->is(node_type_t::VARIABLE))
             {
-                throw csspp_exception_logic("compiler.cpp:compiler::replace_variable(): ARG first child is not a VARIABLE."); // LCOV_EXCL_LINE
+                // this was already erred when we created the variable
+                //error::instance() << n->get_position()
+                //        << "function declaration requires all parameters to be variables, "
+                //        << arg_name->get_type()
+                //        << " is not acceptable."
+                //        << error_mode_t::ERROR_ERROR;
+                return;
             }
             if(i >= max_input)
             {
@@ -1027,6 +1141,16 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
                     // use default value
                     node::pointer_t default_param(arg->clone());
                     default_param->remove_child(0);  // remove the variable name
+                    if(default_param->size() == 1)
+                    {
+                        default_param = default_param->get_child(0);
+                    }
+                    else
+                    {
+                        node::pointer_t value_list(new node(node_type_t::LIST, arg->get_position()));
+                        value_list->take_over_children_of(default_param);
+                        default_param = value_list;
+                    }
                     node::pointer_t param_value(new node(node_type_t::LIST, arg->get_position()));
                     param_value->add_child(arg_name);
                     param_value->add_child(default_param);
@@ -1083,10 +1207,18 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
 
         // ready to be inserted in the parent
         val = root;
+
+        // only keep the curlybracket instead of list + curlybracket
+        if(val->size() == 1
+        && val->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
+        {
+            val = val->get_child(0);
+        }
     }
     else
     {
-        if(n->is(node_type_t::VARIABLE_FUNCTION))
+        if(n->is(node_type_t::VARIABLE_FUNCTION)
+        || n->is(node_type_t::FUNCTION))
         {
             error::instance() << n->get_position()
                     << "variable named \""
@@ -1105,6 +1237,73 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
     {
     case node_type_t::LIST:
     case node_type_t::OPEN_CURLYBRACKET:
+        // check what the content of the list looks like, we may want to
+        // insert it as a COMPONENT_VALUE instead of directly as is
+        //
+        // TODO: the following test is terribly ugly, I'm wondering whether
+        //       a "complex" variable should not instead be recompiled in
+        //       context; one problem being that we do not really know
+        //       what context we're in when we do this transformation...
+        //       none-the-less, I think there would be much better ways
+        //       to handle the situation.
+        //
+        if(val->size() >= 2)
+        {
+            bool component_value(false);
+            switch(val->get_child(0)->get_type())
+            {
+            case node_type_t::IDENTIFIER:
+                if(val->get_child(1)->is(node_type_t::WHITESPACE))
+                {
+                    if(val->size() >= 3
+                    && val->get_child(2)->is(node_type_t::COLON))
+                    {
+                        component_value = true;
+                    }
+                }
+                else
+                {
+                    if(val->get_child(1)->is(node_type_t::COLON))
+                    {
+                        component_value = true;
+                    }
+                }
+                if(!component_value)
+                {
+                    component_value = val->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET);
+                }
+                break;
+
+            case node_type_t::MULTIPLY:
+            case node_type_t::OPEN_SQUAREBRACKET:
+            case node_type_t::PERIOD:
+            case node_type_t::REFERENCE:
+            case node_type_t::HASH:
+                component_value = val->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET);
+                break;
+
+            default:
+                // anything else cannot be defining a component value
+                break;
+
+            }
+
+            if(component_value)
+            {
+                // in this case we copy the data in a COMPONENT_VALUE instead
+                // of directly
+                node::pointer_t cv(new node(node_type_t::COMPONENT_VALUE, val->get_position()));
+                parent->insert_child(idx, cv);
+
+                size_t const max_children(val->size());
+                for(size_t j(0); j < max_children; ++j)
+                {
+                    cv->add_child(val->get_child(j)->clone());
+                }
+                break;
+            }
+        }
+        /*FALLTHROUGH*/
     case node_type_t::OPEN_PARENTHESIS:
     case node_type_t::OPEN_SQUAREBRACKET:
         // in this case we insert the children of 'val'
@@ -1118,6 +1317,7 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
         }
         break;
 
+    case node_type_t::NULL_TOKEN:
     case node_type_t::WHITESPACE:
         // whitespaces by themselves do not get re-included,
         // which may be a big mistake but at this point
@@ -1164,32 +1364,81 @@ void compiler::set_variable(node::pointer_t n)
     // check whether we have a "!global" at the end of the value
     // if so remove it and set global to true
     bool global(false);
+    bool set_if_unset(false);
+    bool more(true);
     size_t pos(n->size());
-    if(pos >= 2)
+    while(more && pos >= 2)
     {
+        more = false;
         --pos;
         node::pointer_t last(n->get_child(pos));
-        if(last->is(node_type_t::IDENTIFIER)
-        && last->get_string() == "global")
+        if(last->is(node_type_t::IDENTIFIER))
         {
-            --pos;
-            last = n->get_child(pos);
-            if(last->is(node_type_t::WHITESPACE))
+            if(last->get_string() == "global")
             {
-                if(pos > 0)
+                --pos;
+                last = n->get_child(pos);
+                if(last->is(node_type_t::WHITESPACE))
                 {
-                    --pos;
-                    last = n->get_child(pos);
+                    if(pos > 0)
+                    {
+                        --pos;
+                        last = n->get_child(pos);
+                    }
+                }
+                if(last->is(node_type_t::EXCLAMATION))
+                {
+                    more = true;
+                    global = true;
+                    if(pos > 0
+                    && n->get_child(pos - 1)->is(node_type_t::WHITESPACE))
+                    {
+                        --pos;
+                    }
+                    while(pos < n->size())
+                    {
+                        n->remove_child(pos);
+                    }
                 }
             }
-            if(last->is(node_type_t::EXCLAMATION))
+            else if(last->get_string() == "default")
             {
-                global = true;
-                while(pos < n->size())
+                --pos;
+                last = n->get_child(pos);
+                if(last->is(node_type_t::WHITESPACE))
                 {
-                    n->remove_child(pos);
+                    if(pos > 0)
+                    {
+                        --pos;
+                        last = n->get_child(pos);
+                    }
+                }
+                if(last->is(node_type_t::EXCLAMATION))
+                {
+                    more = true;
+                    set_if_unset = true;
+                    if(pos > 0
+                    && n->get_child(pos - 1)->is(node_type_t::WHITESPACE))
+                    {
+                        --pos;
+                    }
+                    while(pos < n->size())
+                    {
+                        n->remove_child(pos);
+                    }
                 }
             }
+        }
+    }
+
+    // if variable is already set, return immediately
+    if(set_if_unset)
+    {
+        // TODO: verify that the type (i.e. VARIABLE / VARIABLE_FUNCTION)
+        //       would not be changed?
+        if(f_state.get_variable(var->get_string()))
+        {
+            return;
         }
     }
 
@@ -1205,83 +1454,97 @@ void compiler::set_variable(node::pointer_t n)
         list->take_over_children_of(n);
     }
 
+    // we may need to check a little better as null may be in a sub-list
+    if(list->is(node_type_t::IDENTIFIER)
+    && list->get_string() == "null")
+    {
+        list.reset(new node(node_type_t::NULL_TOKEN, list->get_position()));
+    }
+
     // now the value of the variable is 'list'; it will get compiled once in
     // context (i.e. not here)
 
     // search the parents for the node where the variable will be set
     if(var->is(node_type_t::VARIABLE_FUNCTION))
     {
-        if(argify(var))
-        {
-            // TODO: verify that the list of arguments is valid (i.e. $var
-            // or $var: <default-value>)
-            bool optional(false);
-            size_t const max_children(var->size());
-            for(size_t i(0); i < max_children; ++i)
-            {
-                node::pointer_t arg(var->get_child(i));
-                if(!arg->is(node_type_t::ARG))
-                {
-                    throw csspp_exception_logic("compiler.cpp:compiler::set_variable(): an argument is not an ARG node."); // LCOV_EXCL_LINE
-                }
-                if(arg->empty())
-                {
-                    throw csspp_exception_logic("compiler.cpp:compiler::set_variable(): an argument has no children."); // LCOV_EXCL_LINE
-                }
-                node::pointer_t param_var(arg->get_child(0));
-                if(param_var->is(node_type_t::VARIABLE))
-                {
-                    size_t const arg_size(arg->size());
-                    if(arg_size > 1)
-                    {
-                        if(arg->get_child(1)->is(node_type_t::WHITESPACE))
-                        {
-                            arg->remove_child(1);
-                        }
-                        if(arg->size() > 1
-                        && arg->get_child(1)->is(node_type_t::COLON))
-                        {
-                            optional = true;
-                            arg->remove_child(1);
-                            if(arg->size() > 1
-                            && arg->get_child(1)->is(node_type_t::WHITESPACE))
-                            {
-                                arg->remove_child(1);
-                            }
-                            // so now we have $arg <optional-value> and no whitespaces or colon
-                        }
-                        else
-                        {
-                            error::instance() << n->get_position()
-                                    << "function declarations expect variable with optional parameters to use a ':' after the variable name and before the optional value."
-                                    << error_mode_t::ERROR_ERROR;
-                        }
-                    }
-                    else
-                    {
-                        // TODO: I think that the last parameter, if it ends with "...", is not required to have an optional value?
-                        if(optional)
-                        {
-                            error::instance() << n->get_position()
-                                    << "function declarations with optional parameters must make all parameters optional from the first one that is given an optional value up to the end of the list of arguments."
-                                    << error_mode_t::ERROR_ERROR;
-                        }
-                    }
-                }
-                else
-                {
-                    error::instance() << n->get_position()
-                            << "function declarations expect variables for each of their arguments, not a "
-                            << param_var->get_type()
-                            << "."
-                            << error_mode_t::ERROR_ERROR;
-                }
-            }
-        }
+        prepare_function_arguments(var);
     }
 
     // now save all of that in the best place
     f_state.set_variable(var, list, global);
+}
+
+void compiler::prepare_function_arguments(node::pointer_t var)
+{
+    if(!argify(var))
+    {
+        return;
+    }
+
+    // TODO: verify that the list of arguments is valid (i.e. $var
+    // or $var: <default-value>)
+    bool optional(false);
+    size_t const max_children(var->size());
+    for(size_t i(0); i < max_children; ++i)
+    {
+        node::pointer_t arg(var->get_child(i));
+        if(!arg->is(node_type_t::ARG))
+        {
+            throw csspp_exception_logic("compiler.cpp:compiler::set_variable(): an argument is not an ARG node."); // LCOV_EXCL_LINE
+        }
+        if(arg->empty())
+        {
+            throw csspp_exception_logic("compiler.cpp:compiler::set_variable(): an argument has no children."); // LCOV_EXCL_LINE
+        }
+        node::pointer_t param_var(arg->get_child(0));
+        if(param_var->is(node_type_t::VARIABLE))
+        {
+            size_t const arg_size(arg->size());
+            if(arg_size > 1)
+            {
+                if(arg->get_child(1)->is(node_type_t::WHITESPACE))
+                {
+                    arg->remove_child(1);
+                }
+                if(arg->size() > 1
+                && arg->get_child(1)->is(node_type_t::COLON))
+                {
+                    optional = true;
+                    arg->remove_child(1);
+                    if(arg->size() > 1
+                    && arg->get_child(1)->is(node_type_t::WHITESPACE))
+                    {
+                        arg->remove_child(1);
+                    }
+                    // so now we have $arg <optional-value> and no whitespaces or colon
+                }
+                else
+                {
+                    error::instance() << arg->get_position()
+                            << "function declarations expect variable with optional parameters to use a ':' after the variable name and before the optional value."
+                            << error_mode_t::ERROR_ERROR;
+                }
+            }
+            else
+            {
+                // TODO: I think that the last parameter, if it ends with "...", is not required to have an optional value?
+                if(optional)
+                {
+                    error::instance() << arg->get_position()
+                            << "function declarations with optional parameters must make all parameters optional from the first one that is given an optional value up to the end of the list of arguments."
+                            << error_mode_t::ERROR_ERROR;
+                }
+            }
+        }
+        else
+        {
+            error::instance() << arg->get_position()
+                    << "function declarations expect variables for each of their arguments, not a "
+                    << param_var->get_type()
+                    << "."
+                    << error_mode_t::ERROR_ERROR;
+        }
+    }
 }
 
 void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, size_t & idx)
@@ -1301,8 +1564,22 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
     //
     std::string const at(n->get_string());
 
+    if(at != "mixin")
+    {
+        replace_variables(n);
+    }
+
+    // TODO: calculating the expression at this point is somewhat of
+    //       an early optimization; the more @-keyword we support,
+    //       the more special cases (such as the @include) we will need
+    //       to support... I am thinking that may actually need to move
+    //       into a function and all those @-keyword call that function
+    //       as required...
+    //
     node::pointer_t expr;
-    if(!n->empty()
+    if(at != "include"
+    && at != "mixin"
+    && !n->empty()
     && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
     {
         if(at == "else"
@@ -1326,7 +1603,7 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
             if(n->size() == 1)
             {
                 error::instance() << n->get_position()
-                        << "'@else if ...' is missing an expression or a block"
+                        << "'@else if ...' is missing an expression or a block."
                         << error_mode_t::ERROR_ERROR;
                 return;
             }
@@ -1377,24 +1654,28 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
 
         if(n->empty())
         {
-            error::instance() << n->get_position()
-                    << "@include is expected to be followed by an IDENTIFIER naming the variable/mixin to include."
-                    << error_mode_t::ERROR_ERROR;
-            return;
+            // as far as I can tell, it is not possible to reach these
+            // lines from a tree created by the parser; we could work
+            // on creating a "fake" invalid tree too...
+            error::instance() << n->get_position()                                                                                  // LCOV_EXCL_LINE
+                    << "@include is expected to be followed by an IDENTIFIER or a FUNCTION naming the variable/mixin to include."   // LCOV_EXCL_LINE
+                    << error_mode_t::ERROR_ERROR;                                                                                   // LCOV_EXCL_LINE
+            return;                                                                                                                 // LCOV_EXCL_LINE
         }
 
         node::pointer_t id(n->get_child(0));
-        if(!id->is(node_type_t::IDENTIFIER))
+        if(!id->is(node_type_t::IDENTIFIER)
+        && !id->is(node_type_t::FUNCTION))
         {
             error::instance() << n->get_position()
-                    << "@include is expected to be followed by an IDENTIFIER naming the variable/mixin to include."
+                    << "@include is expected to be followed by an IDENTIFIER or a FUNCTION naming the variable/mixin to include."
                     << error_mode_t::ERROR_ERROR;
             return;
         }
 
         // search for the variable and replace this 'child' with
         // the contents of the variable
-        replace_variable(n, id, idx);
+        replace_variable(parent, id, idx);
         return;
     }
 
@@ -1453,7 +1734,7 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, node::poi
     if(status == g_if_or_else_undefined)
     {
         error::instance() << n->get_position()
-                << "a standalone @else is not legal, it has to be preceeded by a @if ... or @else if ..."
+                << "a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ..."
                 << error_mode_t::ERROR_ERROR;
         return;
     }
@@ -1529,6 +1810,108 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, node::poi
             next->set_integer(status);
         }
     }
+}
+
+void compiler::replace_variables_in_comment(node::pointer_t n)
+{
+    std::string comment(n->get_string());
+
+    std::string::size_type pos(comment.find('{')); // } for vim % functionality
+    while(pos != std::string::npos)
+    {
+        if(pos + 2 < comment.length()
+        && comment[pos + 1] == '$')
+        {
+            std::string::size_type start_var(pos);
+            std::string::size_type start_name(start_var + 2);
+            // include the preceeding '#' if present (SASS compatibility)
+            if(start_var > 0
+            && comment[start_var - 1] == '#')
+            {
+                --start_var;
+            }
+            // we do +1 because it definitely cannot start at '{$'
+            std::string::size_type end_var(comment.find('}', start_var + 2));
+            if(end_var != std::string::npos)
+            {
+                // we got a variable, replace with the content
+                std::string const full_name(comment.substr(start_name, end_var - start_name));
+
+                // check whether the user referenced a function or not
+                bool is_function(false);
+                std::string variable_name(full_name);
+                std::string::size_type func_pos(full_name.find('('));
+                if(func_pos != std::string::npos)
+                {
+                    // only keep the name part, ignore the parameters
+                    variable_name = full_name.substr(0, func_pos);
+                    is_function = true;
+                }
+
+                node::pointer_t var_content(f_state.get_variable(variable_name));
+                if(var_content)
+                {
+                    // internal validity check
+                    if(!var_content->is(node_type_t::LIST)
+                    || var_content->size() != 2)
+                    {
+                        throw csspp_exception_logic("compiler.cpp:compiler::replace_variables_in_comment(): all variable values must be two sub-values in a LIST, the first item being the variable."); // LCOV_EXCL_LINE
+                    }
+
+                    node::pointer_t var(var_content->get_child(0));
+                    if(var->is(node_type_t::FUNCTION)
+                    || var->is(node_type_t::VARIABLE_FUNCTION))
+                    {
+                        // TODO: add the support?
+                        error::instance() << n->get_position()
+                                << "variable named \""
+                                << variable_name
+                                << "\", is a function which is not supported in a comment."
+                                << error_mode_t::ERROR_WARNING;
+                    }
+                    else
+                    {
+                        if(is_function)
+                        {
+                            error::instance() << n->get_position()
+                                    << "variable named \""
+                                    << variable_name
+                                    << "\", is not a function, yet you referenced it as such (and functions are not yet supported in comments)."
+                                    << error_mode_t::ERROR_WARNING;
+                        }
+
+                        node::pointer_t val(var_content->get_child(1));
+
+                        comment.erase(start_var, end_var + 1 - start_var);
+                        // TODO: use the assembler instead of to_string()?
+                        std::string const value(val->to_string(0));
+
+                        comment.insert(start_var, value);
+
+                        // adjust pos to continue checking from after the
+                        // variable (i.e. if inserting a variable that includes
+                        // a {$var} it won't be replaced...)
+                        pos = start_var + value.length() - 1;
+                    }
+                }
+                else
+                {
+                    if(!f_empty_on_undefined_variable)
+                    {
+                        error::instance() << n->get_position()
+                                << "variable named \""
+                                << variable_name
+                                << "\", used in a comment, is not set."
+                                << error_mode_t::ERROR_WARNING;
+                    }
+                }
+            }
+        }
+
+        pos = comment.find('{', pos + 1); // } for vim % functionality
+    }
+
+    n->set_string(comment);
 }
 
 bool compiler::argify(node::pointer_t n)
@@ -1807,7 +2190,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
             {
                 // ':' IDENTIFIER
                 // validate the identifier as only a small number can be used
-                set_validation_script("pseudo-classes");
+                set_validation_script("validation/pseudo-classes");
                 node::pointer_t str(new node(node_type_t::STRING, term->get_position()));
                 str->set_string(term->get_string());
                 add_validation_variable("pseudo_name", str);
@@ -1826,7 +2209,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
                 // checks, because the FUNCTION is a list of nodes!
                 node::pointer_t function_name(new node(node_type_t::STRING, term->get_position()));
                 function_name->set_string(term->get_string());
-                set_validation_script("pseudo-nth-functions");
+                set_validation_script("validation/pseudo-nth-functions");
                 add_validation_variable("pseudo_name", function_name);
                 if(run_validation(true))
                 {
@@ -1859,7 +2242,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
                 }
                 else
                 {
-                    set_validation_script("pseudo-functions");
+                    set_validation_script("validation/pseudo-functions");
                     add_validation_variable("pseudo_name", function_name);
                     if(!run_validation(false))
                     {
@@ -1905,7 +2288,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
                             // check the language (mandatory)
                             node::pointer_t language_name(new node(node_type_t::STRING, term->get_position()));
                             language_name->set_string(lang);
-                            set_validation_script("languages");
+                            set_validation_script("validation/languages");
                             add_validation_variable("language_name", language_name);
                             if(!run_validation(false))
                             {
@@ -1916,7 +2299,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
                                 // check the country (optional)
                                 node::pointer_t country_name(new node(node_type_t::STRING, term->get_position()));
                                 country_name->set_string(country);
-                                set_validation_script("countries");
+                                set_validation_script("validation/countries");
                                 add_validation_variable("country_name", country_name);
                                 if(!run_validation(false))
                                 {
@@ -2080,7 +2463,7 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
                 // only a few pseudo element names exist, do a validation
                 node::pointer_t pseudo_element(new node(node_type_t::STRING, term->get_position()));
                 pseudo_element->set_string(term->get_string());
-                set_validation_script("pseudo-elements");
+                set_validation_script("validation/pseudo-elements");
                 add_validation_variable("pseudo_name", pseudo_element);
                 if(!run_validation(false))
                 {
@@ -2179,6 +2562,7 @@ bool compiler::selector_list(node::pointer_t n, size_t & pos)
             }
             else
             {
+                // otherwise just go over that operator
                 ++pos;
             }
 
@@ -2248,12 +2632,31 @@ bool compiler::parse_selector(node::pointer_t n)
 
 std::string compiler::find_file(std::string const & script_name)
 {
+    // no name?!
+    if(script_name.empty())
+    {
+        return std::string();
+    }
+
+    // an absolute path?
+    if(script_name[0] == '/')
+    {
+        if(access(script_name.c_str(), R_OK) == 0)
+        {
+            return script_name;
+        }
+        // absolute does not mean we can find the file
+        return std::string();
+    }
+
+    // no paths at all???
     if(f_paths.empty())
     {
         // should this be "." here instead of the default?
         f_paths.push_back("/usr/lib/csspp/scripts");
     }
 
+    // check with each path and return the first match
     for(auto it : f_paths)
     {
         std::string const name(it == "" ? script_name : it + "/" + script_name);
@@ -2358,48 +2761,45 @@ void compiler::add_validation_variable(std::string const & variable_name, node::
 
 bool compiler::run_validation(bool check_only)
 {
-    // avoid validation from within a validation script (we probably would
-    // get infinite loops anyway)
-    if(!f_compiler_validating)
+    // forbid validations from within validation scripts
+    if(f_compiler_validating)
     {
-        // save the number of errors so we can test after we ran
-        // the compile() function
-        error_happened_t old_count;
-
-        safe_compiler_state_t safe_state(f_state);
-        f_state.set_root(f_current_validation_script);
-        if(check_only)
-        {
-            // save the current error/warning counters so they do not change
-            // on this run
-            safe_error_t safe_error;
-
-            // replace the output stream with a memory buffer so the user
-            // does not see any of it
-            std::stringstream ignore;
-            safe_error_stream_t safe_output(ignore);
-
-            // now compile that true/false check
-            compile();
-
-            // WARNING: this MUST be here (before the closing curly bracket)
-            //          and not after the if() since we restore the error
-            //          state from before the compile() call.
-            //
-            bool const result(!old_count.error_happened());
-
-            // now restore the stream and error counters
-            return result;
-        }
-        else
-        {
-            compile();
-
-            return !old_count.error_happened();
-        }
+        throw csspp_exception_logic("compiler.cpp:compiler::run_validation(): already validating, cannot validate from within a validation script."); // LCOV_EXCL_LINE
     }
 
-    return true;
+    // save the number of errors so we can test after we ran
+    // the compile() function
+    error_happened_t old_count;
+
+    safe_compiler_state_t safe_state(f_state);
+    f_state.set_root(f_current_validation_script);
+    if(check_only)
+    {
+        // save the current error/warning counters so they do not change
+        // on this run
+        safe_error_t safe_error;
+
+        // replace the output stream with a memory buffer so the user
+        // does not see any of it
+        std::stringstream ignore;
+        safe_error_stream_t safe_output(ignore);
+
+        // now compile that true/false check
+        compile(true);
+
+        // WARNING: this MUST be here (before the closing curly bracket)
+        //          and not after the if() since we restore the error
+        //          state from before the compile() call.
+        //
+        bool const result(!old_count.error_happened());
+
+        // now restore the stream and error counters
+        return result;
+    }
+
+    compile(true);
+
+    return !old_count.error_happened();
 }
 
 } // namespace csspp

@@ -57,8 +57,9 @@ namespace csspp
 namespace
 {
 
-int const component_value_flag_return_on_semi_colon  = 0x0001;
-int const component_value_flag_return_on_exclamation = 0x0002;
+int const g_component_value_flag_return_on_semi_colon  = 0x0001;
+int const g_component_value_flag_return_on_exclamation = 0x0002;
+int const g_component_value_flag_return_on_variable    = 0x0004;
 
 } // no name namespace
 
@@ -90,7 +91,7 @@ node::pointer_t parser::declaration_list()
 
 node::pointer_t parser::component_value_list()
 {
-    return component_value_list(f_last_token, component_value_flag_return_on_semi_colon);
+    return component_value_list(f_last_token, g_component_value_flag_return_on_semi_colon);
 }
 
 node::pointer_t parser::component_value()
@@ -209,12 +210,12 @@ node::pointer_t parser::rule(node::pointer_t n)
 node::pointer_t parser::at_rule(node::pointer_t at_keyword)
 {
     // the '@' was already eaten, it will be our result
-    node::pointer_t n(component_value_list(next_token(), component_value_flag_return_on_semi_colon));
+    node::pointer_t n(component_value_list(next_token(), g_component_value_flag_return_on_semi_colon));
 
     if(n->empty())
     {
         error::instance() << at_keyword->get_position()
-                          << "At '@' command cannot be empty (missing block) unless ended by a semicolon (;)."
+                          << "At '@' command cannot be empty (missing expression or block) unless ended by a semicolon (;)."
                           << error_mode_t::ERROR_ERROR;
     }
     else
@@ -258,7 +259,7 @@ node::pointer_t parser::qualified_rule(node::pointer_t n)
 
     // a qualified rule is a component value list that
     // ends with a block
-    node::pointer_t result(component_value_list(n, 0));
+    node::pointer_t result(component_value_list(n, g_component_value_flag_return_on_variable));
 
     if(result->empty())
     {
@@ -363,7 +364,7 @@ node::pointer_t parser::declaration(node::pointer_t identifier)
     if(!n->is(node_type_t::EXCLAMATION))
     {
         // a component value
-        result->add_child(component_value_list(n, component_value_flag_return_on_semi_colon | component_value_flag_return_on_exclamation));
+        result->add_child(component_value_list(n, g_component_value_flag_return_on_semi_colon | g_component_value_flag_return_on_exclamation));
         n = f_last_token;
     }
 
@@ -417,8 +418,8 @@ node::pointer_t parser::component_value_list(node::pointer_t n, int flags)
         || n->is(node_type_t::CLOSE_PARENTHESIS)
         || n->is(node_type_t::CLOSE_SQUAREBRACKET)
         || n->is(node_type_t::CLOSE_CURLYBRACKET)
-        || ((flags & component_value_flag_return_on_semi_colon) && n->is(node_type_t::SEMICOLON)) // declarations handle the semi-colon differently
-        || ((flags & component_value_flag_return_on_exclamation) != 0 && n->is(node_type_t::EXCLAMATION))
+        || ((flags & g_component_value_flag_return_on_semi_colon)  != 0 && n->is(node_type_t::SEMICOLON)) // declarations handle the semi-colon differently
+        || ((flags & g_component_value_flag_return_on_exclamation) != 0 && n->is(node_type_t::EXCLAMATION))
         || n->is(node_type_t::CDO)
         || n->is(node_type_t::CDC))
         {
@@ -449,7 +450,8 @@ node::pointer_t parser::component_value_list(node::pointer_t n, int flags)
             // semicolon; a qualified rule normally requires a block to
             // end, but we have a special case to allow definition of
             // variables anywhere
-            if(is_variable_set(list, false))
+            if((flags & g_component_value_flag_return_on_variable) != 0
+            && is_variable_set(list, false))
             {
                 break;
             }
@@ -657,14 +659,25 @@ bool parser::is_nested_declaration(node::pointer_t n)
         return false;
     }
     ++pos;
+
+    if(pos >= n->size())
+    {
+        return false;
+    }
+
     if(n->get_child(pos)->is(node_type_t::WHITESPACE))
     {
         // although we test this special case, there isn't a way to
         // reach this line without actually building a tree of nodes
         // by hand and adding a WHITESPACE "at the wrong place" which
         // we dot not currently test (TODO)
-        ++pos; // LCOV_EXCL_LINE
+        ++pos;
+        if(pos >= n->size())
+        {
+            return false;
+        }
     }
+
     return n->get_child(pos)->is(node_type_t::OPEN_CURLYBRACKET);
 }
 

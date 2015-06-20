@@ -72,6 +72,7 @@ void compare(std::string const & generated, std::string const & expected, char c
 #define REQUIRE_TREES( a, b ) ::csspp_test::compare((a), (b), __FILE__, __LINE__)
 
 std::string get_script_path();
+std::string get_version_script_path();
 
 } // csspp_test namespace
 #endif

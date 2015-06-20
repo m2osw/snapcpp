@@ -712,7 +712,7 @@ TEST_CASE("Invalid Rules", "[parser] [rule-list] [invalid]")
 
 //std::cerr << "Result is: [" << *n << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): error: At '@' command cannot be empty (missing block) unless ended by a semicolon (;).\n");
+        REQUIRE_ERRORS("test.css(1): error: At '@' command cannot be empty (missing expression or block) unless ended by a semicolon (;).\n");
     }
 
     // a @-rule cannot be empty
@@ -1022,7 +1022,7 @@ TEST_CASE("Invalid One Rule", "[parser] [rule] [invalid]")
         // this failed with an error, no need to check the "broken" output
         n = p.rule();
 
-        REQUIRE_ERRORS("test.css(1): error: At '@' command cannot be empty (missing block) unless ended by a semicolon (;).\n");
+        REQUIRE_ERRORS("test.css(1): error: At '@' command cannot be empty (missing expression or block) unless ended by a semicolon (;).\n");
     }
 
     // a @-rule cannot be empty
@@ -2053,7 +2053,7 @@ TEST_CASE("Is Variable Set", "[parser] [variable] [invalid]")
 
 TEST_CASE("Is Nested Declaration", "[parser] [variable] [invalid]")
 {
-    // simple test with a value + value (SASS compatible)
+    // which a field name with a simple nested declaration
     {
         std::stringstream ss;
         ss << "width : { color : red } ;";
@@ -2104,6 +2104,62 @@ TEST_CASE("Is Nested Declaration", "[parser] [variable] [invalid]")
 
         // no error happened
         REQUIRE_ERRORS("test.css(1): error: Variable set to a block and a nested property block must end with a semicolon (;) after said block.\n");
+    }
+
+    // test special cases which woudl be really hard to get from the
+    // normal parser/lexer combo
+    for(int i(0); i < (1 << 5); ++i)
+    {
+        csspp::position pos("test.css");
+        csspp::node::pointer_t root(new csspp::node(csspp::node_type_t::LIST, pos));
+
+        // name WS ':' WS '{'
+        if((i & (1 << 0)) != 0)
+        {
+            csspp::node::pointer_t name(new csspp::node(csspp::node_type_t::IDENTIFIER, pos));
+            name->set_string("field-name");
+            root->add_child(name);
+        }
+
+        if((i & (1 << 1)) != 0)
+        {
+            csspp::node::pointer_t whitespace1(new csspp::node(csspp::node_type_t::WHITESPACE, pos));
+            root->add_child(whitespace1);
+        }
+
+        if((i & (1 << 2)) != 0)
+        {
+            csspp::node::pointer_t colon(new csspp::node(csspp::node_type_t::COLON, pos));
+            root->add_child(colon);
+        }
+
+        if((i & (1 << 3)) != 0)
+        {
+            csspp::node::pointer_t whitespace2(new csspp::node(csspp::node_type_t::WHITESPACE, pos));
+            root->add_child(whitespace2);
+        }
+
+        if((i & (1 << 4)) != 0)
+        {
+            csspp::node::pointer_t curlybracket(new csspp::node(csspp::node_type_t::OPEN_CURLYBRACKET, pos));
+            root->add_child(curlybracket);
+        }
+
+        // this one is "valid"
+        switch(i)
+        {
+        case 0x1F: // all with and without spaces are valid
+        case 0x1D:
+        case 0x17:
+        case 0x15:
+            REQUIRE(csspp::parser::is_nested_declaration(root));
+            break;
+
+        default:
+            REQUIRE_FALSE(csspp::parser::is_nested_declaration(root));
+            break;
+
+        }
     }
 
     // no error left over

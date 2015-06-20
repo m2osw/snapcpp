@@ -75,6 +75,7 @@ enum class node_type_t
     MODULO,
     MULTIPLY,               // for selectors: '*'
     NOT_EQUAL,
+    NULL_TOKEN,
     OPEN_CURLYBRACKET,      // holds the children of '{'
     OPEN_PARENTHESIS,       // holds the children of '('
     OPEN_SQUAREBRACKET,     // holds the children of '['

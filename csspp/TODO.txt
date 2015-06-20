@@ -1,0 +1,24 @@
+
+To be closer to what SASS supports, we shall implement the following
+additional features:
+
+. variable named when calling a function:
+
+     $func($name: value, $arg2: value2, ...)
+
+
+. Implement @extend
+
+. Support the placeholder in the assembler
+
+. Support for lists / maps in expressions
+
+. Full coverage for expressions, also look into adding many still missing
+  operations (i.e. color + color, color * 3, int * flt, etc.)
+
+. Add !important in variables, preventing further definitions of that variable
+
+      $var-final: 3px !important;
+
+      $var-final: 15px;  <-- error, !important prevents redefinition
+

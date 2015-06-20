@@ -15,7 +15,7 @@ then
 		shift
 		echo run with \"$TEST\"
 	fi
-	../BUILD/csspp/tests/csspp_tests --scripts scripts "$TEST" $*
+	../BUILD/csspp/tests/csspp_tests --scripts scripts --version-script ../BUILD/csspp/scripts "$TEST" $*
 elif test "$1" = "-i"
 then
 	make -C ../BUILD/csspp install

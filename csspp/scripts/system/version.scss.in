@@ -16,9 +16,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 $_csspp_version: "@CSSPP_VERSION_MAJOR@.@CSSPP_VERSION_MINOR@.@CSSPP_VERSION_PATCH@";
-$_csspp_major: "@CSSPP_VERSION_MAJOR@";
-$_csspp_minor: "@CSSPP_VERSION_MINOR@";
-$_csspp_patch: "@CSSPP_VERSION_PATCH@";
+$_csspp_major: @CSSPP_VERSION_MAJOR@;
+$_csspp_minor: @CSSPP_VERSION_MINOR@;
+$_csspp_patch: @CSSPP_VERSION_PATCH@;
 
 // Local Variables:
 // mode: scss

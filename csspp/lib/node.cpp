@@ -226,7 +226,8 @@ boolean_t node::to_boolean() const
         {
             return boolean_t::TRUE;
         }
-        if(f_string == "false")
+        if(f_string == "false"
+        || f_string == "null")
         {
             return boolean_t::FALSE;
         }
@@ -783,6 +784,11 @@ std::string node::to_string(int flags) const
         out << "!=";
         break;
 
+    case node_type_t::NULL_TOKEN:
+        // should null be "null" or ""?
+        out << "";
+        break;
+
     case node_type_t::OPEN_CURLYBRACKET:
         out << "{";
         for(auto c : f_children)
@@ -1282,6 +1288,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
 
     case csspp::node_type_t::NOT_EQUAL:
         out << "NOT_EQUAL";
+        break;
+
+    case csspp::node_type_t::NULL_TOKEN:
+        out << "NULL_TOKEN";
         break;
 
     case csspp::node_type_t::OPEN_CURLYBRACKET:

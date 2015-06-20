@@ -1286,6 +1286,11 @@ node::pointer_t lexer::comment(bool c_comment)
         for(;;)
         {
             wide_char_t c(getc());
+            if(c == EOF)
+            {
+                error::instance() << f_start_position << "unclosed C-like comment at the end of your document." << error_mode_t::ERROR_ERROR;
+                break;
+            }
             if(c == '*')
             {
                 c = getc();
