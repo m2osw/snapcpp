@@ -349,6 +349,10 @@ node::pointer_t lexer::next_token()
                     node::pointer_t cn(comment(false));
                     if(cn)
                     {
+                        error::instance()
+                                << f_start_position
+                                << "C++ comments should not be preserved as they are not supported by most CSS parsers."
+                                << error_mode_t::ERROR_WARNING;
                         return cn;
                     }
                     // silently let it go
@@ -1327,6 +1331,14 @@ node::pointer_t lexer::comment(bool c_comment)
                     {
                         // include a newline, but not the "//" sequence
                         str += '\n';
+                        // remove the first space if there is such
+                        // it will be readded by the assembler
+                        c = getc();
+                        if(c != ' '
+                        && c != '\t')
+                        {
+                            ungetc(c);
+                        }
                         continue;
                     }
                     ungetc(c);

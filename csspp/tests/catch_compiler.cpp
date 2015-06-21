@@ -25,8 +25,8 @@
 
 #include "catch_tests.h"
 
-#include "csspp/exceptions.h"
 #include "csspp/compiler.h"
+#include "csspp/exceptions.h"
 #include "csspp/parser.h"
 
 #include <fstream>
@@ -410,6 +410,33 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
 
         // no error left over
         REQUIRE_ERRORS("test.css(1): error: two commas in a row are invalid in a list of arguments or selectors.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // A repeated hash
+    {
+        std::stringstream ss;
+        ss << "#color div #color { color : red }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("test.css(1): error: found #color twice in selector: \"#color div #color\".\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -10021,6 +10048,530 @@ TEST_CASE("At-Keyword Messages", "[compiler] [output]")
     REQUIRE_ERRORS("");
 }
 
+TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
+{
+    // a valid @document
+    {
+        std::stringstream ss;
+        ss << "@document { body { content: \"Utf-16\" } }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"document\" I:0\n"
+"    OPEN_CURLYBRACKET\n"
+"      ARG\n"
+"        IDENTIFIER \"body\"\n"
+"      OPEN_CURLYBRACKET\n"
+"        DECLARATION \"content\"\n"
+"          STRING \"Utf-16\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a valid @media
+    {
+        std::stringstream ss;
+        ss << "@media screen { i { font-style: normal } }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"media\" I:0\n"
+"    IDENTIFIER \"screen\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      ARG\n"
+"        IDENTIFIER \"i\"\n"
+"      OPEN_CURLYBRACKET\n"
+"        DECLARATION \"font-style\"\n"
+"          IDENTIFIER \"normal\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a valid @supports
+    {
+        std::stringstream ss;
+        ss << "@supports not (screen and desktop) { b { font-weight: normal } }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"supports\" I:0\n"
+"    IDENTIFIER \"not\"\n"
+"    OPEN_PARENTHESIS\n"
+"      IDENTIFIER \"screen\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"and\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"desktop\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      ARG\n"
+"        IDENTIFIER \"b\"\n"
+"      OPEN_CURLYBRACKET\n"
+"        DECLARATION \"font-weight\"\n"
+"          IDENTIFIER \"normal\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Invalid At-Keyword Expecting Qualified Rules", "[compiler] [at-keyword]")
+{
+    // a @supports without a {}-block
+    {
+        std::stringstream ss;
+        ss << "@supports not (screen and desktop);\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"supports\" I:0\n"
+"    IDENTIFIER \"not\"\n"
+"    OPEN_PARENTHESIS\n"
+"      IDENTIFIER \"screen\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"and\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"desktop\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
+{
+    // a valid @page
+    {
+        std::stringstream ss;
+        ss << "@page { left: 2in; right: 2.2in; }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"page\" I:0\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"left\"\n"
+"        INTEGER \"in\" I:2\n"
+"      DECLARATION \"right\"\n"
+"        DECIMAL_NUMBER \"in\" D:2.2\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a valid @media
+    {
+        std::stringstream ss;
+        ss << "@media screen { i { font-style: normal } }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"media\" I:0\n"
+"    IDENTIFIER \"screen\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      ARG\n"
+"        IDENTIFIER \"i\"\n"
+"      OPEN_CURLYBRACKET\n"
+"        DECLARATION \"font-style\"\n"
+"          IDENTIFIER \"normal\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a valid @supports
+    {
+        std::stringstream ss;
+        ss << "@supports not (screen and desktop) { b { font-weight: normal } }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"supports\" I:0\n"
+"    IDENTIFIER \"not\"\n"
+"    OPEN_PARENTHESIS\n"
+"      IDENTIFIER \"screen\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"and\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"desktop\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      ARG\n"
+"        IDENTIFIER \"b\"\n"
+"      OPEN_CURLYBRACKET\n"
+"        DECLARATION \"font-weight\"\n"
+"          IDENTIFIER \"normal\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Charset", "[compiler] [invalid]")
+{
+    // a valid @charset
+    {
+        std::stringstream ss;
+        ss << "@charset \"Utf-8\";\n"
+           << "html{margin:0}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"html\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"margin\"\n"
+"        INTEGER \"\" I:0\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a valid @charset with many spaces
+    {
+        std::stringstream ss;
+        ss << "   @charset   \"   UTF-8   \"   ;\n"
+           << "html{margin:0}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"html\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"margin\"\n"
+"        INTEGER \"\" I:0\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // an @charset with a refused encoding
+    {
+        std::stringstream ss;
+        ss << "@charset \"iso-8859-6\";\n"
+           << "html{margin:0}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: we only support @charset \"utf-8\";, any other encoding is refused.\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"html\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"margin\"\n"
+"        INTEGER \"\" I:0\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // an @charset with a decimal number
+    {
+        std::stringstream ss;
+        ss << "@charset 8859.6;\n"
+           << "html{margin:0}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: the @charset is expected to be followed by exactly one string.\n");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"html\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"margin\"\n"
+"        INTEGER \"\" I:0\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no left over?
+    REQUIRE_ERRORS("");
+}
+
 TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
 {
     // script with @if / @else if / @else keywords
@@ -10216,8 +10767,8 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
         REQUIRE_ERRORS(
                 "test.css(2): error: @if is expected to have exactly 2 parameters: an expression and a block. This @if has 1 parameters.\n"
                 "test.css(3): error: '@else if ...' is missing an expression or a block.\n"
-                "test.css(3): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
-                "test.css(4): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
+                //"test.css(3): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
+                //"test.css(4): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
             );
 
         std::stringstream out;
@@ -10290,7 +10841,7 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
         REQUIRE_ERRORS(
                 "test.css(3): error: unsupported type OPEN_CURLYBRACKET as a unary expression token.\n"
                 "test.css(3): error: '@else { ... }' is expected to have 1 parameter, '@else if ... { ... }' is expected to have 2 parameters. This @else has 2 parameters.\n"
-                "test.css(4): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
+                //"test.css(4): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
             );
 
         std::stringstream out;
@@ -10344,6 +10895,7 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS(""
+                "test.css(4): error: '@else { ... }' is expected to have 1 parameter, '@else if ... { ... }' is expected to have 2 parameters. This @else has 2 parameters.\n"
                 //"test.css(3): error: '@else if ...' is missing an expression or a block.\n"
                 //"test.css(3): error: '@else { ... }' cannot follow another '@else { ... }'. Maybe you are missing an 'if expr'?\n"
                 //"test.css(4): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
@@ -10404,7 +10956,7 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
         REQUIRE_ERRORS(""
                 "test.css(4): error: '@else { ... }' cannot follow another '@else { ... }'. Maybe you are missing an 'if expr'?\n"
                 "test.css(5): error: a standalone @else is not legal, it has to be preceeded by an @if ... or @else if ...\n"
-                "test.css(4): info: Got here! (3)\n"
+                //"test.css(4): info: Got here! (3)\n"
             );
 
         std::stringstream out;

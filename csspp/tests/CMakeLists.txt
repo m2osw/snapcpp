@@ -40,6 +40,7 @@ include_directories(
 add_executable( ${PROJECT_NAME}
     catch_tests.cpp
 
+    catch_assembler.cpp
     catch_color.cpp
     catch_compiler.cpp
     catch_csspp.cpp

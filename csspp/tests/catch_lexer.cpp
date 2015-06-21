@@ -395,6 +395,7 @@ TEST_CASE("Invalid characters", "[lexer] [invalid]")
             REQUIRE_ERRORS(
                     "test.css(1): error: too many follow bytes, it cannot represent a valid UTF-8 character.\n"
                     "test.css(1): error: invalid input character: U+fffd.\n"
+                    "test.css(1): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n"
                 );
         }
 
@@ -519,7 +520,8 @@ TEST_CASE("Invalid characters", "[lexer] [invalid]")
             std::stringstream errmsg;
             errmsg << "test.css(1): error: unexpected byte in input buffer: U+"
                    << std::hex << (i == 0xC0 ? 0xFF : i)
-                   << ".\ntest.css(1): error: invalid input character: U+fffd.\n";
+                   << ".\ntest.css(1): error: invalid input character: U+fffd.\n"
+                   << "test.css(1): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n";
             REQUIRE_ERRORS(errmsg.str());
         }
     }
@@ -1740,6 +1742,9 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // one simple comment
@@ -1760,6 +1765,8 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
             REQUIRE(npos.get_page() == 1);
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
+
+            REQUIRE_ERRORS("test.css(1): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n");
         }
 
         // whitespace
@@ -1777,6 +1784,9 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // a C++ comment on multiple lines is just a comment
@@ -1798,6 +1808,8 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
             REQUIRE(npos.get_page() == 1);
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
+
+            REQUIRE_ERRORS("test.css(1): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n");
         }
 
         // whitespace
@@ -1815,6 +1827,9 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // one multi-line comment followed by another simple comment
@@ -1835,6 +1850,8 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
             REQUIRE(npos.get_page() == 1);
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
+
+            REQUIRE_ERRORS("test.css(1): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n");
         }
 
         // whitespace
@@ -1859,12 +1876,17 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
             REQUIRE(npos.get_page() == 2);
             REQUIRE(npos.get_line() == 4);
             REQUIRE(npos.get_total_line() == 6);
+
+            REQUIRE_ERRORS("test.css(4): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n");
         }
 
         // EOF
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // one comment nearly multi-line
@@ -1885,6 +1907,8 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
             REQUIRE(npos.get_page() == 1);
             REQUIRE(npos.get_line() == 1);
             REQUIRE(npos.get_total_line() == 1);
+
+            REQUIRE_ERRORS("test.css(1): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n");
         }
 
         // whitespace
@@ -1936,6 +1960,9 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // test with all types of characters that are considered valid by
@@ -2021,16 +2048,18 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
                 REQUIRE(npos.get_page() == 1);
                 REQUIRE(npos.get_line() == 1);
                 REQUIRE(npos.get_total_line() == 1);
+
+                REQUIRE_ERRORS("test.css(1): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n");
             }
 
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
         }
-    }
 
-    // no error left over
-    REQUIRE_ERRORS("");
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
 }
 
 TEST_CASE("Strings", "[lexer] [string]")

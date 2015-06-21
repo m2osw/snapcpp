@@ -497,7 +497,7 @@ node::pointer_t parser::component_value_list(node::pointer_t n, int flags)
 
             // remove leading and trailing whitespace, no need really
             // (to make sure the tests below work as expected)
-            if(!list->empty() && list->get_child(0)->is(node_type_t::WHITESPACE))
+            while(!list->empty() && list->get_child(0)->is(node_type_t::WHITESPACE))
             {
                 list->remove_child(0);
             }
@@ -557,7 +557,7 @@ node::pointer_t parser::component_value(node::pointer_t n)
     if(n->is(node_type_t::OPEN_CURLYBRACKET))
     {
         // parse a block up to '}'
-        return block(n, node_type_t::CLOSE_CURLYBRACKET);
+        return block_list(n);
     }
 
     if(n->is(node_type_t::OPEN_SQUAREBRACKET))
@@ -603,6 +603,29 @@ node::pointer_t parser::block(node::pointer_t b, node_type_t closing_token)
                           << " instead."
                           << error_mode_t::ERROR_ERROR;
     }
+
+    return b;
+}
+
+node::pointer_t parser::block_list(node::pointer_t b)
+{
+    // skip the '{'
+    next_token();
+
+    do
+    {
+        node::pointer_t children(component_value_list(f_last_token, 0));
+        b->add_child(children);
+        if(f_last_token->is(node_type_t::WHITESPACE))
+        {
+            next_token();
+        }
+    }
+    while(!f_last_token->is(node_type_t::CLOSE_CURLYBRACKET)
+       && !f_last_token->is(node_type_t::EOF_TOKEN));
+
+    // skip the '}'
+    next_token();
 
     return b;
 }

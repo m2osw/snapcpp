@@ -58,7 +58,7 @@ TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
 
         csspp::node::pointer_t n(p.stylesheet());
 
-//std::cerr << "Result is: [" << *n << "]\n";
+std::cerr << "Result is: [" << *n << "]\n";
 
         std::stringstream out;
         out << *n;
@@ -2160,6 +2160,88 @@ TEST_CASE("Is Nested Declaration", "[parser] [variable] [invalid]")
             break;
 
         }
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Rules defined inside an @-Keyword", "[parser] [variable] [invalid]")
+{
+    // which a field name with a simple nested declaration
+    {
+        std::stringstream ss;
+        ss << "@document url(http://www.example.com/), regexp(\"https://.*\")\n"
+           << "{\n"
+           << "  body { width: 8.5in; height: 9in; }\n"
+           << "  div { border: 0.25in solid lightgray }\n"
+           << "}\n"
+           << "#edge { border: 1px solid black }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  AT_KEYWORD \"document\" I:0\n"
+"    URL \"http://www.example.com/\"\n"
+"    COMMA\n"
+"    WHITESPACE\n"
+"    FUNCTION \"regexp\"\n"
+"      STRING \"https://.*\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"body\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          LIST\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"width\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              DECIMAL_NUMBER \"in\" D:8.5\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"height\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              INTEGER \"in\" I:9\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"div\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"border\"\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            DECIMAL_NUMBER \"in\" D:0.25\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"solid\"\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"lightgray\"\n"
+"  COMPONENT_VALUE\n"
+"    HASH \"edge\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"border\"\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        INTEGER \"px\" I:1\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"solid\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"black\"\n"
+
+            );
+
     }
 
     // no error left over

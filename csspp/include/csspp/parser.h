@@ -49,7 +49,8 @@ private:
     node::pointer_t         declaration(node::pointer_t identifier);
     node::pointer_t         component_value_list(node::pointer_t n, int flags);
     node::pointer_t         component_value(node::pointer_t n);
-    node::pointer_t         block(node::pointer_t block, node_type_t closing_token);
+    node::pointer_t         block(node::pointer_t b, node_type_t closing_token);
+    node::pointer_t         block_list(node::pointer_t b);
 
     lexer::pointer_t        f_lexer;
     node::pointer_t         f_last_token;

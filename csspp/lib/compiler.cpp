@@ -616,6 +616,100 @@ void compiler::compile_at_keyword(node::pointer_t n)
         return;
     }
 
+    if(at == "charset")
+    {
+        // we do not keep the @charset, we always default to UTF-8
+        // on all sides (i.e. HTML, XHTML, XML, CSS, even JS...)
+        // the assembler could re-introduce such, but again, not required
+        parent->remove_child(n);
+
+        if(n->size() != 1
+        || !n->get_child(0)->is(node_type_t::STRING))
+        {
+            error::instance() << n->get_position()
+                    << "the @charset is expected to be followed by exactly one string."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        std::string charset(n->get_child(0)->get_string());
+        while(!charset.empty() && std::isspace(charset[0]))
+        {
+            charset.erase(charset.begin(), charset.begin() + 1);
+        }
+        while(!charset.empty() && std::isspace(charset.back()))
+        {
+            charset.erase(charset.end() - 1, charset.end());
+        }
+        for(auto & c : charset)
+        {
+            c = std::tolower(c);
+        }
+        if(charset != "utf-8")
+        {
+            error::instance() << n->get_position()
+                    << "we only support @charset \"utf-8\";, any other encoding is refused."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+        return;
+    }
+
+    // TODO: use a validation to determine the list of @-keyword that need
+    //       parsing as a qualified rule, a component value, or no parsing
+    //       and others are unsupported/unknown (i.e. generate an error)
+    if(at == "document"
+    || at == "media"
+    || at == "supports")
+    {
+        if(!n->empty())
+        {
+            node::pointer_t last(n->get_last_child());
+            if(last->is(node_type_t::OPEN_CURLYBRACKET))
+            {
+                node::pointer_t component_values(last->get_last_child());
+                if(component_values->is(node_type_t::OPEN_CURLYBRACKET))
+                {
+std::cerr << "+++++++++++ Before tweaking this is like this:\n" << *n << "--------------------------------------\n";
+                    if(n->size() > 1)
+                    {
+                        argify(n);
+                    }
+                    node::pointer_t component_value(new node(node_type_t::COMPONENT_VALUE, last->get_position()));
+                    component_value->take_over_children_of(last);
+                    //n->replace_child(last, component_value);
+                    last->add_child(component_value);
+                    compile_qualified_rule(component_value);
+                }
+            }
+        }
+        return;
+    }
+
+    if(at == "font-face"
+    || at == "page")
+    {
+        if(!n->empty())
+        {
+            node::pointer_t last(n->get_last_child());
+            if(last->is(node_type_t::OPEN_CURLYBRACKET))
+            {
+                safe_parents_t safe_parents(f_state, last);
+                size_t const max_children(last->size());
+                for(size_t idx(0); idx < max_children; ++idx)
+                {
+                    node::pointer_t child(last->get_child(idx));
+                    // TODO: add support for other node types?
+                    if(child->is(node_type_t::COMPONENT_VALUE))
+                    {
+                        safe_parents_t safe_component_parents(f_state, child);
+                        compile_component_value(child);
+                    }
+                }
+            }
+        }
+        return;
+    }
 }
 
 node::pointer_t compiler::compile_expression(node::pointer_t n, bool skip_whitespace, bool list_of_expressions)
@@ -665,7 +759,7 @@ node::pointer_t compiler::compile_expression(node::pointer_t n, bool skip_whites
     return result;
 }
 
-void compiler::replace_import(node::pointer_t parent, node::pointer_t import, node::pointer_t expr, size_t & idx)
+void compiler::replace_import(node::pointer_t parent, node::pointer_t import, size_t & idx)
 {
     static_cast<void>(import);
 
@@ -679,6 +773,8 @@ void compiler::replace_import(node::pointer_t parent, node::pointer_t import, no
     //
     //   @import string | url() [ media-list ] ';'
     //
+
+    node::pointer_t expr(at_keyword_expression(import));
 
     // we only support arguments with one string
     // (@import accepts strings and url() as their first parameter)
@@ -1551,16 +1647,20 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
 {
     // @<id> [expression] '{' ... '}'
     //
-    // Note that the expression is optional.
+    // Note that the expression is optional. Not only that, in most
+    // cases we do not attempt to compile it because it is not expected
+    // to be an SCSS expression (especially in an @support command).
     //
     // All the @-keyword that are used to control the flow of the
-    // SCSS file are to be handled here; these include:
+    // SCSS file are to be handled here; at this time these include:
     //
     //  @else       -- changes what happens (i.e. sets a variable)
     //  @if         -- changes what happens (i.e. sets a variable)
     //  @import     -- changes input code
     //  @include    -- same as $var or $var(args)
     //  @mixin      -- changes variables
+    //
+    // To be added are: @for, @while, @each.
     //
     std::string const at(n->get_string());
 
@@ -1569,51 +1669,9 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
         replace_variables(n);
     }
 
-    // TODO: calculating the expression at this point is somewhat of
-    //       an early optimization; the more @-keyword we support,
-    //       the more special cases (such as the @include) we will need
-    //       to support... I am thinking that may actually need to move
-    //       into a function and all those @-keyword call that function
-    //       as required...
-    //
-    node::pointer_t expr;
-    if(at != "include"
-    && at != "mixin"
-    && !n->empty()
-    && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
-    {
-        if(at == "else"
-        && n->get_child(0)->is(node_type_t::IDENTIFIER)
-        && n->get_child(0)->get_string() == "if")
-        {
-            // this is a very special case of the:
-            //
-            //    @else if expr '{' ... '}'
-            //
-            // (this is from SASS, if it had been me, I would have used
-            // @elseif or @else-if and not @else if ...)
-            //
-            n->remove_child(0);
-            if(!n->empty() && n->get_child(0)->is(node_type_t::WHITESPACE))
-            {
-                // this should always happen because otherwise we are missing
-                // the actual expression!
-                n->remove_child(0);
-            }
-            if(n->size() == 1)
-            {
-                error::instance() << n->get_position()
-                        << "'@else if ...' is missing an expression or a block."
-                        << error_mode_t::ERROR_ERROR;
-                return;
-            }
-        }
-        expr = compile_expression(n, true, false);
-    }
-
     if(at == "import")
     {
-        replace_import(parent, n, expr, idx);
+        replace_import(parent, n, idx);
         return;
     }
 
@@ -1634,7 +1692,7 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
         // data at that position if necessary
         //
         parent->remove_child(idx);
-        replace_if(parent, n, expr, idx);
+        replace_if(parent, n, idx);
         return;
     }
 
@@ -1642,7 +1700,7 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
     {
         // remove the @else from the parent
         parent->remove_child(idx);
-        replace_else(parent, n, expr, idx);
+        replace_else(parent, n, idx);
         return;
     }
 
@@ -1679,12 +1737,32 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
         return;
     }
 
+    if(at == "error"
+    || at == "warning"
+    || at == "message"
+    || at == "info"
+    || at == "debug")
+    {
+        // make sure the expression is calculated for these
+        at_keyword_expression(n);
+    }
+
     // in all other cases the @-keyword is kept as is
     ++idx;
 }
 
-void compiler::replace_if(node::pointer_t parent, node::pointer_t n, node::pointer_t expr, size_t idx)
+node::pointer_t compiler::at_keyword_expression(node::pointer_t n)
 {
+    // calculate the expression if present
+    return !n->empty() && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET)
+            ? compile_expression(n, true, false)
+            : node::pointer_t();
+}
+
+void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
+{
+    node::pointer_t expr(at_keyword_expression(n));
+
     // make sure that we got a valid syntax
     if(n->size() != 2 || !expr)
     {
@@ -1725,8 +1803,71 @@ void compiler::replace_if(node::pointer_t parent, node::pointer_t n, node::point
     }
 }
 
-void compiler::replace_else(node::pointer_t parent, node::pointer_t n, node::pointer_t expr, size_t idx)
+void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t idx)
 {
+    node::pointer_t next;
+
+    // FALSE or INVALID, we remove the block to avoid
+    // executing it since we do not know whether it should
+    // be executed or not; also we mark the next block as
+    // "true" if it is an '@else' or '@else if'
+    if(idx < parent->size())
+    {
+        next = parent->get_child(idx);
+        if(next->is(node_type_t::AT_KEYWORD)
+        && next->get_string() == "else")
+        {
+            if(n->size() == 1)
+            {
+                error::instance() << n->get_position()
+                        << "'@else { ... }' cannot follow another '@else { ... }'. Maybe you are missing an 'if expr'?"
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+
+            // at this point we do not know the state that the next
+            // @else/@else if should have so we use "executed" as a
+            // safe value
+            //
+            next->set_integer(g_if_or_else_executed);
+        }
+        else
+        {
+            next.reset();
+        }
+    }
+    node::pointer_t expr;
+
+    bool const else_if(n->get_child(0)->is(node_type_t::IDENTIFIER)
+                    && n->get_child(0)->get_string() == "if");
+
+    // in case of an else_if, check the expression
+    if(else_if)
+    {
+        // this is a very special case of the:
+        //
+        //    @else if expr '{' ... '}'
+        //
+        // (this is from SASS, if it had been me, I would have used
+        // @elseif or @else-if and not @else if ...)
+        //
+        n->remove_child(0);
+        if(!n->empty() && n->get_child(0)->is(node_type_t::WHITESPACE))
+        {
+            // this should always happen because otherwise we are missing
+            // the actual expression!
+            n->remove_child(0);
+        }
+        if(n->size() == 1)
+        {
+            error::instance() << n->get_position()
+                    << "'@else if ...' is missing an expression or a block."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+        expr = at_keyword_expression(n);
+    }
+
     // if this '@else' is still marked with 'g_if_or_else_undefined'
     // then there was no '@if' or '@else if' before it which is an error
     //
@@ -1784,31 +1925,9 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, node::poi
         }
     }
 
-    // FALSE or INVALID, we remove the block to avoid
-    // executing it since we do not know whether it should
-    // be executed or not; also we mark the next block as
-    // "true" if it is an '@else' or '@else if'
-    if(idx < parent->size())
+    if(next)
     {
-        node::pointer_t next(parent->get_child(idx));
-        if(next->is(node_type_t::AT_KEYWORD)
-        && next->get_string() == "else")
-        {
-            if(n->size() == 1)
-            {
-                error::instance() << n->get_position()
-                        << "'@else { ... }' cannot follow another '@else { ... }'. Maybe you are missing an 'if expr'?"
-                        << error_mode_t::ERROR_ERROR;
-                return;
-            }
-
-            // mark that the '@else' is at the right place and whether
-            // it may be 'true' (g_if_or_else_false_so_far) or not
-            // (g_if_or_else_executed); our status already shows
-            // what it can be
-            //
-            next->set_integer(status);
-        }
+        next->set_integer(status);
     }
 }
 
@@ -2624,6 +2743,32 @@ bool compiler::parse_selector(node::pointer_t n)
         if(!selector_list(arg, pos))
         {
             return false;
+        }
+
+        // check and make sure that #<id> is not repeated in the same
+        // list, because that's an error (TBD--there may be one exception
+        // now that we have the ~ operator...)
+        std::map<std::string, bool> hash;
+        for(size_t j(0); j < arg->size(); ++j)
+        {
+            node::pointer_t child(arg->get_child(j));
+            if(child->is(node_type_t::HASH))
+            {
+                if(hash.find(child->get_string()) != hash.end())
+                {
+                    error::instance() << arg->get_position()
+                            << "found #"
+                            << child->get_string()
+                            << " twice in selector: \""
+                            << arg->to_string(0)
+                            << "\"."
+                            << error_mode_t::ERROR_ERROR;
+                }
+                else
+                {
+                    hash[child->get_string()] = true;
+                }
+            }
         }
     }
 

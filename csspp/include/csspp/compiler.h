@@ -73,10 +73,11 @@ private:
     void                    compile_at_keyword(node::pointer_t n);
     node::pointer_t         compile_expression(node::pointer_t n, bool skip_whitespace, bool list_of_expressions);
 
-    void                    replace_import(node::pointer_t parent, node::pointer_t import, node::pointer_t expr, size_t & idx);
+    void                    replace_import(node::pointer_t parent, node::pointer_t import, size_t & idx);
     void                    replace_at_keyword(node::pointer_t parent, node::pointer_t n, size_t & idx);
-    void                    replace_if(node::pointer_t parent, node::pointer_t n, node::pointer_t expr, size_t idx);
-    void                    replace_else(node::pointer_t parent, node::pointer_t n, node::pointer_t expr, size_t idx);
+    node::pointer_t         at_keyword_expression(node::pointer_t n);
+    void                    replace_if(node::pointer_t parent, node::pointer_t n, size_t idx);
+    void                    replace_else(node::pointer_t parent, node::pointer_t n, size_t idx);
     void                    handle_mixin(node::pointer_t n);
 
     void                    mark_selectors(node::pointer_t n);

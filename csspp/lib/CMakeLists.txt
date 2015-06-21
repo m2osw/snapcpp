@@ -40,6 +40,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CSSPPConfigVersion.cmake.in
                @ONLY)
 
 add_library( ${PROJECT_NAME} SHARED
+    assembler.cpp                               # Write the nodes back out
     csspp.cpp                                   # Some basics about the library
     color.cpp                                   # Manager RGBA colors
     compiler.cpp                                # Work on a tree of node to make it CSS compatible

@@ -41,6 +41,7 @@ then
     echo "   --full         run all tests and publish to the world"
     echo
     echo "To run specific tests, use one of the tags defined in the test suite."
+    echo "   '[assembler]'"
     echo "   '[color]'"
     echo "   '[compiler]'"
     echo "   '[csspp]'"

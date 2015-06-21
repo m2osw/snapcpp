@@ -2,19 +2,23 @@
 To be closer to what SASS supports, we shall implement the following
 additional features:
 
-. variable named when calling a function:
+. variable named when calling a function (to allow any order):
 
      $func($name: value, $arg2: value2, ...)
 
 
 . Implement @extend
 
+
 . Support the placeholder in the assembler
+
 
 . Support for lists / maps in expressions
 
+
 . Full coverage for expressions, also look into adding many still missing
   operations (i.e. color + color, color * 3, int * flt, etc.)
+
 
 . Add !important in variables, preventing further definitions of that variable
 
@@ -22,3 +26,18 @@ additional features:
 
       $var-final: 15px;  <-- error, !important prevents redefinition
 
+
+. Add code to check all selectors (that way we can err on a syntax error):
+
+      @selectors {
+        @extends; [or] @override; -- whether we reset the system lists or not
+        tags: html div p span ...;
+        invalid-tags: title link script iframe ...;
+        classes: .wrapper .menu-item ...;
+        identifiers: #content #menu ...;
+        attributes: href enabled class ...;
+        attribute-values: ???; -- would we really want to support that one?!
+      }
+
+
+vim: tw=2 sw=2 et
