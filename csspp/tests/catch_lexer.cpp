@@ -1793,7 +1793,7 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
     // that is followed by a number of other C++ comments
     {
         std::stringstream ss;
-        ss << "// test\n// a\r\n// multi-line\f// comment\r// too @preserve\n";
+        ss << "// test\n// a\r\n// multi-line\f//comment\r//\ttoo @preserve\n";
         csspp::position pos("test.css");
         csspp::lexer l(ss, pos);
 
@@ -1801,7 +1801,7 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
         {
             csspp::node::pointer_t comment(l.next_token());
             REQUIRE(comment->is(csspp::node_type_t::COMMENT));
-            REQUIRE(comment->get_string() == "test\n a\n multi-line\n comment\n too @preserve");
+            REQUIRE(comment->get_string() == "test\na\nmulti-line\ncomment\ntoo @preserve");
             REQUIRE(comment->get_integer() == 0); // C++ comment
             csspp::position const & npos(comment->get_position());
             REQUIRE(npos.get_filename() == "test.css");
@@ -1835,7 +1835,7 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
     // one multi-line comment followed by another simple comment
     {
         std::stringstream ss;
-        ss << "// test\n// a\r\n// multi-line\f// comment\r\n// too @preserve\r\n\r\n// with a second comment @preserve";
+        ss << "// test\n//\ta\r\n//multi-line\f// comment\r\n// too @preserve\r\n\r\n// with a second comment @preserve";
         csspp::position pos("test.css");
         csspp::lexer l(ss, pos);
 
@@ -1843,7 +1843,7 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
         {
             csspp::node::pointer_t comment(l.next_token());
             REQUIRE(comment->is(csspp::node_type_t::COMMENT));
-            REQUIRE(comment->get_string() == "test\n a\n multi-line\n comment\n too @preserve");
+            REQUIRE(comment->get_string() == "test\na\nmulti-line\ncomment\ntoo @preserve");
             REQUIRE(comment->get_integer() == 0); // C++ comment
             csspp::position const & npos(comment->get_position());
             REQUIRE(npos.get_filename() == "test.css");
@@ -2094,6 +2094,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // one simple string with " and including '
@@ -2116,6 +2119,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // one simple string with '
@@ -2148,6 +2154,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // one simple string with ' including "
@@ -2170,6 +2179,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // string with escaped characters
@@ -2264,6 +2276,9 @@ TEST_CASE("Strings", "[lexer] [string]")
             }
 
             REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+            // no error left over
+            REQUIRE_ERRORS("");
         }
     }
 
@@ -2289,6 +2304,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // unterminated string before \n
@@ -2382,6 +2400,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // special escapes in a string: \ + <EOF>
@@ -2407,6 +2428,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // special escapes in a string: \ + '\n'
@@ -2430,6 +2454,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // special escapes in a string: \ + <FFFD>
@@ -2453,6 +2480,9 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // no error left over
+        REQUIRE_ERRORS("");
     }
 
     // escapes in a string: \ + <number too large>
@@ -2478,10 +2508,10 @@ TEST_CASE("Strings", "[lexer] [string]")
         }
 
         REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
-    }
 
-    // no error left over
-    REQUIRE_ERRORS("");
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
 }
 
 TEST_CASE("Identifiers", "[lexer] [identifier]")

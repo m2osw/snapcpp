@@ -616,13 +616,40 @@ node::pointer_t parser::block_list(node::pointer_t b)
     {
         node::pointer_t children(component_value_list(f_last_token, 0));
         b->add_child(children);
-        if(f_last_token->is(node_type_t::WHITESPACE))
+        // WHITESPACE are skiped between component values
+        // Also the variable tokens that force a return without a next_token()
+        if(f_last_token->is(node_type_t::WHITESPACE)
+        || f_last_token->is(node_type_t::CDO)
+        || f_last_token->is(node_type_t::CDC))
         {
+            next_token();
+        }
+        else if(f_last_token->is(node_type_t::CLOSE_PARENTHESIS)
+             || f_last_token->is(node_type_t::CLOSE_SQUAREBRACKET))
+        {
+            error::instance() << b->get_position()
+                              << "Block expected to end with "
+                              << node_type_t::CLOSE_CURLYBRACKET
+                              << " but got "
+                              << f_last_token->get_type()
+                              << " instead."
+                              << error_mode_t::ERROR_ERROR;
             next_token();
         }
     }
     while(!f_last_token->is(node_type_t::CLOSE_CURLYBRACKET)
        && !f_last_token->is(node_type_t::EOF_TOKEN));
+
+    if(!f_last_token->is(node_type_t::CLOSE_CURLYBRACKET))
+    {
+        error::instance() << b->get_position()
+                          << "Block expected to end with "
+                          << node_type_t::CLOSE_CURLYBRACKET
+                          << " but got "
+                          << f_last_token->get_type()
+                          << " instead."
+                          << error_mode_t::ERROR_ERROR;
+    }
 
     // skip the '}'
     next_token();

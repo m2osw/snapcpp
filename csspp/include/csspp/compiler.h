@@ -70,6 +70,7 @@ private:
     void                    compile_component_value(node::pointer_t n);
     void                    compile_qualified_rule(node::pointer_t n);
     void                    compile_declaration(node::pointer_t n);
+    void                    compile_declaration_values(node::pointer_t declaration);
     void                    compile_at_keyword(node::pointer_t n);
     node::pointer_t         compile_expression(node::pointer_t n, bool skip_whitespace, bool list_of_expressions);
 

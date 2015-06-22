@@ -261,6 +261,16 @@ void assembler::output(node::pointer_t n)
         f_impl->output_operator("+", g_flag_optional_spaces);
         break;
 
+    case node_type_t::ARG:
+        {
+            size_t const max_children(n->size());
+            for(size_t idx(0); idx < max_children; ++idx)
+            {
+                output(n->get_child(idx));
+            }
+        }
+        break;
+
     case node_type_t::AT_KEYWORD:
         output_at_keyword(n);
         break;
@@ -484,13 +494,24 @@ void assembler::output(node::pointer_t n)
         }
         break;
 
-    case node_type_t::ARG:
     case node_type_t::LIST:
         {
             size_t const max_children(n->size());
             for(size_t idx(0); idx < max_children; ++idx)
             {
-                output(n->get_child(idx));
+                node::pointer_t child(n->get_child(idx));
+                if(child->is(node_type_t::DECLARATION))
+                {
+                    output(child);
+                    if(idx + 1 != max_children)
+                    {
+                        f_impl->output_operator(";", g_flag_optional_space_after_or_newline);
+                    }
+                }
+                else
+                {
+                    output(child);
+                }
             }
         }
         break;

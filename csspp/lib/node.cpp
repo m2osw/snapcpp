@@ -36,6 +36,9 @@ size_t const node::npos;
 namespace
 {
 
+uint32_t g_node_count = 0;
+uint32_t g_node_max_count = 0;
+
 union convert_t
 {
     integer_t           f_int;
@@ -178,6 +181,23 @@ node::node(node_type_t const type, position const & pos)
     : f_type(type)
     , f_position(pos)
 {
+    ++g_node_count;
+    if(g_node_max_count != 0
+    && g_node_count >= g_node_max_count)
+    {
+        // This is NOT a bug per se, you may limit the number of nodes in case
+        // you have a limited amount of memory available or you suspect the
+        // CSS Preprocessor has a bug which allocates nodes forever; this is
+        // used for our tests with a maximum number of nodes equal to one
+        // million (which generally represents a lot less than 1Gb of RAM.)
+        std::cerr << "error: node of type " << type << " cannot be allocated.\n";                                                           // LCOV_EXCL_LINE
+        throw csspp_exception_overflow("node.cpp: node::node() too many nodes allocated at the same time, we are probably having a leak."); // LCOV_EXCL_LINE
+    }
+}
+
+node::~node()
+{
+    --g_node_count;
 }
 
 node::pointer_t node::clone() const
@@ -1134,6 +1154,11 @@ void node::display(std::ostream & out, uint32_t indent) const
         break;
 
     }
+}
+
+void node::limit_nodes_to(uint32_t count)
+{
+    g_node_max_count = count;
 }
 
 } // namespace csspp

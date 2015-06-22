@@ -5664,10 +5664,11 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "        IDENTIFIER \"foo\"\n"
 // {color:red}
 "    OPEN_CURLYBRACKET\n"
-"      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
-"      DECLARATION \"width\"\n"
-"        INTEGER \"px\" I:12\n"
+"      LIST\n"
+"        DECLARATION \"color\"\n"
+"          IDENTIFIER \"red\"\n"
+"        DECLARATION \"width\"\n"
+"          INTEGER \"px\" I:12\n"
 
             );
 
@@ -6858,6 +6859,8 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 
         csspp::node::pointer_t n(p.stylesheet());
 
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
         // no errors so far
         REQUIRE_ERRORS("");
 
@@ -6869,10 +6872,10 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 
         c.compile(true);
 
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
         // no error left over
         REQUIRE_ERRORS("");
-
-//std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
         std::stringstream out;
         out << *n;
@@ -6923,10 +6926,10 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 
         c.compile(true);
 
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
         // no error left over
         REQUIRE_ERRORS("");
-
-//std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
         std::stringstream out;
         out << *n;
@@ -6942,17 +6945,18 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "      IDENTIFIER \"a\"\n"
 // {color:blue}
 "    OPEN_CURLYBRACKET\n"
-"      DECLARATION \"color\"\n"
-"        IDENTIFIER \"blue\"\n"
-"      COMPONENT_VALUE\n"
-"        ARG\n"
+"      LIST\n"
+"        DECLARATION \"color\"\n"
+"          IDENTIFIER \"blue\"\n"
+"        COMPONENT_VALUE\n"
+"          ARG\n"
 // &:hover
-"          REFERENCE\n"
-"          COLON\n"
-"          IDENTIFIER \"hover\"\n"
-"        OPEN_CURLYBRACKET\n"
-"          DECLARATION \"color\"\n"
-"            IDENTIFIER \"red\"\n"
+"            REFERENCE\n"
+"            COLON\n"
+"            IDENTIFIER \"hover\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            DECLARATION \"color\"\n"
+"              IDENTIFIER \"red\"\n"
 
             );
 
@@ -7568,12 +7572,13 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"font\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          DECLARATION \"family\"\n"
-"            IDENTIFIER \"helvetica\"\n"
-"          DECLARATION \"color\"\n"
-"            IDENTIFIER \"red\"\n"
-"          DECLARATION \"size\"\n"
-"            INTEGER \"px\" I:8\n"
+"          LIST\n"
+"            DECLARATION \"family\"\n"
+"              IDENTIFIER \"helvetica\"\n"
+"            DECLARATION \"color\"\n"
+"              IDENTIFIER \"red\"\n"
+"            DECLARATION \"size\"\n"
+"              INTEGER \"px\" I:8\n"
 
             );
 
@@ -7623,10 +7628,11 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"margin\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          DECLARATION \"left\"\n"
-"            INTEGER \"px\" I:317\n"
-"          DECLARATION \"top\"\n"
-"            INTEGER \"px\" I:8\n"
+"          LIST\n"
+"            DECLARATION \"left\"\n"
+"              INTEGER \"px\" I:317\n"
+"            DECLARATION \"top\"\n"
+"              INTEGER \"px\" I:8\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"p\"\n"
@@ -7677,37 +7683,39 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "      LIST\n"
 "        VARIABLE \"m\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"left\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:300\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:51\n"
-"            WHITESPACE\n"
-"            DIVIDE\n"
-"            WHITESPACE\n"
-"            INTEGER \"\" I:3\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"top\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:3\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:5\n"
+"          LIST\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"left\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:300\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:51\n"
+"              WHITESPACE\n"
+"              DIVIDE\n"
+"              WHITESPACE\n"
+"              INTEGER \"\" I:3\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"top\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:3\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:5\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"margin\"\n"
-"        DECLARATION \"left\"\n"
-"          INTEGER \"px\" I:317\n"
-"        DECLARATION \"top\"\n"
-"          INTEGER \"px\" I:8\n"
+"        LIST\n"
+"          DECLARATION \"left\"\n"
+"            INTEGER \"px\" I:317\n"
+"          DECLARATION \"top\"\n"
+"            INTEGER \"px\" I:8\n"
 
             );
 
@@ -7804,6 +7812,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 
         csspp::node::pointer_t n(p.stylesheet());
 
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
         // no errors so far
         REQUIRE_ERRORS("");
 
@@ -7833,37 +7843,39 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "            VARIABLE \"border\"\n"
 "            INTEGER \"px\" I:1\n"
 "        OPEN_CURLYBRACKET\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"left\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"width\"\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:51\n"
-"            WHITESPACE\n"
-"            DIVIDE\n"
-"            WHITESPACE\n"
-"            INTEGER \"\" I:3\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"top\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"border\"\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:5\n"
+"          LIST\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"left\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              VARIABLE \"width\"\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:51\n"
+"              WHITESPACE\n"
+"              DIVIDE\n"
+"              WHITESPACE\n"
+"              INTEGER \"\" I:3\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"top\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              VARIABLE \"border\"\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:5\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"margin\"\n"
-"        DECLARATION \"left\"\n"
-"          INTEGER \"px\" I:317\n"
-"        DECLARATION \"top\"\n"
-"          INTEGER \"px\" I:8\n"
+"        LIST\n"
+"          DECLARATION \"left\"\n"
+"            INTEGER \"px\" I:317\n"
+"          DECLARATION \"top\"\n"
+"            INTEGER \"px\" I:8\n"
 
             );
 
@@ -7911,37 +7923,39 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "            VARIABLE \"border\"\n"
 "            INTEGER \"px\" I:1\n"
 "        OPEN_CURLYBRACKET\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"left\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"width\"\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:51\n"
-"            WHITESPACE\n"
-"            DIVIDE\n"
-"            WHITESPACE\n"
-"            INTEGER \"\" I:3\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"top\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"border\"\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:5\n"
+"          LIST\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"left\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              VARIABLE \"width\"\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:51\n"
+"              WHITESPACE\n"
+"              DIVIDE\n"
+"              WHITESPACE\n"
+"              INTEGER \"\" I:3\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"top\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              VARIABLE \"border\"\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:5\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"margin\"\n"
-"        DECLARATION \"left\"\n"
-"          INTEGER \"px\" I:317\n"
-"        DECLARATION \"top\"\n"
-"          INTEGER \"px\" I:8\n"
+"        LIST\n"
+"          DECLARATION \"left\"\n"
+"            INTEGER \"px\" I:317\n"
+"          DECLARATION \"top\"\n"
+"            INTEGER \"px\" I:8\n"
 
             );
 
@@ -7989,37 +8003,39 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "            VARIABLE \"border\"\n"
 "            INTEGER \"px\" I:1\n"
 "        OPEN_CURLYBRACKET\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"left\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"width\"\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:51\n"
-"            WHITESPACE\n"
-"            DIVIDE\n"
-"            WHITESPACE\n"
-"            INTEGER \"\" I:3\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"top\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"border\"\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:5\n"
+"          LIST\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"left\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              VARIABLE \"width\"\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:51\n"
+"              WHITESPACE\n"
+"              DIVIDE\n"
+"              WHITESPACE\n"
+"              INTEGER \"\" I:3\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"top\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              VARIABLE \"border\"\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:5\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"margin\"\n"
-"        DECLARATION \"left\"\n"
-"          INTEGER \"px\" I:317\n"
-"        DECLARATION \"top\"\n"
-"          INTEGER \"px\" I:6\n"
+"        LIST\n"
+"          DECLARATION \"left\"\n"
+"            INTEGER \"px\" I:317\n"
+"          DECLARATION \"top\"\n"
+"            INTEGER \"px\" I:6\n"
 
             );
 
@@ -8069,35 +8085,37 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "            WHITESPACE\n"
 "            INTEGER \"px\" I:3\n"
 "        OPEN_CURLYBRACKET\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"left\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"width\"\n"
-"            WHITESPACE\n"
-"            ADD\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:51\n"
-"            WHITESPACE\n"
-"            DIVIDE\n"
-"            WHITESPACE\n"
-"            INTEGER \"\" I:3\n"
-"          COMPONENT_VALUE\n"
-"            IDENTIFIER \"top\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"border\"\n"
+"          LIST\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"left\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              VARIABLE \"width\"\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:51\n"
+"              WHITESPACE\n"
+"              DIVIDE\n"
+"              WHITESPACE\n"
+"              INTEGER \"\" I:3\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"top\"\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              VARIABLE \"border\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"margin\"\n"
-"        DECLARATION \"left\"\n"
-"          INTEGER \"px\" I:317\n"
-"        DECLARATION \"top\"\n"
-"          INTEGER \"px\" I:1\n"
-"          WHITESPACE\n"
-"          INTEGER \"px\" I:3\n"
+"        LIST\n"
+"          DECLARATION \"left\"\n"
+"            INTEGER \"px\" I:317\n"
+"          DECLARATION \"top\"\n"
+"            INTEGER \"px\" I:1\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:3\n"
 
             );
 
@@ -8115,6 +8133,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
         csspp::parser p(l);
 
         csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
 
         // no errors so far
         REQUIRE_ERRORS("");
@@ -8142,7 +8162,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          ARG\n"
 "            VARIABLE \"border\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          VARIABLE \"border\"\n"
+"          COMPONENT_VALUE\n"
+"            VARIABLE \"border\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"br\"\n"
@@ -8227,6 +8248,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 
         csspp::node::pointer_t n(p.stylesheet());
 
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
         // no errors so far
         REQUIRE_ERRORS("");
 
@@ -8255,14 +8278,16 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          LIST\n"
 "            VARIABLE \"size\"\n"
 "            INTEGER \"px\" I:300\n"
-"      DECLARATION \"entry\"\n"
-"        OPEN_CURLYBRACKET\n"
-"          DECLARATION \"width\"\n"
-"            INTEGER \"px\" I:300\n"
-"          DECLARATION \"height\"\n"
-"            INTEGER \"px\" I:225\n"
-"      DECLARATION \"junior\"\n"
-"        INTEGER \"px\" I:313\n"
+"      LIST\n"
+"        DECLARATION \"entry\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            LIST\n"
+"              DECLARATION \"width\"\n"
+"                INTEGER \"px\" I:300\n"
+"              DECLARATION \"height\"\n"
+"                INTEGER \"px\" I:225\n"
+"        DECLARATION \"junior\"\n"
+"          INTEGER \"px\" I:313\n"
 
             );
 
@@ -8321,18 +8346,20 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          LIST\n"
 "            VARIABLE \"size\"\n"
 "            INTEGER \"px\" I:300\n"
-"      DECLARATION \"entry\"\n"
-"        OPEN_CURLYBRACKET\n"
-"            V:size\n"
-"              LIST\n"
-"                VARIABLE \"size\"\n"
+"      LIST\n"
+"        DECLARATION \"entry\"\n"
+"          OPEN_CURLYBRACKET\n"
+"              V:size\n"
+"                LIST\n"
+"                  VARIABLE \"size\"\n"
+"                  INTEGER \"px\" I:50\n"
+"            LIST\n"
+"              DECLARATION \"width\"\n"
 "                INTEGER \"px\" I:50\n"
-"          DECLARATION \"width\"\n"
-"            INTEGER \"px\" I:50\n"
-"          DECLARATION \"height\"\n"
-"            INTEGER \"px\" I:37\n"
-"      DECLARATION \"junior\"\n"
-"        INTEGER \"px\" I:313\n"
+"              DECLARATION \"height\"\n"
+"                INTEGER \"px\" I:37\n"
+"        DECLARATION \"junior\"\n"
+"          INTEGER \"px\" I:313\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"section\"\n"
@@ -8393,14 +8420,16 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      DECLARATION \"entry\"\n"
-"        OPEN_CURLYBRACKET\n"
-"          DECLARATION \"width\"\n"
-"            INTEGER \"px\" I:50\n"
-"          DECLARATION \"height\"\n"
-"            INTEGER \"px\" I:37\n"
-"      DECLARATION \"junior\"\n"
-"        INTEGER \"px\" I:63\n"
+"      LIST\n"
+"        DECLARATION \"entry\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            LIST\n"
+"              DECLARATION \"width\"\n"
+"                INTEGER \"px\" I:50\n"
+"              DECLARATION \"height\"\n"
+"                INTEGER \"px\" I:37\n"
+"        DECLARATION \"junior\"\n"
+"          INTEGER \"px\" I:63\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"section\"\n"
@@ -8461,14 +8490,16 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      DECLARATION \"entry\"\n"
-"        OPEN_CURLYBRACKET\n"
-"          DECLARATION \"width\"\n"
-"            INTEGER \"px\" I:100\n"
-"          DECLARATION \"height\"\n"
-"            INTEGER \"px\" I:75\n"
-"      DECLARATION \"junior\"\n"
-"        INTEGER \"px\" I:113\n"
+"      LIST\n"
+"        DECLARATION \"entry\"\n"
+"          OPEN_CURLYBRACKET\n"
+"            LIST\n"
+"              DECLARATION \"width\"\n"
+"                INTEGER \"px\" I:100\n"
+"              DECLARATION \"height\"\n"
+"                INTEGER \"px\" I:75\n"
+"        DECLARATION \"junior\"\n"
+"          INTEGER \"px\" I:113\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"section\"\n"
@@ -8614,16 +8645,18 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      LIST\n"
 "        VARIABLE \"var\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          IDENTIFIER \"div\"\n"
-"          OPEN_CURLYBRACKET\n"
-"            IDENTIFIER \"border\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:1\n"
-"            WHITESPACE\n"
-"            IDENTIFIER \"solid\"\n"
-"            WHITESPACE\n"
-"            HASH \"ffe093\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"div\"\n"
+"            OPEN_CURLYBRACKET\n"
+"              COMPONENT_VALUE\n"
+"                IDENTIFIER \"border\"\n"
+"                COLON\n"
+"                WHITESPACE\n"
+"                INTEGER \"px\" I:1\n"
+"                WHITESPACE\n"
+"                IDENTIFIER \"solid\"\n"
+"                WHITESPACE\n"
+"                HASH \"ffe093\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -8679,16 +8712,18 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          ARG\n"
 "            VARIABLE \"width\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          IDENTIFIER \"div\"\n"
-"          OPEN_CURLYBRACKET\n"
-"            IDENTIFIER \"border\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"width\"\n"
-"            WHITESPACE\n"
-"            IDENTIFIER \"solid\"\n"
-"            WHITESPACE\n"
-"            HASH \"ffe093\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"div\"\n"
+"            OPEN_CURLYBRACKET\n"
+"              COMPONENT_VALUE\n"
+"                IDENTIFIER \"border\"\n"
+"                COLON\n"
+"                WHITESPACE\n"
+"                VARIABLE \"width\"\n"
+"                WHITESPACE\n"
+"                IDENTIFIER \"solid\"\n"
+"                WHITESPACE\n"
+"                HASH \"ffe093\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -8744,16 +8779,18 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      LIST\n"
 "        IDENTIFIER \"nice-button\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          IDENTIFIER \"div\"\n"
-"          OPEN_CURLYBRACKET\n"
-"            IDENTIFIER \"border\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:3\n"
-"            WHITESPACE\n"
-"            IDENTIFIER \"solid\"\n"
-"            WHITESPACE\n"
-"            HASH \"ffe093\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"div\"\n"
+"            OPEN_CURLYBRACKET\n"
+"              COMPONENT_VALUE\n"
+"                IDENTIFIER \"border\"\n"
+"                COLON\n"
+"                WHITESPACE\n"
+"                INTEGER \"px\" I:3\n"
+"                WHITESPACE\n"
+"                IDENTIFIER \"solid\"\n"
+"                WHITESPACE\n"
+"                HASH \"ffe093\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -8811,16 +8848,18 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          ARG\n"
 "            VARIABLE \"width\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          IDENTIFIER \"div\"\n"
-"          OPEN_CURLYBRACKET\n"
-"            IDENTIFIER \"border\"\n"
-"            COLON\n"
-"            WHITESPACE\n"
-"            VARIABLE \"width\"\n"
-"            WHITESPACE\n"
-"            IDENTIFIER \"solid\"\n"
-"            WHITESPACE\n"
-"            HASH \"ffe093\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"div\"\n"
+"            OPEN_CURLYBRACKET\n"
+"              COMPONENT_VALUE\n"
+"                IDENTIFIER \"border\"\n"
+"                COLON\n"
+"                WHITESPACE\n"
+"                VARIABLE \"width\"\n"
+"                WHITESPACE\n"
+"                IDENTIFIER \"solid\"\n"
+"                WHITESPACE\n"
+"                HASH \"ffe093\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -8876,11 +8915,12 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      LIST\n"
 "        IDENTIFIER \"var\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          INTEGER \"px\" I:1\n"
-"          WHITESPACE\n"
-"          IDENTIFIER \"solid\"\n"
-"          WHITESPACE\n"
-"          HASH \"ff0000\"\n"
+"          COMPONENT_VALUE\n"
+"            INTEGER \"px\" I:1\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"solid\"\n"
+"            WHITESPACE\n"
+"            HASH \"ff0000\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -8936,16 +8976,87 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      LIST\n"
 "        IDENTIFIER \"var\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          IDENTIFIER \"rock\"\n"
-"          PERIOD\n"
-"          IDENTIFIER \"paper\"\n"
-"          HASH \"scissors\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"rock\"\n"
+"            PERIOD\n"
+"            IDENTIFIER \"paper\"\n"
+"            HASH \"scissors\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"rock\"\n"
 "      PERIOD\n"
 "      IDENTIFIER \"paper\"\n"
 "      HASH \"scissors\"\n"
+"    OPEN_CURLYBRACKET\n"
+"      DECLARATION \"border\"\n"
+"        IDENTIFIER \"blue\"\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // test $var with @mixin definition
+    {
+        std::stringstream ss;
+        ss << "@mixin var { rock.paper#scissors, with.more#selectors }"
+           << "$var {border:blue}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:var\n"
+"      LIST\n"
+"        IDENTIFIER \"var\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"rock\"\n"
+"            PERIOD\n"
+"            IDENTIFIER \"paper\"\n"
+"            HASH \"scissors\"\n"
+"            COMMA\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"with\"\n"
+"            PERIOD\n"
+"            IDENTIFIER \"more\"\n"
+"            HASH \"selectors\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"rock\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"paper\"\n"
+"      HASH \"scissors\"\n"
+"    ARG\n"
+"      IDENTIFIER \"with\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"more\"\n"
+"      HASH \"selectors\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      DECLARATION \"border\"\n"
 "        IDENTIFIER \"blue\"\n"
@@ -8994,14 +9105,16 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      LIST\n"
 "        IDENTIFIER \"var\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          IDENTIFIER \"rock\"\n"
-"          PERIOD\n"
-"          IDENTIFIER \"paper\"\n"
-"          HASH \"scissors\"\n"
-"          OPEN_CURLYBRACKET\n"
-"            IDENTIFIER \"border\"\n"
-"            COLON\n"
-"            IDENTIFIER \"blue\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"rock\"\n"
+"            PERIOD\n"
+"            IDENTIFIER \"paper\"\n"
+"            HASH \"scissors\"\n"
+"            OPEN_CURLYBRACKET\n"
+"              COMPONENT_VALUE\n"
+"                IDENTIFIER \"border\"\n"
+"                COLON\n"
+"                IDENTIFIER \"blue\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -9060,15 +9173,16 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      LIST\n"
 "        IDENTIFIER \"var\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          IDENTIFIER \"border\"\n"
-"          WHITESPACE\n"
-"          COLON\n"
-"          WHITESPACE\n"
-"          INTEGER \"px\" I:1\n"
-"          WHITESPACE\n"
-"          IDENTIFIER \"solid\"\n"
-"          WHITESPACE\n"
-"          HASH \"eeeeee\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"border\"\n"
+"            WHITESPACE\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:1\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"solid\"\n"
+"            WHITESPACE\n"
+"            HASH \"eeeeee\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -9124,13 +9238,14 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      LIST\n"
 "        IDENTIFIER \"var\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          IDENTIFIER \"border\"\n"
-"          COLON\n"
-"          INTEGER \"px\" I:1\n"
-"          WHITESPACE\n"
-"          IDENTIFIER \"solid\"\n"
-"          WHITESPACE\n"
-"          HASH \"eeeeee\"\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"border\"\n"
+"            COLON\n"
+"            INTEGER \"px\" I:1\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"solid\"\n"
+"            WHITESPACE\n"
+"            HASH \"eeeeee\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -9149,20 +9264,41 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 
     // test $var with @mixin definition
     {
-        char const * start[] =
+        struct mixin_info_t
         {
-            "*",            "MULTIPLY\n",
-            "[foo='bar']",  "OPEN_SQUAREBRACKET\n            IDENTIFIER \"foo\"\n            EQUAL\n            STRING \"bar\"\n",
-            ".color",       "PERIOD\n          IDENTIFIER \"color\"\n",
-            "&:hover",      "REFERENCE\n          COLON\n          IDENTIFIER \"hover\"\n",
-            "#peculiar",    "HASH \"peculiar\"\n"
-        };
+            mixin_info_t(char const *selector, char const *r1, char const *r2 = nullptr, char const *r3 = nullptr, char const *r4 = nullptr)
+                : f_selector(selector)
+            {
+                f_result.push_back(r1);
+                if(r2)
+                {
+                    f_result.push_back(r2);
+                    if(r3)
+                    {
+                        f_result.push_back(r3);
+                        if(r4)
+                        {
+                            f_result.push_back(r4);
+                        }
+                    }
+                }
+            }
 
-        for(size_t i(0); i < sizeof(start) / sizeof(start[0]); i += 2)
+            char const *                            f_selector;
+            std::vector<std::string>                f_result;
+        };
+        mixin_info_t * start[5];
+        start[0] = new mixin_info_t("*", "MULTIPLY");
+        start[1] = new mixin_info_t("[foo='bar']", "OPEN_SQUAREBRACKET", "  IDENTIFIER \"foo\"", "  EQUAL", "  STRING \"bar\"");
+        start[2] = new mixin_info_t(".color", "PERIOD", "IDENTIFIER \"color\"");
+        start[3] = new mixin_info_t("&:hover", "REFERENCE", "COLON", "IDENTIFIER \"hover\"");
+        start[4] = new mixin_info_t("#peculiar", "HASH \"peculiar\"");
+
+        for(size_t i(0); i < sizeof(start) / sizeof(start[0]); ++i)
         {
 
             std::stringstream ss;
-            ss << "@mixin var{" << start[i] << " div p{color:#eeeeee}}"
+            ss << "@mixin var{" << start[i]->f_selector << " div p{color:#eeeeee}}"
                << "div{$var}\n";
             csspp::position pos("test.css");
             csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
@@ -9199,22 +9335,36 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      LIST\n"
 "        IDENTIFIER \"var\"\n"
 "        OPEN_CURLYBRACKET\n"
-"          " << start[i + 1] <<
-"          WHITESPACE\n"
-"          IDENTIFIER \"div\"\n"
-"          WHITESPACE\n"
-"          IDENTIFIER \"p\"\n"
-"          OPEN_CURLYBRACKET\n"
-"            IDENTIFIER \"color\"\n"
-"            COLON\n"
-"            HASH \"eeeeee\"\n"
+"          COMPONENT_VALUE\n";
+
+            for(auto s : start[i]->f_result)
+            {
+                expected << "            " << s << "\n";
+            }
+
+            expected <<
+"            WHITESPACE\n"
+"            IDENTIFIER \"div\"\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"p\"\n"
+"            OPEN_CURLYBRACKET\n"
+"              COMPONENT_VALUE\n"
+"                IDENTIFIER \"color\"\n"
+"                COLON\n"
+"                HASH \"eeeeee\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET\n"
 "      COMPONENT_VALUE\n"
-"        ARG\n"
-"          " << start[i + 1] <<
+"        ARG\n";
+
+            for(auto s : start[i]->f_result)
+            {
+                expected << "          " << s << "\n";
+            }
+
+            expected <<
 "          WHITESPACE\n"
 "          IDENTIFIER \"div\"\n"
 "          WHITESPACE\n"
@@ -9459,7 +9609,7 @@ TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
 
         REQUIRE_ERRORS(
                 "test.css(1): error: function declarations with optional parameters must make all parameters optional from the first one that is given an optional value up to the end of the list of arguments.\n"
-                "test.css(1): error: unsupported type LIST as a unary expression token.\n"
+                //"test.css(1): error: unsupported type LIST as a unary expression token.\n"
             );
 
         REQUIRE(c.get_root() == n);
@@ -9492,7 +9642,7 @@ TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
 
         REQUIRE_ERRORS(
                 "test.css(1): error: function declarations expect variable with optional parameters to use a ':' after the variable name and before the optional value.\n"
-                "test.css(1): error: unsupported type LIST as a unary expression token.\n"
+                //"test.css(1): error: unsupported type LIST as a unary expression token.\n"
             );
 
         REQUIRE(c.get_root() == n);
@@ -9858,15 +10008,16 @@ TEST_CASE("At-Keyword Ignored", "[compiler] [at-keyword]")
 "  AT_KEYWORD \"unknown\" I:0\n"
 "    STRING \"Question?\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      IDENTIFIER \"this\"\n"
-"      WHITESPACE\n"
-"      IDENTIFIER \"one\"\n"
-"      WHITESPACE\n"
-"      IDENTIFIER \"has\"\n"
-"      WHITESPACE\n"
-"      IDENTIFIER \"a\"\n"
-"      WHITESPACE\n"
-"      IDENTIFIER \"block\"\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"this\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"one\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"has\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"a\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"block\"\n"
 
             );
 
@@ -10083,11 +10234,12 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "LIST\n"
 "  AT_KEYWORD \"document\" I:0\n"
 "    OPEN_CURLYBRACKET\n"
-"      ARG\n"
-"        IDENTIFIER \"body\"\n"
-"      OPEN_CURLYBRACKET\n"
-"        DECLARATION \"content\"\n"
-"          STRING \"Utf-16\"\n"
+"      COMPONENT_VALUE\n"
+"        ARG\n"
+"          IDENTIFIER \"body\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"content\"\n"
+"            STRING \"Utf-16\"\n"
 
             );
 
@@ -10126,13 +10278,15 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 
 "LIST\n"
 "  AT_KEYWORD \"media\" I:0\n"
-"    IDENTIFIER \"screen\"\n"
+"    ARG\n"
+"      IDENTIFIER \"screen\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      ARG\n"
-"        IDENTIFIER \"i\"\n"
-"      OPEN_CURLYBRACKET\n"
-"        DECLARATION \"font-style\"\n"
-"          IDENTIFIER \"normal\"\n"
+"      COMPONENT_VALUE\n"
+"        ARG\n"
+"          IDENTIFIER \"i\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"font-style\"\n"
+"            IDENTIFIER \"normal\"\n"
 
             );
 
@@ -10171,19 +10325,21 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 
 "LIST\n"
 "  AT_KEYWORD \"supports\" I:0\n"
-"    IDENTIFIER \"not\"\n"
-"    OPEN_PARENTHESIS\n"
-"      IDENTIFIER \"screen\"\n"
-"      WHITESPACE\n"
-"      IDENTIFIER \"and\"\n"
-"      WHITESPACE\n"
-"      IDENTIFIER \"desktop\"\n"
+"    ARG\n"
+"      IDENTIFIER \"not\"\n"
+"      OPEN_PARENTHESIS\n"
+"        IDENTIFIER \"screen\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"and\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"desktop\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      ARG\n"
-"        IDENTIFIER \"b\"\n"
-"      OPEN_CURLYBRACKET\n"
-"        DECLARATION \"font-weight\"\n"
-"          IDENTIFIER \"normal\"\n"
+"      COMPONENT_VALUE\n"
+"        ARG\n"
+"          IDENTIFIER \"b\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"font-weight\"\n"
+"            IDENTIFIER \"normal\"\n"
 
             );
 
@@ -10280,10 +10436,11 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 "LIST\n"
 "  AT_KEYWORD \"page\" I:0\n"
 "    OPEN_CURLYBRACKET\n"
-"      DECLARATION \"left\"\n"
-"        INTEGER \"in\" I:2\n"
-"      DECLARATION \"right\"\n"
-"        DECIMAL_NUMBER \"in\" D:2.2\n"
+"      LIST\n"
+"        DECLARATION \"left\"\n"
+"          INTEGER \"in\" I:2\n"
+"        DECLARATION \"right\"\n"
+"          DECIMAL_NUMBER \"in\" D:2.2\n"
 
             );
 
@@ -10322,13 +10479,15 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 
 "LIST\n"
 "  AT_KEYWORD \"media\" I:0\n"
-"    IDENTIFIER \"screen\"\n"
+"    ARG\n"
+"      IDENTIFIER \"screen\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      ARG\n"
-"        IDENTIFIER \"i\"\n"
-"      OPEN_CURLYBRACKET\n"
-"        DECLARATION \"font-style\"\n"
-"          IDENTIFIER \"normal\"\n"
+"      COMPONENT_VALUE\n"
+"        ARG\n"
+"          IDENTIFIER \"i\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"font-style\"\n"
+"            IDENTIFIER \"normal\"\n"
 
             );
 
@@ -10367,19 +10526,21 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 
 "LIST\n"
 "  AT_KEYWORD \"supports\" I:0\n"
-"    IDENTIFIER \"not\"\n"
-"    OPEN_PARENTHESIS\n"
-"      IDENTIFIER \"screen\"\n"
-"      WHITESPACE\n"
-"      IDENTIFIER \"and\"\n"
-"      WHITESPACE\n"
-"      IDENTIFIER \"desktop\"\n"
+"    ARG\n"
+"      IDENTIFIER \"not\"\n"
+"      OPEN_PARENTHESIS\n"
+"        IDENTIFIER \"screen\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"and\"\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"desktop\"\n"
 "    OPEN_CURLYBRACKET\n"
-"      ARG\n"
-"        IDENTIFIER \"b\"\n"
-"      OPEN_CURLYBRACKET\n"
-"        DECLARATION \"font-weight\"\n"
-"          IDENTIFIER \"normal\"\n"
+"      COMPONENT_VALUE\n"
+"        ARG\n"
+"          IDENTIFIER \"b\"\n"
+"        OPEN_CURLYBRACKET\n"
+"          DECLARATION \"font-weight\"\n"
+"            IDENTIFIER \"normal\"\n"
 
             );
 
@@ -10588,6 +10749,8 @@ TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
         csspp::parser p(l);
 
         csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
 
         // no errors so far
         REQUIRE_ERRORS("");

@@ -30,6 +30,7 @@
 
 #include "csspp/csspp.h"
 #include "csspp/error.h"
+#include "csspp/node.h"
 
 #include <cstring>
 
@@ -208,6 +209,7 @@ int main(int argc, char *argv[])
         if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
         {
             help = true; // LCOV_EXCL_LINE
+            ++i;
         }
         else if(strcmp(argv[i], "--seed") == 0)
         {
@@ -275,6 +277,9 @@ int main(int argc, char *argv[])
     }
     srand(seed);
     std::cout << csspp_test::g_progname << "[" << getpid() << "]" << ": version " << CSSPP_VERSION << ", seed is " << seed << std::endl;
+
+    // unless we get a loop going forever, we should never hit this limit
+    csspp::node::limit_nodes_to(1000000);
 
     if(help)
     {

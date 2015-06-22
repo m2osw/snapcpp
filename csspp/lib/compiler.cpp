@@ -331,6 +331,21 @@ void compiler::compile(node::pointer_t n)
 
 void compiler::compile_component_value(node::pointer_t n)
 {
+    // already compiled?
+    if(n->is(node_type_t::DECLARATION))
+    {
+        // This is really double ugly, I'll have to look into getting
+        // my loops straighten up because having to test such in
+        // various places is bad!
+        //
+        // We may want to find a better way to skip these entries...
+        // we replace a COMPONENT_VALUE with a DECLARATION and return
+        // and the loops think that the COMPONENT_VALUE was "replaced"
+        // by new code that needs to be compiled; only we replaced the
+        // entry with already compiled data! The best way may be to have
+        // a state with a position that we pass around...
+        return;
+    }
     // there are quite a few cases to handle here:
     //
     //   $variable ':' '{' ... '}'
@@ -345,6 +360,23 @@ void compiler::compile_component_value(node::pointer_t n)
         // we have a problem, we should already have had an error
         // somewhere?
         return;     // LCOV_EXCL_LINE
+    }
+
+    // this may be only temporary (until I fix the parser) but at this
+    // point we may get an @-keyword inside a COMPONENT_VALUE
+    if(n->get_child(0)->is(node_type_t::AT_KEYWORD))
+    {
+        {
+            safe_parents_t safe_parents(f_state, n->get_child(0));
+            compile_at_keyword(n->get_child(0));
+        }
+        if(n->empty())
+        {
+            // the @-keyword was removed and now the COMPONENT_VALUE is
+            // empty so we can just get rid of it
+            f_state.get_previous_parent()->remove_child(n);
+        }
+        return;
     }
 
     // $variable ':' '{' ... '}'
@@ -404,27 +436,71 @@ void compiler::compile_qualified_rule(node::pointer_t n)
 
     // compile the block contents
     node::pointer_t brackets(n->get_last_child());
-    if(!brackets->empty()
-    && brackets->get_child(0)->is(node_type_t::COMPONENT_VALUE))
+    if(!brackets->empty())
     {
-        safe_parents_t safe_parents(f_state, brackets);
-        size_t max_children(brackets->size());
-        for(size_t idx(0); idx < max_children; ++idx)
+        node::pointer_t child(brackets->get_child(0));
+        if(child->is(node_type_t::LIST))
         {
-            safe_parents_t safe_sub_parents(f_state, brackets->get_child(idx));
-            compile_component_value(brackets->get_child(idx));
+            safe_parents_t safe_parents(f_state, brackets);
+            safe_parents_t safe_list_parents(f_state, child);
+            for(size_t idx(0); idx < child->size();)
+            {
+                node::pointer_t item(child->get_child(idx));
+                safe_parents_t safe_sub_parents(f_state, item);
+                compile_component_value(item);
+                if(idx < child->size()
+                && item == child->get_child(idx))
+                {
+                    ++idx;
+                }
+            }
+            return;
+        }
+
+        if(child->is(node_type_t::COMPONENT_VALUE))
+        {
+            safe_parents_t safe_parents(f_state, brackets);
+            for(size_t idx(0); idx < brackets->size();)
+            {
+                node::pointer_t item(brackets->get_child(idx));
+                safe_parents_t safe_sub_parents(f_state, item);
+                compile_component_value(item);
+                if(idx < brackets->size()
+                && item == brackets->get_child(idx))
+                {
+                    ++idx;
+                }
+            }
+            return;
         }
     }
-    else
-    {
-        // only one value, this is a component value by itself
-        safe_parents_t safe_parents(f_state, brackets);
-        compile_component_value(brackets);
-    }
+
+    // only one value, this is a component value by itself
+    safe_parents_t safe_parents(f_state, brackets);
+    compile_component_value(brackets);
 }
 
 void compiler::compile_declaration(node::pointer_t n)
 {
+    // already compiled?
+    if(n->is(node_type_t::DECLARATION))
+    {
+        // We may want to find a better way to skip these entries...
+        // we replace a COMPONENT_VALUE with a DECLARATION and return
+        // and the loops think that the COMPONENT_VALUE was "replaced"
+        // by new code that needs to be compiled; only we replaced the
+        // entry with already compiled data! The best way may be to have
+        // a state with a position that we pass around...
+        return;
+    }
+    if(n->size() < 2)
+    {
+        error::instance() << n->get_position()
+                << "somehow a declaration list is missing a field name or ':'."
+                << error_mode_t::ERROR_ERROR;
+        return;
+    }
+
     // first make sure we have a declaration
     // (i.e. IDENTIFIER WHITESPACE ':' ...)
     //
@@ -490,7 +566,23 @@ void compiler::compile_declaration(node::pointer_t n)
     {
         // since we are removing the children, we always seemingly
         // copy child 1...
-        declaration->add_child(n->get_child(1));
+        node::pointer_t child(n->get_child(1));
+        if(child->is(node_type_t::COMPONENT_VALUE)
+        && !child->empty()
+        && (parser::is_nested_declaration(child)
+         || !child->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET)))
+        {
+            // add all the items of the component value
+            size_t const max_list(child->size());
+            for(size_t j(0); j < max_list; ++j)
+            {
+                declaration->add_child(child->get_child(j));
+            }
+        }
+        else
+        {
+            declaration->add_child(child);
+        }
         n->remove_child(1);
     }
 
@@ -517,6 +609,7 @@ void compiler::compile_declaration(node::pointer_t n)
         switch(item->get_type())
         {
         case node_type_t::OPEN_CURLYBRACKET:
+        case node_type_t::LIST:
         case node_type_t::COMPONENT_VALUE:
             compile_declaration_items = false;
             break;
@@ -530,11 +623,17 @@ void compiler::compile_declaration(node::pointer_t n)
 
         }
     }
-    if(compile_declaration_items)
+    if(compile_declaration_items
+    && !declaration->empty())
     {
         compile_expression(declaration, true, true);
     }
 
+    compile_declaration_values(declaration);
+}
+
+void compiler::compile_declaration_values(node::pointer_t declaration)
+{
     // finally compile the parameters of the declaration
     for(size_t i(0); i < declaration->size(); ++i)
     {
@@ -542,15 +641,32 @@ void compiler::compile_declaration(node::pointer_t n)
         safe_parents_t safe_parents(f_state, item);
         switch(item->get_type())
         {
+        case node_type_t::LIST:
+            // handle lists recursively
+            compile_declaration_values(item);
+            break;
+
         case node_type_t::OPEN_CURLYBRACKET:
             // nested declarations, this {}-block includes sub-field names
             // (i.e. names that will be added this this declaration after a
             // dash (-) and with the name of the fields appearing here)
-            for(size_t j(0); j < item->size(); ++j)
+            for(size_t j(0); j < item->size();)
             {
                 node::pointer_t component(item->get_child(j));
                 safe_parents_t safe_grand_parents(f_state, component);
-                compile_component_value(component);
+                if(component->is(node_type_t::LIST))
+                {
+                    compile_declaration_values(component);
+                }
+                else
+                {
+                    compile_component_value(component);
+                }
+                if(j < item->size()
+                && component == item->get_child(j))
+                {
+                    ++j;
+                }
             }
             break;
 
@@ -667,19 +783,28 @@ void compiler::compile_at_keyword(node::pointer_t n)
             node::pointer_t last(n->get_last_child());
             if(last->is(node_type_t::OPEN_CURLYBRACKET))
             {
-                node::pointer_t component_values(last->get_last_child());
-                if(component_values->is(node_type_t::OPEN_CURLYBRACKET))
+                if(n->size() > 1)
                 {
-std::cerr << "+++++++++++ Before tweaking this is like this:\n" << *n << "--------------------------------------\n";
-                    if(n->size() > 1)
+                    argify(n);
+                }
+                safe_parents_t safe_list_parents(f_state, last);
+                for(size_t idx(0); idx < last->size();)
+                {
+                    node::pointer_t child(last->get_child(idx));
+                    safe_parents_t safe_parents(f_state, child);
+                    if(child->is(node_type_t::AT_KEYWORD))
                     {
-                        argify(n);
+                        compile_at_keyword(child);
                     }
-                    node::pointer_t component_value(new node(node_type_t::COMPONENT_VALUE, last->get_position()));
-                    component_value->take_over_children_of(last);
-                    //n->replace_child(last, component_value);
-                    last->add_child(component_value);
-                    compile_qualified_rule(component_value);
+                    else
+                    {
+                        compile_component_value(child);
+                    }
+                    if(idx < last->size()
+                    && child == last->get_child(idx))
+                    {
+                        ++idx;
+                    }
                 }
             }
         }
@@ -694,16 +819,34 @@ std::cerr << "+++++++++++ Before tweaking this is like this:\n" << *n << "------
             node::pointer_t last(n->get_last_child());
             if(last->is(node_type_t::OPEN_CURLYBRACKET))
             {
-                safe_parents_t safe_parents(f_state, last);
-                size_t const max_children(last->size());
-                for(size_t idx(0); idx < max_children; ++idx)
+                if(last->size() > 0)
                 {
-                    node::pointer_t child(last->get_child(idx));
-                    // TODO: add support for other node types?
-                    if(child->is(node_type_t::COMPONENT_VALUE))
+                    node::pointer_t list(last);
+                    if(last->get_child(0)->is(node_type_t::LIST))
                     {
-                        safe_parents_t safe_component_parents(f_state, child);
-                        compile_component_value(child);
+                        list = last->get_child(0);
+                    }
+                    // we may be stacking the same node twice...
+                    safe_parents_t safe_grand_parents(f_state, last);
+                    safe_parents_t safe_parents(f_state, list);
+                    for(size_t idx(0); idx < list->size();)
+                    {
+                        node::pointer_t child(list->get_child(idx));
+                        // TODO: add support for other node types?
+                        if(child->is(node_type_t::COMPONENT_VALUE))
+                        {
+                            safe_parents_t safe_component_parents(f_state, child);
+                            compile_component_value(child);
+                            if(idx < list->size()
+                            && child == list->get_child(idx))
+                            {
+                                ++idx;
+                            }
+                        }
+                        else
+                        {
+                            ++idx;
+                        }
                     }
                 }
             }
@@ -1087,7 +1230,7 @@ void compiler::replace_variables(node::pointer_t n)
                 else if(child->is(node_type_t::VARIABLE_FUNCTION))
                 {
                     // we need to first replace variables in the parameters
-                    // if the function
+                    // of the function
                     replace_variables(child);
 
                     n->remove_child(idx);
@@ -1343,7 +1486,19 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
         //       none-the-less, I think there would be much better ways
         //       to handle the situation.
         //
-        if(val->size() >= 2)
+        if(val->size() == 1
+        && val->get_child(0)->is(node_type_t::COMPONENT_VALUE)
+        && parent->is(node_type_t::COMPONENT_VALUE))
+        {
+            size_t const max_children(val->get_child(0)->size());
+            for(size_t j(0), i(idx); j < max_children; ++j, ++i)
+            {
+                node::pointer_t child(val->get_child(0)->get_child(j));
+                parent->insert_child(i, child->clone());
+            }
+            break;
+        }
+        else if(val->size() >= 2)
         {
             bool component_value(false);
             switch(val->get_child(0)->get_type())
@@ -1761,6 +1916,22 @@ node::pointer_t compiler::at_keyword_expression(node::pointer_t n)
 
 void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
 {
+    // we want to mark the next block as valid if it is an
+    // '@else' or '@else if' and can possibly be inserted
+    node::pointer_t next;
+    if(idx < parent->size())
+    {
+        // note: we deleted the @if so 'idx' represents the position of the
+        //       next node in the parent array
+        next = parent->get_child(idx);
+        if(next->is(node_type_t::AT_KEYWORD)
+        && next->get_string() == "else")
+        {
+            // mark that the @else is at the right place
+            next->set_integer(g_if_or_else_executed);
+        }
+    }
+
     node::pointer_t expr(at_keyword_expression(n));
 
     // make sure that we got a valid syntax
@@ -1788,18 +1959,10 @@ void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
         }
     }
 
-    // we want to mark the next block as valid if it is an
-    // '@else' or '@else if' and can possibly be inserted
-    if(idx < parent->size())
+    if(next && r == boolean_t::FALSE)
     {
-        node::pointer_t next(parent->get_child(idx));
-        if(next->is(node_type_t::AT_KEYWORD)
-        && next->get_string() == "else")
-        {
-            // mark that the @else is at the right place
-            // (i.e. an @else with integer == 0 is an error)
-            next->set_integer(r == boolean_t::TRUE ? g_if_or_else_executed : g_if_or_else_false_so_far);
-        }
+        // mark the else as not executed if r is false
+        next->set_integer(g_if_or_else_false_so_far);
     }
 }
 

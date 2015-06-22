@@ -124,6 +124,7 @@ public:
     static int const                g_to_string_flag_add_spaces  = 0x02;
 
                         node(node_type_t const type, position const & pos);
+                        ~node();
 
     pointer_t           clone() const;
 
@@ -168,6 +169,8 @@ public:
 
     std::string         to_string(int flags) const;
     void                display(std::ostream & out, uint32_t indent) const;
+
+    static void         limit_nodes_to(uint32_t count);
 
 private:
     typedef std::vector<pointer_t>                  list_t;
