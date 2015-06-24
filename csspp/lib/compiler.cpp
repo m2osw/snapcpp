@@ -346,6 +346,7 @@ void compiler::compile_component_value(node::pointer_t n)
         // a state with a position that we pass around...
         return;
     }
+
     // there are quite a few cases to handle here:
     //
     //   $variable ':' '{' ... '}'
@@ -360,6 +361,49 @@ void compiler::compile_component_value(node::pointer_t n)
         // we have a problem, we should already have had an error
         // somewhere?
         return;     // LCOV_EXCL_LINE
+    }
+
+    // was that COMPONENT_VALUE already compiled?
+    if(n->get_child(0)->is(node_type_t::ARG))
+    {
+        // the following fix prevents this from happening so at this time
+        // I mark this as a problem; we could just return otherwise
+        // (like the case the list is a declaration)
+        throw csspp_exception_logic("compiler.cpp: found an ARG as the first child of COMPONENT_VALUE, compile_component_value() called twice on the same object?"); // LCOV_EXCL_LINE
+    }
+
+    size_t const max_children(n->size());
+    size_t count_cv(0);
+    for(size_t idx(0); idx < max_children; ++idx)
+    {
+        node::pointer_t child(n->get_child(idx));
+        if(child->is(node_type_t::COMPONENT_VALUE))
+        {
+            ++count_cv;
+        }
+    }
+    if(count_cv == max_children)
+    {
+        // this happens when we add elements from a sub {}-block
+        // for example, a verbatim:
+        //
+        //     @if (true) { foo { a: b; } blah { c: d; }
+        //
+        node::pointer_t parent(f_state.get_previous_parent());
+        size_t pos(parent->child_position(n));
+        parent->remove_child(pos);
+        for(size_t idx(0); idx < max_children; ++idx, ++pos)
+        {
+            parent->insert_child(pos, n->get_child(idx));
+        }
+        // the caller will call us again with the new list of
+        // COMPONENT_VALUE nodes as expected
+        return;
+    }
+    else if(count_cv != 0)
+    {
+        std::cerr << "Invalid node:\n" << *n;                                                           // LCOV_EXCL_LINE
+        throw csspp_exception_logic("compiler.cpp: found a COMPONENT_VALUE with a mix of children.");   // LCOV_EXCL_LINE
     }
 
     // this may be only temporary (until I fix the parser) but at this
@@ -434,50 +478,49 @@ void compiler::compile_qualified_rule(node::pointer_t n)
         return;
     }
 
-    // compile the block contents
+    // compile the block of contents
     node::pointer_t brackets(n->get_last_child());
-    if(!brackets->empty())
+    if(brackets->empty())
     {
-        node::pointer_t child(brackets->get_child(0));
-        if(child->is(node_type_t::LIST))
-        {
-            safe_parents_t safe_parents(f_state, brackets);
-            safe_parents_t safe_list_parents(f_state, child);
-            for(size_t idx(0); idx < child->size();)
-            {
-                node::pointer_t item(child->get_child(idx));
-                safe_parents_t safe_sub_parents(f_state, item);
-                compile_component_value(item);
-                if(idx < child->size()
-                && item == child->get_child(idx))
-                {
-                    ++idx;
-                }
-            }
-            return;
-        }
-
-        if(child->is(node_type_t::COMPONENT_VALUE))
-        {
-            safe_parents_t safe_parents(f_state, brackets);
-            for(size_t idx(0); idx < brackets->size();)
-            {
-                node::pointer_t item(brackets->get_child(idx));
-                safe_parents_t safe_sub_parents(f_state, item);
-                compile_component_value(item);
-                if(idx < brackets->size()
-                && item == brackets->get_child(idx))
-                {
-                    ++idx;
-                }
-            }
-            return;
-        }
+        // when only defining variables in a block, it can end up empty
+        error::instance() << n->get_position()
+                << "the {}-block of a qualified rule is missing."
+                << error_mode_t::ERROR_ERROR;
+        return;
     }
 
-    // only one value, this is a component value by itself
-    safe_parents_t safe_parents(f_state, brackets);
-    compile_component_value(brackets);
+    node::pointer_t child(brackets->get_child(0));
+    if(child->is(node_type_t::LIST))
+    {
+        safe_parents_t safe_parents(f_state, brackets);
+        safe_parents_t safe_list_parents(f_state, child);
+        for(size_t idx(0); idx < child->size();)
+        {
+            node::pointer_t item(child->get_child(idx));
+            safe_parents_t safe_sub_parents(f_state, item);
+            compile_component_value(item);
+            if(idx < child->size()
+            && item == child->get_child(idx))
+            {
+                ++idx;
+            }
+        }
+    }
+    else if(child->is(node_type_t::COMPONENT_VALUE))
+    {
+        safe_parents_t safe_parents(f_state, brackets);
+        for(size_t idx(0); idx < brackets->size();)
+        {
+            node::pointer_t item(brackets->get_child(idx));
+            safe_parents_t safe_sub_parents(f_state, item);
+            compile_component_value(item);
+            if(idx < brackets->size()
+            && item == brackets->get_child(idx))
+            {
+                ++idx;
+            }
+        }
+    }
 }
 
 void compiler::compile_declaration(node::pointer_t n)
@@ -495,10 +538,14 @@ void compiler::compile_declaration(node::pointer_t n)
     }
     if(n->size() < 2)
     {
-        error::instance() << n->get_position()
-                << "somehow a declaration list is missing a field name or ':'."
-                << error_mode_t::ERROR_ERROR;
-        return;
+        // I don't think I ever hit this case, but I really don't see how it
+        // could happen; if we get this throw, write a test case that hits
+        // this line and replace it with the error below
+        throw csspp_exception_logic("compiler.cpp: called compiler_declaration() with a node having only one element."); // LCOV_EXCL_LINE
+        //error::instance() << n->get_position()
+        //        << "somehow a declaration list is missing a field name or ':'."
+        //        << error_mode_t::ERROR_ERROR;
+        //return;
     }
 
     // first make sure we have a declaration
@@ -567,19 +614,19 @@ void compiler::compile_declaration(node::pointer_t n)
         // since we are removing the children, we always seemingly
         // copy child 1...
         node::pointer_t child(n->get_child(1));
-        if(child->is(node_type_t::COMPONENT_VALUE)
-        && !child->empty()
-        && (parser::is_nested_declaration(child)
-         || !child->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET)))
-        {
-            // add all the items of the component value
-            size_t const max_list(child->size());
-            for(size_t j(0); j < max_list; ++j)
-            {
-                declaration->add_child(child->get_child(j));
-            }
-        }
-        else
+        //if(child->is(node_type_t::COMPONENT_VALUE)
+        //&& !child->empty()
+        //&& (parser::is_nested_declaration(child)
+        // || !child->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET)))
+        //{
+        //    // add all the items of the component value
+        //    size_t const max_list(child->size());
+        //    for(size_t j(0); j < max_list; ++j)
+        //    {
+        //        declaration->add_child(child->get_child(j));
+        //    }
+        //}
+        //else
         {
             declaration->add_child(child);
         }
@@ -595,7 +642,8 @@ void compiler::compile_declaration(node::pointer_t n)
     }
     else
     {
-        n->replace_child(identifier, declaration);
+        throw csspp_exception_logic("compiler.cpp: got a node which was not of type COMPONENT_VALUE to replace with the DECLARATION."); // LCOV_EXCL_LINE
+        //n->replace_child(identifier, declaration);
     }
     // now the declaration is part of the stack of parents
     safe_parents_t safe_declaration_parent(f_state, declaration);
@@ -626,7 +674,8 @@ void compiler::compile_declaration(node::pointer_t n)
     if(compile_declaration_items
     && !declaration->empty())
     {
-        compile_expression(declaration, true, true);
+        expression expr(declaration, true);
+        expr.compile_list();
     }
 
     compile_declaration_values(declaration);
@@ -660,7 +709,9 @@ void compiler::compile_declaration_values(node::pointer_t declaration)
                 }
                 else
                 {
-                    compile_component_value(component);
+                    // it looks like I cannot get here anymore
+                    throw csspp_exception_logic("compiler.cpp: found an unexpected node type, expected a LIST."); // LCOV_EXCL_LINE
+                    //compile_component_value(component);
                 }
                 if(j < item->size()
                 && component == item->get_child(j))
@@ -785,7 +836,7 @@ void compiler::compile_at_keyword(node::pointer_t n)
             {
                 if(n->size() > 1)
                 {
-                    argify(n);
+                    parser::argify(n);
                 }
                 safe_parents_t safe_list_parents(f_state, last);
                 for(size_t idx(0); idx < last->size();)
@@ -794,7 +845,11 @@ void compiler::compile_at_keyword(node::pointer_t n)
                     safe_parents_t safe_parents(f_state, child);
                     if(child->is(node_type_t::AT_KEYWORD))
                     {
-                        compile_at_keyword(child);
+                        // at this point @-keywords are added inside a
+                        // COMPONENT_VALUE so this does not happen...
+                        // if we change the parser at some point, this
+                        // may happen again so I keep it here
+                        compile_at_keyword(child); // LCOV_EXCL_LINE
                     }
                     else
                     {
@@ -853,53 +908,6 @@ void compiler::compile_at_keyword(node::pointer_t n)
         }
         return;
     }
-}
-
-node::pointer_t compiler::compile_expression(node::pointer_t n, bool skip_whitespace, bool list_of_expressions)
-{
-    // expression: conditional
-    expression expr(n, skip_whitespace);
-    expr.mark_start();
-    expr.next();
-    node::pointer_t result;
-    if(list_of_expressions)
-    {
-        // result is a list: a b c ...
-        for(;;)
-        {
-            result = expr.conditional();
-            if(result)
-            {
-                expr.replace_with_result(result);
-            }
-            if(expr.end_of_nodes())
-            {
-                return result;
-            }
-            expr.next();
-            // keep one whitespace between expressions if such exists
-            if(expr.current()->is(node_type_t::WHITESPACE))
-            {
-                if(expr.end_of_nodes())
-                {
-                    // TODO: list of nodes ends with WHITESPACE
-                    return result;    // LCOV_EXCL_LINE
-                }
-                expr.mark_start();
-                expr.next();
-            }
-        }
-        /*NOTREACHED*/
-    }
-    else
-    {
-        result = expr.conditional();
-        if(result)
-        {
-            expr.replace_with_result(result);
-        }
-    }
-    return result;
 }
 
 void compiler::replace_import(node::pointer_t parent, node::pointer_t import, size_t & idx)
@@ -1194,12 +1202,19 @@ void compiler::replace_variables(node::pointer_t n)
 
     switch(n->get_type())
     {
+    case node_type_t::LIST:
+        if(n->empty())
+        {
+            // totally ignore empty lists
+            f_state.get_previous_parent()->remove_child(n);
+            break;
+        }
+        /*FALLTRHOUGH*/
     case node_type_t::AT_KEYWORD:
     case node_type_t::ARG:
     case node_type_t::COMPONENT_VALUE:
     case node_type_t::DECLARATION:
     case node_type_t::FUNCTION:
-    case node_type_t::LIST:
     case node_type_t::OPEN_CURLYBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
     case node_type_t::OPEN_SQUAREBRACKET:
@@ -1213,8 +1228,8 @@ void compiler::replace_variables(node::pointer_t n)
             // replace all $<var> references with the corresponding value
             size_t idx(is_variable_set
                     ? (n->get_child(0)->is(node_type_t::VARIABLE_FUNCTION)
-                        ? n->size() // completely ignore
-                        : 1)        // do not replace <var> in $<var>:
+                        ? n->size() // completely ignore functions
+                        : 1)        // do not replace $<var> in $<var>:
                     : 0);           // replace everything
             while(idx < n->size())
             {
@@ -1257,7 +1272,8 @@ void compiler::replace_variables(node::pointer_t n)
                         replace_variables(child);
 
                         // skip that child if still present
-                        if(child == n->get_child(idx))
+                        if(idx < n->size()
+                        && child == n->get_child(idx))
                         {
                             ++idx;
                         }
@@ -1342,7 +1358,7 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
             return;
         }
         // we need to apply the function...
-        argify(n);
+        parser::argify(n);
 
         node::pointer_t root(new node(node_type_t::LIST, val->get_position()));
         root->add_child(val->clone());
@@ -1498,62 +1514,63 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
             }
             break;
         }
-        else if(val->size() >= 2)
-        {
-            bool component_value(false);
-            switch(val->get_child(0)->get_type())
-            {
-            case node_type_t::IDENTIFIER:
-                if(val->get_child(1)->is(node_type_t::WHITESPACE))
-                {
-                    if(val->size() >= 3
-                    && val->get_child(2)->is(node_type_t::COLON))
-                    {
-                        component_value = true;
-                    }
-                }
-                else
-                {
-                    if(val->get_child(1)->is(node_type_t::COLON))
-                    {
-                        component_value = true;
-                    }
-                }
-                if(!component_value)
-                {
-                    component_value = val->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET);
-                }
-                break;
-
-            case node_type_t::MULTIPLY:
-            case node_type_t::OPEN_SQUAREBRACKET:
-            case node_type_t::PERIOD:
-            case node_type_t::REFERENCE:
-            case node_type_t::HASH:
-                component_value = val->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET);
-                break;
-
-            default:
-                // anything else cannot be defining a component value
-                break;
-
-            }
-
-            if(component_value)
-            {
-                // in this case we copy the data in a COMPONENT_VALUE instead
-                // of directly
-                node::pointer_t cv(new node(node_type_t::COMPONENT_VALUE, val->get_position()));
-                parent->insert_child(idx, cv);
-
-                size_t const max_children(val->size());
-                for(size_t j(0); j < max_children; ++j)
-                {
-                    cv->add_child(val->get_child(j)->clone());
-                }
-                break;
-            }
-        }
+//        else if(val->size() >= 2)
+//        {
+//std::cerr << "----------------- REPLACE WITH VARIABLE CONTENT:\n" << *val << "----------------------------------\n";
+//            bool component_value(false);
+//            switch(val->get_child(0)->get_type())
+//            {
+//            case node_type_t::IDENTIFIER:
+//                if(val->get_child(1)->is(node_type_t::WHITESPACE))
+//                {
+//                    if(val->size() >= 3
+//                    && val->get_child(2)->is(node_type_t::COLON))
+//                    {
+//                        component_value = true;
+//                    }
+//                }
+//                else
+//                {
+//                    if(val->get_child(1)->is(node_type_t::COLON))
+//                    {
+//                        component_value = true;
+//                    }
+//                }
+//                if(!component_value)
+//                {
+//                    component_value = val->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET);
+//                }
+//                break;
+//
+//            case node_type_t::MULTIPLY:
+//            case node_type_t::OPEN_SQUAREBRACKET:
+//            case node_type_t::PERIOD:
+//            case node_type_t::REFERENCE:
+//            case node_type_t::HASH:
+//                component_value = val->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET);
+//                break;
+//
+//            default:
+//                // anything else cannot be defining a component value
+//                break;
+//
+//            }
+//
+//            if(component_value)
+//            {
+//                // in this case we copy the data in a COMPONENT_VALUE instead
+//                // of directly
+//                node::pointer_t cv(new node(node_type_t::COMPONENT_VALUE, val->get_position()));
+//                parent->insert_child(idx, cv);
+//
+//                size_t const max_children(val->size());
+//                for(size_t j(0); j < max_children; ++j)
+//                {
+//                    cv->add_child(val->get_child(j)->clone());
+//                }
+//                break;
+//            }
+//        }
         /*FALLTHROUGH*/
     case node_type_t::OPEN_PARENTHESIS:
     case node_type_t::OPEN_SQUAREBRACKET:
@@ -1614,72 +1631,48 @@ void compiler::set_variable(node::pointer_t n)
 
     // check whether we have a "!global" at the end of the value
     // if so remove it and set global to true
+    // similarly, handle the "!default"
+    // we should also support the "!important" but that requires a
+    // special flag in the variable to know that it cannot be overwritten
     bool global(false);
     bool set_if_unset(false);
-    bool more(true);
+    std::string not_at_the_end;
     size_t pos(n->size());
-    while(more && pos >= 2)
+    while(pos > 0)
     {
-        more = false;
         --pos;
-        node::pointer_t last(n->get_child(pos));
-        if(last->is(node_type_t::IDENTIFIER))
+        node::pointer_t child(n->get_child(pos));
+        if(child->is(node_type_t::EXCLAMATION))
         {
-            if(last->get_string() == "global")
+            if(child->get_string() == "global")
             {
-                --pos;
-                last = n->get_child(pos);
-                if(last->is(node_type_t::WHITESPACE))
+                global = true;
+                n->remove_child(pos);
+                if(not_at_the_end.empty()
+                && pos != n->size())
                 {
-                    if(pos > 0)
-                    {
-                        --pos;
-                        last = n->get_child(pos);
-                    }
-                }
-                if(last->is(node_type_t::EXCLAMATION))
-                {
-                    more = true;
-                    global = true;
-                    if(pos > 0
-                    && n->get_child(pos - 1)->is(node_type_t::WHITESPACE))
-                    {
-                        --pos;
-                    }
-                    while(pos < n->size())
-                    {
-                        n->remove_child(pos);
-                    }
+                    not_at_the_end = child->get_string();
                 }
             }
-            else if(last->get_string() == "default")
+            else if(child->get_string() == "default")
             {
-                --pos;
-                last = n->get_child(pos);
-                if(last->is(node_type_t::WHITESPACE))
+                set_if_unset = true;
+                n->remove_child(pos);
+                if(not_at_the_end.empty()
+                && pos != n->size())
                 {
-                    if(pos > 0)
-                    {
-                        --pos;
-                        last = n->get_child(pos);
-                    }
-                }
-                if(last->is(node_type_t::EXCLAMATION))
-                {
-                    more = true;
-                    set_if_unset = true;
-                    if(pos > 0
-                    && n->get_child(pos - 1)->is(node_type_t::WHITESPACE))
-                    {
-                        --pos;
-                    }
-                    while(pos < n->size())
-                    {
-                        n->remove_child(pos);
-                    }
+                    not_at_the_end = child->get_string();
                 }
             }
         }
+    }
+    if(!not_at_the_end.empty())
+    {
+        error::instance() << n->get_position()
+                << "A special flag, !"
+                << not_at_the_end
+                << " in this case, must only appear at the end of a declaration."
+                << error_mode_t::ERROR_WARNING;
     }
 
     // if variable is already set, return immediately
@@ -1727,7 +1720,7 @@ void compiler::set_variable(node::pointer_t n)
 
 void compiler::prepare_function_arguments(node::pointer_t var)
 {
-    if(!argify(var))
+    if(!parser::argify(var))
     {
         return;
     }
@@ -1909,9 +1902,13 @@ void compiler::replace_at_keyword(node::pointer_t parent, node::pointer_t n, siz
 node::pointer_t compiler::at_keyword_expression(node::pointer_t n)
 {
     // calculate the expression if present
-    return !n->empty() && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET)
-            ? compile_expression(n, true, false)
-            : node::pointer_t();
+    if(!n->empty() && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
+    {
+        expression expr(n, true);
+        return expr.compile();
+    }
+
+    return node::pointer_t();
 }
 
 void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
@@ -2194,75 +2191,6 @@ void compiler::replace_variables_in_comment(node::pointer_t n)
     }
 
     n->set_string(comment);
-}
-
-bool compiler::argify(node::pointer_t n)
-{
-    size_t const max_children(n->size());
-    if(max_children > 0)
-    {
-        node::pointer_t temp(new node(node_type_t::LIST, n->get_position()));
-        temp->take_over_children_of(n);
-
-        node::pointer_t arg(new node(node_type_t::ARG, n->get_position()));
-        n->add_child(arg);
-
-        for(size_t i(0); i < max_children; ++i)
-        {
-            node::pointer_t child(temp->get_child(i));
-            if(child->is(node_type_t::OPEN_CURLYBRACKET))
-            {
-                if(i + 1 != max_children)
-                {
-                    throw csspp_exception_logic("compiler.cpp:compiler::argify(): list that has an OPEN_CURLYBRACKET that is not the last child."); // LCOV_EXCL_LINE
-                }
-                n->add_child(child);
-                break;
-            }
-            if(child->is(node_type_t::COMMA))
-            {
-                // make sure to remove any WHITESPACE appearing just
-                // before a comma
-                while(!arg->empty() && arg->get_last_child()->is(node_type_t::WHITESPACE))
-                {
-                    arg->remove_child(arg->get_last_child());
-                }
-                if(arg->empty())
-                {
-                    if(n->size() == 1)
-                    {
-                        error::instance() << n->get_position()
-                                << "dangling comma at the beginning of a list of arguments or selectors."
-                                << error_mode_t::ERROR_ERROR;
-                    }
-                    else
-                    {
-                        error::instance() << n->get_position()
-                                << "two commas in a row are invalid in a list of arguments or selectors."
-                                << error_mode_t::ERROR_ERROR;
-                    }
-                    return false;
-                }
-                if(i + 1 == max_children
-                || temp->get_child(i + 1)->is(node_type_t::OPEN_CURLYBRACKET))
-                {
-                    error::instance() << n->get_position()
-                            << "dangling comma at the end of a list of arguments or selectors."
-                            << error_mode_t::ERROR_ERROR;
-                    return false;
-                }
-                // move to the next 'arg'
-                arg.reset(new node(node_type_t::ARG, n->get_position()));
-                n->add_child(arg);
-            }
-            else if(!child->is(node_type_t::WHITESPACE) || !arg->empty())
-            {
-                arg->add_child(child);
-            }
-        }
-    }
-
-    return true;
 }
 
 bool compiler::selector_attribute_check(node::pointer_t n)
@@ -2884,7 +2812,7 @@ bool compiler::selector_list(node::pointer_t n, size_t & pos)
 
 bool compiler::parse_selector(node::pointer_t n)
 {
-    if(!argify(n))
+    if(!parser::argify(n))
     {
         return false;
     }
@@ -2911,6 +2839,7 @@ bool compiler::parse_selector(node::pointer_t n)
         // check and make sure that #<id> is not repeated in the same
         // list, because that's an error (TBD--there may be one exception
         // now that we have the ~ operator...)
+        bool err(false);
         std::map<std::string, bool> hash;
         for(size_t j(0); j < arg->size(); ++j)
         {
@@ -2926,11 +2855,27 @@ bool compiler::parse_selector(node::pointer_t n)
                             << arg->to_string(0)
                             << "\"."
                             << error_mode_t::ERROR_ERROR;
+                    err = true;
                 }
                 else
                 {
                     hash[child->get_string()] = true;
                 }
+            }
+        }
+        if(!err)
+        {
+            if(hash.size() > 1)
+            {
+                error::instance() << arg->get_position()
+                        << "found multiple #id entries, note that in most cases, assuming your HTML is proper (identifiers are not repeated) then only the last #id is necessary."
+                        << error_mode_t::ERROR_INFO;
+            }
+            else if(hash.size() == 1 && !arg->get_child(0)->is(node_type_t::HASH))
+            {
+                error::instance() << arg->get_position()
+                        << "found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only."
+                        << error_mode_t::ERROR_INFO;
             }
         }
     }

@@ -26,10 +26,13 @@ class expression
 {
 public:
                         expression(node::pointer_t n, bool skip_whitespace);
+    node::pointer_t     compile_list();
+    node::pointer_t     compile();
     bool                end_of_nodes();
     void                mark_start();
-    void                replace_with_result(node::pointer_t result);
+    node::pointer_t     replace_with_result(node::pointer_t result);
     void                next();
+    node::pointer_t     look_ahead() const;
     node::pointer_t     current() const;
     node::pointer_t     conditional();
     node::pointer_t     argument_list();
@@ -54,7 +57,7 @@ private:
     node::pointer_t     power();
     node::pointer_t     post();
     node::pointer_t     unary();
-    node::pointer_t     excecute_function(node::pointer_t func, node::pointer_t args);
+    node::pointer_t     excecute_function(node::pointer_t func);
 
     node::pointer_t     f_node;
     size_t              f_pos = 0;

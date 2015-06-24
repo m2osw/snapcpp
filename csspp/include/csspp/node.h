@@ -167,6 +167,10 @@ public:
     void                set_variable(std::string const & name, pointer_t value);
     pointer_t           get_variable(std::string const & name);
 
+    void                clear_flags();
+    void                set_flag(std::string const & name, bool value);
+    bool                get_flag(std::string const & name);
+
     std::string         to_string(int flags) const;
     void                display(std::ostream & out, uint32_t indent) const;
 
@@ -175,6 +179,7 @@ public:
 private:
     typedef std::vector<pointer_t>                  list_t;
     typedef std::map<std::string, node::pointer_t>  variable_table_t;
+    typedef std::map<std::string, bool>             flag_table_t;
 
     node_type_t         f_type = node_type_t::UNKNOWN;
     position            f_position;
@@ -184,6 +189,7 @@ private:
     std::string         f_string;
     list_t              f_children;
     variable_table_t    f_variables;
+    flag_table_t        f_flags;
 };
 
 typedef std::vector<node::pointer_t>    node_vector_t;

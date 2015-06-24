@@ -51,6 +51,11 @@ TEST_CASE("Node types", "[node] [type]")
         // verify the type
         REQUIRE(n->get_type() == w);
 
+        n->set_flag("important", true);
+        REQUIRE(n->get_flag("important"));
+        n->set_flag("important", false);
+        REQUIRE_FALSE(n->get_flag("important"));
+
         // boolean
         switch(w)
         {
@@ -435,7 +440,7 @@ TEST_CASE("Invalid Tree Handling", "[node] [invalid]")
 
 TEST_CASE("True and False", "[node] [type] [output]")
 {
-    // we expect the test suite to be compiled with the exact same version
+    // test boolean values
     {
         csspp::position pos("test.css");
         csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::IDENTIFIER, pos));
@@ -446,6 +451,9 @@ TEST_CASE("True and False", "[node] [type] [output]")
         REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
 
         n->set_string("false");
+        REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+
+        n->set_string("null");
         REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
 
         n->set_string("other");
@@ -462,7 +470,7 @@ TEST_CASE("True and False", "[node] [type] [output]")
 
 TEST_CASE("Node Variables", "[node] [variable]")
 {
-    // we expect the test suite to be compiled with the exact same version
+    // set/get variables
     {
         csspp::position pos("test.css");
         csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::LIST, pos));
@@ -497,6 +505,48 @@ TEST_CASE("Node Variables", "[node] [variable]")
 
             csspp::node::pointer_t p(n->get_variable("t" + nb));
             REQUIRE(!p);
+        }
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Node Flags", "[node] [flag]")
+{
+    // read/write flags
+    {
+        csspp::position pos("test.css");
+        csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::LIST, pos));
+
+        for(int i(-10); i <= 10; ++i)
+        {
+            std::string nb("t" + std::to_string(i));
+
+            n->set_flag(nb, true);
+            REQUIRE(n->get_flag(nb));
+            n->set_flag(nb, false);
+            REQUIRE_FALSE(n->get_flag(nb));
+            n->set_flag(nb, true);
+            REQUIRE(n->get_flag(nb));
+        }
+
+        // check contents again
+        for(int i(-10); i <= 10; ++i)
+        {
+            std::string nb("t" + std::to_string(i));
+
+            REQUIRE(n->get_flag(nb));
+        }
+
+        n->clear_flags();
+
+        // all are gone now!
+        for(int i(-10); i <= 10; ++i)
+        {
+            std::string nb("t" + std::to_string(i));
+
+            REQUIRE_FALSE(n->get_flag(nb));
         }
     }
 
@@ -1959,6 +2009,7 @@ TEST_CASE("Print nodes", "[node] [output]")
 
         csspp::node::pointer_t child(new csspp::node(csspp::node_type_t::AT_KEYWORD, pos));
         child->set_string("@-char");
+        child->set_flag("important", true);
         csspp::node::pointer_t var(new csspp::node(csspp::node_type_t::IDENTIFIER, pos));
         var->set_string("colorous");
         child->set_variable("test", var);
@@ -1997,7 +2048,7 @@ TEST_CASE("Print nodes", "[node] [output]")
 "  INTEGER \"\" I:123\n"
 "  STRING \"bear\"\n"
 "  DECIMAL_NUMBER \"\" D:100\n"
-"  AT_KEYWORD \"@-char\" I:0\n"
+"  AT_KEYWORD \"@-char\" I:0 F:important\n"
 "      V:test\n"
 "        IDENTIFIER \"colorous\"\n"
 "    BOOLEAN B:true\n"
@@ -2015,13 +2066,13 @@ TEST_CASE("Print nodes", "[node] [output]")
     std::stringstream ss2;
     ss2 << *p;
 
-    REQUIRE_TREES(ss.str(),
+    REQUIRE_TREES(ss2.str(),
 
 "LIST\n"
 "  INTEGER \"\" I:123\n"
 "  STRING \"bear\"\n"
 "  DECIMAL_NUMBER \"\" D:100\n"
-"  AT_KEYWORD \"@-char\" I:0\n"
+"  AT_KEYWORD \"@-char\" I:0 F:important\n"
 "      V:test\n"
 "        IDENTIFIER \"colorous\"\n"
 "    BOOLEAN B:true\n"

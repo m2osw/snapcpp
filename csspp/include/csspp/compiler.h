@@ -88,8 +88,6 @@ private:
     void                    replace_variables_in_comment(node::pointer_t n);
     void                    prepare_function_arguments(node::pointer_t var);
 
-    bool                    argify(node::pointer_t n);
-
     bool                    selector_attribute_check(node::pointer_t n);
     bool                    selector_simple_term(node::pointer_t n, size_t & pos);
     bool                    selector_term(node::pointer_t n, size_t & pos);

@@ -210,6 +210,7 @@ node::pointer_t node::clone() const
     result->f_integer = f_integer;
     result->f_decimal_number = f_decimal_number;
     result->f_string = f_string;
+    result->f_flags = f_flags;
 
     for(auto c : f_children)
     {
@@ -612,6 +613,33 @@ node::pointer_t node::get_variable(std::string const & name)
         return pointer_t();
     }
     return it->second;
+}
+
+void node::clear_flags()
+{
+    f_flags.clear();
+}
+
+void node::set_flag(std::string const & name, bool value)
+{
+    if(value)
+    {
+        f_flags[name] = value;
+    }
+    else
+    {
+        auto it(f_flags.find(name));
+        if(it != f_flags.end())
+        {
+            f_flags.erase(it);
+        }
+    }
+}
+
+bool node::get_flag(std::string const & name)
+{
+    auto it(f_flags.find(name));
+    return it != f_flags.end();
 }
 
 std::string node::to_string(int flags) const
@@ -1062,6 +1090,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     switch(f_type)
     {
     case node_type_t::BOOLEAN:
+    case node_type_t::OPEN_CURLYBRACKET:
         out << " B:" << (f_boolean ? "true" : "false");
         break;
 
@@ -1119,6 +1148,11 @@ void node::display(std::ostream & out, uint32_t indent) const
     default:
         break;
 
+    }
+
+    for(auto f : f_flags)
+    {
+        out << " F:" << f.first;
     }
 
     out << "\n";

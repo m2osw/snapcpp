@@ -28,7 +28,7 @@
 
 #include "csspp/color.h"
 #include "csspp/exceptions.h"
-//#include "csspp/unicode_range.h"
+#include "csspp/parser.h"
 
 #include <cmath>
 #include <iostream>
@@ -46,6 +46,68 @@ expression::expression(node::pointer_t n, bool skip_whitespace)
     }
 }
 
+node::pointer_t expression::compile_list()
+{
+    mark_start();
+    next();
+    node::pointer_t result;
+
+    // result is a list: a b c ...
+    for(;;)
+    {
+        // we have one special case here: !important cannot be
+        // compiled as an expression...
+        if(f_current->is(node_type_t::EXCLAMATION))
+        {
+            // this is viewed as !important and only such
+            // can appear now so we can just return immediately
+            if(!end_of_nodes())
+            {
+                error::instance() << f_current->get_position()
+                        << "A special flag, !"
+                        << f_current->get_string()
+                        << " in this case, must only appear at the end of a declaration."
+                        << error_mode_t::ERROR_WARNING;
+            }
+
+            // we remove the !<word> from the declaration and
+            // setup a flag instead
+            f_node->remove_child(f_current);
+            f_node->set_flag(f_current->get_string(), true);
+        }
+        else
+        {
+            result = conditional();
+            replace_with_result(result);
+        }
+        if(end_of_nodes())
+        {
+            break;
+        }
+        next();
+        // keep one whitespace between expressions if such exists
+        if(f_current->is(node_type_t::WHITESPACE))
+        {
+            if(end_of_nodes())
+            {
+                // TODO: list of nodes ends with WHITESPACE
+                break;    // LCOV_EXCL_LINE
+            }
+            mark_start();
+            next();
+        }
+    }
+
+    return result;
+}
+
+node::pointer_t expression::compile()
+{
+    mark_start();
+    next();
+    return replace_with_result(conditional());
+}
+
 // basic state handling
 bool expression::end_of_nodes()
 {
@@ -57,43 +119,49 @@ void expression::mark_start()
     f_start = f_pos;
 }
 
-void expression::replace_with_result(node::pointer_t result)
+node::pointer_t expression::replace_with_result(node::pointer_t result)
 {
-    if(f_start == static_cast<size_t>(-1))
+    if(result)
     {
-        throw csspp_exception_logic("expression.cpp:expression(): replace_with_result() cannot be called if mark_start() was never called.");
-    }
-
-    // f_pos may point to a tag right after the end of the previous
-    // expression; expressions may be separated by WHITESPACE tokens
-    // too so we have to restore them if they appear at the end of
-    // the epxression we just worked on (i.e. we cannot eat a WHITESPACE
-    // in an expression.)
-    if(!f_current->is(node_type_t::EOF_TOKEN) && f_pos > 0)
-    {
-        while(f_pos > 0)
+        if(f_start == static_cast<size_t>(-1))
         {
-            --f_pos;
-            if(f_node->get_child(f_pos) == f_current)
+            throw csspp_exception_logic("expression.cpp:expression(): replace_with_result() cannot be called if mark_start() was never called.");
+        }
+
+        // f_pos may point to a tag right after the end of the previous
+        // expression; expressions may be separated by WHITESPACE tokens
+        // too so we have to restore them if they appear at the end of
+        // the epxression we just worked on (i.e. we cannot eat a WHITESPACE
+        // in an expression.)
+        if(!f_current->is(node_type_t::EOF_TOKEN) && f_pos > 0)
+        {
+            while(f_pos > 0)
             {
-                break;
+                --f_pos;
+                if(f_node->get_child(f_pos) == f_current)
+                {
+                    break;
+                }
+            }
+            if(f_pos > 0 && f_node->get_child(f_pos - 1)->is(node_type_t::WHITESPACE))
+            {
+                --f_pos;
             }
         }
-        if(f_pos > 0 && f_node->get_child(f_pos - 1)->is(node_type_t::WHITESPACE))
+
+        // this "reduces" the expression with its result
+        while(f_pos > f_start)
         {
             --f_pos;
+            f_node->remove_child(f_pos);
         }
+        f_node->insert_child(f_pos, result);
+        ++f_pos;
     }
 
-    // this "reduces" the expression with its result
-    while(f_pos > f_start)
-    {
-        --f_pos;
-        f_node->remove_child(f_pos);
-    }
-    f_node->insert_child(f_pos, result);
-    ++f_pos;
-    f_start = f_pos;
+    mark_start();
+
+    return result;
 }
 
 void expression::next()
@@ -116,6 +184,16 @@ void expression::next()
             ++f_pos;
         }
     }
+}
+
+node::pointer_t expression::look_ahead() const
+{
+    if(f_pos < f_node->size())
+    {
+        return f_node->get_child(f_pos);
+    }
+
+    return node::pointer_t();
 }
 
 node::pointer_t expression::current() const
@@ -917,16 +995,30 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
         type = node_type_t::INTEGER;
         break;
 
+    case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
+        // TODO: test that the dimensions are compatible
+        af = static_cast<decimal_number_t>(lhs->get_integer());
+        bf = rhs->get_decimal_number();
+        type = node_type_t::DECIMAL_NUMBER;
+        break;
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
+        // TODO: test that the dimensions are compatible
+        af = lhs->get_decimal_number();
+        bf = static_cast<decimal_number_t>(rhs->get_integer());
+        type = node_type_t::DECIMAL_NUMBER;
+        break;
+
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
         // TODO: test that the dimensions are compatible
-        ai = lhs->get_integer();
-        bi = rhs->get_integer();
+        af = lhs->get_decimal_number();
+        bf = rhs->get_decimal_number();
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
-        ai = lhs->get_integer();
-        bi = rhs->get_integer();
+        af = lhs->get_decimal_number();
+        bf = rhs->get_decimal_number();
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
@@ -1245,6 +1337,7 @@ node::pointer_t expression::unary()
     //      | STRING
     //      | PERCENT
     //      | HASH (-> COLOR)
+    //      | UNICODE_RANGE
     //      | FUNCTION argument_list ')' -- including url()
     //      | '(' expression_list ')'
     //      | '+' power
@@ -1254,10 +1347,12 @@ node::pointer_t expression::unary()
     switch(f_current->get_type())
     {
     case node_type_t::DECIMAL_NUMBER:
+    case node_type_t::EXCLAMATION:  // this is not a BOOLEAN NOT operator...
     case node_type_t::IDENTIFIER:
     case node_type_t::INTEGER:
     case node_type_t::PERCENT:
     case node_type_t::STRING:
+    case node_type_t::UNICODE_RANGE:
     case node_type_t::URL:
         {
             node::pointer_t result(f_current);
@@ -1274,11 +1369,15 @@ node::pointer_t expression::unary()
             next();
 
             // calculate the arguments
-            expression args_expr(f_current, true);
-            args_expr.next();
-            node::pointer_t args(args_expr.argument_list());
+            parser::argify(func);
+            size_t const max_children(func->size());
+            for(size_t a(0); a < max_children; ++a)
+            {
+                expression args_expr(func->get_child(a), true);
+                args_expr.compile_list();
+            }
 
-            return excecute_function(func, args);
+            return excecute_function(func);
         }
         break;
 
@@ -1330,26 +1429,27 @@ node::pointer_t expression::unary()
         }
         /*NOTREACHED*/
 
-    case node_type_t::EXCLAMATION:
-        {
-            // skip the '!'
-            next();
-
-            node::pointer_t result(power());
-            int const r(boolean(result));
-            if(r < 0)
-            {
-                return node::pointer_t();
-            }
-            // make sure the result is a boolean
-            if(!result->is(node_type_t::BOOLEAN))
-            {
-                result.reset(new node(node_type_t::BOOLEAN, result->get_position()));
-            }
-            result->set_boolean(r == 0 ? true : false);
-            return result;
-        }
-        /*NOTREACHED*/
+    // This is not too good, we actually transform the !important in
+    // one 'EXCLAMATION + string' node; use the not(...) instead
+    //case node_type_t::EXCLAMATION:
+    //    {
+    //        // skip the '!'
+    //        next();
+    //        node::pointer_t result(power());
+    //        int const r(boolean(result));
+    //        if(r < 0)
+    //        {
+    //            return node::pointer_t();
+    //        }
+    //        // make sure the result is a boolean
+    //        if(!result->is(node_type_t::BOOLEAN))
+    //        {
+    //            result.reset(new node(node_type_t::BOOLEAN, result->get_position()));
+    //        }
+    //        result->set_boolean(r == 0 ? true : false);
+    //        return result;
+    //    }
+    //    /*NOTREACHED*/
 
     case node_type_t::HASH:
         // a '#...' in an expression is expected to be a valid color
@@ -1387,25 +1487,73 @@ node::pointer_t expression::unary()
     }
 }
 
-node::pointer_t expression::excecute_function(node::pointer_t func, node::pointer_t args)
+node::pointer_t expression::excecute_function(node::pointer_t func)
 {
     std::string const function_name(func->get_string());
 
     if(function_name == "if")
     {
         // if(condition, if-true, if-false)
-        if(args->size() == 3)
+        if(func->size() == 3)
         {
-            int const r(boolean(args->get_child(0)));
-            if(r == 0 || r == 1)
+            node::pointer_t arg1(func->get_child(0));
+            if(arg1->size() != 1)
             {
-                return args->get_child(r + 1);
+                error::instance() << f_current->get_position()
+                        << "if() expects a boolean as its first argument."
+                        << error_mode_t::ERROR_ERROR;
+            }
+            else
+            {
+                int const r(boolean(arg1->get_child(0)));
+                if(r == 0 || r == 1)
+                {
+                    node::pointer_t result(func->get_child(r + 1));
+                    if(result->size() == 1)
+                    {
+                        return result->get_child(0);
+                    }
+                    node::pointer_t list(new node(node_type_t::LIST, result->get_position()));
+                    list->take_over_children_of(result);
+                    return list;
+                }
             }
         }
         else
         {
             error::instance() << f_current->get_position()
                     << "if() expects exactly 3 arguments."
+                    << error_mode_t::ERROR_ERROR;
+        }
+        return node::pointer_t();
+    }
+
+    if(function_name == "not")
+    {
+        if(func->size() == 1)
+        {
+            node::pointer_t arg1(func->get_child(0));
+            if(arg1->size() != 1)
+            {
+                error::instance() << f_current->get_position()
+                        << "not() expects a boolean as its first argument."
+                        << error_mode_t::ERROR_ERROR;
+            }
+            else
+            {
+                int const r(boolean(arg1->get_child(0)));
+                if(r == 0 || r == 1)
+                {
+                    node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
+                    result->set_boolean(r == 0); // this is a not so false is true and vice versa
+                    return result;
+                }
+            }
+        }
+        else
+        {
+            error::instance() << f_current->get_position()
+                    << "not() expects exactly 1 argument."
                     << error_mode_t::ERROR_ERROR;
         }
         return node::pointer_t();

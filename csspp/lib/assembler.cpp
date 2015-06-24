@@ -316,6 +316,12 @@ void assembler::output(node::pointer_t n)
             {
                 output(n->get_child(idx));
             }
+            // we make sure it appears at the end
+            if(n->get_flag("important"))
+            {
+                f_impl->output_operator("!", g_flag_optional_space_before);
+                f_out << "important";
+            }
         }
         break;
 
@@ -328,10 +334,6 @@ void assembler::output(node::pointer_t n)
         f_impl->output_operator("=", g_flag_optional_spaces);
         break;
 
-    case node_type_t::EXCLAMATION:
-        f_impl->output_operator("!", 0);
-        break;
-
     case node_type_t::FONT_METRICS:
         // this is a mouthful!
         f_out << decimal_number_to_string(n->get_font_size()) << n->get_dim1()
@@ -342,19 +344,35 @@ void assembler::output(node::pointer_t n)
         {
             f_out << n->get_string();
             f_impl->output_operator("(", 0);
-            bool first(true);
-            size_t const max_children(n->size());
-            for(size_t idx(0); idx < max_children; ++idx)
+            if(!n->empty())
             {
-                if(first)
+                if(n->get_child(0)->is(node_type_t::ARG))
                 {
-                    first = false;
+                    bool first(true);
+                    size_t const max_children(n->size());
+                    for(size_t idx(0); idx < max_children; ++idx)
+                    {
+                        if(first)
+                        {
+                            first = false;
+                        }
+                        else
+                        {
+                            f_impl->output_operator(",", g_flag_optional_space_after);
+                        }
+                        output(n->get_child(idx));
+                    }
                 }
                 else
                 {
-                    f_impl->output_operator(",", g_flag_optional_space_after);
+                    // no ARG then no commas; this happens in :not(),
+                    // :lang(), nth-child(), etc.
+                    size_t const max_children(n->size());
+                    for(size_t idx(0); idx < max_children; ++idx)
+                    {
+                        output(n->get_child(idx));
+                    }
                 }
-                output(n->get_child(idx));
             }
             f_impl->output_operator(")", 0);
         }
@@ -387,33 +405,15 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::OPEN_CURLYBRACKET:
         {
+            f_impl->output_operator("{", g_flag_optional_spaces_or_newlines);
             size_t const max_children(n->size());
-            if(max_children > 0
-            && n->get_child(0)->is(node_type_t::ARG))
+            for(size_t idx(0); idx < max_children; ++idx)
             {
-                // this is a COMPONENT_VALUE disguised in an OPEN_CURLYBRACKET
-                // (we probably will fix the tree in the compiler at some point)
-                f_impl->output_operator("{", g_flag_optional_spaces_or_newlines);
-                output_component_value(n);
-                f_impl->output_operator(";", g_flag_optional_operator);
-                f_impl->output_operator("}", g_flag_optional_space_before_or_newline);
-                f_impl->newline();
+                output(n->get_child(idx));
             }
-            else
-            {
-                f_impl->output_operator("{", g_flag_optional_spaces_or_newlines);
-                for(size_t idx(0); idx < max_children; ++idx)
-                {
-                    if(idx != 0)
-                    {
-                        f_impl->output_operator(";", g_flag_optional_space_after_or_newline);
-                    }
-                    output(n->get_child(idx));
-                }
-                f_impl->output_operator(";", g_flag_optional_operator);
-                f_impl->output_operator("}", g_flag_optional_space_before_or_newline);
-                f_impl->newline();
-            }
+            f_impl->output_operator(";", g_flag_optional_operator);
+            f_impl->output_operator("}", g_flag_optional_space_before_or_newline);
+            f_impl->newline();
         }
         break;
 
@@ -423,18 +423,18 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::OPEN_SQUAREBRACKET:
         {
-            f_impl->output_operator("[", g_flag_optional_space_after);
+            f_impl->output_operator("[", 0);
             size_t const max_children(n->size());
             for(size_t idx(0); idx < max_children; ++idx)
             {
                 output(n->get_child(idx));
             }
-            f_impl->output_operator("]", g_flag_optional_space_before);
+            f_impl->output_operator("]", 0);
         }
         break;
 
     case node_type_t::PERCENT:
-        f_out << decimal_number_to_string(n->get_decimal_number()) << "%";
+        f_out << decimal_number_to_string(n->get_decimal_number() * 100.0) << "%";
         break;
 
     case node_type_t::PERIOD:
@@ -531,6 +531,7 @@ void assembler::output(node::pointer_t n)
     case node_type_t::DIVIDE:
     case node_type_t::DOLLAR:
     case node_type_t::EOF_TOKEN:
+    case node_type_t::EXCLAMATION:
     case node_type_t::GREATER_EQUAL:
     case node_type_t::LESS_EQUAL:
     case node_type_t::LESS_THAN:
@@ -572,11 +573,11 @@ void assembler::output_component_value(node::pointer_t n)
         else if(!c->is(node_type_t::ARG))
         {
             // unexpected for a component value
-            std::stringstream ss;
-            ss << "assembler.cpp: expected all direct children of COMPONENT_VALUE to be ARG instead of "
-               << c->get_type()
-               << ".";
-            throw csspp_exception_logic(ss.str());
+            std::stringstream ss;                                                                           // LCOV_EXCL_LINE
+            ss << "assembler.cpp: expected all direct children of COMPONENT_VALUE to be ARG instead of "    // LCOV_EXCL_LINE
+               << c->get_type()                                                                             // LCOV_EXCL_LINE
+               << ".";                                                                                      // LCOV_EXCL_LINE
+            throw csspp_exception_logic(ss.str());                                                          // LCOV_EXCL_LINE
         }
         else
         {
@@ -610,9 +611,12 @@ void assembler::output_parenthesis(node::pointer_t n, int flags)
     for(size_t idx(0); idx < max_children; ++idx)
     {
         node::pointer_t child(n->get_child(idx));
-        if(idx == 0
-        && child->is(node_type_t::OPEN_PARENTHESIS))
+        if(child->is(node_type_t::OPEN_PARENTHESIS))
         {
+            if(idx != 0)
+            {
+                f_out << " ";
+            }
             output_parenthesis(child, 1);
         }
         else

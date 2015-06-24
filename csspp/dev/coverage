@@ -74,7 +74,7 @@ then
         echo -n "`date +'%D %T'`: Building: $t ... "
         echo "<h2>${count}. <a href='csspp_coverage_${t}_html/index.html'>$t<a/></h2>" >>tmp/build/index.html
         echo "<a href='csspp_coverage_${t}_html/statistics.html'>Statistics</a>" >>tmp/build/index.html
-        echo "<a href='csspp_coverage_${t}_html/test_log.html'>Logs</a>" >>tmp/build/index.html
+        echo "<a href='csspp_coverage_${t}/coverage_script_log.html'>Logs</a>" >>tmp/build/index.html
         if $0 --test $t >tmp/build/csspp_coverage_${t}.log 2>&1
         then
             echo "<iframe src='csspp_coverage_${t}_html/lib/index.html' width='100%' height='500'></iframe>" >>tmp/build/index.html
@@ -87,6 +87,9 @@ then
             fi
             echo "failure... logs are in: tmp/build/csspp_coverage_${t}.log"
         fi
+        echo "<html><head><title>Log for ${t}</title></head><body><pre>" >tmp/build/csspp_coverage_${t}/coverage_script_log.html
+        cat tmp/build/csspp_coverage_${t}.log >>tmp/build/csspp_coverage_${t}/coverage_script_log.html
+        echo "</pre></body></html>" >>tmp/build/csspp_coverage_${t}/coverage_script_log.html
         count=`expr $count + 1`
     done
     echo "</body></html>" >>tmp/build/index.html

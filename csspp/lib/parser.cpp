@@ -58,7 +58,6 @@ namespace
 {
 
 int const g_component_value_flag_return_on_semi_colon  = 0x0001;
-int const g_component_value_flag_return_on_exclamation = 0x0002;
 int const g_component_value_flag_return_on_variable    = 0x0004;
 
 } // no name namespace
@@ -361,44 +360,8 @@ node::pointer_t parser::declaration(node::pointer_t identifier)
                           << error_mode_t::ERROR_ERROR;
     }
 
-    if(!n->is(node_type_t::EXCLAMATION))
-    {
-        // a component value
-        result->add_child(component_value_list(n, g_component_value_flag_return_on_semi_colon | g_component_value_flag_return_on_exclamation));
-        n = f_last_token;
-    }
-
-    if(n->is(node_type_t::EXCLAMATION))
-    {
-        node::pointer_t exclamation(next_token());
-        if(exclamation->is(node_type_t::WHITESPACE))
-        {
-            exclamation = next_token();
-        }
-        if(exclamation->is(node_type_t::IDENTIFIER))
-        {
-            n->set_string(exclamation->get_string());
-            result->add_child(n);
-
-            // TBD: should we check that the identifier is either
-            //      "important" or "global" at this point?
-
-            // read the next token and if it is a space, skip it
-            n = next_token();
-            if(n->is(node_type_t::WHITESPACE))
-            {
-                next_token();
-            }
-        }
-        else
-        {
-            error::instance() << exclamation->get_position()
-                              << "A '!' must be followed by an identifier, got a "
-                              << exclamation->get_type()
-                              << " instead."
-                              << error_mode_t::ERROR_ERROR;
-        }
-    }
+    // a component value
+    result->add_child(component_value_list(n, g_component_value_flag_return_on_semi_colon));
 
     return result;
 }
@@ -419,7 +382,6 @@ node::pointer_t parser::component_value_list(node::pointer_t n, int flags)
         || n->is(node_type_t::CLOSE_SQUAREBRACKET)
         || n->is(node_type_t::CLOSE_CURLYBRACKET)
         || ((flags & g_component_value_flag_return_on_semi_colon)  != 0 && n->is(node_type_t::SEMICOLON)) // declarations handle the semi-colon differently
-        || ((flags & g_component_value_flag_return_on_exclamation) != 0 && n->is(node_type_t::EXCLAMATION))
         || n->is(node_type_t::CDO)
         || n->is(node_type_t::CDC))
         {
@@ -461,6 +423,49 @@ node::pointer_t parser::component_value_list(node::pointer_t n, int flags)
                 // move to a new sub-list
                 list.reset(new node(node_type_t::COMPONENT_VALUE, n->get_position()));
                 result->add_child(list);
+            }
+            continue;
+        }
+
+        if(n->is(node_type_t::EXCLAMATION))
+        {
+            node::pointer_t exclamation(next_token());
+            if(exclamation->is(node_type_t::WHITESPACE))
+            {
+                exclamation = next_token();
+            }
+            if(exclamation->is(node_type_t::IDENTIFIER))
+            {
+                // remove the WHITESPACE before if there is one
+                if(!list->empty()
+                && list->get_last_child()->is(node_type_t::WHITESPACE))
+                {
+                    list->remove_child(list->get_last_child());
+                }
+
+                // save the identifier in the EXCLAMATION node
+                // and add that to the current COMPONENT_VALUE
+                n->set_string(exclamation->get_string());
+                list->add_child(n);
+
+                // TBD: should we check that the identifier is either
+                //      "important" or "global" at this point?
+                //      (there are also others we support like "default")
+
+                // read the next token and if it is a space, skip it
+                n = next_token();
+                if(n->is(node_type_t::WHITESPACE))
+                {
+                    next_token();
+                }
+            }
+            else
+            {
+                error::instance() << exclamation->get_position()
+                                  << "A '!' must be followed by an identifier, got a "
+                                  << exclamation->get_type()
+                                  << " instead."
+                                  << error_mode_t::ERROR_ERROR;
             }
             continue;
         }
@@ -729,6 +734,75 @@ bool parser::is_nested_declaration(node::pointer_t n)
     }
 
     return n->get_child(pos)->is(node_type_t::OPEN_CURLYBRACKET);
+}
+
+bool parser::argify(node::pointer_t n)
+{
+    size_t const max_children(n->size());
+    if(max_children > 0)
+    {
+        node::pointer_t temp(new node(node_type_t::LIST, n->get_position()));
+        temp->take_over_children_of(n);
+
+        node::pointer_t arg(new node(node_type_t::ARG, n->get_position()));
+        n->add_child(arg);
+
+        for(size_t i(0); i < max_children; ++i)
+        {
+            node::pointer_t child(temp->get_child(i));
+            if(child->is(node_type_t::OPEN_CURLYBRACKET))
+            {
+                if(i + 1 != max_children)
+                {
+                    throw csspp_exception_logic("compiler.cpp:compiler::argify(): list that has an OPEN_CURLYBRACKET that is not the last child."); // LCOV_EXCL_LINE
+                }
+                n->add_child(child);
+                break;
+            }
+            if(child->is(node_type_t::COMMA))
+            {
+                // make sure to remove any WHITESPACE appearing just
+                // before a comma
+                while(!arg->empty() && arg->get_last_child()->is(node_type_t::WHITESPACE))
+                {
+                    arg->remove_child(arg->get_last_child());
+                }
+                if(arg->empty())
+                {
+                    if(n->size() == 1)
+                    {
+                        error::instance() << n->get_position()
+                                << "dangling comma at the beginning of a list of arguments or selectors."
+                                << error_mode_t::ERROR_ERROR;
+                    }
+                    else
+                    {
+                        error::instance() << n->get_position()
+                                << "two commas in a row are invalid in a list of arguments or selectors."
+                                << error_mode_t::ERROR_ERROR;
+                    }
+                    return false;
+                }
+                if(i + 1 == max_children
+                || temp->get_child(i + 1)->is(node_type_t::OPEN_CURLYBRACKET))
+                {
+                    error::instance() << n->get_position()
+                            << "dangling comma at the end of a list of arguments or selectors."
+                            << error_mode_t::ERROR_ERROR;
+                    return false;
+                }
+                // move to the next 'arg'
+                arg.reset(new node(node_type_t::ARG, n->get_position()));
+                n->add_child(arg);
+            }
+            else if(!child->is(node_type_t::WHITESPACE) || !arg->empty())
+            {
+                arg->add_child(child);
+            }
+        }
+    }
+
+    return true;
 }
 
 } // namespace csspp
