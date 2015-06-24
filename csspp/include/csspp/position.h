@@ -19,6 +19,7 @@
 
 #include "csspp/csspp.h"
 
+#include <memory>
 #include <string>
 
 namespace csspp
@@ -29,6 +30,8 @@ typedef int         line_t;
 class position
 {
 public:
+    typedef std::shared_ptr<position>   pointer_t;
+
                         position(std::string const & filename, line_t page = 1, line_t line = 1);
     position &          operator = (position const & rhs);
 

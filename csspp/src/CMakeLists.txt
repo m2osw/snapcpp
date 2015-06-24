@@ -33,7 +33,7 @@
 project(csspp-tool)
 
 include_directories(
-    #${ADVGETOPT_INCLUDE_DIRS}
+    ${ADVGETOPT_INCLUDE_DIRS}
 )
 
 add_executable(${PROJECT_NAME}
@@ -42,6 +42,7 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     csspp
+    ${ADVGETOPT_LIBRARIES}
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

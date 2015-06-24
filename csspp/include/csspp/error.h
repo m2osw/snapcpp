@@ -54,6 +54,7 @@ public:
     error_count_t           get_warning_count() const;
     void                    set_warning_count(error_count_t count);
 
+    void                    set_hide_all(bool show_debug);
     void                    set_show_debug(bool show_debug);
 
     void                    set_verbose(bool status);
@@ -75,6 +76,7 @@ private:
     error_count_t           f_error_count = 0;
     error_count_t           f_warning_count = 0;
     bool                    f_warnings_as_errors = false;
+    bool                    f_hide_all = false;
     bool                    f_show_debug = false;
     bool                    f_verbose = false;
 };

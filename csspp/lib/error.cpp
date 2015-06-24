@@ -88,6 +88,11 @@ void error::set_warning_count(error_count_t count)
     f_warning_count = count;
 }
 
+void error::set_hide_all(bool hide_all)
+{
+    f_hide_all = hide_all;
+}
+
 void error::set_show_debug(bool show_debug)
 {
     f_show_debug = show_debug;
@@ -125,6 +130,11 @@ error & error::operator << (error_mode_t mode)
         }
         else
         {
+            // should we count warnings even if we do not show them?
+            if(f_hide_all)
+            {
+                break;
+            }
             ++f_warning_count;
         }
         goto print_error;
@@ -136,6 +146,10 @@ error & error::operator << (error_mode_t mode)
         }
         /*FALLTHROUGH*/
     case error_mode_t::ERROR_INFO:
+        if(f_hide_all)
+        {
+            break;
+        }
 
 print_error:
         // print the error now

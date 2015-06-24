@@ -20,7 +20,6 @@
 #include <csspp/error.h>
 
 #include <map>
-#include <memory>
 #include <vector>
 
 namespace csspp
