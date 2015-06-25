@@ -46,7 +46,17 @@ expression::expression(node::pointer_t n, bool skip_whitespace)
     }
 }
 
-node::pointer_t expression::compile_list()
+void expression::compile_args()
+{
+    size_t const max_children(f_node->size());
+    for(size_t a(0); a < max_children; ++a)
+    {
+        expression arg_expr(f_node->get_child(a), true);
+        arg_expr.compile_list(f_node);
+    }
+}
+
+node::pointer_t expression::compile_list(node::pointer_t parent)
 {
     mark_start();
     next();
@@ -73,7 +83,7 @@ node::pointer_t expression::compile_list()
             // we remove the !<word> from the declaration and
             // setup a flag instead
             f_node->remove_child(f_current);
-            f_node->set_flag(f_current->get_string(), true);
+            parent->set_flag(f_current->get_string(), true);
         }
         else
         {
@@ -450,7 +460,7 @@ bool is_equal(node::pointer_t lhs, node::pointer_t rhs)
             << lhs->get_type()
             << " and "
             << rhs->get_type()
-            << " for operator '==', '!=', '<=', or '>='."
+            << " for operator '=', '!=', '<', '<=', '>', or '>='."
             << error_mode_t::ERROR_ERROR;
     return false;
 }
@@ -1016,6 +1026,20 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
+    case mix_node_types(node_type_t::INTEGER, node_type_t::PERCENT):
+        // TODO: test that the dimensions are compatible
+        af = static_cast<decimal_number_t>(lhs->get_integer());
+        bf = rhs->get_decimal_number();
+        type = node_type_t::PERCENT;
+        break;
+
+    case mix_node_types(node_type_t::PERCENT, node_type_t::INTEGER):
+        // TODO: test that the dimensions are compatible
+        af = lhs->get_decimal_number();
+        bf = static_cast<decimal_number_t>(rhs->get_integer());
+        type = node_type_t::PERCENT;
+        break;
+
     case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
@@ -1370,12 +1394,8 @@ node::pointer_t expression::unary()
 
             // calculate the arguments
             parser::argify(func);
-            size_t const max_children(func->size());
-            for(size_t a(0); a < max_children; ++a)
-            {
-                expression args_expr(func->get_child(a), true);
-                args_expr.compile_list();
-            }
+            expression args_expr(func, true);
+            args_expr.compile_args();
 
             return excecute_function(func);
         }

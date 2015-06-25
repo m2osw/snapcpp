@@ -370,6 +370,49 @@ TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
         // no error left over
         REQUIRE_ERRORS("");
     }
+
+    // verify support of an empty {}-block
+    {
+        std::stringstream ss;
+        ss << "div section span {}\n"
+           << "div p b {}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Result is: [" << *n << "]\n";
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    WHITESPACE\n"
+"    IDENTIFIER \"section\"\n"
+"    WHITESPACE\n"
+"    IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    WHITESPACE\n"
+"    IDENTIFIER \"p\"\n"
+"    WHITESPACE\n"
+"    IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      LIST\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
 }
 
 TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
@@ -2282,6 +2325,392 @@ TEST_CASE("Rules defined inside an @-Keyword", "[parser] [variable] [invalid]")
 
             );
 
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Parse Argify", "[parser] [stylesheet]")
+{
+    {
+        std::stringstream ss;
+        ss << "a,b{color:red}\n"
+           << "a, b{color:red}\n"
+           << "a,b ,c{color:red}\n"
+           << "a , b,c{color:red}\n"
+           << "a{color:red}\n"
+           << "a {color:red}\n"
+           << "a,b {color:red}\n"
+           ;
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    COMMA\n"
+"    IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    COMMA\n"
+"    WHITESPACE\n"
+"    IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    COMMA\n"
+"    IDENTIFIER \"b\"\n"
+"    WHITESPACE\n"
+"    COMMA\n"
+"    IDENTIFIER \"c\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    WHITESPACE\n"
+"    COMMA\n"
+"    WHITESPACE\n"
+"    IDENTIFIER \"b\"\n"
+"    COMMA\n"
+"    IDENTIFIER \"c\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    COMMA\n"
+"    IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        // Argify the list under each COMPONENT_VALUE
+        REQUIRE(n->is(csspp::node_type_t::LIST));
+
+        size_t const max_children(n->size());
+        for(size_t idx(0); idx < max_children; ++idx)
+        {
+            csspp::node::pointer_t component_value(n->get_child(idx));
+            REQUIRE(component_value->is(csspp::node_type_t::COMPONENT_VALUE));
+            REQUIRE(csspp::parser::argify(component_value));
+        }
+
+//std::cerr << "Argified result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        std::stringstream out2;
+        out2 << *n;
+        REQUIRE_TREES(out2.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    ARG\n"
+"      IDENTIFIER \"c\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    ARG\n"
+"      IDENTIFIER \"c\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+    }
+}
+
+TEST_CASE("Invalid Argify", "[parser] [stylesheet]")
+{
+    // A starting comma is illegal
+    {
+        std::stringstream ss;
+        ss << ",a{color:red}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    COMMA\n"
+"    IDENTIFIER \"a\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        // Argify the list under each COMPONENT_VALUE
+        REQUIRE(n->is(csspp::node_type_t::LIST));
+
+        size_t const max_children(n->size());
+        for(size_t idx(0); idx < max_children; ++idx)
+        {
+            csspp::node::pointer_t component_value(n->get_child(idx));
+            REQUIRE(component_value->is(csspp::node_type_t::COMPONENT_VALUE));
+            REQUIRE_FALSE(csspp::parser::argify(component_value));
+        }
+
+        REQUIRE_ERRORS("test.css(1): error: dangling comma at the beginning of a list of arguments or selectors.\n");
+    }
+
+    // An ending comma is illegal
+    {
+        std::stringstream ss;
+        ss << "a,{color:red}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    COMMA\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        // Argify the list under each COMPONENT_VALUE
+        REQUIRE(n->is(csspp::node_type_t::LIST));
+
+        size_t const max_children(n->size());
+        for(size_t idx(0); idx < max_children; ++idx)
+        {
+            csspp::node::pointer_t component_value(n->get_child(idx));
+            REQUIRE(component_value->is(csspp::node_type_t::COMPONENT_VALUE));
+            REQUIRE_FALSE(csspp::parser::argify(component_value));
+        }
+
+        REQUIRE_ERRORS("test.css(1): error: dangling comma at the end of a list of arguments or selectors.\n");
+    }
+
+    // Two commas in a row is illegal
+    {
+        std::stringstream ss;
+        ss << "a,,b{color:red}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    COMMA\n"
+"    COMMA\n"
+"    IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        // Argify the list under each COMPONENT_VALUE
+        REQUIRE(n->is(csspp::node_type_t::LIST));
+
+        size_t const max_children(n->size());
+        for(size_t idx(0); idx < max_children; ++idx)
+        {
+            csspp::node::pointer_t component_value(n->get_child(idx));
+            REQUIRE(component_value->is(csspp::node_type_t::COMPONENT_VALUE));
+            REQUIRE_FALSE(csspp::parser::argify(component_value));
+        }
+
+        REQUIRE_ERRORS("test.css(1): error: two commas in a row are invalid in a list of arguments or selectors.\n");
+    }
+
+    // Just a comma is illegal
+    {
+        std::stringstream ss;
+        ss << ",{color:red}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    COMMA\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        // Argify the list under each COMPONENT_VALUE
+        REQUIRE(n->is(csspp::node_type_t::LIST));
+
+        size_t const max_children(n->size());
+        for(size_t idx(0); idx < max_children; ++idx)
+        {
+            csspp::node::pointer_t component_value(n->get_child(idx));
+            REQUIRE(component_value->is(csspp::node_type_t::COMPONENT_VALUE));
+            REQUIRE_FALSE(csspp::parser::argify(component_value));
+        }
+
+        REQUIRE_ERRORS("test.css(1): error: dangling comma at the beginning of a list of arguments or selectors.\n");
     }
 
     // no error left over

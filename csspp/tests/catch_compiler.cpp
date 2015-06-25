@@ -121,9 +121,10 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "      IDENTIFIER \"blue\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"background\"\n"
-"        IDENTIFIER \"white\"\n"
-"        WHITESPACE\n"
-"        URL \"/images/background.png\"\n"
+"        ARG\n"
+"          IDENTIFIER \"white\"\n"
+"          WHITESPACE\n"
+"          URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\"\" I:1\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
@@ -216,9 +217,10 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "      IDENTIFIER \"blue\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"background\"\n"
-"        IDENTIFIER \"white\"\n"
-"        WHITESPACE\n"
-"        URL \"/images/background.png\"\n"
+"        ARG\n"
+"          IDENTIFIER \"white\"\n"
+"          WHITESPACE\n"
+"          URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\" with version 1.0\" I:1\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
@@ -281,7 +283,8 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "      IDENTIFIER \"blackness\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -343,7 +346,8 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "      IDENTIFIER \"blackness\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -405,7 +409,153 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "      IDENTIFIER \"blackness\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
+"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // empty rules have to compile too
+    {
+        std::stringstream ss;
+        ss << "div.blackness section.light span.clear\n"
+           << "{\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:_csspp_major\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_major\"\n"
+"        INTEGER \"\" I:1\n"
+"    V:_csspp_minor\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_minor\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_patch\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_patch\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_version\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_version\"\n"
+"        STRING \"1.0.0\"\n"
+"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // special IE8 value which has to be skipped
+    {
+        std::stringstream ss;
+        ss << ".transparent img\n"
+           << "{\n"
+           << "  $alpha: 5% * 4;\n"
+           << "  filter: opacity($alpha);\n"
+           << "  filter: alpha( opacity=20 );\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        // no error left over
+        REQUIRE_ERRORS("test.css(4): warning: the alpha() function of the filter field is an Internet Explorer 8 (and earlier) extension which is not supported across browsers.\n");
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:_csspp_major\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_major\"\n"
+"        INTEGER \"\" I:1\n"
+"    V:_csspp_minor\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_minor\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_patch\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_patch\"\n"
+"        INTEGER \"\" I:0\n"
+"    V:_csspp_version\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_version\"\n"
+"        STRING \"1.0.0\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      PERIOD\n"
+"      IDENTIFIER \"transparent\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"img\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"        V:alpha\n"
+"          LIST\n"
+"            VARIABLE \"alpha\"\n"
+"            LIST\n"
+"              PERCENT D:0.05\n"
+"              WHITESPACE\n"
+"              MULTIPLY\n"
+"              WHITESPACE\n"
+"              INTEGER \"\" I:4\n"
+"      LIST\n"
+"        DECLARATION \"filter\"\n"
+"          ARG\n"
+"            FUNCTION \"opacity\"\n"
+"              ARG\n"
+"                PERCENT D:0.2\n"
+"        DECLARATION \"filter\"\n"
+"          FUNCTION \"alpha\"\n"
+"            IDENTIFIER \"opacity\"\n"
+"            EQUAL\n"
+"            INTEGER \"\" I:20\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -419,6 +569,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
 TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 {
+    // valid argify with/without spaces
     {
         std::stringstream ss;
         ss << "a,b{color:red}\n"
@@ -458,7 +609,8 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "      IDENTIFIER \"b\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -466,17 +618,8 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "      IDENTIFIER \"b\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
-"  COMPONENT_VALUE\n"
-"    ARG\n"
-"      IDENTIFIER \"a\"\n"
-"    ARG\n"
-"      IDENTIFIER \"b\"\n"
-"    ARG\n"
-"      IDENTIFIER \"c\"\n"
-"    OPEN_CURLYBRACKET B:true\n"
-"      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -486,19 +629,33 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "      IDENTIFIER \"c\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    ARG\n"
+"      IDENTIFIER \"c\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -506,7 +663,96 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "      IDENTIFIER \"b\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // now check declarations with multiple entries like text-shadow
+    {
+        std::stringstream ss;
+        ss << "a, b\n"
+           << "{\n"
+           << "  text-shadow: 1px 3px 2px #f0e933, 7px 1px 5px #88ff45;\n"
+           << "  box-shadow: 2.5em 4.3em 1.25em #ffee33, 7.3px 1.25px 4.11px #88ff55, 3.32em 2.45em 4.11em #ee5599;\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      LIST\n"
+"        DECLARATION \"text-shadow\"\n"
+"          ARG\n"
+"            INTEGER \"px\" I:1\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:3\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:2\n"
+"            WHITESPACE\n"
+"            COLOR H:ff33e9f0\n"
+"          ARG\n"
+"            INTEGER \"px\" I:7\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:1\n"
+"            WHITESPACE\n"
+"            INTEGER \"px\" I:5\n"
+"            WHITESPACE\n"
+"            COLOR H:ff45ff88\n"
+"        DECLARATION \"box-shadow\"\n"
+"          ARG\n"
+"            DECIMAL_NUMBER \"em\" D:2.5\n"
+"            WHITESPACE\n"
+"            DECIMAL_NUMBER \"em\" D:4.3\n"
+"            WHITESPACE\n"
+"            DECIMAL_NUMBER \"em\" D:1.25\n"
+"            WHITESPACE\n"
+"            COLOR H:ff33eeff\n"
+"          ARG\n"
+"            DECIMAL_NUMBER \"px\" D:7.3\n"
+"            WHITESPACE\n"
+"            DECIMAL_NUMBER \"px\" D:1.25\n"
+"            WHITESPACE\n"
+"            DECIMAL_NUMBER \"px\" D:4.11\n"
+"            WHITESPACE\n"
+"            COLOR H:ff55ff88\n"
+"          ARG\n"
+"            DECIMAL_NUMBER \"em\" D:3.32\n"
+"            WHITESPACE\n"
+"            DECIMAL_NUMBER \"em\" D:2.45\n"
+"            WHITESPACE\n"
+"            DECIMAL_NUMBER \"em\" D:4.11\n"
+"            WHITESPACE\n"
+"            COLOR H:ff9955ee\n"
 
             );
 
@@ -648,7 +894,6 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-        // no error left over
         REQUIRE_ERRORS("test.css(1): error: found #color twice in selector: \"#color div #color\".\n");
 
         REQUIRE(c.get_root() == n);
@@ -707,7 +952,8 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
 "      IDENTIFIER \"blackness\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -810,7 +1056,8 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
                      << "        " << val[j + 1] << "\n"
                         "    OPEN_CURLYBRACKET B:true\n"
                         "      DECLARATION \"color\"\n"
-                        "        IDENTIFIER \"red\"\n"
+                        "        ARG\n"
+                        "          IDENTIFIER \"red\"\n"
                     ;
                 REQUIRE_TREES(out.str(), expected.str());
 
@@ -872,7 +1119,8 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
                 "        IDENTIFIER \"b\"\n"
                 "    OPEN_CURLYBRACKET B:true\n"
                 "      DECLARATION \"color\"\n"
-                "        IDENTIFIER \"red\"\n"
+                "        ARG\n"
+                "          IDENTIFIER \"red\"\n"
             ;
         REQUIRE_TREES(out.str(), expected.str());
 
@@ -1652,7 +1900,8 @@ TEST_CASE("Undefined Paths", "[compiler] [invalid]")
 "        IDENTIFIER \"fr\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 
                 );
 
@@ -1778,9 +2027,11 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      LIST\n"
 "        DECLARATION \"color\"\n"
-"          IDENTIFIER \"red\"\n"
+"          ARG\n"
+"            IDENTIFIER \"red\"\n"
 "        DECLARATION \"width\"\n"
-"          INTEGER \"px\" I:12\n"
+"          ARG\n"
+"            INTEGER \"px\" I:12\n"
 
             );
 
@@ -1851,7 +2102,8 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "      IDENTIFIER \"" + std::string(pseudo_name) + "\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 
             );
 
@@ -1923,7 +2175,8 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "      IDENTIFIER \"" + std::string(pseudo_name) + "\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"red\"\n"
+"        ARG\n"
+"          IDENTIFIER \"red\"\n"
 
             );
 
@@ -1989,7 +2242,8 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 // {color:blue}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        COLOR H:ff115566\n"
+"        ARG\n"
+"          COLOR H:ff115566\n"
 
                 );
 
@@ -2046,7 +2300,8 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 // {color:#651}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        COLOR H:ff115566\n"
+"        ARG\n"
+"          COLOR H:ff115566\n"
 
             );
 
@@ -2102,7 +2357,8 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 // {color:#651}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"brisque\"\n"
+"        ARG\n"
+"          IDENTIFIER \"brisque\"\n"
 
             );
 
@@ -2167,7 +2423,8 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 // {color:#651}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"brisque\"\n"
+"        ARG\n"
+"          IDENTIFIER \"brisque\"\n"
 
             );
 
@@ -2220,7 +2477,8 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 // {color:coral}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"coral\"\n"
+"        ARG\n"
+"          IDENTIFIER \"coral\"\n"
 
             );
 
@@ -2271,7 +2529,8 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 // {color:coral}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"coral\"\n"
+"        ARG\n"
+"          IDENTIFIER \"coral\"\n"
 
             );
 
@@ -3081,7 +3340,8 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 // {color:blue}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"blue\"\n"
+"        ARG\n"
+"          IDENTIFIER \"blue\"\n"
 
             );
 
@@ -3135,7 +3395,8 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      LIST\n"
 "        DECLARATION \"color\"\n"
-"          IDENTIFIER \"blue\"\n"
+"          ARG\n"
+"            IDENTIFIER \"blue\"\n"
 "        COMPONENT_VALUE\n"
 "          ARG\n"
 // &:hover
@@ -3144,7 +3405,8 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "            IDENTIFIER \"hover\"\n"
 "          OPEN_CURLYBRACKET B:true\n"
 "            DECLARATION \"color\"\n"
-"              IDENTIFIER \"red\"\n"
+"              ARG\n"
+"                IDENTIFIER \"red\"\n"
 
             );
 
@@ -3201,7 +3463,8 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 // {color:blue}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        COLOR H:ff557711\n"
+"        ARG\n"
+"          COLOR H:ff557711\n"
 
             );
 
@@ -3259,7 +3522,8 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 // {color:blue}
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        COLOR H:ff557711\n"
+"        ARG\n"
+"          COLOR H:ff557711\n"
 
             );
 
@@ -3319,7 +3583,8 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "      IDENTIFIER \"" + std::string(pseudo_name) + "\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
-"        IDENTIFIER \"teal\"\n"
+"        ARG\n"
+"          IDENTIFIER \"teal\"\n"
 
             );
 
@@ -3717,6 +3982,40 @@ TEST_CASE("Invalid Node", "[compiler] [invalid]")
         REQUIRE(c.get_root() == n);
     }
 
+    // a declaration needs an identifier
+    {
+        std::stringstream ss;
+        ss << "div {\n"
+           << "  font-size: 80%;\n"
+           << "  font-style; italic;\n"
+           << "  text-align: right;\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+        REQUIRE_ERRORS(
+                "test.css(2): error: somehow a declaration list is missing a field name or ':'.\n"
+                "test.css(3): error: somehow a declaration list is missing a field name or ':'.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
     // no left over?
     REQUIRE_ERRORS("");
 }
@@ -3762,11 +4061,14 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "        OPEN_CURLYBRACKET B:true\n"
 "          LIST\n"
 "            DECLARATION \"family\"\n"
-"              IDENTIFIER \"helvetica\"\n"
+"              ARG\n"
+"                IDENTIFIER \"helvetica\"\n"
 "            DECLARATION \"color\"\n"
-"              IDENTIFIER \"red\"\n"
+"              ARG\n"
+"                IDENTIFIER \"red\"\n"
 "            DECLARATION \"size\"\n"
-"              INTEGER \"px\" I:8\n"
+"              ARG\n"
+"                INTEGER \"px\" I:8\n"
 
             );
 
@@ -3818,17 +4120,20 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "        OPEN_CURLYBRACKET B:true\n"
 "          LIST\n"
 "            DECLARATION \"left\"\n"
-"              INTEGER \"px\" I:317\n"
+"              ARG\n"
+"                INTEGER \"px\" I:317\n"
 "            DECLARATION \"top\"\n"
-"              INTEGER \"px\" I:8\n"
+"              ARG\n"
+"                INTEGER \"px\" I:8\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"p\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"margin\"\n"
-"        INTEGER \"px\" I:910\n"
-"        WHITESPACE\n"
-"        INTEGER \"px\" I:-875\n"
+"        ARG\n"
+"          INTEGER \"px\" I:910\n"
+"          WHITESPACE\n"
+"          INTEGER \"px\" I:-875\n"
 
             );
 
@@ -3901,9 +4206,11 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "      DECLARATION \"margin\"\n"
 "        LIST\n"
 "          DECLARATION \"left\"\n"
-"            INTEGER \"px\" I:317\n"
+"            ARG\n"
+"              INTEGER \"px\" I:317\n"
 "          DECLARATION \"top\"\n"
-"            INTEGER \"px\" I:8\n"
+"            ARG\n"
+"              INTEGER \"px\" I:8\n"
 
             );
 
@@ -3961,7 +4268,8 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      LIST\n"
 "        DECLARATION \"left\"\n"
-"          INTEGER \"\" I:0\n"
+"          ARG\n"
+"            INTEGER \"\" I:0\n"
 "        COMPONENT_VALUE\n"
 "          ARG\n"
 "            IDENTIFIER \"width\"\n"
@@ -3972,7 +4280,8 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "              OPEN_CURLYBRACKET B:true\n"
 "                LIST\n"
 "                  DECLARATION \"height\"\n"
-"                    INTEGER \"px\" I:317\n"
+"                    ARG\n"
+"                      INTEGER \"px\" I:317\n"
 "                  COMPONENT_VALUE\n"
 "                    ARG\n"
 "                      IDENTIFIER \"top\"\n"
@@ -3982,15 +4291,18 @@ TEST_CASE("Nested Declarations", "[compiler] [invalid]")
 "                          IDENTIFIER \"color\"\n"
 "                        OPEN_CURLYBRACKET B:true\n"
 "                          DECLARATION \"edge\"\n"
-"                            IDENTIFIER \"white\"\n"
+"                            ARG\n"
+"                              IDENTIFIER \"white\"\n"
 "                      DECLARATION \"position\"\n"
-"                        INTEGER \"px\" I:8\n"
+"                        ARG\n"
+"                          INTEGER \"px\" I:8\n"
 "                      COMPONENT_VALUE\n"
 "                        ARG\n"
 "                          IDENTIFIER \"chain\"\n"
 "                        OPEN_CURLYBRACKET B:true\n"
 "                          DECLARATION \"key\"\n"
-"                            IDENTIFIER \"attached\"\n"
+"                            ARG\n"
+"                              IDENTIFIER \"attached\"\n"
 
             );
 
@@ -4148,9 +4460,11 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      DECLARATION \"margin\"\n"
 "        LIST\n"
 "          DECLARATION \"left\"\n"
-"            INTEGER \"px\" I:317\n"
+"            ARG\n"
+"              INTEGER \"px\" I:317\n"
 "          DECLARATION \"top\"\n"
-"            INTEGER \"px\" I:8\n"
+"            ARG\n"
+"              INTEGER \"px\" I:8\n"
 
             );
 
@@ -4228,9 +4542,11 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      DECLARATION \"margin\"\n"
 "        LIST\n"
 "          DECLARATION \"left\"\n"
-"            INTEGER \"px\" I:317\n"
+"            ARG\n"
+"              INTEGER \"px\" I:317\n"
 "          DECLARATION \"top\"\n"
-"            INTEGER \"px\" I:8\n"
+"            ARG\n"
+"              INTEGER \"px\" I:8\n"
 
             );
 
@@ -4308,9 +4624,11 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      DECLARATION \"margin\"\n"
 "        LIST\n"
 "          DECLARATION \"left\"\n"
-"            INTEGER \"px\" I:317\n"
+"            ARG\n"
+"              INTEGER \"px\" I:317\n"
 "          DECLARATION \"top\"\n"
-"            INTEGER \"px\" I:6\n"
+"            ARG\n"
+"              INTEGER \"px\" I:6\n"
 
             );
 
@@ -4386,11 +4704,13 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      DECLARATION \"margin\"\n"
 "        LIST\n"
 "          DECLARATION \"left\"\n"
-"            INTEGER \"px\" I:317\n"
+"            ARG\n"
+"              INTEGER \"px\" I:317\n"
 "          DECLARATION \"top\"\n"
-"            INTEGER \"px\" I:1\n"
-"            WHITESPACE\n"
-"            INTEGER \"px\" I:3\n"
+"            ARG\n"
+"              INTEGER \"px\" I:1\n"
+"              WHITESPACE\n"
+"              INTEGER \"px\" I:3\n"
 
             );
 
@@ -4444,13 +4764,14 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"br\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:3\n"
-"        WHITESPACE\n"
-"        INTEGER \"px\" I:1\n"
-"        WHITESPACE\n"
-"        INTEGER \"px\" I:2\n"
-"        WHITESPACE\n"
-"        INTEGER \"px\" I:4\n"
+"        ARG\n"
+"          INTEGER \"px\" I:3\n"
+"          WHITESPACE\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          INTEGER \"px\" I:2\n"
+"          WHITESPACE\n"
+"          INTEGER \"px\" I:4\n"
 
             );
 
@@ -4499,7 +4820,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"margin\"\n"
-"        INTEGER \"px\" I:300\n"
+"        ARG\n"
+"          INTEGER \"px\" I:300\n"
 
             );
 
@@ -4558,11 +4880,14 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          OPEN_CURLYBRACKET B:true\n"
 "            LIST\n"
 "              DECLARATION \"width\"\n"
-"                INTEGER \"px\" I:300\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:300\n"
 "              DECLARATION \"height\"\n"
-"                INTEGER \"px\" I:225\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:225\n"
 "        DECLARATION \"junior\"\n"
-"          INTEGER \"px\" I:313\n"
+"          ARG\n"
+"            INTEGER \"px\" I:313\n"
 
             );
 
@@ -4630,17 +4955,21 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "                  INTEGER \"px\" I:50\n"
 "            LIST\n"
 "              DECLARATION \"width\"\n"
-"                INTEGER \"px\" I:50\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:50\n"
 "              DECLARATION \"height\"\n"
-"                INTEGER \"px\" I:37\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:37\n"
 "        DECLARATION \"junior\"\n"
-"          INTEGER \"px\" I:313\n"
+"          ARG\n"
+"            INTEGER \"px\" I:313\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"section\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"diameter\"\n"
-"        INTEGER \"px\" I:100\n"
+"        ARG\n"
+"          INTEGER \"px\" I:100\n"
 
             );
 
@@ -4700,17 +5029,21 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          OPEN_CURLYBRACKET B:true\n"
 "            LIST\n"
 "              DECLARATION \"width\"\n"
-"                INTEGER \"px\" I:50\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:50\n"
 "              DECLARATION \"height\"\n"
-"                INTEGER \"px\" I:37\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:37\n"
 "        DECLARATION \"junior\"\n"
-"          INTEGER \"px\" I:63\n"
+"          ARG\n"
+"            INTEGER \"px\" I:63\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"section\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"diameter\"\n"
-"        INTEGER \"px\" I:50\n"
+"        ARG\n"
+"          INTEGER \"px\" I:50\n"
 
             );
 
@@ -4770,17 +5103,21 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          OPEN_CURLYBRACKET B:true\n"
 "            LIST\n"
 "              DECLARATION \"width\"\n"
-"                INTEGER \"px\" I:100\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:100\n"
 "              DECLARATION \"height\"\n"
-"                INTEGER \"px\" I:75\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:75\n"
 "        DECLARATION \"junior\"\n"
-"          INTEGER \"px\" I:113\n"
+"          ARG\n"
+"            INTEGER \"px\" I:113\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"section\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"diameter\"\n"
-"        INTEGER \"px\" I:100\n"
+"        ARG\n"
+"          INTEGER \"px\" I:100\n"
 
             );
 
@@ -4828,9 +5165,10 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:1\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
 
             );
 
@@ -4874,9 +5212,10 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:1\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
 
             );
 
@@ -4937,11 +5276,12 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:1\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
-"        WHITESPACE\n"
-"        COLOR H:ff93e0ff\n"
+"        ARG\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          COLOR H:ff93e0ff\n"
 
             );
 
@@ -5004,11 +5344,12 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:7\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
-"        WHITESPACE\n"
-"        COLOR H:ff93e0ff\n"
+"        ARG\n"
+"          INTEGER \"px\" I:7\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          COLOR H:ff93e0ff\n"
 
             );
 
@@ -5071,11 +5412,12 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:3\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
-"        WHITESPACE\n"
-"        COLOR H:ff93e0ff\n"
+"        ARG\n"
+"          INTEGER \"px\" I:3\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          COLOR H:ff93e0ff\n"
 
             );
 
@@ -5140,11 +5482,12 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:7\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
-"        WHITESPACE\n"
-"        COLOR H:ff93e0ff\n"
+"        ARG\n"
+"          INTEGER \"px\" I:7\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          COLOR H:ff93e0ff\n"
 
             );
 
@@ -5201,11 +5544,12 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:1\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
-"        WHITESPACE\n"
-"        COLOR H:ff0000ff\n"
+"        ARG\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -5264,7 +5608,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      HASH \"scissors\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        IDENTIFIER \"blue\"\n"
+"        ARG\n"
+"          IDENTIFIER \"blue\"\n"
 
             );
 
@@ -5337,7 +5682,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      HASH \"selectors\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        IDENTIFIER \"blue\"\n"
+"        ARG\n"
+"          IDENTIFIER \"blue\"\n"
 
             );
 
@@ -5405,7 +5751,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          HASH \"scissors\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"border\"\n"
-"            IDENTIFIER \"blue\"\n"
+"            ARG\n"
+"              IDENTIFIER \"blue\"\n"
 
             );
 
@@ -5466,11 +5813,12 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:1\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
-"        WHITESPACE\n"
-"        COLOR H:ffeeeeee\n"
+"        ARG\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          COLOR H:ffeeeeee\n"
 
             );
 
@@ -5529,11 +5877,12 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
-"        INTEGER \"px\" I:1\n"
-"        WHITESPACE\n"
-"        IDENTIFIER \"solid\"\n"
-"        WHITESPACE\n"
-"        COLOR H:ffeeeeee\n"
+"        ARG\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          COLOR H:ffeeeeee\n"
 
             );
 
@@ -5649,7 +5998,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          IDENTIFIER \"p\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"color\"\n"
-"            COLOR H:ffeeeeee\n";
+"            ARG\n"
+"              COLOR H:ffeeeeee\n";
 
             REQUIRE_TREES(out.str(), expected.str());
 
@@ -5722,7 +6072,64 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "          IDENTIFIER \"p\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"color\"\n"
-"            COLOR H:ffeeeeee\n"
+"            ARG\n"
+"              COLOR H:ffeeeeee\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // wrote this test out of a mistake really,
+    // but it generates an empty {}-block which is a good test
+    {
+        std::stringstream ss;
+        ss << "$b: border;"
+           << "$v: 1px solid white;"
+           << "div{$b: $v}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.set_empty_on_undefined_variable(true);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"    V:b\n"
+"      LIST\n"
+"        VARIABLE \"b\"\n"
+"        IDENTIFIER \"border\"\n"
+"    V:v\n"
+"      LIST\n"
+"        VARIABLE \"v\"\n"
+"        LIST\n"
+"          INTEGER \"px\" I:1\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"white\"\n"
 
             );
 
@@ -6315,41 +6722,6 @@ TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
         REQUIRE(c.get_root() == n);
     }
 
-    // wrote this test out of a mistake really,
-    // but it generates an empty {}-block which is a good test
-    {
-        std::stringstream ss;
-        ss << "$b: border;"
-           << "$v: 1px solid white;"
-           << "div{$b: $v}\n";
-        csspp::position pos("test.css");
-        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
-
-        csspp::parser p(l);
-
-        csspp::node::pointer_t n(p.stylesheet());
-
-//std::cerr << "Parser result is: [" << *n << "]\n";
-
-        // no errors so far
-        REQUIRE_ERRORS("");
-
-        csspp::compiler c;
-        c.set_root(n);
-        c.clear_paths();
-        c.set_empty_on_undefined_variable(true);
-        c.add_path(csspp_test::get_script_path());
-        c.add_path(csspp_test::get_version_script_path());
-
-        c.compile(true);
-
-//std::cerr << "Result is: [" << *c.get_root() << "]\n";
-
-        REQUIRE_ERRORS("test.css(1): error: the {}-block of a qualified rule is missing.\n");
-
-        REQUIRE(c.get_root() == n);
-    }
-
     // try !global at the wrong place and see the warning
     {
         std::stringstream ss;
@@ -6406,17 +6778,21 @@ TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
 "          OPEN_CURLYBRACKET B:true\n"
 "            LIST\n"
 "              DECLARATION \"width\"\n"
-"                INTEGER \"px\" I:50\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:50\n"
 "              DECLARATION \"height\"\n"
-"                INTEGER \"px\" I:37\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:37\n"
 "        DECLARATION \"junior\"\n"
-"          INTEGER \"px\" I:63\n"
+"          ARG\n"
+"            INTEGER \"px\" I:63\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"section\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"diameter\"\n"
-"        INTEGER \"px\" I:50\n"
+"        ARG\n"
+"          INTEGER \"px\" I:50\n"
 
             );
 
@@ -6479,17 +6855,21 @@ TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
 "          OPEN_CURLYBRACKET B:true\n"
 "            LIST\n"
 "              DECLARATION \"width\"\n"
-"                INTEGER \"px\" I:100\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:100\n"
 "              DECLARATION \"height\"\n"
-"                INTEGER \"px\" I:75\n"
+"                ARG\n"
+"                  INTEGER \"px\" I:75\n"
 "        DECLARATION \"junior\"\n"
-"          INTEGER \"px\" I:113\n"
+"          ARG\n"
+"            INTEGER \"px\" I:113\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"section\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"diameter\"\n"
-"        INTEGER \"px\" I:100\n"
+"        ARG\n"
+"          INTEGER \"px\" I:100\n"
 
             );
 
@@ -6802,7 +7182,8 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "          IDENTIFIER \"body\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"content\"\n"
-"            STRING \"Utf-16\"\n"
+"            ARG\n"
+"              STRING \"Utf-16\"\n"
 
             );
 
@@ -6855,23 +7236,26 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "          IDENTIFIER \"body\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"content\"\n"
-"            STRING \"Utf-16\"\n"
+"            ARG\n"
+"              STRING \"Utf-16\"\n"
 "      COMPONENT_VALUE\n"
 "        ARG\n"
 "          IDENTIFIER \"body\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"margin\"\n"
-"            INTEGER \"\" I:0\n"
+"            ARG\n"
+"              INTEGER \"\" I:0\n"
 "      COMPONENT_VALUE\n"
 "        ARG\n"
 "          IDENTIFIER \"div\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"border\"\n"
-"            INTEGER \"px\" I:1\n"
-"            WHITESPACE\n"
-"            IDENTIFIER \"solid\"\n"
-"            WHITESPACE\n"
-"            IDENTIFIER \"white\"\n"
+"            ARG\n"
+"              INTEGER \"px\" I:1\n"
+"              WHITESPACE\n"
+"              IDENTIFIER \"solid\"\n"
+"              WHITESPACE\n"
+"              IDENTIFIER \"white\"\n"
 
             );
 
@@ -6918,7 +7302,8 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "          IDENTIFIER \"i\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"font-style\"\n"
-"            IDENTIFIER \"normal\"\n"
+"            ARG\n"
+"              IDENTIFIER \"normal\"\n"
 
             );
 
@@ -6970,7 +7355,8 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "          IDENTIFIER \"i\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"font-style\"\n"
-"            IDENTIFIER \"normal\"\n"
+"            ARG\n"
+"              IDENTIFIER \"normal\"\n"
 "      COMPONENT_VALUE\n"
 "        AT_KEYWORD \"media\" I:0\n"
 "          ARG\n"
@@ -6982,7 +7368,8 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "                IDENTIFIER \"b\"\n"
 "              OPEN_CURLYBRACKET B:true\n"
 "                DECLARATION \"font-weight\"\n"
-"                  IDENTIFIER \"normal\"\n"
+"                  ARG\n"
+"                    IDENTIFIER \"normal\"\n"
 
             );
 
@@ -7035,7 +7422,8 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "          IDENTIFIER \"b\"\n"
 "        OPEN_CURLYBRACKET B:true\n"
 "          DECLARATION \"font-weight\"\n"
-"            IDENTIFIER \"normal\"\n"
+"            ARG\n"
+"              IDENTIFIER \"normal\"\n"
 
             );
 
@@ -7134,9 +7522,11 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      LIST\n"
 "        DECLARATION \"left\"\n"
-"          INTEGER \"in\" I:2\n"
+"          ARG\n"
+"            INTEGER \"in\" I:2\n"
 "        DECLARATION \"right\"\n"
-"          DECIMAL_NUMBER \"in\" D:2.2\n"
+"          ARG\n"
+"            DECIMAL_NUMBER \"in\" D:2.2\n"
 
             );
 
@@ -7184,9 +7574,11 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      LIST\n"
 "        DECLARATION \"left\"\n"
-"          INTEGER \"in\" I:2\n"
+"          ARG\n"
+"            INTEGER \"in\" I:2\n"
 "        DECLARATION \"right\"\n"
-"          DECIMAL_NUMBER \"in\" D:2.2\n"
+"          ARG\n"
+"            DECIMAL_NUMBER \"in\" D:2.2\n"
 "        COMPONENT_VALUE\n"
 "          AT_KEYWORD \"media\" I:0\n"
 "            ARG\n"
@@ -7198,7 +7590,8 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 "                  IDENTIFIER \"arg\"\n"
 "                OPEN_CURLYBRACKET B:true\n"
 "                  DECLARATION \"color\"\n"
-"                    IDENTIFIER \"grey\"\n"
+"                    ARG\n"
+"                      IDENTIFIER \"grey\"\n"
 
             );
 
@@ -7240,9 +7633,11 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      LIST\n"
 "        DECLARATION \"unicode-range\"\n"
-"          UNICODE_RANGE I:5493263172608\n"
+"          ARG\n"
+"            UNICODE_RANGE I:5493263172608\n"
 "        DECLARATION \"font-style\"\n"
-"          IDENTIFIER \"italic\"\n"
+"          ARG\n"
+"            IDENTIFIER \"italic\"\n"
 
             );
 
@@ -7292,7 +7687,8 @@ TEST_CASE("Charset", "[compiler] [invalid]")
 "      IDENTIFIER \"html\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"margin\"\n"
-"        INTEGER \"\" I:0\n"
+"        ARG\n"
+"          INTEGER \"\" I:0\n"
 
             );
 
@@ -7336,7 +7732,8 @@ TEST_CASE("Charset", "[compiler] [invalid]")
 "      IDENTIFIER \"html\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"margin\"\n"
-"        INTEGER \"\" I:0\n"
+"        ARG\n"
+"          INTEGER \"\" I:0\n"
 
             );
 
@@ -7380,7 +7777,8 @@ TEST_CASE("Charset", "[compiler] [invalid]")
 "      IDENTIFIER \"html\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"margin\"\n"
-"        INTEGER \"\" I:0\n"
+"        ARG\n"
+"          INTEGER \"\" I:0\n"
 
             );
 
@@ -7424,7 +7822,8 @@ TEST_CASE("Charset", "[compiler] [invalid]")
 "      IDENTIFIER \"html\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"margin\"\n"
-"        INTEGER \"\" I:0\n"
+"        ARG\n"
+"          INTEGER \"\" I:0\n"
 
             );
 
@@ -7483,7 +7882,8 @@ TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
 "      IDENTIFIER \"ul\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"list\"\n"
-"        IDENTIFIER \"cross\"\n"
+"        ARG\n"
+"          IDENTIFIER \"cross\"\n"
 
             );
 
@@ -7534,7 +7934,8 @@ TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
 "      IDENTIFIER \"ul\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"list\"\n"
-"        IDENTIFIER \"cross\"\n"
+"        ARG\n"
+"          IDENTIFIER \"cross\"\n"
 
             );
 
@@ -7579,15 +7980,14 @@ TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
 "    V:var\n"
 "      LIST\n"
 "        VARIABLE \"var\"\n"
-"        LIST\n"
-"          SUBTRACT\n"
-"          INTEGER \"\" I:192\n"
+"        INTEGER \"\" I:-192\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"ul\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"list\"\n"
-"        IDENTIFIER \"cross\"\n"
+"        ARG\n"
+"          IDENTIFIER \"cross\"\n"
 
             );
 
@@ -7666,7 +8066,8 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 "      IDENTIFIER \"ul\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"list\"\n"
-"        IDENTIFIER \"cross\"\n"
+"        ARG\n"
+"          IDENTIFIER \"cross\"\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -7723,7 +8124,8 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 "      IDENTIFIER \"ul\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"list\"\n"
-"        IDENTIFIER \"cross\"\n"
+"        ARG\n"
+"          IDENTIFIER \"cross\"\n"
 
             );
 
@@ -7781,7 +8183,8 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 "      IDENTIFIER \"ul\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"list\"\n"
-"        IDENTIFIER \"cross\"\n"
+"        ARG\n"
+"          IDENTIFIER \"cross\"\n"
 
             );
 
@@ -7838,7 +8241,8 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 "      IDENTIFIER \"ul\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"list\"\n"
-"        IDENTIFIER \"cross\"\n"
+"        ARG\n"
+"          IDENTIFIER \"cross\"\n"
 
             );
 

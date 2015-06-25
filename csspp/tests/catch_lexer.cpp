@@ -1267,6 +1267,64 @@ TEST_CASE("Simple tokens", "[lexer] [basics] [delimiters]")
         REQUIRE_ERRORS("");
     }
 
+    // A "special" sequence div+.alpha
+    {
+        std::stringstream ss;
+        csspp::position pos("test.css");
+        csspp::lexer l(ss, pos);
+        ss << "div+.alpha";
+
+        // so far, no error
+        REQUIRE_ERRORS("");
+
+        csspp::node::pointer_t div(l.next_token());
+        REQUIRE(div->is(csspp::node_type_t::IDENTIFIER));
+        REQUIRE(div->get_string() == "div");
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::ADD));
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::PERIOD));
+
+        csspp::node::pointer_t alpha(l.next_token());
+        REQUIRE(alpha->is(csspp::node_type_t::IDENTIFIER));
+        REQUIRE(alpha->get_string() == "alpha");
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // make sure we got the expected error
+        REQUIRE_ERRORS("");
+    }
+
+    // A "special" sequence div -.alpha
+    {
+        std::stringstream ss;
+        csspp::position pos("test.css");
+        csspp::lexer l(ss, pos);
+        ss << "div -.alpha";
+
+        // so far, no error
+        REQUIRE_ERRORS("");
+
+        csspp::node::pointer_t div(l.next_token());
+        REQUIRE(div->is(csspp::node_type_t::IDENTIFIER));
+        REQUIRE(div->get_string() == "div");
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::WHITESPACE));
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::SUBTRACT));
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::PERIOD));
+
+        csspp::node::pointer_t alpha(l.next_token());
+        REQUIRE(alpha->is(csspp::node_type_t::IDENTIFIER));
+        REQUIRE(alpha->get_string() == "alpha");
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // make sure we got the expected error
+        REQUIRE_ERRORS("");
+    }
+
     // no error left over
     REQUIRE_ERRORS("");
 }
@@ -3372,22 +3430,22 @@ TEST_CASE("Numbers", "[lexer] [number]")
         csspp::lexer l(ss, pos);
 
         // sign
-        if(i < 0)
-        {
-            csspp::node::pointer_t integer(l.next_token());
-            REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
-            csspp::position const & npos(integer->get_position());
-            REQUIRE(npos.get_filename() == "test.css");
-            REQUIRE(npos.get_page() == 1);
-            REQUIRE(npos.get_line() == 1);
-            REQUIRE(npos.get_total_line() == 1);
-        }
+        //if(i < 0)
+        //{
+        //    csspp::node::pointer_t integer(l.next_token());
+        //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+        //    csspp::position const & npos(integer->get_position());
+        //    REQUIRE(npos.get_filename() == "test.css");
+        //    REQUIRE(npos.get_page() == 1);
+        //    REQUIRE(npos.get_line() == 1);
+        //    REQUIRE(npos.get_total_line() == 1);
+        //}
 
         // integer
         {
             csspp::node::pointer_t integer(l.next_token());
             REQUIRE(integer->is(csspp::node_type_t::INTEGER));
-            REQUIRE(integer->get_integer() == abs(i));
+            REQUIRE(integer->get_integer() == i);
             csspp::position const & npos(integer->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3414,26 +3472,26 @@ TEST_CASE("Numbers", "[lexer] [number]")
         csspp::position pos("test.css");
         csspp::lexer l(ss, pos);
 
-        if(negative)
-        {
-            csspp::node::pointer_t subtract(l.next_token());
-            REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-            csspp::position const & npos(subtract->get_position());
-            REQUIRE(npos.get_filename() == "test.css");
-            REQUIRE(npos.get_page() == 1);
-            REQUIRE(npos.get_line() == 1);
-            REQUIRE(npos.get_total_line() == 1);
-        }
-        else if(*sign == '+')
-        {
-            csspp::node::pointer_t subtract(l.next_token());
-            REQUIRE(subtract->is(csspp::node_type_t::ADD));
-            csspp::position const & npos(subtract->get_position());
-            REQUIRE(npos.get_filename() == "test.css");
-            REQUIRE(npos.get_page() == 1);
-            REQUIRE(npos.get_line() == 1);
-            REQUIRE(npos.get_total_line() == 1);
-        }
+        //if(negative)
+        //{
+        //    csspp::node::pointer_t subtract(l.next_token());
+        //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+        //    csspp::position const & npos(subtract->get_position());
+        //    REQUIRE(npos.get_filename() == "test.css");
+        //    REQUIRE(npos.get_page() == 1);
+        //    REQUIRE(npos.get_line() == 1);
+        //    REQUIRE(npos.get_total_line() == 1);
+        //}
+        //else if(*sign == '+')
+        //{
+        //    csspp::node::pointer_t subtract(l.next_token());
+        //    REQUIRE(subtract->is(csspp::node_type_t::ADD));
+        //    csspp::position const & npos(subtract->get_position());
+        //    REQUIRE(npos.get_filename() == "test.css");
+        //    REQUIRE(npos.get_page() == 1);
+        //    REQUIRE(npos.get_line() == 1);
+        //    REQUIRE(npos.get_total_line() == 1);
+        //}
 
         if(floating_point)
         {
@@ -3441,12 +3499,19 @@ TEST_CASE("Numbers", "[lexer] [number]")
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::DECIMAL_NUMBER));
 //std::cerr << "*** from [" << ss.str()
-//          << "] or [" << static_cast<double>(i) / 1000.0
+//          << "] or [" << static_cast<csspp::decimal_number_t>(i) / 1000.0
 //          << "] we got [" << string->get_decimal_number()
 //          << "] |" << fabs(string->get_decimal_number())
 //          << "| (sign: " << (negative ? "-" : "+") << ")\n";
-            REQUIRE(fabs(fabs(string->get_decimal_number()) - static_cast<double>(i) / 1000.0) < 0.00001);
-            REQUIRE(string->get_decimal_number() >= 0.0);
+            REQUIRE(fabs(fabs(string->get_decimal_number()) - static_cast<csspp::decimal_number_t>(i) / 1000.0) < 0.00001);
+            if(negative)
+            {
+                REQUIRE(string->get_decimal_number() <= 0.0);
+            }
+            else
+            {
+                REQUIRE(string->get_decimal_number() >= 0.0);
+            }
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3458,7 +3523,7 @@ TEST_CASE("Numbers", "[lexer] [number]")
             // integer
             csspp::node::pointer_t string(l.next_token());
             REQUIRE(string->is(csspp::node_type_t::INTEGER));
-            REQUIRE(string->get_integer() == i / 1000);
+            REQUIRE(string->get_integer() == (negative ? -1 : 1) * i / 1000);
             csspp::position const & npos(string->get_position());
             REQUIRE(npos.get_filename() == "test.css");
             REQUIRE(npos.get_page() == 1);
@@ -3498,55 +3563,62 @@ TEST_CASE("Numbers", "[lexer] [number]")
                << std::setw(0) << std::setfill('\0') << "e" << exponent_sign << e;
             csspp::position pos("test.css");
             csspp::lexer l(ss, pos);
-            double our_number(static_cast<double>(i) / 1000.0 * pow(10.0, e * (strcmp(exponent_sign, "-") == 0 ? -1 : 1)));
+            csspp::decimal_number_t our_number(static_cast<csspp::decimal_number_t>(i) / 1000.0 * pow(10.0, e * (strcmp(exponent_sign, "-") == 0 ? -1 : 1)));
 //std::cerr << "*** from [" << ss.str()
 //          << "] or [" << our_number
 //          << "] sign & exponent [" << exponent_sign << "|" << e
 //          << "] ... ";
 
             // sign
-            if(i < 0)
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
-            else if(*sign == '+')
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::ADD));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
+            //if(i < 0)
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
+            //else if(*sign == '+')
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::ADD));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
 
             // decimal number
             {
                 csspp::node::pointer_t decimal_number(l.next_token());
 //std::cerr << "*** type is " << static_cast<int>(decimal_number->get_type()) << " ***\n";
                 REQUIRE(decimal_number->is(csspp::node_type_t::DECIMAL_NUMBER));
-                double const result(decimal_number->get_decimal_number());
-                double const abs_number(fabs(our_number));
-                double const delta(fabs(result - abs_number));
-                double const diff(delta / pow(10.0, e * (strcmp(exponent_sign, "-") == 0 ? -1 : 1)));
+                csspp::decimal_number_t const result(fabs(decimal_number->get_decimal_number()));
+                csspp::decimal_number_t const abs_number(fabs(our_number));
+                csspp::decimal_number_t const delta(fabs(result - abs_number));
+                csspp::decimal_number_t const diff(delta / pow(10.0, e * (strcmp(exponent_sign, "-") == 0 ? -1 : 1)));
 
 //std::cerr << "we got [" << result
 //          << "| vs |" << abs_number
 //          << "| diff = " << diff
 //          << "\n";
-//double r(fabs(decimal_number->get_decimal_number()));
-//double q(fabs(our_number));
+//csspp::decimal_number_t r(fabs(decimal_number->get_decimal_number()));
+//csspp::decimal_number_t q(fabs(our_number));
 //std::cerr << std::hex
 //          << *reinterpret_cast<int64_t *>(&r) << "\n"
 //          << *reinterpret_cast<int64_t *>(&q) << " " << (r - q) << " -> " << diff << "\n";
                 REQUIRE(diff < 0.00001);
-                REQUIRE(decimal_number->get_decimal_number() >= 0);
+                if(*sign == '-')
+                {
+                    REQUIRE(decimal_number->get_decimal_number() <= 0);
+                }
+                else
+                {
+                    REQUIRE(decimal_number->get_decimal_number() >= 0);
+                }
                 csspp::position const & npos(decimal_number->get_position());
                 REQUIRE(npos.get_filename() == "test.css");
                 REQUIRE(npos.get_page() == 1);
@@ -3584,54 +3656,61 @@ TEST_CASE("Numbers", "[lexer] [number]")
                << std::setw(0) << std::setfill('\0') << "e" << exponent_sign << e;
             csspp::position pos("test.css");
             csspp::lexer l(ss, pos);
-            double our_number(static_cast<double>(i) / 1000.0 * pow(10.0, e * (strcmp(exponent_sign, "-") == 0 ? -1 : 1)));
+            csspp::decimal_number_t our_number(static_cast<csspp::decimal_number_t>(i) / 1000.0 * pow(10.0, e * (strcmp(exponent_sign, "-") == 0 ? -1 : 1)));
 //std::cerr << "*** from [" << ss.str()
 //          << "] or [" << our_number
 //          << "] sign & exponent [" << exponent_sign << "|" << e
 //          << "] ... ";
 
             // sign
-            if(i < 0)
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
-            else if(*sign == '+')
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::ADD));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
+            //if(i < 0)
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
+            //else if(*sign == '+')
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::ADD));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
 
             // decimal number
             {
                 csspp::node::pointer_t decimal_number(l.next_token());
                 REQUIRE(decimal_number->is(csspp::node_type_t::DECIMAL_NUMBER));
-                double const result(fabs(decimal_number->get_decimal_number()));
-                double const abs_number(fabs(our_number));
-                double const delta(fabs(result - abs_number));
-                double const diff(delta / pow(10.0, e * (strcmp(exponent_sign, "-") == 0 ? -1 : 1)));
+                csspp::decimal_number_t const result(fabs(decimal_number->get_decimal_number()));
+                csspp::decimal_number_t const abs_number(fabs(our_number));
+                csspp::decimal_number_t const delta(fabs(result - abs_number));
+                csspp::decimal_number_t const diff(delta / pow(10.0, e * (strcmp(exponent_sign, "-") == 0 ? -1 : 1)));
 
 //std::cerr << "we got [" << result
 //          << "| vs |" << abs_number
 //          << "| diff = " << diff
 //          << "\n";
-//double r(fabs(decimal_number->get_decimal_number()));
-//double q(fabs(our_number));
+//csspp::decimal_number_t r(fabs(decimal_number->get_decimal_number()));
+//csspp::decimal_number_t q(fabs(our_number));
 //std::cerr << std::hex
 //          << *reinterpret_cast<int64_t *>(&r) << "\n"
 //          << *reinterpret_cast<int64_t *>(&q) << " " << (r - q) << " -> " << diff << "\n";
                 REQUIRE(diff < 0.00001);
-                REQUIRE(decimal_number->get_decimal_number() >= 0);
+                if(*sign == '-')
+                {
+                    REQUIRE(decimal_number->get_decimal_number() <= 0);
+                }
+                else
+                {
+                    REQUIRE(decimal_number->get_decimal_number() >= 0);
+                }
                 csspp::position const & npos(decimal_number->get_position());
                 REQUIRE(npos.get_filename() == "test.css");
                 REQUIRE(npos.get_page() == 1);
@@ -4079,16 +4158,16 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                 csspp::lexer l(ss, pos);
 
                 // sign
-                if(i < 0)
-                {
-                    csspp::node::pointer_t integer(l.next_token());
-                    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
-                    csspp::position const & npos(integer->get_position());
-                    REQUIRE(npos.get_filename() == "test.css");
-                    REQUIRE(npos.get_page() == 1);
-                    REQUIRE(npos.get_line() == 1);
-                    REQUIRE(npos.get_total_line() == 1);
-                }
+                //if(i < 0)
+                //{
+                //    csspp::node::pointer_t integer(l.next_token());
+                //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+                //    csspp::position const & npos(integer->get_position());
+                //    REQUIRE(npos.get_filename() == "test.css");
+                //    REQUIRE(npos.get_page() == 1);
+                //    REQUIRE(npos.get_line() == 1);
+                //    REQUIRE(npos.get_total_line() == 1);
+                //}
 
                 // dimension
                 {
@@ -4096,7 +4175,7 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                     // with a string expressing the dimension
                     csspp::node::pointer_t dimension(l.next_token());
                     REQUIRE(dimension->is(csspp::node_type_t::INTEGER));
-                    REQUIRE(dimension->get_integer() == abs(i));
+                    REQUIRE(dimension->get_integer() == i);
                     REQUIRE(dimension->get_string() == dimensions[j]);
                     csspp::position const & npos(dimension->get_position());
                     REQUIRE(npos.get_filename() == "test.css");
@@ -4120,16 +4199,16 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                     }
 
                     // sign
-                    if(i < 0)
-                    {
-                        csspp::node::pointer_t integer(l.next_token());
-                        REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
-                        csspp::position const & npos(integer->get_position());
-                        REQUIRE(npos.get_filename() == "test.css");
-                        REQUIRE(npos.get_page() == 1);
-                        REQUIRE(npos.get_line() == 1);
-                        REQUIRE(npos.get_total_line() == 1);
-                    }
+                    //if(i < 0)
+                    //{
+                    //    csspp::node::pointer_t integer(l.next_token());
+                    //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+                    //    csspp::position const & npos(integer->get_position());
+                    //    REQUIRE(npos.get_filename() == "test.css");
+                    //    REQUIRE(npos.get_page() == 1);
+                    //    REQUIRE(npos.get_line() == 1);
+                    //    REQUIRE(npos.get_total_line() == 1);
+                    //}
 
                     // dimension
                     {
@@ -4137,7 +4216,7 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                         // with a string expressing the dimension
                         csspp::node::pointer_t dimension(l.next_token());
                         REQUIRE(dimension->is(csspp::node_type_t::INTEGER));
-                        REQUIRE(dimension->get_integer() == abs(i));
+                        REQUIRE(dimension->get_integer() == i);
                         REQUIRE(dimension->get_string() == dimensions[j]);
                         csspp::position const & npos(dimension->get_position());
                         REQUIRE(npos.get_filename() == "test.css");
@@ -4159,16 +4238,16 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                 }
 
                 // sign
-                if(i < 0)
-                {
-                    csspp::node::pointer_t integer(l.next_token());
-                    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
-                    csspp::position const & npos(integer->get_position());
-                    REQUIRE(npos.get_filename() == "test.css");
-                    REQUIRE(npos.get_page() == 1);
-                    REQUIRE(npos.get_line() == 1);
-                    REQUIRE(npos.get_total_line() == 1);
-                }
+                //if(i < 0)
+                //{
+                //    csspp::node::pointer_t integer(l.next_token());
+                //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+                //    csspp::position const & npos(integer->get_position());
+                //    REQUIRE(npos.get_filename() == "test.css");
+                //    REQUIRE(npos.get_page() == 1);
+                //    REQUIRE(npos.get_line() == 1);
+                //    REQUIRE(npos.get_total_line() == 1);
+                //}
 
                 // dimension
                 {
@@ -4176,7 +4255,7 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                     // with a string expressing the dimension
                     csspp::node::pointer_t dimension(l.next_token());
                     REQUIRE(dimension->is(csspp::node_type_t::INTEGER));
-                    REQUIRE(dimension->get_integer() == abs(i));
+                    REQUIRE(dimension->get_integer() == i);
                     REQUIRE(dimension->get_string() == dimensions[j]);
                     csspp::position const & npos(dimension->get_position());
                     REQUIRE(npos.get_filename() == "test.css");
@@ -4197,22 +4276,22 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                 }
 
                 // sign
-                if(i < 0)
-                {
-                    csspp::node::pointer_t integer(l.next_token());
-                    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
-                    csspp::position const & npos(integer->get_position());
-                    REQUIRE(npos.get_filename() == "test.css");
-                    REQUIRE(npos.get_page() == 1);
-                    REQUIRE(npos.get_line() == 1);
-                    REQUIRE(npos.get_total_line() == 1);
-                }
+                //if(i < 0)
+                //{
+                //    csspp::node::pointer_t integer(l.next_token());
+                //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+                //    csspp::position const & npos(integer->get_position());
+                //    REQUIRE(npos.get_filename() == "test.css");
+                //    REQUIRE(npos.get_page() == 1);
+                //    REQUIRE(npos.get_line() == 1);
+                //    REQUIRE(npos.get_total_line() == 1);
+                //}
 
                 // integer (separated!)
                 {
                     csspp::node::pointer_t integer(l.next_token());
                     REQUIRE(integer->is(csspp::node_type_t::INTEGER));
-                    REQUIRE(integer->get_integer() == abs(i));
+                    REQUIRE(integer->get_integer() == i);
                     REQUIRE(integer->get_string() == "");
                     csspp::position const & npos(integer->get_position());
                     REQUIRE(npos.get_filename() == "test.css");
@@ -4268,16 +4347,16 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                 csspp::lexer l(ss, pos);
 
                 // sign
-                if(i < 0)
-                {
-                    csspp::node::pointer_t integer(l.next_token());
-                    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
-                    csspp::position const & npos(integer->get_position());
-                    REQUIRE(npos.get_filename() == "test.css");
-                    REQUIRE(npos.get_page() == 1);
-                    REQUIRE(npos.get_line() == 1);
-                    REQUIRE(npos.get_total_line() == 1);
-                }
+                //if(i < 0)
+                //{
+                //    csspp::node::pointer_t integer(l.next_token());
+                //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+                //    csspp::position const & npos(integer->get_position());
+                //    REQUIRE(npos.get_filename() == "test.css");
+                //    REQUIRE(npos.get_page() == 1);
+                //    REQUIRE(npos.get_line() == 1);
+                //    REQUIRE(npos.get_total_line() == 1);
+                //}
 
                 // dimension
                 {
@@ -4285,7 +4364,7 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                     // with a string expressing the dimension
                     csspp::node::pointer_t dimension(l.next_token());
                     REQUIRE(dimension->is(csspp::node_type_t::DECIMAL_NUMBER));
-                    REQUIRE(fabs(dimension->get_decimal_number() - abs(i) / 100.0) < 0.00001);
+                    REQUIRE(fabs(dimension->get_decimal_number() - i / 100.0) < 0.00001);
                     REQUIRE(dimension->get_string() == dimensions[j]);
                     csspp::position const & npos(dimension->get_position());
                     REQUIRE(npos.get_filename() == "test.css");
@@ -4306,22 +4385,131 @@ TEST_CASE("Dimensions", "[lexer] [number] [dimension] [identifier]")
                 }
 
                 // sign
-                if(i < 0)
+                //if(i < 0)
+                //{
+                //    csspp::node::pointer_t integer(l.next_token());
+                //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+                //    csspp::position const & npos(integer->get_position());
+                //    REQUIRE(npos.get_filename() == "test.css");
+                //    REQUIRE(npos.get_page() == 1);
+                //    REQUIRE(npos.get_line() == 1);
+                //    REQUIRE(npos.get_total_line() == 1);
+                //}
+
+                // decimal number (separated!)
                 {
-                    csspp::node::pointer_t integer(l.next_token());
-                    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
-                    csspp::position const & npos(integer->get_position());
+                    csspp::node::pointer_t decimal_number(l.next_token());
+                    REQUIRE(decimal_number->is(csspp::node_type_t::DECIMAL_NUMBER));
+                    REQUIRE(fabs(decimal_number->get_decimal_number() - i / 100.0) < 0.00001);
+                    REQUIRE(decimal_number->get_string() == "");
+                    csspp::position const & npos(decimal_number->get_position());
                     REQUIRE(npos.get_filename() == "test.css");
                     REQUIRE(npos.get_page() == 1);
                     REQUIRE(npos.get_line() == 1);
                     REQUIRE(npos.get_total_line() == 1);
                 }
 
+                // whitespace
+                {
+                    csspp::node::pointer_t whitespace(l.next_token());
+                    REQUIRE(whitespace->is(csspp::node_type_t::WHITESPACE));
+                    csspp::position const & npos(whitespace->get_position());
+                    REQUIRE(npos.get_filename() == "test.css");
+                    REQUIRE(npos.get_page() == 1);
+                    REQUIRE(npos.get_line() == 1);
+                    REQUIRE(npos.get_total_line() == 1);
+                }
+
+                // "dimension" (as a separate identifier)
+                {
+                    // a dimension is an integer or a decimal number
+                    // with a string expressing the dimension
+                    csspp::node::pointer_t dimension(l.next_token());
+                    REQUIRE(dimension->is(csspp::node_type_t::IDENTIFIER));
+                    REQUIRE(dimension->get_string() == dimensions[j]);
+                    csspp::position const & npos(dimension->get_position());
+                    REQUIRE(npos.get_filename() == "test.css");
+                    REQUIRE(npos.get_page() == 1);
+                    REQUIRE(npos.get_line() == 1);
+                    REQUIRE(npos.get_total_line() == 1);
+                }
+                REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+            }
+        }
+    }
+
+    // decimal numbers that start with "." or "-."
+    {
+        char const *dimensions[] = {
+            "em",       // character em
+            "px",       // pixel
+            "pt"        // point
+        };
+        for(int i(-99); i <= 99; ++i)
+        {
+            for(size_t j(0); j < sizeof(dimensions) / sizeof(dimensions[0]); ++j)
+            {
+                std::stringstream ss;
+                ss << (i < 0 ? "-" : "") << "." << std::setw(2) << std::setfill('0') << abs(i) << dimensions[j]
+                   << "," << (i < 0 ? "-" : "") << "." << std::setw(2) << abs(i) << " " << dimensions[j]; // prove it does not work when we have a space
+                csspp::position pos("test.css");
+                csspp::lexer l(ss, pos);
+
+                // sign
+                //if(i < 0)
+                //{
+                //    csspp::node::pointer_t integer(l.next_token());
+                //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+                //    csspp::position const & npos(integer->get_position());
+                //    REQUIRE(npos.get_filename() == "test.css");
+                //    REQUIRE(npos.get_page() == 1);
+                //    REQUIRE(npos.get_line() == 1);
+                //    REQUIRE(npos.get_total_line() == 1);
+                //}
+
+                // dimension
+                {
+                    // a dimension is an integer or a decimal number
+                    // with a string expressing the dimension
+                    csspp::node::pointer_t dimension(l.next_token());
+                    REQUIRE(dimension->is(csspp::node_type_t::DECIMAL_NUMBER));
+                    REQUIRE(fabs(dimension->get_decimal_number() - i / 100.0) < 0.00001);
+                    REQUIRE(dimension->get_string() == dimensions[j]);
+                    csspp::position const & npos(dimension->get_position());
+                    REQUIRE(npos.get_filename() == "test.css");
+                    REQUIRE(npos.get_page() == 1);
+                    REQUIRE(npos.get_line() == 1);
+                    REQUIRE(npos.get_total_line() == 1);
+                }
+
+                // comma
+                {
+                    csspp::node::pointer_t comma(l.next_token());
+                    REQUIRE(comma->is(csspp::node_type_t::COMMA));
+                    csspp::position const & npos(comma->get_position());
+                    REQUIRE(npos.get_filename() == "test.css");
+                    REQUIRE(npos.get_page() == 1);
+                    REQUIRE(npos.get_line() == 1);
+                    REQUIRE(npos.get_total_line() == 1);
+                }
+
+                // sign
+                //if(i < 0)
+                //{
+                //    csspp::node::pointer_t integer(l.next_token());
+                //    REQUIRE(integer->is(csspp::node_type_t::SUBTRACT));
+                //    csspp::position const & npos(integer->get_position());
+                //    REQUIRE(npos.get_filename() == "test.css");
+                //    REQUIRE(npos.get_page() == 1);
+                //    REQUIRE(npos.get_line() == 1);
+                //    REQUIRE(npos.get_total_line() == 1);
+                //}
+
                 // decimal number (separated!)
                 {
                     csspp::node::pointer_t decimal_number(l.next_token());
                     REQUIRE(decimal_number->is(csspp::node_type_t::DECIMAL_NUMBER));
-                    REQUIRE(fabs(decimal_number->get_decimal_number() - abs(i) / 100.0) < 0.00001);
+                    REQUIRE(fabs(decimal_number->get_decimal_number() - i / 100.0) < 0.00001);
                     REQUIRE(decimal_number->get_string() == "");
                     csspp::position const & npos(decimal_number->get_position());
                     REQUIRE(npos.get_filename() == "test.css");
@@ -4405,16 +4593,16 @@ TEST_CASE("Percent", "[lexer] [number] [percent]")
             csspp::lexer l(ss, pos);
 
             // sign
-            if(i < 0)
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
+            //if(i < 0)
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
 
             // percent
             {
@@ -4422,7 +4610,7 @@ TEST_CASE("Percent", "[lexer] [number] [percent]")
                 REQUIRE(percent->is(csspp::node_type_t::PERCENT));
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-                REQUIRE(percent->get_decimal_number() == static_cast<double>(abs(i)) / 100.0);
+                REQUIRE(percent->get_decimal_number() == static_cast<csspp::decimal_number_t>(i) / 100.0);
 #pragma GCC diagnostic pop
                 csspp::position const & npos(percent->get_position());
                 REQUIRE(npos.get_filename() == "test.css");
@@ -4443,22 +4631,22 @@ TEST_CASE("Percent", "[lexer] [number] [percent]")
             }
 
             // sign
-            if(i < 0)
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
+            //if(i < 0)
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
 
             // dimension (because '%' written '\%' is not a PERCENT...)
             {
                 csspp::node::pointer_t integer(l.next_token());
                 REQUIRE(integer->is(csspp::node_type_t::INTEGER));
-                REQUIRE(integer->get_integer() == abs(i));
+                REQUIRE(integer->get_integer() == i);
                 REQUIRE(integer->get_string() == "%");
                 csspp::position const & npos(integer->get_position());
                 REQUIRE(npos.get_filename() == "test.css");
@@ -4479,22 +4667,22 @@ TEST_CASE("Percent", "[lexer] [number] [percent]")
             }
 
             // sign
-            if(i < 0)
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
+            //if(i < 0)
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
 
             // dimension (again \25 is not a PERCENT)
             {
                 csspp::node::pointer_t dimension(l.next_token());
                 REQUIRE(dimension->is(csspp::node_type_t::INTEGER));
-                REQUIRE(dimension->get_integer() == abs(i));
+                REQUIRE(dimension->get_integer() == i);
                 REQUIRE(dimension->get_string() == "%");
                 csspp::position const & npos(dimension->get_position());
                 REQUIRE(npos.get_filename() == "test.css");
@@ -4515,22 +4703,22 @@ TEST_CASE("Percent", "[lexer] [number] [percent]")
             }
 
             // sign
-            if(i < 0)
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
+            //if(i < 0)
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
 
             // integer (separated!)
             {
                 csspp::node::pointer_t integer(l.next_token());
                 REQUIRE(integer->is(csspp::node_type_t::INTEGER));
-                REQUIRE(integer->get_integer() == abs(i));
+                REQUIRE(integer->get_integer() == i);
                 REQUIRE(integer->get_string() == "");
                 REQUIRE(integer->get_string() == "");
                 csspp::position const & npos(integer->get_position());
@@ -4572,22 +4760,22 @@ TEST_CASE("Percent", "[lexer] [number] [percent]")
             csspp::lexer l(ss, pos);
 
             // sign
-            if(i < 0)
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
+            //if(i < 0)
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
 
             // percent
             {
                 csspp::node::pointer_t percent(l.next_token());
                 REQUIRE(percent->is(csspp::node_type_t::PERCENT));
-                REQUIRE(fabs(percent->get_decimal_number() - abs(i) / 10000.0) < 0.00001);
+                REQUIRE(fabs(percent->get_decimal_number() - i / 10000.0) < 0.00001);
                 csspp::position const & npos(percent->get_position());
                 REQUIRE(npos.get_filename() == "test.css");
                 REQUIRE(npos.get_page() == 1);
@@ -4607,22 +4795,22 @@ TEST_CASE("Percent", "[lexer] [number] [percent]")
             }
 
             // sign
-            if(i < 0)
-            {
-                csspp::node::pointer_t subtract(l.next_token());
-                REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
-                csspp::position const & npos(subtract->get_position());
-                REQUIRE(npos.get_filename() == "test.css");
-                REQUIRE(npos.get_page() == 1);
-                REQUIRE(npos.get_line() == 1);
-                REQUIRE(npos.get_total_line() == 1);
-            }
+            //if(i < 0)
+            //{
+            //    csspp::node::pointer_t subtract(l.next_token());
+            //    REQUIRE(subtract->is(csspp::node_type_t::SUBTRACT));
+            //    csspp::position const & npos(subtract->get_position());
+            //    REQUIRE(npos.get_filename() == "test.css");
+            //    REQUIRE(npos.get_page() == 1);
+            //    REQUIRE(npos.get_line() == 1);
+            //    REQUIRE(npos.get_total_line() == 1);
+            //}
 
             // decimal number (separated!)
             {
                 csspp::node::pointer_t decimal_number(l.next_token());
                 REQUIRE(decimal_number->is(csspp::node_type_t::DECIMAL_NUMBER));
-                REQUIRE(fabs(decimal_number->get_decimal_number() - abs(i) / 100.0) < 0.00001);
+                REQUIRE(fabs(decimal_number->get_decimal_number() - i / 100.0) < 0.00001);
                 REQUIRE(decimal_number->get_string() == "");
                 csspp::position const & npos(decimal_number->get_position());
                 REQUIRE(npos.get_filename() == "test.css");

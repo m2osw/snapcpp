@@ -199,16 +199,26 @@ node::pointer_t lexer::next_token()
 
         case '+':
             {
-                // Positive numbers are not tested here, as otherwise defined
-                // in CSS3; this allows us for easier to handle expressions
-                //wide_char_t const n(getc());
-                //if(n >= '0' && n <= '9')
-                //{
-                //    // found a negative number
-                //    ungetc(n);
-                //    return number(c);
-                //}
-                //ungetc(n);
+                wide_char_t const n(getc());
+                if(n >= '0' && n <= '9')
+                {
+                    // found a positive number
+                    ungetc(n);
+                    return number(c);
+                }
+                if(n == '.')
+                {
+                    wide_char_t const p(getc());
+                    if(p >= '0' && p <= '9')
+                    {
+                        // found a negative decimal number
+                        ungetc(p);
+                        ungetc(n);
+                        return number(c);
+                    }
+                    ungetc(p);
+                }
+                ungetc(n);
                 return node::pointer_t(new node(node_type_t::ADD, f_start_position));
             }
             //NOTREACHED
@@ -216,16 +226,24 @@ node::pointer_t lexer::next_token()
         case '-':
             {
                 wide_char_t const n(getc());
-                // This is being removed from here to better allow for
-                // static expressions in our CSS3 code; also the '.' test
-                // would require us to test whether the '.' is followed
-                // by a decimal digit
-                //if(n >= '0' && n <= '9' || n == '.')
-                //{
-                //    // found a negative number
-                //    ungetc(n);
-                //    return number(c);
-                //}
+                if(n >= '0' && n <= '9')
+                {
+                    // found a negative number
+                    ungetc(n);
+                    return number(c);
+                }
+                if(n == '.')
+                {
+                    wide_char_t const p(getc());
+                    if(p >= '0' && p <= '9')
+                    {
+                        // found a negative decimal number
+                        ungetc(p);
+                        ungetc(n);
+                        return number(c);
+                    }
+                    ungetc(p);
+                }
                 if(n == '-')
                 {
                     wide_char_t const p(getc());
@@ -971,10 +989,13 @@ node::pointer_t lexer::identifier(wide_char_t c)
 
 node::pointer_t lexer::number(wide_char_t c)
 {
-    // this function is not called with a sign
-    // instead we always return ADD and SUBTRACT when we find '-' and '+'
-    // (although '-' followed by an identifier character is returned as
-    // part of that identifier instead)
+    bool const has_sign(c == '-' || c == '+');
+    int const sign(c == '-' ? -1 : 1);
+    if(has_sign)
+    {
+        // skip the sign if we have one
+        c = getc();
+    }
 
     // the first part is an integer number
     integer_t integer(0);
@@ -1139,13 +1160,15 @@ node::pointer_t lexer::number(wide_char_t c)
         ungetc(c);
     }
 
+    node::pointer_t n;
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
     if(exponent != 0
     || decimal_frac != 1.0)
 #pragma GCC diagnostic pop
     {
-        node::pointer_t n(new node(c == '%' ? node_type_t::PERCENT : node_type_t::DECIMAL_NUMBER, f_start_position));
+        n.reset(new node(c == '%' ? node_type_t::PERCENT : node_type_t::DECIMAL_NUMBER, f_start_position));
         // Note: CSS defines this math as such and thus we follow that scheme
         //       instead of the usual immediate conversion
         //
@@ -1154,7 +1177,7 @@ node::pointer_t lexer::number(wide_char_t c)
 //std::cerr << "+++ integer = [" << integer << "]\n"
 //          << "+++ decimal_part = [" << decimal_part << "] / [" << decimal_frac << "]\n"
 //          << "+++ exponent = [" << exponent << "]\n";
-        n->set_decimal_number((static_cast<decimal_number_t>(integer)
+        n->set_decimal_number(sign * (static_cast<decimal_number_t>(integer)
                             + static_cast<decimal_number_t>(decimal_part) / decimal_frac)
                             * pow(10.0, static_cast<decimal_number_t>(exponent)));
         if(c == '%')
@@ -1166,15 +1189,15 @@ node::pointer_t lexer::number(wide_char_t c)
         {
             n->set_string(dimension);
         }
-        return n;
     }
     else
     {
-        node::pointer_t n(new node(node_type_t::INTEGER, f_start_position));
-        n->set_integer(integer);
+        n.reset(new node(node_type_t::INTEGER, f_start_position));
+        n->set_integer(integer * sign);
         n->set_string(dimension);
-        return n;
     }
+    n->set_boolean(has_sign);
+    return n;
 }
 
 node::pointer_t lexer::hash()

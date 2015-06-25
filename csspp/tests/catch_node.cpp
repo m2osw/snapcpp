@@ -76,6 +76,20 @@ TEST_CASE("Node types", "[node] [type]")
             }
             break;
 
+        case csspp::node_type_t::DECIMAL_NUMBER:
+        case csspp::node_type_t::INTEGER:
+        case csspp::node_type_t::PERCENT:
+            {
+                bool b(rand() % 1 == 0);
+                n->set_boolean(b);
+                REQUIRE(n->get_boolean() == b);
+                // the to_boolean() converts the value not the f_boolean field
+                // this test MUST happen before the next or we would not know
+                // whether it  true or false
+                REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+            }
+            break;
+
         default:
             REQUIRE_THROWS_AS(n->set_boolean(true), csspp::csspp_exception_logic);
             REQUIRE_THROWS_AS(n->get_boolean(), csspp::csspp_exception_logic);

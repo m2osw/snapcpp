@@ -72,7 +72,10 @@ void type_supports_boolean(node_type_t const type)
     switch(type)
     {
     case node_type_t::BOOLEAN:
+    case node_type_t::DECIMAL_NUMBER:
+    case node_type_t::INTEGER:
     case node_type_t::OPEN_CURLYBRACKET:
+    case node_type_t::PERCENT:
         break;
 
     default:
@@ -726,7 +729,7 @@ std::string node::to_string(int flags) const
 
     case node_type_t::DECIMAL_NUMBER:
         // this may be a dimension, if not f_string is empty anyway
-        out << f_decimal_number << f_string;
+        out << (f_boolean && f_integer >= 0 ? "+" : "") << f_decimal_number << f_string;
         break;
 
     case node_type_t::DIVIDE:
@@ -802,7 +805,7 @@ std::string node::to_string(int flags) const
 
     case node_type_t::INTEGER:
         // this may be a dimension, if not f_string is empty anyway
-        out << f_integer << f_string;
+        out << (f_boolean && f_integer >= 0 ? "+" : "") << f_integer << f_string;
         break;
 
     case node_type_t::LESS_EQUAL:
@@ -865,7 +868,7 @@ std::string node::to_string(int flags) const
         break;
 
     case node_type_t::PERCENT:
-        out << decimal_number_to_string(f_decimal_number) << "%";
+        out << (f_boolean && f_integer >= 0 ? "+" : "") << decimal_number_to_string(f_decimal_number) << "%";
         break;
 
     case node_type_t::PERIOD:

@@ -195,6 +195,13 @@ int pp::compile()
             {
                 // full paths so the -I have no effects on those files
                 std::string filename(f_opt->get_string("--", idx));
+                if(filename.empty())
+                {
+                    csspp::error::instance() << *pos
+                            << "You cannot include a file with an empty name."
+                            << csspp::error_mode_t::ERROR_WARNING;
+                    return 1;
+                }
                 if(filename == "-")
                 {
                     csspp::error::instance() << *pos
@@ -202,7 +209,16 @@ int pp::compile()
                             << csspp::error_mode_t::ERROR_WARNING;
                     return 1;
                 }
-                *ss << "@import \"" << cwd << "/" << filename << "\";\n";
+                if(filename[0] == '/')
+                {
+                    // already absolute
+                    *ss << "@import \"" << filename << "\";\n";
+                }
+                else
+                {
+                    // make absolute so we do not need to have a "." path
+                    *ss << "@import \"" << cwd << "/" << filename << "\";\n";
+                }
             }
             l.reset(new csspp::lexer(*ss, *pos));
         }
@@ -223,7 +239,6 @@ int pp::compile()
         exit(1);
     }
 
-std::cerr << "compiler...\n";
     // run the compiler
     csspp::compiler c;
     c.set_root(root);
@@ -241,7 +256,6 @@ std::cerr << "compiler...\n";
             }
             else
             {
-std::cerr << "add path [" << path << "]\n";
                 c.add_path(path);
             }
         }
@@ -293,7 +307,6 @@ std::cerr << "add path [" << path << "]\n";
     std::ostream * out;
     if(f_opt->is_defined("output"))
     {
-std::cerr << "output [" << f_opt->get_string("output") << "]\n";
         out = new std::ofstream(f_opt->get_string("output"));
     }
     else

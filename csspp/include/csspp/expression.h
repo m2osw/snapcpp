@@ -26,7 +26,7 @@ class expression
 {
 public:
                         expression(node::pointer_t n, bool skip_whitespace);
-    node::pointer_t     compile_list();
+    void                compile_args();
     node::pointer_t     compile();
     bool                end_of_nodes();
     void                mark_start();
@@ -42,6 +42,7 @@ public:
 private:
     typedef std::map<std::string, node::pointer_t>  variable_vector_t;
 
+    node::pointer_t     compile_list(node::pointer_t parent);
     node::pointer_t     expression_list();
     node::pointer_t     assignment();
     node::pointer_t     logical_or();

@@ -251,6 +251,12 @@ void compiler::compile(bool bare)
     {
         throw csspp_exception_logic("compiler.cpp: the stack of parents must always be empty before compile() returns"); // LCOV_EXCL_LINE
     }
+
+    remove_empty_rules(f_state.get_root());
+    if(!f_state.empty_parents())
+    {
+        throw csspp_exception_logic("compiler.cpp: the stack of parents must always be empty before remove_empty_rules() returns"); // LCOV_EXCL_LINE
+    }
 }
 
 void compiler::add_header_and_footer()
@@ -482,10 +488,12 @@ void compiler::compile_qualified_rule(node::pointer_t n)
     node::pointer_t brackets(n->get_last_child());
     if(brackets->empty())
     {
-        // when only defining variables in a block, it can end up empty
-        error::instance() << n->get_position()
-                << "the {}-block of a qualified rule is missing."
-                << error_mode_t::ERROR_ERROR;
+        // an empty block is perfectly valid, it means the whole rule
+        // "exists" but is really useless; in SCSS it could be useful
+        // for @extends and %placeholder to have such empty rules
+        //error::instance() << n->get_position()
+        //        << "the {}-block of a qualified rule is missing."
+        //        << error_mode_t::ERROR_ERROR;
         return;
     }
 
@@ -538,14 +546,12 @@ void compiler::compile_declaration(node::pointer_t n)
     }
     if(n->size() < 2)
     {
-        // I don't think I ever hit this case, but I really don't see how it
-        // could happen; if we get this throw, write a test case that hits
-        // this line and replace it with the error below
-        throw csspp_exception_logic("compiler.cpp: called compiler_declaration() with a node having only one element."); // LCOV_EXCL_LINE
-        //error::instance() << n->get_position()
-        //        << "somehow a declaration list is missing a field name or ':'."
-        //        << error_mode_t::ERROR_ERROR;
-        //return;
+        // A "declaration" without the ':' and values reaches here:
+        //     font-style; italic;  (notice the ';' instead of ':')
+        error::instance() << n->get_position()
+                << "somehow a declaration list is missing a field name or ':'."
+                << error_mode_t::ERROR_ERROR;
+        return;
     }
 
     // first make sure we have a declaration
@@ -613,23 +619,7 @@ void compiler::compile_declaration(node::pointer_t n)
     {
         // since we are removing the children, we always seemingly
         // copy child 1...
-        node::pointer_t child(n->get_child(1));
-        //if(child->is(node_type_t::COMPONENT_VALUE)
-        //&& !child->empty()
-        //&& (parser::is_nested_declaration(child)
-        // || !child->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET)))
-        //{
-        //    // add all the items of the component value
-        //    size_t const max_list(child->size());
-        //    for(size_t j(0); j < max_list; ++j)
-        //    {
-        //        declaration->add_child(child->get_child(j));
-        //    }
-        //}
-        //else
-        {
-            declaration->add_child(child);
-        }
+        declaration->add_child(n->get_child(1));
         n->remove_child(1);
     }
 
@@ -659,12 +649,10 @@ void compiler::compile_declaration(node::pointer_t n)
         case node_type_t::OPEN_CURLYBRACKET:
         case node_type_t::LIST:
         case node_type_t::COMPONENT_VALUE:
+            // This means we have a cascade, a field declaration which has
+            // sub-fields (font-<name>, border-<name>, etc.)
             compile_declaration_items = false;
             break;
-
-        // is the following possible at all? (without someone breaking the
-        // node tree on purpose, of course...)
-            //throw csspp_exception_logic("compiler.cpp: found a COMPONENT_VALUE directly under our declaration object."); // LCOV_EXCL_LINE
 
         default:
             break;
@@ -674,8 +662,23 @@ void compiler::compile_declaration(node::pointer_t n)
     if(compile_declaration_items
     && !declaration->empty())
     {
-        expression expr(declaration, true);
-        expr.compile_list();
+        if(declaration->get_child(0)->is(node_type_t::FUNCTION)
+        && declaration->get_child(0)->get_string() == "alpha"
+        && declaration->get_string() == "filter")
+        {
+            // we probably should remove such declarations, but if we want
+            // to have functions that output such things, it is important to
+            // support this horrible field...
+            error::instance() << declaration->get_position()
+                    << "the alpha() function of the filter field is an Internet Explorer 8 (and earlier) extension which is not supported across browsers."
+                    << error_mode_t::ERROR_WARNING;
+        }
+        else
+        {
+            parser::argify(declaration);
+            expression args_expr(declaration, true);
+            args_expr.compile_args();
+        }
     }
 
     compile_declaration_values(declaration);
@@ -1185,6 +1188,52 @@ void compiler::mark_selectors(node::pointer_t n)
                 // recursive call to handle all children in the
                 // entire tree
                 mark_selectors(n->get_child(idx));
+            }
+        }
+        break;
+
+    default:
+        // other nodes are not of interest here
+        break;
+
+    }
+}
+
+void compiler::remove_empty_rules(node::pointer_t n)
+{
+    safe_parents_t safe_parents(f_state, n);
+
+    switch(n->get_type())
+    {
+    case node_type_t::COMPONENT_VALUE:
+        if(!n->empty()
+        && n->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET)
+        && n->get_last_child()->empty())
+        {
+            // that's an empty rule such as:
+            //    div {}
+            // so get rid of it (i.e. optimization in output, no need for
+            // empty rules, really)
+            f_state.get_previous_parent()->remove_child(n);
+            return;
+        }
+    case node_type_t::AT_KEYWORD:
+    //case node_type_t::ARG:
+    case node_type_t::DECLARATION:
+    case node_type_t::LIST:
+    case node_type_t::OPEN_CURLYBRACKET:
+        // replace all $<var> references with the corresponding value
+        for(size_t idx(0); idx < n->size();)
+        {
+            // recursive call to handle all children in the
+            // entire tree; we need our special handling in
+            // case something gets deleted
+            node::pointer_t child(n->get_child(idx));
+            remove_empty_rules(child);
+            if(idx < n->size()
+            && child == n->get_child(idx))
+            {
+                ++idx;
             }
         }
         break;
