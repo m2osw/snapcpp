@@ -18,16 +18,19 @@
 /** \file
  * \brief Implementation of the CSS Preprocessor command line tool.
  *
+ * This tool can be used as a verification, compilation, and compression
+ * tool depending on your needs.
+ *
+ * The Snap! Websites environment uses the tool for verification when
+ * generating a layout. Later a Snap! Website plugin compresses the various
+ * files. That way the website system includes the original file and not
+ * just the minimized version.
  */
 
 #include "csspp/assembler.h"
 #include "csspp/compiler.h"
 #include "csspp/lexer.h"
 #include "csspp/parser.h"
-
-//#include "csspp/error.h"
-//#include "csspp/exceptions.h"
-//#include "csspp/unicode_range.h"
 
 #include <advgetopt/advgetopt.h>
 
@@ -60,11 +63,27 @@ advgetopt::getopt::option const g_options[] =
         advgetopt::getopt::help_argument
     },
     {
+        'a',
+        0,
+        "args",
+        nullptr,
+        "define values in the $_csspp_args variable map",
+        advgetopt::getopt::required_multiple_argument
+    },
+    {
         'd',
         0,
         "debug",
         nullptr,
         "show all messages, including @debug messages",
+        advgetopt::getopt::no_argument
+    },
+    {
+        'h',
+        0,
+        "help",
+        nullptr,
+        "display this help screen",
         advgetopt::getopt::no_argument
     },
     {
@@ -162,6 +181,12 @@ pp::pp(int argc, char * argv[])
         exit(1);
     }
 
+    if(f_opt->is_defined("help"))
+    {
+        f_opt->usage(advgetopt::getopt::no_error, "csspp");
+        exit(0);
+    }
+
     if(f_opt->is_defined("quiet"))
     {
         csspp::error::instance().set_hide_all(true);
@@ -254,6 +279,26 @@ int pp::compile()
     {
         exit(1);
     }
+
+    csspp::node::pointer_t csspp_args(new csspp::node(csspp::node_type_t::LIST, root->get_position()));
+    csspp::node::pointer_t args_var(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    args_var->set_string("_csspp_args");
+    csspp::node::pointer_t wrapper(new csspp::node(csspp::node_type_t::LIST, root->get_position()));
+    csspp::node::pointer_t list(new csspp::node(csspp::node_type_t::LIST, root->get_position()));
+    wrapper->add_child(list);
+    csspp_args->add_child(args_var);
+    csspp_args->add_child(wrapper);
+    if(f_opt->is_defined("args"))
+    {
+        int const count(f_opt->size("args"));
+        for(int idx(0); idx < count; ++idx)
+        {
+            csspp::node::pointer_t arg(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+            arg->set_string(f_opt->get_string("args", idx));
+            list->add_child(arg);
+        }
+    }
+    root->set_variable("_csspp_args", csspp_args);
 
     // run the compiler
     csspp::compiler c;
