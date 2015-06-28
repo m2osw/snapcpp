@@ -84,6 +84,14 @@ advgetopt::getopt::option const g_options[] =
         advgetopt::getopt::required_argument
     },
     {
+        'p',
+        0,
+        "precision",
+        nullptr,
+        "define the number of digits to use after the decimal point, defaults to 3; note that for percent values, the precision is always 2.",
+        advgetopt::getopt::no_argument
+    },
+    {
         'q',
         0,
         "quiet",
@@ -136,12 +144,13 @@ advgetopt::getopt::option const g_options[] =
 class pp
 {
 public:
-    pp(int argc, char * argv[]);
+                                        pp(int argc, char * argv[]);
 
-    int compile();
+    int                                 compile();
 
 private:
     std::shared_ptr<advgetopt::getopt>  f_opt;
+    int                                 f_precision = 3;
 };
 
 pp::pp(int argc, char * argv[])
@@ -167,6 +176,11 @@ pp::pp(int argc, char * argv[])
     {
         csspp::error::instance().set_count_warnings_as_errors(true);
     }
+
+    if(f_opt->is_defined("precision"))
+    {
+        f_precision = f_opt->get_long("precision");
+    }
 }
 
 int pp::compile()
@@ -174,6 +188,8 @@ int pp::compile()
     csspp::lexer::pointer_t l;
     csspp::position::pointer_t pos;
     std::unique_ptr<std::stringstream> ss;
+
+    csspp::safe_precision_t safe_precision(f_precision);
 
     if(f_opt->is_defined("--"))
     {

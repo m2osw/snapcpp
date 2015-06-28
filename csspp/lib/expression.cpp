@@ -46,13 +46,18 @@ expression::expression(node::pointer_t n, bool skip_whitespace)
     }
 }
 
-void expression::compile_args()
+void expression::compile_args(bool divide_font_metrics)
 {
     size_t const max_children(f_node->size());
     for(size_t a(0); a < max_children; ++a)
     {
-        expression arg_expr(f_node->get_child(a), true);
-        arg_expr.compile_list(f_node);
+        if(a + 1 < max_children
+        || !f_node->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET))
+        {
+            expression arg_expr(f_node->get_child(a), true);
+            arg_expr.f_divide_font_metrics = divide_font_metrics;
+            arg_expr.compile_list(f_node);
+        }
     }
 }
 
@@ -1019,6 +1024,20 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::PERCENT):
+        // TODO: test that the dimensions are compatible
+        af = lhs->get_decimal_number();
+        bf = rhs->get_decimal_number();
+        type = node_type_t::PERCENT;
+        break;
+
+    case mix_node_types(node_type_t::PERCENT, node_type_t::DECIMAL_NUMBER):
+        // TODO: test that the dimensions are compatible
+        af = lhs->get_decimal_number();
+        bf = rhs->get_decimal_number();
+        type = node_type_t::PERCENT;
+        break;
+
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
         // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
@@ -1058,10 +1077,44 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
 
     }
 
+    if(op == node_type_t::DIVIDE && f_divide_font_metrics)
+    {
+        // this is that special case of a FONT_METRICS node
+        node::pointer_t result(new node(node_type_t::FONT_METRICS, lhs->get_position()));
+
+        // convert integers
+        // (we don't need to convert to do the set, but I find it cleaner this way)
+        if(type == node_type_t::INTEGER)
+        {
+            af = static_cast<decimal_number_t>(ai);
+            bf = static_cast<decimal_number_t>(bi);
+        }
+
+        result->set_font_size(af);
+        result->set_line_height(bf);
+        if(lhs->is(node_type_t::PERCENT))
+        {
+            result->set_dim1("%");
+        }
+        else
+        {
+            result->set_dim1(lhs->get_string());
+        }
+        if(rhs->is(node_type_t::PERCENT))
+        {
+            result->set_dim2("%");
+        }
+        else
+        {
+            result->set_dim2(rhs->get_string());
+        }
+        return result;
+    }
+
     node::pointer_t result(new node(type, lhs->get_position()));
     if(type != node_type_t::PERCENT)
     {
-        // do not lose the dimension
+        // do not lose the dimension(s)
         result->set_string(lhs->get_string());
     }
 
@@ -1253,14 +1306,15 @@ node::pointer_t expression::post()
         return node::pointer_t();
     }
 
+    node::pointer_t index;
     for(;;)
     {
         if(f_current->is(node_type_t::OPEN_SQUAREBRACKET))
         {
             // compile the index expression
-            expression index(f_current, true);
-            index.next();
-            node::pointer_t i(index.expression_list());
+            expression index_expr(f_current, true);
+            index_expr.next();
+            node::pointer_t i(index_expr.expression_list());
             if(!i)
             {
                 return node::pointer_t();
@@ -1275,7 +1329,7 @@ node::pointer_t expression::post()
                 {
                     // index is 1 based (not like in C/C++)
                     integer_t const idx(i->get_integer());
-                    if(static_cast<size_t>(idx) > result->size())
+                    if(static_cast<size_t>(idx - 1) >= result->size())
                     {
                         error::instance() << f_current->get_position()
                                 << "index "
@@ -1300,7 +1354,9 @@ node::pointer_t expression::post()
             }
             else if(i->is(node_type_t::STRING))
             {
-                f_current = i;
+                // nothing more to skip, the string is a child in
+                // a separate list
+                index = i;
                 goto field_index;
             }
             else
@@ -1320,26 +1376,28 @@ node::pointer_t expression::post()
                         << error_mode_t::ERROR_ERROR;
                 return node::pointer_t();
             }
+            index = f_current;
+
+            // skip the index (identifier)
+            next();
 
 field_index:
             if(result->is(node_type_t::LIST))
             {
-                // index is 1 based (not like in C/C++)
-                std::string idx(f_current->get_string());
+                // in this case the index is a string/identifier
+                std::string const idx(index->get_string());
                 // TODO: what are we indexing against?
                 error::instance() << f_current->get_position()
-                        << "unsupported type "
-                        << result->get_type()
-                        << " for the 'map[<string>]' operation."
+                        << "'map[<string|identifier>]' not yet supported."
                         << error_mode_t::ERROR_ERROR;
                 return node::pointer_t();
             }
             else
             {
                 error::instance() << f_current->get_position()
-                        << "unsupported type "
+                        << "unsupported left handside type "
                         << result->get_type()
-                        << " for the 'map[<string>]' operation."
+                        << " for the 'map[<string|identifier>]' operation."
                         << error_mode_t::ERROR_ERROR;
                 return node::pointer_t();
             }
@@ -1394,8 +1452,14 @@ node::pointer_t expression::unary()
 
             // calculate the arguments
             parser::argify(func);
-            expression args_expr(func, true);
-            args_expr.compile_args();
+            if(func->get_string() != "calc"
+            && func->get_string() != "expression")
+            {
+                expression args_expr(func, true);
+                args_expr.compile_args(false);
+            }
+            //else -- we may want to verify the calculations, but
+            //        we cannot compile those
 
             return excecute_function(func);
         }

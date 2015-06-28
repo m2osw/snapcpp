@@ -83,6 +83,54 @@ TEST_CASE("Safe Boolean", "[csspp] [output]")
         }
         REQUIRE(flag == true);
     }
+
+    {
+        bool flag(false);
+        REQUIRE(flag == false);
+        {
+            csspp::safe_bool_t safe(flag, true);
+            REQUIRE(flag == true);
+            flag = false;
+            REQUIRE(flag == false);
+        }
+        REQUIRE(flag == false);
+    }
+
+    {
+        bool flag(false);
+        REQUIRE(flag == false);
+        {
+            csspp::safe_bool_t safe(flag, false);
+            REQUIRE(flag == false);
+            flag = true;
+            REQUIRE(flag == true);
+        }
+        REQUIRE(flag == false);
+    }
+
+    {
+        bool flag(true);
+        REQUIRE(flag == true);
+        {
+            csspp::safe_bool_t safe(flag, true);
+            REQUIRE(flag == true);
+            flag = false;
+            REQUIRE(flag == false);
+        }
+        REQUIRE(flag == true);
+    }
+
+    {
+        bool flag(true);
+        REQUIRE(flag == true);
+        {
+            csspp::safe_bool_t safe(flag, false);
+            REQUIRE(flag == false);
+            flag = true;
+            REQUIRE(flag == true);
+        }
+        REQUIRE(flag == true);
+    }
 }
 
 TEST_CASE("Decimal Number Output", "[csspp] [output]")
@@ -98,10 +146,17 @@ TEST_CASE("Decimal Number Output", "[csspp] [output]")
     REQUIRE(csspp::decimal_number_to_string(-1.2526) == "-1.253");
     REQUIRE(csspp::decimal_number_to_string(-0.9) == "-0.9");
     REQUIRE(csspp::decimal_number_to_string(-0.0009) == "-0.001");
+    REQUIRE(csspp::decimal_number_to_string(-1000.0) == "-1000");
+    REQUIRE(csspp::decimal_number_to_string(1000.0) == "1000");
+    REQUIRE(csspp::decimal_number_to_string(100.0) == "100");
+    REQUIRE(csspp::decimal_number_to_string(10.0) == "10");
 }
 
 TEST_CASE("Invalid Precision", "[csspp] [invalid]")
 {
+    // we want to keep the default precision in place
+    csspp::safe_precision_t precision;
+
     // negative not available
     for(int i(-10); i < 0; ++i)
     {

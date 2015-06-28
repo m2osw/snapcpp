@@ -2041,17 +2041,28 @@ TEST_CASE("Print nodes", "[node] [output]")
             string2->set_string("rabbit");
             child->add_child(string2);
 
-            csspp::node::pointer_t decimal_number2(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, pos));
-            decimal_number2->set_decimal_number(208.0);
-            child->add_child(decimal_number2);
+            csspp::node::pointer_t bracket(new csspp::node(csspp::node_type_t::OPEN_CURLYBRACKET, pos));
+            bracket->set_boolean(true);
+            child->add_child(bracket);
 
-            csspp::node::pointer_t an_plus_b(new csspp::node(csspp::node_type_t::AN_PLUS_B, pos));
-            an_plus_b->set_integer(0x0000000700000003);
-            child->add_child(an_plus_b);
+                csspp::node::pointer_t decimal_number2(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, pos));
+                decimal_number2->set_decimal_number(208.0);
+                bracket->add_child(decimal_number2);
 
-            csspp::node::pointer_t color(new csspp::node(csspp::node_type_t::COLOR, pos));
-            color->set_integer(0xFF783411);
-            child->add_child(color);
+                csspp::node::pointer_t an_plus_b(new csspp::node(csspp::node_type_t::AN_PLUS_B, pos));
+                an_plus_b->set_integer(0x0000000700000003);
+                bracket->add_child(an_plus_b);
+
+                csspp::node::pointer_t color(new csspp::node(csspp::node_type_t::COLOR, pos));
+                color->set_integer(0xFF783411);
+                bracket->add_child(color);
+
+                csspp::node::pointer_t font_metrics(new csspp::node(csspp::node_type_t::FONT_METRICS, pos));
+                font_metrics->set_font_size(3.45);
+                font_metrics->set_dim1("cm");
+                font_metrics->set_line_height(1.5);
+                font_metrics->set_dim2("%");
+                bracket->add_child(font_metrics);
 
     std::stringstream ss;
     ss << *root;
@@ -2068,9 +2079,11 @@ TEST_CASE("Print nodes", "[node] [output]")
 "    BOOLEAN B:true\n"
 "    INTEGER \"\" I:409\n"
 "    STRING \"rabbit\"\n"
-"    DECIMAL_NUMBER \"\" D:208\n"
-"    AN_PLUS_B S:3n+7\n"
-"    COLOR H:ff783411\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECIMAL_NUMBER \"\" D:208\n"
+"      AN_PLUS_B S:3n+7\n"
+"      COLOR H:ff783411\n"
+"      FONT_METRICS FM:3.45cm/150%\n"
 
         );
 
@@ -2092,9 +2105,11 @@ TEST_CASE("Print nodes", "[node] [output]")
 "    BOOLEAN B:true\n"
 "    INTEGER \"\" I:409\n"
 "    STRING \"rabbit\"\n"
-"    DECIMAL_NUMBER \"\" D:208\n"
-"    AN_PLUS_B S:3n+7\n"
-"    COLOR H:ff783411\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECIMAL_NUMBER \"\" D:208\n"
+"      AN_PLUS_B S:3n+7\n"
+"      COLOR H:ff783411\n"
+"      FONT_METRICS FM:3.45cm/150%\n"
 
         );
 

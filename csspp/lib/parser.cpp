@@ -701,39 +701,87 @@ bool parser::is_variable_set(node::pointer_t n, bool with_block)
 bool parser::is_nested_declaration(node::pointer_t n)
 {
     // a declaration with a sub-block
-    //    field: '{' ... '}' ';'
+    //    field: [optional-values] '{' ... '}' ';'
     if(n->size() < 3
-    || !n->get_child(0)->is(node_type_t::IDENTIFIER))
+    || !n->get_child(0)->is(node_type_t::IDENTIFIER)
+    || !n->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET))
     {
         return false;
     }
 
+    // the colon is mandatory, after an optional whitespace
     size_t pos(n->get_child(1)->is(node_type_t::WHITESPACE) ? 2 : 1);
     if(!n->get_child(pos)->is(node_type_t::COLON))
     {
         return false;
     }
-    ++pos;
-
+    ++pos; // skip the colon
     if(pos >= n->size())
     {
-        return false;
+        // this is "too short" so not really a declaration nor a component value
+        // note: I'm not able to reach this one anymore, I think that's because
+        // of the OPEN_CURLYBRACKET that I moved at the top...
+        return false;   // LCOV_EXCL_LINE
     }
-
-    if(n->get_child(pos)->is(node_type_t::WHITESPACE))
+    if(n->get_child(pos)->is(node_type_t::WHITESPACE)
+    || n->get_child(pos)->is(node_type_t::OPEN_CURLYBRACKET))
     {
-        // although we test this special case, there isn't a way to
-        // reach this line without actually building a tree of nodes
-        // by hand and adding a WHITESPACE "at the wrong place" which
-        // we dot not currently test (TODO)
+        // a colon cannot be followed by a space or '{' in a valid selector
+        return true;
+    }
+    if(n->get_child(pos)->is(node_type_t::FUNCTION))
+    {
+        // in this case we have <id>':'<func> which can be a valid selector
+        // so we have to skip this function otherwise we return 'true'
         ++pos;
         if(pos >= n->size())
         {
-            return false;
+            // this test is for security (code may change over time...)
+            // but since the last item must be a curly bracket, it could
+            // not be this function, right?
+            return false;  // LCOV_EXCL_LINE
         }
     }
 
-    return n->get_child(pos)->is(node_type_t::OPEN_CURLYBRACKET);
+    for(;;)
+    {
+        switch(n->get_child(pos)->get_type())
+        {
+        case node_type_t::COLON:
+        case node_type_t::PLACEHOLDER:
+        case node_type_t::PRECEDED:
+        case node_type_t::REFERENCE:
+        case node_type_t::SCOPE:
+            // a valid declaration cannot include one of those
+            return false;
+
+        case node_type_t::ADD:
+        case node_type_t::COMMA:
+        //case node_type_t::FUNCTION: -- must be preceded by ':' so no need here we already returned if we hit a colon
+        case node_type_t::GREATER_THAN:
+        case node_type_t::HASH:
+        case node_type_t::IDENTIFIER:
+        case node_type_t::MULTIPLY:
+        case node_type_t::OPEN_SQUAREBRACKET:
+        case node_type_t::OPEN_CURLYBRACKET:
+        case node_type_t::PERIOD:
+        case node_type_t::WHITESPACE:
+            break;
+
+        default:
+            // this is something that would not be valid in a selector
+            // so we must have a declaration...
+            return true;
+
+        }
+
+        ++pos;
+        if(pos >= n->size())
+        {
+            // everything looks valid for a selector, so return false
+            return false;
+        }
+    }
 }
 
 bool parser::argify(node::pointer_t n)

@@ -213,9 +213,9 @@ end_date=`date`
 # Statistics
 echo "<html><head><title>csspp $FULL_VERSION statistics</title></head><body>" >${DIRNAME}_html/statistics.html
 echo "<h3>Statistics of the csspp $FULL_VERSION code</h3><pre>" >>${DIRNAME}_html/statistics.html
-cloc $SOURCE_PATH/include/ $SOURCE_PATH/lib/ $SOURCE_PATH/src/ >>${DIRNAME}_html/statistics.html
+cloc --autoconf --by-file-by-lang $SOURCE_PATH/include/ $SOURCE_PATH/lib/ $SOURCE_PATH/src/ >>${DIRNAME}_html/statistics.html
 echo "</pre><h3>Statistics of the csspp $FULL_VERSION tests</h3><pre>" >>${DIRNAME}_html/statistics.html
-cloc $SOURCE_PATH/tests/ >>${DIRNAME}_html/statistics.html
+cloc --autoconf --by-file-by-lang $SOURCE_PATH/tests/ >>${DIRNAME}_html/statistics.html
 echo "</pre></body></html>" >>${DIRNAME}_html/statistics.html
 
 # Test output (Logs)

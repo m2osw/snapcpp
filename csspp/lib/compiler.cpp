@@ -257,6 +257,12 @@ void compiler::compile(bool bare)
     {
         throw csspp_exception_logic("compiler.cpp: the stack of parents must always be empty before remove_empty_rules() returns"); // LCOV_EXCL_LINE
     }
+
+    expand_nested_components(f_state.get_root());
+    if(!f_state.empty_parents())
+    {
+        throw csspp_exception_logic("compiler.cpp: the stack of parents must always be empty before expand_nested_components() returns"); // LCOV_EXCL_LINE
+    }
 }
 
 void compiler::add_header_and_footer()
@@ -497,36 +503,34 @@ void compiler::compile_qualified_rule(node::pointer_t n)
         return;
     }
 
-    node::pointer_t child(brackets->get_child(0));
-    if(child->is(node_type_t::LIST))
+    safe_parents_t safe_parents(f_state, brackets);
+
+    for(size_t b(0); b < brackets->size();)
     {
-        safe_parents_t safe_parents(f_state, brackets);
+        node::pointer_t child(brackets->get_child(b));
         safe_parents_t safe_list_parents(f_state, child);
-        for(size_t idx(0); idx < child->size();)
+        if(child->is(node_type_t::LIST))
         {
-            node::pointer_t item(child->get_child(idx));
-            safe_parents_t safe_sub_parents(f_state, item);
-            compile_component_value(item);
-            if(idx < child->size()
-            && item == child->get_child(idx))
+            for(size_t idx(0); idx < child->size();)
             {
-                ++idx;
+                node::pointer_t item(child->get_child(idx));
+                safe_parents_t safe_sub_parents(f_state, item);
+                compile_component_value(item);
+                if(idx < child->size()
+                && item == child->get_child(idx))
+                {
+                    ++idx;
+                }
             }
         }
-    }
-    else if(child->is(node_type_t::COMPONENT_VALUE))
-    {
-        safe_parents_t safe_parents(f_state, brackets);
-        for(size_t idx(0); idx < brackets->size();)
+        else if(child->is(node_type_t::COMPONENT_VALUE))
         {
-            node::pointer_t item(brackets->get_child(idx));
-            safe_parents_t safe_sub_parents(f_state, item);
-            compile_component_value(item);
-            if(idx < brackets->size()
-            && item == brackets->get_child(idx))
-            {
-                ++idx;
-            }
+            compile_component_value(child);
+        }
+        if(b < brackets->size()
+        && child == brackets->get_child(b))
+        {
+            ++b;
         }
     }
 }
@@ -560,10 +564,38 @@ void compiler::compile_declaration(node::pointer_t n)
     node::pointer_t identifier(n->get_child(0));
     if(!identifier->is(node_type_t::IDENTIFIER))
     {
-        error::instance() << n->get_position()
-                << "expected an identifier to start a declaration value; got a: " << identifier->get_type() << " instead."
-                << error_mode_t::ERROR_ERROR;
-        return;
+        if((identifier->is(node_type_t::MULTIPLY)
+         || identifier->is(node_type_t::PERIOD))
+        && n->get_child(1)->is(node_type_t::IDENTIFIER))
+        {
+            // get rid of the asterisk or period
+            // This was an IE 7 and earlier web browser trick to allow
+            // various CSS entries only for IE...
+            n->remove_child(0);
+            identifier = n->get_child(0);
+            error::instance() << identifier->get_position()
+                    << "the '[*|.|!]<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks."
+                    << error_mode_t::ERROR_WARNING;
+        }
+        else if(identifier->is(node_type_t::HASH)
+             || identifier->is(node_type_t::EXCLAMATION))
+        {
+            // the !<id> and #<id> will be converted to a declaration so
+            // we do not need to do anything more about it
+            //
+            // This was an IE 7 and earlier web browser trick to allow
+            // various CSS entries only for IE...
+            error::instance() << identifier->get_position()
+                    << "the '#<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks."
+                    << error_mode_t::ERROR_WARNING;
+        }
+        else
+        {
+            error::instance() << identifier->get_position()
+                    << "expected an identifier to start a declaration value; got a: " << identifier->get_type() << " instead."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
     }
 
     // the WHITESPACE is optional, if present, remove it
@@ -639,45 +671,73 @@ void compiler::compile_declaration(node::pointer_t n)
     safe_parents_t safe_declaration_parent(f_state, declaration);
 
     // apply the expression parser on the parameters
-    // TODO: test something a lot better, right now it does not look correct...
-    bool compile_declaration_items(true);
-    for(size_t i(0); i < declaration->size(); ++i)
+    // TODO: test that stuff a lot better, right now it does not look correct...
+    bool compile_declaration_items(!declaration->empty() && !declaration->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET));
+    if(compile_declaration_items)
     {
-        node::pointer_t item(declaration->get_child(i));
-        switch(item->get_type())
+        for(size_t i(0); i < declaration->size(); ++i)
         {
-        case node_type_t::OPEN_CURLYBRACKET:
-        case node_type_t::LIST:
-        case node_type_t::COMPONENT_VALUE:
-            // This means we have a cascade, a field declaration which has
-            // sub-fields (font-<name>, border-<name>, etc.)
-            compile_declaration_items = false;
-            break;
+            node::pointer_t item(declaration->get_child(i));
+            switch(item->get_type())
+            {
+            //case node_type_t::OPEN_CURLYBRACKET:
+            case node_type_t::LIST:
+            case node_type_t::COMPONENT_VALUE:
+                // This means we have a cascade, a field declaration which has
+                // sub-fields (font-<name>, border-<name>, etc.)
+                compile_declaration_items = false;
+                break;
 
-        default:
-            break;
+            default:
+                break;
 
+            }
         }
     }
+
     if(compile_declaration_items
     && !declaration->empty())
     {
-        if(declaration->get_child(0)->is(node_type_t::FUNCTION)
-        && declaration->get_child(0)->get_string() == "alpha"
-        && declaration->get_string() == "filter")
+        node::pointer_t child(declaration->get_child(0));
+
+        bool const ignore(
+                  (child->is(node_type_t::FUNCTION)
+                && (child->get_string() == "alpha" || child->get_string() == "chroma" || child->get_string() == "gray")
+                && (declaration->get_string() == "filter" || declaration->get_string() == "-filter"))
+            ||
+                  (child->is(node_type_t::IDENTIFIER)
+                && child->get_string() == "progid"
+                && (declaration->get_string() == "filter" || declaration->get_string() == "-filter"))
+            );
+
+        if(ignore)
         {
+            // Note: the progid does not mean that the function used is
+            //       alpha(), but its fairly likely
+            //
             // we probably should remove such declarations, but if we want
             // to have functions that output such things, it is important to
             // support this horrible field...
-            error::instance() << declaration->get_position()
-                    << "the alpha() function of the filter field is an Internet Explorer 8 (and earlier) extension which is not supported across browsers."
+            //
+            // alpha() was for IE8 and earlier, now opacity works
+            error::instance() << child->get_position()
+                    << "the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers."
                     << error_mode_t::ERROR_WARNING;
         }
-        else
+
+        if(!ignore)
         {
+            // ':' IDENTIFIER
+            // validate the identifier as only a small number can be used
+            set_validation_script("validation/has-font-metrics");
+            node::pointer_t str(new node(node_type_t::STRING, declaration->get_position()));
+            str->set_string(declaration->get_string());
+            add_validation_variable("field_name", str);
+            bool const divide_font_metrics(run_validation(true));
+
             parser::argify(declaration);
             expression args_expr(declaration, true);
-            args_expr.compile_args();
+            args_expr.compile_args(divide_font_metrics);
         }
     }
 
@@ -2356,8 +2416,6 @@ bool compiler::selector_attribute_check(node::pointer_t n)
 
 bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
 {
-    // test with `pos + 1` since the last item in the list is not a selector,
-    // it is the curly bracket block
     if(pos >= n->size())
     {
         throw csspp_exception_logic("compiler.cpp:compiler::selector_term(): selector_simple_term() called when not enough selectors are available."); // LCOV_EXCL_LINE
@@ -2623,7 +2681,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
 
     case node_type_t::FUNCTION:
         error::instance() << n->get_position()
-                << "found function \"" << term->get_string() << "()\", which may be a valid selector token but only if immediately preceeded by a ':' (simple term)."
+                << "found function \"" << term->get_string() << "()\", which may be a valid selector token but only if immediately preceeded by one ':' (simple term)."
                 << error_mode_t::ERROR_ERROR;
         return false;
 
@@ -2652,8 +2710,18 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
     switch(term->get_type())
     {
     case node_type_t::PLACEHOLDER:
-    case node_type_t::REFERENCE:
         // valid complex term as is
+        break;
+
+    case node_type_t::REFERENCE:
+        // valid complex term only if pos == 0
+        if(pos != 0)
+        {
+            error::instance() << n->get_position()
+                    << "a selector reference (&) can only appear as the very first item in a list of selectors."
+                    << error_mode_t::ERROR_ERROR;
+            return false;
+        }
         break;
 
     case node_type_t::COLON:
@@ -2679,19 +2747,27 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
             // ':' FUNCTION component-value-list ')'
             if(term->get_string() == "not")
             {
-                // skip FUNCTION
-                ++pos;
-
                 // special handling, the :not() is considered to be
                 // a complex selector and as such has to be handled
                 // right here; the parameters must represent one valid
                 // simple term
                 //
-                // TODO: got to take care of WHITESPACE, plus the
-                //       end of the list of children is NOT a {}-block
-                //       (argh!)
+                // TODO: still got to take care of WHITESPACE?
                 size_t sub_pos(0);
-                return selector_simple_term(term, sub_pos);
+                if(!selector_simple_term(term, sub_pos))
+                {
+                    return false;
+                }
+                if(sub_pos < term->size())
+                {
+                    // we did not reach the end of that list so something
+                    // is wrong (i.e. the :not() can only include one
+                    // element)
+                    error::instance() << term->get_position()
+                            << "the :not() function accepts at most one simple term."
+                            << error_mode_t::ERROR_ERROR;
+                    return false;
+                }
             }
             else
             {
@@ -2707,7 +2783,7 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
                 if(pos >= n->size())
                 {
                     error::instance() << n->get_position()
-                            << "a selector list cannot end with a '::'."
+                            << "a selector list cannot end with a '::' without an identifier after it."
                             << error_mode_t::ERROR_ERROR;
                     return false;
                 }
@@ -2726,6 +2802,13 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
                 add_validation_variable("pseudo_name", pseudo_element);
                 if(!run_validation(false))
                 {
+                    return false;
+                }
+                if(pos + 1 < n->size())
+                {
+                    error::instance() << n->get_position()
+                            << "a pseudo element name (defined after a '::' in a list of selectors) must be defined as the last element in the list of selectors."
+                            << error_mode_t::ERROR_ERROR;
                     return false;
                 }
             }
@@ -2758,8 +2841,10 @@ bool compiler::selector_term(node::pointer_t n, size_t & pos)
         return false;
 
     case node_type_t::FUNCTION:
+        // we can reach this case if we have a token in the selector list
+        // which immediately returns false in is_nested_declaration()
         error::instance() << n->get_position()
-                << "found function \"" << term->get_string() << "()\", which may be a valid selector token but only if immediately preceeded by a ':' (term)."
+                << "found function \"" << term->get_string() << "()\", which may be a valid selector token but only if immediately preceeded by one ':' (term)."
                 << error_mode_t::ERROR_ERROR;
         return false;
 
@@ -3102,6 +3187,323 @@ bool compiler::run_validation(bool check_only)
     compile(true);
 
     return !old_count.error_happened();
+}
+
+void compiler::expand_nested_components(node::pointer_t n)
+{
+    safe_parents_t safe_parents(f_state, n);
+
+    switch(n->get_type())
+    {
+    case node_type_t::COMPONENT_VALUE:
+        {
+            node::pointer_t rule_last(n);
+            for(size_t idx(0); idx < n->size();)
+            {
+                node::pointer_t child(n->get_child(idx));
+                expand_nested_rules(f_state.get_previous_parent(), n, rule_last, child);
+                if(idx < n->size()
+                && child == n->get_child(idx))
+                {
+                    ++idx;
+                }
+            }
+        }
+        break;
+
+    case node_type_t::DECLARATION:
+        // this is true for all but one case, when @-keyword accepts
+        // declarations instead of rules (like @font-face); we may want
+        // to test that and use the correct call in the @-keyword...
+        //error::instance() << n->get_position()
+        //        << "a declaration can only appears inside a rule."
+        //        << error_mode_t::ERROR_ERROR;
+        for(size_t idx(0); idx < n->size();)
+        {
+            node::pointer_t child(n->get_child(idx));
+            node::pointer_t declaration_root(n);
+            expand_nested_declarations(n->get_string(), f_state.get_previous_parent(), declaration_root, child);
+            if(idx < n->size()
+            && child == n->get_child(idx))
+            {
+                ++idx;
+            }
+        }
+        //if(n->empty())
+        //{
+        //    f_state.get_previous_parent()->remove_child(n);
+        //}
+        break;
+
+    case node_type_t::LIST:
+    case node_type_t::AT_KEYWORD:
+    case node_type_t::OPEN_CURLYBRACKET:
+        for(size_t idx(0); idx < n->size();)
+        {
+            node::pointer_t child(n->get_child(idx));
+            expand_nested_components(child);
+            if(idx < n->size()
+            && child == n->get_child(idx))
+            {
+                ++idx;
+            }
+        }
+        break;
+
+    //case node_type_t::ARG: -- we should not have sub-declarations under ARG
+    default:
+        break;
+
+    }
+}
+
+void compiler::expand_nested_rules(node::pointer_t parent, node::pointer_t root, node::pointer_t & last, node::pointer_t n)
+{
+    safe_parents_t safe_parents(f_state, n);
+
+    switch(n->get_type())
+    {
+    case node_type_t::COMPONENT_VALUE:
+        //
+        // before this expansion the declarations are like:
+        //
+        //    COMPONENT_VALUE
+        //      ARG
+        //        ...
+        //      OPEN_CURLYBRACKET
+        //        LIST
+        //          DECLARATION
+        //            ARG
+        //              ...
+        //          DECLARATION
+        //            ARG
+        //              ...
+        //          COMPONENT_VALUE  <-- expand this one with the first one
+        //            ARG
+        //              ...
+        //            OPEN_CURLYBRACKET
+        //              ...
+        //
+        // so what we do is move the sub-declaration at the same level as the
+        // parent and prepend the name of the parent + "-".
+        //
+        {
+            // move the rule as a child of the parent node
+            f_state.get_previous_parent()->remove_child(n);
+            size_t pos(parent->child_position(last));
+            parent->insert_child(pos + 1, n);
+
+            // prepend the arguments of root to the arguments of n
+            // note that this is a product, if root has 3 ARGs and
+            // n also has 3 ARGs, we end up with 9 ARGs in n
+            node::pointer_t list(new node(node_type_t::LIST, n->get_position()));
+            while(!n->empty())
+            {
+                node::pointer_t child(n->get_child(0));
+                if(!child->is(node_type_t::ARG))
+                {
+                    break;
+                }
+                n->remove_child(0);
+                list->add_child(child);
+            }
+            for(size_t idx(0); idx < root->size(); ++idx)
+            {
+                node::pointer_t child(root->get_child(idx));
+                if(!child->is(node_type_t::ARG))
+                {
+                    break;
+                }
+                // we use clone because of the product
+                node::pointer_t clone(child->clone());
+                for(size_t l(0); l < list->size(); ++l)
+                {
+                    node::pointer_t arg(list->get_child(l));
+                    // we use clone because of the product
+                    for(size_t a(0); a < arg->size(); ++a)
+                    {
+                        node::pointer_t item(arg->get_child(a));
+                        if(!item->is(node_type_t::REFERENCE))
+                        {
+                            if(a == 0)
+                            {
+                                node::pointer_t whitespace(new node(node_type_t::WHITESPACE, clone->get_position()));
+                                clone->add_child(whitespace);
+                            }
+                            clone->add_child(item->clone());
+                        }
+                    }
+                }
+                n->insert_child(idx, clone);
+            }
+
+            last = n;
+
+            for(size_t idx(0); idx < n->size();)
+            {
+                node::pointer_t child(n->get_child(idx));
+                node::pointer_t rule_root(n);
+                expand_nested_rules(parent, rule_root, last, child);
+                if(idx < n->size()
+                && child == n->get_child(idx))
+                {
+                    ++idx;
+                }
+            }
+        }
+        break;
+
+    case node_type_t::DECLARATION:
+        for(size_t idx(0); idx < n->size();)
+        {
+            node::pointer_t child(n->get_child(idx));
+            node::pointer_t declaration_root(n);
+            expand_nested_declarations(n->get_string(), f_state.get_previous_parent(), declaration_root, child);
+            if(idx < n->size()
+            && child == n->get_child(idx))
+            {
+                ++idx;
+            }
+        }
+        if(n->empty())
+        {
+            f_state.get_previous_parent()->remove_child(n);
+        }
+        break;
+
+    case node_type_t::AT_KEYWORD:
+        for(size_t idx(0); idx < n->size();)
+        {
+            node::pointer_t child(n->get_child(idx));
+            expand_nested_components(child);
+            if(idx < n->size()
+            && child == n->get_child(idx))
+            {
+                ++idx;
+            }
+        }
+        break;
+
+    case node_type_t::LIST:
+    case node_type_t::OPEN_CURLYBRACKET:
+        for(size_t idx(0); idx < n->size();)
+        {
+            node::pointer_t child(n->get_child(idx));
+            expand_nested_rules(parent, root, last, child);
+            if(idx < n->size()
+            && child == n->get_child(idx))
+            {
+                ++idx;
+            }
+        }
+        break;
+
+    //case node_type_t::ARG: -- we should not have sub-declarations under ARG
+    default:
+        break;
+
+    }
+}
+
+void compiler::expand_nested_declarations(std::string const & name, node::pointer_t parent, node::pointer_t & root, node::pointer_t n)
+{
+    safe_parents_t safe_parents(f_state, n);
+
+    switch(n->get_type())
+    {
+    case node_type_t::DECLARATION:
+        //
+        // before this expansion the declarations are like:
+        //
+        //    DECLARATION
+        //      ARG
+        //        ...
+        //    OPEN_CURLYBRACKET
+        //      LIST
+        //        DECLARATION   <-- expand this one with the first one
+        //          ARG
+        //            ...
+        //        DECLARATION   <-- expand this too, also with the first one
+        //          ARG
+        //            ...
+        //
+        // so what we do is move the sub-declaration at the same level as the
+        // parent and prepend the name of the parent + "-".
+        //
+        {
+            std::string const sub_name((name == "-csspp-null" ? "" : name + "-") + n->get_string());
+
+            // move this declaration from where it is now to the root
+            f_state.get_previous_parent()->remove_child(n);
+            size_t pos(parent->child_position(root));
+            parent->insert_child(pos + 1, n);
+            n->set_string(sub_name);
+            root = n;
+
+            for(size_t idx(0); idx < n->size();)
+            {
+                node::pointer_t child(n->get_child(idx));
+                expand_nested_declarations(sub_name, parent, root, child);
+                if(idx < n->size()
+                && child == n->get_child(idx))
+                {
+                    ++idx;
+                }
+            }
+
+            // remove empty declarations
+            //if(n->empty())
+            //{
+            //    f_state.get_previous_parent()->remove_child(n);
+            //}
+        }
+        break;
+
+    case node_type_t::AT_KEYWORD:
+        // we may have to handle declarations within an @-keyword, but
+        // it is not a sub-expand-nested-declaration
+        throw csspp_exception_logic("compiler.cpp:compiler::expand_nested_declarations(): @-keyword cannot appear within a declaration."); // LCOV_EXCL_LINE
+        //for(size_t idx(0); idx < n->size();)
+        //{
+        //    node::pointer_t child(n->get_child(idx));
+        //    expand_nested_components(child);
+        //    if(idx < n->size()
+        //    && child == n->get_child(idx))
+        //    {
+        //        ++idx;
+        //    }
+        //}
+        //break;
+
+    case node_type_t::LIST:
+    case node_type_t::OPEN_CURLYBRACKET:
+        for(size_t idx(0); idx < n->size();)
+        {
+            node::pointer_t child(n->get_child(idx));
+            expand_nested_declarations(name, parent, root, child);
+            if(idx < n->size()
+            && child == n->get_child(idx))
+            {
+                ++idx;
+            }
+        }
+        if(n->empty())
+        {
+            f_state.get_previous_parent()->remove_child(n);
+        }
+        break;
+
+    case node_type_t::COMPONENT_VALUE:
+        error::instance() << n->get_position()
+                << "a nested declaration cannot include a rule."
+                << error_mode_t::ERROR_ERROR;
+        break;
+
+    //case node_type_t::ARG: -- we should not have sub-declarations under ARG
+    default:
+        break;
+
+    }
 }
 
 } // namespace csspp

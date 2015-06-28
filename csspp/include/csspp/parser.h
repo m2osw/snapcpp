@@ -59,7 +59,7 @@ private:
 
 } // namespace csspp
 #endif
-// #ifndef CSSPP_LEXER_H
+// #ifndef CSSPP_PARSER_H
 
 // Local Variables:
 // mode: cpp

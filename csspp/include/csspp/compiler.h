@@ -88,6 +88,9 @@ private:
     void                    set_variable(node::pointer_t n);
     void                    replace_variables_in_comment(node::pointer_t n);
     void                    prepare_function_arguments(node::pointer_t var);
+    void                    expand_nested_components(node::pointer_t n);
+    void                    expand_nested_rules(node::pointer_t parent, node::pointer_t root, node::pointer_t & last, node::pointer_t n);
+    void                    expand_nested_declarations(std::string const & name, node::pointer_t parent, node::pointer_t & root, node::pointer_t n);
 
     bool                    selector_attribute_check(node::pointer_t n);
     bool                    selector_simple_term(node::pointer_t n, size_t & pos);

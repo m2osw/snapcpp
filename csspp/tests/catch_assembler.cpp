@@ -169,6 +169,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
            << "{\n"
            << "  border: 3px solid #f7d0cf;\n"
            << "\tborder-bottom-width: 1px;\n"
+           << "  font: 17.2px/1.35em\tArial;\n"
            << "}\n"
            << "\n";
         csspp::position pos("test.css");
@@ -198,14 +199,14 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
 "div { color: black; font-size: 1.3em }\n"
-"span { border: 3px solid #f7d0cf; border-bottom-width: 1px }\n"
+"span { border: 3px solid #f7d0cf; border-bottom-width: 1px; font: 17.2px/1.35em arial }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div{color:black;font-size:1.3em}span{border:3px solid #f7d0cf;border-bottom-width:1px}\n"
+"div{color:black;font-size:1.3em}span{border:3px solid #f7d0cf;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -221,6 +222,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
 "{\n"
 "  border: 3px solid #f7d0cf;\n"
 "  border-bottom-width: 1px;\n"
+"  font: 17.2px/1.35em arial;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -229,7 +231,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
 "div{color:black;font-size:1.3em}\n"
-"span{border:3px solid #f7d0cf;border-bottom-width:1px}\n"
+"span{border:3px solid #f7d0cf;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -2221,13 +2223,15 @@ TEST_CASE("Assemble Functions", "[assembler] [function]")
     {
         std::stringstream ss;
         ss << "$box($color, $width, $height): { border: 1px * 3 solid $color; width: $width * 1.5; height: $height };\n"
-           << "a ~ b { null: $box(#39458A, 300px, 200px); }\n";
+           << "a ~ b { -csspp-null: $box(#39458A, 300px, 200px); }\n";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
         csspp::parser p(l);
 
         csspp::node::pointer_t n(p.stylesheet());
+
+std::cerr << "Parser result is: [" << *n << "]\n";
 
         csspp::compiler c;
         c.set_root(n);
@@ -2236,7 +2240,7 @@ TEST_CASE("Assemble Functions", "[assembler] [function]")
 
         c.compile(false);
 
-//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         std::stringstream out;
         csspp::assembler a(out);
@@ -2248,24 +2252,24 @@ TEST_CASE("Assemble Functions", "[assembler] [function]")
         switch(static_cast<csspp::output_mode_t>(i))
         {
         case csspp::output_mode_t::COMPACT:
-expected << "a ~ b { null: border: 3px solid #39458a; width: 450px; height: 200px }\n";
+expected << "a ~ b { border: 3px solid #39458a; width: 450px; height: 200px }\n";
             break;
 
         case csspp::output_mode_t::COMPRESSED:
-expected << "a~b{null:border:3px solid #39458a;width:450px;height:200px}\n";
+expected << "a~b{border:3px solid #39458a;width:450px;height:200px}\n";
             break;
 
         case csspp::output_mode_t::EXPANDED:
 expected << "a ~ b\n"
  << "{\n"
- << "  null:   border: 3px solid #39458a;\n"
+ << "  border: 3px solid #39458a;\n"
  << "  width: 450px;\n"
  << "  height: 200px;\n"
  << "}\n";
             break;
 
         case csspp::output_mode_t::TIDY:
-expected << "a~b{null:border:3px solid #39458a;width:450px;height:200px}\n";
+expected << "a~b{border:3px solid #39458a;width:450px;height:200px}\n";
             break;
 
         }

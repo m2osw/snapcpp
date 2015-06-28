@@ -399,6 +399,28 @@ void assembler::output(node::pointer_t n)
         f_out << n->get_integer() << n->get_string();
         break;
 
+    case node_type_t::LIST:
+        {
+            size_t const max_children(n->size());
+            for(size_t idx(0); idx < max_children; ++idx)
+            {
+                node::pointer_t child(n->get_child(idx));
+                if(child->is(node_type_t::DECLARATION))
+                {
+                    output(child);
+                    if(idx + 1 != max_children)
+                    {
+                        f_impl->output_operator(";", g_flag_optional_space_after_or_newline);
+                    }
+                }
+                else
+                {
+                    output(child);
+                }
+            }
+        }
+        break;
+
     case node_type_t::MULTIPLY:
         f_impl->output_operator("*", 0);
         break;
@@ -409,7 +431,13 @@ void assembler::output(node::pointer_t n)
             size_t const max_children(n->size());
             for(size_t idx(0); idx < max_children; ++idx)
             {
+                node::pointer_t item(n->get_child(idx));
                 output(n->get_child(idx));
+                if(item->is(node_type_t::DECLARATION)
+                && idx + 1 < max_children)
+                {
+                    f_impl->output_operator(";", g_flag_optional_space_after_or_newline);
+                }
             }
             f_impl->output_operator(";", g_flag_optional_operator);
             f_impl->output_operator("}", g_flag_optional_space_before_or_newline);
@@ -491,28 +519,6 @@ void assembler::output(node::pointer_t n)
             // TODO: support adding around the operator?
             nth_child const an_b(n->get_integer());
             f_out << an_b.to_string();
-        }
-        break;
-
-    case node_type_t::LIST:
-        {
-            size_t const max_children(n->size());
-            for(size_t idx(0); idx < max_children; ++idx)
-            {
-                node::pointer_t child(n->get_child(idx));
-                if(child->is(node_type_t::DECLARATION))
-                {
-                    output(child);
-                    if(idx + 1 != max_children)
-                    {
-                        f_impl->output_operator(";", g_flag_optional_space_after_or_newline);
-                    }
-                }
-                else
-                {
-                    output(child);
-                }
-            }
         }
         break;
 

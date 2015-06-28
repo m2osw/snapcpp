@@ -26,7 +26,7 @@ class expression
 {
 public:
                         expression(node::pointer_t n, bool skip_whitespace);
-    void                compile_args();
+    void                compile_args(bool divide_font_metrics);
     node::pointer_t     compile();
     bool                end_of_nodes();
     void                mark_start();
@@ -66,6 +66,7 @@ private:
     node::pointer_t     f_current;
     variable_vector_t   f_variables;
     bool                f_skip_whitespace = false;
+    bool                f_divide_font_metrics = false;
 };
 
 } // namespace csspp

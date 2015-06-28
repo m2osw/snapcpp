@@ -49,6 +49,13 @@ public:
         f_flag = true;
     }
 
+    safe_bool_t(bool & flag, bool new_value)
+        : f_flag(flag)
+        , f_old_value(flag)
+    {
+        f_flag = new_value;
+    }
+
     ~safe_bool_t()
     {
         f_flag = f_old_value;
@@ -62,6 +69,11 @@ private:
 class safe_precision_t
 {
 public:
+    safe_precision_t()
+        : f_precision(get_precision())
+    {
+    }
+
     safe_precision_t(int precision)
         : f_precision(get_precision())
     {

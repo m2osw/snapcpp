@@ -757,8 +757,8 @@ std::string node::to_string(int flags) const
 
     case node_type_t::FONT_METRICS:
         // this is a mouthful!
-        out << decimal_number_to_string(get_font_size()) << get_dim1()
-            << "/" << decimal_number_to_string(get_line_height()) << get_dim2();
+        out <<        decimal_number_to_string(get_font_size()   * (get_dim1() == "%" ? 100.0 : 1.0)) << get_dim1()
+            << "/" << decimal_number_to_string(get_line_height() * (get_dim2() == "%" ? 100.0 : 1.0)) << get_dim2();
         break;
 
     case node_type_t::VARIABLE_FUNCTION:
@@ -1120,6 +1120,18 @@ void node::display(std::ostream & out, uint32_t indent) const
     {
     case node_type_t::COLOR:
         out << " H:" << std::hex << f_integer << std::dec;
+        break;
+
+    default:
+        break;
+
+    }
+
+    switch(f_type)
+    {
+    case node_type_t::FONT_METRICS:
+        out << " FM:" << decimal_number_to_string(get_font_size()   * (get_dim1() == "%" ? 100.0 : 1.0)) << get_dim1()
+               << "/" << decimal_number_to_string(get_line_height() * (get_dim2() == "%" ? 100.0 : 1.0)) << get_dim2();
         break;
 
     default:

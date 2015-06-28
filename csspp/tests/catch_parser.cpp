@@ -790,6 +790,20 @@ TEST_CASE("Invalid Rules", "[parser] [rule-list] [invalid]")
         REQUIRE_ERRORS("test.css(1): error: At '@' command must end with a block or a ';'.\n");
     }
 
+    // :INTEGER is not valid, plus it is viewed as a nested rule!
+    {
+        std::stringstream ss;
+        ss << "div:556 {color:bisque}";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        REQUIRE_ERRORS("test.css(1): error: Variable set to a block and a nested property block must end with a semicolon (;) after said block.\n");
+    }
+
     // no error left over
     REQUIRE_ERRORS("");
 }
@@ -2133,7 +2147,7 @@ TEST_CASE("Is Variable Set", "[parser] [variable] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Is Nested Declaration", "[parser] [variable] [invalid]")
+TEST_CASE("Is nested declaration", "[parser] [variable] [invalid]")
 {
     // which a field name with a simple nested declaration
     {
@@ -2172,6 +2186,484 @@ TEST_CASE("Is Nested Declaration", "[parser] [variable] [invalid]")
 
         csspp::node::pointer_t var(n->get_child(0));
         REQUIRE(csspp::parser::is_nested_declaration(var));
+    }
+
+    // which a field name with a simple nested declaration
+    {
+        std::stringstream ss;
+        ss << "width :nth-child(3n+2) span{ color : red } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"width\"\n"
+"    WHITESPACE\n"
+"    COLON\n"
+"    FUNCTION \"nth-child\"\n"
+"      INTEGER \"n\" I:3\n"
+"      INTEGER \"\" I:2\n"
+"    WHITESPACE\n"
+"    IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(var));
+    }
+
+    // which a field name with a simple nested declaration
+    {
+        std::stringstream ss;
+        ss << "width :not(.color) { color : red } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"width\"\n"
+"    WHITESPACE\n"
+"    COLON\n"
+"    FUNCTION \"not\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"color\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        csspp::node::pointer_t var(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(var));
+    }
+
+    // in this case it is clear that none are declarations
+    // (although the span:not() is not valid since it is
+    // missing the {}-block at the end)
+    {
+        std::stringstream ss;
+        ss << "div { span :not(.wrap); p { color : red } } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      LIST\n"
+"        COMPONENT_VALUE\n"
+"          IDENTIFIER \"span\"\n"
+"          WHITESPACE\n"
+"          COLON\n"
+"          FUNCTION \"not\"\n"
+"            PERIOD\n"
+"            IDENTIFIER \"wrap\"\n"
+"        COMPONENT_VALUE\n"
+"          IDENTIFIER \"p\"\n"
+"          OPEN_CURLYBRACKET B:false\n"
+"            COMPONENT_VALUE\n"
+"              IDENTIFIER \"color\"\n"
+"              WHITESPACE\n"
+"              COLON\n"
+"              WHITESPACE\n"
+"              IDENTIFIER \"red\"\n"
+
+            );
+
+        // check the first COMPONENT_VALUE
+        csspp::node::pointer_t div(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(div));
+
+        // check the second COMPONENT_VALUE
+        csspp::node::pointer_t span(n->get_child(0)->get_child(1)->get_child(0)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(span));
+
+        // check the third COMPONENT_VALUE
+        csspp::node::pointer_t p_tag(n->get_child(0)->get_child(1)->get_child(0)->get_child(1));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(p_tag));
+    }
+
+    // in this case it is clear that none are declarations
+    // (although the span:not() is not valid since it is
+    // missing the {}-block at the end)
+    {
+        std::stringstream ss;
+        ss << "div { span : { color : red }; } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"span\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        OPEN_CURLYBRACKET B:false\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"color\"\n"
+"            WHITESPACE\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"red\"\n"
+
+            );
+
+        // check the first COMPONENT_VALUE
+        csspp::node::pointer_t div(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(div));
+
+        // check the second COMPONENT_VALUE
+        csspp::node::pointer_t span(n->get_child(0)->get_child(1)->get_child(0));
+        REQUIRE(csspp::parser::is_nested_declaration(span));
+
+        // check the third COMPONENT_VALUE
+        csspp::node::pointer_t p_tag(n->get_child(0)->get_child(1)->get_child(0)->get_child(3)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(p_tag));
+    }
+
+    // ':' always marks a selector
+    {
+        std::stringstream ss;
+        ss << "div { span :section : { color : red }; } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"span\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        IDENTIFIER \"section\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        OPEN_CURLYBRACKET B:false\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"color\"\n"
+"            WHITESPACE\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"red\"\n"
+"      LIST\n"
+
+            );
+
+        // check the first COMPONENT_VALUE
+        csspp::node::pointer_t div(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(div));
+
+        // check the second COMPONENT_VALUE
+        csspp::node::pointer_t span(n->get_child(0)->get_child(1)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(span));
+
+        // check the third COMPONENT_VALUE
+        csspp::node::pointer_t p_tag(n->get_child(0)->get_child(1)->get_child(0)->get_child(6)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(p_tag));
+    }
+
+    // '%<id>' always marks a selector
+    {
+        std::stringstream ss;
+        ss << "div { span :section%july { color : red }; } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"span\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        IDENTIFIER \"section\"\n"
+"        PLACEHOLDER \"july\"\n"
+"        OPEN_CURLYBRACKET B:false\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"color\"\n"
+"            WHITESPACE\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"red\"\n"
+"      LIST\n"
+
+            );
+
+        // check the first COMPONENT_VALUE
+        csspp::node::pointer_t div(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(div));
+
+        // check the second COMPONENT_VALUE
+        csspp::node::pointer_t span(n->get_child(0)->get_child(1)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(span));
+
+        // check the third COMPONENT_VALUE
+        csspp::node::pointer_t p_tag(n->get_child(0)->get_child(1)->get_child(0)->get_child(5)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(p_tag));
+    }
+
+    // 'E ~ E' always marks a selector
+    {
+        std::stringstream ss;
+        ss << "div { span :section ~ july { color : red }; } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"span\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        IDENTIFIER \"section\"\n"
+"        WHITESPACE\n"
+"        PRECEDED\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"july\"\n"
+"        OPEN_CURLYBRACKET B:false\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"color\"\n"
+"            WHITESPACE\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"red\"\n"
+"      LIST\n"
+
+            );
+
+        // check the first COMPONENT_VALUE
+        csspp::node::pointer_t div(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(div));
+
+        // check the second COMPONENT_VALUE
+        csspp::node::pointer_t span(n->get_child(0)->get_child(1)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(span));
+
+        // check the third COMPONENT_VALUE
+        csspp::node::pointer_t p_tag(n->get_child(0)->get_child(1)->get_child(0)->get_child(8)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(p_tag));
+    }
+
+    // 'E & E' always marks a selector
+    {
+        std::stringstream ss;
+        ss << "div { span :section & july { color : red }; } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"span\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        IDENTIFIER \"section\"\n"
+"        WHITESPACE\n"
+"        REFERENCE\n"
+"        WHITESPACE\n"
+"        IDENTIFIER \"july\"\n"
+"        OPEN_CURLYBRACKET B:false\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"color\"\n"
+"            WHITESPACE\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"red\"\n"
+"      LIST\n"
+
+            );
+
+        // check the first COMPONENT_VALUE
+        csspp::node::pointer_t div(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(div));
+
+        // check the second COMPONENT_VALUE
+        csspp::node::pointer_t span(n->get_child(0)->get_child(1)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(span));
+
+        // check the third COMPONENT_VALUE
+        csspp::node::pointer_t p_tag(n->get_child(0)->get_child(1)->get_child(0)->get_child(8)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(p_tag));
+    }
+
+    // 'E|E' always marks a selector
+    {
+        std::stringstream ss;
+        ss << "div { span :section *|july { color : red }; } ";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no error happened
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"span\"\n"
+"        WHITESPACE\n"
+"        COLON\n"
+"        IDENTIFIER \"section\"\n"
+"        WHITESPACE\n"
+"        MULTIPLY\n"
+"        SCOPE\n"
+"        IDENTIFIER \"july\"\n"
+"        OPEN_CURLYBRACKET B:false\n"
+"          COMPONENT_VALUE\n"
+"            IDENTIFIER \"color\"\n"
+"            WHITESPACE\n"
+"            COLON\n"
+"            WHITESPACE\n"
+"            IDENTIFIER \"red\"\n"
+"      LIST\n"
+
+            );
+
+        // check the first COMPONENT_VALUE
+        csspp::node::pointer_t div(n->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(div));
+
+        // check the second COMPONENT_VALUE
+        csspp::node::pointer_t span(n->get_child(0)->get_child(1)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(span));
+
+        // check the third COMPONENT_VALUE
+        csspp::node::pointer_t p_tag(n->get_child(0)->get_child(1)->get_child(0)->get_child(8)->get_child(0));
+        REQUIRE_FALSE(csspp::parser::is_nested_declaration(p_tag));
     }
 
     // a nested block must end with a ';'

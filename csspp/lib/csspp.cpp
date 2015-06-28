@@ -20,6 +20,7 @@
 #include "csspp/exceptions.h"
 
 #include <cmath>
+#include <cfloat>
 #include <iomanip>
 #include <sstream>
 #include <iostream>
@@ -61,28 +62,33 @@ std::string decimal_number_to_string(decimal_number_t d)
     // we use the following algorithm for it:
     std::stringstream ss;
 
+    // use the maximum precision so we do not get any surprises
+    // see the following for the "3 + DBL_MANT_DIG - DBL_MIN_EXP":
+    // http://stackoverflow.com/questions/1701055/what-is-the-maximum-length-in-chars-needed-to-represent-any-double-value
+    ss << std::setprecision(3 + DBL_MANT_DIG - DBL_MIN_EXP);
+
     // make sure to round the value up first
     if(d >= 0)
     {
-        ss << d + 5.0 / pow(10, g_precision + 1);
+        ss << d + 0.5 / pow(10, g_precision);
     }
     else
     {
-        ss << d - 5.0 / pow(10, g_precision + 1);
+        ss << d - 0.5 / pow(10, g_precision);
     }
 
     std::string out(ss.str());
 
     // check wether the number of digits after the decimal point is too large
-    std::string::size_type end(out.find('.') + g_precision + 1);
+    std::string::size_type end(out.find('.'));
     if(end != std::string::npos
-    && out.length() > end)
+    && out.length() > end + g_precision + 1)
     {
         // remove anything extra
-        out = out.substr(0, end);
+        out = out.substr(0, end + g_precision + 1);
     }
-    if(end != std::string::npos
-    && end > 0)
+    if(out.find('.') != std::string::npos
+    && end != std::string::npos)
     {
         while(out.back() == '0')
         {

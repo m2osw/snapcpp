@@ -15,11 +15,16 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-@if $pseudo_name != "first-line"
-and $pseudo_name != "first-letter"
+@if $pseudo_name != "after"
 and $pseudo_name != "before"
-and $pseudo_name != "after" {
-    @error $pseudo_name + " is not a valid name for a pseudo element; CSS only supports first-line, first-letter, before, and after.";
+and $pseudo_name != "first-letter"
+and $pseudo_name != "first-line"
+and $pseudo_name != "grammar-error"
+and $pseudo_name != "marker"
+and $pseudo_name != "placeholder"
+and $pseudo_name != "selection"
+and $pseudo_name != "spelling-error" {
+    @error $pseudo_name + " is not a valid name for a pseudo element; CSS only supports after, before, first-letter, first-line, grammar-error, marker, placeholder, selection, and spelling-error.";
 }
 
 // Local Variables:
