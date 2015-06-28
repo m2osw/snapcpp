@@ -2231,7 +2231,7 @@ TEST_CASE("Assemble Functions", "[assembler] [function]")
 
         csspp::node::pointer_t n(p.stylesheet());
 
-std::cerr << "Parser result is: [" << *n << "]\n";
+//std::cerr << "Parser result is: [" << *n << "]\n";
 
         csspp::compiler c;
         c.set_root(n);
@@ -2240,7 +2240,7 @@ std::cerr << "Parser result is: [" << *n << "]\n";
 
         c.compile(false);
 
-std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         std::stringstream out;
         csspp::assembler a(out);
@@ -2330,6 +2330,74 @@ expected << "a b\n"
 
         case csspp::output_mode_t::TIDY:
 expected << "a b{color:rgba(7,2,3,0.5)}\n";
+            break;
+
+        }
+        expected << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+        REQUIRE(out.str() == expected.str());
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Assemble placeholder", "[assembler] [placeholder]")
+{
+    // Test with gradient() function
+    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+        i <= static_cast<int>(csspp::output_mode_t::TIDY);
+        ++i)
+    {
+        std::stringstream ss;
+        ss << "$reddish: #e09756;\n"
+           << "#context a%extreme { color: blue; font-weight: bold; font-size: 2em }\n"
+           << ".error { color: $reddish }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        std::stringstream expected;
+        switch(static_cast<csspp::output_mode_t>(i))
+        {
+        case csspp::output_mode_t::COMPACT:
+expected << ".error { color: #e09756 }\n";
+            break;
+
+        case csspp::output_mode_t::COMPRESSED:
+expected << ".error{color:#e09756}\n";
+            break;
+
+        case csspp::output_mode_t::EXPANDED:
+expected << ".error\n"
+ << "{\n"
+ << "  color: #e09756;\n"
+ << "}\n";
+            break;
+
+        case csspp::output_mode_t::TIDY:
+expected << ".error{color:#e09756}\n";
             break;
 
         }

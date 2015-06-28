@@ -568,13 +568,17 @@ void assembler::output(node::pointer_t n)
 void assembler::output_component_value(node::pointer_t n)
 {
     bool first(true);
+    bool has_arg(false);
     size_t const max_children(n->size());
     for(size_t idx(0); idx < max_children; ++idx)
     {
         node::pointer_t c(n->get_child(idx));
         if(c->is(node_type_t::OPEN_CURLYBRACKET))
         {
-            output(c);
+            if(has_arg)
+            {
+                output(c);
+            }
         }
         else if(!c->is(node_type_t::ARG))
         {
@@ -585,8 +589,11 @@ void assembler::output_component_value(node::pointer_t n)
                << ".";                                                                                      // LCOV_EXCL_LINE
             throw csspp_exception_logic(ss.str());                                                          // LCOV_EXCL_LINE
         }
-        else
+        else if(c->empty() || !c->get_last_child()->is(node_type_t::PLACEHOLDER))
         {
+            // TODO: if we compile out PLACEHOLDER nodes in the compiler
+            //       then we can remove the test here... (on the line prior)
+            has_arg = true;
             if(first)
             {
                 first = false;
