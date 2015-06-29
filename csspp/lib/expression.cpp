@@ -88,6 +88,10 @@ node::pointer_t expression::compile_list(node::pointer_t parent)
             // we remove the !<word> from the declaration and
             // setup a flag instead
             f_node->remove_child(f_current);
+            if(f_pos > 0)
+            {
+                --f_pos;
+            }
             parent->set_flag(f_current->get_string(), true);
         }
         else
@@ -255,25 +259,121 @@ node::pointer_t expression::argument_list()
     return result;
 }
 
+bool expression::is_label() const
+{
+    // we have a label if we have:
+    //    <identifier> <ws>* ':'
+    size_t pos(f_pos + 1);
+    if(!f_current->is(node_type_t::IDENTIFIER)
+    || pos >= f_node->size())
+    {
+        return false;
+    }
+
+    node::pointer_t n(f_node->get_child(pos));
+    if(n->is(node_type_t::WHITESPACE))
+    {
+        ++pos;
+        if(pos >= f_node->size())
+        {
+            return false;
+        }
+        n = f_node->get_child(pos);
+    }
+
+    return n->is(node_type_t::COLON);
+}
+
 node::pointer_t expression::expression_list()
 {
-    node::pointer_t result(assignment());
-    if(!result)
+    // expression-list: expression
+    //                | list
+    //                | array
+    //
+    // list: expression
+    //     | list ',' expression
+    //
+    // array-list: IDENTIFIER ':' expression
+    //           | array-list ',' IDENTIFIER ':' expression
+    //
+    safe_bool_t safe_skip_whitespace(f_skip_whitespace);
+
+    if(is_label())
     {
-        return node::pointer_t();
-    }
+        node::pointer_t map(new node(node_type_t::ARRAY, f_current->get_position()));
+        while(is_label())
+        {
+            map->add_child(f_current);
 
-    // an expression list does NOT return a LIST, it just returns
-    // the result of the last expression (as in C/C++)
-    while(f_current->is(node_type_t::COMMA))
+            // skip the IDENTIFIER (f_current == ':')
+            next();
+
+            // skip the ':'
+            next();
+
+            node::pointer_t result;
+            if(f_current->is(node_type_t::COMMA))
+            {
+                // empty entries are viewed as valid and set to NULL
+                result.reset(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
+
+                // skip the ','
+                next();
+            }
+            else
+            {
+                result = assignment();
+                if(result)
+                {
+                    // maps need to have an even number of entries, but
+                    // the value of an entry does not need to be provided
+                    // in which case we want to put NULL in there
+                    result.reset(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
+                    map->add_child(result);
+                    break;
+                }
+            }
+
+            map->add_child(result);
+        }
+        return map;
+    }
+    else
     {
-        // skip the ','
-        next();
+        node::pointer_t result(assignment());
 
-        result = assignment();
+        if(result
+        && f_current->is(node_type_t::COMMA))
+        {
+            node::pointer_t array(new node(node_type_t::ARRAY, f_current->get_position()));
+            array->add_child(result);
+
+            // an expression list does NOT return a LIST, it just returns
+            // the result of the last expression (as in C/C++)
+            while(f_current->is(node_type_t::COMMA))
+            {
+                // skip the ','
+                next();
+
+                if(f_current->is(node_type_t::IDENTIFIER)
+                && f_pos + 1 < f_node->size())
+                {
+                }
+
+                result = assignment();
+                if(!result)
+                {
+                    break;
+                }
+                array->add_child(result);
+            }
+
+            // the result is the array in this case
+            return array;
+        }
+
+        return result;
     }
-
-    return result;
 }
 
 node::pointer_t expression::assignment()
@@ -1325,11 +1425,12 @@ node::pointer_t expression::post()
 
             if(i->is(node_type_t::INTEGER))
             {
-                if(result->is(node_type_t::LIST))
+                if(result->is(node_type_t::ARRAY)
+                || result->is(node_type_t::LIST))
                 {
                     // index is 1 based (not like in C/C++)
-                    integer_t const idx(i->get_integer());
-                    if(static_cast<size_t>(idx - 1) >= result->size())
+                    integer_t const idx(i->get_integer() - 1);
+                    if(static_cast<size_t>(idx) >= result->size())
                     {
                         error::instance() << f_current->get_position()
                                 << "index "
@@ -1340,7 +1441,27 @@ node::pointer_t expression::post()
                                 << error_mode_t::ERROR_ERROR;
                         return node::pointer_t();
                     }
-                    result = result->get_child(idx - 1);
+                    result = result->get_child(idx);
+                }
+                else if(result->is(node_type_t::MAP))
+                {
+                    // index is 1 based (not like in C/C++)
+                    // maps are defined as <property name> ':' <property value>
+                    // so the numeric index being used to access the property
+                    // value it has to be x 2 + 1 (C index: 1, 3, 5...)
+                    integer_t const idx((i->get_integer() - 1) * 2 + 1);
+                    if(static_cast<size_t>(idx) >= result->size())
+                    {
+                        error::instance() << f_current->get_position()
+                                << "index "
+                                << idx
+                                << " is out of range. The allowed range is 1 to "
+                                << static_cast<int>(result->size())
+                                << "."
+                                << error_mode_t::ERROR_ERROR;
+                        return node::pointer_t();
+                    }
+                    result = result->get_child(idx);
                 }
                 else
                 {
@@ -1428,10 +1549,12 @@ node::pointer_t expression::unary()
 
     switch(f_current->get_type())
     {
+    case node_type_t::ARRAY:
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::EXCLAMATION:  // this is not a BOOLEAN NOT operator...
-    case node_type_t::IDENTIFIER:
     case node_type_t::INTEGER:
+    case node_type_t::MAP:
+    case node_type_t::NULL_TOKEN:
     case node_type_t::PERCENT:
     case node_type_t::STRING:
     case node_type_t::UNICODE_RANGE:
@@ -1560,6 +1683,26 @@ node::pointer_t expression::unary()
         }
         /*NOTREACHED*/
 
+    case node_type_t::IDENTIFIER:
+        // a '#...' in an expression is expected to be a valid color
+        {
+            color hash;
+            if(!hash.set_color(f_current->get_string()))
+            {
+                // it is not a color, return as is
+                node::pointer_t result(f_current);
+                next();
+                return result;
+            }
+            node::pointer_t color_node(new node(node_type_t::COLOR, f_current->get_position()));
+            color_node->set_integer(hash.get_color());
+
+            // skip the IDENTIFIER
+            next();
+            return color_node;
+        }
+        /*NOTREACHED*/
+
     default:
         error::instance() << f_current->get_position()
                 << "unsupported type "
@@ -1574,6 +1717,49 @@ node::pointer_t expression::unary()
 node::pointer_t expression::excecute_function(node::pointer_t func)
 {
     std::string const function_name(func->get_string());
+
+    if(function_name == "identifier")
+    {
+        // identifier(expr)
+        if(func->size() == 1)
+        {
+            node::pointer_t arg1(func->get_child(0));
+            if(arg1->is(node_type_t::ARG)
+            && arg1->size() == 1)
+            {
+                node::pointer_t a(arg1->get_child(0));
+                switch(a->get_type())
+                {
+                case node_type_t::IDENTIFIER:
+                    // already an identifier, return as is
+                    return a;
+
+                case node_type_t::COLOR:
+                case node_type_t::DECIMAL_NUMBER:
+                case node_type_t::EXCLAMATION:
+                case node_type_t::HASH:
+                case node_type_t::INTEGER:
+                case node_type_t::PERCENT:
+                case node_type_t::PLACEHOLDER:
+                case node_type_t::STRING:
+                case node_type_t::URL:
+                    {
+                        node::pointer_t id(new node(node_type_t::IDENTIFIER, a->get_position()));
+                        id->set_string(a->to_string(0));
+                        return id;
+                    }
+
+                default:
+                    break;
+
+                }
+            }
+        }
+        error::instance() << f_current->get_position()
+                << "identifier() expects an identifier, an exclamation, a hash, a placeholder, a string or a URL as parameter."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+    }
 
     if(function_name == "if")
     {

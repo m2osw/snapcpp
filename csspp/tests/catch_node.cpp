@@ -245,11 +245,13 @@ TEST_CASE("Node types", "[node] [type]")
         switch(w)
         {
         case csspp::node_type_t::ARG:
+        case csspp::node_type_t::ARRAY:
         case csspp::node_type_t::AT_KEYWORD:
         case csspp::node_type_t::COMPONENT_VALUE:
         case csspp::node_type_t::DECLARATION:
         case csspp::node_type_t::FUNCTION:
         case csspp::node_type_t::LIST:
+        case csspp::node_type_t::MAP:
         case csspp::node_type_t::OPEN_CURLYBRACKET:
         case csspp::node_type_t::OPEN_PARENTHESIS:
         case csspp::node_type_t::OPEN_SQUAREBRACKET:
@@ -385,10 +387,12 @@ TEST_CASE("Node types", "[node] [type]")
         // all invalid node types for to_boolean()
         switch(w)
         {
+        case csspp::node_type_t::ARRAY:
         case csspp::node_type_t::BOOLEAN:
         case csspp::node_type_t::DECIMAL_NUMBER:
         case csspp::node_type_t::INTEGER:
         case csspp::node_type_t::LIST:
+        case csspp::node_type_t::MAP:
         case csspp::node_type_t::PERCENT:
         case csspp::node_type_t::STRING:
             break;
@@ -828,6 +832,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
             REQUIRE(name == "ARG");
             break;
 
+        case csspp::node_type_t::ARRAY:
+            REQUIRE(name == "ARRAY");
+            break;
+
         case csspp::node_type_t::COMPONENT_VALUE:
             REQUIRE(name == "COMPONENT_VALUE");
             break;
@@ -838,6 +846,10 @@ TEST_CASE("Type names", "[node] [type] [output]")
 
         case csspp::node_type_t::LIST:
             REQUIRE(name == "LIST");
+            break;
+
+        case csspp::node_type_t::MAP:
+            REQUIRE(name == "MAP");
             break;
 
         case csspp::node_type_t::max_type:
@@ -1114,6 +1126,10 @@ TEST_CASE("Node output", "[node] [output]")
             REQUIRE(name == "ARG");
             break;
 
+        case csspp::node_type_t::ARRAY:
+            REQUIRE(name == "ARRAY");
+            break;
+
         case csspp::node_type_t::COMPONENT_VALUE:
             REQUIRE(name == "COMPONENT_VALUE");
             break;
@@ -1124,6 +1140,10 @@ TEST_CASE("Node output", "[node] [output]")
 
         case csspp::node_type_t::LIST:
             REQUIRE(name == "LIST");
+            break;
+
+        case csspp::node_type_t::MAP:
+            REQUIRE(name == "MAP");
             break;
 
         case csspp::node_type_t::max_type:
@@ -1594,6 +1614,28 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                 }
                 break;
 
+            case csspp::node_type_t::ARRAY:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "()");
+
+                    // each item is comma separated
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::IDENTIFIER, n->get_position()));
+                    p->set_string("number");
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(3.22);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::POWER, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("hello world!");
+                    n->add_child(p);
+
+                    REQUIRE(n->to_string(flags) == "(number, 3.22, **, \"hello world!\")");
+                }
+                break;
+
             case csspp::node_type_t::COMPONENT_VALUE:
                 {
                     // the defaults are empty...
@@ -1693,6 +1735,31 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     p->set_decimal_number(5.3);
                     n->add_child(p);
                     REQUIRE(n->to_string(flags) == "3.22 ** 5.3");
+                }
+                break;
+
+            case csspp::node_type_t::MAP:
+                {
+                    // the defaults are empty...
+                    REQUIRE(n->to_string(flags) == "()");
+
+                    // number: 3.22
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::IDENTIFIER, n->get_position()));
+                    p->set_string("number");
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DECIMAL_NUMBER, n->get_position()));
+                    p->set_decimal_number(3.22);
+                    n->add_child(p);
+
+                    // string: "hello world!"
+                    p.reset(new csspp::node(csspp::node_type_t::IDENTIFIER, n->get_position()));
+                    p->set_string("string");
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("hello world!");
+                    n->add_child(p);
+
+                    REQUIRE(n->to_string(flags) == "(number: 3.22, string: \"hello world!\")");
                 }
                 break;
 
@@ -1976,6 +2043,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
             REQUIRE_ERRORS("test.css(1): error: node name \"ARG\".\n");
             break;
 
+        case csspp::node_type_t::ARRAY:
+            REQUIRE_ERRORS("test.css(1): error: node name \"ARRAY\".\n");
+            break;
+
         case csspp::node_type_t::COMPONENT_VALUE:
             REQUIRE_ERRORS("test.css(1): error: node name \"COMPONENT_VALUE\".\n");
             break;
@@ -1986,6 +2057,10 @@ TEST_CASE("Error with node names", "[node] [type] [output]")
 
         case csspp::node_type_t::LIST:
             REQUIRE_ERRORS("test.css(1): error: node name \"LIST\".\n");
+            break;
+
+        case csspp::node_type_t::MAP:
+            REQUIRE_ERRORS("test.css(1): error: node name \"MAP\".\n");
             break;
 
         case csspp::node_type_t::max_type:

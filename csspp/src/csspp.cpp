@@ -284,8 +284,8 @@ int pp::compile()
     csspp::node::pointer_t args_var(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
     args_var->set_string("_csspp_args");
     csspp::node::pointer_t wrapper(new csspp::node(csspp::node_type_t::LIST, root->get_position()));
-    csspp::node::pointer_t list(new csspp::node(csspp::node_type_t::LIST, root->get_position()));
-    wrapper->add_child(list);
+    csspp::node::pointer_t array(new csspp::node(csspp::node_type_t::ARRAY, root->get_position()));
+    wrapper->add_child(array);
     csspp_args->add_child(args_var);
     csspp_args->add_child(wrapper);
     if(f_opt->is_defined("args"))
@@ -295,7 +295,7 @@ int pp::compile()
         {
             csspp::node::pointer_t arg(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
             arg->set_string(f_opt->get_string("args", idx));
-            list->add_child(arg);
+            array->add_child(arg);
         }
     }
     root->set_variable("_csspp_args", csspp_args);

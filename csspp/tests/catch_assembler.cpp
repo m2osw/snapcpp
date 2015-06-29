@@ -113,7 +113,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div { color: black }\n"
+"div { color: #000 }\n"
 "span { border: 3px solid #f7d0cf }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -121,7 +121,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div{color:black}span{border:3px solid #f7d0cf}\n"
+"div{color:#000}span{border:3px solid #f7d0cf}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -130,7 +130,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
             REQUIRE(out.str() ==
 "div\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "span\n"
 "{\n"
@@ -142,7 +142,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div{color:black}\n"
+"div{color:#000}\n"
 "span{border:3px solid #f7d0cf}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -198,7 +198,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div { color: black; font-size: 1.3em }\n"
+"div { color: #000; font-size: 1.3em }\n"
 "span { border: 3px solid #f7d0cf; border-bottom-width: 1px; font: 17.2px/1.35em arial }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -206,7 +206,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div{color:black;font-size:1.3em}span{border:3px solid #f7d0cf;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
+"div{color:#000;font-size:1.3em}span{border:3px solid #f7d0cf;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -215,7 +215,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
             REQUIRE(out.str() ==
 "div\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "  font-size: 1.3em;\n"
 "}\n"
 "span\n"
@@ -230,7 +230,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div{color:black;font-size:1.3em}\n"
+"div{color:#000;font-size:1.3em}\n"
 "span{border:3px solid #f7d0cf;border-bottom-width:1px;font:17.2px/1.35em arial}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -283,14 +283,14 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div a b, p span i { color: black; font-size: 1.3em; border: 3px solid #f7d0cf; border-bottom-width: 1px }\n"
+"div a b, p span i { color: #000; font-size: 1.3em; border: 3px solid #f7d0cf; border-bottom-width: 1px }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div a b,p span i{color:black;font-size:1.3em;border:3px solid #f7d0cf;border-bottom-width:1px}\n"
+"div a b,p span i{color:#000;font-size:1.3em;border:3px solid #f7d0cf;border-bottom-width:1px}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -299,7 +299,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
             REQUIRE(out.str() ==
 "div a b, p span i\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "  font-size: 1.3em;\n"
 "  border: 3px solid #f7d0cf;\n"
 "  border-bottom-width: 1px;\n"
@@ -310,7 +310,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div a b,p span i{color:black;font-size:1.3em;border:3px solid #f7d0cf;border-bottom-width:1px}\n"
+"div a b,p span i{color:#000;font-size:1.3em;border:3px solid #f7d0cf;border-bottom-width:1px}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -361,14 +361,14 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div span a { color: black }\n"
+"div span a { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div span a{color:black}\n"
+"div span a{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -377,7 +377,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div span a\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -385,7 +385,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div span a{color:black}\n"
+"div span a{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -428,14 +428,14 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div[foo] { color: black }\n"
+"div[foo] { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div[foo]{color:black}\n"
+"div[foo]{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -444,7 +444,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div[foo]\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -452,7 +452,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div[foo]{color:black}\n"
+"div[foo]{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -495,14 +495,14 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div.foo { color: black }\n"
+"div.foo { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div.foo{color:black}\n"
+"div.foo{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -511,7 +511,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div.foo\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -519,7 +519,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div.foo{color:black}\n"
+"div.foo{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -562,14 +562,14 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"#foo div { color: black }\n"
+"#foo div { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"#foo div{color:black}\n"
+"#foo div{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -578,7 +578,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "#foo div\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -586,7 +586,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"#foo div{color:black}\n"
+"#foo div{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -629,14 +629,14 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div[foo = \"a b c\"] { color: black }\n"
+"div[foo = \"a b c\"] { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div[foo=\"a b c\"]{color:black}\n"
+"div[foo=\"a b c\"]{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -645,7 +645,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div[foo = \"a b c\"]\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -653,7 +653,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div[foo=\"a b c\"]{color:black}\n"
+"div[foo=\"a b c\"]{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -696,14 +696,14 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div:lang(fr) { color: black }\n"
+"div:lang(fr) { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div:lang(fr){color:black}\n"
+"div:lang(fr){color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -712,7 +712,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div:lang(fr)\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -720,7 +720,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div:lang(fr){color:black}\n"
+"div:lang(fr){color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -763,14 +763,14 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
         {
         case csspp::output_mode_t::COMPACT:
             REQUIRE(out.str() ==
-"div:not(:lang(fr)):not(:nth-child(odd)) { color: black }\n"
+"div:not(:lang(fr)):not(:nth-child(odd)) { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div:not(:lang(fr)):not(:nth-child(odd)){color:black}\n"
+"div:not(:lang(fr)):not(:nth-child(odd)){color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -779,7 +779,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             REQUIRE(out.str() ==
 "div:not(:lang(fr)):not(:nth-child(odd))\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -787,7 +787,7 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
 
         case csspp::output_mode_t::TIDY:
             REQUIRE(out.str() ==
-"div:not(:lang(fr)):not(:nth-child(odd)){color:black}\n"
+"div:not(:lang(fr)):not(:nth-child(odd)){color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -852,25 +852,25 @@ TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
             switch(static_cast<csspp::output_mode_t>(i))
             {
             case csspp::output_mode_t::COMPACT:
-expected << "div:" << pseudo_classes[j] << " { color: black }\n"
+expected << "div:" << pseudo_classes[j] << " { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
-expected << "div:" << pseudo_classes[j] << "{color:black}\n"
+expected << "div:" << pseudo_classes[j] << "{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::EXPANDED:
 expected << "div:" << pseudo_classes[j] << "\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::TIDY:
-expected << "div:" << pseudo_classes[j] << "{color:black}\n"
+expected << "div:" << pseudo_classes[j] << "{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
@@ -923,25 +923,25 @@ expected << "div:" << pseudo_classes[j] << "{color:black}\n"
             switch(static_cast<csspp::output_mode_t>(i))
             {
             case csspp::output_mode_t::COMPACT:
-expected << "div::" << pseudo_elements[j] << " { color: black }\n"
+expected << "div::" << pseudo_elements[j] << " { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
-expected << "div::" << pseudo_elements[j] << "{color:black}\n"
+expected << "div::" << pseudo_elements[j] << "{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::EXPANDED:
 expected << "div::" << pseudo_elements[j] << "\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::TIDY:
-expected << "div::" << pseudo_elements[j] << "{color:black}\n"
+expected << "div::" << pseudo_elements[j] << "{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
@@ -994,25 +994,25 @@ expected << "div::" << pseudo_elements[j] << "{color:black}\n"
             switch(static_cast<csspp::output_mode_t>(i))
             {
             case csspp::output_mode_t::COMPACT:
-expected << "div:" << pseudo_functions[j] << "(5n+2) { color: black }\n"
+expected << "div:" << pseudo_functions[j] << "(5n+2) { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
-expected << "div:" << pseudo_functions[j] << "(5n+2){color:black}\n"
+expected << "div:" << pseudo_functions[j] << "(5n+2){color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::EXPANDED:
 expected << "div:" << pseudo_functions[j] << "(5n+2)\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::TIDY:
-expected << "div:" << pseudo_functions[j] << "(5n+2){color:black}\n"
+expected << "div:" << pseudo_functions[j] << "(5n+2){color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
@@ -1066,25 +1066,25 @@ expected << "div:" << pseudo_functions[j] << "(5n+2){color:black}\n"
             switch(static_cast<csspp::output_mode_t>(i))
             {
             case csspp::output_mode_t::COMPACT:
-expected << "with " << scope[j] << " scope { color: black }\n"
+expected << "with " << scope[j] << " scope { color: #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::COMPRESSED:
-expected << "with " << scope[j] << " scope{color:black}\n"
+expected << "with " << scope[j] << " scope{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::EXPANDED:
 expected << "with " << scope[j] << " scope\n"
 "{\n"
-"  color: black;\n"
+"  color: #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
             case csspp::output_mode_t::TIDY:
-expected << "with " << scope[j] << " scope{color:black}\n"
+expected << "with " << scope[j] << " scope{color:#000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
                 break;
 
@@ -1899,17 +1899,17 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@document url( http://www.example.com/ ), regexp(\"https://.*\")\n"
 "{\n"
 "body { width: 8.5in; height: 9in }\n"
-"div { border: 0.25in solid lightgray }\n"
+"div { border: 0.25in solid #d3d3d3 }\n"
 "}\n"
 "\n"
-"#edge { border: 1px solid black }\n"
+"#edge { border: 1px solid #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"@document url(http://www.example.com/),regexp(\"https://.*\"){body{width:8.5in;height:9in}div{border:0.25in solid lightgray}}#edge{border:1px solid black}\n"
+"@document url(http://www.example.com/),regexp(\"https://.*\"){body{width:8.5in;height:9in}div{border:0.25in solid #d3d3d3}}#edge{border:1px solid #000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -1925,13 +1925,13 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "}\n"
 "div\n"
 "{\n"
-"  border: 0.25in solid lightgray;\n"
+"  border: 0.25in solid #d3d3d3;\n"
 "}\n"
 "}\n"
 "\n"
 "#edge\n"
 "{\n"
-"  border: 1px solid black;\n"
+"  border: 1px solid #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -1942,10 +1942,10 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@document url(http://www.example.com/),regexp(\"https://.*\")\n"
 "{\n"
 "body{width:8.5in;height:9in}\n"
-"div{border:0.25in solid lightgray}\n"
+"div{border:0.25in solid #d3d3d3}\n"
 "}\n"
 "\n"
-"#edge{border:1px solid black}\n"
+"#edge{border:1px solid #000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -1994,14 +1994,14 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "body { width: 8.5in; height: 9in }\n"
 "}\n"
 "\n"
-"#edge { border: 1px solid black }\n"
+"#edge { border: 1px solid #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"@media screen or (printer and color){body{width:8.5in;height:9in}}#edge{border:1px solid black}\n"
+"@media screen or (printer and color){body{width:8.5in;height:9in}}#edge{border:1px solid #000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -2019,7 +2019,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "\n"
 "#edge\n"
 "{\n"
-"  border: 1px solid black;\n"
+"  border: 1px solid #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -2032,7 +2032,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "body{width:8.5in;height:9in}\n"
 "}\n"
 "\n"
-"#edge{border:1px solid black}\n"
+"#edge{border:1px solid #000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -2087,14 +2087,14 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "p { margin-bottom: 2em }\n"
 "}\n"
 "\n"
-"#edge { border: 1px solid black }\n"
+"#edge { border: 1px solid #000 }\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"@media not (screen or ((laser or matrix or jet-printer) and color)){body{width:8.5in;height:9in}div{margin:0.15in;padding:0.07in}p{margin-bottom:2em}}#edge{border:1px solid black}\n"
+"@media not (screen or ((laser or matrix or jet-printer) and color)){body{width:8.5in;height:9in}div{margin:0.15in;padding:0.07in}p{margin-bottom:2em}}#edge{border:1px solid #000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;
@@ -2121,7 +2121,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "\n"
 "#edge\n"
 "{\n"
-"  border: 1px solid black;\n"
+"  border: 1px solid #000;\n"
 "}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
@@ -2136,7 +2136,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "p{margin-bottom:2em}\n"
 "}\n"
 "\n"
-"#edge{border:1px solid black}\n"
+"#edge{border:1px solid #000}\n"
 "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n"
                 );
             break;

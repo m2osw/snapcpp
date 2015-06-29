@@ -525,6 +525,7 @@ void assembler::output(node::pointer_t n)
     case node_type_t::UNKNOWN:
     case node_type_t::AND:
     case node_type_t::ASSIGNMENT:
+    case node_type_t::ARRAY:
     case node_type_t::BOOLEAN:
     case node_type_t::CDC:
     case node_type_t::CDO:
@@ -541,6 +542,7 @@ void assembler::output(node::pointer_t n)
     case node_type_t::GREATER_EQUAL:
     case node_type_t::LESS_EQUAL:
     case node_type_t::LESS_THAN:
+    case node_type_t::MAP:
     case node_type_t::MODULO:
     case node_type_t::NOT_EQUAL:
     case node_type_t::NULL_TOKEN:

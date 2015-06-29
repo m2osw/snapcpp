@@ -157,11 +157,13 @@ void type_supports_children(node_type_t const type)
     switch(type)
     {
     case node_type_t::ARG:
+    case node_type_t::ARRAY:
     case node_type_t::AT_KEYWORD:
     case node_type_t::COMPONENT_VALUE:
     case node_type_t::DECLARATION:
     case node_type_t::FUNCTION:
     case node_type_t::LIST:
+    case node_type_t::MAP:
     case node_type_t::OPEN_CURLYBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
     case node_type_t::OPEN_SQUAREBRACKET:
@@ -270,7 +272,9 @@ boolean_t node::to_boolean() const
     case node_type_t::STRING:
         return f_string.empty() ? boolean_t::FALSE : boolean_t::TRUE;
 
+    case node_type_t::ARRAY:
     case node_type_t::LIST:
+    case node_type_t::MAP:
         return f_children.empty() ? boolean_t::FALSE : boolean_t::TRUE;
 
     default:
@@ -1040,6 +1044,55 @@ std::string node::to_string(int flags) const
         }
         break;
 
+    case node_type_t::ARRAY:
+        {
+            out << "(";
+            bool first(true);
+            for(auto c : f_children)
+            {
+                if(first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    out << ", ";
+                }
+                out << c->to_string(flags | g_to_string_flag_show_quotes);
+            }
+            out << ")";
+        }
+        break;
+
+    case node_type_t::MAP:
+        {
+            out << "(";
+            bool first(true);
+            bool label(true);
+            for(auto c : f_children)
+            {
+                if(label)
+                {
+                    if(first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        out << ", ";
+                    }
+                }
+                out << c->to_string(flags | g_to_string_flag_show_quotes);
+                if(label)
+                {
+                    out << ": ";
+                }
+                label = !label;
+            }
+            out << ")";
+        }
+        break;
+
     case node_type_t::UNKNOWN:
     case node_type_t::CDC:
     case node_type_t::CDO:
@@ -1182,12 +1235,14 @@ void node::display(std::ostream & out, uint32_t indent) const
     switch(f_type)
     {
     case node_type_t::ARG:
+    case node_type_t::ARRAY:
     case node_type_t::AT_KEYWORD:
     case node_type_t::COMPONENT_VALUE:
     case node_type_t::DECLARATION:
     case node_type_t::EXCLAMATION:
     case node_type_t::FUNCTION:
     case node_type_t::LIST:
+    case node_type_t::MAP:
     case node_type_t::OPEN_SQUAREBRACKET:
     case node_type_t::OPEN_CURLYBRACKET:
     case node_type_t::OPEN_PARENTHESIS:
@@ -1461,6 +1516,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
         out << "ARG";
         break;
 
+    case csspp::node_type_t::ARRAY:
+        out << "ARRAY";
+        break;
+
     case csspp::node_type_t::COMPONENT_VALUE:
         out << "COMPONENT_VALUE";
         break;
@@ -1471,6 +1530,10 @@ std::ostream & operator << (std::ostream & out, csspp::node_type_t const type)
 
     case csspp::node_type_t::LIST:
         out << "LIST";
+        break;
+
+    case csspp::node_type_t::MAP:
+        out << "MAP";
         break;
 
     case csspp::node_type_t::max_type:

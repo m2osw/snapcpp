@@ -42,6 +42,7 @@ public:
 private:
     typedef std::map<std::string, node::pointer_t>  variable_vector_t;
 
+    bool                is_label() const;
     node::pointer_t     compile_list(node::pointer_t parent);
     node::pointer_t     expression_list();
     node::pointer_t     assignment();

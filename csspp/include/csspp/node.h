@@ -100,9 +100,11 @@ enum class node_type_t
     // composed tokens
     AN_PLUS_B,              // An+B for nth-child() functions
     ARG,                    // broken up comma separated elements end up in lists of arguments (for functions and qualified rule selectors)
+    ARRAY,                  // "value value value ...", like a map, only just indexed with integers
     COMPONENT_VALUE,        // "token token token ..." representing a component-value-list
     DECLARATION,            // <id> ':' ...
     LIST,                   // bare "token token token ..." until better qualified
+    MAP,                    // "index value index value ..." (a property list)
 
     max_type
 };

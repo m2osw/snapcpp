@@ -123,7 +123,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"background\"\n"
 "        ARG\n"
-"          IDENTIFIER \"white\"\n"
+"          COLOR H:ffffffff\n"
 "          WHITESPACE\n"
 "          URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\"\" I:1\n"
@@ -220,7 +220,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"background\"\n"
 "        ARG\n"
-"          IDENTIFIER \"white\"\n"
+"          COLOR H:ffffffff\n"
 "          WHITESPACE\n"
 "          URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\" with version 1.0\" I:1\n"
@@ -287,7 +287,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -351,7 +351,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -415,7 +415,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -620,7 +620,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -629,18 +629,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
-"  COMPONENT_VALUE\n"
-"    ARG\n"
-"      IDENTIFIER \"a\"\n"
-"    ARG\n"
-"      IDENTIFIER \"b\"\n"
-"    ARG\n"
-"      IDENTIFIER \"c\"\n"
-"    OPEN_CURLYBRACKET B:true\n"
-"      DECLARATION \"color\"\n"
-"        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -651,21 +640,32 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"    ARG\n"
+"      IDENTIFIER \"b\"\n"
+"    ARG\n"
+"      IDENTIFIER \"c\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"a\"\n"
@@ -674,7 +674,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -776,7 +776,7 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
     }
 }
 
-TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
+TEST_CASE("Invalid arguments", "[compiler] [invalid]")
 {
     // A starting comma is illegal
     {
@@ -982,7 +982,7 @@ TEST_CASE("Invalid Arguments", "[compiler] [invalid]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -1089,7 +1089,7 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
                         "    OPEN_CURLYBRACKET B:true\n"
                         "      DECLARATION \"color\"\n"
                         "        ARG\n"
-                        "          IDENTIFIER \"red\"\n"
+                        "          COLOR H:ff0000ff\n"
                     ;
                 REQUIRE_TREES(out.str(), expected.str());
 
@@ -1155,7 +1155,7 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
                 "    OPEN_CURLYBRACKET B:true\n"
                 "      DECLARATION \"color\"\n"
                 "        ARG\n"
-                "          IDENTIFIER \"red\"\n"
+                "          COLOR H:ff0000ff\n"
             ;
         REQUIRE_TREES(out.str(), expected.str());
 
@@ -1939,7 +1939,7 @@ TEST_CASE("Undefined Paths", "[compiler] [invalid]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
                 );
 
@@ -2066,7 +2066,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "      LIST\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"red\"\n"
+"            COLOR H:ff0000ff\n"
 "        DECLARATION \"width\"\n"
 "          ARG\n"
 "            INTEGER \"px\" I:12\n"
@@ -2141,7 +2141,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -2214,7 +2214,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -2514,7 +2514,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"coral\"\n"
+"          COLOR H:ff507fff\n"
 
             );
 
@@ -2570,7 +2570,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"coral\"\n"
+"          COLOR H:ff507fff\n"
 
             );
 
@@ -2622,7 +2622,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"coral\"\n"
+"          COLOR H:ff507fff\n"
 
             );
 
@@ -3431,7 +3431,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"blue\"\n"
+"          COLOR H:ffff0000\n"
 
             );
 
@@ -3486,7 +3486,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "      LIST\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"blue\"\n"
+"            COLOR H:ffff0000\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 // &:hover
@@ -3498,7 +3498,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -3676,7 +3676,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"teal\"\n"
+"          COLOR H:ff808000\n"
 
             );
 
@@ -4241,7 +4241,7 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
 "                DECIMAL_NUMBER \"\" D:0.2\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"chocolate\"\n"
+"            COLOR H:ff1e69d2\n"
 "        DECLARATION \"exclamation\"\n"
 "          ARG\n"
 "            INTEGER \"px\" I:300\n"
@@ -4487,7 +4487,7 @@ TEST_CASE("Compile Font Metrics", "[compiler] [invalid]")
 "      LIST\n"
 "        DECLARATION \"background-color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"white\"\n"
+"            COLOR H:ffffffff\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
 "            COLOR H:ff333333\n"
@@ -4576,7 +4576,7 @@ TEST_CASE("Compile Font Metrics", "[compiler] [invalid]")
 "            COLOR H:ff333333\n"
 "        DECLARATION \"background-color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"white\"\n"
+"            COLOR H:ffffffff\n"
 
             );
 
@@ -4647,12 +4647,12 @@ TEST_CASE("Nested declarations", "[compiler] [nested]")
 "      LIST\n"
 "        DECLARATION \"font-color\"\n"
 "          ARG\n"
-"            IDENTIFIER \"red\"\n"
+"            COLOR H:ff0000ff\n"
 "        DECLARATION \"font-family\"\n"
 "          ARG\n"
 "            INTEGER \"px\" I:34\n"
 "            WHITESPACE\n"
-"            IDENTIFIER \"white\"\n"
+"            COLOR H:ffffffff\n"
 "        DECLARATION \"font-family-name\"\n"
 "          ARG\n"
 "            IDENTIFIER \"helvetica\"\n"
@@ -4928,7 +4928,7 @@ TEST_CASE("Nested declarations", "[compiler] [nested]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"edge\"\n"
 "        ARG\n"
-"          IDENTIFIER \"white\"\n"
+"          COLOR H:ffffffff\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"border\"\n"
@@ -4985,7 +4985,7 @@ TEST_CASE("Nested declarations", "[compiler] [nested]")
 
         c.compile(true);
 
-std::cerr << "Result is: [" << *c.get_root() << "]\n";
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS("");
 
@@ -5015,7 +5015,7 @@ std::cerr << "Result is: [" << *c.get_root() << "]\n";
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"color\"\n"
 "        ARG\n"
-"          IDENTIFIER \"red\"\n"
+"          COLOR H:ff0000ff\n"
 
             );
 
@@ -6340,7 +6340,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
 "        ARG\n"
-"          IDENTIFIER \"blue\"\n"
+"          COLOR H:ffff0000\n"
 
             );
 
@@ -6414,7 +6414,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
 "        ARG\n"
-"          IDENTIFIER \"blue\"\n"
+"          COLOR H:ffff0000\n"
 
             );
 
@@ -6485,7 +6485,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"border\"\n"
 "        ARG\n"
-"          IDENTIFIER \"blue\"\n"
+"          COLOR H:ffff0000\n"
 
             );
 
@@ -8015,7 +8015,7 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
 "              WHITESPACE\n"
 "              IDENTIFIER \"solid\"\n"
 "              WHITESPACE\n"
-"              IDENTIFIER \"white\"\n"
+"              COLOR H:ffffffff\n"
 
             );
 
@@ -8351,7 +8351,7 @@ TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
 "                OPEN_CURLYBRACKET B:true\n"
 "                  DECLARATION \"color\"\n"
 "                    ARG\n"
-"                      IDENTIFIER \"grey\"\n"
+"                      COLOR H:ff808080\n"
 
             );
 

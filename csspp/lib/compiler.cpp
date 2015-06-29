@@ -1716,6 +1716,9 @@ void compiler::set_variable(node::pointer_t n)
     // a variable gets removed from the tree and its current value
     // saved in a parent node that is an OPEN_CURLYBRACKET or the
     // root node if no OPEN_CURLYBRACKET is found in the parents
+    // (note also that only OPEN_CURLYBRACKET marked with 'true'
+    // are used, those are the only valid '{' for variables, for
+    // example, an @-keyword '{' does not count...)
 
     f_state.get_previous_parent()->remove_child(n);
 
