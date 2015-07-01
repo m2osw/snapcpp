@@ -286,15 +286,15 @@ bool expression::is_label() const
 
 node::pointer_t expression::expression_list()
 {
-    // expression-list: expression
+    // expression-list: assignment
     //                | list
-    //                | array
+    //                | map
     //
-    // list: expression
-    //     | list ',' expression
+    // list: assignment
+    //     | list ',' assignment
     //
-    // array-list: IDENTIFIER ':' expression
-    //           | array-list ',' IDENTIFIER ':' expression
+    // map: IDENTIFIER ':' assignment
+    //    | map ',' IDENTIFIER ':' assignment
     //
     safe_bool_t safe_skip_whitespace(f_skip_whitespace);
 
@@ -1675,7 +1675,7 @@ node::pointer_t expression::unary()
                 return node::pointer_t();
             }
             node::pointer_t color_node(new node(node_type_t::COLOR, f_current->get_position()));
-            color_node->set_integer(hash.get_color());
+            color_node->set_color(hash);
 
             // skip the HASH
             next();
@@ -1684,10 +1684,26 @@ node::pointer_t expression::unary()
         /*NOTREACHED*/
 
     case node_type_t::IDENTIFIER:
-        // a '#...' in an expression is expected to be a valid color
+        // an identifier may represent a color, null, true, or false
         {
-            color hash;
-            if(!hash.set_color(f_current->get_string()))
+            std::string const identifier(f_current->get_string());
+            if(identifier == "null")
+            {
+                return node::pointer_t(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
+            }
+            if(identifier == "true")
+            {
+                node::pointer_t b(new node(node_type_t::BOOLEAN, f_current->get_position()));
+                b->set_boolean(true);
+                return b;
+            }
+            if(identifier == "false")
+            {
+                // a boolean is false by default, so no need to set the value
+                return node::pointer_t(new node(node_type_t::BOOLEAN, f_current->get_position()));
+            }
+            color col;
+            if(!col.set_color(identifier))
             {
                 // it is not a color, return as is
                 node::pointer_t result(f_current);
@@ -1695,7 +1711,7 @@ node::pointer_t expression::unary()
                 return result;
             }
             node::pointer_t color_node(new node(node_type_t::COLOR, f_current->get_position()));
-            color_node->set_integer(hash.get_color());
+            color_node->set_color(col);
 
             // skip the IDENTIFIER
             next();
@@ -1712,127 +1728,6 @@ node::pointer_t expression::unary()
         return node::pointer_t();
 
     }
-}
-
-node::pointer_t expression::excecute_function(node::pointer_t func)
-{
-    std::string const function_name(func->get_string());
-
-    if(function_name == "identifier")
-    {
-        // identifier(expr)
-        if(func->size() == 1)
-        {
-            node::pointer_t arg1(func->get_child(0));
-            if(arg1->is(node_type_t::ARG)
-            && arg1->size() == 1)
-            {
-                node::pointer_t a(arg1->get_child(0));
-                switch(a->get_type())
-                {
-                case node_type_t::IDENTIFIER:
-                    // already an identifier, return as is
-                    return a;
-
-                case node_type_t::COLOR:
-                case node_type_t::DECIMAL_NUMBER:
-                case node_type_t::EXCLAMATION:
-                case node_type_t::HASH:
-                case node_type_t::INTEGER:
-                case node_type_t::PERCENT:
-                case node_type_t::PLACEHOLDER:
-                case node_type_t::STRING:
-                case node_type_t::URL:
-                    {
-                        node::pointer_t id(new node(node_type_t::IDENTIFIER, a->get_position()));
-                        id->set_string(a->to_string(0));
-                        return id;
-                    }
-
-                default:
-                    break;
-
-                }
-            }
-        }
-        error::instance() << f_current->get_position()
-                << "identifier() expects an identifier, an exclamation, a hash, a placeholder, a string or a URL as parameter."
-                << error_mode_t::ERROR_ERROR;
-        return node::pointer_t();
-    }
-
-    if(function_name == "if")
-    {
-        // if(condition, if-true, if-false)
-        if(func->size() == 3)
-        {
-            node::pointer_t arg1(func->get_child(0));
-            if(arg1->size() != 1)
-            {
-                error::instance() << f_current->get_position()
-                        << "if() expects a boolean as its first argument."
-                        << error_mode_t::ERROR_ERROR;
-            }
-            else
-            {
-                int const r(boolean(arg1->get_child(0)));
-                if(r == 0 || r == 1)
-                {
-                    node::pointer_t result(func->get_child(r + 1));
-                    if(result->size() == 1)
-                    {
-                        return result->get_child(0);
-                    }
-                    node::pointer_t list(new node(node_type_t::LIST, result->get_position()));
-                    list->take_over_children_of(result);
-                    return list;
-                }
-            }
-        }
-        else
-        {
-            error::instance() << f_current->get_position()
-                    << "if() expects exactly 3 arguments."
-                    << error_mode_t::ERROR_ERROR;
-        }
-        return node::pointer_t();
-    }
-
-    if(function_name == "not")
-    {
-        if(func->size() == 1)
-        {
-            node::pointer_t arg1(func->get_child(0));
-            if(arg1->size() != 1)
-            {
-                error::instance() << f_current->get_position()
-                        << "not() expects a boolean as its first argument."
-                        << error_mode_t::ERROR_ERROR;
-            }
-            else
-            {
-                int const r(boolean(arg1->get_child(0)));
-                if(r == 0 || r == 1)
-                {
-                    node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
-                    result->set_boolean(r == 0); // this is a not so false is true and vice versa
-                    return result;
-                }
-            }
-        }
-        else
-        {
-            error::instance() << f_current->get_position()
-                    << "not() expects exactly 1 argument."
-                    << error_mode_t::ERROR_ERROR;
-        }
-        return node::pointer_t();
-    }
-
-    // "unknown" functions have to be left alone since these maybe
-    // CSS functions that we do not want to transform (we already
-    // worked on their arguments.)
-    return func;
 }
 
 } // namespace csspp

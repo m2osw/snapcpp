@@ -15,9 +15,14 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-@import "system/version.scss";
-@import "system/constants.scss";
-@import "system/functions.scss";
+$_scss_e:      2.7182818284590452354;       // e
+$_scss_log2e:  1.4426950408889634074;       // log_2(e)
+$_scss_log10e: 0.43429448190325182765;      // log_10(e)
+$_scss_ln2e:   0.69314718055994530942;      // log_e(2)
+$_scss_ln10e:  2.30258509299404568402;      // log_e(10)
+$_scss_pi:     3.14159265358979323846;      // pi
+$_scss_pi_rad: 3.14159265358979323846rad;   // pi as an angle
+$_scss_sqrt2:  1.41421356237309504880;      // sqrt(2)
 
 // Local Variables:
 // mode: scss

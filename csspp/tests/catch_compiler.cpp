@@ -1049,7 +1049,8 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
                    << (rand() % 2 == 0 ? " " : "")
                    << "{"
                    << (rand() % 2 == 0 ? " " : "")
-                   << "color:red"
+                   << "color:"
+                   << (rand() % 2 == 0 ? "rgb(255,0,0)" : "rgba(255,0,0,1.0)")
                    << (rand() % 2 == 0 ? " " : "")
                    << "}\n";
                 csspp::position pos("test.css");
@@ -1095,6 +1096,86 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
 
                 REQUIRE(c.get_root() == n);
             }
+        }
+    }
+
+    // a[b!=c]
+    for(size_t j(0); j < sizeof(val) / sizeof(val[0]); j += 2)
+    {
+        for(size_t k(0); k < (1 << 4); ++k)
+        {
+            std::stringstream ss;
+            ss << "a[";
+            if((k & (1 << 0)) != 0)
+            {
+                ss << " ";
+            }
+            ss << "b";
+            if((k & (1 << 1)) != 0)
+            {
+                ss << " ";
+            }
+            ss << "!=";
+            if((k & (1 << 2)) != 0)
+            {
+                ss << " ";
+            }
+            ss << val[j];
+            if((k & (1 << 3)) != 0)
+            {
+                ss << " ";
+            }
+            ss << "]"
+               << (rand() % 2 == 0 ? " " : "")
+               << "{"
+               << (rand() % 2 == 0 ? " " : "")
+               << "color:red"
+               << (rand() % 2 == 0 ? " " : "")
+               << "}\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            // no errors so far
+            REQUIRE_ERRORS("");
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.clear_paths();
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+            REQUIRE_ERRORS("");
+
+            std::stringstream out;
+            out << *n;
+            std::stringstream expected;
+            expected <<
+                    "LIST\n"
+                    "  COMPONENT_VALUE\n"
+                    "    ARG\n"
+                    "      IDENTIFIER \"a\"\n"
+                    "      COLON\n"
+                    "      FUNCTION \"not\"\n"
+                    "        OPEN_SQUAREBRACKET\n"
+                    "          IDENTIFIER \"b\"\n"
+                    "          EQUAL\n"
+                    "          " << val[j + 1] << "\n"
+                    "    OPEN_CURLYBRACKET B:true\n"
+                    "      DECLARATION \"color\"\n"
+                    "        ARG\n"
+                    "          COLOR H:ff0000ff\n"
+                ;
+            REQUIRE_TREES(out.str(), expected.str());
+
+            REQUIRE(c.get_root() == n);
         }
     }
 
@@ -1254,13 +1335,21 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             "$",
             "!",
             ">",
+            ">=",
+            "<=",
+            "<",
+            ":=",
+            "?",
+            "&&",
             "#123",
             "*",
+            "**",
             ".top",
             "%name",
             "~",
             "&",
             "|",
+            "||",
         };
 
         for(auto iv : invalid_value)
@@ -1285,7 +1374,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-            REQUIRE_ERRORS("test.css(1): error: expected attribute operator missing, supported operators are '=', '~=', '^=', '$=', '*=', and '|='.\n");
+            REQUIRE_ERRORS("test.css(1): error: expected attribute operator missing, supported operators are '=', '!=', '~=', '^=', '$=', '*=', and '|='.\n");
 
             REQUIRE(c.get_root() == n);
         }
@@ -6315,7 +6404,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): info: found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n");
+        REQUIRE_ERRORS("test.css(1): info: found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n");
 
         std::stringstream out;
         out << *n;
@@ -6376,8 +6465,8 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS(
-                "test.css(1): info: found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n"
-                "test.css(1): info: found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n"
+                "test.css(1): info: found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n"
+                "test.css(1): info: found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n"
             );
 
         std::stringstream out;
@@ -6449,7 +6538,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): info: found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n");
+        REQUIRE_ERRORS("test.css(1): info: found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only.\n");
 
         std::stringstream out;
         out << *n;

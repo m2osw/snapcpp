@@ -57,5 +57,7 @@ additional features:
 . Validations generate errors printing out their own position, we would
   need to show the position in the user source, not the validation SCSS file.
 
+. Implement the @import loop detection (i.e. if A imports itself through
+  other @imports or not)
 
 vim: tw=2 sw=2 et

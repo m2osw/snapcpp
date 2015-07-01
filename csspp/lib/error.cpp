@@ -15,6 +15,45 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Implementation of the CSS Preprocessor error handling.
+ *
+ * The library handles errors by printing messages to a standard output
+ * stream. The functions also count the number of errors and warnings
+ * that occur while parsing and compiling a source file.
+ *
+ * The output can be redirected to your own buffer.
+ *
+ * The number of errors can be \em protected by an RAII class so the
+ * exact same instance of the library can be reused any number of times
+ * (in case you were to create a GUI that helps debug code quickly,
+ * possibly inline...)
+ *
+ * \code
+ *      // error counts are zero
+ *      csspp::error_count_t count;
+ *      {
+ *          csspp::safe_error_t safe_errors;
+ *
+ *          // super over simplified... (no proper error handling
+ *          // and probably a bit wrong)
+ *          csspp::position pos;
+ *          csspp::lexer l(input, pos);
+ *          csspp::parser p(l);
+ *          csspp::node root(p.stylesheet());
+ *          csspp::compiler c;
+ *          c.set_root(root);
+ *          c.compile()
+ *
+ *          // get number of errors before the '}'
+ *          count = csspp::error()->get_error_count();
+ *      }
+ *      // error counts are still zero, they were restored by safe_error_t
+ * \endcode
+ *
+ * \sa \ref lexer_rules
+ */
+
 #include "csspp/lexer.h"
 
 #include "csspp/error.h"

@@ -103,7 +103,6 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::AN_PLUS_B:
         case csspp::node_type_t::AT_KEYWORD:
         case csspp::node_type_t::COMMENT:
-        case csspp::node_type_t::COLOR:
         case csspp::node_type_t::INTEGER:
         case csspp::node_type_t::UNICODE_RANGE:
             {
@@ -183,6 +182,27 @@ TEST_CASE("Node types", "[node] [type]")
             REQUIRE_THROWS_AS(n->get_string(), csspp::csspp_exception_logic);
             break;
 
+        }
+
+        {
+            csspp::color c;
+            switch(w)
+            {
+            case csspp::node_type_t::COLOR:
+                {
+                    c.set_color(rand() % 255, rand() % 255, rand() % 255, rand() % 255);
+                    n->set_color(c);
+                    csspp::color d(n->get_color());
+                    REQUIRE(c.get_color() == d.get_color());
+                }
+                break;
+
+            default:
+                REQUIRE_THROWS_AS(n->set_color(c), csspp::csspp_exception_logic);
+                REQUIRE_THROWS_AS(n->get_color(), csspp::csspp_exception_logic);
+                break;
+
+            }
         }
 
         // font metrics
@@ -1202,11 +1222,16 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                 break;
 
             case csspp::node_type_t::COLOR:
-                REQUIRE(n->to_string(flags) == "transparent");
-                n->set_integer(0xffff3258);
-                REQUIRE(n->to_string(flags) == "#5832ff");
-                n->set_integer(0x7fff3258);
-                REQUIRE(n->to_string(flags) == "rgba(88,50,255,0.5)");
+                {
+                    REQUIRE(n->to_string(flags) == "transparent");
+                    csspp::color c;
+                    c.set_color(0x58, 0x32, 0xff, 0xff);
+                    n->set_color(c);
+                    REQUIRE(n->to_string(flags) == "#5832ff");
+                    c.set_color(0x58, 0x32, 0xff, 0x7f);
+                    n->set_color(c);
+                    REQUIRE(n->to_string(flags) == "rgba(88,50,255,0.5)");
+                }
                 break;
 
             case csspp::node_type_t::COLUMN:
@@ -2129,7 +2154,9 @@ TEST_CASE("Print nodes", "[node] [output]")
                 bracket->add_child(an_plus_b);
 
                 csspp::node::pointer_t color(new csspp::node(csspp::node_type_t::COLOR, pos));
-                color->set_integer(0xFF783411);
+                csspp::color c;
+                c.set_color(0x11, 0x34, 0x78, 0xFF);
+                color->set_color(c);
                 bracket->add_child(color);
 
                 csspp::node::pointer_t font_metrics(new csspp::node(csspp::node_type_t::FONT_METRICS, pos));

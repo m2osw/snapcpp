@@ -15,6 +15,20 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Implementation of the CSS Preprocessor node.
+ *
+ * The CSS Preprocessor node handles the tree of nodes that the parser
+ * generates, the compiler crunches, and the assembler outputs.
+ *
+ * All the code that handles the nodes is found here, however, the
+ * compiler and expression classes handle the various operations that
+ * are required between nodes. The nodes are nearly only limited to
+ * handling the data they hold and the tree.
+ *
+ * \sa \ref lexer_rules
+ */
+
 #include <csspp/node.h>
 
 #include <csspp/color.h>
@@ -51,7 +65,6 @@ void type_supports_integer(node_type_t const type)
     {
     case node_type_t::AN_PLUS_B:
     case node_type_t::AT_KEYWORD:
-    case node_type_t::COLOR:
     case node_type_t::COMMENT:
     case node_type_t::INTEGER:
     case node_type_t::UNICODE_RANGE:
@@ -130,6 +143,23 @@ void type_supports_string(node_type_t const type)
         {
             std::stringstream ss;
             ss << "trying to access (read/write) the string of a node of type " << type << ", which does not support strings.";
+            throw csspp_exception_logic(ss.str());
+        }
+
+    }
+}
+
+void type_supports_color(node_type_t const type)
+{
+    switch(type)
+    {
+    case node_type_t::COLOR:
+        break;
+
+    default:
+        {
+            std::stringstream ss;
+            ss << "trying to access (read/write) the color of a node of type " << type << ", which does not support colors.";
             throw csspp_exception_logic(ss.str());
         }
 
@@ -335,6 +365,45 @@ void node::set_decimal_number(decimal_number_t decimal_number)
 {
     type_supports_decimal_number(f_type);
     f_decimal_number = decimal_number;
+}
+
+color node::get_color() const
+{
+    type_supports_color(f_type);
+
+    union color_transfer_t
+    {
+        uint64_t    f_int;
+        double      f_dbl;
+        float       f_flt[2];
+    };
+
+    color_transfer_t c1, c2;
+    c1.f_int = f_integer;
+    c2.f_dbl = f_decimal_number;
+
+    color c;
+    c.set_color(c1.f_flt[0], c1.f_flt[1], c2.f_flt[0], c2.f_flt[1]);
+
+    return c;
+}
+
+void node::set_color(color c)
+{
+    type_supports_color(f_type);
+
+    union color_transfer_t
+    {
+        uint64_t    f_int;
+        double      f_dbl;
+        float       f_flt[2];
+    };
+
+    color_transfer_t c1, c2;
+    c.get_color(c1.f_flt[0], c1.f_flt[1], c2.f_flt[0], c2.f_flt[1]);
+
+    f_integer        = c1.f_int;
+    f_decimal_number = c2.f_dbl;
 }
 
 decimal_number_t node::get_font_size() const
@@ -681,8 +750,7 @@ std::string node::to_string(int flags) const
 
     case node_type_t::COLOR:
         {
-            color c;
-            c.set_color(f_integer);
+            color c(get_color());
             out << c.to_string();
         }
         break;
@@ -1172,7 +1240,10 @@ void node::display(std::ostream & out, uint32_t indent) const
     switch(f_type)
     {
     case node_type_t::COLOR:
-        out << " H:" << std::hex << f_integer << std::dec;
+        {
+            color c(get_color());
+            out << " H:" << std::hex << c.get_color() << std::dec;
+        }
         break;
 
     default:

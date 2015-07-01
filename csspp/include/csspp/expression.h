@@ -59,6 +59,53 @@ private:
     node::pointer_t     power();
     node::pointer_t     post();
     node::pointer_t     unary();
+
+    // in internal_functions.cpp
+    node::pointer_t     internal_function__get_any(node::pointer_t func, size_t argn);
+    node::pointer_t     internal_function__get_color(node::pointer_t func, size_t argn, color & col);
+    node::pointer_t     internal_function__get_number(node::pointer_t func, size_t argn, decimal_number_t & number);
+    node::pointer_t     internal_function__get_number_or_percent(node::pointer_t func, size_t argn, decimal_number_t & number);
+    node::pointer_t     internal_function__get_string(node::pointer_t func, size_t argn, std::string & str);
+
+    node::pointer_t     internal_function__abs(node::pointer_t func);
+    node::pointer_t     internal_function__acos(node::pointer_t func);
+    node::pointer_t     internal_function__adjust_hue(node::pointer_t func);
+    node::pointer_t     internal_function__alpha(node::pointer_t func);
+    node::pointer_t     internal_function__asin(node::pointer_t func);
+    node::pointer_t     internal_function__atan(node::pointer_t func);
+    node::pointer_t     internal_function__blue(node::pointer_t func);
+    node::pointer_t     internal_function__ceil(node::pointer_t func);
+    node::pointer_t     internal_function__cos(node::pointer_t func);
+    node::pointer_t     internal_function__decimal_number(node::pointer_t func);
+    node::pointer_t     internal_function__floor(node::pointer_t func);
+    node::pointer_t     internal_function__frgb(node::pointer_t func);
+    node::pointer_t     internal_function__frgba(node::pointer_t func);
+    node::pointer_t     internal_function__green(node::pointer_t func);
+    node::pointer_t     internal_function__hue(node::pointer_t func);
+    node::pointer_t     internal_function__identifier(node::pointer_t func);
+    node::pointer_t     internal_function__if(node::pointer_t func);
+    node::pointer_t     internal_function__integer(node::pointer_t func);
+    node::pointer_t     internal_function__inspect(node::pointer_t func);
+    node::pointer_t     internal_function__lightness(node::pointer_t func);
+    node::pointer_t     internal_function__log(node::pointer_t func);
+    node::pointer_t     internal_function__max(node::pointer_t func);
+    node::pointer_t     internal_function__min(node::pointer_t func);
+    node::pointer_t     internal_function__not(node::pointer_t func);
+    node::pointer_t     internal_function__random(node::pointer_t func);
+    node::pointer_t     internal_function__red(node::pointer_t func);
+    node::pointer_t     internal_function__rgb(node::pointer_t func);
+    node::pointer_t     internal_function__rgba(node::pointer_t func);
+    node::pointer_t     internal_function__round(node::pointer_t func);
+    node::pointer_t     internal_function__saturation(node::pointer_t func);
+    node::pointer_t     internal_function__sign(node::pointer_t func);
+    node::pointer_t     internal_function__sin(node::pointer_t func);
+    node::pointer_t     internal_function__sqrt(node::pointer_t func);
+    node::pointer_t     internal_function__string(node::pointer_t func);
+    node::pointer_t     internal_function__str_length(node::pointer_t func);
+    node::pointer_t     internal_function__tan(node::pointer_t func);
+    node::pointer_t     internal_function__type_of(node::pointer_t func);
+    node::pointer_t     internal_function__unit(node::pointer_t func);
+
     node::pointer_t     excecute_function(node::pointer_t func);
 
     node::pointer_t     f_node;

@@ -46,6 +46,7 @@ add_library( ${PROJECT_NAME} SHARED
     compiler.cpp                                # Work on a tree of node to make it CSS compatible
     error.cpp                                   # Print out error messages
     expression.cpp                              # Reduce expressions
+    internal_functions.cpp                      # Expression internal function handling
     lexer.cpp                                   # Transform input in tokens
     node.cpp                                    # Holds the data read
     nth_child.cpp                               # Manage An+B

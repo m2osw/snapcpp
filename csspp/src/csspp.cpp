@@ -17,6 +17,7 @@
 
 /** \file
  * \brief Implementation of the CSS Preprocessor command line tool.
+ * \tableofcontents
  *
  * This tool can be used as a verification, compilation, and compression
  * tool depending on your needs.
@@ -25,11 +26,203 @@
  * generating a layout. Later a Snap! Website plugin compresses the various
  * files. That way the website system includes the original file and not
  * just the minimized version.
+ *
+ * \section csspp-options Command Line Options
+ *
+ * The following are the options currently supported by csspp:
+ *
+ * \subsection arguments --args or -a -- specifying arguments
+ *
+ * The SCSS scripts expect some variables to be set. Some of these variables
+ * can be set on the command line with the --args option. The arguments are
+ * added to an array that can be accessed as the variable $_csspp_args.
+ *
+ * \code
+ *      // command line
+ *      csspp --args red -- my-file.scss
+ *
+ *      // reference to the command line argument
+ *      .flowers
+ *      {
+ *          border: 1px solid rgb(identifier($_csspp_args[1]));
+ *      }
+ * \endcode
+ *
+ * \warning
+ * This example does not work yet because I did not yet implement the
+ * rgb() internal function to transform input in a COLOR token. However,
+ * I intend to work on the colors soonish and thus it could be fully
+ * functional by the time you read the example.
+ *
+ * At this time there is no other way to access command line arguments.
+ *
+ * There is no $_csspp_args[0] since arrays in SCSS start at 1. This
+ * also means you do not (yet) have access to the name of the program
+ * compiling the code.
+ *
+ * Multiple arguments can be specified one after another:
+ *
+ * \code
+ *      csspp --args red green blue -- my-file.css
+ * \endcode
+ *
+ * \subsection debug --debug or -d -- show all messages, including @debug messages
+ *
+ * When specified, the error output is setup to output everything,
+ * including fatal errors, errors, warnings, informational messages,
+ * and debug messages.
+ *
+ * \subsection help --help or -h -- show the available command line options
+ *
+ * The --help command line option can be used to request that the csspp
+ * print out the complete list of supported command line options in
+ * stdout.
+ *
+ * The tool then quits immediately.
+ *
+ * \subsection include -I -- specify paths to include files
+ *
+ * Specify paths to user defined directories that include SCSS scripts
+ * one can include using the @import command.
+ *
+ * By default the system looks for system defined scripts (i.e. the
+ * default validation, version, and other similar scripts) under
+ * the following directory:
+ *
+ * \code
+ *      /usr/lib/csspp/scripts
+ * \endcode
+ *
+ * The system scripts (initialization, closure, version) appear under
+ * a sub-directory named "system".
+ *
+ * The validation scripts (field names, pseudo names, etc.) appear
+ * under a sub-directory named "validation".
+ *
+ * There are no specific rules for where include files will be found.
+ * The @import can use a full path or a local path. When a local path
+ * is used, then all the specified -I paths are prepended until a
+ * file matches. The first match is used.
+ *
+ * You may specify any number of include paths one after another. You
+ * must specify -I only once:
+ *
+ * \code
+ *      csspp ... -I my-scripts alfred-scripts extension-scripts ...
+ * \endcode
+ *
+ * \subsection output --output or -o -- specify the output
+ *
+ * This option may be used to specify a filename used to save the
+ * output of the compiler. By default the output is written to
+ * stdout.
+ *
+ * You may explicitly use '-' to write the output to stdout.
+ *
+ * \code
+ *      csspp --output file.css my-script.scss
+ * \endcode
+ *
+ * \subsection precision --precision or -p -- specify the precision to use with decimal number
+ *
+ * The output is written as consice as possible. Only that can cause problems
+ * with decimal numbers getting written with less precision than you need.
+ *
+ * By default decimal numbers are written with 3 decimal numbers after the
+ * decimal point. You may use the --precision command line option to change
+ * that default to another value.
+ *
+ * \code
+ *      csspp ... --precision 5 ...
+ * \endcode
+ *
+ * Note that numbers such as 3.5 are not written with ending zeroes (i.e.
+ * 3.50000) even if you increase precision.
+ *
+ * \warning
+ * The percent numbers, which are also decimal numbers, do not take this
+ * value in account. All percent numbers are always written with 2 decimal
+ * digits after the decimal point. We may change that behavior in the
+ * future if someone sees a need for it.
+ *
+ * \subsection quiet --quiet or -q -- make the output as quite as possible
+ *
+ * By default csspp prints out all messages except debug messages.
+ *
+ * This option also turns off informational and warning messages. So in
+ * effect all that's left are error and fatal error messages.
+ *
+ * Note that if you used the --Werror command line options, warning
+ * are transformed to errors and thus they get printed in your output
+ * anyway.
+ *
+ * \subsection style --style or -s -- define the output style
+ *
+ * By default the csspp compiler is expected to compress your CSS data
+ * as much as possible (i.e. it removes non-required spaces, delete empty
+ * rules, avoid new lines, etc.)
+ *
+ * The --style options let choose a different output style than the
+ * compressed style:
+ *
+ * \li --style compressed -- this is the default, it outputs files as
+ * compressed as possible
+ * \li --style tidy -- this option writes one rule per line, each rule is
+ * as compressed as possible
+ * \li --compact -- this option writes one declaration per line, making it
+ * a lot easier to edit if you were to do such a thing; this output is
+ * already quite gentle on humans and can easily be used for debug purposes
+ * \li expanded -- this option prints everything as neatly as possible
+ * for human consumption; the output uses many newlines and indentation
+ * for declarations
+ *
+ * The best to see how each style really looks like is for you to test
+ * with a large existing CSS file and check the output of csspp against
+ * that file.
+ *
+ * For example, you could use the \c expanded format before reading a
+ * file you found on a website as in:
+ *
+ * \code
+ *      csspp --style expanded compressed.css
+ * \endcode
+ *
+ * \subsection version --version -- print out the version and exit
+ *
+ * This command line option prints out the version of the csspp compiler
+ * in stdout and then exits.
+ *
+ * \subsection warnings-to-errors --Werror -- transform warnings into errors
+ *
+ * The --Werror requests the compiler to generate errors whenever
+ * a warning message was to be printed. This also has the side effect
+ * of incrementing the error counter by one each time a warning is
+ * found. Note that as a result the warning counter will always
+ * remains zero nin this case.
+ *
+ * \note
+ * You may want to note that this option uses two dashes (--) to specify.
+ * With GNU C/C++, the command line accepts -Werror, with a single dash.
+ *
+ * \subsection command-line-filenames Input files
+ *
+ * Other parameters specified on the command line, or parameters defined
+ * after a "--", are taken as .scss filenames. The "--" is mandatory if
+ * you have a preceeding argument that accepts multiple values like the
+ * --args and -I options.
+ *
+ * \code
+ *      // no need for "--" in this case:
+ *      csspp -I scripts -p 2 my-script.scss
+ *
+ *      // "--" required in this case:
+ *      csspp -p 2 -I scripts -- my-script.scss
+ * \endcode
  */
 
 #include "csspp/assembler.h"
 #include "csspp/compiler.h"
-#include "csspp/lexer.h"
+#include "csspp/exceptions.h"
 #include "csspp/parser.h"
 
 #include <advgetopt/advgetopt.h>
@@ -366,7 +559,8 @@ int pp::compile()
     }
 
     std::ostream * out;
-    if(f_opt->is_defined("output"))
+    if(f_opt->is_defined("output")
+    && f_opt->get_string("output") != "-")
     {
         out = new std::ofstream(f_opt->get_string("output"));
     }
@@ -395,7 +589,15 @@ int pp::compile()
 int main(int argc, char *argv[])
 {
     pp preprocessor(argc, argv);
-    return preprocessor.compile();
+    try
+    {
+        return preprocessor.compile();
+    }
+    catch(csspp::csspp_exception_exit const & e)
+    {
+        // something went wrong in the library
+        return e.exit_code();
+    }
 }
 
 // Local Variables:

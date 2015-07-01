@@ -17,23 +17,22 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-//#include "csspp/node.h"
-
 #include <cstdint>
 #include <string>
 
 namespace csspp
 {
 
-typedef uint8_t         color_component_t;
+typedef float           color_component_t;
+typedef uint8_t         byte_component_t;
 typedef uint32_t        rgba_color_t;
 
 struct color_table_t
 {
-    color_component_t       f_red;
-    color_component_t       f_green;
-    color_component_t       f_blue;
-    color_component_t       f_alpha;
+    byte_component_t        f_red;
+    byte_component_t        f_green;
+    byte_component_t        f_blue;
+    byte_component_t        f_alpha;
     char const *            f_name;
 };
 
@@ -41,9 +40,16 @@ class color
 {
 public:
     void                    set_color(rgba_color_t const rgba);
+    void                    set_color(byte_component_t red, byte_component_t green, byte_component_t blue, byte_component_t alpha);
+    void                    set_color(unsigned int red, unsigned int green, unsigned int blue, unsigned int alpha);
+    void                    set_color(int red, int green, int blue, int alpha);
     void                    set_color(color_component_t red, color_component_t green, color_component_t blue, color_component_t alpha);
     void                    set_color(double red, double green, double blue, double alpha);
-    void                    set_hsl(double h, double s, double l, double alpha);
+    void                    set_hsl(color_component_t h, color_component_t s, color_component_t l, color_component_t alpha);
+    void                    get_hsl(color_component_t & hue, color_component_t & saturation, color_component_t & lightness, color_component_t & alpha);
+    void                    adjust_hue(float hue);
+    void                    adjust_saturation(float change);
+    void                    adjust_lightness(float change);
     bool                    set_color(std::string const & name);
     rgba_color_t            get_color() const;
     void                    get_color(color_component_t & red, color_component_t & green, color_component_t & blue, color_component_t & alpha);
@@ -54,10 +60,10 @@ public:
     std::string             to_string() const;
 
 private:
-    color_component_t       f_red   = 0;
-    color_component_t       f_green = 0;
-    color_component_t       f_blue  = 0;
-    color_component_t       f_alpha = 255;
+    color_component_t       f_red   = 0.0;
+    color_component_t       f_green = 0.0;
+    color_component_t       f_blue  = 0.0;
+    color_component_t       f_alpha = 1.0;
 };
 
 } // namespace csspp

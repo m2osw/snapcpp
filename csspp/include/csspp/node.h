@@ -17,6 +17,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <csspp/color.h>
 #include <csspp/error.h>
 
 #include <map>
@@ -142,6 +143,8 @@ public:
     void                set_boolean(bool integer);
     decimal_number_t    get_decimal_number() const;
     void                set_decimal_number(decimal_number_t decimal_number);
+    color               get_color() const;
+    void                set_color(color c);
     decimal_number_t    get_font_size() const;
     void                set_font_size(decimal_number_t font_size);
     decimal_number_t    get_line_height() const;

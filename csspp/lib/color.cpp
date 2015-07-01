@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /** \file
- * \brief Implementation of the color class.
+ * \brief Implementation of the CSS Preprocessor color class.
  *
  * The CSS Preprocessor works on colors using the color class.
  *
@@ -198,30 +198,54 @@ color_table_t const color_names[] =
 
 size_t const color_names_size(sizeof(color_names) / sizeof(color_names[0]));
 
-color_component_t double_to_component(double c)
+byte_component_t color_component_to_byte(color_component_t c)
 {
     // first clamp
-    if(c >= 1.0)
+    if(c >= static_cast<color_component_t>(1.0))
     {
         return 255;
     }
-    else if(c <= 0.0)
+    else if(c <= static_cast<color_component_t>(0.0))
     {
-        return 0.0;
+        return 0;
     }
 
     // in range, compute the corresponding value
-    return static_cast<color_component_t>(c * 255.0 + 0.5);
+    return static_cast<byte_component_t>(c * static_cast<color_component_t>(255.0) + static_cast<color_component_t>(0.5));
 }
 
 } // no name namespace
 
 void color::set_color(uint32_t const rgba)
 {
-    f_red   = (rgba >>  0) & 255;
-    f_green = (rgba >>  8) & 255;
-    f_blue  = (rgba >> 16) & 255;
-    f_alpha = (rgba >> 24) & 255;
+    set_color((rgba >>  0) & 255,
+              (rgba >>  8) & 255,
+              (rgba >> 16) & 255,
+              (rgba >> 24) & 255);
+}
+
+void color::set_color(byte_component_t red, byte_component_t green, byte_component_t blue, byte_component_t alpha)
+{
+    f_red   = static_cast<color_component_t>(red)   / static_cast<color_component_t>(255.0);
+    f_green = static_cast<color_component_t>(green) / static_cast<color_component_t>(255.0);
+    f_blue  = static_cast<color_component_t>(blue)  / static_cast<color_component_t>(255.0);
+    f_alpha = static_cast<color_component_t>(alpha) / static_cast<color_component_t>(255.0);
+}
+
+void color::set_color(int red, int green, int blue, int alpha)
+{
+    f_red   = static_cast<color_component_t>(red)   / static_cast<color_component_t>(255.0);
+    f_green = static_cast<color_component_t>(green) / static_cast<color_component_t>(255.0);
+    f_blue  = static_cast<color_component_t>(blue)  / static_cast<color_component_t>(255.0);
+    f_alpha = static_cast<color_component_t>(alpha) / static_cast<color_component_t>(255.0);
+}
+
+void color::set_color(unsigned int red, unsigned int green, unsigned int blue, unsigned int alpha)
+{
+    f_red   = static_cast<color_component_t>(red)   / static_cast<color_component_t>(255.0);
+    f_green = static_cast<color_component_t>(green) / static_cast<color_component_t>(255.0);
+    f_blue  = static_cast<color_component_t>(blue)  / static_cast<color_component_t>(255.0);
+    f_alpha = static_cast<color_component_t>(alpha) / static_cast<color_component_t>(255.0);
 }
 
 void color::set_color(color_component_t red, color_component_t green, color_component_t blue, color_component_t alpha)
@@ -234,10 +258,10 @@ void color::set_color(color_component_t red, color_component_t green, color_comp
 
 void color::set_color(double red, double green, double blue, double alpha)
 {
-    f_red   = double_to_component(red);
-    f_green = double_to_component(green);
-    f_blue  = double_to_component(blue);
-    f_alpha = double_to_component(alpha);
+    f_red   = red;
+    f_green = green;
+    f_blue  = blue;
+    f_alpha = alpha;
 }
 
 bool color::set_color(std::string const & name)
@@ -261,10 +285,10 @@ bool color::set_color(std::string const & name)
             size_t const p((j - i) / 2 + i);
             if(color_names[p].f_name == name)
             {
-                f_red   = color_names[p].f_red;
-                f_green = color_names[p].f_green;
-                f_blue  = color_names[p].f_blue;
-                f_alpha = color_names[p].f_alpha;
+                set_color(color_names[p].f_red,
+                          color_names[p].f_green,
+                          color_names[p].f_blue,
+                          color_names[p].f_alpha);
                 return true;
             }
             if(color_names[p].f_name < name)
@@ -286,10 +310,10 @@ bool color::set_color(std::string const & name)
         && lexer::is_hex(name[1])
         && lexer::is_hex(name[2]))
         {
-            f_red   = lexer::hex_to_dec(name[0]) * 0x11;
-            f_green = lexer::hex_to_dec(name[1]) * 0x11;
-            f_blue  = lexer::hex_to_dec(name[2]) * 0x11;
-            f_alpha = 255;
+            set_color(lexer::hex_to_dec(name[0]) * 0x11,
+                      lexer::hex_to_dec(name[1]) * 0x11,
+                      lexer::hex_to_dec(name[2]) * 0x11,
+                      255);
             return true;
         }
     }
@@ -302,10 +326,10 @@ bool color::set_color(std::string const & name)
         && lexer::is_hex(name[4])
         && lexer::is_hex(name[5]))
         {
-            f_red   = lexer::hex_to_dec(name[0]) * 16 + lexer::hex_to_dec(name[1]);
-            f_green = lexer::hex_to_dec(name[2]) * 16 + lexer::hex_to_dec(name[3]);
-            f_blue  = lexer::hex_to_dec(name[4]) * 16 + lexer::hex_to_dec(name[5]);
-            f_alpha = 255;
+            set_color(lexer::hex_to_dec(name[0]) * 16 + lexer::hex_to_dec(name[1]),
+                      lexer::hex_to_dec(name[2]) * 16 + lexer::hex_to_dec(name[3]),
+                      lexer::hex_to_dec(name[4]) * 16 + lexer::hex_to_dec(name[5]),
+                      255);
             return true;
         }
     }
@@ -313,7 +337,7 @@ bool color::set_color(std::string const & name)
     return false;
 }
 
-void color::set_hsl(double hue, double saturation, double lightness, double alpha)
+void color::set_hsl(color_component_t hue, color_component_t saturation, color_component_t lightness, color_component_t alpha)
 {
     // see: http://en.wikipedia.org/wiki/HSL_and_HSV
     double const chroma = (1.0 - fabs(2.0 * lightness - 1.0)) * saturation;
@@ -367,19 +391,135 @@ void color::set_hsl(double hue, double saturation, double lightness, double alph
 
     double const m(lightness - 0.5 * chroma);
 
-    f_red   = double_to_component(r + m);
-    f_green = double_to_component(g + m);
-    f_blue  = double_to_component(b + m);
+    f_red   = static_cast<color_component_t>(r + m);
+    f_green = static_cast<color_component_t>(g + m);
+    f_blue  = static_cast<color_component_t>(b + m);
 
-    f_alpha = double_to_component(alpha);
+    f_alpha = alpha;
+}
+
+void color::get_hsl(color_component_t & hue, color_component_t & saturation, color_component_t & lightness, color_component_t & alpha)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+    // see: http://en.wikipedia.org/wiki/HSL_and_HSV
+    double const maximum(std::max(f_red, std::max(f_green, f_blue)));
+    double const minimum(std::min(f_red, std::min(f_green, f_blue)));
+    double const chroma(maximum - minimum);
+
+//std::cerr << " min/max/C " << minimum << "/" << maximum << "/" << chroma;
+
+    // warning: we define chroma in degrees just as set_hsl() expects
+    //          but most of our angles are kept in radians otherwise
+    if(chroma == 0.0)
+    {
+        // this is really "undefined"...
+        // absolutely any angle would work just fine
+        hue = 0.0;
+    }
+    else if(maximum == f_red)
+    {
+        hue = (f_green - f_blue) / chroma;
+    }
+    else if(maximum == f_green)
+    {
+        hue = (f_blue - f_red) / chroma + 2.0;
+    }
+    else //if(maximum == f_blue)
+    {
+        hue = (f_red - f_green) / chroma + 4.0;
+    }
+    if(hue < 0)
+    {
+        hue += 6.0;
+    }
+    hue = fmod(hue, 6.0) * 60.0;
+
+    lightness = (minimum + maximum) / 2.0;
+
+    if(lightness == 0.0 || lightness == 1.0)
+    {
+        saturation = 0.0;
+    }
+    else
+    {
+        saturation = chroma / (1 - fabs(lightness * 2 - 1));
+    }
+
+    alpha = f_alpha;
+#pragma GCC diagnostic pop
+}
+
+void color::adjust_hue(float change)
+{
+    // Although that other computation works, it can get way off so
+    // we just use the get_hsl() and set_hsl() calls; that's a lot
+    // safer and easier to maintain
+
+    // source: http://stackoverflow.com/questions/8507885/shift-hue-of-an-rgb-color
+    // hue is expected to already be in radian (0 to pi x 2)
+    //float const U(cos(change));
+    //float const W(sin(change));
+
+    //color_component_t const r((0.299f + 0.701f * U + 0.168f * W) * f_red
+    //                        + (0.587f - 0.587f * U + 0.330f * W) * f_green
+    //                        + (0.114f - 0.114f * U - 0.497f * W) * f_blue);
+    //color_component_t const g((0.299f - 0.299f * U - 0.328f * W) * f_red
+    //                        + (0.587f + 0.413f * U + 0.035f * W) * f_green
+    //                        + (0.114f - 0.114f * U + 0.292f * W) * f_blue);
+    //color_component_t const b((0.299f - 0.300f * U + 1.250f * W) * f_red
+    //                        + (0.587f - 0.588f * U - 1.050f * W) * f_green
+    //                        + (0.114f + 0.886f * U - 0.203f * W) * f_blue);
+
+    //f_red   = r;
+    //f_green = g;
+    //f_blue  = b;
+
+    color_component_t hue;
+    color_component_t saturation;
+    color_component_t lightness;
+    color_component_t alpha;
+    get_hsl(hue, saturation, lightness, alpha);
+    set_hsl(hue + change, saturation, lightness, alpha);
+}
+
+void color::adjust_saturation(float change)
+{
+    // source: http://alienryderflex.com/saturation.html
+    //float const p(sqrtf(
+    //          f_red   * f_red   * 0.299
+    //        + f_green * f_green * 0.587
+    //        + f_blue  * f_blue  * 0.114));
+    //f_red   = p + (f_red   - p) * change;
+    //f_green = p + (f_green - p) * change;
+    //f_blue  = p + (f_blue  - p) * change;
+
+    color_component_t hue;
+    color_component_t saturation;
+    color_component_t lightness;
+    color_component_t alpha;
+    get_hsl(hue, saturation, lightness, alpha);
+    set_hsl(hue, saturation + change, lightness, alpha);
+}
+
+void color::adjust_lightness(float change)
+{
+    color_component_t hue;
+    color_component_t saturation;
+    color_component_t lightness;
+    color_component_t alpha;
+    get_hsl(hue, saturation, lightness, alpha);
+    set_hsl(hue, saturation, lightness + change, alpha);
 }
 
 rgba_color_t color::get_color() const
 {
-    return (f_red   <<  0)
-         | (f_green <<  8)
-         | (f_blue  << 16)
-         | (f_alpha << 24);
+    // the color_component_to_byte() function clamps each color component
+    // between 0 and 1 before converting it to a uint8_t
+    return (color_component_to_byte(f_red)   <<  0)
+         | (color_component_to_byte(f_green) <<  8)
+         | (color_component_to_byte(f_blue)  << 16)
+         | (color_component_to_byte(f_alpha) << 24);
 }
 
 void color::get_color(color_component_t & red, color_component_t & green, color_component_t & blue, color_component_t & alpha)
@@ -392,23 +532,30 @@ void color::get_color(color_component_t & red, color_component_t & green, color_
 
 bool color::is_solid() const
 {
-    return f_alpha == 255;
+    return f_alpha >= 1.0;
 }
 
 bool color::is_transparent() const
 {
-    return f_alpha == 0;
+    return f_alpha <= 0.0;
 }
 
 std::string color::to_string() const
 {
-    if(is_solid())
+    rgba_color_t const col(get_color());
+
+    byte_component_t const red  ((col >>  0) & 255);
+    byte_component_t const green((col >>  8) & 255);
+    byte_component_t const blue ((col >> 16) & 255);
+    byte_component_t const alpha((col >> 24) & 255);
+
+    if(alpha == 255) // is_solid()
     {
         // we will have to do some testing, but with compression, always
         // use #RGB or #RRGGBB is probably better than saving 1 character
         // here or there... (because compression is all about repeated
         // bytes that can be saved in a small number of bits.)
-        switch(get_color())
+        switch(col)
         {
         case (192UL << 0) | (192UL << 8) | (192UL << 16) | (255UL << 24): // #c0c0c0
             return "silver";
@@ -452,35 +599,35 @@ std::string color::to_string() const
         std::stringstream ss;
         ss << std::hex << "#";
 
-        if(((f_red   >> 4) == (f_red   & 15))
-        && ((f_green >> 4) == (f_green & 15))
-        && ((f_blue  >> 4) == (f_blue  & 15)))
+        if(((red   >> 4) == (red   & 15))
+        && ((green >> 4) == (green & 15))
+        && ((blue  >> 4) == (blue  & 15)))
         {
             // we can use the smaller format (#RGB)
-            ss << static_cast<int>(f_red & 15) << static_cast<int>(f_green & 15) << static_cast<int>(f_blue & 15);
+            ss << static_cast<int>(red & 15) << static_cast<int>(green & 15) << static_cast<int>(blue & 15);
             return ss.str();
         }
 
         // cannot simplify (#RRGGBB)
         ss << std::setfill('0')
-           << std::setw(2) << static_cast<int>(f_red)
-           << std::setw(2) << static_cast<int>(f_green)
-           << std::setw(2) << static_cast<int>(f_blue);
+           << std::setw(2) << static_cast<int>(red)
+           << std::setw(2) << static_cast<int>(green)
+           << std::setw(2) << static_cast<int>(blue);
         return ss.str();
     }
     else
     {
-        if(get_color() == 0)
+        if(alpha == 0) // is_transparent()
         {
             return "transparent"; // rgba(0,0,0,0)
         }
 
         // when alpha is specified we have to use the rgba() function
         safe_precision_t safe(2);
-        return "rgba(" + std::to_string(static_cast<int>(f_red))
-                 + "," + std::to_string(static_cast<int>(f_green))
-                 + "," + std::to_string(static_cast<int>(f_blue))
-                 + "," + decimal_number_to_string(static_cast<int>(f_alpha) / 255.0) + ")";
+        return "rgba(" + std::to_string(static_cast<int>(red))
+                 + "," + std::to_string(static_cast<int>(green))
+                 + "," + std::to_string(static_cast<int>(blue))
+                 + "," + decimal_number_to_string(f_alpha) + ")";
     }
 }
 

@@ -15,6 +15,16 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Implementation of the CSS Preprocessor library.
+ *
+ * This file represents the main implementation of the CSS Preprocessor
+ * library. It has only a few functions handling code that's common
+ * to all the other classes. It also has the library version information.
+ *
+ * \sa \ref lexer_rules
+ */
+
 #include "csspp/csspp.h"
 
 #include "csspp/exceptions.h"

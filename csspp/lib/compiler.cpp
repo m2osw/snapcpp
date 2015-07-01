@@ -2305,7 +2305,7 @@ void compiler::replace_variables_in_comment(node::pointer_t n)
     n->set_string(comment);
 }
 
-bool compiler::selector_attribute_check(node::pointer_t n)
+bool compiler::selector_attribute_check(node::pointer_t parent, size_t & parent_pos, node::pointer_t n)
 {
     // use a for() as a 'goto exit;' on a 'break'
     for(;;)
@@ -2336,6 +2336,7 @@ bool compiler::selector_attribute_check(node::pointer_t n)
         if(pos >= n->size())
         {
             // just IDENTIFIER is valid
+            ++parent_pos;
             return true;
         }
 
@@ -2348,12 +2349,14 @@ bool compiler::selector_attribute_check(node::pointer_t n)
                 // just IDENTIFIER is valid, although we should never
                 // reach this line because WHITESPACE are removed from
                 // the end of lists
-                return true;  // LCOV_EXCL_LINE
+                ++parent_pos;   // LCOV_EXCL_LINE
+                return true;    // LCOV_EXCL_LINE
             }
             term = n->get_child(pos);
         }
 
         if(!term->is(node_type_t::EQUAL)                // '='
+        && !term->is(node_type_t::NOT_EQUAL)            // '!=' -- extension
         && !term->is(node_type_t::INCLUDE_MATCH)        // '~='
         && !term->is(node_type_t::PREFIX_MATCH)         // '^='
         && !term->is(node_type_t::SUFFIX_MATCH)         // '$='
@@ -2361,10 +2364,11 @@ bool compiler::selector_attribute_check(node::pointer_t n)
         && !term->is(node_type_t::DASH_MATCH))          // '|='
         {
             error::instance() << n->get_position()
-                    << "expected attribute operator missing, supported operators are '=', '~=', '^=', '$=', '*=', and '|='."
+                    << "expected attribute operator missing, supported operators are '=', '!=', '~=', '^=', '$=', '*=', and '|='."
                     << error_mode_t::ERROR_ERROR;
             return false;
         }
+        node::pointer_t op(term);
 
         ++pos;
         if(pos >= n->size())
@@ -2407,6 +2411,38 @@ bool compiler::selector_attribute_check(node::pointer_t n)
                     << error_mode_t::ERROR_ERROR;
             return false;
         }
+
+        // if the operator was '!=', we have to make changes from:
+        //      [a!=b]
+        // to
+        //      :not([a=b])
+        if(op->is(node_type_t::NOT_EQUAL))
+        {
+            // remove the [a!=b] from parent
+            parent->remove_child(parent_pos);
+
+            // add the ':'
+            node::pointer_t colon(new node(node_type_t::COLON, n->get_position()));
+            parent->insert_child(parent_pos, colon);
+            ++parent_pos;
+
+            // add the not()
+            node::pointer_t not_func(new node(node_type_t::FUNCTION, n->get_position()));
+            not_func->set_string("not");
+            parent->insert_child(parent_pos, not_func);
+
+            // in the not() add the [a!=b]
+            not_func->add_child(n);
+
+            // remove the '!='
+            n->remove_child(1);
+
+            // replace with the '='
+            node::pointer_t equal(new node(node_type_t::EQUAL, n->get_position()));
+            n->insert_child(1, equal);
+        }
+
+        ++parent_pos;
 
         return true;
     }
@@ -2671,8 +2707,7 @@ bool compiler::selector_simple_term(node::pointer_t n, size_t & pos)
 
     case node_type_t::OPEN_SQUAREBRACKET:
         // '[' WHITESPACE attribute-check WHITESPACE ']' -- attributes check
-        ++pos;
-        return selector_attribute_check(term);
+        return selector_attribute_check(n, pos, term);
 
     case node_type_t::GREATER_THAN:
     case node_type_t::ADD:
@@ -3011,7 +3046,7 @@ bool compiler::parse_selector(node::pointer_t n)
             else if(hash.size() == 1 && !arg->get_child(0)->is(node_type_t::HASH))
             {
                 error::instance() << arg->get_position()
-                        << "found a #id entry which is not the at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only."
+                        << "found an #id entry which is not at the beginning of the list of selectors; unless your HTML changes that much, #id should be the first selector only."
                         << error_mode_t::ERROR_INFO;
             }
         }

@@ -281,8 +281,7 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::COLOR:
         {
-            color c;
-            c.set_color(n->get_integer());
+            color c(n->get_color());
             f_impl->output_token(c.to_string());
         }
         break;
