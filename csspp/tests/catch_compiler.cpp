@@ -38,7 +38,13 @@
 #include <sys/stat.h>
 
 
-TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
+TEST_CASE("Compile set_date_time_variables() called too soon", "[compiler] [stylesheet] [attribute]")
+{
+        csspp::compiler c;
+        REQUIRE_THROWS_AS(c.set_date_time_variables(csspp_test::get_now()), csspp::csspp_exception_logic);
+}
+
+TEST_CASE("Compile simple stylesheets", "[compiler] [stylesheet] [attribute]")
 {
     // with many spaces
     {
@@ -58,6 +64,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -112,7 +119,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "          WHITESPACE\n"
 "          URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\"\" I:1\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -140,6 +147,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -194,7 +202,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "          WHITESPACE\n"
 "          URL \"/images/background.png\"\n"
 "  COMMENT \"@preserver test \"Compile Simple Stylesheet\" with version 1.0\" I:1\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -220,6 +228,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -243,7 +252,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
 "          COLOR H:ff0000ff\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -269,6 +278,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -292,7 +302,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
 "          COLOR H:ff0000ff\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -318,6 +328,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -341,7 +352,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
 "          COLOR H:ff0000ff\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -369,6 +380,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -382,8 +394,8 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-+ csspp_test::get_default_variables() +
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_default_variables()
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -414,6 +426,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -458,7 +471,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
 "            IDENTIFIER \"opacity\"\n"
 "            EQUAL\n"
 "            INTEGER \"\" I:20\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -469,7 +482,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
     }
 }
 
-TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
+TEST_CASE("Check all argify", "[compiler] [stylesheet]")
 {
     // valid argify with/without spaces
     {
@@ -838,6 +851,7 @@ TEST_CASE("Invalid arguments", "[compiler] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -863,7 +877,7 @@ TEST_CASE("Invalid arguments", "[compiler] [invalid]")
 "      DECLARATION \"color\" F:important\n"
 "        ARG\n"
 "          COLOR H:ff0000ff\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -877,7 +891,7 @@ TEST_CASE("Invalid arguments", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
+TEST_CASE("Selector attribute tests", "[compiler] [stylesheet] [attribute]")
 {
     char const * op[] =
     {
@@ -1347,7 +1361,7 @@ TEST_CASE("Invalid attributes", "[compiler] [invalid]")
             "|=",
             "/",
             "$",
-            "=",
+            //"=",
             //"!",
             ">",
             "#123",
@@ -1870,7 +1884,7 @@ TEST_CASE("Invalid attributes", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Undefined Paths", "[compiler] [invalid]")
+TEST_CASE("Undefined paths", "[compiler] [invalid]")
 {
     // compile without defining the paths
     //
@@ -1936,7 +1950,7 @@ TEST_CASE("Undefined Paths", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
+TEST_CASE("Simple terms", "[compiler] [stylesheet]")
 {
     // simple terms are:
     //      HASH
@@ -2610,7 +2624,7 @@ TEST_CASE("Simple Terms", "[compiler] [stylesheet]")
     }
 }
 
-TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
+TEST_CASE("Invalid simple terms", "[compiler] [invalid]")
 {
     // two terms in one :not(...)
     {
@@ -3355,7 +3369,7 @@ TEST_CASE("Invalid Simple Terms", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
+TEST_CASE("Complex terms", "[compiler] [stylesheet]")
 {
     // [complex] terms are:
     // term: simple-term
@@ -3846,7 +3860,7 @@ TEST_CASE("Complex Terms", "[compiler] [stylesheet]")
     }
 }
 
-TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
+TEST_CASE("Invalid complex terms", "[compiler] [invalid]")
 {
     // '::' must be followed by an IDENTIFIER
     {
@@ -4273,7 +4287,7 @@ TEST_CASE("Invalid Complex Terms", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Node", "[compiler] [invalid]")
+TEST_CASE("Invalid node", "[compiler] [invalid]")
 {
     // create a fake node tree with some invalid node types to
     // exercise the compile() switch default entry
@@ -4423,7 +4437,7 @@ TEST_CASE("Invalid Node", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Compile Font Metrics", "[compiler] [invalid]")
+TEST_CASE("Compile font metrics", "[compiler] [invalid]")
 {
     // define a sub-declaration inside a declaration
     {
@@ -5120,7 +5134,7 @@ TEST_CASE("Invalid nested declarations", "[compiler] [nested] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Advanced Variables", "[compiler] [variable]")
+TEST_CASE("Advanced variables", "[compiler] [variable]")
 {
     // define a variable function with a parameter
     {
@@ -6886,7 +6900,7 @@ TEST_CASE("Advanced Variables", "[compiler] [variable]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
+TEST_CASE("Invalid variables", "[compiler] [variable] [invalid]")
 {
     // undefined variable with whitespace before
     {
@@ -7620,7 +7634,7 @@ TEST_CASE("Invalid Variables", "[compiler] [variable] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword Ignored", "[compiler] [at-keyword]")
+TEST_CASE("At-Keyword ignored", "[compiler] [at-keyword]")
 {
     // make sure @<not supported> is left alone as expected by CSS 3
     {
@@ -7711,7 +7725,7 @@ TEST_CASE("At-Keyword Ignored", "[compiler] [at-keyword]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword Messages", "[compiler] [output]")
+TEST_CASE("At-Keyword messages", "[compiler] [output]")
 {
     // generate an error with @error
     {
@@ -7882,7 +7896,7 @@ TEST_CASE("At-Keyword Messages", "[compiler] [output]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
+TEST_CASE("At-Keyword with qualified rules", "[compiler] [at-keyword]")
 {
     // a valid @document
     {
@@ -8174,7 +8188,7 @@ TEST_CASE("At-Keyword With Qualified Rules", "[compiler] [at-keyword]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid At-Keyword Expecting Qualified Rules", "[compiler] [at-keyword]")
+TEST_CASE("Invalid at-keyword expecting qualified rules", "[compiler] [at-keyword]")
 {
     // a @supports without a {}-block
     {
@@ -8225,7 +8239,7 @@ TEST_CASE("Invalid At-Keyword Expecting Qualified Rules", "[compiler] [at-keywor
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("At-Keyword With Declarations", "[compiler] [at-keyword]")
+TEST_CASE("At-Keyword with declarations", "[compiler] [at-keyword]")
 {
     // a valid @page
     {
@@ -8574,7 +8588,7 @@ TEST_CASE("Charset", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
+TEST_CASE("Conditional compilation", "[compiler] [conditional]")
 {
     // script with @if / @else if / @else keywords
     {
@@ -8738,7 +8752,7 @@ TEST_CASE("Conditional Compilation", "[compiler] [conditional]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
+TEST_CASE("Invalid conditional", "[compiler] [conditional] [invalid]")
 {
     // script with @if / @else if / @else keywords
     // invalid "@else if" which includes an expression
@@ -8763,6 +8777,7 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -8795,7 +8810,7 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 "      DECLARATION \"list\"\n"
 "        ARG\n"
 "          IDENTIFIER \"cross\"\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -9007,6 +9022,7 @@ TEST_CASE("User @import", "[compiler] [at-keyword]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -9021,8 +9037,8 @@ TEST_CASE("User @import", "[compiler] [at-keyword]")
 
 "LIST\n"
 + csspp_test::get_default_variables() +
-"  COMMENT \"@preserve this worked! 1.0.0\" I:1\n"
-"  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
+"  COMMENT \"@preserve this worked! " CSSPP_VERSION "\" I:1\n"
++ csspp_test::get_close_comment(true)
 
             );
 
@@ -9300,7 +9316,7 @@ TEST_CASE("Invalid @import", "[compiler] [at-keyword] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
+TEST_CASE("Invalid variable in comment", "[compiler] [conditional] [invalid]")
 {
     // variable is not defined
     {
@@ -9318,6 +9334,7 @@ TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -9350,6 +9367,7 @@ TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -9382,6 +9400,7 @@ TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
 
         csspp::compiler c;
         c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
         c.clear_paths();
         c.add_path(csspp_test::get_script_path());
         c.add_path(csspp_test::get_version_script_path());
@@ -9404,7 +9423,7 @@ TEST_CASE("Invalid Variable in Comment", "[compiler] [conditional] [invalid]")
 // This does not work under Linux, the ifstream.open() accepts a
 // directory name as input without generating an error
 //
-//TEST_CASE("Cannot Open File", "[compiler] [invalid] [input]")
+//TEST_CASE("Cannot open file", "[compiler] [invalid] [input]")
 //{
 //    // generate an error with @error
 //    {

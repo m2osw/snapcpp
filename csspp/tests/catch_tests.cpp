@@ -47,10 +47,13 @@ char * g_progname;
 
 trace_error * g_trace_error;
 
-}
-
 std::string g_script_path;
+
 std::string g_version_script_path;
+
+time_t const g_now(1435871798); // 07/02/2015 14:16:38
+
+}
 
 trace_error::trace_error()
 {
@@ -187,12 +190,22 @@ std::string get_version_script_path()
 
 std::string get_default_variables()
 {
+#define STRINGIFY_CONTENT(str)  #str
+#define STRINGIFY(str)  STRINGIFY_CONTENT(str)
     return
 
+"    V:_csspp_day\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_day\"\n"
+"        STRING \"02\"\n"
 "    V:_csspp_e\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_e\"\n"
 "        DECIMAL_NUMBER \"\" D:2.71828\n"
+"    V:_csspp_hour\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_hour\"\n"
+"        STRING \"14\"\n"
 "    V:_csspp_ln10e\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_ln10e\"\n"
@@ -212,15 +225,23 @@ std::string get_default_variables()
 "    V:_csspp_major\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
+"        INTEGER \"\" I:" STRINGIFY(CSSPP_VERSION_MAJOR) "\n"
 "    V:_csspp_minor\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
+"        INTEGER \"\" I:" STRINGIFY(CSSPP_VERSION_MINOR) "\n"
+"    V:_csspp_minute\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_minute\"\n"
+"        STRING \"16\"\n"
+"    V:_csspp_month\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_month\"\n"
+"        STRING \"07\"\n"
 "    V:_csspp_patch\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
+"        INTEGER \"\" I:" STRINGIFY(CSSPP_VERSION_PATCH) "\n"
 "    V:_csspp_pi\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_pi\"\n"
@@ -229,14 +250,30 @@ std::string get_default_variables()
 "      LIST\n"
 "        VARIABLE \"_csspp_pi_rad\"\n"
 "        DECIMAL_NUMBER \"rad\" D:3.14159\n"
+"    V:_csspp_second\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_second\"\n"
+"        STRING \"38\"\n"
 "    V:_csspp_sqrt2\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_sqrt2\"\n"
 "        DECIMAL_NUMBER \"\" D:1.41421\n"
+"    V:_csspp_time\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_time\"\n"
+"        STRING \"14:16:38\"\n"
+"    V:_csspp_usdate\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_usdate\"\n"
+"        STRING \"07/02/2015\"\n"
 "    V:_csspp_version\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
+"        STRING \"" CSSPP_VERSION "\"\n"
+"    V:_csspp_year\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_year\"\n"
+"        STRING \"2015\"\n"
 "    V:adjust_hue\n"
 "      LIST\n"
 "        FUNCTION \"adjust_hue\"\n"
@@ -670,6 +707,25 @@ std::string get_default_variables()
 
 ;
 
+#undef STRINGIFY
+#undef STRINGIFY_CONTENT
+}
+
+std::string get_close_comment(bool token)
+{
+    if(token)
+    {
+        return "  COMMENT \"@preserve -- CSS file parsed by http://csspp.org/ v" CSSPP_VERSION " on 07/02/2015\" I:1\n";
+    }
+    else
+    {
+        return "/* @preserve -- CSS file parsed by http://csspp.org/ v" CSSPP_VERSION " on 07/02/2015 */\n";
+    }
+}
+
+time_t get_now()
+{
+    return g_now;
 }
 
 } // csspp_test namespace

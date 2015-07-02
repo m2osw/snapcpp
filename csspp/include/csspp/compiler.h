@@ -30,6 +30,7 @@ public:
     node::pointer_t         get_root() const;
     void                    set_root(node::pointer_t root);
 
+    void                    set_date_time_variables(time_t now);
     void                    set_empty_on_undefined_variable(bool const empty_on_undefined_variable);
 
     void                    clear_paths();

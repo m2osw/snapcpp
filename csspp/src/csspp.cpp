@@ -496,6 +496,7 @@ int pp::compile()
     // run the compiler
     csspp::compiler c;
     c.set_root(root);
+    c.set_date_time_variables(time(nullptr));
 
     // add paths to the compiler (i.e. for the user and system @imports)
     if(f_opt->is_defined("I"))

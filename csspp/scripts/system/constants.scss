@@ -24,6 +24,16 @@ $_csspp_pi:     3.14159265358979323846;     // pi
 $_csspp_pi_rad: 3.14159265358979323846rad;  // pi as an angle
 $_csspp_sqrt2:  1.41421356237309504880;     // sqrt(2)
 
+// The csspp command line tool also adds the following variables:
+//     $_csspp_usdate = "MM/DD/YYYY";
+//     $_csspp_month  = "MM";
+//     $_csspp_day    = "DD";
+//     $_csspp_year   = "YYYY";
+//     $_csspp_time   = "HH:MM:SS";
+//     $_csspp_hour   = "HH";
+//     $_csspp_minute = "MM";
+//     $_csspp_second = "SS";
+
 // Local Variables:
 // mode: scss
 // indent-tabs-mode: nil

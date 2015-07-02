@@ -200,6 +200,80 @@ void compiler::set_root(node::pointer_t root)
     f_state.set_root(root);
 }
 
+void compiler::set_date_time_variables(time_t now)
+{
+    // make sure we're ready to setup the date and time
+    node::pointer_t root(get_root());
+    if(!root)
+    {
+        throw csspp_exception_logic("compiler.cpp: compiler::set_date_time_variables(): function called too soon, root not set yet.");
+    }
+
+    // convert date/time in a string
+    struct tm t;
+    localtime_r(&now, &t);
+    char buf[20];
+    strftime(buf, sizeof(buf), "%m/%d/%Y%T", &t);
+
+    // save the result in variables
+
+    // usdate
+    csspp::node::pointer_t var(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_usdate");
+    csspp::node::pointer_t arg(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf, 10));
+    f_state.set_variable(var, arg, true);
+
+    // month
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_month");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf, 2));
+    f_state.set_variable(var, arg, true);
+
+    // day
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_day");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 3, 2));
+    f_state.set_variable(var, arg, true);
+
+    // year
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_year");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 6, 4));
+    f_state.set_variable(var, arg, true);
+
+    // time
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_time");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 10, 8));
+    f_state.set_variable(var, arg, true);
+
+    // hour
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_hour");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 10, 2));
+    f_state.set_variable(var, arg, true);
+
+    // minute
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_minute");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 13, 2));
+    f_state.set_variable(var, arg, true);
+
+    // second
+    var.reset(new csspp::node(csspp::node_type_t::VARIABLE, root->get_position()));
+    var->set_string("_csspp_second");
+    arg.reset(new csspp::node(csspp::node_type_t::STRING, root->get_position()));
+    arg->set_string(std::string(buf + 16, 2));
+    f_state.set_variable(var, arg, true);
+}
+
 void compiler::set_empty_on_undefined_variable(bool empty_on_undefined_variable)
 {
     f_empty_on_undefined_variable = empty_on_undefined_variable;

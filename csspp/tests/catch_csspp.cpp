@@ -48,7 +48,7 @@ TEST_CASE("Version string", "[csspp] [version]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Safe Boolean", "[csspp] [output]")
+TEST_CASE("Safe boolean", "[csspp] [output]")
 {
     {
         bool flag(false);
@@ -133,7 +133,7 @@ TEST_CASE("Safe Boolean", "[csspp] [output]")
     }
 }
 
-TEST_CASE("Decimal Number Output", "[csspp] [output]")
+TEST_CASE("Decimal number output", "[csspp] [output]")
 {
     REQUIRE(csspp::decimal_number_to_string(1.0) == "1");
     REQUIRE(csspp::decimal_number_to_string(1.2521) == "1.252");
@@ -152,7 +152,7 @@ TEST_CASE("Decimal Number Output", "[csspp] [output]")
     REQUIRE(csspp::decimal_number_to_string(10.0) == "10");
 }
 
-TEST_CASE("Invalid Precision", "[csspp] [invalid]")
+TEST_CASE("Invalid precision", "[csspp] [invalid]")
 {
     // we want to keep the default precision in place
     csspp::safe_precision_t precision;
