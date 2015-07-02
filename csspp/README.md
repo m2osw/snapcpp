@@ -21,7 +21,8 @@ The main features of CSS Preprocessor are:
 The CMakeLists.txt file depends on the snapCMakeModules.
 
 The csspp command line tool makes use of the advgetopt C++ library to
-handle the command line argument.
+handle the command line argument. The advgetopt C++ library makes use
+of the controlled\_vars headers.
 
 The library requires at least C++11.
 
@@ -29,4 +30,16 @@ To generate the documentation, you will need to have Doxygen. That should
 not be required (if you have problems with that, let me know.) If you
 get Doxygen, having the dot tool is a good idea to get all the graphs
 generated.
+
+# Compile the library and csspp command line tool
+
+The INSTALL in the root directory tells you how to generate the
+distribution directory (or dev/INSTALL in the csspp project itself.)
+
+# Contact
+
+If you have any problems, questions, suggestions, feel free to post
+them here:
+
+  https://sourceforge.net/p/csspp/tickets/
 
