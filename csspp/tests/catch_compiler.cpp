@@ -71,22 +71,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"body\"\n"
@@ -168,22 +153,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"body\"\n"
@@ -263,22 +233,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -327,22 +282,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -391,22 +331,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -457,22 +382,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 
             );
@@ -520,22 +430,7 @@ TEST_CASE("Compile Simple Stylesheets", "[compiler] [stylesheet] [attribute]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      PERIOD\n"
@@ -580,10 +475,10 @@ TEST_CASE("Check All Argify", "[compiler] [stylesheet]")
     {
         std::stringstream ss;
         ss << "a,b{color:red}\n"
-           << "a, b{color:red}\n"
-           << "a,b ,c{color:red}\n"
-           << "a , b,c{color:red}\n"
-           << "a{color:red}\n"
+           << "a, b{color:hsl(0,100%,50%)}\n"
+           << "a,b ,c{color:rgb(255,0,0)}\n"
+           << "a , b,c{color:hsla(0,100%,50%,1)}\n"
+           << "a{color:rgba(255,0,0,1)}\n"
            << "a {color:red}\n"
            << "a,b {color:red}\n"
            ;
@@ -958,22 +853,7 @@ TEST_CASE("Invalid arguments", "[compiler] [invalid]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -1244,10 +1124,11 @@ TEST_CASE("Selector Attribute Tests", "[compiler] [stylesheet] [attribute]")
     }
 }
 
-TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
+TEST_CASE("Invalid attributes", "[compiler] [invalid]")
 {
     // attribute name cannot be an integer, decimal number, opening
     // brackets or parenthesis, delimiter, etc. only an identifier
+    SECTION("Missing operator or value")
     {
         char const * invalid_value[] =
         {
@@ -1317,6 +1198,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
 
     // attribute only accept a very few binary operators: =, |=, ~=, $=, ^=, *=
     // anything else is an error (including another identifier)
+    SECTION("Not an attribute operator")
     {
         char const * invalid_value[] =
         {
@@ -1327,7 +1209,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             "1.23%",
             "(b)",
             "[b]",
-            //"{b}", -- causes lexer problems at this time... not too sure whether that's normal though
+            //"{b}", -- causes parser/lexer problems at this time... not too sure whether that's normal though
             "+",
             ",",
             "/* @preserve this comment */",
@@ -1382,6 +1264,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
 
     // attribute and a binary operators: =, |=, ~=, $=, ^=, *=
     // not followed by any value
+    SECTION("Valid operators, missing right hand side value")
     {
         char const * invalid_value[] =
         {
@@ -1389,6 +1272,10 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
             " =",
             "= ",
             " = ",
+            "!=",
+            " !=",
+            "!= ",
+            " != ",
             "|=",
             " |=",
             "|= ",
@@ -1441,6 +1328,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
 
     // attribute value can only be identifier, string, integer,
     // and decimal number
+    SECTION("Valid operators, invalid right hand side value")
     {
         char const * invalid_value[] =
         {
@@ -1652,6 +1540,7 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
     }
 
     // attribute value can only be one token
+    SECTION("Valid operators, right hand side value followed by something")
     {
         char const * invalid_value[] =
         {
@@ -1883,10 +1772,12 @@ TEST_CASE("Invalid Attributes", "[compiler] [invalid]")
     }
 
     // attribute value can only be one token
+    SECTION("Valid operators, right hand side value missing, no spaces")
     {
         char const *op[] =
         {
             "=",
+            "!=",
             "|=",
             "~=",
             "$=",
@@ -8853,7 +8744,7 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
     // invalid "@else if" which includes an expression
     {
         std::stringstream ss;
-        ss << "$var: false;\n"
+        ss << "$zzvar: false;\n"
            << "@if { @message \"Got here! (1)\" ; }\n"
            << "@else if { @message \"Got here! (2)\";}\n"
            << "@else{@message\"Got here! (3)\";}\n"
@@ -8864,6 +8755,8 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
         csspp::parser p(l);
 
         csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
 
         // no errors so far
         REQUIRE_ERRORS("");
@@ -8876,7 +8769,7 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
 
         c.compile(false);
 
-//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS(
                 "test.css(2): error: @if is expected to have exactly 2 parameters: an expression and a block. This @if has 1 parameters.\n"
@@ -8890,25 +8783,10 @@ TEST_CASE("Invalid Conditional", "[compiler] [conditional] [invalid]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
++ csspp_test::get_default_variables() +
+"    V:zzvar\n"
 "      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
-"    V:var\n"
-"      LIST\n"
-"        VARIABLE \"var\"\n"
+"        VARIABLE \"zzvar\"\n"
 "        IDENTIFIER \"false\"\n"
 "  COMPONENT_VALUE\n"
 "    ARG\n"
@@ -9142,22 +9020,7 @@ TEST_CASE("User @import", "[compiler] [at-keyword]")
         REQUIRE_TREES(out.str(),
 
 "LIST\n"
-"    V:_csspp_major\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_major\"\n"
-"        INTEGER \"\" I:1\n"
-"    V:_csspp_minor\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_minor\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_patch\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_patch\"\n"
-"        INTEGER \"\" I:0\n"
-"    V:_csspp_version\n"
-"      LIST\n"
-"        VARIABLE \"_csspp_version\"\n"
-"        STRING \"1.0.0\"\n"
++ csspp_test::get_default_variables() +
 "  COMMENT \"@preserve this worked! 1.0.0\" I:1\n"
 "  COMMENT \"@preserve -- CSS file parsed by csspp v1.0.0\" I:1\n"
 

@@ -30,7 +30,6 @@
 
 #include "csspp/assembler.h"
 
-#include "csspp/color.h"
 #include "csspp/exceptions.h"
 #include "csspp/lexer.h"
 #include "csspp/nth_child.h"
@@ -127,6 +126,9 @@ public:
     {
     }
 
+    virtual ~assembler_compressed()
+    {
+    }
 };
 
 class assembler_tidy : public assembler_compressed
@@ -134,6 +136,10 @@ class assembler_tidy : public assembler_compressed
 public:
     assembler_tidy(std::ostream & out)
         : assembler_compressed(out)
+    {
+    }
+
+    virtual ~assembler_tidy()
     {
     }
 
@@ -149,6 +155,10 @@ class assembler_compact : public assembler_tidy
 public:
     assembler_compact(std::ostream & out)
         : assembler_tidy(out)
+    {
+    }
+
+    virtual ~assembler_compact()
     {
     }
 
@@ -179,6 +189,10 @@ class assembler_expanded : public assembler_compact
 public:
     assembler_expanded(std::ostream & out)
         : assembler_compact(out)
+    {
+    }
+
+    virtual ~assembler_expanded()
     {
     }
 

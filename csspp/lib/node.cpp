@@ -31,14 +31,12 @@
 
 #include <csspp/node.h>
 
-#include <csspp/color.h>
 #include <csspp/exceptions.h>
 #include <csspp/nth_child.h>
 #include <csspp/unicode_range.h>
 
 #include <algorithm>
 #include <iostream>
-#include <sstream>
 
 namespace csspp
 {

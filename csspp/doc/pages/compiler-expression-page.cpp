@@ -167,7 +167,8 @@
  *
  * Note that the '!=' operator is available in SASS but is not otherwise
  * an CSS 3 operator. Also, the '==' operator is accepted, but it should
- * not be used (however, SASS expects '==' in its expressions.)
+ * not be used (however, SASS expects '==' in its expressions, so for
+ * remote compatibility.)
  *
  * The result of all the equality operators is always true or false.
  *
@@ -458,7 +459,7 @@
  * that computes the average of three colors:
  *
  * \code{.scss}
- *      $three-color-avg($c1, $c2, $c3):
+ *      $three_color_avg($c1, $c2, $c3):
  *      {
  *          @return ($c1 + $c2 + $c3) / 3;
  *      }
@@ -499,22 +500,6 @@
  * Calculate the arccosine value of number.
  *
  * \f$result = cos^{-1}(number)\f$
- *
- * \subsection adjust_hue_function adjust-hue()
- *
- * \code{.scss}
- *      adjust-hue(color, adjustment-angle)
- * \endcode
- *
- * The \b adjust-hue() function expects two parameters: a color and
- * a number representing an angle. That number is added to the current
- * hue of the color.
- *
- * Since the color is kept as RGB components, the computation uses the
- * get_hsl() and the set_hsl() color functions.
- *
- * \note
- * You can find the code in the csspp::color::adjust_hue() function.
  *
  * \subsection alpha_function alpha()
  *
@@ -582,10 +567,10 @@
  *
  * Calculate the cosine value of number.
  *
- * \subsection decimal_number_function decimal-number()
+ * \subsection decimal_number_function decimal_number()
  *
  * \code{.scss}
- *      decimal-number(expression)
+ *      decimal_number(expression)
  * \endcode
  *
  * This function is a \em cast that transforms its parameter in a
@@ -600,8 +585,8 @@
  * a dimension:
  *
  * \code{.scss}
- *      $set-unit($value, $unit) {
- *          @return decimal-number($value + $unit);
+ *      @mixin set_unit($value, $unit): {
+ *          @return decimal_number($value + $unit);
  *      }
  * \endcode
  *
@@ -650,6 +635,33 @@
  * allows you to apply various mathematical functions to your colors
  * before the output gets generated.
  *
+ * \subsection function_exists_function function_exists()
+ *
+ * \code{.scss}
+ *      function_exists(name)
+ * \endcode
+ *
+ * The \b function_exists() function returns true if the \p name'd function
+ * exists.
+ *
+ * The name can be a string or an identifier.
+ *
+ * Note that in CSS Preprocessor, functions may be defined locally, just
+ * like variables. This function returns true whether the function is
+ * global or not.
+ *
+ * \subsection global_variable_exists_function global_variable_exists()
+ *
+ * \code{.scss}
+ *      global_variable_exists(name)
+ * \endcode
+ *
+ * The \b global_variable_exists() function checks whether a global variable
+ * of the specified \p name exists.
+ *
+ * \p name can be a string or an identifier representing the name of the
+ * variable to be checked.
+ *
  * \subsection green_function green()
  *
  * \code{.scss}
@@ -657,11 +669,36 @@
  * \endcode
  *
  * The \b green() function retrieves the current green value of the
- * specified color.
+ * specified \p color.
  *
  * The color components are not clamped so the green value may be
  * out of range. However, the default range is from 0.0 to 255.0
  * inclusive. The value is returned as a decimal number.
+ *
+ * \subsection hsl_function hsl()
+ *
+ * \code{.scss}
+ *      hsl(hue, saturation, lightness)
+ * \endcode
+ *
+ * The \b hsl() function creates an opaque color using the specified hue,
+ * which should be an angle, and saturation and lightness, which should
+ * be percentages.
+ *
+ * The HSL color is immediately converted to RGB.
+ *
+ * \subsection hsla_function hsla()
+ *
+ * \code{.scss}
+ *      hsla(hue, saturation, lightness, alpha)
+ * \endcode
+ *
+ * The \b hsla() function creates a color using the specified hue,
+ * which should be an angle, saturation and lightness, which should
+ * be percentages, and alpha which should be a number from 0.0 to 1.0.
+ *
+ * The HSL color is immediately converted to RGB. The alpha channel is
+ * used as is.
  *
  * \subsection hue_function hue()
  *
@@ -744,7 +781,7 @@
  * a dimension:
  *
  * \code{.scss}
- *      $set-unit($value, $unit) {
+ *      @mixin set_unit($value, $unit) {
  *          @return integer($value + $unit);
  *      }
  * \endcode
@@ -946,13 +983,13 @@
  *
  * All of these may not always work exactly as expected.
  *
- * \subsection str_length_function str-length()
+ * \subsection str_length_function str_length()
  *
  * \code{.scss}
- *      str-length(string)
+ *      str_length(string)
  * \endcode
  *
- * The \b str-length() function returns the number of characters found
+ * The \b str_length() function returns the number of characters found
  * in the specified \em string parameter. The length is returned as an
  * integer.
  *
@@ -960,7 +997,7 @@
  * stringify the parameter as in:
  *
  * \code{.scss}
- *      str-length(string(expression))
+ *      str_length(string(expression))
  * \endcode
  *
  * The length is the number of characters. So if you have a UTF-8
@@ -974,29 +1011,29 @@
  *
  * Calculate the tangent value of number.
  *
- * \subsection type_of_function type-of()
+ * \subsection type_of_function type_of()
  *
  * \code{.scss}
- *      type-of(expression)
+ *      type_of(expression)
  * \endcode
  *
- * The \b type-of() function returns a string naming the type of the
+ * The \b type_of() function returns a string naming the type of the
  * specified expression. The types availabe in the CSS Preprocessor
  * are as follow:
  *
- * \li type-of(100px) => "integer"
- * \li type-of(3.5em) => "number"
- * \li type-of(25%) => "number"
- * \li type-of(solid) => "identifier"
- * \li type-of("Hello world!") => "string"
- * \li type-of(true) => "bool"
- * \li type-of(false) => "bool"
- * \li type-of(15 = 42) => "bool"
- * \li type-of(\#fff) => "color"
- * \li type-of(chocolate) => "color"
- * \li type-of(U+4??) => "unicode-range"
- * \li type-of((hello: "world", thank: "you")) => "map"
- * \li type-of((32px, 55px, 172px)) => "array"
+ * \li type_of(100px) => "integer"
+ * \li type_of(3.5em) => "number"
+ * \li type_of(25%) => "number"
+ * \li type_of(solid) => "identifier"
+ * \li type_of("Hello world!") => "string"
+ * \li type_of(true) => "bool"
+ * \li type_of(false) => "bool"
+ * \li type_of(15 = 42) => "bool"
+ * \li type_of(\#fff) => "color"
+ * \li type_of(chocolate) => "color"
+ * \li type_of(U+4??) => "unicode-range"
+ * \li type_of((hello: "world", thank: "you")) => "map"
+ * \li type_of((32px, 55px, 172px)) => "array"
  *
  * \subsection unit_function unit()
  *
@@ -1015,6 +1052,30 @@
  *      unit(4px * 3px) = "px * px"
  * \endcode
  *
+ * \subsection variable_exists_function variable_exists()
+ *
+ * \code{.scss}
+ *      variable_exists(name)
+ * \endcode
+ *
+ * The \b variable_exists() function checks whether a variable with the
+ * specified name was set prior to this statement.
+ *
+ * The parameter can be a string or an identifier representing the name
+ * of the variable:
+ *
+ * \code{.scss}
+ *      $var: 123px;
+ *
+ *      width: variable_exists(var) ? $var + 0 : 123;
+ *
+ *      height: variable_exists("var") ? $var + 0 : 123;
+ * \endcode
+ *
+ * \note
+ * The "... + 0" in the previous example is necessary because when
+ * $var is not defined, the statement would become empty.
+ *
  * \subsection missing_functions Functions still missing
  *
  * The following is a brief list of internal functions we will be adding
@@ -1022,21 +1083,13 @@
  *
  * \li call() -- call a function
  * \li comparable() -- check whether two items can be added, subtracted, compared
- * \li feature-exists() -- check whether a certain feature exists in CSS Preprocessor
- * \li function-exists() -- check whether a certain function exists
- * \li global-variable-exists() -- check whether a specific variable is defined globally
- * \li hsl() -- convert components to COLOR
- * \li hsla() -- convert components to COLOR
- * \li hue() -- extract hue from COLOR
+ * \li feature_exists() -- check whether a certain feature exists in CSS Preprocessor
  * \li keywords() -- retrieve the '...' parameters of a function as a map
  * \li length() -- return the number of items in a map or an array
- * \li lightness() -- extract lightness from COLOR
- * \li map-has-key() -- return true if the map has the specified key
- * \li map-keys() -- retrieve the keys of a map as an array
- * \li map-values() -- retrieve the values of a map as an array
- * \li saturation() -- extract saturation from COLOR
- * \li set-nth() -- replace specified parameter with a new value in an array or a map
- * \li variable-exists() -- check whether a variable is defined
+ * \li map_has_key() -- return true if the map has the specified key
+ * \li map_keys() -- retrieve the keys of a map as an array
+ * \li map_values() -- retrieve the values of a map as an array
+ * \li set_nth() -- replace specified parameter with a new value in an array or a map
  *
  * \section user_functions User Functions
  *
@@ -1055,6 +1108,19 @@
  * list concept that SASS has (we're close... we'll see whether we
  * can do that one day.)
  *
+ * \subsection adjust_hue_function adjust_hue()
+ *
+ * \code{.scss}
+ *      adjust_hue(color, adjustment-angle)
+ * \endcode
+ *
+ * The \b adjust_hue() function expects two parameters: a color and
+ * a number representing an angle. That number is added to the current
+ * hue of the color.
+ *
+ * Since the color is kept as RGB components, the computation uses the
+ * get_hsl() and the set_hsl() color functions.
+ *
  * \subsection complement_function complement()
  *
  * \code{.scss}
@@ -1065,8 +1131,35 @@
  * It is equivalent to:
  *
  * \code{.scss}
- *      adjust-hue(color, 180deg)
+ *      adjust_hue(color, 180deg)
  * \endcode
+ *
+ * \subsection darken_function darken()
+ *
+ * \code{.scss}
+ *      darken(color, adjustment)
+ * \endcode
+ *
+ * The \b darken() function subtracts the specified \p adjustment from the
+ * lightness parameter of \p color.
+ *
+ * \subsection desaturate_function desaturate()
+ *
+ * \code{.scss}
+ *      desaturate(color, adjustment)
+ * \endcode
+ *
+ * The \b desaturate() function subtracts the specified \p adjustment from
+ * the saturation parameter of \p color.
+ *
+ * \subsection grayscale_function grayscale()
+ *
+ * \code{.scss}
+ *      grayscale(color)
+ * \endcode
+ *
+ * The \b grayscale() function removes all the saturation from a color,
+ * which means the color becomes black, gray, or white.
  *
  * \subsection invert_function invert()
  *
@@ -1086,6 +1179,15 @@
  * we do not clamp these by default so you may have negative numbers and
  * numbers larger than 1.0). This is similar to doing \f$255 - color_c\f$
  * if the components were unsigned bytes from 0 to 255.
+ *
+ * \subsection lighten_function lighten()
+ *
+ * \code{.scss}
+ *      lighten(color, adjustment)
+ * \endcode
+ *
+ * The \b lighten() function adds the specified \p adjustment to the
+ * lightness parameter of \p color.
  *
  * \subsection mix_function mix()
  *
@@ -1122,11 +1224,11 @@
  * Assuming you know that the total of all the weights is equal to one, the
  * division is not necessary.
  *
- * \subsection opacify_function opacify() or fade-in()
+ * \subsection opacify_function opacify() or fade_in()
  *
  * \code{.scss}
  *      opacify(color, adjustment)
- *      fade-in(color, adjustment)
+ *      fade_in(color, adjustment)
  * \endcode
  *
  * The \b opacify() function add the specified adjustment to the alpha
@@ -1144,49 +1246,77 @@
  *
  * The \b opacity() function is an overload of the \ref alpha_function.
  *
- * \subsection mix_function mix()
+ * \subsection percentage_function percentage()
  *
  * \code{.scss}
- *      mix(color1, color2, weigth: 0.5)
+ *      percentage(number)
  * \endcode
  *
- * The \b mix() function adds two colors together using a weight.
+ * The \b percentage() function transforms a number in a percentage.
  *
- * \f$color_r = color_1 \, weight + color_2 \, (1 - weight)\f$
+ * This is equivalent to using \ref set_unit_function with "%" as the unit:
  *
- * \subsection remove_unit_function remove-unit()
+ * \code
+ *      set_unit($number, "%")
+ * \endcode
+ *
+ * \subsection quote_function quote()
  *
  * \code{.scss}
- *      remove-unit(number)
+ *      quote(identifier)
  * \endcode
  *
- * The \b remove-unit() function removes the unit of the number making
+ * The \b quote() function transforms an \p identifier in a string.
+ *
+ * This function is based on the \ref string_function function so
+ * any token that represents a string in an expression will be transformed
+ * to a quoted string.
+ *
+ * \subsection remove_unit_function remove_unit()
+ *
+ * \code{.scss}
+ *      remove_unit(number)
+ * \endcode
+ *
+ * The \b remove_unit() function removes the unit of the number making
  * it a plain number instead of a dimension. If the number was already
  * a plain number, then nothing happens. If the number was an integer
  * it remains an integer.
  *
- * The \b remove-unit() function uses a trick: it divides the number
+ * The \b remove_unit() function uses a trick: it divides the number
  * by "1\<unit>" of the number.
  *
- * \subsection set_unit_function set-unit()
+ * \subsection saturate_function saturate()
  *
  * \code{.scss}
- *      set-unit(number)
+ *      saturate(color, adjustment)
  * \endcode
  *
- * The \b set-unit() function replace the existing the unit of the number making
+ * The \b saturate() function adds the specified \p adjustment to the
+ * saturation parameter of \p color.
+ *
+ * \subsection set_unit_function set_unit()
+ *
+ * \code{.scss}
+ *      set_unit(number)
+ * \endcode
+ *
+ * The \b set_unit() function replace the existing the unit of the number making
  * it a plain number instead of a dimension. If the number was already
  * a plain number, then nothing happens. If the number was an integer
  * it remains an integer.
  *
- * The \b set-unit() function uses a trick: it divides the number
+ * The \b set_unit() function uses a trick: it divides the number
  * by "1\<unit>" of the number.
  *
- * \subsection transparentize_function transparentize() or fade-out()
+ * To define a number as a percentage, you may instead use the function
+ * \ref percentage_function.
+ *
+ * \subsection transparentize_function transparentize() or fade_out()
  *
  * \code{.scss}
  *      transparentize(color, adjustment)
- *      fade-out(color, adjustment)
+ *      fade_out(color, adjustment)
  * \endcode
  *
  * The \b transparentize() function subtract adjustment from the alpha
@@ -1196,51 +1326,71 @@
  *
  * It is the same as calling \ref opacify_function with \b -adjustment.
  *
+ * \subsection unique_id_function unique_id()
+ *
+ * \code{.scss}
+ *      unique_id()
+ * \endcode
+ *
+ * The \b unique_id() function generates a unique identifier. At this
+ * point the identifier looks like: "_csspp_unique\<number>". The
+ * number is incremented by one each time the function is called.
+ *
+ * \subsection unitless_function unitless()
+ *
+ * \code{.scss}
+ *      unitless(number)
+ * \endcode
+ *
+ * The \b unitless() function returns true if \p number is unit_less
+ * (i.e. is not a dimension, was not assigned a unit.)
+ *
+ * \subsection unquote_function unquote()
+ *
+ * \code{.scss}
+ *      unquote(string)
+ * \endcode
+ *
+ * The \b unquote() function transforms a \p string in an identifier.
+ *
+ * This function is based on the \ref identifier_function function so
+ * any token that represents a string in an expression will be transformed
+ * to an identifier.
+ *
  * \subsection missing_user_functions User functions still missing
  *
- * \li adjust-hue() -- rotate the hue
- * \li lighten() -- increase lightness
- * \li darken() -- decrease lightness
- * \li saturate() -- increase saturation
- * \li desaturate() -- decrease saturation
- * \li grayscale() -- remove the hue from a color
- * \li adjust-color() -- add the specified components to the corresponding color component
- * \li scale-color() -- fluidly scale the color
- * \li change-color() -- change one or more property of a color
- * \li ie-hex-str() -- convert color to Internet Explorer compatible color for a filter: ... field
- * \li unquote() -- remove the quotes of a string, see identifier()
- * \li quote() -- add quotes to a string, see string()
- * \li str-insert() -- insert a string in another
- * \li str-index() -- find a string in another and get position
- * \li str-slice() -- retrieve part of a string
- * \li to-upper-case() -- transform string to all uppercase
- * \li to-lower-case() -- transform string to all lowercase
- * \li percentage() -- convert a number to a percentage
+ * \li adjust_color() -- add the specified components to the corresponding color component
+ * \li scale_color() -- fluidly scale the color
+ * \li change_color() -- change one or more property of a color
+ * \li ie_hex_str() -- convert color to Internet Explorer compatible color for a filter: ... field
+ * \li str_insert() -- insert a string in another
+ * \li str_index() -- find a string in another and get position
+ * \li str_slice() -- retrieve part of a string
+ * \li to_upper_case() -- transform string to all uppercase
+ * \li to_lower_case() -- transform string to all lowercase
  * \li nth() -- return the nth element of an array or a map
  * \li join() -- concatenate an array or a map
  * \li append() -- add one value at the end of the array
  * \li index() -- search for a value in an array or map and return its position
  * \li zip() -- concatenate any number of lists into one
- * \li list-separator() -- return ',' because we only support such
- * \li map-get() -- return an item by name from a map
- * \li map-merge() -- merge two maps together
- * \li map-remove() -- remove items with the specified keys
- * \li mixin-exists() -- check whether a variable exists
- * \li unitless() -- return whether a number is a dimension or not
- * \li unique_id() -- return a unique identifier (i.e. _csspp_unique1, _csspp_unique2, etc.)
+ * \li list_separator() -- return ',' because we only support such
+ * \li map_get() -- return an item by name from a map
+ * \li map_merge() -- merge two maps together
+ * \li map_remove() -- remove items with the specified keys
+ * \li mixin_exists() -- check whether a variable exists
  *
  * SASS also supports functions for selectors. We do not support expressions
  * in selectors, so these are probably not going to be supported any time
  * soon:
  *
- * \li selector-nest() -- nest selectors
- * \li selector-append() -- add selectors at the end of another
- * \li selector-extend() -- extend selectors a bit like \@extend
- * \li selector-replace() -- replace part of a selector with another selector
- * \li selector-unify() -- add a comma between two selectors
- * \li is-super-selector() -- check whether the second selector matches the first one to one
- * \li simple-selector() -- return a simple selector (?)
- * \li selector-parse() -- compile a selector in the same format used by &
+ * \li selector_nest() -- nest selectors
+ * \li selector_append() -- add selectors at the end of another
+ * \li selector_extend() -- extend selectors a bit like \@extend
+ * \li selector_replace() -- replace part of a selector with another selector
+ * \li selector_unify() -- add a comma between two selectors
+ * \li is_super_selector() -- check whether the second selector matches the first one to one
+ * \li simple_selector() -- return a simple selector (?)
+ * \li selector_parse() -- compile a selector in the same format used by &
  */
 
 // Local Variables:

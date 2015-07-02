@@ -27,7 +27,6 @@
 #include "csspp/compiler.h"
 
 #include "csspp/exceptions.h"
-#include "csspp/expression.h"
 #include "csspp/nth_child.h"
 #include "csspp/parser.h"
 
@@ -123,29 +122,32 @@ node::pointer_t compiler::compiler_state_t::get_previous_parent() const
     return f_parents[f_parents.size() - 2];
 }
 
-node::pointer_t compiler::compiler_state_t::get_variable(std::string const & variable_name) const
+node::pointer_t compiler::compiler_state_t::get_variable(std::string const & variable_name, bool global_only) const
 {
-    size_t pos(f_parents.size());
-    while(pos > 0)
+    if(!global_only)
     {
-        --pos;
-        node::pointer_t s(f_parents[pos]);
-        switch(s->get_type())
+        size_t pos(f_parents.size());
+        while(pos > 0)
         {
-        case node_type_t::OPEN_CURLYBRACKET:
-            if(s->get_boolean())
+            --pos;
+            node::pointer_t s(f_parents[pos]);
+            switch(s->get_type())
             {
-                node::pointer_t value(s->get_variable(variable_name));
-                if(value)
+            case node_type_t::OPEN_CURLYBRACKET:
+                if(s->get_boolean())
                 {
-                    return value;
+                    node::pointer_t value(s->get_variable(variable_name));
+                    if(value)
+                    {
+                        return value;
+                    }
                 }
+                break;
+
+            default:
+                break;
+
             }
-            break;
-
-        default:
-            break;
-
         }
     }
 
@@ -737,6 +739,7 @@ void compiler::compile_declaration(node::pointer_t n)
 
             parser::argify(declaration);
             expression args_expr(declaration, true);
+            args_expr.set_variable_handler(&f_state);
             args_expr.compile_args(divide_font_metrics);
         }
     }
@@ -2017,6 +2020,7 @@ node::pointer_t compiler::at_keyword_expression(node::pointer_t n)
     if(!n->empty() && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
     {
         expression expr(n, true);
+        expr.set_variable_handler(&f_state);
         return expr.compile();
     }
 

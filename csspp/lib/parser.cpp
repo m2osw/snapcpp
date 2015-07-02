@@ -46,7 +46,6 @@
 
 #include "csspp/parser.h"
 
-#include "csspp/error.h"
 #include "csspp/exceptions.h"
 
 #include <iostream>

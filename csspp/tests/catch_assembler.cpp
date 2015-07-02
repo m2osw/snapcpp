@@ -2279,7 +2279,8 @@ expected << "a~b{border:3px solid #39458a;width:450px;height:200px}\n";
         REQUIRE(c.get_root() == n);
     }
 
-    // CSS Function
+    // CSS Function which is an internal CSS Preprocess function
+    // (meaning that it gets interpreted and replaced by a value)
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
         i <= static_cast<int>(csspp::output_mode_t::TIDY);
         ++i)
@@ -2330,6 +2331,66 @@ expected << "a b\n"
 
         case csspp::output_mode_t::TIDY:
 expected << "a b{color:rgba(7,2,3,0.5)}\n";
+            break;
+
+        }
+        expected << "/* @preserve -- CSS file parsed by csspp v1.0.0 */\n";
+        REQUIRE(out.str() == expected.str());
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // CSS Function which is not replaced by CSS Proprocessor
+    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+        i <= static_cast<int>(csspp::output_mode_t::TIDY);
+        ++i)
+    {
+        std::stringstream ss;
+        ss << "a b { transform: translate(-50%, 0); }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        std::stringstream expected;
+        switch(static_cast<csspp::output_mode_t>(i))
+        {
+        case csspp::output_mode_t::COMPACT:
+expected << "a b { transform: translate(-50%, 0) }\n";
+            break;
+
+        case csspp::output_mode_t::COMPRESSED:
+expected << "a b{transform:translate(-50%,0)}\n";
+            break;
+
+        case csspp::output_mode_t::EXPANDED:
+expected << "a b\n"
+         << "{\n"
+         << "  transform: translate(-50%, 0);\n"
+         << "}\n";
+            break;
+
+        case csspp::output_mode_t::TIDY:
+expected << "a b{transform:translate(-50%,0)}\n";
             break;
 
         }

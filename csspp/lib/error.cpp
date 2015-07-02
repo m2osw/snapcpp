@@ -54,14 +54,10 @@
  * \sa \ref lexer_rules
  */
 
-#include "csspp/lexer.h"
-
 #include "csspp/error.h"
-#include "csspp/exceptions.h"
 
 #include <cmath>
 #include <iostream>
-#include <sstream>
 
 namespace csspp
 {

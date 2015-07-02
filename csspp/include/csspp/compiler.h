@@ -17,7 +17,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "csspp/node.h"
+#include "csspp/expression.h"
 
 namespace csspp
 {
@@ -46,7 +46,7 @@ private:
     typedef std::vector<std::string>                string_vector_t;
     typedef std::map<std::string, node::pointer_t>  validator_script_vector_t;
 
-    class compiler_state_t
+    class compiler_state_t : public expression_variables_interface
     {
     public:
         void                        set_root(node::pointer_t root);
@@ -56,7 +56,7 @@ private:
         void                        pop_parent();
         bool                        empty_parents() const;
         node::pointer_t             get_previous_parent() const;
-        node::pointer_t             get_variable(std::string const & variable_name) const;
+        node::pointer_t             get_variable(std::string const & variable_name, bool global_only = false) const;
         void                        set_variable(node::pointer_t variable, node::pointer_t value, bool global) const;
 
     private:

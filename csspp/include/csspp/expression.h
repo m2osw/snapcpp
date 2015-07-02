@@ -22,10 +22,21 @@
 namespace csspp
 {
 
+class expression_variables_interface
+{
+public:
+    virtual                 ~expression_variables_interface() {}
+
+    virtual node::pointer_t get_variable(std::string const & variable_name, bool global_only = false) const = 0;
+};
+
 class expression
 {
 public:
                         expression(node::pointer_t n, bool skip_whitespace);
+
+    void                set_variable_handler(expression_variables_interface * handler);
+
     void                compile_args(bool divide_font_metrics);
     node::pointer_t     compile();
     bool                end_of_nodes();
@@ -66,6 +77,7 @@ private:
     node::pointer_t     internal_function__get_number(node::pointer_t func, size_t argn, decimal_number_t & number);
     node::pointer_t     internal_function__get_number_or_percent(node::pointer_t func, size_t argn, decimal_number_t & number);
     node::pointer_t     internal_function__get_string(node::pointer_t func, size_t argn, std::string & str);
+    node::pointer_t     internal_function__get_string_or_identifier(node::pointer_t func, size_t argn, std::string & str);
 
     node::pointer_t     internal_function__abs(node::pointer_t func);
     node::pointer_t     internal_function__acos(node::pointer_t func);
@@ -80,7 +92,11 @@ private:
     node::pointer_t     internal_function__floor(node::pointer_t func);
     node::pointer_t     internal_function__frgb(node::pointer_t func);
     node::pointer_t     internal_function__frgba(node::pointer_t func);
+    node::pointer_t     internal_function__function_exists(node::pointer_t func);
+    node::pointer_t     internal_function__global_variable_exists(node::pointer_t func);
     node::pointer_t     internal_function__green(node::pointer_t func);
+    node::pointer_t     internal_function__hsl(node::pointer_t func);
+    node::pointer_t     internal_function__hsla(node::pointer_t func);
     node::pointer_t     internal_function__hue(node::pointer_t func);
     node::pointer_t     internal_function__identifier(node::pointer_t func);
     node::pointer_t     internal_function__if(node::pointer_t func);
@@ -105,16 +121,18 @@ private:
     node::pointer_t     internal_function__tan(node::pointer_t func);
     node::pointer_t     internal_function__type_of(node::pointer_t func);
     node::pointer_t     internal_function__unit(node::pointer_t func);
+    node::pointer_t     internal_function__variable_exists(node::pointer_t func);
 
     node::pointer_t     excecute_function(node::pointer_t func);
 
-    node::pointer_t     f_node;
-    size_t              f_pos = 0;
-    size_t              f_start = static_cast<size_t>(-1);
-    node::pointer_t     f_current;
-    variable_vector_t   f_variables;
-    bool                f_skip_whitespace = false;
-    bool                f_divide_font_metrics = false;
+    node::pointer_t                     f_node;
+    size_t                              f_pos = 0;
+    size_t                              f_start = static_cast<size_t>(-1);
+    node::pointer_t                     f_current;
+    variable_vector_t                   f_variables;
+    bool                                f_skip_whitespace = false;
+    bool                                f_divide_font_metrics = false;
+    expression_variables_interface *    f_variable_handler = nullptr;
 };
 
 } // namespace csspp

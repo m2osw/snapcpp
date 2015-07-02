@@ -26,7 +26,6 @@
 
 #include "csspp/expression.h"
 
-#include "csspp/color.h"
 #include "csspp/exceptions.h"
 #include "csspp/parser.h"
 
@@ -44,6 +43,11 @@ expression::expression(node::pointer_t n, bool skip_whitespace)
     {
         throw csspp_exception_logic("expression.cpp:expression(): contructor called with a null pointer.");
     }
+}
+
+void expression::set_variable_handler(expression_variables_interface * handler)
+{
+    f_variable_handler = handler;
 }
 
 void expression::compile_args(bool divide_font_metrics)
@@ -1400,6 +1404,8 @@ node::pointer_t expression::post()
     //     | post '[' expression ']'
     //     | post '.' IDENTIFIER
 
+    // TODO: add support to access color members (i.e. $c.red <=> red($c))
+
     node::pointer_t result(unary());
     if(!result)
     {
@@ -1686,35 +1692,35 @@ node::pointer_t expression::unary()
     case node_type_t::IDENTIFIER:
         // an identifier may represent a color, null, true, or false
         {
-            std::string const identifier(f_current->get_string());
+            node::pointer_t result(f_current);
+            // skip the IDENTIFIER
+            next();
+
+            std::string const identifier(result->get_string());
             if(identifier == "null")
             {
-                return node::pointer_t(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
+                return node::pointer_t(new node(node_type_t::NULL_TOKEN, result->get_position()));
             }
             if(identifier == "true")
             {
-                node::pointer_t b(new node(node_type_t::BOOLEAN, f_current->get_position()));
+                node::pointer_t b(new node(node_type_t::BOOLEAN, result->get_position()));
                 b->set_boolean(true);
                 return b;
             }
             if(identifier == "false")
             {
                 // a boolean is false by default, so no need to set the value
-                return node::pointer_t(new node(node_type_t::BOOLEAN, f_current->get_position()));
+                return node::pointer_t(new node(node_type_t::BOOLEAN, result->get_position()));
             }
             color col;
             if(!col.set_color(identifier))
             {
                 // it is not a color, return as is
-                node::pointer_t result(f_current);
-                next();
                 return result;
             }
-            node::pointer_t color_node(new node(node_type_t::COLOR, f_current->get_position()));
+            node::pointer_t color_node(new node(node_type_t::COLOR, result->get_position()));
             color_node->set_color(col);
 
-            // skip the IDENTIFIER
-            next();
             return color_node;
         }
         /*NOTREACHED*/

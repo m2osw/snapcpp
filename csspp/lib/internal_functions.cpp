@@ -26,7 +26,6 @@
 
 #include "csspp/expression.h"
 
-#include "csspp/color.h"
 #include "csspp/exceptions.h"
 #include "csspp/parser.h"
 
@@ -163,6 +162,30 @@ node::pointer_t expression::internal_function__get_string(node::pointer_t func, 
     return node::pointer_t();
 }
 
+node::pointer_t expression::internal_function__get_string_or_identifier(node::pointer_t func, size_t argn, std::string & str)
+{
+    if(argn >= func->size())
+    {
+        return node::pointer_t();
+    }
+
+    node::pointer_t arg(func->get_child(argn));
+    if(arg->size() != 1)
+    {
+        return node::pointer_t();
+    }
+
+    node::pointer_t value(arg->get_child(0));
+    if(value->is(node_type_t::IDENTIFIER)
+    || value->is(node_type_t::STRING))
+    {
+        str = value->get_string();
+        return value;
+    }
+
+    return node::pointer_t();
+}
+
 node::pointer_t expression::internal_function__abs(node::pointer_t func)
 {
     // abs(number)
@@ -205,27 +228,6 @@ node::pointer_t expression::internal_function__acos(node::pointer_t func)
 
     error::instance() << f_current->get_position()
             << "acos() expects a number as parameter."
-            << error_mode_t::ERROR_ERROR;
-
-    return node::pointer_t();
-}
-
-node::pointer_t expression::internal_function__adjust_hue(node::pointer_t func)
-{
-    // adjust-hue(color, angle)
-    color c;
-    node::pointer_t col(internal_function__get_color(func, 0, c));
-    decimal_number_t angle(0);
-    node::pointer_t a(internal_function__get_number(func, 1, angle));
-    if(col && a)
-    {
-        c.adjust_hue(angle);
-        col->set_color(c);
-        return col;
-    }
-
-    error::instance() << f_current->get_position()
-            << "adjust-hue() expects a color and an angle as parameters."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -499,7 +501,7 @@ node::pointer_t expression::internal_function__frgb(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "frgb() expects exactly one color parameter or three numbers."
+            << "frgb() expects exactly one color parameter or three numbers (Red, Green, Blue)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -547,7 +549,40 @@ node::pointer_t expression::internal_function__frgba(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "frgba() expects exactly one color parameter or three numbers."
+            << "frgba() expects exactly one color parameter followed by one number (Alpha), or four numbers (Red, Green, Blue, Alpha)."
+            << error_mode_t::ERROR_ERROR;
+
+    return node::pointer_t();
+}
+
+node::pointer_t expression::internal_function__function_exists(node::pointer_t func)
+{
+    // function-exists(name)
+    std::string name;
+    node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
+    if(id && !name.empty())
+    {
+        node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
+
+        // although variables were already applied they will still be
+        // defined when we reach these lines of code
+        if(f_variable_handler)
+        {
+            node::pointer_t var(f_variable_handler->get_variable(name, true));
+            if(var
+            && (var->is(node_type_t::VARIABLE_FUNCTION) // $<name>()
+            || var->is(node_type_t::FUNCTION)))         // @mixin <name>()
+            {
+                result->set_boolean(true);
+            }
+        }
+        // else -- default is already false
+
+        return result;
+    }
+
+    error::instance() << f_current->get_position()
+            << "function-exists() expects a number as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -571,7 +606,98 @@ node::pointer_t expression::internal_function__green(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "red() expects a color as parameter."
+            << "green() expects a color as parameter."
+            << error_mode_t::ERROR_ERROR;
+
+    return node::pointer_t();
+}
+
+node::pointer_t expression::internal_function__global_variable_exists(node::pointer_t func)
+{
+    // variable-exists(name)
+    std::string name;
+    node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
+    if(id && !name.empty())
+    {
+        node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
+
+        // although variables were already applied they will still be
+        // defined when we reach these lines of code
+        if(f_variable_handler)
+        {
+            node::pointer_t var(f_variable_handler->get_variable(name, true));
+            if(var
+            && (var->is(node_type_t::VARIABLE)      // $<name>
+            || var->is(node_type_t::IDENTIFIER)))   // @mixin <name>
+            {
+                result->set_boolean(true);
+            }
+        }
+        // else -- default is already false
+
+        return result;
+    }
+
+    error::instance() << f_current->get_position()
+            << "global-variable-exists() expects a number as parameter."
+            << error_mode_t::ERROR_ERROR;
+
+    return node::pointer_t();
+}
+
+node::pointer_t expression::internal_function__hsl(node::pointer_t func)
+{
+    // hsl(red, green, blue)
+    decimal_number_t h;
+    decimal_number_t s;
+    decimal_number_t l;
+
+    node::pointer_t col1(internal_function__get_number(func, 0, h));
+    node::pointer_t col2(internal_function__get_number_or_percent(func, 1, s));
+    node::pointer_t col3(internal_function__get_number_or_percent(func, 2, l));
+
+    if(col1 && col2 && col3)
+    {
+        // force alpha to 1.0
+        color c;
+        c.set_hsl(h, s, l, 1.0);
+        node::pointer_t col(new node(node_type_t::COLOR, func->get_position()));
+        col->set_color(c);
+        return col;
+    }
+
+    error::instance() << f_current->get_position()
+            << "hsl() expects exactly three numbers represent Hue (angle), Saturation (%), and Lightness (%)."
+            << error_mode_t::ERROR_ERROR;
+
+    return node::pointer_t();
+}
+
+node::pointer_t expression::internal_function__hsla(node::pointer_t func)
+{
+    // hsla(red, green, blue, alpha)
+    decimal_number_t h;
+    decimal_number_t s;
+    decimal_number_t l;
+    decimal_number_t a;
+
+    node::pointer_t col1(internal_function__get_number(func, 0, h));
+    node::pointer_t col2(internal_function__get_number_or_percent(func, 1, s));
+    node::pointer_t col3(internal_function__get_number_or_percent(func, 2, l));
+    node::pointer_t col4(internal_function__get_number(func, 3, a));
+
+    if(col1 && col2 && col3 && col4)
+    {
+        // set color with alpha
+        color c;
+        c.set_hsl(h, s, l, a);
+        node::pointer_t col(new node(node_type_t::COLOR, func->get_position()));
+        col->set_color(c);
+        return col;
+    }
+
+    error::instance() << f_current->get_position()
+            << "hsla() expects exactly four numbers: Hue (angle), saturation (%), lightness (%), alpha (0.0 to 1.0)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -955,7 +1081,7 @@ node::pointer_t expression::internal_function__rgb(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "rgb() expects exactly one color parameter or three numbers."
+            << "rgb() expects exactly one color parameter or three numbers (Red, Green, Blue)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1003,7 +1129,7 @@ node::pointer_t expression::internal_function__rgba(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "rgba() expects exactly one color parameter or three numbers."
+            << "rgba() expects exactly one color parameter followed by alpha or four numbers (Red, Green, Blue, Alpha)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1313,6 +1439,39 @@ node::pointer_t expression::internal_function__unit(node::pointer_t func)
     return node::pointer_t();
 }
 
+node::pointer_t expression::internal_function__variable_exists(node::pointer_t func)
+{
+    // variable-exists(name)
+    std::string name;
+    node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
+    if(id && !name.empty())
+    {
+        node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
+
+        // although variables were already applied they will still be
+        // defined when we reach these lines of code
+        if(f_variable_handler)
+        {
+            node::pointer_t var(f_variable_handler->get_variable(name, true));
+            if(var
+            && (var->is(node_type_t::VARIABLE)      // $<name>
+            || var->is(node_type_t::IDENTIFIER)))   // @mixin <name>
+            {
+                result->set_boolean(true);
+            }
+        }
+        // else -- default is already false
+
+        return result;
+    }
+
+    error::instance() << f_current->get_position()
+            << "unit() expects a number as parameter."
+            << error_mode_t::ERROR_ERROR;
+
+    return node::pointer_t();
+}
+
 node::pointer_t expression::excecute_function(node::pointer_t func)
 {
     typedef node::pointer_t (expression::*internal_function_t)(node::pointer_t func);
@@ -1341,12 +1500,6 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             1,
             1,
             &expression::internal_function__acos
-        },
-        {
-            "adjust-hue",
-            1,
-            1,
-            &expression::internal_function__adjust_hue
         },
         {
             "alpha",
@@ -1409,10 +1562,34 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__frgba
         },
         {
+            "function-exists",
+            1,
+            1,
+            &expression::internal_function__function_exists
+        },
+        {
+            "global-variable-exists",
+            1,
+            1,
+            &expression::internal_function__global_variable_exists
+        },
+        {
             "green",
             1,
             1,
             &expression::internal_function__green
+        },
+        {
+            "hsl",
+            3,
+            3,
+            &expression::internal_function__hsl
+        },
+        {
+            "hsla",
+            4,
+            4,
+            &expression::internal_function__hsla
         },
         {
             "hue",
@@ -1557,6 +1734,12 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             1,
             1,
             &expression::internal_function__unit
+        },
+        {
+            "variable-exists",
+            1,
+            1,
+            &expression::internal_function__variable_exists
         }
     };
 

@@ -15,27 +15,32 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-@mixin adjust-hue($color, $angle)
+@mixin adjust_hue($color, $angle)
 {
     @return hsla(hue($color) + $angle, saturation($color), lightness($color), alpha($color));
 }
 
 @mixin complement($color)
 {
-    @return adjust-hue($color, $_scss_pi_rad);
+    @return adjust_hue($color, $_csspp_pi_rad);
 }
 
 @mixin darken($color, $percent)
 {
-    @return lighten($color, -$percent);
+    @return lighten($color, - $percent);
 }
 
 @mixin desaturate($color, $percent)
 {
-    @return saturate($color, -$percent);
+    @return saturate($color, - $percent);
 }
 
-@mixin fade-out($color, $number)
+@mixin fade_in($color, $number)
+{
+    @return opacify($color, $number);
+}
+
+@mixin fade_out($color, $number)
 {
     @return transparentize($color, $number);
 }
@@ -45,7 +50,7 @@
     // TBD: we may want to use a much better gray scale computation
     //      (i.e. the Y in JPEG images is much better to the eye than
     //      the L in HSL.)
-    @return saturate($color, -100%);
+    @return saturate($color, - saturation($color));
 }
 
 @mixin invert($color)
@@ -53,14 +58,14 @@
     @return rgba(255.0 - red($color), 255.0 - green($color), 255.0 - blue($color), alpha($color));
 }
 
-@mixin mix($color1, $color2, $weight: 0.5)
-{
-    @return $color1 * $weight + $color2 * (1.0 - $weight);
-}
-
 @mixin lighten($color, $percent)
 {
     @return hsla(hue($color), saturation($color), lightness($color) + $precent, alpha($color));
+}
+
+@mixin mix($color1, $color2, $weight: 0.5)
+{
+    @return $color1 * $weight + $color2 * (1.0 - $weight);
 }
 
 @mixin opacify($color, $number)
@@ -73,9 +78,19 @@
     @return alpha($color);
 }
 
-@mixin remove-unit($value)
+@mixin percentage($value)
 {
-    @return $value / integer(1 + unit($value));
+    @return decimal_number(remove_unit($value) + "%");
+}
+
+@mixin quote($string)
+{
+    @return string($string);
+}
+
+@mixin remove_unit($value)
+{
+    @return $value / integer("1" + unit($value));
 }
 
 @mixin saturate($color, $percent)
@@ -83,16 +98,32 @@
     @return hsla(hue($color), saturation($color) + $precent, lightness($color), alpha($color));
 }
 
-@mixin set-unit($value, $unit)
+@mixin set_unit($value, $unit)
 {
-    @return type-of($value) = "integer"
-                ? integer(remove-unit($value) + $unit)
-                : decimal-number(remove-unit($value) + $unit);
+    @return type_of($value) = "integer" && $unit != "%"
+                ? integer(remove_unit($value) + $unit)
+                : decimal_number(remove_unit($value) + $unit);
 }
 
 @mixin transparentize($color, $number)
 {
     @return rgba($color, alpha($color) - $number);
+}
+
+@mixin unique_id()
+{
+    $_csspp_id: $_csspp_id + 1 !global;
+    @return identifier("_csspp_unique" + $_csspp_id);
+}
+
+@mixin unitless($number)
+{
+    @return unit($number) = "";
+}
+
+@mixin unquote($identifier)
+{
+    @return identifier($identifier);
 }
 
 // Local Variables:

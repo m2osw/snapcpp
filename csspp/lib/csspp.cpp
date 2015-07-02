@@ -35,6 +35,13 @@
 #include <sstream>
 #include <iostream>
 
+/** \brief The namespace of all the classes in the CSS Preprocessor.
+ *
+ * All the classes and many definitions appear under 'csspp'. It
+ * is strongly advised that you do not do a 'using csspp;' because
+ * some of the definitions are likely to spoil your namespace in
+ * a way you do not want it to.
+ */
 namespace csspp
 {
 

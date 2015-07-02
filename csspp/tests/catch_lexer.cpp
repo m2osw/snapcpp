@@ -3842,7 +3842,7 @@ TEST_CASE("Numbers", "[lexer] [number]")
     // (we limit those to 8 digits at this time)
     {
         std::stringstream ss;
-        ss << "decimal_part_too_long: 1.0000000000000000000";
+        ss << "decimal_part_too_long: 1.000000000000000000000";
         csspp::position pos("test.css");
         csspp::lexer l(ss, pos);
 

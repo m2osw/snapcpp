@@ -73,6 +73,7 @@ void compare(std::string const & generated, std::string const & expected, char c
 
 std::string get_script_path();
 std::string get_version_script_path();
+std::string get_default_variables();
 
 } // csspp_test namespace
 #endif

@@ -28,15 +28,13 @@
  * into in string as small as possible (i.e. compress colors.)
  */
 
-#include "csspp/color.h"
-
 #include "csspp/lexer.h"
+
 #include "csspp/exceptions.h"
 
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 
 namespace csspp
 {
