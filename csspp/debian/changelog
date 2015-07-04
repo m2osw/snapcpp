@@ -1,3 +1,11 @@
+csspp (1.0.2~trusty) trusty; urgency=high
+
+  * Fixed the TRUE and FALSE in the node header as these may be #define names.
+  * Scripts were not being added to the library package as expected.
+  * Various small enhancements.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 10 Jun 2015 05:18:21 -0700
+
 csspp (1.0.1~trusty) trusty; urgency=high
 
   * First public release.
