@@ -1,3 +1,9 @@
+snapcmakemodules (1.0.24.1~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Thu, 02 Jul 2015 15:50:37 -0700
+
 snapcmakemodules (1.0.24~trusty) trusty; urgency=high
 
   * Making an official version to publish csspp.
