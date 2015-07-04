@@ -36,6 +36,9 @@ generated.
 The INSTALL in the root directory tells you how to generate the
 distribution directory (or dev/INSTALL in the csspp project itself.)
 
+We will be looking at making this simpler with time... for now, the
+environment is a bit convoluted.
+
 # Contact
 
 If you have any problems, questions, suggestions, feel free to post
