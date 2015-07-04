@@ -351,7 +351,6 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return column_type_t::CT_int8_value;
     }
     else if(n == "content::final"
-         || n == "content::files::compressor"
          || n.startsWith("content::files::reference::")
          || n == "epayment_paypal::maximum_repeat_failures"
          || n == "favicon::sitewide"
@@ -377,6 +376,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::files::image_width"
          || n == "content::files::size"
          || n == "content::files::size::gzip_compressed"
+         || n == "content::files::size::minified"
+         || n == "content::files::size::minified::gzip_compressed"
          || n == "content::revision_control::attachment::current_branch"
          || n == "content::revision_control::attachment::current_working_branch"
          || n == "content::revision_control::current_branch"

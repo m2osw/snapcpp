@@ -26,6 +26,7 @@ FILES="plugins/ecommerce/ecommerce.js
        plugins/list/list/list.js
        plugins/locale_widgets/locale-timezone.js
        plugins/output/output.js
+       plugins/output/fixed-box.js
        plugins/output/popup.js
        plugins/output/rotate-animation.js
        plugins/sendmail/unsubscribe.js

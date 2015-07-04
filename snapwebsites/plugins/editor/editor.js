@@ -4741,6 +4741,8 @@ snapwebsites.Editor.prototype.initUserActivity_ = function()
  */
 snapwebsites.Editor.prototype.resetFormsTimeout = function()
 {
+    var key = null;
+
     for(key in this.editorForms_)
     {
         if(this.editorForms_.hasOwnProperty(key))
