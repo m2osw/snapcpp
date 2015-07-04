@@ -67,11 +67,11 @@ TEST_CASE("Node types", "[node] [type]")
                 REQUIRE(n->get_boolean() == b);
                 if(w == csspp::node_type_t::OPEN_CURLYBRACKET)
                 {
-                    REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_INVALID);
                 }
                 else
                 {
-                    REQUIRE(n->to_boolean() == (b ? csspp::boolean_t::TRUE : csspp::boolean_t::FALSE));
+                    REQUIRE(n->to_boolean() == (b ? csspp::boolean_t::BOOLEAN_TRUE : csspp::boolean_t::BOOLEAN_FALSE));
                 }
             }
             break;
@@ -86,7 +86,7 @@ TEST_CASE("Node types", "[node] [type]")
                 // the to_boolean() converts the value not the f_boolean field
                 // this test MUST happen before the next or we would not know
                 // whether it  true or false
-                REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+                REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
             }
             break;
 
@@ -108,14 +108,14 @@ TEST_CASE("Node types", "[node] [type]")
             {
                 if(w == csspp::node_type_t::INTEGER)
                 {
-                    REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
                 }
                 csspp::integer_t i(static_cast<csspp::integer_t>(rand()) + (static_cast<csspp::integer_t>(rand()) << 32));
                 n->set_integer(i);
                 REQUIRE(n->get_integer() == i);
                 if(w == csspp::node_type_t::INTEGER)
                 {
-                    REQUIRE(n->to_boolean() == (i != 0 ? csspp::boolean_t::TRUE : csspp::boolean_t::FALSE));
+                    REQUIRE(n->to_boolean() == (i != 0 ? csspp::boolean_t::BOOLEAN_TRUE : csspp::boolean_t::BOOLEAN_FALSE));
                 }
             }
             break;
@@ -132,13 +132,13 @@ TEST_CASE("Node types", "[node] [type]")
         {
         case csspp::node_type_t::DECIMAL_NUMBER:
         case csspp::node_type_t::PERCENT:
-            REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+            REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
             n->set_decimal_number(123.456);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
             REQUIRE(n->get_decimal_number() == 123.456);
 #pragma GCC diagnostic pop
-            REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+            REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_TRUE);
             break;
 
         default:
@@ -167,13 +167,13 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::VARIABLE_FUNCTION:
             if(w == csspp::node_type_t::STRING)
             {
-                REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+                REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
             }
             n->set_string("test-string");
             REQUIRE(n->get_string() == "test-string");
             if(w == csspp::node_type_t::STRING)
             {
-                REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+                REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_TRUE);
             }
             break;
 
@@ -280,7 +280,7 @@ TEST_CASE("Node types", "[node] [type]")
                 // try adding one child
                 if(w == csspp::node_type_t::LIST)
                 {
-                    REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
                 }
                 REQUIRE(n->empty());
                 REQUIRE(n->size() == 0);
@@ -298,7 +298,7 @@ TEST_CASE("Node types", "[node] [type]")
                 n->add_child(child1);
                 if(w == csspp::node_type_t::LIST)
                 {
-                    REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_TRUE);
                 }
                 REQUIRE(n->size() == 1);
                 REQUIRE_FALSE(n->empty());
@@ -309,7 +309,7 @@ TEST_CASE("Node types", "[node] [type]")
                 n->add_child(child2);
                 if(w == csspp::node_type_t::LIST)
                 {
-                    REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_TRUE);
                 }
                 REQUIRE(n->size() == 2);
                 REQUIRE_FALSE(n->empty());
@@ -336,7 +336,7 @@ TEST_CASE("Node types", "[node] [type]")
                 // fully empty again, all fails like follow
                 if(w == csspp::node_type_t::LIST)
                 {
-                    REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+                    REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
                 }
                 REQUIRE(n->empty());
                 REQUIRE(n->size() == 0);
@@ -418,7 +418,7 @@ TEST_CASE("Node types", "[node] [type]")
             break;
 
         default:
-            REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+            REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_INVALID);
             break;
 
         }
@@ -483,23 +483,23 @@ TEST_CASE("True and False", "[node] [type] [output]")
         csspp::position pos("test.css");
         csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::IDENTIFIER, pos));
 
-        REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+        REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_INVALID);
 
         n->set_string("true");
-        REQUIRE(n->to_boolean() == csspp::boolean_t::TRUE);
+        REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_TRUE);
 
         n->set_string("false");
-        REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+        REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
 
         n->set_string("null");
-        REQUIRE(n->to_boolean() == csspp::boolean_t::FALSE);
+        REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
 
         n->set_string("other");
-        REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+        REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_INVALID);
 
         // fortuitious...
         n->set_string("invalid");
-        REQUIRE(n->to_boolean() == csspp::boolean_t::INVALID);
+        REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_INVALID);
     }
 
     // no error left over

@@ -28,9 +28,9 @@ namespace csspp
 
 enum boolean_t
 {
-    INVALID = -1,
-    FALSE = 0,
-    TRUE = 1
+    BOOLEAN_INVALID = -1,
+    BOOLEAN_FALSE = 0,
+    BOOLEAN_TRUE = 1
 };
 
 enum class node_type_t

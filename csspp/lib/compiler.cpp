@@ -2133,9 +2133,9 @@ void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
     }
 
     boolean_t const r(expression::boolean(expr));
-    if(r == boolean_t::TRUE)
+    if(r == boolean_t::BOOLEAN_TRUE)
     {
-        // TRUE, we need the data which we put in the stream
+        // BOOLEAN_TRUE, we need the data which we put in the stream
         // at the position of the @if as if the @if and
         // expression never existed
         node::pointer_t block(n->get_child(1));
@@ -2146,7 +2146,7 @@ void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
         }
     }
 
-    if(next && r == boolean_t::FALSE)
+    if(next && r == boolean_t::BOOLEAN_FALSE)
     {
         // mark the else as not executed if r is false
         next->set_integer(g_if_or_else_false_so_far);
@@ -2157,7 +2157,7 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t id
 {
     node::pointer_t next;
 
-    // FALSE or INVALID, we remove the block to avoid
+    // BOOLEAN_FALSE or BOOLEAN_INVALID, we remove the block to avoid
     // executing it since we do not know whether it should
     // be executed or not; also we mark the next block as
     // "true" if it is an '@else' or '@else if'
@@ -2235,7 +2235,7 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t id
     // we are 'true' here; once one of the '@if' / '@else if' is 'true'
     // then we start with 'r = false'
     //
-    boolean_t r(status == g_if_or_else_false_so_far ? boolean_t::TRUE : boolean_t::FALSE);
+    boolean_t r(status == g_if_or_else_false_so_far ? boolean_t::BOOLEAN_TRUE : boolean_t::BOOLEAN_FALSE);
     if(n->size() != 1)
     {
         if(n->size() != 2 || !expr)
@@ -2252,19 +2252,19 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t id
         // not yet found a match (i.e. the starting '@if' was false
         // and any '@else if' were all false so far) so we check the
         // expression of this very '@else if' to know whether to go
-        // on or not; r is TRUE when the status allows us to check
+        // on or not; r is BOOLEAN_TRUE when the status allows us to check
         // the next expression
-        if(r == boolean_t::TRUE)
+        if(r == boolean_t::BOOLEAN_TRUE)
         {
             r = expression::boolean(expr);
         }
     }
 
-    if(r == boolean_t::TRUE)
+    if(r == boolean_t::BOOLEAN_TRUE)
     {
         status = g_if_or_else_executed;
 
-        // TRUE, we need the data which we put in the stream
+        // BOOLEAN_TRUE, we need the data which we put in the stream
         // at the position of the @if as if the @if and
         // expression never existed
         node::pointer_t block(n->get_child(n->size() == 1 ? 0 : 1));

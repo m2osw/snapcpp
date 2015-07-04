@@ -1,13 +1,16 @@
 #!/bin/bash
 #
 # File:
-#      CMakeLists.txt
+#      pack
 #
 # Description:
-#      Definitions to create the build environment with cmake
+#      A shell script used to generate the source package with all the
+#      Snap! Websites dependencies (which are all in one at this point.)
 #
 # Documentation:
-#      See the CMake documentation.
+#      This script is currently considered internal and is not directly
+#      documented. It may be useful to you, although it is likely that
+#      it won't be.
 #
 # License:
 #      csspp -- a CSS Preprocessor
@@ -32,6 +35,16 @@
 #
 
 set -e
+
+if ! test -d ../sources-repo
+then
+    echo "To use this script, we expect you to have a directory named"
+    echo "sources-repo, which is a pristine copy of the git repository."
+    echo "Create that directory like any other git repository and place"
+    echo "it as the parent of the csspp directory. The script will update"
+    echo "the files on each run."
+    exit 1
+fi
 
 cd ../sources-repo
 git pull origin master

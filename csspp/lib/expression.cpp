@@ -227,7 +227,7 @@ node::pointer_t expression::current() const
 boolean_t expression::boolean(node::pointer_t n)
 {
     boolean_t const result(n->to_boolean());
-    if(result == boolean_t::INVALID)
+    if(result == boolean_t::BOOLEAN_INVALID)
     {
         error::instance() << n->get_position()
                 << "a boolean expression was expected."

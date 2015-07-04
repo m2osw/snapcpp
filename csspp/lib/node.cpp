@@ -273,40 +273,40 @@ boolean_t node::to_boolean() const
     switch(f_type)
     {
     case node_type_t::BOOLEAN:
-        return f_boolean ? boolean_t::TRUE : boolean_t::FALSE;
+        return f_boolean ? boolean_t::BOOLEAN_TRUE : boolean_t::BOOLEAN_FALSE;
 
     case node_type_t::IDENTIFIER:
         if(f_string == "true")
         {
-            return boolean_t::TRUE;
+            return boolean_t::BOOLEAN_TRUE;
         }
         if(f_string == "false"
         || f_string == "null")
         {
-            return boolean_t::FALSE;
+            return boolean_t::BOOLEAN_FALSE;
         }
-        return boolean_t::INVALID;
+        return boolean_t::BOOLEAN_INVALID;
 
     case node_type_t::INTEGER:
-        return f_integer != 0 ? boolean_t::TRUE : boolean_t::FALSE;
+        return f_integer != 0 ? boolean_t::BOOLEAN_TRUE : boolean_t::BOOLEAN_FALSE;
 
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::PERCENT:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-        return f_decimal_number != 0.0 ? boolean_t::TRUE : boolean_t::FALSE;
+        return f_decimal_number != 0.0 ? boolean_t::BOOLEAN_TRUE : boolean_t::BOOLEAN_FALSE;
 #pragma GCC diagnostic pop
 
     case node_type_t::STRING:
-        return f_string.empty() ? boolean_t::FALSE : boolean_t::TRUE;
+        return f_string.empty() ? boolean_t::BOOLEAN_FALSE : boolean_t::BOOLEAN_TRUE;
 
     case node_type_t::ARRAY:
     case node_type_t::LIST:
     case node_type_t::MAP:
-        return f_children.empty() ? boolean_t::FALSE : boolean_t::TRUE;
+        return f_children.empty() ? boolean_t::BOOLEAN_FALSE : boolean_t::BOOLEAN_TRUE;
 
     default:
-        return boolean_t::INVALID;
+        return boolean_t::BOOLEAN_INVALID;
 
     }
     /*NOTREACHED*/
