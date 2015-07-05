@@ -64,19 +64,19 @@ SNAP_PLUGIN_START(path, 1, 0)
 class path_error_callback : public permission_error_callback
 {
 public:
-    path_error_callback(snap_child *snap, content::path_info_t& ipath)
+    path_error_callback(snap_child * snap, content::path_info_t & ipath)
         : f_snap(snap)
         , f_ipath(ipath)
         //, f_plugin(nullptr)
     {
     }
 
-    void set_plugin(plugins::plugin *p)
+    void set_plugin(plugins::plugin * p)
     {
         f_plugin = p;
     }
 
-    void on_error(snap_child::http_code_t err_code, QString const& err_name, QString const& err_description, QString const& err_details, bool const err_by_mime_type)
+    void on_error(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
     {
         if(err_by_mime_type && f_plugin)
         {
@@ -123,8 +123,8 @@ public:
     }
 
     void on_redirect(
-            /* message::set_error() */ QString const& err_name, QString const& err_description, QString const& err_details, bool err_security,
-            /* snap_child::page_redirect() */ QString const& path, snap_child::http_code_t const http_code)
+            /* message::set_error() */ QString const & err_name, QString const & err_description, QString const & err_details, bool err_security,
+            /* snap_child::page_redirect() */ QString const & path, snap_child::http_code_t const http_code)
     {
         // TODO: remove this message dependency
         messages::messages::instance()->set_error(err_name, err_description, err_details, err_security);
@@ -186,7 +186,7 @@ private:
  *
  * \param[in] p  The plugin that can handle the path specified in the signal.
  */
-void dynamic_plugin_t::set_plugin(plugins::plugin *p)
+void dynamic_plugin_t::set_plugin(plugins::plugin * p)
 {
 //std::cerr << "handle_dynamic_path(" << p->get_plugin_name() << ")\n";
     if(f_plugin != nullptr)
@@ -223,7 +223,7 @@ void dynamic_plugin_t::set_plugin(plugins::plugin *p)
  * \li jquery-1.2.3.min.js
  * \li jquery-1.2.3.min.js.gz
  *
- * File types of filenames that we support in core:
+ * Type of filenames that we support in core:
  *
  * \li Compressions: .gz, .bz2, .xz, ...
  * \li Minified: .min.js, .min.css
@@ -234,10 +234,11 @@ void dynamic_plugin_t::set_plugin(plugins::plugin *p)
  * \li Book: .pdf on the root page of a book tree
  *
  * \param[in] plugin  The plugin that understands the path.
+ * \param[in] cpath  The path replacing the one used by the user.
  */
-void dynamic_plugin_t::set_plugin_if_renamed(plugins::plugin *p, QString const& cpath)
+void dynamic_plugin_t::set_plugin_if_renamed(plugins::plugin * p, QString const & cpath)
 {
-    if(f_plugin_if_renamed)
+    if(f_plugin_if_renamed != nullptr)
     {
         // in this case we really cannot handle the path properly...
         // I'm not too sure how we can resolve the problem because we
@@ -313,7 +314,7 @@ QString path::description() const
  *
  * \param[in] snap  The child handling this request.
  */
-void path::on_bootstrap(::snap::snap_child *snap)
+void path::on_bootstrap(::snap::snap_child * snap)
 {
     f_snap = snap;
 
@@ -331,7 +332,7 @@ void path::on_bootstrap(::snap::snap_child *snap)
  *
  * \return A pointer to the plugin that owns this path.
  */
-plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_callback& err_callback)
+plugins::plugin *path::get_plugin(content::path_info_t & ipath, permission_error_callback & err_callback)
 {
     // get the name of the plugin that owns this URL 
     plugins::plugin *owner_plugin(nullptr);
@@ -411,12 +412,12 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
 //std::cerr << "Testing for page dynamically [" << ipath.get_cpath() << "]\n";
         dynamic_plugin_t dp;
         can_handle_dynamic_path(ipath, dp);
-        owner_plugin = dp.get_plugin();
 
+        owner_plugin = dp.get_plugin();
         if(owner_plugin == nullptr)
         {
             // a plugin (such as the attachment, images, or search plugins)
-            // may take care of this path
+            // may take care of this path by renaming it
             owner_plugin = dp.get_plugin_if_renamed();
             if(owner_plugin != nullptr)
             {
@@ -454,13 +455,13 @@ plugins::plugin *path::get_plugin(content::path_info_t& ipath, permission_error_
  * \param[in,out] err_callback  An object with on_error() and on_redirect()
  *                              functions.
  */
-void path::verify_permissions(content::path_info_t& ipath, permission_error_callback& err_callback)
+void path::verify_permissions(content::path_info_t & ipath, permission_error_callback & err_callback)
 {
     QString action(ipath.get_parameter("action"));
     if(action.isEmpty())
     {
         QString const qs_action(f_snap->get_server_parameter("qs_action"));
-        snap_uri const& uri(f_snap->get_uri());
+        snap_uri const & uri(f_snap->get_uri());
         if(uri.has_query_option(qs_action))
         {
             // the user specified an action
@@ -476,7 +477,7 @@ void path::verify_permissions(content::path_info_t& ipath, permission_error_call
         ipath.set_parameter("action", action);
     }
 
-    SNAP_LOG_TRACE() << "verify_permissions(): ipath=" << ipath.get_key() << ", action=" << action;
+    SNAP_LOG_TRACE("verify_permissions(): ipath=") << ipath.get_key() << ", action=" << action;
 
     // only actions that are defined in the permission types are
     // allowed, anything else is funky action from a hacker or
@@ -739,9 +740,21 @@ bool path::check_for_redirect_impl(content::path_info_t& ipath)
  * offer another way to handle a path than checking the database (which
  * has priority and thus this function never gets called if that happens.)
  *
+ * A good example of this signal can be found in the attachment plugin
+ * which accepts paths such as an attachment with .gz to download the
+ * compressed version of a file.
+ *
+ * The char_chart plugin shows you a way to handle a large number of
+ * dynamic pages under a specific path.
+ *
+ * The favicon shows how a certain files can be selected dynamically.
+ *
+ * The qrcode plugin shows how one can create an image dynamically,
+ * using a path very similar to the char_chart creating HTML pages.
+ *
  * \param[in] ipath  The canonicalized path to be checked.
- * \param[in.out] plugin_info  Will hold the plugin that can handle this
- *                             dynamic path.
+ * \param[in.out] plugin_info  Will hold information about the plugin that
+ *                             can handle this dynamic path.
  */
 
 

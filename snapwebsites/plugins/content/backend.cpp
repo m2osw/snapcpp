@@ -382,10 +382,10 @@ void content::backend_process_files()
     QtCassandra::QCassandraRow::pointer_t new_row(files_table->row(get_name(name_t::SNAP_NAME_CONTENT_FILES_NEW)));
 
 // test this file over and over again until it worked
-new_row->cell(QByteArray::fromHex("e8679901999b15d6dbdff03192a5d160"))->setValue(true);
-signed char const ref(1);
-files_table->row(QByteArray::fromHex("e8679901999b15d6dbdff03192a5d160"))->cell("content::files::reference::http://csnap.m2osw.com/css/finball/style.css")->setValue(ref);
-std::cerr << "-------------------------------------- backend_process_files() START\n";
+//new_row->cell(QByteArray::fromHex("1f2bcb1bd25c07eb88373f7c9f50adb6"))->setValue(true);
+//signed char const ref(1);
+//files_table->row(QByteArray::fromHex("1f2bcb1bd25c07eb88373f7c9f50adb6"))->cell("content::files::reference::http://csnap.m2osw.com/css/finball/style.css")->setValue(ref);
+//std::cerr << "-------------------------------------- backend_process_files() START\n";
 
     QtCassandra::QCassandraColumnRangePredicate column_predicate;
     column_predicate.setCount(100); // should this be a parameter?
@@ -447,7 +447,6 @@ std::cerr << "-------------------------------------- backend_process_files() STA
                             int8_t const reference_value(content_cell->value().signedCharValue());
                             if(attachment_key.startsWith(site_key_utf8))
                             {
-std::cerr << "------------------------------ got file [" << attachment_key.data() << "] -> ref = " << static_cast<int>(reference_value) << "\n";
                                 // if not 1, then it was already checked
                                 if(reference_value == 1)
                                 {
@@ -516,7 +515,6 @@ std::cerr << "------------------------------ got file [" << attachment_key.data(
             }
         }
     }
-std::cerr << "-------------------------------------- backend_process_files() END--before \"crashing\"\n";
 }
 
 
@@ -601,12 +599,10 @@ void content::backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file
  */
 void content::backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file)
 {
-std::cerr << "***\n*** Minify " << file.get_parent_cpath() << " ?\n***\n";
     bool const is_css(file.get_parent_cpath().startsWith("css/"));
     if(is_css)
     {
         // this is considered a CSS file
-std::cerr << "***\n*** Okay trying to minify: " << file.get_parent_cpath() << " + " << file.get_file().get_filename() << "\n***\n";
         std::stringstream error_output;
         csspp::error::instance().set_error_stream(error_output);
         QByteArray data(file.get_file().get_data());
@@ -619,7 +615,6 @@ std::cerr << "***\n*** Okay trying to minify: " << file.get_parent_cpath() << " 
         csspp::node::pointer_t root(p.stylesheet());
         if(!error_tracker.error_happened())
         {
-std::cerr << "+++ parser ran with success\n";
             csspp::compiler c;
             c.set_root(root);
             c.set_date_time_variables(time(nullptr));
@@ -641,13 +636,11 @@ std::cerr << "+++ parser ran with success\n";
             }
             if(!error_tracker.error_happened())
             {
-std::cerr << "+++ compiler ran with success\n";
                 std::stringstream out;
                 csspp::assembler a(out);
                 a.output(c.get_root(), csspp::output_mode_t::COMPRESSED);
                 if(!error_tracker.error_happened())
                 {
-std::cerr << "+++ assembler ran with success\n";
                     // it all worked so save the result
                     // (the filename should be <filename>.min.css for this specific entry)
                     std::string const result(out.str());
@@ -676,9 +669,7 @@ std::cerr << "+++ assembler ran with success\n";
                 }
             }
         }
-std::cerr << "+++ error or success... output messages\n";
         std::string const messages(error_output.str());
-std::cerr << "+++ messages are [" << messages << "]\n";
         if(!messages.empty())
         {
             if(error_tracker.error_happened())

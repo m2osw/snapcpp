@@ -33,12 +33,6 @@ namespace path
 class dynamic_plugin_t
 {
 public:
-                        dynamic_plugin_t()
-                            : f_plugin(nullptr)
-                            , f_plugin_if_renamed(nullptr)
-                        {
-                        }
-
     plugins::plugin *   get_plugin() const { return f_plugin; }
     void                set_plugin(plugins::plugin * p);
 
@@ -51,8 +45,8 @@ private:
                         dynamic_plugin_t(dynamic_plugin_t const & rhs);
                         dynamic_plugin_t & operator = (dynamic_plugin_t const & rhs);
 
-    plugins::plugin *   f_plugin;
-    plugins::plugin *   f_plugin_if_renamed;
+    plugins::plugin *   f_plugin = nullptr;
+    plugins::plugin *   f_plugin_if_renamed = nullptr;
     QString             f_cpath_renamed;
 };
 

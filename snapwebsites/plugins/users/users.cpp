@@ -4062,12 +4062,12 @@ void users::set_referrer( QString path )
     path = ipath.get_key();  // make sure it is canonicalized
 
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    if(!content_table->exists(ipath.get_key()))
+    if(!content_table->exists(ipath.get_key())
+    && ipath.get_real_key().isEmpty())
     {
-        // TODO: this test fails when we hit dynamic pages!
-        //       we will have to test the real path once it is fixed to
-        //       see whether it is possible that a parent would accept
-        //       this page when we cannot find the page directly
+        // TODO: dynamic pages are expected to end up as a "real key" entry
+        //       we will need to do more tests to make sure this works as
+        //       expected, although this code should work already
         //
         SNAP_LOG_ERROR("path \"")(path)("\" was not found in the database?!");
         return;

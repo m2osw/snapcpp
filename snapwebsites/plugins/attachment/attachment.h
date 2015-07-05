@@ -77,6 +77,9 @@ public:
 private:
     void                content_update(int64_t variables_timestamp);
 
+    bool                check_for_uncompressed_file(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+    bool                check_for_minify(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
+
     zpsnap_child_t      f_snap;
 };
 
