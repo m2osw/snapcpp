@@ -9,7 +9,7 @@
 #      See the CMake documentation.
 #
 # License:
-#      Copyright (c) 2011-2013 Made to Order Software Corp.
+#      Copyright (c) 2011-2015 Made to Order Software Corp.
 #
 #      http://snapwebsites.org/
 #      contact@m2osw.com
@@ -150,6 +150,8 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
         -DLOG4CPLUS_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/x86_64-linux-gnu/liblog4cplus.so
         -DQTSERIALIZATION_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include/QtSerialization
         -DLIBTLD_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libtld.so
+        -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
+        -DCSSPP_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libcsspp.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     DEPENDS zipios libQtCassandra libQtSerialization libtld as2js log4cplus
 )
