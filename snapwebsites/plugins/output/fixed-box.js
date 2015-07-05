@@ -325,18 +325,33 @@ snapwebsites.FixedBox.prototype.scrollVertically_ = function()
         max = this.minPosition_ + this.container_.height()
                 - this.box_.outerHeight() - this.margin_;
 
-    if(pos < this.minPosition_)
+    if(pos <= this.minPosition_)
     {
-        pos = this.minPosition_;
+        this.box_.css("top", "0px");
+        this.box_.css("position", "static");
     }
-    else if(pos > max)
+    else if(pos >= max)
     {
-        pos = max;
+        pos = max - this.minPosition_;
+        this.box_.css("top", pos + "px");
+        this.box_.css("position", "static");
     }
-
-    pos -= this.minPosition_;
-
-    this.box_.css("top", pos + "px");
+    else
+    {
+        // in this case the position becomes fixed which
+        // glues the item at the top of the screen (+margin_)
+        //
+        // Note: we have to use a fixed position because of IE,
+        //       which otherwise bounces the box up and down like crazy
+        //       (they scroll the box, then run the JS which fixes the
+        //       position, then display the box with the new position,
+        //       Mozilla runs the JS before doing any refresh.)
+        //       In IE it still bounces a bit at the top and bottom
+        //       when scrolling "too fast".
+        //
+        this.box_.css("top", "0px");
+        this.box_.css("position", "fixed");
+    }
 };
 
 
@@ -460,7 +475,7 @@ snapwebsites.FixedBoxes.prototype.initFixedBoxes_ = function()
  *
  * @return {snapwebsites.FixedBox}
  */
-snapwebsites.FixedBoxes.prototy.findFixedBox = function(name)
+snapwebsites.FixedBoxes.prototype.findFixedBox = function(name)
 {
     return this.fixedBoxes_[name];
 };
