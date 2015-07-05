@@ -77,7 +77,7 @@ bool is_valid_char(csspp::wide_char_t c)
 
 } // no name namespace
 
-TEST_CASE("Assemble Two Rules", "[assembler]")
+TEST_CASE("Assemble two rules", "[assembler]")
 {
     // with many spaces
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -327,7 +327,7 @@ TEST_CASE("Assemble Two Rules", "[assembler]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Selectors", "[assembler] [selectors]")
+TEST_CASE("Assemble selectors", "[assembler] [selectors]")
 {
     // check various selectors without the operators
 
@@ -1113,7 +1113,7 @@ expected << "with " << scope[j] << " scope{color:#000}\n"
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Numbers", "[assembler] [numbers]")
+TEST_CASE("Assemble numbers", "[assembler] [numbers]")
 {
     // create strings with more single quotes (')
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -1204,7 +1204,7 @@ expected << "#wrapper div * span a:hover{"
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Unicode Range", "[assembler] [unicode-range] [at-keyword]")
+TEST_CASE("Assemble unicode range", "[assembler] [unicode-range] [at-keyword]")
 {
     // a valid @supports
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -1299,7 +1299,7 @@ TEST_CASE("Assemble Unicode Range", "[assembler] [unicode-range] [at-keyword]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Strings", "[assembler] [strings]")
+TEST_CASE("Assemble strings", "[assembler] [strings]")
 {
     // create strings with more single quotes (')
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -1708,7 +1708,7 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble C++ Comment", "[assembler] [comment]")
+TEST_CASE("Assemble C++ comment", "[assembler] [comment]")
 {
     // One line C++ comment
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -2240,7 +2240,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Functions", "[assembler] [function]")
+TEST_CASE("Assemble functions", "[assembler] [function]")
 {
     // Test with gradient() function
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -2502,7 +2502,7 @@ expected << ".error{color:#e09756}\n";
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble Operators", "[assembler] [operators]")
+TEST_CASE("Assemble operators", "[assembler] [operators]")
 {
     // Selector unary operator
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -2804,7 +2804,7 @@ expected << "a[b" << attribute_operator[op] << "3]{color:red}\n";
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assembler Modes", "[assembler] [mode]")
+TEST_CASE("Assembler modes", "[assembler] [mode]")
 {
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
         i <= static_cast<int>(csspp::output_mode_t::TIDY);
@@ -2838,7 +2838,7 @@ TEST_CASE("Assembler Modes", "[assembler] [mode]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Assembler Mode", "[assembler] [mode] [invalid]")
+TEST_CASE("Invalid assembler mode", "[assembler] [mode] [invalid]")
 {
     // with many spaces
     for(int i(0); i < 100; ++i)
@@ -2859,7 +2859,7 @@ TEST_CASE("Invalid Assembler Mode", "[assembler] [mode] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Inacceptable Nodes", "[assembler] [invalid]")
+TEST_CASE("Inacceptable nodes", "[assembler] [invalid]")
 {
     // list of "invalid" nodes in the assembler
     csspp::node_type_t node_types[] =

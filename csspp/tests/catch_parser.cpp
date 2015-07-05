@@ -46,7 +46,7 @@ namespace
 
 
 
-TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
+TEST_CASE("Simple stylesheets", "[parser] [stylesheet] [rules]")
 {
     {
         std::stringstream ss;
@@ -415,7 +415,7 @@ TEST_CASE("Simple Stylesheets", "[parser] [stylesheet] [rules]")
     }
 }
 
-TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
+TEST_CASE("Invalid stylesheets", "[parser] [stylesheet] [invalid]")
 {
     // closing '}' one too many times
     {
@@ -501,7 +501,7 @@ TEST_CASE("Invalid Stylesheets", "[parser] [stylesheet] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Rules", "[parser] [rule-list]")
+TEST_CASE("Simple rules", "[parser] [rule-list]")
 {
     // a simple valid rule
     {
@@ -612,7 +612,7 @@ TEST_CASE("Simple Rules", "[parser] [rule-list]")
     }
 }
 
-TEST_CASE("Nested Rules", "[parser] [rule-list]")
+TEST_CASE("Nested rules", "[parser] [rule-list]")
 {
     // at rule inside another at rule
     {
@@ -646,7 +646,7 @@ TEST_CASE("Nested Rules", "[parser] [rule-list]")
     }
 }
 
-TEST_CASE("Invalid Rules", "[parser] [rule-list] [invalid]")
+TEST_CASE("Invalid rules", "[parser] [rule-list] [invalid]")
 {
     // breaks on the <!--
     {
@@ -808,7 +808,7 @@ TEST_CASE("Invalid Rules", "[parser] [rule-list] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("One Simple Rule", "[parser] [rule]")
+TEST_CASE("One simple rule", "[parser] [rule]")
 {
     // a simple valid rule
     {
@@ -932,7 +932,7 @@ TEST_CASE("One Simple Rule", "[parser] [rule]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid One Rule", "[parser] [rule] [invalid]")
+TEST_CASE("Invalid one rule", "[parser] [rule] [invalid]")
 {
     // breaks on the <!--
     {
@@ -1122,7 +1122,7 @@ TEST_CASE("Invalid One Rule", "[parser] [rule] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Component Values", "[parser] [component-value]")
+TEST_CASE("Simple component values", "[parser] [component-value]")
 {
     // a simple valid rule
     {
@@ -1246,7 +1246,7 @@ TEST_CASE("Simple Component Values", "[parser] [component-value]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Component Values", "[parser] [component-value] [invalid]")
+TEST_CASE("Invalid component values", "[parser] [component-value] [invalid]")
 {
     // breaks on missing }
     {
@@ -1313,7 +1313,7 @@ TEST_CASE("Invalid Component Values", "[parser] [component-value] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple One Component Value", "[parser] [component-value]")
+TEST_CASE("Simple one component value", "[parser] [component-value]")
 {
     // a simple valid rule
     {
@@ -1394,7 +1394,7 @@ TEST_CASE("Simple One Component Value", "[parser] [component-value]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid One Component Value", "[parser] [component-value] [invalid]")
+TEST_CASE("Invalid one component value", "[parser] [component-value] [invalid]")
 {
     // breaks on missing }
     {
@@ -1514,7 +1514,7 @@ TEST_CASE("Invalid One Component Value", "[parser] [component-value] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Simple Declarations", "[parser] [declaration]")
+TEST_CASE("Simple declarations", "[parser] [declaration]")
 {
     // a simple valid declaration
     {
@@ -1690,7 +1690,7 @@ TEST_CASE("Simple Declarations", "[parser] [declaration]")
     }
 }
 
-TEST_CASE("Invalid Declarations", "[parser] [declaration] [invalid]")
+TEST_CASE("Invalid declarations", "[parser] [declaration] [invalid]")
 {
     // declarations must end with EOF
     {
@@ -1882,7 +1882,7 @@ TEST_CASE("Multi-line, multi-level stylesheet", "[parser] [rules]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Is Variable Set", "[parser] [variable] [invalid]")
+TEST_CASE("Is variable set", "[parser] [variable] [invalid]")
 {
     // simple test with a value + value (SASS compatible)
     {
@@ -2823,7 +2823,7 @@ TEST_CASE("Rules defined inside an @-Keyword", "[parser] [variable] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Parse Argify", "[parser] [stylesheet]")
+TEST_CASE("Parse argify", "[parser] [stylesheet]")
 {
     {
         std::stringstream ss;
@@ -3018,7 +3018,7 @@ TEST_CASE("Parse Argify", "[parser] [stylesheet]")
     }
 }
 
-TEST_CASE("Invalid Argify", "[parser] [stylesheet]")
+TEST_CASE("Invalid argify", "[parser] [stylesheet]")
 {
     // A starting comma is illegal
     {

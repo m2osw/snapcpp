@@ -463,7 +463,7 @@ TEST_CASE("Error messages when hidden", "[error] [output] [hide]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Error strean", "[error] [stream]")
+TEST_CASE("Error stream", "[error] [stream]")
 {
     {
         std::stringstream ss;

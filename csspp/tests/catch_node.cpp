@@ -431,7 +431,7 @@ TEST_CASE("Node types", "[node] [type]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid Tree Handling", "[node] [invalid]")
+TEST_CASE("Invalid tree handling", "[node] [invalid]")
 {
     // replace with an invalid child
     {
@@ -476,7 +476,7 @@ TEST_CASE("Invalid Tree Handling", "[node] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("True and False", "[node] [type] [output]")
+TEST_CASE("True and false", "[node] [type] [output]")
 {
     // test boolean values
     {
@@ -506,7 +506,7 @@ TEST_CASE("True and False", "[node] [type] [output]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Node Variables", "[node] [variable]")
+TEST_CASE("Node variables", "[node] [variable]")
 {
     // set/get variables
     {
@@ -550,7 +550,7 @@ TEST_CASE("Node Variables", "[node] [variable]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Node Flags", "[node] [flag]")
+TEST_CASE("Node flags", "[node] [flag]")
 {
     // read/write flags
     {
@@ -2219,7 +2219,7 @@ TEST_CASE("Print nodes", "[node] [output]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Font Metrics", "[node] [output]")
+TEST_CASE("Font metrics", "[node] [output]")
 {
     // create a tree of nodes, then print it to exercise all the possible
     // cases of the display() function

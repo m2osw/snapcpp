@@ -60,7 +60,7 @@
 //! add as many of the options available in those projects to the
 //! CSS Preprocessor.
 //!
-//! \li <a href="http://sass.org/">SASS</a>
+//! \li <a href="http://sass-lang.com/">SASS</a>
 //! \li <a href="http://lesscss.org/">{less}</a>
 //!
 //! If you know of other projects we could list here, let us know.
