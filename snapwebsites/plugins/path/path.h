@@ -33,6 +33,8 @@ namespace path
 class dynamic_plugin_t
 {
 public:
+                        dynamic_plugin_t() {}
+
     plugins::plugin *   get_plugin() const { return f_plugin; }
     void                set_plugin(plugins::plugin * p);
 
