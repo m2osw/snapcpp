@@ -4,6 +4,7 @@
 		<meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
 		<title>CSS Preprocessor | A fast command line tool and C++ library to work with CSS data</title>
 		<meta content="width=device-width, initial-scale=1" name="viewport">
+		<link href="http://csspp.org/favicon.ico" type="image/x-icon" rel="shortcut icon">
 		<style>
 			/* Mobile compatible CSS and Page */
 			html

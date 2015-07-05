@@ -249,9 +249,10 @@ then
         mkdir -p /usr/clients/www/lcov.csspp.org/public_html/csspp-$FULL_VERSION
         cp -r ${DIRNAME}_html/* /usr/clients/www/lcov.csspp.org/public_html/csspp-$FULL_VERSION/.
         cp ${DIRNAME}_html/statistics.html /usr/clients/www/lcov.csspp.org/public_html/csspp-$FULL_VERSION/.
-    fi
 
-    scp ${DIRNAME}/doc/front-page.html build.m2osw.com:/var/www/csspp/public_html/index.html
+        scp ${DIRNAME}/doc/front-page.html build.m2osw.com:/var/www/csspp/public_html/index.html
+        scp ${SOURCE_PATH}/doc/favicon.ico build.m2osw.com:/var/www/csspp/public_html/favicon.ico
+    fi
 fi
 
 echo "Process started  on $start_date"
