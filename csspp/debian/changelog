@@ -11,6 +11,7 @@ csspp (1.0.3~trusty) trusty; urgency=high
   * Changed the '[hide]' tag with '[hidden]' because '[hide]' is a
     special catch tag which prevents such tests from being run by default.
   * Updated the pack script to verify versions.
+  * Started test to verify the expression class.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sun,  5 Jul 2015 19:58:31 -0700
 

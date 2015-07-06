@@ -62,6 +62,7 @@ void type_supports_integer(node_type_t const type)
     switch(type)
     {
     case node_type_t::AN_PLUS_B:
+    case node_type_t::ARG:
     case node_type_t::AT_KEYWORD:
     case node_type_t::COMMENT:
     case node_type_t::INTEGER:
@@ -1080,7 +1081,21 @@ std::string node::to_string(int flags) const
                     }
                     else
                     {
-                        out << ",";
+                        switch(static_cast<node_type_t>(c->get_integer()))
+                        {
+                        case node_type_t::UNKNOWN: // this is the default if the integer is never set
+                        case node_type_t::COMMA:
+                            out << ",";
+                            break;
+
+                        case node_type_t::DIVIDE:
+                            out << "/";
+                            break;
+
+                        default:
+                            throw csspp_exception_logic("ARG only supports ',' and '/' as separators.");
+
+                        }
                     }
                     out << c->to_string(flags);
                 }

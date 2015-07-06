@@ -51,6 +51,7 @@ then
     echo "   '[compiler]'"
     echo "   '[csspp]'"
     echo "   '[error]'"
+    echo "   '[expression]'"
     echo "   '[lexer]'"
     echo "   '[node]'"
     echo "   '[nth-child]'"
@@ -69,7 +70,7 @@ then
     mkdir -p tmp/build
     echo "<html><head><title>Coverage</title></head><body><h1>Coverage</h1>" >tmp/build/index.html
     count=1
-    for t in assembler color compiler csspp error lexer node nth-child parser position unicode-range
+    for t in assembler color compiler csspp error expression lexer node nth-child parser position unicode-range
     do
         echo -n "`date +'%D %T'`: Building: $t ... "
         echo "<h2>${count}. <a href='csspp_coverage_${t}_html/index.html'>$t<a/></h2>" >>tmp/build/index.html

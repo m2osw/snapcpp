@@ -36,7 +36,7 @@ public:
 
     static bool             is_variable_set(node::pointer_t n, bool with_block);
     static bool             is_nested_declaration(node::pointer_t n);
-    static bool             argify(node::pointer_t n);
+    static bool             argify(node::pointer_t n, node_type_t const separator = node_type_t::COMMA);
 
 private:
     node::pointer_t         next_token();

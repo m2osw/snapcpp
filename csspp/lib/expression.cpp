@@ -870,6 +870,7 @@ node_type_t additive_operator(node::pointer_t n)
 node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
 {
     node_type_t type(node_type_t::UNKNOWN);
+    bool test_dimensions(true);
     integer_t ai;
     integer_t bi;
     decimal_number_t af;
@@ -878,23 +879,14 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
     switch(mix_node_types(lhs->get_type(), rhs->get_type()))
     {
     case mix_node_types(node_type_t::STRING, node_type_t::STRING):
+        if(!subtract)
         {
-            if(subtract)
-            {
-                error::instance() << lhs->get_position()
-                        << "incompatible types between "
-                        << lhs->get_type()
-                        << " and "
-                        << rhs->get_type()
-                        << " for operator '-'."
-                        << error_mode_t::ERROR_ERROR;
-                return node::pointer_t();
-            }
             // string concatenation
             node::pointer_t result(new node(node_type_t::STRING, lhs->get_position()));
             result->set_string(lhs->get_string() + rhs->get_string());
             return result;
         }
+        break;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
         // TODO: test that the dimensions are compatible
@@ -914,27 +906,50 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
         type = node_type_t::PERCENT;
+        test_dimensions = false;
         break;
 
     default:
-        {
-            node_type_t lt(lhs->get_type());
-            node_type_t rt(rhs->get_type());
+        break;
 
+    }
+
+    if(type == node_type_t::UNKNOWN)
+    {
+        node_type_t lt(lhs->get_type());
+        node_type_t rt(rhs->get_type());
+
+        error::instance() << lhs->get_position()
+                << "incompatible types between "
+                << lt
+                << (lt == node_type_t::IDENTIFIER || lt == node_type_t::STRING ? " (" + lhs->get_string() + ")" : "")
+                << " and "
+                << rt
+                << (rt == node_type_t::IDENTIFIER || rt == node_type_t::STRING ? " (" + rhs->get_string() + ")" : "")
+                << " for operator '"
+                << (subtract ? "-" : "+")
+                << "'."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+    }
+
+    if(test_dimensions)
+    {
+        std::string const ldim(lhs->get_string());
+        std::string const rdim(rhs->get_string());
+        if(ldim != rdim)
+        {
             error::instance() << lhs->get_position()
-                    << "incompatible types between "
-                    << lt
-                    << (lt == node_type_t::IDENTIFIER || lt == node_type_t::STRING ? " (" + lhs->get_string() + ")" : "")
-                    << " and "
-                    << rt
-                    << (rt == node_type_t::IDENTIFIER || rt == node_type_t::STRING ? " (" + rhs->get_string() + ")" : "")
-                    << " for operator '"
+                    << "incompatible dimensions: \""
+                    << ldim
+                    << "\" and \""
+                    << rdim
+                    << "\" cannot be used as is with operator '"
                     << (subtract ? "-" : "+")
                     << "'."
                     << error_mode_t::ERROR_ERROR;
             return node::pointer_t();
         }
-
     }
 
     node::pointer_t result(new node(type, lhs->get_position()));

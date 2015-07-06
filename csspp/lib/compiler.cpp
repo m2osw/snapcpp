@@ -837,14 +837,24 @@ void compiler::compile_declaration(node::pointer_t n)
         if(!ignore)
         {
             // ':' IDENTIFIER
-            // validate the identifier as only a small number can be used
+
+            node::pointer_t declaration_name(new node(node_type_t::STRING, declaration->get_position()));
+            declaration_name->set_string(declaration->get_string());
+
+            // check the identifier, if "has-font-metrics" is true, then
+            // slashes are viewed as the font metrics separator
+            //
             set_validation_script("validation/has-font-metrics");
-            node::pointer_t str(new node(node_type_t::STRING, declaration->get_position()));
-            str->set_string(declaration->get_string());
-            add_validation_variable("field_name", str);
+            add_validation_variable("field_name", declaration_name);
             bool const divide_font_metrics(run_validation(true));
 
-            parser::argify(declaration);
+            // if slash-separator returns true then slash (if present)
+            // is a separator like a comma in a list of arguments
+            set_validation_script("validation/slash-separator");
+            add_validation_variable("field_name", declaration_name);
+            bool const slash_separators(run_validation(true));
+
+            parser::argify(declaration, slash_separators ? node_type_t::DIVIDE : node_type_t::COMMA);
             expression args_expr(declaration, true);
             args_expr.set_variable_handler(&f_state);
             args_expr.compile_args(divide_font_metrics);

@@ -101,6 +101,7 @@ TEST_CASE("Node types", "[node] [type]")
         switch(w)
         {
         case csspp::node_type_t::AN_PLUS_B:
+        case csspp::node_type_t::ARG:
         case csspp::node_type_t::AT_KEYWORD:
         case csspp::node_type_t::COMMENT:
         case csspp::node_type_t::INTEGER:
@@ -1626,6 +1627,7 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                 {
                     // the defaults are empty...
                     REQUIRE(n->to_string(flags) == "");
+                    REQUIRE(n->get_integer() == 0);
 
                     // test with an actual function
                     csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
@@ -1662,6 +1664,7 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                 break;
 
             case csspp::node_type_t::COMPONENT_VALUE:
+                // test with the default (undefined) separator
                 {
                     // the defaults are empty...
                     REQUIRE(n->to_string(flags) == "");
@@ -1716,6 +1719,140 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     else
                     {
                         REQUIRE(n->to_string(flags) == "111,purple,301");
+                    }
+                }
+
+                // test again with "," as the ARG separator
+                {
+                    n->clear();
+
+                    // test with an actual function
+                    csspp::node::pointer_t a(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    a->set_integer(static_cast<int>(csspp::node_type_t::COMMA));
+                    n->add_child(a);
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    a->add_child(p);
+
+                    a.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    a->set_integer(static_cast<int>(csspp::node_type_t::COMMA));
+                    n->add_child(a);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("orange");
+                    a->add_child(p);
+
+                    a.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    a->set_integer(static_cast<int>(csspp::node_type_t::COMMA));
+                    n->add_child(a);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(33);
+                    a->add_child(p);
+
+                    if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                    {
+                        REQUIRE(n->to_string(flags) == "0,\"orange\",33");
+                    }
+                    else
+                    {
+                        REQUIRE(n->to_string(flags) == "0,orange,33");
+                    }
+
+                    // test with an actual function but not argified
+                    n->clear();
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(111);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::COMMA, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("purple");
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::COMMA, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(301);
+                    n->add_child(p);
+
+                    if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                    {
+                        REQUIRE(n->to_string(flags) == "111,\"purple\",301");
+                    }
+                    else
+                    {
+                        REQUIRE(n->to_string(flags) == "111,purple,301");
+                    }
+                }
+
+                // test again with "/" as the ARG separator
+                {
+                    n->clear();
+
+                    // test with an actual function
+                    csspp::node::pointer_t a(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    a->set_integer(static_cast<int>(csspp::node_type_t::DIVIDE));
+                    n->add_child(a);
+                    csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    a->add_child(p);
+
+                    a.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    a->set_integer(static_cast<int>(csspp::node_type_t::DIVIDE));
+                    n->add_child(a);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("orange");
+                    a->add_child(p);
+
+                    a.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+                    a->set_integer(static_cast<int>(csspp::node_type_t::DIVIDE));
+                    n->add_child(a);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(33);
+                    a->add_child(p);
+
+                    if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                    {
+                        REQUIRE(n->to_string(flags) == "0/\"orange\"/33");
+                    }
+                    else
+                    {
+                        REQUIRE(n->to_string(flags) == "0/orange/33");
+                    }
+
+                    // test with an actual function but not argified
+                    n->clear();
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(111);
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DIVIDE, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+                    p->set_string("purple");
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::DIVIDE, n->get_position()));
+                    n->add_child(p);
+                    p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+                    p->set_integer(301);
+                    n->add_child(p);
+
+                    if((flags & csspp::node::g_to_string_flag_show_quotes) != 0)
+                    {
+                        if((flags & csspp::node::g_to_string_flag_add_spaces) != 0)
+                        {
+                            REQUIRE(n->to_string(flags) == "111 / \"purple\" / 301");
+                        }
+                        else
+                        {
+                            REQUIRE(n->to_string(flags) == "111/\"purple\"/301");
+                        }
+                    }
+                    else
+                    {
+                        if((flags & csspp::node::g_to_string_flag_add_spaces) != 0)
+                        {
+                            REQUIRE(n->to_string(flags) == "111 / purple / 301");
+                        }
+                        else
+                        {
+                            REQUIRE(n->to_string(flags) == "111/purple/301");
+                        }
                     }
                 }
                 break;
@@ -1798,6 +1935,59 @@ TEST_CASE("Node to string", "[node] [type] [output]")
 
             // move to the next type
             w = static_cast<csspp::node_type_t>(static_cast<int>(w) + 1);
+        }
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Node to string ARG with wrong type", "[node] [output] [invalid]")
+{
+    // we expect the test suite to be compiled with the exact same version
+    for(int flags(0); flags < 4; ++flags)
+    {
+        for(csspp::node_type_t w(csspp::node_type_t::UNKNOWN);
+            w <= csspp::node_type_t::max_type;
+            w = static_cast<csspp::node_type_t>(static_cast<int>(w) + 1))
+        {
+            switch(w)
+            {
+            case csspp::node_type_t::UNKNOWN:
+            case csspp::node_type_t::COMMA:
+            case csspp::node_type_t::DIVIDE:
+                continue;
+
+            default:
+                break;
+
+            }
+            csspp::position pos("test.css");
+            csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::COMPONENT_VALUE, pos));
+
+            // test with an actual function
+            csspp::node::pointer_t a(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+            a->set_integer(static_cast<csspp::integer_t>(w));
+            n->add_child(a);
+            csspp::node::pointer_t p(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+            a->add_child(p);
+
+            a.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+            a->set_integer(static_cast<csspp::integer_t>(w));
+            n->add_child(a);
+            p.reset(new csspp::node(csspp::node_type_t::STRING, n->get_position()));
+            p->set_string("orange");
+            a->add_child(p);
+
+            a.reset(new csspp::node(csspp::node_type_t::ARG, n->get_position()));
+            a->set_integer(static_cast<csspp::integer_t>(w));
+            n->add_child(a);
+            p.reset(new csspp::node(csspp::node_type_t::INTEGER, n->get_position()));
+            p->set_integer(33);
+            a->add_child(p);
+
+            // w is not valid as an ARG separator so it throws
+            REQUIRE_THROWS_AS(n->to_string(flags), csspp::csspp_exception_logic);
         }
     }
 

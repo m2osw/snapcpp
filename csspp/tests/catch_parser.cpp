@@ -3205,6 +3205,70 @@ TEST_CASE("Invalid argify", "[parser] [stylesheet]")
         REQUIRE_ERRORS("test.css(1): error: dangling comma at the beginning of a list of arguments or selectors.\n");
     }
 
+    // calling argify with the wrong separators
+    {
+        std::stringstream ss;
+        ss << "a,b{color:red}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *n << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    IDENTIFIER \"a\"\n"
+"    COMMA\n"
+"    IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:false\n"
+"      COMPONENT_VALUE\n"
+"        IDENTIFIER \"color\"\n"
+"        COLON\n"
+"        IDENTIFIER \"red\"\n"
+
+            );
+
+        // Attempt to argify the list under each COMPONENT_VALUE using
+        // the wrong type
+        REQUIRE(n->is(csspp::node_type_t::LIST));
+
+        size_t const max_children(n->size());
+        for(size_t idx(0); idx < max_children; ++idx)
+        {
+            csspp::node::pointer_t component_value(n->get_child(idx));
+            REQUIRE(component_value->is(csspp::node_type_t::COMPONENT_VALUE));
+
+            for(csspp::node_type_t w(csspp::node_type_t::UNKNOWN);
+                w <= csspp::node_type_t::max_type;
+                w = static_cast<csspp::node_type_t>(static_cast<int>(w) + 1))
+            {
+                switch(w)
+                {
+                case csspp::node_type_t::COMMA:
+                case csspp::node_type_t::DIVIDE:
+                    continue;
+
+                default:
+                    break;
+
+                }
+                REQUIRE_THROWS_AS(csspp::parser::argify(component_value, w), csspp::csspp_exception_logic);
+            }
+        }
+
+        REQUIRE_ERRORS("");
+    }
+
     // no error left over
     REQUIRE_ERRORS("");
 }
