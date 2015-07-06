@@ -207,7 +207,7 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
     if((cpath.endsWith(".min.css")    && !cpath.endsWith("/.min.css"))
     || (cpath.endsWith(".min.css.gz") && !cpath.endsWith("/.min.css.gz")))
     {
-        if(check_for_minify(ipath, plugin_info))
+        if(check_for_minified_css(ipath, plugin_info))
         {
             return;
         }
@@ -281,9 +281,10 @@ bool attachment::check_for_uncompressed_file(content::path_info_t& ipath, path::
  *
  * \return true if this was a match.
  */
-bool attachment::check_for_minify(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+bool attachment::check_for_minified_css(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
 {
     content::name_t name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED);
+    content::name_t fallback_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
     QString cpath(ipath.get_cpath());
     if(cpath.endsWith(".min.css"))
     {
@@ -293,6 +294,7 @@ bool attachment::check_for_minify(content::path_info_t& ipath, path::dynamic_plu
     {
         cpath = cpath.left(cpath.length() - 11) + ".css";
         name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED_GZIP_COMPRESSED;
+        fallback_name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED;
     }
 
     content::path_info_t attachment_ipath;
@@ -311,18 +313,35 @@ bool attachment::check_for_minify(content::path_info_t& ipath, path::dynamic_plu
     }
 
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
-    if(!files_table->exists(attachment_key.binaryValue())
-    || !files_table->row(attachment_key.binaryValue())->exists(content::get_name(name)))
+    if(files_table->exists(attachment_key.binaryValue()))
     {
+        // check for the minified version
+        if(files_table->row(attachment_key.binaryValue())->exists(content::get_name(name)))
+        {
+            // tell the path plugin that we know how to handle this one
+            plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
+            ipath.set_parameter("attachment_field", content::get_name(name));
+            return true;
+        }
+
         // TODO? we could offer an on the fly version minimized and compressed?
-        return false;
+
+        // if not minified yet, at least try the regular version
+        if(files_table->row(attachment_key.binaryValue())->exists(content::get_name(fallback_name)))
+        {
+            // tell the path plugin that we know how to handle this one
+            plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
+            ipath.set_parameter("attachment_field", content::get_name(fallback_name));
+
+            // NOTE: There is no need to reduce the caching of this file,
+            //       after all the file is genuine and will work just as
+            //       well and once we sent it, large or small, not having
+            //       to reload another file is definitely faster.
+            return true;
+        }
     }
 
-    // tell the path plugin that we know how to handle this one
-    plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
-    ipath.set_parameter("attachment_field", content::get_name(name));
-
-    return true;
+    return false;
 }
 
 
