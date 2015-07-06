@@ -153,7 +153,7 @@ ConfigureMakeProject( PROJECT_NAME snapwebsites
         -DCSSPP_INCLUDE_DIR:PATH=${CMAKE_BINARY_DIR}/dist/include
         -DCSSPP_LIBRARY:PATH=${CMAKE_BINARY_DIR}/dist/lib/libcsspp.so
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    DEPENDS zipios libQtCassandra libQtSerialization libtld as2js log4cplus
+    DEPENDS zipios libQtCassandra libQtSerialization libtld as2js log4cplus csspp
 )
 
 ConfigureMakeProject( PROJECT_NAME snapwatchdog
