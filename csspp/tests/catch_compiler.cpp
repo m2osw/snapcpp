@@ -38,7 +38,7 @@
 #include <sys/stat.h>
 
 
-TEST_CASE("Compile set_date_time_variables() called too soon", "[compiler] [stylesheet] [attribute]")
+TEST_CASE("Compile set_date_time_variables() called too soon", "[compiler] [invalid]")
 {
         csspp::compiler c;
         REQUIRE_THROWS_AS(c.set_date_time_variables(csspp_test::get_now()), csspp::csspp_exception_logic);
@@ -472,6 +472,62 @@ TEST_CASE("Compile simple stylesheets", "[compiler] [stylesheet] [attribute]")
 "            EQUAL\n"
 "            INTEGER \"\" I:20\n"
 + csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // a simple test with '--no-logo' specified
+    {
+        std::stringstream ss;
+        ss << ".box\n"
+           << "{\n"
+           << "  color: $_csspp_no_logo ? red : blue;\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.set_no_logo();
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables(csspp_test::flag_no_logo_true) +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      PERIOD\n"
+"      IDENTIFIER \"box\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ff0000ff\n"
+//+ csspp_test::get_close_comment(true) -- with --no-logo this is gone
 
             );
 

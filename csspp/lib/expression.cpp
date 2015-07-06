@@ -1545,6 +1545,7 @@ node::pointer_t expression::unary()
     //      | DECIMAL_NUMBER
     //      | STRING
     //      | PERCENT
+    //      | BOOLEAN
     //      | HASH (-> COLOR)
     //      | UNICODE_RANGE
     //      | FUNCTION argument_list ')' -- including url()
@@ -1556,6 +1557,7 @@ node::pointer_t expression::unary()
     switch(f_current->get_type())
     {
     case node_type_t::ARRAY:
+    case node_type_t::BOOLEAN:
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::EXCLAMATION:  // this is not a BOOLEAN NOT operator...
     case node_type_t::INTEGER:

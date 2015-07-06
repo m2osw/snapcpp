@@ -1,3 +1,19 @@
+csspp (1.0.3~trusty) trusty; urgency=high
+
+  * Added a --no-logo command line option.
+  * Allow comments to appear within { ... }, but still just by themselves
+    (this allows for conditionally adding @preserve comments.)
+  * Added BOOLEAN support as a unary expression.
+  * Added "border-radius" as a "font metric" field since it uses '/' to
+    separate vertical and horizontal lengths.
+  * Fixed a compiler test tags which were completely incorrect.
+  * Added a test to verify the --no-logo option.
+  * Changed the '[hide]' tag with '[hidden]' because '[hide]' is a
+    special catch tag which prevents such tests from being run by default.
+  * Updated the pack script to verify versions.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  5 Jul 2015 19:58:31 -0700
+
 csspp (1.0.2~trusty) trusty; urgency=high
 
   * Fixed the TRUE and FALSE in the node header as these may be #define names.

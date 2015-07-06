@@ -279,6 +279,11 @@ void compiler::set_empty_on_undefined_variable(bool empty_on_undefined_variable)
     f_empty_on_undefined_variable = empty_on_undefined_variable;
 }
 
+void compiler::set_no_logo(bool no_logo)
+{
+    f_no_logo = no_logo;
+}
+
 void compiler::clear_paths()
 {
     f_paths.clear();
@@ -366,6 +371,17 @@ void compiler::add_header_and_footer()
         footer->add_child(footer_string);
         f_state.get_root()->add_child(footer);
     }
+
+    // the close.scss checks this flag
+    //
+    {
+        position pos("close.scss");
+        node::pointer_t no_logo(new node(node_type_t::VARIABLE, pos));
+        no_logo->set_string("_csspp_no_logo");
+        node::pointer_t value(new node(node_type_t::BOOLEAN, pos));
+        value->set_boolean(f_no_logo);
+        f_state.set_variable(no_logo, value, true);
+    }
 }
 
 void compiler::compile(node::pointer_t n)
@@ -449,6 +465,23 @@ void compiler::compile_component_value(node::pointer_t n)
         // we have a problem, we should already have had an error
         // somewhere?
         return;     // LCOV_EXCL_LINE
+    }
+
+    if(n->get_child(0)->is(node_type_t::COMMENT))
+    {
+        // XXX: verify that this is the right location to chek this
+        //      special case, we may want to do it only in the loop
+        //      that also accepts plain comments instead of here
+        //      which is a function that can get called from deep
+        //      inside...
+
+        // get parent of n, remove n from there, replace it by
+        // the comment
+        node::pointer_t parent(f_state.get_previous_parent());
+        size_t pos(parent->child_position(n));
+        parent->remove_child(pos);
+        parent->insert_child(pos, n->get_child(0));
+        return;
     }
 
     // was that COMPONENT_VALUE already compiled?

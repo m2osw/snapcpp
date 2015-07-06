@@ -71,9 +71,13 @@ private:
 void compare(std::string const & generated, std::string const & expected, char const * filename, int line);
 #define REQUIRE_TREES( a, b ) ::csspp_test::compare((a), (b), __FILE__, __LINE__)
 
+typedef uint64_t    default_variables_flags_t;
+
+default_variables_flags_t const         flag_no_logo_true = 0x0001;
+
 std::string get_script_path();
 std::string get_version_script_path();
-std::string get_default_variables();
+std::string get_default_variables(default_variables_flags_t const flags = 0);
 std::string get_close_comment(bool token = false);
 time_t get_now();
 

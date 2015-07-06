@@ -46,6 +46,17 @@ then
     exit 1
 fi
 
+# Get both versions
+. dev/version
+DEBIAN_VERSION=`dpkg-parsechangelog --show-field Version | sed -e s/~.*//`
+
+if test "$FULL_VERSION" != "$DEBIAN_VERSION"
+then
+    echo "error: CMakeLists.txt says version $FULL_VERSION and the changelog"
+    echo "error: says $DEBIAN_VERSION instead. Please fix and try again."
+    exit 1;
+fi
+
 cd ../sources-repo
 git pull origin master
 rm -f snapcmakemodules_*.tar.gz controlledvars_*.tar.gz advgetopt_*.tar.gz csspp_*.tar.gz

@@ -15,11 +15,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-@if $field_name != "font"
-and $field_name != "border-radius" // border-radius: 1em / 5em; (eliptic)
-{
-    @error $field_name + " never includes a font metric parameter.";
-}
+// This file is included unless you called the compiler set_no_logo() function
+// with 'true'; this is how the --no-logo option works.
+
+/* @preserve -- CSS file parsed by http://csspp.org/ v{$_csspp_version} on {$_csspp_usdate} */
 
 // Local Variables:
 // mode: scss
@@ -28,4 +27,3 @@ and $field_name != "border-radius" // border-radius: 1em / 5em; (eliptic)
 // End:
 
 // vim: ts=4 sw=4 et
-

@@ -271,7 +271,7 @@ TEST_CASE("Error messages", "[error] [output]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Error messages when hidden", "[error] [output] [hide]")
+TEST_CASE("Error messages when hidden", "[error] [output] [hidden]")
 {
     csspp::error_count_t error_count(csspp::error::instance().get_error_count());
     csspp::error_count_t warning_count(csspp::error::instance().get_warning_count());

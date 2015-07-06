@@ -111,6 +111,11 @@
  *      csspp ... -I my-scripts alfred-scripts extension-scripts ...
  * \endcode
  *
+ * \subsection no_logo --no-logo -- hide the "logo"
+ *
+ * This option prevents the "logo" comment from being added at the end
+ * of the output.
+ *
  * \subsection output --output or -o -- specify the output
  *
  * This option may be used to specify a filename used to save the
@@ -286,6 +291,14 @@ advgetopt::getopt::option const g_options[] =
         nullptr,
         "specify a path to various user defined CSS files; \"-\" to clear the list",
         advgetopt::getopt::required_multiple_argument
+    },
+    {
+        '\0',
+        0,
+        "no-logo",
+        nullptr,
+        "prevent the \"logo\" from appearing in the output file",
+        advgetopt::getopt::no_argument
     },
     {
         'o',
@@ -514,6 +527,11 @@ int pp::compile()
                 c.add_path(path);
             }
         }
+    }
+
+    if(f_opt->is_defined("no-logo"))
+    {
+        c.set_no_logo();
     }
 
     if(f_opt->is_defined(""))

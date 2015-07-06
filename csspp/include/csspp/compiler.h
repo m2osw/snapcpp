@@ -32,6 +32,7 @@ public:
 
     void                    set_date_time_variables(time_t now);
     void                    set_empty_on_undefined_variable(bool const empty_on_undefined_variable);
+    void                    set_no_logo(bool no_logo = true);
 
     void                    clear_paths();
     void                    add_path(std::string const & path);
@@ -111,6 +112,7 @@ private:
     validator_script_vector_t   f_validator_scripts;            // caching scripts
     node::pointer_t             f_current_validation_script;    // last script selected by set_validator_script()
     bool                        f_compiler_validating = false;
+    bool                        f_no_logo = false;
 };
 
 } // namespace csspp

@@ -188,11 +188,13 @@ std::string get_version_script_path()
     return g_version_script_path;
 }
 
-std::string get_default_variables()
+std::string get_default_variables(default_variables_flags_t const flags)
 {
 #define STRINGIFY_CONTENT(str)  #str
 #define STRINGIFY(str)  STRINGIFY_CONTENT(str)
     return
+
+std::string() +
 
 "    V:_csspp_day\n"
 "      LIST\n"
@@ -238,6 +240,10 @@ std::string get_default_variables()
 "      LIST\n"
 "        VARIABLE \"_csspp_month\"\n"
 "        STRING \"07\"\n"
+"    V:_csspp_no_logo\n"
+"      LIST\n"
+"        VARIABLE \"_csspp_no_logo\"\n"
+"        BOOLEAN B:" + ((flags & flag_no_logo_true) != 0 ? "true" : "false") + "\n"
 "    V:_csspp_patch\n"
 "      LIST\n"
 "        VARIABLE \"_csspp_patch\"\n"
@@ -715,7 +721,7 @@ std::string get_close_comment(bool token)
 {
     if(token)
     {
-        return "  COMMENT \"@preserve -- CSS file parsed by http://csspp.org/ v" CSSPP_VERSION " on 07/02/2015\" I:1\n";
+        return  "  COMMENT \"@preserve -- CSS file parsed by http://csspp.org/ v" CSSPP_VERSION " on 07/02/2015\" I:1\n";
     }
     else
     {
