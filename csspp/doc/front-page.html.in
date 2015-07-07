@@ -3,8 +3,11 @@
 	<head>
 		<meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
 		<title>CSS Preprocessor | A fast command line tool and C++ library to work with CSS data</title>
-		<meta content="width=device-width, initial-scale=1" name="viewport">
-		<link href="http://csspp.org/favicon.ico" type="image/x-icon" rel="shortcut icon">
+		<meta content="width=device-width, initial-scale=1" name="viewport"/>
+		<meta content="CSS Preprocessor is a powerful professional grade extension to the CSS 1, 2, and 3 languages." name="description"/>
+		<meta content="http://csspp.org/images/csspp-logo.png" property="og:image"/>
+		<link href="http://csspp.org/favicon.ico" type="image/x-icon" rel="shortcut icon"/>
+		<link href="https://plus.google.com/+AlexisWilke" rel="author"/>
 		<style>
 			/* Mobile compatible CSS and Page */
 			html
@@ -251,6 +254,32 @@
 					clear: none;
 				}
 			}
+			.license-logos
+			{
+				display: flex;
+				flex-direction: row;
+			}
+			.license-logos .license-item
+			{
+				flex: auto;
+			}
+			.license-logos .license-item.gpl
+			{
+				padding-top: 13px;
+				font-size: 150%;
+				font-weight: bold;
+				text-align: center;
+			}
+			.license-logos .license-item.gpl a
+			{
+				color: black;
+				text-decoration: none;
+			}
+			.license-logos .license-item.gpl a:hover
+			{
+				color: #f80;
+				font-variant: none;
+			}
 		</style>
 	</head>
 	<body>
@@ -360,6 +389,11 @@
 						dearly appreciate you sharing with us so we can continue
 						to improve the library much faster.
 					</p>
+					<div class="license-logos">
+						<div class="license-item gpl"><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html">GNU<br/>GPL v2</a></div>
+						<div class="license-item"><a href="http://opensource.org/"><img src="images/open-source-initiative-logo.png" width="72" height="82"/></a></div>
+						<div style="clear: both;"></div>
+					</div>
 				</li>
 			</ul>
 			<div style="clear: both;"></div>

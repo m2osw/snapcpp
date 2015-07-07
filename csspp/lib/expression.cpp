@@ -889,15 +889,25 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
         break;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-        // TODO: test that the dimensions are compatible
         ai = lhs->get_integer();
         bi = rhs->get_integer();
         type = node_type_t::INTEGER;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
+        bf = rhs->get_decimal_number();
+        type = node_type_t::DECIMAL_NUMBER;
+        break;
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
+        af = lhs->get_decimal_number();
+        bf = static_cast<decimal_number_t>(rhs->get_integer());
+        type = node_type_t::DECIMAL_NUMBER;
+        break;
+
+    case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
+        af = static_cast<decimal_number_t>(lhs->get_integer());
         bf = rhs->get_decimal_number();
         type = node_type_t::DECIMAL_NUMBER;
         break;
@@ -985,23 +995,7 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
         break;
 
     default:
-        {
-            node_type_t lt(lhs->get_type());
-            node_type_t rt(rhs->get_type());
-
-            error::instance() << lhs->get_position()
-                    << "incompatible types between "
-                    << lt
-                    << (lt == node_type_t::IDENTIFIER || lt == node_type_t::STRING ? " (" + lhs->get_string() + ")" : "")
-                    << " and "
-                    << rt
-                    << (rt == node_type_t::IDENTIFIER || rt == node_type_t::STRING ? " (" + rhs->get_string() + ")" : "")
-                    << " for operator '"
-                    << (subtract ? "-" : "+")
-                    << "'."
-                    << error_mode_t::ERROR_ERROR;
-            return node::pointer_t();
-        }
+        throw csspp_exception_logic("expression.cpp:multiply(): 'type' set to a valid which is not handled here."); // LCOV_EXCL_LINE
 
     }
 

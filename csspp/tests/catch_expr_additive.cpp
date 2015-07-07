@@ -421,6 +421,1864 @@ TEST_CASE("Expression integer +/- integer with incompatible dimensions", "[expre
         REQUIRE(c.get_root() == n);
     }
 
+    // string - string
+    {
+        std::stringstream ss;
+        ss << "div { width: \"lhs\" - 'rhs'; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: incompatible types between STRING (lhs) and STRING (rhs) for operator '-'.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Expression additive errors", "[expression] [additive] [invalid]")
+{
+    // an invalid unary value generates an error caught in additive
+    {
+        std::stringstream ss;
+        ss << "div { width: ?; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: unsupported type CONDITIONAL as a unary expression token.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // an invalid unary on the right side of the operator
+    {
+        std::stringstream ss;
+        ss << "div { width: 3 + ?; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: unsupported type CONDITIONAL as a unary expression token.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // cannot add a unicode range with anything
+    {
+        std::stringstream ss;
+        ss << "div { width: 3 + U+4??; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: incompatible types between INTEGER and UNICODE_RANGE for operator '+'.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Expression decimal number or integer +/- decimal number or integer", "[expression] [additive]")
+{
+    // add sizes without dimentions; both decimal with non zero decimals
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3.5 + 10.2; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:13.7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:13.7}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add sizes without dimentions; one integer and one decimal with non zero decimals
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3 + 10.2; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:13.2\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:13.2}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add sizes without dimentions; one integer and one decimal with non zero decimals
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3.5 + 10; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:13.5\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:13.5}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add sizes without dimentions; both decimal with zero decimals
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3.0 + 10.0; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:13\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:13}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add sizes without dimentions; one integer and one decimal with zero decimals
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3 + 10.0; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:13\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:13}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add sizes without dimentions; one integer and one decimal with zero decimals
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3.0 + 10; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:13\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:13}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract sizes without dimentions; with decimal numbers
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3.7 - 10.2; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:-6.5\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:-6.5}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract sizes without dimentions; with integer and decimal numbers
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3 - 10.2; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:-7.2\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:-7.2}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract sizes without dimentions; with integer and decimal numbers
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3.5 - 10; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:-6.5\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:-6.5}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract sizes without dimentions; with decimal numbers
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3.0 - 10.0; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:-7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:-7}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract sizes without dimentions; with an integer and a decimal number
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3.0 - 10; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:-7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:-7}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract sizes without dimentions; with an integer and a decimal number
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 3 - 10.0; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:-7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{z-index:-7}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add pixels; both decimal numbers
+    {
+        std::stringstream ss;
+        ss << "div { width: 3.5px + 10.2px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:13.7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:13.7px}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add pixels; both decimal numbers
+    {
+        std::stringstream ss;
+        ss << "div { width: 3.5px + 10.2px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:13.7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:13.7px}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add pixels; integer and decimal number
+    {
+        std::stringstream ss;
+        ss << "div { width: 3.5px + 10px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:13.5\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:13.5px}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add pixels; integer and decimal number
+    {
+        std::stringstream ss;
+        ss << "div { width: 3px + 10.2px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:13.2\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:13.2px}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtrat pixels; both decimals
+    {
+        std::stringstream ss;
+        ss << "div { width: 10.2px - 3.5px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:6.7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:6.7px}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtrat pixels; one integer and one decimal
+    {
+        std::stringstream ss;
+        ss << "div { width: 10px - 3.5px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:6.5\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:6.5px}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtrat pixels; one integer and one decimal
+    {
+        std::stringstream ss;
+        ss << "div { width: 10.2px - 3px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:7.2\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:7.2px}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add pixels; both decimal numbers
+    {
+        std::stringstream ss;
+        ss << "div { width: 3.0em + 10.0em; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"em\" D:13\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:13em}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add pixels; integer and decimal number
+    {
+        std::stringstream ss;
+        ss << "div { width: 3.0em + 10em; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"em\" D:13\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:13em}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add pixels; integer and decimal number
+    {
+        std::stringstream ss;
+        ss << "div { width: 3em + 10.0em; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"em\" D:13\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:13em}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtrat pixels; both decimals
+    {
+        std::stringstream ss;
+        ss << "div { width: 10.0em - 3.0em; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"em\" D:7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:7em}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtrat pixels; one integer and one decimal
+    {
+        std::stringstream ss;
+        ss << "div { width: 10em - 3.0em; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"em\" D:7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:7em}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtrat pixels; one integer and one decimal
+    {
+        std::stringstream ss;
+        ss << "div { width: 10.0em - 3em; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"em\" D:7\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(out.str() ==
+"div{width:7em}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Expression percent +/- percent", "[expression] [additive]")
+{
+    // add percents; both decimal with non zero decimals
+    {
+        std::stringstream ss;
+        ss << "div { height: 3.5% + 10.2%; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"height\"\n"
+"        ARG\n"
+"          PERCENT D:0.137\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{height:13.7%}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add percents; use what looks like an integer and a decimal number
+    {
+        std::stringstream ss;
+        ss << "div { height: 3% + 10.2%; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"height\"\n"
+"        ARG\n"
+"          PERCENT D:0.132\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{height:13.2%}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // add percents; use what looks like an integer and a decimal number
+    {
+        std::stringstream ss;
+        ss << "div { height: 3.5% + 10%; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"height\"\n"
+"        ARG\n"
+"          PERCENT D:0.135\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{height:13.5%}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract percents; both decimal with non zero decimals
+    {
+        std::stringstream ss;
+        ss << "div { height: 10.2% - 3.5%; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"height\"\n"
+"        ARG\n"
+"          PERCENT D:0.067\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{height:6.7%}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract percents; use what looks like an integer and a decimal number
+    {
+        std::stringstream ss;
+        ss << "div { height: 10.2% - 3%; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"height\"\n"
+"        ARG\n"
+"          PERCENT D:0.072\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{height:7.2%}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // subtract percents; use what looks like an integer and a decimal number
+    {
+        std::stringstream ss;
+        ss << "div { height: 10% - 3.5%; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"height\"\n"
+"        ARG\n"
+"          PERCENT D:0.065\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{height:6.5%}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
     // no error left over
     REQUIRE_ERRORS("");
 }
