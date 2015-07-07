@@ -253,7 +253,7 @@ then
 
         scp ${DIRNAME}/doc/front-page.html build.m2osw.com:/var/www/csspp/public_html/index.html
         scp ${SOURCE_PATH}/doc/favicon.ico build.m2osw.com:/var/www/csspp/public_html/favicon.ico
-        scp ${SOURCE_PATH}/doc/images/csspp.png build.m2osw.com:/var/www/csspp/public_html/images/csspp.png
+        scp ${SOURCE_PATH}/doc/images/csspp-logo.png build.m2osw.com:/var/www/csspp/public_html/images/csspp-logo.png
         scp ${SOURCE_PATH}/doc/images/open-source-initiative-logo.png build.m2osw.com:/var/www/csspp/public_html/images/open-source-initiative-logo.png
     fi
 fi

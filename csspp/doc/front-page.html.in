@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html prefix="og: http://ogp.me/ns#">
 	<head>
 		<meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
 		<title>CSS Preprocessor | A fast command line tool and C++ library to work with CSS data</title>
