@@ -77,7 +77,7 @@ bool is_valid_char(csspp::wide_char_t c)
 
 } // no name namespace
 
-TEST_CASE("Assemble two rules", "[assembler]")
+TEST_CASE("Assemble rules", "[assembler]")
 {
     // with many spaces
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
@@ -86,7 +86,8 @@ TEST_CASE("Assemble two rules", "[assembler]")
     {
         std::stringstream ss;
         ss << "div { color: black; }"
-           << "span { border: 3px solid #f7d0cf; }";
+           << "span { border: 3px solid #f7d0cf; }"
+           << "p { font: 13px/135% sans-serif; }";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -116,13 +117,14 @@ TEST_CASE("Assemble two rules", "[assembler]")
             REQUIRE(out.str() ==
 "div { color: #000 }\n"
 "span { border: 3px solid #f7d0cf }\n"
+"p { font: 13px/135% sans-serif }\n"
 + csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div{color:#000}span{border:3px solid #f7d0cf}\n"
+"div{color:#000}span{border:3px solid #f7d0cf}p{font:13px/135% sans-serif}\n"
 + csspp_test::get_close_comment()
                 );
             break;
@@ -137,6 +139,10 @@ TEST_CASE("Assemble two rules", "[assembler]")
 "{\n"
 "  border: 3px solid #f7d0cf;\n"
 "}\n"
+"p\n"
+"{\n"
+"  font: 13px/135% sans-serif;\n"
+"}\n"
 + csspp_test::get_close_comment()
                 );
             break;
@@ -145,6 +151,7 @@ TEST_CASE("Assemble two rules", "[assembler]")
             REQUIRE(out.str() ==
 "div{color:#000}\n"
 "span{border:3px solid #f7d0cf}\n"
+"p{font:13px/135% sans-serif}\n"
 + csspp_test::get_close_comment()
                 );
             break;
@@ -1889,7 +1896,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
         ss << "@document url(http://www.example.com/), regexp(\"https://.*\")\n"
            << "{\n"
            << "  body { width: 8.5in; height: 9in; }\n"
-           << "  div { border: 0.25in solid lightgray }\n"
+           << "  div { border: .25in solid lightgray }\n"
            << "}\n"
            << "#edge { border: 1px solid black }\n";
         csspp::position pos("test.css");
@@ -1922,7 +1929,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@document url( http://www.example.com/ ), regexp(\"https://.*\")\n"
 "{\n"
 "body { width: 8.5in; height: 9in }\n"
-"div { border: 0.25in solid #d3d3d3 }\n"
+"div { border: .25in solid #d3d3d3 }\n"
 "}\n"
 "\n"
 "#edge { border: 1px solid #000 }\n"
@@ -1932,7 +1939,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"@document url(http://www.example.com/),regexp(\"https://.*\"){body{width:8.5in;height:9in}div{border:0.25in solid #d3d3d3}}#edge{border:1px solid #000}\n"
+"@document url(http://www.example.com/),regexp(\"https://.*\"){body{width:8.5in;height:9in}div{border:.25in solid #d3d3d3}}#edge{border:1px solid #000}\n"
 + csspp_test::get_close_comment()
                 );
             break;
@@ -1948,7 +1955,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "}\n"
 "div\n"
 "{\n"
-"  border: 0.25in solid #d3d3d3;\n"
+"  border: .25in solid #d3d3d3;\n"
 "}\n"
 "}\n"
 "\n"
@@ -1965,7 +1972,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@document url(http://www.example.com/),regexp(\"https://.*\")\n"
 "{\n"
 "body{width:8.5in;height:9in}\n"
-"div{border:0.25in solid #d3d3d3}\n"
+"div{border:.25in solid #d3d3d3}\n"
 "}\n"
 "\n"
 "#edge{border:1px solid #000}\n"
@@ -2074,7 +2081,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
         std::stringstream ss;
         ss << "@media not (screen or ((laser or matrix or jet-printer) and color)) {\n"
            << "  body { width: 8.5in; height: 9in; }\n"
-           << "  div { margin: 0.15in; padding: 0.07in; }\n"
+           << "  div { margin: .15in; padding: .07in; }\n"
            << "  p { margin-bottom: 2em; }\n"
            << "}\n"
            << "#edge { border: 1px solid black }\n";
@@ -2108,7 +2115,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@media not (screen or ((laser or matrix or jet-printer) and color)) \n"
 "{\n"
 "body { width: 8.5in; height: 9in }\n"
-"div { margin: 0.15in; padding: 0.07in }\n"
+"div { margin: .15in; padding: .07in }\n"
 "p { margin-bottom: 2em }\n"
 "}\n"
 "\n"
@@ -2119,7 +2126,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"@media not (screen or ((laser or matrix or jet-printer) and color)){body{width:8.5in;height:9in}div{margin:0.15in;padding:0.07in}p{margin-bottom:2em}}#edge{border:1px solid #000}\n"
+"@media not (screen or ((laser or matrix or jet-printer) and color)){body{width:8.5in;height:9in}div{margin:.15in;padding:.07in}p{margin-bottom:2em}}#edge{border:1px solid #000}\n"
 + csspp_test::get_close_comment()
                 );
             break;
@@ -2135,8 +2142,8 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "}\n"
 "div\n"
 "{\n"
-"  margin: 0.15in;\n"
-"  padding: 0.07in;\n"
+"  margin: .15in;\n"
+"  padding: .07in;\n"
 "}\n"
 "p\n"
 "{\n"
@@ -2157,7 +2164,7 @@ TEST_CASE("Assemble @-keyword", "[assembler] [at-keyword]")
 "@media not (screen or ((laser or matrix or jet-printer) and color))\n"
 "{\n"
 "body{width:8.5in;height:9in}\n"
-"div{margin:0.15in;padding:0.07in}\n"
+"div{margin:.15in;padding:.07in}\n"
 "p{margin-bottom:2em}\n"
 "}\n"
 "\n"
@@ -2313,7 +2320,7 @@ expected << "a~b{border:3px solid #39458a;width:450px;height:200px}\n";
         ++i)
     {
         std::stringstream ss;
-        ss << "a b { color: rgba(1 * 7, 2, 3, 0.5); }\n";
+        ss << "a b { color: rgba(1 * 7, 2, 3, .5); }\n";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -2343,22 +2350,22 @@ expected << "a~b{border:3px solid #39458a;width:450px;height:200px}\n";
         switch(static_cast<csspp::output_mode_t>(i))
         {
         case csspp::output_mode_t::COMPACT:
-expected << "a b { color: rgba(7,2,3,0.5) }\n";  // TODO: add support for spaces in the color::to_string() function?
+expected << "a b { color: rgba(7,2,3,.5) }\n";  // TODO: add support for spaces in the color::to_string() function?
             break;
 
         case csspp::output_mode_t::COMPRESSED:
-expected << "a b{color:rgba(7,2,3,0.5)}\n";
+expected << "a b{color:rgba(7,2,3,.5)}\n";
             break;
 
         case csspp::output_mode_t::EXPANDED:
 expected << "a b\n"
          << "{\n"
-         << "  color: rgba(7,2,3,0.5);\n"  // TODO: add support for spaces in the color::to_string() function?
+         << "  color: rgba(7,2,3,.5);\n"  // TODO: add support for spaces in the color::to_string() function?
          << "}\n";
             break;
 
         case csspp::output_mode_t::TIDY:
-expected << "a b{color:rgba(7,2,3,0.5)}\n";
+expected << "a b{color:rgba(7,2,3,.5)}\n";
             break;
 
         }
@@ -2912,6 +2919,49 @@ TEST_CASE("Inacceptable nodes", "[assembler] [invalid]")
             REQUIRE_THROWS_AS(a.output(root, static_cast<csspp::output_mode_t>(i)), csspp::csspp_exception_logic);
         }
     }
+}
+
+TEST_CASE("CSS incompatible dimensions", "[assembler] [invalid] [dimension]")
+{
+    for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+        i <= static_cast<int>(csspp::output_mode_t::TIDY);
+        ++i)
+    {
+        std::stringstream ss;
+        ss << "span { border: 3px * 5px solid #f7d0cf; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // no errors yet
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        csspp::assembler a(out);
+        a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: \"px * px\" is not a valid CSS dimension.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
 }
 
 // Local Variables:

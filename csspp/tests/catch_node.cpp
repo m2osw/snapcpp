@@ -1296,10 +1296,10 @@ TEST_CASE("Node to string", "[node] [type] [output]")
 
             case csspp::node_type_t::FONT_METRICS:
                 REQUIRE(n->to_string(flags) ==
-                          csspp::decimal_number_to_string(n->get_font_size())
+                          csspp::decimal_number_to_string(n->get_font_size(), false)
                         + n->get_dim1()
                         + "/"
-                        + csspp::decimal_number_to_string(n->get_line_height())
+                        + csspp::decimal_number_to_string(n->get_line_height(), false)
                         + n->get_dim2());
                 break;
 

@@ -93,7 +93,7 @@
  *     | map ',' IDENTIFIER ':' assignment
  * \endcode
  *
- * \subsection assignment CSS Preprocessor Assignment Expression
+ * \subsection expression_assignment CSS Preprocessor Assignment Expression
  *
  * The inline assignment operator (:=) can be used to set a variable
  * within an expression. These are always viewed as local variables.
@@ -111,7 +111,7 @@
  *            | IDENTIFIER ':=' conditional
  * \endcode
  *
- * \subsection conditional CSS Preprocessor Conditional Expression
+ * \subsection expression_conditional CSS Preprocessor Conditional Expression
  *
  * Like in C/C++ we offer a conditional operator. The question mark
  * is not otherwise used by CSS so it is safe here.
@@ -124,7 +124,7 @@
  *             | conditional '?' expression_list ':' logical_or
  * \endcode
  *
- * \subsection logical_or CSS Preprocessor Logical OR Expression
+ * \subsection expression_logical_or CSS Preprocessor Logical OR Expression
  *
  * Compare two values that the compiler can convert to a Boolean
  * value and apply the logical OR to those two values (i.e. if both
@@ -136,7 +136,7 @@
  *           | logical_or '||' logical_and
  * \endcode
  *
- * \subsection logical_and CSS Preprocessor Logical AND Expression
+ * \subsection expression_logical_and CSS Preprocessor Logical AND Expression
  *
  * Compare two values that the compiler can convert to a Boolean
  * value and apply the logical AND to those two values (i.e. if both
@@ -148,7 +148,7 @@
  *            | logical_and '&&' equality
  * \endcode
  *
- * \subsection equality CSS Preprocess Equality Expression
+ * \subsection expression_equality CSS Preprocess Equality Expression
  *
  * Compare the two values as specified by the equality operator.
  *
@@ -183,7 +183,7 @@
  *         | equality '|=' relational
  * \endcode
  *
- * \subsection relational CSS Preprocessor Relational Expression
+ * \subsection expression_relational CSS Preprocessor Relational Expression
  *
  * Relational work as expected in other languages.
  *
@@ -197,7 +197,7 @@
  *           | relational '>=' additive
  * \endcode
  *
- * \subsection additive CSS Preprocessor Additive Expression
+ * \subsection expression_additive CSS Preprocessor Additive Expression
  *
  * The addition operator works for numbers (decimal numbers and integers).
  * If one of the two operands is a decimal number then the result is
@@ -210,10 +210,14 @@
  * The addition operator accepts colors. Remember that while working
  * with colors in expressions, colors do not get clamped.
  *
- * \f$
+ * \f[
  * \begin{vmatrix} result_r
  * \\ result_g
  * \\ result_b \end{vmatrix}
+ * =
+ * \begin{vmatrix} lhs_r + rhs_r
+ * \\ lhs_g + rhs_g
+ * \\ lhs_b + rhs_b \end{vmatrix}
  * =
  * \begin{vmatrix} lhs_r
  * \\ lhs_g
@@ -222,7 +226,7 @@
  * \begin{vmatrix} rhs_r
  * \\ rhs_g
  * \\ rhs_b \end{vmatrix}
- * \f$
+ * \f]
  *
  * The addition operator accepts strings and identifiers. In that
  * case it performs a concatenation.
@@ -240,10 +244,14 @@
  * The subtraction accepts colors. Again, colors do not get clamped
  * while being worked on.
  *
- * \f$
+ * \f[
  * \begin{vmatrix} result_r
  * \\ result_g
  * \\ result_b \end{vmatrix}
+ * =
+ * \begin{vmatrix} lhs_r - rhs_r
+ * \\ lhs_g - rhs_g
+ * \\ lhs_b - rhs_b \end{vmatrix}
  * =
  * \begin{vmatrix} lhs_r
  * \\ lhs_g
@@ -252,7 +260,7 @@
  * \begin{vmatrix} rhs_r
  * \\ rhs_g
  * \\ rhs_b \end{vmatrix}
- * \f$
+ * \f]
  *
  * The subtraction accepts maps. In this case fields that appear in
  * the right hand side map are removed the from the left hand side
@@ -274,100 +282,175 @@
  *          | additive '-' multiplicative
  * \endcode
  *
- * \subsection multiplicative CSS Preprocessor Multiplicative Expression
+ * \subsection expression_multiplicative CSS Preprocessor Multiplicative Expression
  *
- * The multiplicative expression works on numbers. If one of the
- * numbers is a decimal number, then the result is a decimal number.
- * Otherwise, the operation is performed with integers and the
- * integer result is returned (i.e. the divide operator does not
- * magically convert the numbers to decimal numbers.)
+ * The multiplicative expression works on numbers, colors, and strings.
+ * The following sub-sections describes how the multiplicative operators
+ * work on each type of input.
+ *
+ * \code{.y}
+ *  multiplicative: power
+ *                | multiplicative '*' power
+ *                | multiplicative IDENTIFIER(="mul") power
+ *                | multiplicative '/' power
+ *                | multiplicative IDENTIFIER(="div") power
+ *                | multiplicative '%' power
+ *                | multiplicative IDENTIFIER(="mod") power
+ * \endcode
+ *
+ * \subsubsection expression_multiplicative_numbers Multiplicative Expression with Numbers (with and without dimensions)
+ *
+ * If one of the numbers is a decimal number, then the result is a
+ * decimal number. Otherwise, the operation is performed with
+ * integers and the result is always an integer (i.e. the divide
+ * operator does not magically convert the numbers to decimal
+ * numbers.) Percent numbers are viewed as decimal numbers.
+ *
+ * All the multiplicative operators can be used with dimensions.
+ *
+ * Multiplications augment dimensions in something that looks
+ * like "dim1 * dim2" (i.e. '3em x 5px' -> '15em\\ \\*\\ px').
+ * The syntax uses a list of dimensions separated by " * ".
+ * The spaces are optional when you type such a dimension.
+ * Note that way you can easily calculate the surface of a
+ * rectangle or the volume of a rectangular cuboid:
+ *
+ * \f[
+ * S mm ^ 2 = W mm \times H mm
+ * \\
+ * V mm ^ 3 = W mm \times H mm \times D mm
+ * \f]
+ *
+ * Only the CSS Preprocessor keeps dimensions such as \f$mm^2\f$
+ * are defined as "mm * mm".
+ *
+ * Divisions reduce dimensions, the opposite of multiplications.
+ * So a dimension like "dim1 * dim2" divided by a dimension "dim1"
+ * results in a dimension "dim2". If the dimension in the divisor
+ * is not present in the list of existing dimensions, then the
+ * result looks like "dim1 * dim2 / dim3". If the dividend is
+ * dimension less, then the dimension becomes "1 / dim1".
+ *
+ * This is particularly useful to convert a dimension into another:
+ *
+ * \code{.scss}
+ *      3cm * 0.393701in / 1cm = 1.1811in
+ * \endcode
+ *
+ * since 1 centimeter is about 0.393701 inches.
+ *
+ * The modulo operator can be used with dimensions. Both dimensions
+ * must be exactly equal (like for additions and subtractions.) For
+ * example "10px % 3px" resuts in "1px". The reason for the modulo
+ * operator to work this way is as follow:
+ *
+ * Say you have a value \em result calculated as follow:
+ *
+ * \f[
+ * result = lhs \bmod rhs
+ * \f]
+ *
+ * You may rewrite this expression as:
+ *
+ * \f[
+ * lhs = rhs \cdot k + result
+ * \f]
+ *
+ * where k is a dimension less factor. As we can see, for the math to
+ * work in this other expression, lhs, rhs, and result must all have
+ * the same dimension.
+ *
+ * \sa http://math.stackexchange.com/questions/1353284/how-do-we-deal-with-units-when-using-the-modulo-operation
+ *
+ * \subsubsection expression_multiplicative_colors Multiplicative Expressions with Colors
  *
  * The multiplicative operators all work against colors and the operations
  * are commutative. The modulo always uses a floating point modulo. Remember
- * that while running operations against colors, the colors do not get clamped.
+ * that while running operations against colors, the colors do not get clamped
+ * and components are floating point numbers.
  *
- * \f$
+ * \f[
  * \begin{vmatrix} result_r
  * \\ result_g
  * \\ result_b \end{vmatrix}
+ * =
+ * \begin{vmatrix} lhs_r * rhs
+ * \\ lhs_g * rhs
+ * \\ lhs_b * rhs \end{vmatrix}
  * =
  * \begin{vmatrix} lhs_r
  * \\ lhs_g
  * \\ lhs_b \end{vmatrix}
  * *
  * rhs
- * \f$
+ * \f]
  *
- * \f$
+ * \f[
  * \begin{vmatrix} result_r
  * \\ result_g
  * \\ result_b \end{vmatrix}
+ * =
+ * \begin{vmatrix} lhs_r / rhs
+ * \\ lhs_g / rhs
+ * \\ lhs_b / rhs \end{vmatrix}
  * =
  * \begin{vmatrix} lhs_r
  * \\ lhs_g
  * \\ lhs_b \end{vmatrix}
  * /
  * rhs
- * \f$
+ * \f]
  *
- * \f$
+ * \f[
  * \begin{vmatrix} result_r
  * \\ result_g
  * \\ result_b \end{vmatrix}
+ * =
+ * \begin{vmatrix} lhs_r \mod rhs
+ * \\ lhs_g \mod rhs
+ * \\ lhs_b \mod rhs \end{vmatrix}
  * =
  * \begin{vmatrix} lhs_r
  * \\ lhs_g
  * \\ lhs_b \end{vmatrix}
  * \mod
  * rhs
- * \f$
+ * \f]
  *
- * The multiply operator can be used with a string and an integer.
- * This will duplicate the string that many times.
+ * \subsubsection expression_multiplicative_strings Multiplicative Expressions with Strings (Duplication)
  *
- * The multiply operator can be used with a Unicode Range. In that
+ * The multiply operator (*) can be used with a string and an integer.
+ * This will duplicate the string that many times. If the integer
+ * is zero, the empty string is returned. You certainly want to
+ * limit the integer in this case otherwise the string is gooing to
+ * take a lot of memory.
+ *
+ * If the integer is negative, an error results.
+ *
+ * \subsubsection expression_multiplicative_unicode_range Multiplicative Expressions with Unicode Ranges (Intersection)
+ *
+ * The multiply operator (*) can be used with a Unicode Range. In that
  * case the multiply represents an intersection and only common
  * characters in both ranges are kept in the resulting range. If
  * the range becomes empty, then the result is NULL instead.
  *
- * The multiply and divide operators can be used with dimensions.
+ * Since the result of the operation may be NULL, we also accept NULL
+ * as one of the operands or both and in that case NULL is also returned.
  *
- * Multiplications augment dimensions in something that looks
- * like "dim1 * dim2" (i.e. '3em x 5px' -> '15em\ \*\ px').
- *
- * Divisions reduce dimensions, the opposite of multiplications.
- * So a dimension like "dim1 * dim2" divided by a dimension "dim1"
- * results in a dimension "dim2".
- *
- * This is particularly useful to convert a dimension to another:
- *
- * \code(.scss)
- *      3cm * 0.393701in / 1cm = 1.1811in
- * \endcode
- *
- * since 1 centimeter is about 0.393701 inches.
- *
- * \code{.y}
- *  multiplicative: power
- *                | multiplicative '*' power
- *                | multiplicative '/' power
- *                | multiplicative '%' power
- * \endcode
- *
- * \subsection power CSS Preprocessor Power Expression
+ * \subsection expression_power CSS Preprocessor Power Expression
  *
  * The power operator let you calculte a number (left hand side) to the
  * power of another number (the right hand side).
  *
  * Note that the power is not looping. If you want to calculate a power
- * b power c, you will need to add parenthese:
+ * b power c (\f$\large a^{b^c}\f$), you will need to add parenthese:
  *
  * \code{.scss}
  *      a ** (b ** c)
  * \endcode
  *
  * Even though the power operator would otherwise be properly handled
- * with a right to left operator, by default a double or more power
+ * with a right to left priority, by default a double or more power
  * expression is not allowed.
  *
  * \code{.y}
@@ -375,7 +458,18 @@
  *       | post '**' post
  * \endcode
  *
- * \subsection post CSS Preprocessor Post Expression
+ * \subsubsection expression_power_dimension Power Expression with Dimensions
+ *
+ * The left handside of a power operation can have a dimension if the
+ * right hand side is a positive integer:
+ * \f$power \in \Bbb{Z}^*\f$.
+ * The dimension will be duplicated a number of time equal to the power.
+ *
+ * \f[
+ *      (13cm)^2 = 169cm^2
+ * \f]
+ *
+ * \subsection expression_post CSS Preprocessor Post Expression
  *
  * The post expression allows for access to elements of a list (an array)
  * or a map (a keyed array).
@@ -392,7 +486,7 @@
  *      | post '.' IDENTIFIER
  * \endcode
  *
- * \subsection unary Unary CSS Preprocessor Unary Expression Expression
+ * \subsection expression_unary Unary CSS Preprocessor Unary Expression Expression
  *
  * Unary expressions are composed of literals (identifiers, strings,
  * numbers, etc.) and a few unary operators.
@@ -489,7 +583,9 @@
  * Calculate the absolute value of number. If the number is an integer,
  * then it remains an integer.
  *
- * \f$result = |number|\f$
+ * \f[
+ * result = |number|
+ * \f]
  *
  * \subsection acos_function acos()
  *
@@ -499,7 +595,9 @@
  *
  * Calculate the arccosine value of number.
  *
- * \f$result = cos^{-1}(number)\f$
+ * \f[
+ * result = cos^{-1}(number)
+ * \f]
  *
  * \subsection alpha_function alpha()
  *
@@ -524,7 +622,9 @@
  *
  * Calculate the arcsine value of number.
  *
- * \f$result = sin^{-1}(number)\f$
+ * \f[
+ * result = sin^{-1}(number)
+ * \f]
  *
  * \subsection atan_function atan()
  *
@@ -534,7 +634,9 @@
  *
  * Calculate the arctangent value of number.
  *
- * \f$result = tan^{-1}(number)\f$
+ * \f[
+ * result = tan^{-1}(number)
+ * \f]
  *
  * \subsection blue_function blue()
  *
@@ -557,7 +659,9 @@
  *
  * Calculate the ceiling value of number.
  *
- * \f$result = \lceil number \rceil\f$
+ * \f[
+ * result = \lceil number \rceil
+ * \f]
  *
  * \subsection cos_function cos()
  *
@@ -598,7 +702,9 @@
  *
  * Calculate the floor value of number.
  *
- * \f$result = \lfloor number \rfloor\f$
+ * \f[
+ * result = \lfloor number \rfloor
+ * \f]
  *
  * \subsection frgb_function frgb()
  *
@@ -939,9 +1045,11 @@
  * Extract the sign of a number. The result is -1 for negative numbers,
  * 0 for zero, and 1 for positive numbers.
  *
- * \f$result = \begin{cases} -1 & , if number < 0
+ * \f[
+ * result = \begin{cases} -1 & , if number < 0
  * \\ 0 & , if number = 0
- * \\ 1 & , if number > 0\end{cases}\f$
+ * \\ 1 & , if number > 0\end{cases}
+ * \f]
  *
  * \subsection sin_function sin()
  *
@@ -959,7 +1067,13 @@
  *
  * Calculate the square root value of number.
  *
- * \f$result = \sqrt{number}\f$
+ * If number has a dimension, it has to be squared. For example, "cm * cm"
+ * (for \f$cm^2\f$) and the resulting value will be "cm". If a dimension is
+ * defined but not squared, then an error results.
+ *
+ * \f[
+ * result = \sqrt{number}
+ * \f]
  *
  * \subsection string_function string()
  *
@@ -1076,7 +1190,7 @@
  * The "... + 0" in the previous example is necessary because when
  * $var is not defined, the statement would become empty.
  *
- * \subsection missing_functions Functions still missing
+ * \subsection missing_internal_functions Internal functions still missing
  *
  * The following is a brief list of internal functions we will be adding
  * at some point:
@@ -1170,9 +1284,11 @@
  * The \b invert() function calculates the opposite component value. This
  * is (1.0 - component). It only affects the red, green, and blue components.
  *
- * \f$\begin{cases} result_r = 1.0 - $color_r
+ * \f[
+ * \begin{cases} result_r = 1.0 - $color_r
  * \\ result_g = 1.0 - $color_g
- * \\ result_b = 1.0 - $color_b\end{cases}\f$
+ * \\ result_b = 1.0 - $color_b\end{cases}
+ * \f]
  *
  * \note
  * The colors are saved as floating point values from 0.0 to 1.0 (although
@@ -1197,7 +1313,9 @@
  *
  * The \b mix() function adds two colors together using a weight.
  *
- * \f$color_r = color_1 \, weight + color_2 \, (1 - weight)\f$
+ * \f[
+ * color_r = color_1 \, weight + color_2 \, (1 - weight)
+ * \f]
  *
  * By default the weight is 0.5 which is equivalent to adding two
  * colors together and dividing by two:
@@ -1208,7 +1326,9 @@
  *
  * This means:
  *
- * \f$\large color_r = \frac{color_1 + color_2}{2}\f$
+ * \f[
+ * \large color_r = \frac{color_1 + color_2}{2}
+ * \f]
  *
  * If you want to mix more colors, you may write that in one statement
  * such as:
@@ -1219,7 +1339,9 @@
  *
  * This means:
  *
- * \f$\large color_r = \frac{\sum\limits_{i=0}^n color_{i} \, weight_{i}}{\sum\limits_{i=0}^n weight_{i}}\f$
+ * \f[
+ * \large color_r = \frac{\sum\limits_{i=0}^n color_{i} \, weight_{i}}{\sum\limits_{i=0}^n weight_{i}}
+ * \f]
  *
  * Assuming you know that the total of all the weights is equal to one, the
  * division is not necessary.
@@ -1234,7 +1356,9 @@
  * The \b opacify() function add the specified adjustment to the alpha
  * channel of a color:
  *
- * \f$result_a = color_a + adjustment\f$
+ * \f[
+ * result_a = color_a + adjustment
+ * \f]
  *
  * It is the same as calling \ref transparentize_function with \b -adjustment.
  *
@@ -1322,7 +1446,9 @@
  * The \b transparentize() function subtract adjustment from the alpha
  * channel and returns the result.
  *
- * \f$result_a = color_a - adjustment\f$
+ * \f[
+ * result_a = color_a - adjustment
+ * \f]
  *
  * It is the same as calling \ref opacify_function with \b -adjustment.
  *

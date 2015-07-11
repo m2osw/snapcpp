@@ -46,13 +46,15 @@ then
     echo "                  (see list below, do NOT include the square brackets)"
     echo
     echo "To run specific tests, use one of the tags defined in the test suite."
+    echo "   '[additive]' (expressions sub-set)"
     echo "   '[assembler]'"
     echo "   '[color]'"
     echo "   '[compiler]'"
     echo "   '[csspp]'"
     echo "   '[error]'"
-    echo "   '[expression]'"
+    echo "   '[expression]' (all expressions)"
     echo "   '[lexer]'"
+    echo "   '[multiplicative]' (expressions sub-set)"
     echo "   '[node]'"
     echo "   '[nth-child]'"
     echo "   '[parser]'"
@@ -70,7 +72,8 @@ then
     mkdir -p tmp/build
     echo "<html><head><title>Coverage</title></head><body><h1>Coverage</h1>" >tmp/build/index.html
     count=1
-    for t in assembler color compiler csspp error expression lexer node nth-child parser position unicode-range
+    for t in additive assembler color compiler csspp error expression lexer \
+             multiplicative node nth-child parser position unicode-range
     do
         echo -n "`date +'%D %T'`: Building: $t ... "
         echo "<h2>${count}. <a href='csspp_coverage_${t}_html/index.html'>$t<a/></h2>" >>tmp/build/index.html

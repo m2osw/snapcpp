@@ -53,6 +53,20 @@ flags_t const g_flag_optional_spaces_or_newlines        = 0x10;
 flags_t const g_flag_optional_space_before_or_newline   = 0x20;
 flags_t const g_flag_optional_space_after_or_newline    = 0x40;
 
+void verify_dimension(node::pointer_t n)
+{
+    std::string const dimension(n->get_string());
+    std::string::size_type pos(dimension.find_first_of(" */"));
+    if(pos != std::string::npos)
+    {
+        error::instance() << n->get_position()
+                << "\""
+                << dimension
+                << "\" is not a valid CSS dimension."
+                << error_mode_t::ERROR_ERROR;
+    }
+}
+
 } // no name namespace
 
 // base class
@@ -316,7 +330,8 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::DECIMAL_NUMBER:
         // this may be a dimension, if not f_string is empty anyway
-        f_out << n->get_decimal_number() << n->get_string();
+        verify_dimension(n);
+        f_out << decimal_number_to_string(n->get_decimal_number(), true) << n->get_string();
         break;
 
     case node_type_t::DECLARATION:
@@ -349,8 +364,8 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::FONT_METRICS:
         // this is a mouthful!
-        f_out << decimal_number_to_string(n->get_font_size()) << n->get_dim1()
-              << "/" << decimal_number_to_string(n->get_line_height()) << n->get_dim2();
+        f_out << decimal_number_to_string(n->get_font_size() * (n->get_dim1() == "%" ? 100.0 : 1.0), true) << n->get_dim1()
+              << "/" << decimal_number_to_string(n->get_line_height() * (n->get_dim2() == "%" ? 100.0 : 1.0), true) << n->get_dim2();
         break;
 
     case node_type_t::FUNCTION:
@@ -409,6 +424,7 @@ void assembler::output(node::pointer_t n)
 
     case node_type_t::INTEGER:
         // this may be a dimension, if not f_string is empty anyway
+        verify_dimension(n);
         f_out << n->get_integer() << n->get_string();
         break;
 
@@ -475,7 +491,7 @@ void assembler::output(node::pointer_t n)
         break;
 
     case node_type_t::PERCENT:
-        f_out << decimal_number_to_string(n->get_decimal_number() * 100.0) << "%";
+        f_out << decimal_number_to_string(n->get_decimal_number() * 100.0, true) << "%";
         break;
 
     case node_type_t::PERIOD:

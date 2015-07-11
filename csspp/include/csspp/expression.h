@@ -52,6 +52,7 @@ public:
 
 private:
     typedef std::map<std::string, node::pointer_t>  variable_vector_t;
+    typedef std::vector<std::string>                dimension_vector_t;
 
     bool                is_label() const;
     node::pointer_t     compile_list(node::pointer_t parent);
@@ -63,7 +64,9 @@ private:
     node::pointer_t     equality();
     node::pointer_t     relational();
     node::pointer_t     additive();
-    node_type_t         multiplicative_operator(node::pointer_t n);
+    void                dimensions_to_vectors(std::string const & dimension, dimension_vector_t & dividend, dimension_vector_t & divisor);
+    std::string         multiplicative_dimension(std::string const & dim1, node_type_t const op, std::string const & dim2);
+    std::string         rebuild_dimension(dimension_vector_t const & dividend, dimension_vector_t const & divisor);
     node::pointer_t     multiply(node_type_t op, node::pointer_t lhs, node::pointer_t rhs);
     node::pointer_t     multiplicative();
     node::pointer_t     apply_power(node::pointer_t lhs, node::pointer_t rhs);

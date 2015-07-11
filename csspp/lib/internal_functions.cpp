@@ -29,6 +29,7 @@
 #include "csspp/exceptions.h"
 #include "csspp/parser.h"
 
+#include <algorithm>
 #include <cmath>
 #include <climits>
 #include <iostream>
@@ -1245,11 +1246,88 @@ node::pointer_t expression::internal_function__sqrt(node::pointer_t func)
     node::pointer_t number(internal_function__get_number(func, 0, n));
     if(number)
     {
+        std::string dimension(number->get_string());
+        if(!dimension.empty())
+        {
+            // the dimension MUST be a square
+            //
+            // first get the current dimensions
+            dimension_vector_t dividend;
+            dimension_vector_t divisor;
+            dimensions_to_vectors(dimension, dividend, divisor);
+
+            if((dividend.size() & 1 == 0)
+            && (divisor.size() & 1 == 0))
+            {
+                dimension_vector_t new_dividend;
+                while(dividend.size() > 0)
+                {
+                    std::string const dim(*(dividend.end() - 1));
+                    // remove this instance
+                    dividend.erase(dividend.end() - 1);
+                    // make sure there is another instance
+                    dimension_vector_t::iterator it(std::find(dividend.begin(), dividend.end(), dim));
+                    if(it == dividend.end())
+                    {
+                        // it's not valid
+                        dimension.clear();
+                        break;
+                    }
+                    // remove the copy instance
+                    dividend.erase(it);
+                    // keep one instance here instead
+                    new_dividend.push_back(dim);
+                }
+
+                dimension_vector_t new_divisor;
+                if(!dimension.empty())
+                {
+                    while(divisor.size() > 0)
+                    {
+                        std::string const dim(*(divisor.end() - 1));
+                        // remove this instance
+                        divisor.erase(divisor.end() - 1);
+                        // make sure there is another instance
+                        dimension_vector_t::iterator it(std::find(divisor.begin(), divisor.end(), dim));
+                        if(it == divisor.end())
+                        {
+                            // it's not valid
+                            dimension.clear();
+                            break;
+                        }
+                        // remove the copy instance
+                        divisor.erase(it);
+                        // keep one instance here instead
+                        new_divisor.push_back(dim);
+                    }
+                }
+
+                if(!dimension.empty())
+                {
+                    dimension = rebuild_dimension(dividend, divisor);
+                }
+            }
+            else
+            {
+                dimension.clear();
+            }
+
+            if(dimension.empty())
+            {
+                // an error occured, we cannot handle those dimensions
+                error::instance() << f_current->get_position()
+                        << "sqrt() expects a number as parameter."
+                        << error_mode_t::ERROR_ERROR;
+
+                return node::pointer_t();
+            }
+        }
         if(number->is(node_type_t::INTEGER))
         {
             number.reset(new node(node_type_t::DECIMAL_NUMBER, number->get_position()));
         }
         number->set_decimal_number(sqrt(n));
+        number->set_string(dimension);
         return number;
     }
 

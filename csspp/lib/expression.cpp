@@ -28,7 +28,9 @@
 
 #include "csspp/exceptions.h"
 #include "csspp/parser.h"
+#include "csspp/unicode_range.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -995,7 +997,7 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
         break;
 
     default:
-        throw csspp_exception_logic("expression.cpp:multiply(): 'type' set to a valid which is not handled here."); // LCOV_EXCL_LINE
+        throw csspp_exception_logic("expression.cpp:add(): 'type' set to a value which is not handled here."); // LCOV_EXCL_LINE
 
     }
 
@@ -1039,7 +1041,7 @@ node::pointer_t expression::additive()
     return result;
 }
 
-node_type_t expression::multiplicative_operator(node::pointer_t n)
+node_type_t multiplicative_operator(node::pointer_t n)
 {
     switch(n->get_type())
     {
@@ -1069,6 +1071,186 @@ node_type_t expression::multiplicative_operator(node::pointer_t n)
     }
 
     return node_type_t::UNKNOWN;
+}
+
+void expression::dimensions_to_vectors(std::string const & dimension, dimension_vector_t & dividend, dimension_vector_t & divisor)
+{
+    bool found_slash(false);
+    std::string::size_type pos(0);
+
+    // we have a special case when there is no dividend in a dimension
+    // this is defined as a "1" with a slash
+    if(dimension.length() > 2
+    && dimension.substr(0, 2) == "1/") // user defined may not include the space
+    {
+        pos = 2;
+        found_slash = true;
+    }
+    else if(dimension.length() > 3
+         && dimension.substr(0, 3) == "1 /")
+    {
+        pos = 3;
+        found_slash = true;
+    }
+
+    // if it started with "1 /" then we may have yet another space: "1 / "
+    if(found_slash
+    && pos + 1 < dimension.size()
+    && dimension[pos] == ' ')
+    {
+        ++pos;
+    }
+
+    for(;;)
+    {
+        {
+            // get end of current dimension
+            std::string::size_type end(dimension.find_first_of(" */", pos));
+            if(end == std::string::npos)
+            {
+                end = dimension.size();
+            }
+
+            // add the dimension
+            if(end != pos)
+            {
+                std::string const dim(dimension.substr(pos, end - pos));
+                if(found_slash)
+                {
+                    divisor.push_back(dim);
+                }
+                else
+                {
+                    dividend.push_back(dim);
+                }
+            }
+
+            pos = end;
+            if(pos >= dimension.size())
+            {
+                return;
+            }
+        }
+
+        // check the separator(s)
+        if(pos < dimension.size()
+        && dimension[pos] == ' ')
+        {
+            // this should always be true, but user defined separators
+            // may not include the spaces
+            ++pos;
+        }
+        if(pos >= dimension.size())
+        {
+            throw csspp_exception_logic("expression.cpp:dimensions_to_vectors(): dimension separator missing.");
+        }
+        if(dimension[pos] == '/')
+        {
+            // second slash?!
+            if(found_slash)
+            {
+                // this cannot happen unless this function is not correct
+                throw csspp_exception_logic("expression.cpp:dimensions_to_vectors(): unexpected second '/' separator in dimension.");
+            }
+
+            found_slash = true;
+            ++pos;
+        }
+        else if(dimension[pos] == '*')
+        {
+            ++pos;
+        }
+        else
+        {
+            // what is that character?!
+            throw csspp_exception_logic("expression.cpp:dimensions_to_vectors(): unexpected separator in dimension \"" + dimension + "\" at position " + std::to_string(pos) + ".");
+        }
+        if(pos < dimension.size()
+        && dimension[pos] == ' ')
+        {
+            // this should always be true, but user defined separators
+            // may not include the spaces
+            ++pos;
+        }
+    }
+}
+
+std::string expression::multiplicative_dimension(std::string const & ldim, node_type_t const op, std::string const & rdim)
+{
+    dimension_vector_t dividend;
+    dimension_vector_t divisor;
+
+    // transform the string in one or two vectors
+    dimensions_to_vectors(ldim, dividend, divisor);
+
+    if(op == node_type_t::MULTIPLY)
+    {
+        dimensions_to_vectors(rdim, dividend, divisor);
+    }
+    else
+    {
+        // a division has the dividend / divisor inverted, simple trick
+        dimensions_to_vectors(rdim, divisor, dividend);
+    }
+
+    // optimize the result
+    for(size_t idx(dividend.size()); idx > 0;)
+    {
+        --idx;
+        std::string const dim(dividend[idx]);
+        dimension_vector_t::iterator it(std::find(divisor.begin(), divisor.end(), dim));
+        if(it != divisor.end())
+        {
+            // present in both places? if so remove from both places
+            dividend.erase(dividend.begin() + idx);
+            divisor.erase(it);
+        }
+    }
+
+    // now we rebuild the resulting dimension
+    // if the dividend is empty, then we have to put 1 / ...
+    // if the divisor is empty, we do not put a '/ ...'
+
+    return rebuild_dimension(dividend, divisor);
+}
+
+std::string expression::rebuild_dimension(dimension_vector_t const & dividend, dimension_vector_t const & divisor)
+{
+    std::string result;
+
+    if(!dividend.empty() || !divisor.empty())
+    {
+        if(dividend.empty())
+        {
+            result += "1";
+        }
+        else
+        {
+            for(size_t idx(0); idx < dividend.size(); ++idx)
+            {
+                if(idx != 0)
+                {
+                    result += " * ";
+                }
+                result += dividend[idx];
+            }
+        }
+
+        for(size_t idx(0); idx < divisor.size(); ++idx)
+        {
+            if(idx == 0)
+            {
+                result += " / ";
+            }
+            else
+            {
+                result += " * ";
+            }
+            result += divisor[idx];
+        }
+    }
+
+    return result;
 }
 
 node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::pointer_t rhs)
@@ -1117,66 +1299,105 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
         return lhs;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-        // TODO: test that the dimensions are compatible
         ai = lhs->get_integer();
         bi = rhs->get_integer();
         type = node_type_t::INTEGER;
         break;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
-        // TODO: test that the dimensions are compatible
         af = static_cast<decimal_number_t>(lhs->get_integer());
         bf = rhs->get_decimal_number();
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = static_cast<decimal_number_t>(rhs->get_integer());
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::PERCENT):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
-        type = node_type_t::PERCENT;
+        type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::DECIMAL_NUMBER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
-        type = node_type_t::PERCENT;
+        type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::PERCENT):
-        // TODO: test that the dimensions are compatible
         af = static_cast<decimal_number_t>(lhs->get_integer());
         bf = rhs->get_decimal_number();
-        type = node_type_t::PERCENT;
+        type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::INTEGER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = static_cast<decimal_number_t>(rhs->get_integer());
-        type = node_type_t::PERCENT;
+        type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
-        type = node_type_t::DECIMAL_NUMBER;
+        type = node_type_t::PERCENT;
         break;
+
+    case mix_node_types(node_type_t::NULL_TOKEN, node_type_t::NULL_TOKEN): // could this one support / and %?
+    case mix_node_types(node_type_t::NULL_TOKEN, node_type_t::UNICODE_RANGE):
+        if(op == node_type_t::MULTIPLY)
+        {
+            return lhs;
+        }
+        error::instance() << f_current->get_position()
+                << "unicode_range * unicode_range is the only multiplicative operator accepted with unicode ranges, '/' and '%' are not allowed."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+
+    case mix_node_types(node_type_t::UNICODE_RANGE, node_type_t::NULL_TOKEN):
+        if(op == node_type_t::MULTIPLY)
+        {
+            return rhs;
+        }
+        error::instance() << f_current->get_position()
+                << "unicode_range * unicode_range is the only multiplicative operator accepted with unicode ranges, '/' and '%' are not allowed."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+
+    case mix_node_types(node_type_t::UNICODE_RANGE, node_type_t::UNICODE_RANGE):
+        if(op == node_type_t::MULTIPLY)
+        {
+            unicode_range_t const lrange(static_cast<range_value_t>(lhs->get_integer()));
+            unicode_range_t const rrange(static_cast<range_value_t>(rhs->get_integer()));
+            range_value_t const start(std::max(lrange.get_start(), rrange.get_start()));
+            range_value_t const end  (std::min(lrange.get_end(),   rrange.get_end()));
+            node::pointer_t result;
+            if(start <= end)
+            {
+                result.reset(new node(node_type_t::UNICODE_RANGE, lhs->get_position()));
+                unicode_range_t range(start, end);
+                result->set_integer(range.get_range());
+            }
+            else
+            {
+                // range becomes null (not characters are in common)
+                result.reset(new node(node_type_t::NULL_TOKEN, lhs->get_position()));
+            }
+            return result;
+        }
+        error::instance() << f_current->get_position()
+                << "unicode_range * unicode_range is the only multiplicative operator accepted with unicode ranges, '/' and '%' are not allowed."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
 
     default:
         error::instance() << f_current->get_position()
@@ -1184,7 +1405,7 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
                 << lhs->get_type()
                 << " and "
                 << rhs->get_type()
-                << " for operators '*', '/', or '%'."
+                << " for operator '*', '/', or '%'."
                 << error_mode_t::ERROR_ERROR;
         return node::pointer_t();
 
@@ -1225,10 +1446,59 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
     }
 
     node::pointer_t result(new node(type, lhs->get_position()));
+
     if(type != node_type_t::PERCENT)
     {
-        // do not lose the dimension(s)
-        result->set_string(lhs->get_string());
+        // dimensions do not need to be equal
+        //
+        // a * b  results in a dimension such as 'px * em'
+        // a / b  results in a dimension such as 'px / em'
+        //
+        // multiple products/divisions can occur in which case the '/' becomes
+        // the separator as in:
+        //
+        // a * b / c / d  results in a dimension such as  'px * em / cm * vw'
+        //
+        // when the same dimension appears on the left and right of a /
+        // then it can be removed, allowing conversions from one type to
+        // another, so:
+        //
+        // 'px * em / px' == 'em'
+        //
+        // modulo, like additive operators, requires both dimensions to be
+        // exactly equal or both numbers to not have a dimension
+        //
+        std::string ldim(lhs->is(node_type_t::PERCENT) ? "" : lhs->get_string());
+        std::string rdim(rhs->is(node_type_t::PERCENT) ? "" : rhs->get_string());
+        switch(op)
+        {
+        case node_type_t::MODULO:
+            // modulo requires both dimensions to be equal
+            if(ldim != rdim)
+            {
+                error::instance() << lhs->get_position()
+                        << "incompatible dimensions (\""
+                        << ldim
+                        << "\" and \""
+                        << rdim
+                        << "\") cannot be used with operator '%'."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
+            // set ldim or rdim, they equal each other anyway
+            result->set_string(ldim);
+            break;
+
+        case node_type_t::MULTIPLY:
+        case node_type_t::DIVIDE:
+            result->set_string(multiplicative_dimension(ldim, op, rdim));
+            break;
+
+        default:
+            // that should never happen
+            throw csspp_exception_logic("expression.cpp:multiply(): unexpected operator."); // LCOV_EXCL_LINE
+
+        }
     }
 
     switch(type)
@@ -1241,10 +1511,24 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
             break;
 
         case node_type_t::DIVIDE:
+            if(bi == 0)
+            {
+                error::instance() << lhs->get_position()
+                        << "division by zero."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
             result->set_integer(ai / bi);
             break;
 
         case node_type_t::MODULO:
+            if(bi == 0)
+            {
+                error::instance() << lhs->get_position()
+                        << "modulo by zero."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
             result->set_integer(ai % bi);
             break;
 
@@ -1263,10 +1547,30 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
             break;
 
         case node_type_t::DIVIDE:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(bf == 0.0)
+#pragma GCC diagnostic pop
+            {
+                error::instance() << lhs->get_position()
+                        << "division by zero."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
             result->set_decimal_number(af / bf);
             break;
 
         case node_type_t::MODULO:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(bf == 0.0)
+#pragma GCC diagnostic pop
+            {
+                error::instance() << lhs->get_position()
+                        << "modulo by zero."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
             result->set_decimal_number(fmod(af, bf));
             break;
 
@@ -1277,16 +1581,7 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
         break;
 
     default:
-        error::instance() << f_current->get_position()
-                << "incompatible types between "
-                << lhs->get_type()
-                << " and "
-                << rhs->get_type()
-                << " for operator "
-                << op
-                << "."
-                << error_mode_t::ERROR_ERROR;
-        return node::pointer_t();
+        throw csspp_exception_logic("expression.cpp:multiply(): 'type' set to a value which is not handled here."); // LCOV_EXCL_LINE
 
     }
 
@@ -1379,7 +1674,6 @@ node::pointer_t expression::power()
         return node::pointer_t();
     }
 
-    node_type_t op(multiplicative_operator(f_current));
     while((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "pow")
        || f_current->is(node_type_t::POWER))
     {
@@ -1400,8 +1694,6 @@ node::pointer_t expression::power()
         {
             return node::pointer_t();
         }
-
-        op = multiplicative_operator(f_current);
     }
 
     return result;
@@ -1607,12 +1899,13 @@ node::pointer_t expression::unary()
 
     case node_type_t::OPEN_PARENTHESIS:
         {
-            // skip the '('
-            next();
-
             // calculate the result of the sub-expression
             expression group(f_current, true);
             group.next();
+
+            // skip the '(' in the main expression
+            next();
+
             return group.expression_list();
         }
 

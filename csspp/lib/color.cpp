@@ -625,7 +625,7 @@ std::string color::to_string() const
         return "rgba(" + std::to_string(static_cast<int>(red))
                  + "," + std::to_string(static_cast<int>(green))
                  + "," + std::to_string(static_cast<int>(blue))
-                 + "," + decimal_number_to_string(f_alpha) + ")";
+                 + "," + decimal_number_to_string(f_alpha, true) + ")";
     }
 }
 

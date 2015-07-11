@@ -465,7 +465,7 @@ TEST_CASE("Compile simple stylesheets", "[compiler] [stylesheet] [attribute]")
 "          ARG\n"
 "            FUNCTION \"opacity\"\n"
 "              ARG\n"
-"                PERCENT D:0.2\n"
+"                DECIMAL_NUMBER \"\" D:0.2\n"
 "        DECLARATION \"filter\"\n"
 "          FUNCTION \"alpha\"\n"
 "            IDENTIFIER \"opacity\"\n"
@@ -4493,7 +4493,7 @@ TEST_CASE("Invalid node", "[compiler] [invalid]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Compile font metrics", "[compiler] [invalid]")
+TEST_CASE("Compile font metrics", "[compiler] [font-metrics]")
 {
     // define a sub-declaration inside a declaration
     {

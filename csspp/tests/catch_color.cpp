@@ -915,7 +915,7 @@ TEST_CASE("Color to string", "[color] [output]")
         ss << "rgba(" << static_cast<int>(r)
                << "," << static_cast<int>(g)
                << "," << static_cast<int>(b)
-               << "," << csspp::decimal_number_to_string(static_cast<int>(a) / 255.0)
+               << "," << csspp::decimal_number_to_string(static_cast<int>(a) / 255.0, true)
                << ")";
         REQUIRE(c.to_string() == ss.str());
     }

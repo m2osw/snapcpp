@@ -72,7 +72,7 @@ void set_precision(int precision)
     g_precision = precision;
 }
 
-std::string decimal_number_to_string(decimal_number_t d)
+std::string decimal_number_to_string(decimal_number_t d, bool remove_leading_zero)
 {
     // the std::setprecision() is a total number of digits when we
     // want a specific number of digits after the decimal point so
@@ -114,6 +114,26 @@ std::string decimal_number_to_string(decimal_number_t d)
         if(out.back() == '.')
         {
             out.erase(out.end() - 1);
+        }
+    }
+
+    // remove the leading zero when possible
+    if(remove_leading_zero)
+    {
+        if(out.length() >= 3
+        && out[0] == '0'
+        && out[1] == '.')
+        {
+            out.erase(out.begin());
+            // .33 is valid and equivalent to 0.33
+        }
+        else if(out.length() >= 4
+             && out[0] == '-'
+             && out[1] == '0'
+             && out[2] == '.')
+        {
+            out.erase(out.begin() + 1);
+            // -.33 is valid and equivalent to -0.33
         }
     }
 

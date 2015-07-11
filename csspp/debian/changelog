@@ -1,3 +1,8 @@
+csspp (1.0.4~trusty) trusty; urgency=high
+
+  * Added proper support for dimensions in various places.
+  * Fixed the handling of expression written between parenthesis.
+
 csspp (1.0.3~trusty) trusty; urgency=high
 
   * Added a --no-logo command line option.
