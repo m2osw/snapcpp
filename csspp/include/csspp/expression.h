@@ -64,8 +64,8 @@ private:
     node::pointer_t     equality();
     node::pointer_t     relational();
     node::pointer_t     additive();
-    void                dimensions_to_vectors(std::string const & dimension, dimension_vector_t & dividend, dimension_vector_t & divisor);
-    std::string         multiplicative_dimension(std::string const & dim1, node_type_t const op, std::string const & dim2);
+    void                dimensions_to_vectors(position const & pos, std::string const & dimension, dimension_vector_t & dividend, dimension_vector_t & divisor);
+    std::string         multiplicative_dimension(position const & pos, std::string const & dim1, node_type_t const op, std::string const & dim2);
     std::string         rebuild_dimension(dimension_vector_t const & dividend, dimension_vector_t const & divisor);
     node::pointer_t     multiply(node_type_t op, node::pointer_t lhs, node::pointer_t rhs);
     node::pointer_t     multiplicative();

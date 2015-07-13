@@ -1254,7 +1254,7 @@ node::pointer_t expression::internal_function__sqrt(node::pointer_t func)
             // first get the current dimensions
             dimension_vector_t dividend;
             dimension_vector_t divisor;
-            dimensions_to_vectors(dimension, dividend, divisor);
+            dimensions_to_vectors(number->get_position(), dimension, dividend, divisor);
 
             if((dividend.size() & 1 == 0)
             && (divisor.size() & 1 == 0))

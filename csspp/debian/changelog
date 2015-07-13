@@ -1,7 +1,17 @@
 csspp (1.0.4~trusty) trusty; urgency=high
 
   * Added proper support for dimensions in various places.
-  * Fixed the handling of expression written between parenthesis.
+  * Wrote test to verify multiplicative expressions (100% coverage).
+  * Fixed the multiplicative operations according to the test results.
+  * Fixed the handling of expressions written between parenthesis.
+  * Added support for many color operations.
+  * Added support to multiply unicode range with NULL.
+  * Added a new page to list expressions by type of data.
+  * Fixed the get_color()/get_hsl() which were not const yet.
+  * Fixed compiler to handle component values that are not in a sub-list.
+  * Removed the special handling of '=' + '=' from expressions.
+  * Applied a fix to the handling of the power operator, not tested yet.
+  * Updated the additive test to cover 100% of the additions.
 
 csspp (1.0.3~trusty) trusty; urgency=high
 

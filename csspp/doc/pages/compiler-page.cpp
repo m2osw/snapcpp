@@ -295,7 +295,8 @@
 //!
 //! \section expressions Expressions
 //!
-//! The CSS Preprocessor adds support for C-like expressions.
+//! The CSS Preprocessor adds support for C-like
+//! \ref expression_by_type_page "expressions".
 //! The syntax is described in \ref expression_page.
 //!
 //! Expressions are accepted in various places:

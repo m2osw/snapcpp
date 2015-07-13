@@ -78,7 +78,13 @@ node::pointer_t lexer::next_token()
                 {
                     ungetc(n);
                 }
-                // else -- warn about it?
+                else
+                {
+                    // really warn about it?
+                    error::instance() << f_position
+                            << "we accepted '==' instead of '=' in an expression, you probably want to change the operator to just '=', though."
+                            << error_mode_t::ERROR_WARNING;
+                }
 
                 return node::pointer_t(new node(node_type_t::EQUAL, f_start_position));
             }

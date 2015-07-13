@@ -191,10 +191,23 @@ TEST_CASE("Node types", "[node] [type]")
             {
             case csspp::node_type_t::COLOR:
                 {
+                    // by default a color is black (transparent) and thus
+                    // represents false
+                    REQUIRE_FALSE(n->to_boolean());
                     c.set_color(rand() % 255, rand() % 255, rand() % 255, rand() % 255);
                     n->set_color(c);
                     csspp::color d(n->get_color());
                     REQUIRE(c.get_color() == d.get_color());
+                    if((c.get_color() & 0x00FFFFFF) == 0)
+                    {
+                        // we tested with black... so it is still false
+                        REQUIRE_FALSE(n->to_boolean());
+                    }
+                    else
+                    {
+                        // otherwise we have a "true color"
+                        REQUIRE(n->to_boolean());
+                    }
                 }
                 break;
 
@@ -410,6 +423,7 @@ TEST_CASE("Node types", "[node] [type]")
         {
         case csspp::node_type_t::ARRAY:
         case csspp::node_type_t::BOOLEAN:
+        case csspp::node_type_t::COLOR:
         case csspp::node_type_t::DECIMAL_NUMBER:
         case csspp::node_type_t::INTEGER:
         case csspp::node_type_t::LIST:
@@ -1231,7 +1245,7 @@ TEST_CASE("Node to string", "[node] [type] [output]")
                     REQUIRE(n->to_string(flags) == "#5832ff");
                     c.set_color(0x58, 0x32, 0xff, 0x7f);
                     n->set_color(c);
-                    REQUIRE(n->to_string(flags) == "rgba(88,50,255,0.5)");
+                    REQUIRE(n->to_string(flags) == "rgba(88,50,255,.5)");
                 }
                 break;
 

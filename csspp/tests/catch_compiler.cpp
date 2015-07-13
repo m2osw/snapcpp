@@ -4801,6 +4801,52 @@ TEST_CASE("Nested declarations", "[compiler] [nested]")
         REQUIRE(c.get_root() == n);
     }
 
+    SECTION("just one sub-declaration inside a field definition")
+    {
+        std::stringstream ss;
+        ss << "p.boxed { border: { width: 25px + 5px; }; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(true);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"      PERIOD\n"
+"      IDENTIFIER \"boxed\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"border-width\"\n"
+"        ARG\n"
+"          INTEGER \"px\" I:30\n"
+
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
     // define the sub-declaration in a variable
     {
         std::stringstream ss;

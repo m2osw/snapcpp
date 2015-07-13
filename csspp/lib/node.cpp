@@ -306,6 +306,15 @@ boolean_t node::to_boolean() const
     case node_type_t::MAP:
         return f_children.empty() ? boolean_t::BOOLEAN_FALSE : boolean_t::BOOLEAN_TRUE;
 
+    case node_type_t::COLOR:
+        {
+            color c(get_color());
+            return (c.get_color() & 0x00FFFFFF) == 0
+                    ? boolean_t::BOOLEAN_FALSE
+                    : boolean_t::BOOLEAN_TRUE;
+        }
+        break;
+
     default:
         return boolean_t::BOOLEAN_INVALID;
 

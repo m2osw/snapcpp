@@ -26,6 +26,11 @@
  * Since expressions can appear in lists of values of a field, an
  * expression may stop mid-stream.
  *
+ * You may be more interested in reading the \ref expression_by_type_page
+ * instead of this page, as that other page is less technical
+ * in regard to the compiler implementation and closer to an
+ * end user point of view.
+ *
  * \section expression Expression
  *
  * Expressions are composed of many elements which, when we reach the

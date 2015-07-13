@@ -453,7 +453,7 @@ TEST_CASE("Expression integer +/- integer with incompatible dimensions", "[expre
 
 TEST_CASE("Expression additive errors", "[expression] [additive] [invalid]")
 {
-    // an invalid unary value generates an error caught in additive
+    SECTION("an invalid unary value generates an error caught in additive")
     {
         std::stringstream ss;
         ss << "div { width: ?; }";
@@ -479,7 +479,7 @@ TEST_CASE("Expression additive errors", "[expression] [additive] [invalid]")
         REQUIRE(c.get_root() == n);
     }
 
-    // an invalid unary on the right side of the operator
+    SECTION("an invalid unary on the right side of the operator")
     {
         std::stringstream ss;
         ss << "div { width: 3 + ?; }";
@@ -505,7 +505,7 @@ TEST_CASE("Expression additive errors", "[expression] [additive] [invalid]")
         REQUIRE(c.get_root() == n);
     }
 
-    // cannot add a unicode range with anything
+    SECTION("cannot add a unicode range with anything")
     {
         std::stringstream ss;
         ss << "div { width: 3 + U+4??; }";
@@ -2275,6 +2275,634 @@ TEST_CASE("Expression percent +/- percent", "[expression] [additive]")
 "div{height:6.5%}\n"
 + csspp_test::get_close_comment()
                 );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Expression color or offset +/- color or offsets", "[expression] [additive] [colors]")
+{
+    SECTION("add two colors together")
+    {
+        std::stringstream ss;
+        ss << "div { color: (red + blue) / 2; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ff800080\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{color:purple}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("subtract a color from another")
+    {
+        std::stringstream ss;
+        ss << "div { color: white - purple; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:7fff7f\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{color:transparent}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("subtract a color from another and rescue the alpha channel")
+    {
+        std::stringstream ss;
+        ss << "div { color: rgba(white - purple, 1); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ff7fff7f\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{color:#7fff7f}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("add an offset to a color")
+    {
+        std::stringstream ss;
+        ss << "div { color: black + 1; background-color: black + 0.25; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      LIST\n"
+"        DECLARATION \"color\"\n"
+"          ARG\n"
+"            COLOR H:ffffffff\n"
+"        DECLARATION \"background-color\"\n"
+"          ARG\n"
+"            COLOR H:ff404040\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{color:#fff;background-color:#404040}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("add an offset to a color (swapped)")
+    {
+        std::stringstream ss;
+        ss << "div { color: 1 + black; background-color: 0.25 + black; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      LIST\n"
+"        DECLARATION \"color\"\n"
+"          ARG\n"
+"            COLOR H:ffffffff\n"
+"        DECLARATION \"background-color\"\n"
+"          ARG\n"
+"            COLOR H:ff404040\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{color:#fff;background-color:#404040}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("subtract an offset from a color")
+    {
+        std::stringstream ss;
+        ss << "div { color: white - 1; background-color: white - 0.25; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      LIST\n"
+"        DECLARATION \"color\"\n"
+"          ARG\n"
+"            COLOR H:0\n"
+"        DECLARATION \"background-color\"\n"
+"          ARG\n"
+"            COLOR H:bfbfbfbf\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{color:transparent;background-color:rgba(191,191,191,.75)}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("subtract a color from an offset")
+    {
+        std::stringstream ss;
+        ss << "div { color: 1 - forestgreen; background-color: 0.25 - chocolate; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      LIST\n"
+"        DECLARATION \"color\"\n"
+"          ARG\n"
+"            COLOR H:dd74dd\n"
+"        DECLARATION \"background-color\"\n"
+"          ARG\n"
+"            COLOR H:220000\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+"div{color:transparent;background-color:transparent}\n"
++ csspp_test::get_close_comment()
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Expression color +/- offset with a dimension", "[expression] [additive] [colors] [invalid]")
+{
+    SECTION("color + 3px")
+    {
+        std::stringstream ss;
+        ss << "div { color: red + 3px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("test.css(1): error: color offsets (numbers added with + or - operators) must be unit less values, 3px is not acceptable.\n");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("color - 3px")
+    {
+        std::stringstream ss;
+        ss << "div { color: red - 3px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("test.css(1): error: color offsets (numbers added with + or - operators) must be unit less values, 3px is not acceptable.\n");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("3px + color")
+    {
+        std::stringstream ss;
+        ss << "div { color: 3px + red; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("test.css(1): error: color offsets (numbers added with + or - operators) must be unit less values, 3px is not acceptable.\n");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("3px - color")
+    {
+        std::stringstream ss;
+        ss << "div { color: 3px - red; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("test.css(1): error: color offsets (numbers added with + or - operators) must be unit less values, 3px is not acceptable.\n");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("color + 3.2px")
+    {
+        std::stringstream ss;
+        ss << "div { color: red + 3.2px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("test.css(1): error: color offsets (numbers added with + or - operators) must be unit less values, 3.2px is not acceptable.\n");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("color - 3.2px")
+    {
+        std::stringstream ss;
+        ss << "div { color: red - 3.2px; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("test.css(1): error: color offsets (numbers added with + or - operators) must be unit less values, 3.2px is not acceptable.\n");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("3.2px + color")
+    {
+        std::stringstream ss;
+        ss << "div { color: 3.2px + red; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("test.css(1): error: color offsets (numbers added with + or - operators) must be unit less values, 3.2px is not acceptable.\n");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("3.2px - color")
+    {
+        std::stringstream ss;
+        ss << "div { color: 3.2px - red; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+        REQUIRE_ERRORS("test.css(1): error: color offsets (numbers added with + or - operators) must be unit less values, 3.2px is not acceptable.\n");
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         REQUIRE(c.get_root() == n);
     }

@@ -564,6 +564,13 @@ bool is_equal(node::pointer_t lhs, node::pointer_t rhs)
     case mix_node_types(node_type_t::STRING, node_type_t::STRING):
         return lhs->get_string() == rhs->get_string();
 
+    case mix_node_types(node_type_t::COLOR, node_type_t::COLOR):
+        {
+            color const lc(lhs->get_color());
+            color const rc(rhs->get_color());
+            return lc.get_color() == rc.get_color();
+        }
+
     }
 
     error::instance() << lhs->get_position()
@@ -678,20 +685,6 @@ node_type_t expression::equality_operator(node::pointer_t n)
     {
     // return type as is
     case node_type_t::EQUAL:
-        if(f_pos + 1 < f_node->size())
-        {
-            if(f_node->get_child(f_pos + 1)->is(node_type_t::EQUAL))
-            {
-                // we accept '==' with a warning (for SASS compatibility
-                // skip the first '=' here
-                next();
-                error::instance() << n->get_position()
-                        << "we accepted '==' instead of '=' in an expression, you probably want to change the operator to just '='."
-                        << error_mode_t::ERROR_WARNING;
-            }
-        }
-        return node_type_t::EQUAL;
-
     case node_type_t::NOT_EQUAL:
     case node_type_t::INCLUDE_MATCH:
     case node_type_t::PREFIX_MATCH:
@@ -877,6 +870,7 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
     integer_t bi;
     decimal_number_t af;
     decimal_number_t bf;
+    bool swapped(false);
 
     switch(mix_node_types(lhs->get_type(), rhs->get_type()))
     {
@@ -920,6 +914,102 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
         type = node_type_t::PERCENT;
         test_dimensions = false;
         break;
+
+    case mix_node_types(node_type_t::INTEGER, node_type_t::COLOR):
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::COLOR):
+        std::swap(lhs, rhs);
+        swapped = true;
+    case mix_node_types(node_type_t::COLOR, node_type_t::INTEGER):
+    case mix_node_types(node_type_t::COLOR, node_type_t::DECIMAL_NUMBER):
+        if(rhs->get_string() == "")
+        {
+            decimal_number_t offset;
+            if(rhs->is(node_type_t::INTEGER))
+            {
+                offset = static_cast<decimal_number_t>(rhs->get_integer());
+            }
+            else
+            {
+                offset = rhs->get_decimal_number();
+            }
+            color c(lhs->get_color());
+            color_component_t red;
+            color_component_t green;
+            color_component_t blue;
+            color_component_t alpha;
+            c.get_color(red, green, blue, alpha);
+            if(subtract)
+            {
+                if(swapped)
+                {
+                    red   = offset - red;
+                    green = offset - green;
+                    blue  = offset - blue;
+                    alpha = offset - alpha;
+                }
+                else
+                {
+                    red   -= offset;
+                    green -= offset;
+                    blue  -= offset;
+                    alpha -= offset;
+                }
+            }
+            else
+            {
+                red   += offset;
+                green += offset;
+                blue  += offset;
+                alpha += offset;
+            }
+            c.set_color(red, green, blue, alpha);
+            node::pointer_t result(new node(node_type_t::COLOR, lhs->get_position()));
+            result->set_color(c);
+            return result;
+        }
+        error::instance() << rhs->get_position()
+                << "color offsets (numbers added with + or - operators) must be unit less values, "
+                << (rhs->is(node_type_t::INTEGER)
+                            ? static_cast<decimal_number_t>(rhs->get_integer())
+                            : rhs->get_decimal_number())
+                << rhs->get_string()
+                << " is not acceptable."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+
+    case mix_node_types(node_type_t::COLOR, node_type_t::COLOR):
+        {
+            color lc(lhs->get_color());
+            color const rc(rhs->get_color());
+            color_component_t lred;
+            color_component_t lgreen;
+            color_component_t lblue;
+            color_component_t lalpha;
+            color_component_t rred;
+            color_component_t rgreen;
+            color_component_t rblue;
+            color_component_t ralpha;
+            lc.get_color(lred, lgreen, lblue, lalpha);
+            rc.get_color(rred, rgreen, rblue, ralpha);
+            if(subtract)
+            {
+                lred   -= rred;
+                lgreen -= rgreen;
+                lblue  -= rblue;
+                lalpha -= ralpha;
+            }
+            else
+            {
+                lred   += rred;
+                lgreen += rgreen;
+                lblue  += rblue;
+                lalpha += ralpha;
+            }
+            lc.set_color(lred, lgreen, lblue, lalpha);
+            node::pointer_t result(new node(node_type_t::COLOR, lhs->get_position()));
+            result->set_color(lc);
+            return result;
+        }
 
     default:
         break;
@@ -1073,10 +1163,17 @@ node_type_t multiplicative_operator(node::pointer_t n)
     return node_type_t::UNKNOWN;
 }
 
-void expression::dimensions_to_vectors(std::string const & dimension, dimension_vector_t & dividend, dimension_vector_t & divisor)
+void expression::dimensions_to_vectors(position const & node_pos, std::string const & dimension, dimension_vector_t & dividend, dimension_vector_t & divisor)
 {
     bool found_slash(false);
     std::string::size_type pos(0);
+
+    // return early on empty otherwise we generate an error saying that
+    // the dimension is missing (when unitless numbers are valid)
+    if(dimension.empty())
+    {
+        return;
+    }
 
     // we have a special case when there is no dividend in a dimension
     // this is defined as a "1" with a slash
@@ -1124,6 +1221,13 @@ void expression::dimensions_to_vectors(std::string const & dimension, dimension_
                     dividend.push_back(dim);
                 }
             }
+            else
+            {
+                error::instance() << node_pos
+                        << "number dimension is missing a dimension name."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
 
             pos = end;
             if(pos >= dimension.size())
@@ -1142,15 +1246,19 @@ void expression::dimensions_to_vectors(std::string const & dimension, dimension_
         }
         if(pos >= dimension.size())
         {
-            throw csspp_exception_logic("expression.cpp:dimensions_to_vectors(): dimension separator missing.");
+            // a user dimension may end with a space, just ignore it
+            return;
         }
         if(dimension[pos] == '/')
         {
             // second slash?!
             if(found_slash)
             {
-                // this cannot happen unless this function is not correct
-                throw csspp_exception_logic("expression.cpp:dimensions_to_vectors(): unexpected second '/' separator in dimension.");
+                // user defined dimensions could have invalid dimension definitions
+                error::instance() << node_pos
+                        << "a valid dimension can have any number of '*' operators and a single '/' operator, here we found a second '/'."
+                        << error_mode_t::ERROR_ERROR;
+                return;
             }
 
             found_slash = true;
@@ -1163,7 +1271,12 @@ void expression::dimensions_to_vectors(std::string const & dimension, dimension_
         else
         {
             // what is that character?!
-            throw csspp_exception_logic("expression.cpp:dimensions_to_vectors(): unexpected separator in dimension \"" + dimension + "\" at position " + std::to_string(pos) + ".");
+            error::instance() << node_pos
+                    << "multiple dimensions can only be separated by '*' or '/' not '"
+                    << dimension.substr(pos, 1)
+                    << "'."
+                    << error_mode_t::ERROR_ERROR;
+            return;
         }
         if(pos < dimension.size()
         && dimension[pos] == ' ')
@@ -1175,22 +1288,22 @@ void expression::dimensions_to_vectors(std::string const & dimension, dimension_
     }
 }
 
-std::string expression::multiplicative_dimension(std::string const & ldim, node_type_t const op, std::string const & rdim)
+std::string expression::multiplicative_dimension(position const & pos, std::string const & ldim, node_type_t const op, std::string const & rdim)
 {
     dimension_vector_t dividend;
     dimension_vector_t divisor;
 
     // transform the string in one or two vectors
-    dimensions_to_vectors(ldim, dividend, divisor);
+    dimensions_to_vectors(pos, ldim, dividend, divisor);
 
     if(op == node_type_t::MULTIPLY)
     {
-        dimensions_to_vectors(rdim, dividend, divisor);
+        dimensions_to_vectors(pos, rdim, dividend, divisor);
     }
     else
     {
         // a division has the dividend / divisor inverted, simple trick
-        dimensions_to_vectors(rdim, divisor, dividend);
+        dimensions_to_vectors(pos, rdim, divisor, dividend);
     }
 
     // optimize the result
@@ -1399,6 +1512,155 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
                 << error_mode_t::ERROR_ERROR;
         return node::pointer_t();
 
+    case mix_node_types(node_type_t::INTEGER, node_type_t::COLOR):
+        if(op != node_type_t::MULTIPLY)
+        {
+            error::instance() << f_current->get_position()
+                    << "'number / color' and 'number % color' are not available."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+        std::swap(lhs, rhs);
+    case mix_node_types(node_type_t::COLOR, node_type_t::INTEGER):
+        bf = static_cast<decimal_number_t>(rhs->get_integer());
+        goto color_multiplicative;
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::COLOR):
+    case mix_node_types(node_type_t::PERCENT, node_type_t::COLOR):
+        if(op != node_type_t::MULTIPLY)
+        {
+            error::instance() << f_current->get_position()
+                    << "'number / color' and 'number % color' are not available."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+        std::swap(lhs, rhs);
+    case mix_node_types(node_type_t::COLOR, node_type_t::DECIMAL_NUMBER):
+    case mix_node_types(node_type_t::COLOR, node_type_t::PERCENT):
+        bf = rhs->get_decimal_number();
+color_multiplicative:
+        if(rhs->is(node_type_t::PERCENT)
+        || rhs->get_string() == "")
+        {
+            color c(lhs->get_color());
+            color_component_t red;
+            color_component_t green;
+            color_component_t blue;
+            color_component_t alpha;
+            c.get_color(red, green, blue, alpha);
+            switch(op)
+            {
+            case node_type_t::MULTIPLY:
+                red   *= bf;
+                green *= bf;
+                blue  *= bf;
+                alpha *= bf;
+                break;
+
+            case node_type_t::DIVIDE:
+                red   /= bf;
+                green /= bf;
+                blue  /= bf;
+                alpha /= bf;
+                break;
+
+            case node_type_t::MODULO:
+                red   = fmod(red,   bf);
+                green = fmod(green, bf);
+                blue  = fmod(blue,  bf);
+                alpha = fmod(alpha, bf);
+                break;
+
+            default:
+                throw csspp_exception_logic("expression.cpp:multiply(): unexpected operator."); // LCOV_EXCL_LINE
+
+            }
+            c.set_color(red, green, blue, alpha);
+            node::pointer_t result(new node(node_type_t::COLOR, lhs->get_position()));
+            result->set_color(c);
+            return result;
+        }
+        error::instance() << f_current->get_position()
+                << "color factors must be unit less values, "
+                << bf
+                << rhs->get_string()
+                << " is not acceptable."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+
+    case mix_node_types(node_type_t::COLOR, node_type_t::COLOR):
+        {
+            color lc(lhs->get_color());
+            color const rc(rhs->get_color());
+            color_component_t lred;
+            color_component_t lgreen;
+            color_component_t lblue;
+            color_component_t lalpha;
+            color_component_t rred;
+            color_component_t rgreen;
+            color_component_t rblue;
+            color_component_t ralpha;
+            lc.get_color(lred, lgreen, lblue, lalpha);
+            rc.get_color(rred, rgreen, rblue, ralpha);
+            switch(op)
+            {
+            case node_type_t::MULTIPLY:
+                lred   *= rred;
+                lgreen *= rgreen;
+                lblue  *= rblue;
+                lalpha *= ralpha;
+                break;
+
+            case node_type_t::DIVIDE:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(rred == 0.0
+                || rgreen == 0.0
+                || rblue == 0.0
+                || ralpha == 0.0)
+#pragma GCC diagnostic pop
+                {
+                    error::instance() << f_current->get_position()
+                            << "color division does not accept any color component set to zero."
+                            << error_mode_t::ERROR_ERROR;
+                    return node::pointer_t();
+                }
+                lred   /= rred;
+                lgreen /= rgreen;
+                lblue  /= rblue;
+                lalpha /= ralpha;
+                break;
+
+            case node_type_t::MODULO:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(rred == 0.0
+                || rgreen == 0.0
+                || rblue == 0.0
+                || ralpha == 0.0)
+#pragma GCC diagnostic pop
+                {
+                    error::instance() << f_current->get_position()
+                            << "color modulo does not accept any color component set to zero."
+                            << error_mode_t::ERROR_ERROR;
+                    return node::pointer_t();
+                }
+                lred   = fmod(lred   , rred  );
+                lgreen = fmod(lgreen , rgreen);
+                lblue  = fmod(lblue  , rblue );
+                lalpha = fmod(lalpha , ralpha);
+                break;
+
+            default:
+                throw csspp_exception_logic("expression.cpp:multiply(): unexpected operator."); // LCOV_EXCL_LINE
+
+            }
+            lc.set_color(lred, lgreen, lblue, lalpha);
+            node::pointer_t result(new node(node_type_t::COLOR, lhs->get_position()));
+            result->set_color(lc);
+            return result;
+        }
+
     default:
         error::instance() << f_current->get_position()
                 << "incompatible types between "
@@ -1491,7 +1753,7 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
 
         case node_type_t::MULTIPLY:
         case node_type_t::DIVIDE:
-            result->set_string(multiplicative_dimension(ldim, op, rdim));
+            result->set_string(multiplicative_dimension(lhs->get_position(), ldim, op, rdim));
             break;
 
         default:
@@ -1644,7 +1906,11 @@ node::pointer_t expression::apply_power(node::pointer_t lhs, node::pointer_t rhs
         result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_decimal_number()));
         break;
 
-    case mix_node_types(node_type_t::POWER, node_type_t::POWER):
+    case mix_node_types(node_type_t::PERCENT, node_type_t::INTEGER):
+        result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_integer()));
+        break;
+
+    case mix_node_types(node_type_t::PERCENT, node_type_t::DECIMAL_NUMBER):
         result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_decimal_number()));
         break;
 

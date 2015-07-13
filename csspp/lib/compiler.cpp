@@ -890,11 +890,22 @@ void compiler::compile_declaration_values(node::pointer_t declaration)
                 {
                     compile_declaration_values(component);
                 }
+                else if(component->is(node_type_t::COMPONENT_VALUE))
+                {
+                    compile_component_value(component);
+                }
+                else if(component->is(node_type_t::DECLARATION))
+                {
+                    // this was compiled, ignore
+                }
                 else
                 {
                     // it looks like I cannot get here anymore
-                    throw csspp_exception_logic("compiler.cpp: found an unexpected node type, expected a LIST."); // LCOV_EXCL_LINE
-                    //compile_component_value(component);
+                    std::stringstream errmsg;                               // LCOV_EXCL_LINE
+                    errmsg << "compiler.cpp: found unexpected node type "   // LCOV_EXCL_LINE
+                           << component->get_type()                         // LCOV_EXCL_LINE
+                           << ", expected a LIST.";                         // LCOV_EXCL_LINE
+                    throw csspp_exception_logic(errmsg.str());              // LCOV_EXCL_LINE
                 }
                 if(j < item->size()
                 && component == item->get_child(j))

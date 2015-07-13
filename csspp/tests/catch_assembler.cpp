@@ -1161,6 +1161,16 @@ TEST_CASE("Assemble numbers", "[assembler] [numbers]")
 
 //std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
 
+        std::stringstream percent_stream;
+        percent_stream << percent;
+        std::string percent_str(percent_stream.str());
+        if(percent_str.length() > 1
+        && percent_str[0] == '0'
+        && percent_str[1] == '.')
+        {
+            percent_str = percent_str.substr(1);
+        }
+
         std::stringstream expected;
         switch(static_cast<csspp::output_mode_t>(i))
         {
@@ -1168,7 +1178,7 @@ TEST_CASE("Assemble numbers", "[assembler] [numbers]")
 expected << "#wrapper div * span a:hover {"
          << " width: " << integer << ";"
          << " height: " << decimal_number << ";"
-         << " font-size: " << percent << "%"
+         << " font-size: " << percent_str << "%"
          << " }\n"
          << csspp_test::get_close_comment();
             break;
@@ -1177,7 +1187,7 @@ expected << "#wrapper div * span a:hover {"
 expected << "#wrapper div * span a:hover{"
          << "width:" << integer << ";"
          << "height:" << decimal_number << ";"
-         << "font-size:" << percent << "%"
+         << "font-size:" << percent_str << "%"
          << "}\n"
          << csspp_test::get_close_comment();
             break;
@@ -1187,7 +1197,7 @@ expected << "#wrapper div * span a:hover\n"
          << "{\n"
          << "  width: " << integer << ";\n"
          << "  height: " << decimal_number << ";\n"
-         << "  font-size: " << percent << "%;\n"
+         << "  font-size: " << percent_str << "%;\n"
          << "}\n"
          << csspp_test::get_close_comment();
             break;
@@ -1196,7 +1206,7 @@ expected << "#wrapper div * span a:hover\n"
 expected << "#wrapper div * span a:hover{"
          << "width:" << integer << ";"
          << "height:" << decimal_number << ";"
-         << "font-size:" << percent << "%"
+         << "font-size:" << percent_str << "%"
          << "}\n"
          << csspp_test::get_close_comment();
             break;
@@ -1211,7 +1221,7 @@ expected << "#wrapper div * span a:hover{"
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Assemble unicode range", "[assembler] [unicode-range] [at-keyword]")
+TEST_CASE("Assemble unicode range", "[assembler] [unicode-range-value] [at-keyword]")
 {
     // a valid @supports
     for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));

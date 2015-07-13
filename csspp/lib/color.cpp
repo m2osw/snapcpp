@@ -396,7 +396,7 @@ void color::set_hsl(color_component_t hue, color_component_t saturation, color_c
     f_alpha = alpha;
 }
 
-void color::get_hsl(color_component_t & hue, color_component_t & saturation, color_component_t & lightness, color_component_t & alpha)
+void color::get_hsl(color_component_t & hue, color_component_t & saturation, color_component_t & lightness, color_component_t & alpha) const
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -520,7 +520,7 @@ rgba_color_t color::get_color() const
          | (color_component_to_byte(f_alpha) << 24);
 }
 
-void color::get_color(color_component_t & red, color_component_t & green, color_component_t & blue, color_component_t & alpha)
+void color::get_color(color_component_t & red, color_component_t & green, color_component_t & blue, color_component_t & alpha) const
 {
     red   = f_red;
     green = f_green;

@@ -46,13 +46,13 @@ public:
     void                    set_color(color_component_t red, color_component_t green, color_component_t blue, color_component_t alpha);
     void                    set_color(double red, double green, double blue, double alpha);
     void                    set_hsl(color_component_t h, color_component_t s, color_component_t l, color_component_t alpha);
-    void                    get_hsl(color_component_t & hue, color_component_t & saturation, color_component_t & lightness, color_component_t & alpha);
+    void                    get_hsl(color_component_t & hue, color_component_t & saturation, color_component_t & lightness, color_component_t & alpha) const;
     void                    adjust_hue(float hue);
     void                    adjust_saturation(float change);
     void                    adjust_lightness(float change);
     bool                    set_color(std::string const & name);
     rgba_color_t            get_color() const;
-    void                    get_color(color_component_t & red, color_component_t & green, color_component_t & blue, color_component_t & alpha);
+    void                    get_color(color_component_t & red, color_component_t & green, color_component_t & blue, color_component_t & alpha) const;
 
     bool                    is_solid() const;
     bool                    is_transparent() const;
