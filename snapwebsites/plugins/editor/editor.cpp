@@ -1064,7 +1064,7 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
 
     if(value_info.get_data_type() == "int8")
     {
-        int const v(value_info.get_value().signedCharValue());
+        int const v(value_info.get_value().safeSignedCharValue());
         if(value_info.get_widget_type() == "checkmark")
         {
             value_info.result() = v == 0 ? "0" : "1";
@@ -1080,7 +1080,7 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
     if(value_info.get_data_type() == "double"
     || value_info.get_data_type() == "float64")
     {
-        double const v(value_info.get_value().doubleValue());
+        double const v(value_info.get_value().safeDoubleValue());
         value_info.result() = QString("%1").arg(v);
         value_info.set_status(value_to_string_info_t::status_t::DONE);
         return false;
@@ -1098,7 +1098,7 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
 
     if(value_info.get_data_type() == "ms-date-us")
     {
-        value_info.result() = f_snap->date_to_string(value_info.get_value().int64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
+        value_info.result() = f_snap->date_to_string(value_info.get_value().safeInt64Value(), snap_child::date_format_t::DATE_FORMAT_SHORT_US);
         value_info.set_status(value_to_string_info_t::status_t::DONE);
         return true;
     }
@@ -1444,7 +1444,10 @@ void editor::editor_save(content::path_info_t& ipath, sessions::sessions::sessio
                     {
                         value_to_string_info_t value_info(ipath, widget, data_row->cell(field_name)->value());
                         value_to_string(value_info);
-                        f_current_values[widget_name] = value_info.result();
+                        if(value_info.is_valid())
+                        {
+                            f_current_values[widget_name] = value_info.result();
+                        }
                     }
                 }
             }
@@ -2434,7 +2437,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 messages->set_error(
                                         "Invalid Value",
                                         QString("\"%1\" is a required field.").arg(label),
-                                        QString("no data entered by user in widget \"%1\"").arg(widget_name),
+                                        QString("no file attached by user in widget \"%1\"").arg(widget_name),
                                         false
                                     ).set_widget_name(widget_name);
                                 info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
@@ -2453,7 +2456,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                                 messages->set_error(
                                         "Value is Invalid",
                                         QString("\"%1\" is a required field.").arg(label),
-                                        QString("no data entered in widget \"%1\" by user").arg(widget_name),
+                                        QString("no data dropped in widget \"%1\" by user").arg(widget_name),
                                         false
                                     ).set_widget_name(widget_name);
                                 info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
