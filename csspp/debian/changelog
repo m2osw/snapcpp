@@ -13,6 +13,8 @@ csspp (1.0.4~trusty) trusty; urgency=high
   * Applied a fix to the handling of the power operator, not tested yet.
   * Updated the additive test to cover 100% of the additions.
 
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  9 Jul 2015 19:00:00 -0700
+
 csspp (1.0.3~trusty) trusty; urgency=high
 
   * Added a --no-logo command line option.
