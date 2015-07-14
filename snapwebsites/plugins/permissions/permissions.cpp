@@ -1113,7 +1113,7 @@ std::cerr << "from " << user_id << " -> ";
             // until we have one name in the path then check that the page
             // allows such, if so, we have a chance, otherwise no rights
             // from here... (as an example see /verify in plugins/users/content.xml)
-            QStringList parts(ipath.get_cpath().split('/'));
+            snap_string_list parts(ipath.get_cpath().split('/'));
             int depth(0);
             for(;;)
             {

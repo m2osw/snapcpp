@@ -2288,7 +2288,7 @@ public:
         QString const str(sub_results[0].get_string("segment(1)"));
         QString const sep(sub_results[1].get_string("segment(2)"));
         int64_t const idx(sub_results[2].get_integer("segment(3)"));
-        QStringList list(str.split(sep));
+        snap_string_list list(str.split(sep));
         if(idx >= 0 && idx < list.size())
         {
             result.set_value(variable_t::variable_type_t::EXPR_VARIABLE_TYPE_STRING, list[idx]);

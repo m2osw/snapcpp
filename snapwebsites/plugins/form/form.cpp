@@ -1187,7 +1187,7 @@ void form::on_process_post(QString const& uri_path)
         // unlikely)
         if(cpath.startsWith("admin/layouts/"))
         {
-            QStringList const segments(cpath.split("/"));
+            snap_string_list const segments(cpath.split("/"));
             // TBD: I'm not totally sure that boxes will always have exactly
             //      5 segments, but this is the case at this point
             if(segments.size() == 5)
@@ -1895,7 +1895,7 @@ bool form::validate_post_for_widget_impl(content::path_info_t& ipath, sessions::
             if(!extensions_tag.isNull())
             {
                 QString extensions(extensions_tag.text());
-                QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
+                snap_string_list ext_list(extensions.split(",", QString::SkipEmptyParts));
                 int const max_strings(ext_list.size());
                 QFileInfo const file_info(value);
                 QString const file_ext(file_info.suffix());

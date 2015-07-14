@@ -395,15 +395,15 @@ QString link_info::data() const
  */
 void link_info::from_data(QString const& db_data)
 {
-    QStringList lines(db_data.split('\n'));
+    snap_string_list lines(db_data.split('\n'));
     if(lines.count() != 4)
     {
         throw links_exception_invalid_db_data(QString("db_data (%1) is not exactly 4 lines").arg(db_data));
     }
-    QStringList key_data(lines[0].split('='));
-    QStringList name_data(lines[1].split('='));
-    QStringList branch_data(lines[2].split('='));
-    QStringList unique_data(lines[3].split('='));
+    snap_string_list key_data(lines[0].split('='));
+    snap_string_list name_data(lines[1].split('='));
+    snap_string_list branch_data(lines[2].split('='));
+    snap_string_list unique_data(lines[3].split('='));
     if(key_data.count() != 2 || name_data.count() != 2 || branch_data.count() != 2 || unique_data.count() != 2
     || key_data[0] != "k" || name_data[0] != "n" || branch_data[0] != "b" || unique_data[0] != "u")
     {
@@ -1603,7 +1603,7 @@ void links::on_backend_action(QString const& action)
     {
         // create a link
         QString const mode(f_snap->get_server_parameter("LINK_MODE"));
-        QStringList unique(mode.split(","));
+        snap_string_list unique(mode.split(","));
         if(unique.size() != 2)
         {
             SNAP_LOG_FATAL("invalid mode \"")(mode)("\", missing comma or more than one comma.");
@@ -1647,7 +1647,7 @@ void links::on_backend_action(QString const& action)
     {
         // delete a link
         QString const mode(f_snap->get_server_parameter("LINK_MODE"));
-        QStringList unique(mode.split(","));
+        snap_string_list unique(mode.split(","));
         if(unique.size() == 1)
         {
             if(unique[0] != "*" && unique[0] != "1")

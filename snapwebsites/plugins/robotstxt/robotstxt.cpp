@@ -396,7 +396,7 @@ void robotstxt::define_robots(content::path_info_t& ipath)
     if(ipath.get_key() != f_robots_path)
     {
         // Define the X-Robots HTTP header
-        QStringList robots;
+        snap_string_list robots;
         {
 // linking [http://csnap.m2osw.com/] / [http://csnap.m2osw.com/types/taxonomy/system/robotstxt/noindex]
 // <link name="noindex" to="noindex" mode="1:*">/types/taxonomy/system/robotstxt/noindex</link>

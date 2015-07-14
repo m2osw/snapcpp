@@ -220,7 +220,7 @@ void locale_widgets::on_init_editor_widget(content::path_info_t& ipath, QString 
         // timezone instead and if you'd like to have a website specific
         // timezone, define it as a <default> tag in the XML page file
         //QString const current_timezone(row->cell(get_name(SNAP_NAME_LOCALE_TIMEZONE))->value().stringValue());
-        //QStringList current_timezone_segments(current_timezone.split('/'));
+        //snap_string_list current_timezone_segments(current_timezone.split('/'));
 
         //// this is the widget result
         //doc.getElementByTagName("default");

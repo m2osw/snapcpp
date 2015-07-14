@@ -1004,7 +1004,7 @@ bool content::create_content_impl(path_info_t & ipath, QString const & owner, QS
     // first we need to remove the site key from the path
     snap_version::version_number_t child_branch(branch_number);
     snap_version::version_number_t parent_branch;
-    QStringList parts(ipath.get_cpath().split('/', QString::SkipEmptyParts));
+    snap_string_list parts(ipath.get_cpath().split('/', QString::SkipEmptyParts));
     while(parts.count() > 0)
     {
         QString const src(QString("%1%2").arg(site_key).arg(parts.join("/")));
@@ -2824,7 +2824,7 @@ void content::on_save_content()
         // initializing on a remote machine, it may be slow enough to
         // make sense to present such
         QString const cpath(ipath.get_cpath());
-        QStringList const cpath_segments(cpath.split('/'));
+        snap_string_list const cpath_segments(cpath.split('/'));
         if(cpath_segments.size() < 3)
         {
             f_snap->trace(QString("Saving \"%1\".\n").arg(ipath.get_key()));
@@ -3009,7 +3009,7 @@ void content::on_save_content()
         // link this entry to its parent automatically
         // first we need to remove the site key from the path
         QString const path(d->f_path.mid(site_key.length()));
-        QStringList parts(path.split('/', QString::SkipEmptyParts));
+        snap_string_list parts(path.split('/', QString::SkipEmptyParts));
         while(parts.count() > 0)
         {
             QString src(parts.join("/"));

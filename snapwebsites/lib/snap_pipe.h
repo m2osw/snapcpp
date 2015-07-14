@@ -27,7 +27,6 @@
 #include <stdio.h>
 
 #include <QString>
-#include <QStringList>
 #include <QVector>
 
 

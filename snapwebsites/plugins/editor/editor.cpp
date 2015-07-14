@@ -801,7 +801,7 @@ void editor::on_process_post(QString const& uri_path)
 
 //std::cerr << "***\n*** save mode [" << static_cast<int>(editor_save_mode) << "]\n***\n";
     // [0] -- session Id, [1] -- random number
-    QStringList const session_data(editor_full_session.split("/"));
+    snap_string_list const session_data(editor_full_session.split("/"));
     if(session_data.size() != 2)
     {
         // should never happen on a valid user
@@ -1923,7 +1923,7 @@ void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessi
     QString const widget_names(f_snap->postenv("_editor_widget_names"));
 //std::cerr << "***\n*** Editor Processing POST... [" << ipath.get_key() << "::" << widget_names << "]\n***\n";
 
-    QStringList const names(widget_names.split(","));
+    snap_string_list const names(widget_names.split(","));
     for(int i(0); i < names.size(); ++i)
     {
         widget_map_t::const_iterator w(widgets_by_name.find(names[i]));
@@ -2021,7 +2021,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
         QDomDocument editor_widgets;
         layout::layout *layout_plugin(layout::layout::instance());
         QString script(layout_plugin->get_layout(ipath, get_name(name_t::SNAP_NAME_EDITOR_LAYOUT), true));
-        QStringList const script_parts(script.split("/"));
+        snap_string_list const script_parts(script.split("/"));
         if(script_parts.size() == 2)
         {
             if(script_parts[0].isEmpty()
@@ -2049,7 +2049,7 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
             QString const layout_name(script_parts.size() == 2
                         ? script_parts[0] // force the layout::layout from the editor::layout
                         : layout_plugin->get_layout(ipath, layout::get_name(layout::name_t::SNAP_NAME_LAYOUT_LAYOUT), false));
-            QStringList const names(layout_name.split("/"));
+            snap_string_list const names(layout_name.split("/"));
             if(names.size() > 0)
             {
                 QString const name(names[0]);
@@ -2666,7 +2666,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                     else if(date != 0)
                     {
                         // break parts date / time
-                        QStringList parts(value.split(" "));
+                        snap_string_list parts(value.split(" "));
 
                         // remove empty entries (i.e. multiple spaces)
                         for(int i(parts.size() - 1); i >= 0; i--)
@@ -2695,7 +2695,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             // check date?
                             if(date == 1 || date == 3)
                             {
-                                QStringList const date_parts(parts[0].split("/"));
+                                snap_string_list const date_parts(parts[0].split("/"));
                                 if(date_parts.size() != 3)
                                 {
                                     messages->set_error(
@@ -2777,7 +2777,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             if(date == 2 || date == 3)
                             {
                                 // get part 1 if we also had a date (date == 3)
-                                QStringList const time_parts(parts[date == 2 ? 0 : 1].split(":"));
+                                snap_string_list const time_parts(parts[date == 2 ? 0 : 1].split(":"));
                                 if(time_parts.size() == 3
                                 && time_parts.size() == 2)
                                 {
@@ -3078,7 +3078,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                 {
                     // the text may include allowed or forbidden extensions
                     QString const uri_tlds(uri_tag.text());
-                    QStringList tld_list(uri_tlds.split(",", QString::SkipEmptyParts));
+                    snap_string_list tld_list(uri_tlds.split(",", QString::SkipEmptyParts));
                     bool const match(uri_tag.attribute("match") != "no");
                     snap_uri uri;
                     bool valid(uri.set_uri(value));
@@ -3143,7 +3143,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                 if(!extensions_tag.isNull())
                 {
                     QString const extensions(extensions_tag.text());
-                    QStringList ext_list(extensions.split(",", QString::SkipEmptyParts));
+                    snap_string_list ext_list(extensions.split(",", QString::SkipEmptyParts));
                     int const max_ext(ext_list.size());
                     QFileInfo const file_info(value);
                     QString const file_ext(file_info.suffix());
@@ -3819,7 +3819,7 @@ void editor::parse_out_inline_img(content::path_info_t& ipath, QString& body, QD
         }
     }
 
-    QStringList used_filenames;
+    snap_string_list used_filenames;
     int changed(0);
     int const max_images(imgs.size());
     for(int i(0); i < max_images; ++i)

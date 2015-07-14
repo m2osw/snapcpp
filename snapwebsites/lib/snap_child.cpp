@@ -2757,7 +2757,7 @@ bool snap_child::process(int socket)
         site_redirect();
 
         // start the plugins and there initialization
-        QStringList list_of_plugins(init_plugins(true));
+        snap_string_list list_of_plugins(init_plugins(true));
 
         // run updates if any
         update_plugins(list_of_plugins);
@@ -3054,7 +3054,7 @@ void snap_child::read_environment()
             //       but it looks like we would need to support the
             //       extended-value and extended-other-values as defined in
             //       http://tools.ietf.org/html/rfc2184
-            QStringList disposition(f_post_environment["CONTENT-DISPOSITION"].split(";"));
+            snap_string_list disposition(f_post_environment["CONTENT-DISPOSITION"].split(";"));
             if(disposition.size() < 2)
             {
                 die(QString("multipart posts Content-Disposition must at least include \"form-data\" and a name parameter, \"%1\" is not valid.")
@@ -3074,7 +3074,7 @@ void snap_child::read_environment()
             for(int i(1); i < max_strings; ++i)
             {
                 // each parameter is name=<value>
-                QStringList nv(disposition[i].split('='));
+                snap_string_list nv(disposition[i].split('='));
                 if(nv.size() != 2)
                 {
                     die(QString("parameter %1 in this multipart posts Content-Disposition does not include an equal character so \"%1\" is not valid.")
@@ -3337,7 +3337,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
             // http://www.w3.org/html/wg/drafts/html/master/forms.html#multipart-form-data
 
             // 1. Get the main boundary from the CONTENT_TYPE
-            QStringList content_info(f_env["CONTENT_TYPE"].split(';'));
+            snap_string_list content_info(f_env["CONTENT_TYPE"].split(';'));
             QString boundary;
             int const max_strings(content_info.size());
             for(int i(1); i < max_strings; ++i)
@@ -3415,12 +3415,12 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 if(f_name == "HTTP_COOKIE")
                 {
                     // special case
-                    QStringList cookies(f_value.split(';', QString::SkipEmptyParts));
+                    snap_string_list cookies(f_value.split(';', QString::SkipEmptyParts));
                     int const max_strings(cookies.size());
                     for(int i(0); i < max_strings; ++i)
                     {
                         QString name_value(cookies[i]);
-                        QStringList nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
+                        snap_string_list nv(name_value.trimmed().split('=', QString::SkipEmptyParts));
                         if(nv.size() == 2)
                         {
                             // XXX check with other systems to see
@@ -4134,7 +4134,7 @@ void snap_child::canonicalize_domain()
         if(regex.exactMatch(sub_domains))
         {
             // we found the domain!
-            QStringList captured(regex.capturedTexts());
+            snap_string_list captured(regex.capturedTexts());
             QString canonicalized;
 
             // note captured[0] is the full matching pattern, we ignore it
@@ -4308,7 +4308,7 @@ void snap_child::canonicalize_website()
                     matching = false;
                     break;
                 }
-                QStringList captured(regex.capturedTexts());
+                snap_string_list captured(regex.capturedTexts());
                 port = captured[1];
             }
                 break;
@@ -4326,7 +4326,7 @@ void snap_child::canonicalize_website()
                     matching = false;
                     break;
                 }
-                QStringList captured(regex.capturedTexts());
+                snap_string_list captured(regex.capturedTexts());
                 protocol = captured[1];
             }
                 break;
@@ -4345,7 +4345,7 @@ void snap_child::canonicalize_website()
                         matching = false;
                         break;
                     }
-                    QStringList captured(regex.capturedTexts());
+                    snap_string_list captured(regex.capturedTexts());
                     query[name] = captured[1];
                 }
                 else if(var->get_required())
@@ -4385,7 +4385,7 @@ void snap_child::canonicalize_website()
                 //       However, if the path is only used for options such
                 //       as languages, those options should be removed from
                 //       the original path.
-                QStringList captured(regex.capturedTexts());
+                snap_string_list captured(regex.capturedTexts());
 
                 // note captured[0] is the full matching pattern, we ignore it
                 for(int v = 0; v < vmax; ++v)
@@ -4611,7 +4611,7 @@ void snap_child::canonicalize_options()
     {
         if(!rev.isEmpty())
         {
-            QStringList r(rev.split('.'));
+            snap_string_list r(rev.split('.'));
             branch = r[0];
             int const size(r.size());
             if(size != 1)
@@ -6477,7 +6477,7 @@ QString snap_child::get_unique_number()
  *                          the Snap! server itself, not so much for other
  *                          servers using plugins.)
  */
-QStringList snap_child::init_plugins(bool const add_defaults)
+snap_string_list snap_child::init_plugins(bool const add_defaults)
 {
     server::pointer_t server( f_server.lock() );
     if(!server)
@@ -6499,7 +6499,7 @@ QStringList snap_child::init_plugins(bool const add_defaults)
             site_plugins = server->get_parameter("default_plugins");
         }
     }
-    QStringList list_of_plugins(site_plugins.split(","));
+    snap_string_list list_of_plugins(site_plugins.split(","));
 
     // clean up the list
     for(int i(0); i < list_of_plugins.length(); ++i)
@@ -6594,7 +6594,7 @@ QStringList snap_child::init_plugins(bool const add_defaults)
  * \param[in] list_of_plugins  The list of plugin names that were loaded
  *                             for this run.
  */
-void snap_child::update_plugins(QStringList const& list_of_plugins)
+void snap_child::update_plugins(snap_string_list const& list_of_plugins)
 {
     // system updates run at most once every 10 minutes
     QString const core_last_updated(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
@@ -6625,7 +6625,7 @@ void snap_child::update_plugins(QStringList const& list_of_plugins)
 
         // first run through the plugins to know whether one or more
         // has changed since the last website update
-        for(QStringList::const_iterator it(list_of_plugins.begin());
+        for(snap_string_list::const_iterator it(list_of_plugins.begin());
                 it != list_of_plugins.end();
                 ++it)
         {

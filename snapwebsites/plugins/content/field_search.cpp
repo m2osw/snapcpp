@@ -135,7 +135,7 @@ SNAP_PLUGIN_EXTENSION_START(content)
  * // WARNING: this code is not up to date...
  * //          especially, the SELF function returns a QtCassandraValue
  * //          and the run() function is automatically called on destruction
- * QStringList result(cmd_info_t()
+ * snap_string_list result(cmd_info_t()
  *      (PARAMETER_OPTION_FIELD_NAME, "modified")
  *      (PARAMETER_OPTION_SELF, path)
  *      (PARAMETER_OPTION_FIELD_NAME, "updated")
@@ -932,7 +932,7 @@ void field_search::run()
                 f_self = f_self.left(pos);
             }
 
-            QStringList children;
+            snap_string_list children;
             children += f_self;
 
             for(int i(0); i < children.size(); ++i, --depth)
@@ -989,7 +989,7 @@ void field_search::run()
             {
                 // we could use the parent link from each page, but it is
                 // a lot faster to compute it each time (no db access)
-                QStringList parts(f_self.right(f_self.length() - f_site_key.length()).split('/'));
+                snap_string_list parts(f_self.right(f_self.length() - f_site_key.length()).split('/'));
                 while(!parts.isEmpty())
                 {
                     parts.pop_back();
@@ -1051,7 +1051,7 @@ void field_search::run()
         {
             if(!f_element.isNull())
             {
-                QStringList names(child_name.split("/"));
+                snap_string_list names(child_name.split("/"));
                 int const max_names(names.size());
                 for(int idx(0); idx < max_names && !f_element.isNull(); ++idx)
                 {
@@ -1113,7 +1113,7 @@ void field_search::run()
         {
             if(!f_element.isNull())
             {
-                QStringList a(attr.split('='));
+                snap_string_list a(attr.split('='));
                 if(a.size() == 1)
                 {
                     // checked="checked"

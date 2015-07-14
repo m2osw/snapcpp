@@ -755,7 +755,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
 
     // the actual file data now; this is defined using the MIME type
     // (and the error code?)
-    QStringList const mime_type_parts(content_type.split('/'));
+    snap_string_list const mime_type_parts(content_type.split('/'));
     if(mime_type_parts.size() != 2)
     {
         // no recovery on that one for now

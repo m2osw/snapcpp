@@ -619,7 +619,7 @@ void content::backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file
             c.set_root(root);
             c.set_date_time_variables(time(nullptr));
             QString const csspp_paths(f_snap->get_server_parameter("csspp_scripts"));
-            QStringList const path_list(csspp_paths.split(':'));
+            snap_string_list const path_list(csspp_paths.split(':'));
             int const max_paths(path_list.size());
             for(int i(0); i < max_paths; ++i)
             {

@@ -404,7 +404,7 @@ protected:
     void                        canonicalize_website();
     void                        canonicalize_options();
     void                        site_redirect();
-    QStringList                 init_plugins(bool const add_defaults);
+    snap_string_list            init_plugins(bool const add_defaults);
 
     server_pointer_t                            f_server;
     controlled_vars::flbool_t                   f_is_child;
@@ -432,7 +432,7 @@ private:
     void                        setup_uri();
     void                        snap_info();
     void                        snap_statistics();
-    void                        update_plugins(QStringList const & list_of_plugins);
+    void                        update_plugins(snap_string_list const & list_of_plugins);
     void                        execute();
     void                        process_backend_uri(QString const & uri);
     void                        write(char const * data, ssize_t size);

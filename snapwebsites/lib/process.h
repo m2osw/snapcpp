@@ -18,13 +18,14 @@
 
 #include "snap_thread.h"
 
+#include <snap_string_list.h>
+
 #include <map>
 #include <memory>
 
 #include <proc/readproc.h>
 
 #include <QString>
-#include <QStringList>
 #include <QVector>
 
 namespace snap
@@ -135,7 +136,7 @@ private:
     QString const               f_name;
     zmode_t                     f_mode;
     QString                     f_command;
-    QStringList                 f_arguments;
+    snap_string_list            f_arguments;
     environment_map_t           f_environment;
     QByteArray                  f_input;
     QByteArray                  f_output;

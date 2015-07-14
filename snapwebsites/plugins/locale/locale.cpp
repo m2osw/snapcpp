@@ -288,7 +288,7 @@ locale::locale::timezone_list_t const& locale::get_timezone_list()
                 //}
 
                 QString const qid(QString::fromUtf16(id));
-                QStringList const id_segments(qid.split('/'));
+                snap_string_list const id_segments(qid.split('/'));
                 if(id_segments.size() == 2)
                 {
                     timezone_info_t info;
@@ -345,7 +345,7 @@ locale::locale::timezone_list_t const& locale::get_timezone_list()
                 // get that in a string so we can split it
                 QString const line(QString::fromUtf8(raw_line.data()));
 
-                QStringList const line_segments(line.split('\t'));
+                snap_string_list const line_segments(line.split('\t'));
                 if(line_segments.size() < 3)
                 {
                     continue;
@@ -372,7 +372,7 @@ locale::locale::timezone_list_t const& locale::get_timezone_list()
 
                 // the continent, country/state, city are separated by a slash
                 info.f_timezone_name = line_segments[2];
-                QStringList const names(info.f_timezone_name.split('/'));
+                snap_string_list const names(info.f_timezone_name.split('/'));
                 if(names.size() < 2)
                 {
                     // invalid continent/state/city (TZ) entry

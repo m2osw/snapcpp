@@ -18,14 +18,14 @@
 //
 
 #include "dbutils.h"
+
 #include "snap_exception.h"
 #include "qstring_stream.h"
 #include "log.h"
 #include "mkgmtime.h"
+#include "snap_string_list.h"
 
 #include <iostream>
-
-#include <QStringList>
 
 #include "poison.h"
 
@@ -183,7 +183,7 @@ QString dbutils::key_to_string( QByteArray const& key )
 QByteArray dbutils::string_to_key( const QString& str )
 {
     QByteArray ret;
-    QStringList numList( str.split(' ') );
+    snap_string_list numList( str.split(' ') );
 
     for( auto str_num : numList )
     {
@@ -856,13 +856,13 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S.%N"
             //
-            QStringList const datetime_split ( v.split(' ') );
+            snap_string_list const datetime_split ( v.split(' ') );
             if(datetime_split.size() < 2)
             {
                 return;
             }
-            QStringList const date_split     ( datetime_split[0].split('-') );
-            QStringList const time_split     ( datetime_split[1].split(':') );
+            snap_string_list const date_split     ( datetime_split[0].split('-') );
+            snap_string_list const time_split     ( datetime_split[1].split(':') );
             if(date_split.size() != 3)
             {
                 return;
@@ -892,13 +892,13 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S"
             //
-            QStringList const datetime_split ( v.split(' ') );
+            snap_string_list const datetime_split ( v.split(' ') );
             if(datetime_split.size() < 2)
             {
                 return;
             }
-            QStringList const date_split     ( datetime_split[0].split('-') );
-            QStringList const time_split     ( datetime_split[1].split(':') );
+            snap_string_list const date_split     ( datetime_split[0].split('-') );
+            snap_string_list const time_split     ( datetime_split[1].split(':') );
             if(date_split.size() != 3)
             {
                 return;
@@ -925,13 +925,13 @@ void dbutils::set_column_value( QCassandraCell::pointer_t c, QString const& v )
         {
             // String will be of the form: "%Y-%m-%d %H:%M:%S.%N string"
             //
-            QStringList datetime_split ( v.split(' ') );
+            snap_string_list datetime_split ( v.split(' ') );
             if(datetime_split.size() < 2)
             {
                 return;
             }
-            QStringList const date_split     ( datetime_split[0].split('-') );
-            QStringList const time_split     ( datetime_split[1].split(':') );
+            snap_string_list const date_split     ( datetime_split[0].split('-') );
+            snap_string_list const time_split     ( datetime_split[1].split(':') );
             if(date_split.size() != 3)
             {
                 return;

@@ -17,13 +17,12 @@
 
 #include "snap_version.h"
 
-#include "qstring_stream.h"
-#include "not_reached.h"
 #include "minmax.h"
+#include "not_reached.h"
+#include "qstring_stream.h"
+#include "snap_string_list.h"
 
 #include <iostream>
-
-#include <QStringList>
 
 #include "poison.h"
 
@@ -1361,7 +1360,7 @@ bool dependency::set_dependency(QString const& dependency_string)
             return false;
         }
         QString const version_list(d.mid(pos, end - pos));
-        QStringList version_strings(version_list.split(',', QString::SkipEmptyParts));
+        snap_string_list version_strings(version_list.split(',', QString::SkipEmptyParts));
         int const max_versions(version_strings.size());
         for(int i(0); i < max_versions; ++i)
         {
@@ -1547,7 +1546,7 @@ bool dependency::set_dependency(QString const& dependency_string)
             return false;
         }
         QString const browsers(d.mid(pos, end - pos));
-        QStringList const browser_list(browsers.split(',', QString::SkipEmptyParts));
+        snap_string_list const browser_list(browsers.split(',', QString::SkipEmptyParts));
         int const max_size(browser_list.size());
         for(int i(0); i < max_size; ++i)
         {
@@ -1866,7 +1865,7 @@ bool quick_find_version_in_source::find_version(char const *data, int const size
                 f_error = "browser field cannot be defined more than once";
                 return false;
             }
-            QStringList browser_list(value.split(','));
+            snap_string_list browser_list(value.split(','));
             int const max_size(browser_list.size());
             for(int i(0); i < max_size; ++i)
             {

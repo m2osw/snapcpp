@@ -570,7 +570,7 @@ void feed::generate_feeds()
                         // we found the widget, display its label instead
                         QDomElement e(ns_tags[j].toElement());
                         QString const ns(e.attribute("ns"));
-                        QStringList const ns_name_value(ns.split("="));
+                        snap_string_list const ns_name_value(ns.split("="));
                         e.removeAttribute("ns");
                         if(ns_name_value.size() == 2)
                         {

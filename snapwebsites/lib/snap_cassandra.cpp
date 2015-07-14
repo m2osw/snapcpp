@@ -24,8 +24,6 @@
 #include <controlled_vars/controlled_vars.h>
 #include <QtCassandra/QCassandra.h>
 
-#include <QString>
-
 namespace snap
 {
 
@@ -165,7 +163,7 @@ void snap_cassandra::init_context()
 
             // here each data center gets a replication factor
             QString const data_centers(f_parameters["cassandra_data_centers"]);
-            QStringList const names(data_centers.split(','));
+            snap_string_list const names(data_centers.split(','));
             bool found(false);
             int const max_names(names.size());
             for(int idx(0); idx < max_names; ++idx)
