@@ -1890,27 +1890,56 @@ node::pointer_t expression::multiplicative()
 
 node::pointer_t expression::apply_power(node::pointer_t lhs, node::pointer_t rhs)
 {
-    node::pointer_t result(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
+    node::pointer_t result;
 
+    if(rhs->is(node_type_t::INTEGER)
+    || rhs->is(node_type_t::DECIMAL_NUMBER))
+    {
+        if(rhs->get_string() != "")
+        {
+            error::instance() << f_current->get_position()
+                    << "the number representing the power cannot be a dimension ("
+                    << rhs->get_string()
+                    << "); it has to be unitless."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+    }
+
+    bool check_dimension(false);
     switch(mix_node_types(lhs->get_type(), rhs->get_type()))
     {
     case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-        // TODO: how to handle dimension?
-        result->set_string(lhs->get_string());
-        result->set_decimal_number(pow(lhs->get_integer(), rhs->get_integer()));
+        result.reset(new node(node_type_t::INTEGER, lhs->get_position()));
+        result->set_integer(static_cast<integer_t>(pow(lhs->get_integer(), rhs->get_integer())));
+        check_dimension = true;
+        break;
+
+    case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
+        result.reset(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
+        result->set_decimal_number(pow(lhs->get_integer(), rhs->get_decimal_number()));
+        check_dimension = true;
+        break;
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
+        result.reset(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
+        result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_integer()));
+        check_dimension = true;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-        // TODO: how to handle dimension?
-        result->set_string(lhs->get_string());
+        result.reset(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
         result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_decimal_number()));
+        check_dimension = true;
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::INTEGER):
+        result.reset(new node(node_type_t::PERCENT, lhs->get_position()));
         result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_integer()));
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::DECIMAL_NUMBER):
+        result.reset(new node(node_type_t::PERCENT, lhs->get_position()));
         result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_decimal_number()));
         break;
 
@@ -1926,6 +1955,83 @@ node::pointer_t expression::apply_power(node::pointer_t lhs, node::pointer_t rhs
 
     }
 
+    if(check_dimension
+    && lhs->get_string() != "")
+    {
+        integer_t the_power(0);
+        if(rhs->is(node_type_t::INTEGER))
+        {
+            // integers are fine if > 0
+            the_power = rhs->get_integer();
+        }
+        else
+        {
+            decimal_number_t p(rhs->get_decimal_number());
+            decimal_number_t integral_part(0.0);
+            decimal_number_t fractional_part(modf(p, &integral_part));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(fractional_part != 0.0)
+#pragma GCC diagnostic pop
+            {
+                // the fractional part has to be exactly 0.0 otherwise we
+                // cannot determine the new dimension
+                error::instance() << f_current->get_position()
+                        << "a number with a dimension only supports integers as their power (i.e. 3px ** 2 is fine, 3px ** 2.1 is not supported)."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
+            the_power = static_cast<integer_t>(integral_part);
+        }
+        if(the_power == 0)
+        {
+            error::instance() << f_current->get_position()
+                    << "a number with a dimension power zero cannot be calculated (i.e. 3px ** 0 = 1 what?)."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+        // impose a limit because otherwise we may have a bit of a memory
+        // problem...
+        if(labs(the_power) > 100)
+        {
+            error::instance() << f_current->get_position()
+                    << "a number with a dimension power 101 or more would generate a very large string so we refuse it at this time. You may use unitless numbers instead."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+
+        // calculate the new dimension, if power is negative, make sure
+        // to swap the existing dimension (i.e. px / em -> em / px)
+        dimension_vector_t org_dividend;
+        dimension_vector_t org_divisor;
+        dimension_vector_t dividend;
+        dimension_vector_t divisor;
+
+        if(the_power >= 0)
+        {
+            dimensions_to_vectors(lhs->get_position(), lhs->get_string(), org_dividend, org_divisor);
+        }
+        else
+        {
+            dimensions_to_vectors(lhs->get_position(), lhs->get_string(), org_divisor, org_dividend);
+        }
+
+        the_power = labs(the_power);
+        for(integer_t idx(0); idx < the_power; ++idx)
+        {
+            for(auto d : org_dividend)
+            {
+                dividend.push_back(d);
+            }
+            for(auto d : org_divisor)
+            {
+                divisor.push_back(d);
+            }
+        }
+
+        result->set_string(rebuild_dimension(dividend, divisor));
+    }
+
     return result;
 }
 
@@ -1934,17 +2040,12 @@ node::pointer_t expression::power()
     // power: post
     //      | post '**' post
 
+    // no loop because we do not allow 'a ** b ** c'
     node::pointer_t result(post());
-    if(!result)
+    if(result
+    && ((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "pow")
+      || f_current->is(node_type_t::POWER)))
     {
-        return node::pointer_t();
-    }
-
-    while((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "pow")
-       || f_current->is(node_type_t::POWER))
-    {
-        position pos(f_current->get_position());
-
         // skip the power operator
         next();
 
@@ -1956,10 +2057,6 @@ node::pointer_t expression::power()
 
         // apply the power operation
         result = apply_power(result, rhs);
-        if(!result)
-        {
-            return node::pointer_t();
-        }
     }
 
     return result;

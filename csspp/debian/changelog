@@ -24,6 +24,7 @@ csspp (1.0.4~trusty) trusty; urgency=high
   * Removed the special handling of '=' + '=' from expressions.
   * Applied a fix to the handling of the power operator, not tested yet.
   * Updated the additive test to cover 100% of the additions.
+  * Added a test for the power operator.
 
  -- Alexis Wilke <alexis@m2osw.com>  Thu,  9 Jul 2015 19:00:00 -0700
 

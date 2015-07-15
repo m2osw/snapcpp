@@ -59,6 +59,7 @@ then
     echo "   '[nth-child]'"
     echo "   '[parser]'"
     echo "   '[position]'"
+    echo "   '[power]'"
     echo "   '[unicode-range]'"
     echo "You may use the list option to see the available tests and tags:"
     echo "   csspp_tests --list-tests"
@@ -73,7 +74,7 @@ then
     echo "<html><head><title>Coverage</title></head><body><h1>Coverage</h1>" >tmp/build/index.html
     count=1
     for t in additive assembler color compiler csspp error expression lexer \
-             multiplicative node nth-child parser position unicode-range
+             multiplicative node nth-child parser position power unicode-range
     do
         echo -n "`date +'%D %T'`: Building: $t ... "
         echo "<h2>${count}. <a href='csspp_coverage_${t}_html/index.html'>$t<a/></h2>" >>tmp/build/index.html
