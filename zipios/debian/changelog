@@ -1,3 +1,9 @@
+zipios++ (0.1.5.292~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Wed, 15 Jul 2015 03:01:11 -0700
+
 zipios++ (0.1.5.291~trusty) trusty; urgency=high
 
   * Nightly build.
