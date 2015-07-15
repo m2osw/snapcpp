@@ -518,6 +518,10 @@ void assembler::output(node::pointer_t n)
         f_impl->output_operator("*=", g_flag_optional_spaces);
         break;
 
+    case node_type_t::SUBTRACT: // for calc() / expression()
+        f_impl->output_operator("-", 0);
+        break;
+
     case node_type_t::SUFFIX_MATCH:
         f_impl->output_operator("$=", g_flag_optional_spaces);
         break;
@@ -579,7 +583,6 @@ void assembler::output(node::pointer_t n)
     case node_type_t::POWER:
     case node_type_t::REFERENCE:
     case node_type_t::SEMICOLON:
-    case node_type_t::SUBTRACT:
     case node_type_t::VARIABLE:
     case node_type_t::VARIABLE_FUNCTION:
     case node_type_t::max_type:

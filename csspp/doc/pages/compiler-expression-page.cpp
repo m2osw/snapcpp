@@ -523,15 +523,20 @@
  * to conside adding spaces after your '+' and '-' operators.
  *
  * \code{.y}
- *  unary: IDENTIFIER
- *       | INTEGER
+ *  unary: ARRAY
+ *       | BOOLEAN
  *       | DECIMAL_NUMBER
  *       | EXCLAMATION
- *       | STRING
- *       | PERCENT
- *       | HASH (-> COLOR)
- *       | UNICODE_RANGE
  *       | FUNCTION expression_list ')'
+ *       | HASH (-> COLOR)
+ *       | IDENTIFIER
+ *       | INTEGER
+ *       | MAP
+ *       | NULL_TOKEN
+ *       | PERCENT
+ *       | STRING
+ *       | UNICODE_RANGE
+ *       | URL
  *       | '(' expression_list ')'
  *       | '+' power
  *       | '-' power

@@ -2207,16 +2207,17 @@ node::pointer_t expression::unary()
     // unary: IDENTIFIER
     //      | INTEGER
     //      | DECIMAL_NUMBER
+    //      | EXCLAMATION
     //      | STRING
     //      | PERCENT
     //      | BOOLEAN
     //      | HASH (-> COLOR)
     //      | UNICODE_RANGE
+    //      | URL
     //      | FUNCTION argument_list ')' -- including url()
     //      | '(' expression_list ')'
     //      | '+' power
     //      | '-' power
-    //      | '!' power
 
     switch(f_current->get_type())
     {
@@ -2258,7 +2259,6 @@ node::pointer_t expression::unary()
 
             return excecute_function(func);
         }
-        break;
 
     case node_type_t::OPEN_PARENTHESIS:
         {
@@ -2307,7 +2307,6 @@ node::pointer_t expression::unary()
 
             }
         }
-        /*NOTREACHED*/
 
     // This is not too good, we actually transform the !important in
     // one 'EXCLAMATION + string' node; use the not(...) instead
@@ -2329,7 +2328,6 @@ node::pointer_t expression::unary()
     //        result->set_boolean(r == 0 ? true : false);
     //        return result;
     //    }
-    //    /*NOTREACHED*/
 
     case node_type_t::HASH:
         // a '#...' in an expression is expected to be a valid color
@@ -2354,7 +2352,6 @@ node::pointer_t expression::unary()
             next();
             return color_node;
         }
-        /*NOTREACHED*/
 
     case node_type_t::IDENTIFIER:
         // an identifier may represent a color, null, true, or false
@@ -2390,7 +2387,6 @@ node::pointer_t expression::unary()
 
             return color_node;
         }
-        /*NOTREACHED*/
 
     default:
         error::instance() << f_current->get_position()
@@ -2401,6 +2397,7 @@ node::pointer_t expression::unary()
         return node::pointer_t();
 
     }
+    /*NOTREACHED*/
 }
 
 } // namespace csspp
