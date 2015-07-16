@@ -2907,7 +2907,6 @@ TEST_CASE("Inacceptable nodes", "[assembler] [invalid]")
         csspp::node_type_t::POWER,
         csspp::node_type_t::REFERENCE,
         csspp::node_type_t::SEMICOLON,
-        csspp::node_type_t::SUBTRACT,
         csspp::node_type_t::VARIABLE,
         csspp::node_type_t::VARIABLE_FUNCTION,
         csspp::node_type_t::max_type
