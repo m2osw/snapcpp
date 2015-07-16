@@ -468,6 +468,8 @@ void verify_data(tld_info_map_t& map)
                 {
                 case 0x0902: // Devanagari sign anusvara
                 case 0x093E: // devanagari vowel sign AA
+                case 0x0947: // devanagari vowel sign E
+                case 0x0949: // devanagari vowel sign candra O
                 case 0x0982: // Bengali Sign Anusvara
                 case 0x09BE: // Bengali Vowel Sign AA
                 case 0x0A3E: // Gurmukhi Vowel Sign AA
