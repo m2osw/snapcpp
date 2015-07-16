@@ -1171,13 +1171,23 @@ TEST_CASE("Assemble numbers", "[assembler] [numbers]")
             percent_str = percent_str.substr(1);
         }
 
+        std::stringstream decimal_number_stream;
+        decimal_number_stream << decimal_number;
+        std::string decimal_number_str(decimal_number_stream.str());
+        if(decimal_number_str.length() > 1
+        && decimal_number_str[0] == '0'
+        && decimal_number_str[1] == '.')
+        {
+            decimal_number_str = decimal_number_str.substr(1);
+        }
+
         std::stringstream expected;
         switch(static_cast<csspp::output_mode_t>(i))
         {
         case csspp::output_mode_t::COMPACT:
 expected << "#wrapper div * span a:hover {"
          << " width: " << integer << ";"
-         << " height: " << decimal_number << ";"
+         << " height: " << decimal_number_str << ";"
          << " font-size: " << percent_str << "%"
          << " }\n"
          << csspp_test::get_close_comment();
@@ -1186,7 +1196,7 @@ expected << "#wrapper div * span a:hover {"
         case csspp::output_mode_t::COMPRESSED:
 expected << "#wrapper div * span a:hover{"
          << "width:" << integer << ";"
-         << "height:" << decimal_number << ";"
+         << "height:" << decimal_number_str << ";"
          << "font-size:" << percent_str << "%"
          << "}\n"
          << csspp_test::get_close_comment();
@@ -1196,7 +1206,7 @@ expected << "#wrapper div * span a:hover{"
 expected << "#wrapper div * span a:hover\n"
          << "{\n"
          << "  width: " << integer << ";\n"
-         << "  height: " << decimal_number << ";\n"
+         << "  height: " << decimal_number_str << ";\n"
          << "  font-size: " << percent_str << "%;\n"
          << "}\n"
          << csspp_test::get_close_comment();
@@ -1205,7 +1215,7 @@ expected << "#wrapper div * span a:hover\n"
         case csspp::output_mode_t::TIDY:
 expected << "#wrapper div * span a:hover{"
          << "width:" << integer << ";"
-         << "height:" << decimal_number << ";"
+         << "height:" << decimal_number_str << ";"
          << "font-size:" << percent_str << "%"
          << "}\n"
          << csspp_test::get_close_comment();
