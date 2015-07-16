@@ -289,7 +289,7 @@
 			<a href="https://sourceforge.net/projects/csspp">Downloads</a>
 			<a href="https://sourceforge.net/p/csspp/link/">Source Repository</a>
 			<a href="https://sourceforge.net/p/csspp/tickets/">Support</a>
-			<a href="http://snapwebsites.org/mo_references_view/csspp-doc-1.0/">Documentation</a>
+			<a href="/documentation/csspp-doc-1.0/">Documentation</a>
 		</div>
 		<div class="transparent-menu-placeholder"></div>
 		<div class="header">
@@ -367,7 +367,7 @@
 					<h3>Documentation</h3>
 					<p>
 						The language supported by <b>CSS Preprocessor</b> is fully
-						<a href="http://lcov.csspp.org/documentation">documented</A>.
+						<a href="/documentation/csspp-doc-1.0/">documented</A>.
 						The documentation is offered as a tarball to
 						download. It can also be generated using doxygen. The
 						documentation explains certain choices in making such and
