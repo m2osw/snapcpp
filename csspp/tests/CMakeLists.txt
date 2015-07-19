@@ -48,6 +48,7 @@ add_executable( ${PROJECT_NAME}
     catch_expr_additive.cpp
     catch_expr_multiplicative.cpp
     catch_expr_power.cpp
+    catch_expr_relational.cpp
     catch_expr_unary.cpp
     catch_lexer.cpp
     catch_node.cpp

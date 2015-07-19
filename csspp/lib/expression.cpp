@@ -535,6 +535,40 @@ node::pointer_t expression::logical_and()
     return result;
 }
 
+bool is_comparable(node::pointer_t lhs, node::pointer_t rhs)
+{
+    switch(mix_node_types(lhs->get_type(), rhs->get_type()))
+    {
+    case mix_node_types(node_type_t::BOOLEAN, node_type_t::BOOLEAN):
+    case mix_node_types(node_type_t::COLOR, node_type_t::COLOR):
+    case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
+    case mix_node_types(node_type_t::STRING, node_type_t::STRING):
+        return true;
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
+    case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
+    case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
+        if(lhs->get_string() == rhs->get_string())
+        {
+            return true;
+        }
+        break;
+
+    }
+
+   // dimensions must be exactly the same or the comparison fails
+   error::instance() << lhs->get_position()
+        << "incompatible types or dimensions between "
+        << lhs->get_type()
+        << " and "
+        << rhs->get_type()
+        << " for operator '=', '!=', '<', '<=', '>', or '>='."
+        << error_mode_t::ERROR_ERROR;
+
+    return false;
+}
+
 bool is_equal(node::pointer_t lhs, node::pointer_t rhs)
 {
     switch(mix_node_types(lhs->get_type(), rhs->get_type()))
@@ -543,13 +577,21 @@ bool is_equal(node::pointer_t lhs, node::pointer_t rhs)
         return lhs->get_boolean() == rhs->get_boolean();
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-        // TBD: should we generate an error if these are not
-        //      equivalent dimensions?
         return lhs->get_integer() == rhs->get_integer();
 
+    case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        return lhs->get_integer() == rhs->get_decimal_number();
+#pragma GCC diagnostic pop
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        return lhs->get_decimal_number() == rhs->get_integer();
+#pragma GCC diagnostic pop
+
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-        // TBD: should we generate an error if these are not
-        //      equivalent dimensions?
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
         return lhs->get_decimal_number() == rhs->get_decimal_number();
@@ -573,14 +615,17 @@ bool is_equal(node::pointer_t lhs, node::pointer_t rhs)
 
     }
 
-    error::instance() << lhs->get_position()
-            << "incompatible types between "
-            << lhs->get_type()
-            << " and "
-            << rhs->get_type()
-            << " for operator '=', '!=', '<', '<=', '>', or '>='."
-            << error_mode_t::ERROR_ERROR;
-    return false;
+    // the is_comparable() function prevents us from reaching this line
+    throw csspp_exception_logic("expression.cpp:include_match(): called with an invalid set of node types."); // LCOV_EXCL_LINE
+
+    //error::instance() << lhs->get_position()
+    //        << "incompatible types between "
+    //        << lhs->get_type()
+    //        << " and "
+    //        << rhs->get_type()
+    //        << " for operator '=', '!=', '<', '<=', '>', or '>='."
+    //        << error_mode_t::ERROR_ERROR;
+    //return false;
 }
 
 bool is_less_than(node::pointer_t lhs, node::pointer_t rhs)
@@ -595,6 +640,16 @@ bool is_less_than(node::pointer_t lhs, node::pointer_t rhs)
         //      equivalent dimensions?
         return lhs->get_integer() < rhs->get_integer();
 
+    case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
+        // TBD: should we generate an error if these are not
+        //      equivalent dimensions?
+        return lhs->get_integer() < rhs->get_decimal_number();
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
+        // TBD: should we generate an error if these are not
+        //      equivalent dimensions?
+        return lhs->get_decimal_number() < rhs->get_integer();
+
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
         // TBD: should we generate an error if these are not
         //      equivalent dimensions?
@@ -608,6 +663,7 @@ bool is_less_than(node::pointer_t lhs, node::pointer_t rhs)
 
     }
 
+    // at this time this only really applies to 'COLOR op COLOR'
     error::instance() << lhs->get_position()
             << "incompatible types between "
             << lhs->get_type()
@@ -615,6 +671,7 @@ bool is_less_than(node::pointer_t lhs, node::pointer_t rhs)
             << rhs->get_type()
             << " for operator '<', '<=', '>', or '>='."
             << error_mode_t::ERROR_ERROR;
+
     return false;
 }
 
@@ -815,32 +872,38 @@ node::pointer_t expression::relational()
             return node::pointer_t();
         }
 
-        // apply the equality operation
-        bool boolean_result(false);
-        switch(op)
+        // if not comparable, go on, although we already generated an
+        // error; but at least the rest of the expression can be
+        // parsed properly
+        if(is_comparable(result, rhs))
         {
-        case node_type_t::LESS_THAN:
-            boolean_result = is_less_than(result, rhs);
-            break;
+            // apply the equality operation
+            bool boolean_result(false);
+            switch(op)
+            {
+            case node_type_t::LESS_THAN:
+                boolean_result = is_less_than(result, rhs);
+                break;
 
-        case node_type_t::LESS_EQUAL:
-            boolean_result = is_less_than(result, rhs) && is_equal(result, rhs);
-            break;
+            case node_type_t::LESS_EQUAL:
+                boolean_result = is_less_than(result, rhs) || is_equal(result, rhs);
+                break;
 
-        case node_type_t::GREATER_THAN:
-            boolean_result = !is_less_than(result, rhs) && !is_equal(result, rhs);
-            break;
+            case node_type_t::GREATER_THAN:
+                boolean_result = !is_less_than(result, rhs) && !is_equal(result, rhs);
+                break;
 
-        case node_type_t::GREATER_EQUAL:
-            boolean_result = !is_less_than(result, rhs);
-            break;
+            case node_type_t::GREATER_EQUAL:
+                boolean_result = !is_less_than(result, rhs);
+                break;
 
-        default:
-            throw csspp_exception_logic("expression.cpp:relational(): unexpected operator in 'op'."); // LCOV_EXCL_LINE
+            default:
+                throw csspp_exception_logic("expression.cpp:relational(): unexpected operator in 'op'."); // LCOV_EXCL_LINE
 
+            }
+            result.reset(new node(node_type_t::BOOLEAN, pos));
+            result->set_boolean(boolean_result);
         }
-        result.reset(new node(node_type_t::BOOLEAN, pos));
-        result->set_boolean(boolean_result);
 
         op = relational_operator(f_current);
     }

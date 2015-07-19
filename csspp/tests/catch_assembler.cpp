@@ -87,7 +87,8 @@ TEST_CASE("Assemble rules", "[assembler]")
         std::stringstream ss;
         ss << "div { color: black; }"
            << "span { border: 3px solid #f7d0cf; }"
-           << "p { font: 13px/135% sans-serif; }";
+           << "p { font: 13px/135% sans-serif; }"
+           << "section { width: calc(30px - 5%); }";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -118,13 +119,14 @@ TEST_CASE("Assemble rules", "[assembler]")
 "div { color: #000 }\n"
 "span { border: 3px solid #f7d0cf }\n"
 "p { font: 13px/135% sans-serif }\n"
+"section { width: calc(30px - 5%) }\n"
 + csspp_test::get_close_comment()
                 );
             break;
 
         case csspp::output_mode_t::COMPRESSED:
             REQUIRE(out.str() ==
-"div{color:#000}span{border:3px solid #f7d0cf}p{font:13px/135% sans-serif}\n"
+"div{color:#000}span{border:3px solid #f7d0cf}p{font:13px/135% sans-serif}section{width:calc(30px - 5%)}\n"
 + csspp_test::get_close_comment()
                 );
             break;
@@ -143,6 +145,10 @@ TEST_CASE("Assemble rules", "[assembler]")
 "{\n"
 "  font: 13px/135% sans-serif;\n"
 "}\n"
+"section\n"
+"{\n"
+"  width: calc(30px - 5%);\n"
+"}\n"
 + csspp_test::get_close_comment()
                 );
             break;
@@ -152,6 +158,7 @@ TEST_CASE("Assemble rules", "[assembler]")
 "div{color:#000}\n"
 "span{border:3px solid #f7d0cf}\n"
 "p{font:13px/135% sans-serif}\n"
+"section{width:calc(30px - 5%)}\n"
 + csspp_test::get_close_comment()
                 );
             break;

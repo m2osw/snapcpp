@@ -53,14 +53,16 @@ then
     echo "   '[csspp]'"
     echo "   '[error]'"
     echo "   '[expression]' (all expressions)"
+    echo "   '[full-coverage]' (all tests)"
     echo "   '[lexer]'"
     echo "   '[multiplicative]' (expressions sub-set)"
     echo "   '[node]'"
     echo "   '[nth-child]'"
     echo "   '[parser]'"
     echo "   '[position]'"
-    echo "   '[power]'"
-    echo "   '[unary]'"
+    echo "   '[power]' (expressions sub-set)"
+    echo "   '[relational]' (expressions sub-set)"
+    echo "   '[unary]' (expressions sub-set)"
     echo "   '[unicode-range]'"
     echo "You may use the list option to see the available tests and tags:"
     echo "   csspp_tests --list-tests"
@@ -74,9 +76,9 @@ then
     mkdir -p tmp/build
     echo "<html><head><title>Coverage</title></head><body><h1>Coverage</h1>" >tmp/build/index.html
     count=1
-    for t in additive assembler color compiler coverage csspp error \
+    for t in additive assembler color compiler full-coverage csspp error \
              expression lexer multiplicative node nth-child parser \
-             position power unary unicode-range
+             position power relational unary unicode-range
     do
         echo -n "`date +'%D %T'`: Building: $t ... "
         echo "<h2>${count}. <a href='csspp_coverage_${t}_html/index.html'>$t<a/></h2>" >>tmp/build/index.html
@@ -123,7 +125,14 @@ then
         exit 1;
     fi
     shift
-    TEST=$1
+    if test "$1" = "full-coverage"
+    then
+        TEST=
+        # We also need to remove it which will work like "--all" below
+        shift
+    else
+        TEST=$1
+    fi
 else
     TEST=
 fi

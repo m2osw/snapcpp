@@ -53,6 +53,11 @@
  *
  * \code{.scss}
  *      5 ** 3 ** 2    // error, need parenthesis somewhere
+ * \endcode
+ *
+ * Whereas the following will work since they use one set of parenthesis:
+ *
+ * \code{.scss}
  *      (5 ** 3) ** 2  // works, = 15625
  *      5 ** (3 ** 2)  // works, = 1953125
  * \endcode
