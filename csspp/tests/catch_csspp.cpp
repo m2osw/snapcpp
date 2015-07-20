@@ -172,6 +172,9 @@ TEST_CASE("Decimal number output", "[csspp] [output]")
     REQUIRE(csspp::decimal_number_to_string(1000.0, true) == "1000");
     REQUIRE(csspp::decimal_number_to_string(100.0, true) == "100");
     REQUIRE(csspp::decimal_number_to_string(10.0, true) == "10");
+
+    // super small negative numbers must be output as "0"
+    REQUIRE(csspp::decimal_number_to_string(-1.2526e-10, true) == "0");
 }
 
 TEST_CASE("Invalid precision", "[csspp] [invalid]")

@@ -46,10 +46,16 @@ add_executable( ${PROJECT_NAME}
     catch_csspp.cpp
     catch_error.cpp
     catch_expr_additive.cpp
+    catch_expr_conditional.cpp
+    catch_expr_equality.cpp
+    catch_expr_list.cpp
+    catch_expr_logical_and.cpp
+    catch_expr_logical_or.cpp
     catch_expr_multiplicative.cpp
     catch_expr_power.cpp
     catch_expr_relational.cpp
     catch_expr_unary.cpp
+    catch_internal_functions.cpp
     catch_lexer.cpp
     catch_node.cpp
     catch_nth_child.cpp

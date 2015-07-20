@@ -428,6 +428,7 @@ TEST_CASE("Node types", "[node] [type]")
         case csspp::node_type_t::INTEGER:
         case csspp::node_type_t::LIST:
         case csspp::node_type_t::MAP:
+        case csspp::node_type_t::NULL_TOKEN:
         case csspp::node_type_t::PERCENT:
         case csspp::node_type_t::STRING:
             break;
@@ -493,7 +494,7 @@ TEST_CASE("Invalid tree handling", "[node] [invalid]")
 
 TEST_CASE("True and false", "[node] [type] [output]")
 {
-    // test boolean values
+    // test boolean values from an identifier
     {
         csspp::position pos("test.css");
         csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::IDENTIFIER, pos));
@@ -515,6 +516,14 @@ TEST_CASE("True and false", "[node] [type] [output]")
         // fortuitious...
         n->set_string("invalid");
         REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_INVALID);
+    }
+
+    // test boolean values from the NULL token
+    {
+        csspp::position pos("test.css");
+        csspp::node::pointer_t n(new csspp::node(csspp::node_type_t::NULL_TOKEN, pos));
+
+        REQUIRE(n->to_boolean() == csspp::boolean_t::BOOLEAN_FALSE);
     }
 
     // no error left over

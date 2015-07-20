@@ -39,20 +39,20 @@ public:
 
     void                compile_args(bool divide_font_metrics);
     node::pointer_t     compile();
-    bool                end_of_nodes();
-    void                mark_start();
-    node::pointer_t     replace_with_result(node::pointer_t result);
-    void                next();
-    node::pointer_t     look_ahead() const;
-    node::pointer_t     current() const;
-    node::pointer_t     conditional();
-    node::pointer_t     argument_list();
-
-    static boolean_t    boolean(node::pointer_t n);
+    static bool         boolean(node::pointer_t n);
 
 private:
     typedef std::map<std::string, node::pointer_t>  variable_vector_t;
     typedef std::vector<std::string>                dimension_vector_t;
+
+    bool                end_of_nodes();
+    void                mark_start();
+    node::pointer_t     replace_with_result(node::pointer_t result);
+    void                next();
+    //node::pointer_t     look_ahead() const;
+    //node::pointer_t     current() const;
+    node::pointer_t     conditional();
+    //node::pointer_t     argument_list();
 
     bool                is_label() const;
     node::pointer_t     compile_list(node::pointer_t parent);

@@ -85,13 +85,13 @@ std::string decimal_number_to_string(decimal_number_t d, bool remove_leading_zer
     ss << std::setprecision(3 + DBL_MANT_DIG - DBL_MIN_EXP);
 
     // make sure to round the value up first
-    if(d >= 0)
+    if(d >= 0.0)
     {
-        ss << d + 0.5 / pow(10, g_precision);
+        ss << d + 0.5 / pow(10.0, g_precision);
     }
     else
     {
-        ss << d - 0.5 / pow(10, g_precision);
+        ss << d - 0.5 / pow(10.0, g_precision);
     }
 
     std::string out(ss.str());
@@ -135,6 +135,14 @@ std::string decimal_number_to_string(decimal_number_t d, bool remove_leading_zer
             out.erase(out.begin() + 1);
             // -.33 is valid and equivalent to -0.33
         }
+    }
+
+    if(out == "-0")
+    {
+        // this happens with really small numbers because we lose
+        // the precision and thus end up with zero even if the number
+        // was not really zero
+        return "0";
     }
 
     return out;

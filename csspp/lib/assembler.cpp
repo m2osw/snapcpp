@@ -249,6 +249,45 @@ assembler::assembler(std::ostream & out)
 {
 }
 
+std::string assembler::escape_id(std::string const & id)
+{
+    std::string result;
+
+    bool first_char(true);
+    for(char const *s(id.c_str()); *s != '\0'; ++s)
+    {
+        if((first_char && lexer::is_start_identifier(*s))
+        || (!first_char && lexer::is_identifier(*s)))
+        {
+            result += *s;
+        }
+        else
+        {
+            result += '\\';
+            if(*s >= '0' && *s <= '9')
+            {
+                // digits need to be defined as hexa
+                result += '3';
+                result += *s;
+                // add a space if the next character requires us to do so
+                if((s[1] >= '0' && s[1] <= '9')
+                || (s[1] >= 'a' && s[1] <= 'f')
+                || (s[1] >= 'A' && s[1] <= 'F'))
+                {
+                    result += ' ';
+                }
+            }
+            else
+            {
+                result += *s;
+            }
+        }
+        first_char = false;
+    }
+
+    return result;
+}
+
 void assembler::output(node::pointer_t n, output_mode_t mode)
 {
     f_root = n;
@@ -415,7 +454,7 @@ void assembler::output(node::pointer_t n)
         break;
 
     case node_type_t::IDENTIFIER:
-        f_out << n->get_string();
+        f_out << escape_id(n->get_string());
         break;
 
     case node_type_t::INCLUDE_MATCH:

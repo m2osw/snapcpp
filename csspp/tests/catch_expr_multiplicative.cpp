@@ -3292,7 +3292,7 @@ TEST_CASE("Expression percent *,/,% percent", "[expression] [multiplicative]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"height\"\n"
 "        ARG\n"
-"          PERCENT D:0.00357\n"
+"          PERCENT D:0.004\n"
 + csspp_test::get_close_comment(true)
 
             );
@@ -3348,7 +3348,7 @@ TEST_CASE("Expression percent *,/,% percent", "[expression] [multiplicative]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"height\"\n"
 "        ARG\n"
-"          PERCENT D:0.00306\n"
+"          PERCENT D:0.003\n"
 + csspp_test::get_close_comment(true)
 
             );
@@ -3404,7 +3404,7 @@ TEST_CASE("Expression percent *,/,% percent", "[expression] [multiplicative]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"height\"\n"
 "        ARG\n"
-"          PERCENT D:0.0035\n"
+"          PERCENT D:0.004\n"
 + csspp_test::get_close_comment(true)
 
             );

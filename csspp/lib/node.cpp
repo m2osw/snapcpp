@@ -315,6 +315,9 @@ boolean_t node::to_boolean() const
         }
         break;
 
+    case node_type_t::NULL_TOKEN:
+        return boolean_t::BOOLEAN_FALSE;
+
     default:
         return boolean_t::BOOLEAN_INVALID;
 
@@ -948,7 +951,7 @@ std::string node::to_string(int flags) const
         break;
 
     case node_type_t::PERCENT:
-        out << (f_boolean && f_integer >= 0 ? "+" : "") << decimal_number_to_string(f_decimal_number, false) << "%";
+        out << (f_boolean && f_integer >= 0 ? "+" : "") << decimal_number_to_string(f_decimal_number * 100.0, false) << "%";
         break;
 
     case node_type_t::PERIOD:
@@ -1303,7 +1306,7 @@ void node::display(std::ostream & out, uint32_t indent) const
     {
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::PERCENT:
-        out << " D:" << f_decimal_number;
+        out << " D:" << decimal_number_to_string(f_decimal_number, false);
         break;
 
     default:

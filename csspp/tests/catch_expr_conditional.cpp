@@ -16,11 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /** \file
- * \brief Test the expression.cpp file for all possible unary expressions.
+ * \brief Test the expression.cpp file: "?:" operator.
  *
- * This test runs a battery of tests agains the expression.cpp unary
- * expressions to ensure full coverage and that all possible input types
- * are checked for the unary CSS Preprocessor extensions.
+ * This test runs a battery of tests agains the expression.cpp "?:"
+ * (conditional) operator to ensure full coverage and that all possible
+ * left hand side and right hand side types are checked for the equality
+ * CSS Preprocessor extensions.
  *
  * Note that all the tests use the full chain: lexer, parser, compiler,
  * and assembler to make sure the results are correct. So these tests
@@ -40,176 +41,12 @@
 
 #include <sstream>
 
-TEST_CASE("Unary expressions", "[expression] [unary]")
+TEST_CASE("Expression boolean ? a : b", "[expression] [conditional]")
 {
-    SECTION("integer, identifier, hash color")
+    SECTION("check 10 = 3 ? 9 : 5")
     {
         std::stringstream ss;
-        ss << "$zzzrv: $_csspp_major > 0;\n"
-           << "$zzzempty: null;\n"
-           << "div {\n"
-           << "  border: 3px solid #f1a932;\n"
-           << "  content: \"\\201c\";\n" // open quotation
-           << "  width: 13%;\n"
-           << "  height: 12.5px;\n"
-           << "  color: if($zzzrv, #341109, white);\n"
-           << "  background-x: ( 32px + 44px );\n"
-           << "  background-y: + 44 * 1px;\n"
-           << "  border-top-left-radius: (- 33 + 57) * 2;\n"
-           << "  border-top-right-radius: (- 33.5 + 5.7) * 2;\n"
-           << "  unicode-range: U+410-417;\n"
-           << "  font-size: if(true, 12pt, 12px);\n"
-           << "  font-weight: if(false, bold, thin);\n"
-           << "  margin-left: calc(5% - 5px);\n"
-           << "  margin-right: expression(2.5% + 2px);\n"
-           << "  margin-top: 1.5%;\n"
-           << "  margin-bottom: - 3.2%;\n"
-           << "}\n";
-        csspp::position pos("test.css");
-        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
-
-        csspp::parser p(l);
-
-        csspp::node::pointer_t n(p.stylesheet());
-
-        csspp::compiler c;
-        c.set_root(n);
-        c.set_date_time_variables(csspp_test::get_now());
-        c.add_path(csspp_test::get_script_path());
-        c.add_path(csspp_test::get_version_script_path());
-
-        c.compile(false);
-
-//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
-
-        // to verify that the result is still an INTEGER we have to
-        // test the root node here
-        std::stringstream compiler_out;
-        compiler_out << *n;
-        REQUIRE_TREES(compiler_out.str(),
-
-"LIST\n"
-+ csspp_test::get_default_variables() +
-"    V:zzzempty\n"
-"      LIST\n"
-"        VARIABLE \"zzzempty\"\n"
-"        NULL_TOKEN\n"
-"    V:zzzrv\n"
-"      LIST\n"
-"        VARIABLE \"zzzrv\"\n"
-"        LIST\n"
-"          INTEGER \"\" I:1\n"
-"          WHITESPACE\n"
-"          GREATER_THAN\n"
-"          WHITESPACE\n"
-"          INTEGER \"\" I:0\n"
-"  COMPONENT_VALUE\n"
-"    ARG\n"
-"      IDENTIFIER \"div\"\n"
-"    OPEN_CURLYBRACKET B:true\n"
-"      LIST\n"
-"        DECLARATION \"border\"\n"
-"          ARG\n"
-"            INTEGER \"px\" I:3\n"
-"            WHITESPACE\n"
-"            IDENTIFIER \"solid\"\n"
-"            WHITESPACE\n"
-"            COLOR H:ff32a9f1\n"
-"        DECLARATION \"content\"\n"
-"          ARG\n"
-"            STRING \"\xe2\x80\x9c\"\n"
-"        DECLARATION \"width\"\n"
-"          ARG\n"
-"            PERCENT D:0.13\n"
-"        DECLARATION \"height\"\n"
-"          ARG\n"
-"            DECIMAL_NUMBER \"px\" D:12.5\n"
-"        DECLARATION \"color\"\n"
-"          ARG\n"
-"            COLOR H:ffffffff\n"
-"        DECLARATION \"background-x\"\n"
-"          ARG\n"
-"            INTEGER \"px\" I:76\n"
-"        DECLARATION \"background-y\"\n"
-"          ARG\n"
-"            INTEGER \"px\" I:44\n"
-"        DECLARATION \"border-top-left-radius\"\n"
-"          ARG\n"
-"            INTEGER \"\" I:48\n"
-"        DECLARATION \"border-top-right-radius\"\n"
-"          ARG\n"
-"            DECIMAL_NUMBER \"\" D:-55.6\n"
-"        DECLARATION \"unicode-range\"\n"
-"          ARG\n"
-"            UNICODE_RANGE I:4496830759952\n"
-"        DECLARATION \"font-size\"\n"
-"          ARG\n"
-"            INTEGER \"px\" I:12\n"
-"        DECLARATION \"font-weight\"\n"
-"          ARG\n"
-"            IDENTIFIER \"bold\"\n"
-"        DECLARATION \"margin-left\"\n"
-"          ARG\n"
-"            FUNCTION \"calc\"\n"
-"              ARG\n"
-"                PERCENT D:0.05\n"
-"                WHITESPACE\n"
-"                SUBTRACT\n"
-"                WHITESPACE\n"
-"                INTEGER \"px\" I:5\n"
-"        DECLARATION \"margin-right\"\n"
-"          ARG\n"
-"            FUNCTION \"expression\"\n"
-"              ARG\n"
-"                PERCENT D:0.025\n"
-"                WHITESPACE\n"
-"                ADD\n"
-"                WHITESPACE\n"
-"                INTEGER \"px\" I:2\n"
-"        DECLARATION \"margin-top\"\n"
-"          ARG\n"
-"            PERCENT D:0.015\n"
-"        DECLARATION \"margin-bottom\"\n"
-"          ARG\n"
-"            PERCENT D:-0.032\n"
-+ csspp_test::get_close_comment(true)
-
-            );
-
-        std::stringstream assembler_out;
-        csspp::assembler a(assembler_out);
-        a.output(n, csspp::output_mode_t::COMPRESSED);
-
-//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
-
-        REQUIRE(assembler_out.str() ==
-"div{"
-  "border:3px solid #f1a932;"
-  "content:\"\xe2\x80\x9c\";"
-  "width:13%;height:12.5px;"
-  "color:#fff;"
-  "background-x:76px;"
-  "background-y:44px;"
-  "border-top-left-radius:48;"
-  "border-top-right-radius:-55.6;"
-  "unicode-range:U+410-417;"
-  "font-size:12px;"
-  "font-weight:bold;"
-  "margin-left:calc(5% - 5px);"
-  "margin-right:expression(2.5% + 2px);"
-  "margin-top:1.5%;"
-  "margin-bottom:-3.2%"
-"}\n"
-+ csspp_test::get_close_comment()
-                );
-
-        REQUIRE(c.get_root() == n);
-    }
-
-    SECTION("null token (can't output)")
-    {
-        std::stringstream ss;
-        ss << "div{width:null}";
+        ss << "div { z-index: 10 = 3 ? 9 : 5; }";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -239,107 +76,9 @@ TEST_CASE("Unary expressions", "[expression] [unary]")
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
 "    OPEN_CURLYBRACKET B:true\n"
-"      DECLARATION \"width\"\n"
+"      DECLARATION \"z-index\"\n"
 "        ARG\n"
-"          NULL_TOKEN\n"
-+ csspp_test::get_close_comment(true)
-
-            );
-
-        REQUIRE(c.get_root() == n);
-    }
-
-    SECTION("important width")
-    {
-        std::stringstream ss;
-        ss << "div{width:3px !important}";
-        csspp::position pos("test.css");
-        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
-
-        csspp::parser p(l);
-
-        csspp::node::pointer_t n(p.stylesheet());
-
-        csspp::compiler c;
-        c.set_root(n);
-        c.set_date_time_variables(csspp_test::get_now());
-        c.add_path(csspp_test::get_script_path());
-        c.add_path(csspp_test::get_version_script_path());
-
-        c.compile(false);
-
-//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
-
-        // to verify that the result is still an INTEGER we have to
-        // test the root node here
-        std::stringstream compiler_out;
-        compiler_out << *n;
-        REQUIRE_TREES(compiler_out.str(),
-
-"LIST\n"
-+ csspp_test::get_default_variables() +
-"  COMPONENT_VALUE\n"
-"    ARG\n"
-"      IDENTIFIER \"div\"\n"
-"    OPEN_CURLYBRACKET B:true\n"
-"      DECLARATION \"width\" F:important\n"
-"        ARG\n"
-"          INTEGER \"px\" I:3\n"
-+ csspp_test::get_close_comment(true)
-
-            );
-
-        REQUIRE(c.get_root() == n);
-    }
-
-    // no error left over
-    REQUIRE_ERRORS("");
-}
-
-TEST_CASE("Variables in expressions", "[expression] [unary] [variable]")
-{
-    SECTION("set expression variable and reuse")
-    {
-        std::stringstream ss;
-        ss << "div {\n"
-           << "  border: (w := 54px, w / 2.7)[-1] solid #f1a932;\n"
-           << "}\n";
-        csspp::position pos("test.css");
-        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
-
-        csspp::parser p(l);
-
-        csspp::node::pointer_t n(p.stylesheet());
-
-        csspp::compiler c;
-        c.set_root(n);
-        c.set_date_time_variables(csspp_test::get_now());
-        c.add_path(csspp_test::get_script_path());
-        c.add_path(csspp_test::get_version_script_path());
-
-        c.compile(false);
-
-//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
-
-        // to verify that the result is still an INTEGER we have to
-        // test the root node here
-        std::stringstream compiler_out;
-        compiler_out << *n;
-        REQUIRE_TREES(compiler_out.str(),
-
-"LIST\n"
-+ csspp_test::get_default_variables() +
-"  COMPONENT_VALUE\n"
-"    ARG\n"
-"      IDENTIFIER \"div\"\n"
-"    OPEN_CURLYBRACKET B:true\n"
-"      DECLARATION \"border\"\n"
-"        ARG\n"
-"          DECIMAL_NUMBER \"px\" D:20\n"
-"          WHITESPACE\n"
-"          IDENTIFIER \"solid\"\n"
-"          WHITESPACE\n"
-"          COLOR H:ff32a9f1\n"
+"          INTEGER \"\" I:5\n"
 + csspp_test::get_close_comment(true)
 
             );
@@ -352,9 +91,119 @@ TEST_CASE("Variables in expressions", "[expression] [unary] [variable]")
 
         REQUIRE(assembler_out.str() ==
 
-"div{"
-  "border:20px solid #f1a932"
-"}\n"
+"div{z-index:5}\n"
++ csspp_test::get_close_comment()
+
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("check 10 != 3 ? 9 : 5")
+    {
+        std::stringstream ss;
+        ss << "div { z-index: 10 != 3 ? 9 : 5; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:9\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+
+"div{z-index:9}\n"
++ csspp_test::get_close_comment()
+
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("check 10 != 3 ? \"string\" : 5")
+    {
+        std::stringstream ss;
+        ss << "div { content: 10 != 3 ? \"string\" : 5; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"content\"\n"
+"        ARG\n"
+"          STRING \"string\"\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+
+"div{content:\"string\"}\n"
 + csspp_test::get_close_comment()
 
                 );
@@ -366,12 +215,12 @@ TEST_CASE("Variables in expressions", "[expression] [unary] [variable]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid unary expressions", "[expression] [unary]")
+TEST_CASE("Expression invalid ? invalid : invalid", "[expression] [conditional] [invalid]")
 {
-    SECTION("not a unary token")
+    SECTION("just ? is not a valid number")
     {
         std::stringstream ss;
-        ss << "div { border: ?; }\n";
+        ss << "div { border: ?; }";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -394,10 +243,10 @@ TEST_CASE("Invalid unary expressions", "[expression] [unary]")
         REQUIRE(c.get_root() == n);
     }
 
-    SECTION("invalid # color")
+    SECTION("number ? ? ...  is invalid")
     {
         std::stringstream ss;
-        ss << "div { border: #identifier; }\n";
+        ss << "div { width: 10px ? ?; }";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -415,15 +264,15 @@ TEST_CASE("Invalid unary expressions", "[expression] [unary]")
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): error: the color in #identifier is not valid.\n");
+        REQUIRE_ERRORS("test.css(1): error: unsupported type CONDITIONAL as a unary expression token.\n");
 
         REQUIRE(c.get_root() == n);
     }
 
-    SECTION("not a valid token for minus")
+    SECTION("true ? 3em : ? is invalid")
     {
         std::stringstream ss;
-        ss << "div { border: - \"test\"; }\n";
+        ss << "div { width: true ? 3em : ?; }";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -441,22 +290,15 @@ TEST_CASE("Invalid unary expressions", "[expression] [unary]")
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): error: unsupported type STRING for operator '-'.\n");
+        REQUIRE_ERRORS("test.css(1): error: unsupported type CONDITIONAL as a unary expression token.\n");
 
         REQUIRE(c.get_root() == n);
     }
 
-    SECTION("improper initialization of an expression object")
-    {
-        csspp::node::pointer_t null_node;
-        REQUIRE_THROWS_AS(new csspp::expression(null_node, true), csspp::csspp_exception_logic);
-        REQUIRE_THROWS_AS(new csspp::expression(null_node, false), csspp::csspp_exception_logic);
-    }
-
-    SECTION("important width, wrong order")
+    SECTION("true ? 3em 10em is invalid, missing ':'")
     {
         std::stringstream ss;
-        ss << "div { width: !important 3px; }";
+        ss << "div { width: true ? 3em 10em; }";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -474,7 +316,33 @@ TEST_CASE("Invalid unary expressions", "[expression] [unary]")
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): warning: A special flag, !important in this case, must only appear at the end of a declaration.\n");
+        REQUIRE_ERRORS("test.css(1): error: a mandatory ':' was expected after a '?' first expression.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("unicode-range ? 3em : 10em is invalid, not a boolean")
+    {
+        std::stringstream ss;
+        ss << "div { width: unicode-range ? 3em : 10em; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a boolean expression was expected.\n");
 
         REQUIRE(c.get_root() == n);
     }

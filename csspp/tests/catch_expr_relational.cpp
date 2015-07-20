@@ -1460,7 +1460,7 @@ TEST_CASE("Relational expressions with invalid dimensions or decimal numbers", "
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-            REQUIRE_ERRORS("test.css(1): error: incompatible types or dimensions between INTEGER and INTEGER for operator '=', '!=', '<', '<=', '>', or '>='.\n");
+            REQUIRE_ERRORS("test.css(1): error: incompatible types or dimensions between INTEGER and INTEGER for operator '=', '!=', '<', '<=', '>', '>=', '~=', '^=', '$=', '*=', or '|='.\n");
 
             REQUIRE(c.get_root() == n);
         }
@@ -1492,7 +1492,7 @@ TEST_CASE("Relational expressions with invalid dimensions or decimal numbers", "
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
             REQUIRE_ERRORS(
-                    "test.css(1): error: incompatible types or dimensions between INTEGER and PERCENT for operator '=', '!=', '<', '<=', '>', or '>='.\n"
+                    "test.css(1): error: incompatible types or dimensions between INTEGER and PERCENT for operator '=', '!=', '<', '<=', '>', '>=', '~=', '^=', '$=', '*=', or '|='.\n"
                 );
 
             REQUIRE(c.get_root() == n);
@@ -1521,7 +1521,7 @@ TEST_CASE("Relational expressions with invalid dimensions or decimal numbers", "
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-            REQUIRE_ERRORS("test.css(1): error: incompatible types or dimensions between INTEGER and PERCENT for operator '=', '!=', '<', '<=', '>', or '>='.\n");
+            REQUIRE_ERRORS("test.css(1): error: incompatible types or dimensions between INTEGER and PERCENT for operator '=', '!=', '<', '<=', '>', '>=', '~=', '^=', '$=', '*=', or '|='.\n");
 
             REQUIRE(c.get_root() == n);
         }
@@ -1549,7 +1549,7 @@ TEST_CASE("Relational expressions with invalid dimensions or decimal numbers", "
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-            REQUIRE_ERRORS("test.css(1): error: incompatible types or dimensions between PERCENT and INTEGER for operator '=', '!=', '<', '<=', '>', or '>='.\n");
+            REQUIRE_ERRORS("test.css(1): error: incompatible types or dimensions between PERCENT and INTEGER for operator '=', '!=', '<', '<=', '>', '>=', '~=', '^=', '$=', '*=', or '|='.\n");
 
             REQUIRE(c.get_root() == n);
         }
@@ -1577,7 +1577,7 @@ TEST_CASE("Relational expressions with invalid dimensions or decimal numbers", "
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-            REQUIRE_ERRORS("test.css(1): error: incompatible types or dimensions between PERCENT and INTEGER for operator '=', '!=', '<', '<=', '>', or '>='.\n");
+            REQUIRE_ERRORS("test.css(1): error: incompatible types or dimensions between PERCENT and INTEGER for operator '=', '!=', '<', '<=', '>', '>=', '~=', '^=', '$=', '*=', or '|='.\n");
 
             REQUIRE(c.get_root() == n);
         }

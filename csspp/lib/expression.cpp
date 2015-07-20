@@ -150,7 +150,7 @@ node::pointer_t expression::replace_with_result(node::pointer_t result)
     {
         if(f_start == static_cast<size_t>(-1))
         {
-            throw csspp_exception_logic("expression.cpp:expression(): replace_with_result() cannot be called if mark_start() was never called.");
+            throw csspp_exception_logic("expression.cpp:expression(): replace_with_result() cannot be called if mark_start() was never called."); // LCOV_EXCL_LINE
         }
 
         // f_pos may point to a tag right after the end of the previous
@@ -211,22 +211,22 @@ void expression::next()
     }
 }
 
-node::pointer_t expression::look_ahead() const
-{
-    if(f_pos < f_node->size())
-    {
-        return f_node->get_child(f_pos);
-    }
+//node::pointer_t expression::look_ahead() const
+//{
+//    if(f_pos < f_node->size())
+//    {
+//        return f_node->get_child(f_pos);
+//    }
+//
+//    return node::pointer_t();
+//}
+//
+//node::pointer_t expression::current() const
+//{
+//    return f_current;
+//}
 
-    return node::pointer_t();
-}
-
-node::pointer_t expression::current() const
-{
-    return f_current;
-}
-
-boolean_t expression::boolean(node::pointer_t n)
+bool expression::boolean(node::pointer_t n)
 {
     boolean_t const result(n->to_boolean());
     if(result == boolean_t::BOOLEAN_INVALID)
@@ -235,35 +235,35 @@ boolean_t expression::boolean(node::pointer_t n)
                 << "a boolean expression was expected."
                 << error_mode_t::ERROR_ERROR;
     }
-    return result;
+    return result == boolean_t::BOOLEAN_TRUE;
 }
 
 // expression parsing
-node::pointer_t expression::argument_list()
-{
-    node::pointer_t result(assignment());
-    if(!result)
-    {
-        return node::pointer_t();
-    }
-
-    {
-        node::pointer_t item(result);
-        result.reset(new node(node_type_t::LIST, item->get_position()));
-        result->add_child(item);
-    }
-
-    while(f_current->is(node_type_t::COMMA))
-    {
-        // skip the ','
-        next();
-
-        // read the next expression
-        result->add_child(assignment());
-    }
-
-    return result;
-}
+//node::pointer_t expression::argument_list()
+//{
+//    node::pointer_t result(assignment());
+//    if(!result)
+//    {
+//        return node::pointer_t();
+//    }
+//
+//    {
+//        node::pointer_t item(result);
+//        result.reset(new node(node_type_t::LIST, item->get_position()));
+//        result->add_child(item);
+//    }
+//
+//    while(f_current->is(node_type_t::COMMA))
+//    {
+//        // skip the ','
+//        next();
+//
+//        // read the next expression
+//        result->add_child(assignment());
+//    }
+//
+//    return result;
+//}
 
 bool expression::is_label() const
 {
@@ -282,6 +282,8 @@ bool expression::is_label() const
         ++pos;
         if(pos >= f_node->size())
         {
+            // this should not happen since lists of tokens cannot end
+            // with a WHITESPACE
             return false;
         }
         n = f_node->get_child(pos);
@@ -306,10 +308,11 @@ node::pointer_t expression::expression_list()
 
     if(is_label())
     {
-        node::pointer_t map(new node(node_type_t::ARRAY, f_current->get_position()));
-        while(is_label())
+        node::pointer_t map(new node(node_type_t::MAP, f_current->get_position()));
+        bool found_end(false);
+        while(!found_end && is_label())
         {
-            map->add_child(f_current);
+            node::pointer_t name(f_current);
 
             // skip the IDENTIFIER (f_current == ':')
             next();
@@ -321,7 +324,7 @@ node::pointer_t expression::expression_list()
             if(f_current->is(node_type_t::COMMA))
             {
                 // empty entries are viewed as valid and set to NULL
-                result.reset(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
+                // (see below for the NULL_TOKEN allocation)
 
                 // skip the ','
                 next();
@@ -329,17 +332,28 @@ node::pointer_t expression::expression_list()
             else
             {
                 result = assignment();
-                if(result)
+
+                if(f_current->is(node_type_t::COMMA))
                 {
-                    // maps need to have an even number of entries, but
-                    // the value of an entry does not need to be provided
-                    // in which case we want to put NULL in there
-                    result.reset(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
-                    map->add_child(result);
-                    break;
+                    next();
+                }
+                else
+                {
+                    // no comma, we must have reached the end of the list
+                    found_end = true;
                 }
             }
 
+            if(!result)
+            {
+                // maps need to have an even number of entries, but
+                // the value of an entry does not need to be provided
+                // in which case we want to put NULL in there
+                result.reset(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
+            }
+
+            // add both at the same time
+            map->add_child(name);
             map->add_child(result);
         }
         return map;
@@ -451,13 +465,9 @@ node::pointer_t expression::conditional()
             return node::pointer_t();
         }
 
-        // select the right result
-        int const r(boolean(result));
-        if(r < 0)
-        {
-            return node::pointer_t();
-        }
-        result = r == 0 ? result_false : result_true;
+        // select the correct result
+        bool const r(boolean(result));
+        result = r ? result_true : result_false;
     }
 
     return result;
@@ -490,8 +500,8 @@ node::pointer_t expression::logical_or()
         }
 
         // apply the OR
-        int const lr(boolean(result));
-        int const rr(boolean(rhs));
+        bool const lr(boolean(result));
+        bool const rr(boolean(rhs));
         result.reset(new node(node_type_t::BOOLEAN, pos));
         result->set_boolean(lr || rr);
     }
@@ -526,8 +536,8 @@ node::pointer_t expression::logical_and()
         }
 
         // apply the AND
-        int const lr(boolean(result));
-        int const rr(boolean(rhs));
+        bool const lr(boolean(result));
+        bool const rr(boolean(rhs));
         result.reset(new node(node_type_t::BOOLEAN, pos));
         result->set_boolean(lr && rr);
     }
@@ -563,7 +573,7 @@ bool is_comparable(node::pointer_t lhs, node::pointer_t rhs)
         << lhs->get_type()
         << " and "
         << rhs->get_type()
-        << " for operator '=', '!=', '<', '<=', '>', or '>='."
+        << " for operator '=', '!=', '<', '<=', '>', '>=', '~=', '^=', '$=', '*=', or '|='."
         << error_mode_t::ERROR_ERROR;
 
     return false;
@@ -693,7 +703,7 @@ bool match(node_type_t op, node::pointer_t lhs, node::pointer_t rhs)
                 << lhs->get_type()
                 << " and "
                 << rhs->get_type()
-                << " for operator '~='."
+                << " for operator '~=', '^=', '$=', '*=', '|='."
                 << error_mode_t::ERROR_ERROR;
         return lhs->get_string() == rhs->get_string();
 
@@ -797,30 +807,33 @@ node::pointer_t expression::equality()
 
         // apply the equality operation
         bool boolean_result(false);
-        switch(op)
+        if(is_comparable(result, rhs))
         {
-        case node_type_t::EQUAL:
-            boolean_result = is_equal(result, rhs);
-            break;
+            switch(op)
+            {
+            case node_type_t::EQUAL:
+                boolean_result = is_equal(result, rhs);
+                break;
 
-        case node_type_t::NOT_EQUAL:
-            boolean_result = !is_equal(result, rhs);
-            break;
+            case node_type_t::NOT_EQUAL:
+                boolean_result = !is_equal(result, rhs);
+                break;
 
-        case node_type_t::INCLUDE_MATCH:
-        case node_type_t::PREFIX_MATCH:
-        case node_type_t::SUFFIX_MATCH:
-        case node_type_t::SUBSTRING_MATCH:
-        case node_type_t::DASH_MATCH:
-            boolean_result = match(op, result, rhs);
-            break;
+            case node_type_t::INCLUDE_MATCH:
+            case node_type_t::PREFIX_MATCH:
+            case node_type_t::SUFFIX_MATCH:
+            case node_type_t::SUBSTRING_MATCH:
+            case node_type_t::DASH_MATCH:
+                boolean_result = match(op, result, rhs);
+                break;
 
-        default:
-            throw csspp_exception_logic("expression.cpp:equality(): unexpected operator in 'op'."); // LCOV_EXCL_LINE
+            default:
+                throw csspp_exception_logic("expression.cpp:equality(): unexpected operator in 'op'."); // LCOV_EXCL_LINE
 
+            }
+            result.reset(new node(node_type_t::BOOLEAN, pos));
+            result->set_boolean(boolean_result);
         }
-        result.reset(new node(node_type_t::BOOLEAN, pos));
-        result->set_boolean(boolean_result);
 
         op = equality_operator(f_current);
     }
@@ -2162,7 +2175,16 @@ node::pointer_t expression::post()
                 || result->is(node_type_t::LIST))
                 {
                     // index is 1 based (not like in C/C++)
-                    integer_t const idx(i->get_integer() - 1);
+                    integer_t idx(i->get_integer());
+                    if(idx < 0)
+                    {
+                        // negative numbers get items from the item
+                        idx = result->size() + idx;
+                    }
+                    else
+                    {
+                        --idx;
+                    }
                     if(static_cast<size_t>(idx) >= result->size())
                     {
                         error::instance() << f_current->get_position()
@@ -2182,7 +2204,18 @@ node::pointer_t expression::post()
                     // maps are defined as <property name> ':' <property value>
                     // so the numeric index being used to access the property
                     // value it has to be x 2 + 1 (C index: 1, 3, 5...)
-                    integer_t const idx((i->get_integer() - 1) * 2 + 1);
+                    // if negative we first have to "invert" the index
+                    integer_t idx(i->get_integer());
+                    if(idx < 0)
+                    {
+                        // negative numbers get items from the item
+                        idx = result->size() + idx;
+                    }
+                    else
+                    {
+                        --idx;
+                    }
+                    idx = idx * 2 + 1;
                     if(static_cast<size_t>(idx) >= result->size())
                     {
                         error::instance() << f_current->get_position()
@@ -2378,17 +2411,13 @@ node::pointer_t expression::unary()
     //        // skip the '!'
     //        next();
     //        node::pointer_t result(power());
-    //        int const r(boolean(result));
-    //        if(r < 0)
-    //        {
-    //            return node::pointer_t();
-    //        }
+    //        bool const r(boolean(result));
     //        // make sure the result is a boolean
     //        if(!result->is(node_type_t::BOOLEAN))
     //        {
     //            result.reset(new node(node_type_t::BOOLEAN, result->get_position()));
     //        }
-    //        result->set_boolean(r == 0 ? true : false);
+    //        result->set_boolean(r);
     //        return result;
     //    }
 
@@ -2440,15 +2469,22 @@ node::pointer_t expression::unary()
                 return node::pointer_t(new node(node_type_t::BOOLEAN, result->get_position()));
             }
             color col;
-            if(!col.set_color(identifier))
+            if(col.set_color(identifier))
             {
-                // it is not a color, return as is
-                return result;
-            }
-            node::pointer_t color_node(new node(node_type_t::COLOR, result->get_position()));
-            color_node->set_color(col);
+                node::pointer_t color_node(new node(node_type_t::COLOR, result->get_position()));
+                color_node->set_color(col);
 
-            return color_node;
+                return color_node;
+            }
+
+            auto var(f_variables.find(identifier));
+            if(var != f_variables.end())
+            {
+                return var->second;
+            }
+
+            // it is not a color, return as is
+            return result;
         }
 
     default:

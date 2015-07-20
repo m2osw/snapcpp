@@ -37,6 +37,45 @@
 namespace csspp
 {
 
+namespace
+{
+
+decimal_number_t dimension_to_radians(position const & pos, decimal_number_t n, std::string const & dimension)
+{
+    if(dimension == "rad")
+    {
+        // all good as is
+        return n;
+    }
+    else if(dimension == "deg"
+         || dimension == "") // no angle dimension, use as if it were degrees (which has been the default in CSS)
+    {
+        // convert degrees to radians
+        return n * M_PI / 180.0;
+    }
+    else if(dimension == "grad")
+    {
+        // convert grads to radians
+        return n * M_PI / 200.0;
+    }
+    else if(dimension == "turn")
+    {
+        // convert turns to radians
+        return n * M_PI * 2.0;
+    }
+    else
+    {
+        error::instance() << pos
+                << "trigonometry functions expect an angle (deg, grad, rad, turn) as a parameter."
+                << error_mode_t::ERROR_ERROR;
+
+        // keep 'n' as is... what else could we do?
+        return n;
+    }
+}
+
+} // no name namespace
+
 node::pointer_t expression::internal_function__get_any(node::pointer_t func, size_t argn)
 {
     if(argn >= func->size())
@@ -223,7 +262,9 @@ node::pointer_t expression::internal_function__acos(node::pointer_t func)
         {
             number.reset(new node(node_type_t::DECIMAL_NUMBER, number->get_position()));
         }
+        // should we return the angle in degrees instead?
         number->set_decimal_number(acos(n));
+        number->set_string("rad");
         return number;
     }
 
@@ -269,7 +310,9 @@ node::pointer_t expression::internal_function__asin(node::pointer_t func)
         {
             number.reset(new node(node_type_t::DECIMAL_NUMBER, number->get_position()));
         }
+        // should we return the angle in degrees instead?
         number->set_decimal_number(asin(n));
+        number->set_string("rad");
         return number;
     }
 
@@ -291,7 +334,9 @@ node::pointer_t expression::internal_function__atan(node::pointer_t func)
         {
             number.reset(new node(node_type_t::DECIMAL_NUMBER, number->get_position()));
         }
+        // should we return the angle in degrees instead?
         number->set_decimal_number(atan(n));
+        number->set_string("rad");
         return number;
     }
 
@@ -314,13 +359,13 @@ node::pointer_t expression::internal_function__blue(node::pointer_t func)
         color_component_t b;
         color_component_t a;
         c.get_color(r, g, b, a);
-        node::pointer_t component(new node(node_type_t::DECIMAL_NUMBER, func->get_position()));
-        component->set_decimal_number(b * 255.0);
+        node::pointer_t component(new node(node_type_t::INTEGER, func->get_position()));
+        component->set_integer(static_cast<integer_t>(b * 255.0 + 0.5));
         return component;
     }
 
     error::instance() << f_current->get_position()
-            << "red() expects a color as parameter."
+            << "blue() expects a color as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -354,16 +399,23 @@ node::pointer_t expression::internal_function__cos(node::pointer_t func)
     node::pointer_t number(internal_function__get_number(func, 0, n));
     if(number)
     {
+        std::string const dimension(number->get_string());
         if(number->is(node_type_t::INTEGER))
         {
             number.reset(new node(node_type_t::DECIMAL_NUMBER, number->get_position()));
         }
+        else
+        {
+            // we "lose" the dimension
+            number->set_string("");
+        }
+        n = dimension_to_radians(func->get_position(), n, dimension);
         number->set_decimal_number(cos(n));
         return number;
     }
 
     error::instance() << f_current->get_position()
-            << "cos() expects a number as parameter."
+            << "cos() expects an angle as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -378,9 +430,15 @@ node::pointer_t expression::internal_function__decimal_number(node::pointer_t fu
         switch(any->get_type())
         {
         case node_type_t::DECIMAL_NUMBER:
-        case node_type_t::PERCENT:
             // already a decimal number, return as is
             return any;
+
+        case node_type_t::PERCENT:
+            {
+                node::pointer_t number(new node(node_type_t::DECIMAL_NUMBER, any->get_position()));
+                number->set_decimal_number(any->get_decimal_number());
+                return number;
+            }
 
         case node_type_t::INTEGER:
             {
@@ -390,10 +448,7 @@ node::pointer_t expression::internal_function__decimal_number(node::pointer_t fu
                 return number;
             }
 
-        case node_type_t::EXCLAMATION:
-        case node_type_t::HASH:
         case node_type_t::IDENTIFIER:
-        case node_type_t::PLACEHOLDER:
         case node_type_t::STRING:
         case node_type_t::URL:
             {
@@ -408,8 +463,14 @@ node::pointer_t expression::internal_function__decimal_number(node::pointer_t fu
                 switch(number->get_type())
                 {
                 case node_type_t::DECIMAL_NUMBER:
-                case node_type_t::PERCENT:
                     return number;
+
+                case node_type_t::PERCENT:
+                    {
+                        node::pointer_t result(new node(node_type_t::DECIMAL_NUMBER, any->get_position()));
+                        result->set_decimal_number(number->get_decimal_number());
+                        return result;
+                    }
 
                 case node_type_t::INTEGER:
                     {
@@ -465,8 +526,8 @@ node::pointer_t expression::internal_function__floor(node::pointer_t func)
 
 node::pointer_t expression::internal_function__frgb(node::pointer_t func)
 {
-    // frgba(color)
-    // frgba(fred, fgreen, fblue)
+    // frgb(color)
+    // frgb(fred, fgreen, fblue)
     color c;
     node::pointer_t col(internal_function__get_color(func, 0, c));
     if(col)
@@ -550,7 +611,7 @@ node::pointer_t expression::internal_function__frgba(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "frgba() expects exactly one color parameter followed by one number (Alpha), or four numbers (Red, Green, Blue, Alpha)."
+            << "frgba() expects exactly one color parameter followed by one number (Color, Alpha), or four numbers (Red, Green, Blue, Alpha)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -601,8 +662,8 @@ node::pointer_t expression::internal_function__green(node::pointer_t func)
         color_component_t b;
         color_component_t a;
         c.get_color(r, g, b, a);
-        node::pointer_t component(new node(node_type_t::DECIMAL_NUMBER, func->get_position()));
-        component->set_decimal_number(g * 255.0);
+        node::pointer_t component(new node(node_type_t::INTEGER, func->get_position()));
+        component->set_integer(static_cast<integer_t>(g * 255.0 + 0.5));
         return component;
     }
 
@@ -751,9 +812,6 @@ node::pointer_t expression::internal_function__identifier(node::pointer_t func)
                 return id;
             }
 
-        case node_type_t::EXCLAMATION:
-        case node_type_t::HASH:
-        case node_type_t::PLACEHOLDER:
         case node_type_t::STRING:
         case node_type_t::URL:
             {
@@ -851,10 +909,7 @@ node::pointer_t expression::internal_function__integer(node::pointer_t func)
                 return number;
             }
 
-        case node_type_t::EXCLAMATION:
-        case node_type_t::HASH:
         case node_type_t::IDENTIFIER:
-        case node_type_t::PLACEHOLDER:
         case node_type_t::STRING:
         case node_type_t::URL:
             {
@@ -874,7 +929,7 @@ node::pointer_t expression::internal_function__integer(node::pointer_t func)
                 case node_type_t::DECIMAL_NUMBER:
                     {
                         node::pointer_t result(new node(node_type_t::INTEGER, any->get_position()));
-                        result->set_decimal_number(number->get_integer());
+                        result->set_integer(number->get_decimal_number());
                         result->set_string(number->get_string());
                         return result;
                     }
@@ -882,7 +937,7 @@ node::pointer_t expression::internal_function__integer(node::pointer_t func)
                 case node_type_t::PERCENT:
                     {
                         node::pointer_t result(new node(node_type_t::INTEGER, any->get_position()));
-                        result->set_decimal_number(number->get_integer());
+                        result->set_integer(number->get_decimal_number());
                         return result;
                     }
 
@@ -1031,8 +1086,8 @@ node::pointer_t expression::internal_function__red(node::pointer_t func)
         color_component_t b;
         color_component_t a;
         c.get_color(r, g, b, a);
-        node::pointer_t component(new node(node_type_t::DECIMAL_NUMBER, func->get_position()));
-        component->set_decimal_number(r * 255.0);
+        node::pointer_t component(new node(node_type_t::INTEGER, func->get_position()));
+        component->set_integer(static_cast<integer_t>(r * 255.0 + 0.5));
         return component;
     }
 
@@ -1224,16 +1279,23 @@ node::pointer_t expression::internal_function__sin(node::pointer_t func)
     node::pointer_t number(internal_function__get_number(func, 0, n));
     if(number)
     {
+        std::string const dimension(number->get_string());
         if(number->is(node_type_t::INTEGER))
         {
             number.reset(new node(node_type_t::DECIMAL_NUMBER, number->get_position()));
         }
+        else
+        {
+            // we "lose" the dimension
+            number->set_string("");
+        }
+        n = dimension_to_radians(func->get_position(), n, dimension);
         number->set_decimal_number(sin(n));
         return number;
     }
 
     error::instance() << f_current->get_position()
-            << "sin() expects a number as parameter."
+            << "sin() expects an angle as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1360,10 +1422,7 @@ node::pointer_t expression::internal_function__string(node::pointer_t func)
                 return id;
             }
 
-        case node_type_t::EXCLAMATION:
-        case node_type_t::HASH:
         case node_type_t::IDENTIFIER:
-        case node_type_t::PLACEHOLDER:
         case node_type_t::URL:
             {
                 node::pointer_t id(new node(node_type_t::STRING, any->get_position()));
@@ -1420,16 +1479,23 @@ node::pointer_t expression::internal_function__tan(node::pointer_t func)
     node::pointer_t number(internal_function__get_number(func, 0, n));
     if(number)
     {
+        std::string const dimension(number->get_string());
         if(number->is(node_type_t::INTEGER))
         {
             number.reset(new node(node_type_t::DECIMAL_NUMBER, number->get_position()));
         }
+        else
+        {
+            // we "lose" the dimension
+            number->set_string("");
+        }
+        n = dimension_to_radians(func->get_position(), n, dimension);
         number->set_decimal_number(tan(n));
         return number;
     }
 
     error::instance() << f_current->get_position()
-            << "tan() expects a number as parameter."
+            << "tan() expects an angle as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1616,7 +1682,7 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__cos
         },
         {
-            "decimal-number",
+            "decimal_number",
             1,
             1,
             &expression::internal_function__decimal_number
@@ -1640,13 +1706,13 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__frgba
         },
         {
-            "function-exists",
+            "function_exists",
             1,
             1,
             &expression::internal_function__function_exists
         },
         {
-            "global-variable-exists",
+            "global_variable_exists",
             1,
             1,
             &expression::internal_function__global_variable_exists
@@ -1790,7 +1856,7 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__string
         },
         {
-            "str-length",
+            "str_length",
             1,
             1,
             &expression::internal_function__str_length
@@ -1802,7 +1868,7 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__tan
         },
         {
-            "type-of",
+            "type_of",
             1,
             1,
             &expression::internal_function__type_of
@@ -1814,7 +1880,7 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__unit
         },
         {
-            "variable-exists",
+            "variable_exists",
             1,
             1,
             &expression::internal_function__variable_exists

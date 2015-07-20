@@ -402,7 +402,7 @@ TEST_CASE("Expression number ** number", "[expression] [power]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"z-index\"\n"
 "        ARG\n"
-"          DECIMAL_NUMBER \"\" D:47.1207\n"
+"          DECIMAL_NUMBER \"\" D:47.121\n"
 + csspp_test::get_close_comment(true)
 
             );
@@ -564,7 +564,7 @@ TEST_CASE("Expression number ** number", "[expression] [power]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"width\"\n"
 "        ARG\n"
-"          DECIMAL_NUMBER \"em * em / px * px\" D:0.0016\n"
+"          DECIMAL_NUMBER \"em * em / px * px\" D:0.002\n"
 + csspp_test::get_close_comment(true)
 
             );
@@ -618,7 +618,7 @@ TEST_CASE("Expression number ** number", "[expression] [power]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"width\"\n"
 "        ARG\n"
-"          DECIMAL_NUMBER \"px\" D:7.11111\n"
+"          DECIMAL_NUMBER \"px\" D:7.111\n"
 + csspp_test::get_close_comment(true)
 
             );
@@ -780,7 +780,7 @@ TEST_CASE("Expression number ** number", "[expression] [power]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"width\"\n"
 "        ARG\n"
-"          PERCENT D:1.21551\n"
+"          PERCENT D:1.216\n"
 + csspp_test::get_close_comment(true)
 
             );
@@ -834,7 +834,7 @@ TEST_CASE("Expression number ** number", "[expression] [power]")
 "    OPEN_CURLYBRACKET B:true\n"
 "      DECLARATION \"width\"\n"
 "        ARG\n"
-"          PERCENT D:1.46712\n"
+"          PERCENT D:1.467\n"
 + csspp_test::get_close_comment(true)
 
             );

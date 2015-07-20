@@ -2186,8 +2186,8 @@ void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
         return;
     }
 
-    boolean_t const r(expression::boolean(expr));
-    if(r == boolean_t::BOOLEAN_TRUE)
+    bool const r(expression::boolean(expr));
+    if(r)
     {
         // BOOLEAN_TRUE, we need the data which we put in the stream
         // at the position of the @if as if the @if and
@@ -2199,8 +2199,7 @@ void compiler::replace_if(node::pointer_t parent, node::pointer_t n, size_t idx)
             parent->insert_child(idx, block->get_child(j));
         }
     }
-
-    if(next && r == boolean_t::BOOLEAN_FALSE)
+    else if(next)
     {
         // mark the else as not executed if r is false
         next->set_integer(g_if_or_else_false_so_far);
@@ -2289,7 +2288,7 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t id
     // we are 'true' here; once one of the '@if' / '@else if' is 'true'
     // then we start with 'r = false'
     //
-    boolean_t r(status == g_if_or_else_false_so_far ? boolean_t::BOOLEAN_TRUE : boolean_t::BOOLEAN_FALSE);
+    bool r(status == g_if_or_else_false_so_far);
     if(n->size() != 1)
     {
         if(n->size() != 2 || !expr)
@@ -2308,13 +2307,13 @@ void compiler::replace_else(node::pointer_t parent, node::pointer_t n, size_t id
         // expression of this very '@else if' to know whether to go
         // on or not; r is BOOLEAN_TRUE when the status allows us to check
         // the next expression
-        if(r == boolean_t::BOOLEAN_TRUE)
+        if(r)
         {
             r = expression::boolean(expr);
         }
     }
 
-    if(r == boolean_t::BOOLEAN_TRUE)
+    if(r)
     {
         status = g_if_or_else_executed;
 

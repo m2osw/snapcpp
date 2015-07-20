@@ -50,11 +50,17 @@ then
     echo "   '[assembler]'"
     echo "   '[color]'"
     echo "   '[compiler]'"
+    echo "   '[condition]' (expressions sub-set)"
     echo "   '[csspp]'"
+    echo "   '[equality]' (expressions sub-set)"
     echo "   '[error]'"
     echo "   '[expression]' (all expressions)"
     echo "   '[full-coverage]' (all tests)"
+    echo "   '[internal-functions]' (expressions sub-set)"
     echo "   '[lexer]'"
+    echo "   '[list]' (expressions sub-set)"
+    echo "   '[logical-and]' (expressions sub-set)"
+    echo "   '[logical-or]' (expressions sub-set)"
     echo "   '[multiplicative]' (expressions sub-set)"
     echo "   '[node]'"
     echo "   '[nth-child]'"
@@ -76,9 +82,10 @@ then
     mkdir -p tmp/build
     echo "<html><head><title>Coverage</title></head><body><h1>Coverage</h1>" >tmp/build/index.html
     count=1
-    for t in additive assembler color compiler full-coverage csspp error \
-             expression lexer multiplicative node nth-child parser \
-             position power relational unary unicode-range
+    for t in additive assembler color compiler conditional csspp equality \
+             error expression full-coverage internal-functions lexer \
+             list logical-and logical-or multiplicative node nth-child \
+             parser position power relational unary unicode-range
     do
         echo -n "`date +'%D %T'`: Building: $t ... "
         echo "<h2>${count}. <a href='csspp_coverage_${t}_html/index.html'>$t<a/></h2>" >>tmp/build/index.html
@@ -117,6 +124,7 @@ else
     FULL=false
 fi
 
+DIRNAME=
 if test "$1" = "--test"
 then
     if $FULL
@@ -128,6 +136,7 @@ then
     if test "$1" = "full-coverage"
     then
         TEST=
+        DIRNAME="csspp_coverage_full-coverage"
         # We also need to remove it which will work like "--all" below
         shift
     else
@@ -142,11 +151,14 @@ SOURCE_PATH=`pwd`
 echo "***"
 echo "*** csspp coverage for version $FULL_VERSION (`date`)"
 echo "***"
-if test -z "$TEST"
+if test -z "$DIRNAME"
 then
-    DIRNAME=csspp_coverage
-else
-    DIRNAME=csspp_coverage_$TEST
+    if test -z "$TEST"
+    then
+        DIRNAME=csspp_coverage
+    else
+        DIRNAME=csspp_coverage_$TEST
+    fi
 fi
 mkdir -p tmp/build/$DIRNAME
 rm -rf tmp/build/$DIRNAME/*

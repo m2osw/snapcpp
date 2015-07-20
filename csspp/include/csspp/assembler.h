@@ -40,6 +40,8 @@ public:
     void                    output(node::pointer_t n, output_mode_t mode);
 
 private:
+    std::string             escape_id(std::string const & id);
+
     void                    output(node::pointer_t n);
     void                    output_component_value(node::pointer_t n);
     void                    output_parenthesis(node::pointer_t n, int flags);
