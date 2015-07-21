@@ -423,7 +423,7 @@ node::pointer_t expression::internal_function__cos(node::pointer_t func)
 
 node::pointer_t expression::internal_function__decimal_number(node::pointer_t func)
 {
-    // decimal-number(expr)
+    // decimal_number(expr)
     node::pointer_t any(internal_function__get_any(func, 0));
     if(any)
     {
@@ -486,7 +486,7 @@ node::pointer_t expression::internal_function__decimal_number(node::pointer_t fu
                 }
             }
             error::instance() << f_current->get_position()
-                    << "decimal-number() expects a string parameter to represent a valid integer, decimal number, or percent value."
+                    << "decimal_number() expects a string parameter to represent a valid integer, decimal number, or percent value."
                     << error_mode_t::ERROR_ERROR;
             return node::pointer_t();
 
@@ -497,7 +497,7 @@ node::pointer_t expression::internal_function__decimal_number(node::pointer_t fu
     }
 
     error::instance() << f_current->get_position()
-            << "string() expects one value as parameter."
+            << "decimal_number() expects one value as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -619,7 +619,7 @@ node::pointer_t expression::internal_function__frgba(node::pointer_t func)
 
 node::pointer_t expression::internal_function__function_exists(node::pointer_t func)
 {
-    // function-exists(name)
+    // function_exists(name)
     std::string name;
     node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
     if(id && !name.empty())
@@ -632,8 +632,10 @@ node::pointer_t expression::internal_function__function_exists(node::pointer_t f
         {
             node::pointer_t var(f_variable_handler->get_variable(name, true));
             if(var
-            && (var->is(node_type_t::VARIABLE_FUNCTION) // $<name>()
-            || var->is(node_type_t::FUNCTION)))         // @mixin <name>()
+            && var->is(node_type_t::LIST)
+            && var->size() > 0
+            && (var->get_child(0)->is(node_type_t::VARIABLE_FUNCTION) // $<name>()
+            || var->get_child(0)->is(node_type_t::FUNCTION)))         // @mixin <name>()
             {
                 result->set_boolean(true);
             }
@@ -644,7 +646,7 @@ node::pointer_t expression::internal_function__function_exists(node::pointer_t f
     }
 
     error::instance() << f_current->get_position()
-            << "function-exists() expects a number as parameter."
+            << "function_exists() expects a string or an identifier as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -676,7 +678,7 @@ node::pointer_t expression::internal_function__green(node::pointer_t func)
 
 node::pointer_t expression::internal_function__global_variable_exists(node::pointer_t func)
 {
-    // variable-exists(name)
+    // variable_exists(name)
     std::string name;
     node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
     if(id && !name.empty())
@@ -701,7 +703,7 @@ node::pointer_t expression::internal_function__global_variable_exists(node::poin
     }
 
     error::instance() << f_current->get_position()
-            << "global-variable-exists() expects a number as parameter."
+            << "global-variable_exists() expects a number as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -947,7 +949,7 @@ node::pointer_t expression::internal_function__integer(node::pointer_t func)
                 }
             }
             error::instance() << f_current->get_position()
-                    << "decimal-number() expects a string parameter to represent a valid integer, decimal number, or percent value."
+                    << "decimal_number() expects a string parameter to represent a valid integer, decimal number, or percent value."
                     << error_mode_t::ERROR_ERROR;
             return node::pointer_t();
 
@@ -1056,22 +1058,20 @@ node::pointer_t expression::internal_function__not(node::pointer_t func)
     node::pointer_t arg1(func->get_child(0));
     if(arg1->size() != 1)
     {
-        error::instance() << f_current->get_position()
-                << "not() expects a boolean as its first argument."
-                << error_mode_t::ERROR_ERROR;
+        // the get_child(0) will always work since we do not call this
+        // function when the number of parameters is not exactly 1
+        error::instance() << f_current->get_position()                  // LCOV_EXCL_LINE
+                << "not() expects a boolean as its first argument."     // LCOV_EXCL_LINE
+                << error_mode_t::ERROR_ERROR;                           // LCOV_EXCL_LINE
+        return node::pointer_t();                                       // LCOV_EXCL_LINE
     }
     else
     {
-        int const r(boolean(arg1->get_child(0)));
-        if(r == 0 || r == 1)
-        {
-            node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
-            result->set_boolean(r == 0); // this is a not so false is true and vice versa
-            return result;
-        }
+        bool const r(boolean(arg1->get_child(0)));
+        node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
+        result->set_boolean(!r); // this is 'not()' so false is true and vice versa
+        return result;
     }
-
-    return node::pointer_t();
 }
 
 node::pointer_t expression::internal_function__red(node::pointer_t func)
@@ -1137,7 +1137,7 @@ node::pointer_t expression::internal_function__rgb(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "rgb() expects exactly one color parameter or three numbers (Red, Green, Blue)."
+            << "rgb() expects exactly one color parameter (Color) or three numbers (Red, Green, Blue)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1185,7 +1185,7 @@ node::pointer_t expression::internal_function__rgba(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "rgba() expects exactly one color parameter followed by alpha or four numbers (Red, Green, Blue, Alpha)."
+            << "rgba() expects exactly one color parameter followed by alpha (Color, Alpha) or four numbers (Red, Green, Blue, Alpha)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1445,7 +1445,7 @@ node::pointer_t expression::internal_function__string(node::pointer_t func)
 
 node::pointer_t expression::internal_function__str_length(node::pointer_t func)
 {
-    // str-length(string)
+    // str_length(string)
     std::string copy;
     node::pointer_t str(internal_function__get_string(func, 0, copy));
     if(str)
@@ -1466,7 +1466,7 @@ node::pointer_t expression::internal_function__str_length(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "str-length() expects one string as parameter."
+            << "str_length() expects one string as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1503,7 +1503,7 @@ node::pointer_t expression::internal_function__tan(node::pointer_t func)
 
 node::pointer_t expression::internal_function__type_of(node::pointer_t func)
 {
-    // type-of(expression)
+    // type_of(expression)
     node::pointer_t any(internal_function__get_any(func, 0));
     if(any)
     {
@@ -1558,7 +1558,7 @@ node::pointer_t expression::internal_function__type_of(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "type-of() expects one parameter with one value."
+            << "type_of() expects one parameter with one value."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1585,7 +1585,7 @@ node::pointer_t expression::internal_function__unit(node::pointer_t func)
 
 node::pointer_t expression::internal_function__variable_exists(node::pointer_t func)
 {
-    // variable-exists(name)
+    // variable_exists(name)
     std::string name;
     node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
     if(id && !name.empty())
@@ -1821,8 +1821,8 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
         },
         {
             "round",
-            0,
-            0,
+            1,
+            1,
             &expression::internal_function__round
         },
         {
@@ -1862,7 +1862,7 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__str_length
         },
         {
-            "tan",
+            "tan", // WARNING: just 'tan' is a color... 'tan(...)' is a function
             1,
             1,
             &expression::internal_function__tan
@@ -1889,14 +1889,37 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
 
     std::string const function_name(func->get_string());
 
+    // TODO: (1) verify that functions are properly sorted
+    //       (2) use a binary search
     for(size_t idx(0); idx < sizeof(g_functions) / sizeof(g_functions[0]); ++idx)
     {
         if(function_name == g_functions[idx].f_name)
         {
             // found the function, it is internal!
+
+            // right number of parameters?
             if(func->size() >= static_cast<size_t>(g_functions[idx].f_min_params)
             && func->size() <= static_cast<size_t>(g_functions[idx].f_max_params))
             {
+                if(function_name == "function_exists")
+                {
+                    // first check whether the user is checking for an
+                    // internal function!
+                    std::string name;
+                    node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
+                    if(id && !name.empty())
+                    {
+                        for(size_t j(0); j < sizeof(g_functions) / sizeof(g_functions[0]); ++j)
+                        {
+                            if(name == g_functions[j].f_name)
+                            {
+                                node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
+                                result->set_boolean(true);
+                                return result;
+                            }
+                        }
+                    }
+                }
                 return (this->*g_functions[idx].f_func)(func);
             }
 

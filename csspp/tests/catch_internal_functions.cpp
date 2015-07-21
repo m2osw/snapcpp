@@ -40,6 +40,74 @@
 
 #include <sstream>
 
+TEST_CASE("Expression calc()", "[expression] [internal-functions] [calc]")
+{
+    SECTION("calc() -- leave that one alone!")
+    {
+        std::stringstream ss;
+        ss << "div { width: calc(3px + 5%); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("");
+
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          FUNCTION \"calc\"\n"
+"            ARG\n"
+"              INTEGER \"px\" I:3\n"
+"              WHITESPACE\n"
+"              ADD\n"
+"              WHITESPACE\n"
+"              PERCENT D:0.05\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+
+"div{width:calc(3px + 5%)}\n"
++ csspp_test::get_close_comment()
+
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
 TEST_CASE("Expression cos()/sin()/tan()", "[expression] [internal-functions] [cos] [sin] [tan]")
 {
     SECTION("cos(pi)")
@@ -1308,7 +1376,7 @@ std::string("div{z-index:") + csspp::decimal_number_to_string(atan(2), true) + "
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Expression abs()/ceil()/floor()", "[expression] [internal-functions] [abs] [ceil] [floor]")
+TEST_CASE("Expression abs()/ceil()/floor()/round()", "[expression] [internal-functions] [abs] [ceil] [floor] [round]")
 {
     SECTION("abs(number)")
     {
@@ -1687,6 +1755,131 @@ std::string("div{width:") + csspp::decimal_number_to_string(floor(static_cast<cs
         }
     }
 
+    SECTION("round(number)")
+    {
+        for(int number(-10000); number <= 10000; number += rand() % 250 + 1)
+        {
+            // round(int)
+            {
+                std::stringstream ss;
+                ss << "div { z-index: round("
+                   << number
+                   << "); }";
+                csspp::position pos("test.css");
+                csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+                csspp::parser p(l);
+
+                csspp::node::pointer_t n(p.stylesheet());
+
+                csspp::compiler c;
+                c.set_root(n);
+                c.set_date_time_variables(csspp_test::get_now());
+                c.add_path(csspp_test::get_script_path());
+                c.add_path(csspp_test::get_version_script_path());
+
+                c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+                // to verify that the result is still an INTEGER we have to
+                // test the root node here
+                std::stringstream compiler_out;
+                compiler_out << *n;
+                REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(number) + "\n"
++ csspp_test::get_close_comment(true)
+
+                    );
+
+                std::stringstream assembler_out;
+                csspp::assembler a(assembler_out);
+                a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+                REQUIRE(assembler_out.str() ==
+
+std::string("div{z-index:") + std::to_string(number) + "}\n"
++ csspp_test::get_close_comment()
+
+                        );
+
+                REQUIRE(c.get_root() == n);
+            }
+
+            // round(float)
+            {
+                std::string const dimension(rand() & 1 ? "px" : "em");
+                std::stringstream ss;
+                ss << "div { z-index: round("
+                   << std::setprecision(6) << std::fixed
+                   << (static_cast<csspp::decimal_number_t>(number) / 1000.0)
+                   << dimension
+                   << "); }";
+                csspp::position pos("test.css");
+                csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+                csspp::parser p(l);
+
+                csspp::node::pointer_t n(p.stylesheet());
+
+                csspp::compiler c;
+                c.set_root(n);
+                c.set_date_time_variables(csspp_test::get_now());
+                c.add_path(csspp_test::get_script_path());
+                c.add_path(csspp_test::get_version_script_path());
+
+                c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+                // to verify that the result is still an INTEGER we have to
+                // test the root node here
+                std::stringstream compiler_out;
+                compiler_out << *n;
+                REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"" + dimension + "\" D:" + csspp::decimal_number_to_string(round(static_cast<csspp::decimal_number_t>(number) / 1000.0), false) + "\n"
++ csspp_test::get_close_comment(true)
+
+                    );
+
+                std::stringstream assembler_out;
+                csspp::assembler a(assembler_out);
+                a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+                REQUIRE(assembler_out.str() ==
+
+std::string("div{z-index:") + csspp::decimal_number_to_string(round(static_cast<csspp::decimal_number_t>(number) / 1000.0), true) + dimension + "}\n"
++ csspp_test::get_close_comment()
+
+                        );
+
+                REQUIRE(c.get_root() == n);
+            }
+        }
+    }
+
     // no error left over
     REQUIRE_ERRORS("");
 }
@@ -1741,6 +1934,70 @@ TEST_CASE("Expression red()/greeb()/blue()/alpha()", "[expression] [internal-fun
                                << ", "
                                << alpha / 255.0
                                << ")); }\n"
+                               << "div { z-index: red(rgb("
+                               << r
+                               << ", "
+                               << g
+                               << ", "
+                               << b
+                               << ")); }\n"
+                               << "span { z-index: green(rgb("
+                               << r
+                               << ", "
+                               << g
+                               << ", "
+                               << b
+                               << ")); }\n"
+                               << "p { z-index: blue(rgb("
+                               << r
+                               << ", "
+                               << g
+                               << ", "
+                               << b
+                               << ")); }\n"
+                               << "i { z-index: alpha(rgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << ")); }\n"
+                               << "div { z-index: red(rgba(rgb("
+                               << r
+                               << ", "
+                               << g
+                               << ", "
+                               << b
+                               << "), "
+                               << alpha / 255.0
+                               << ")); }\n"
+                               << "span { z-index: green(rgba(rgb("
+                               << r
+                               << ", "
+                               << g
+                               << ", "
+                               << b
+                               << "), "
+                               << alpha / 255.0
+                               << ")); }\n"
+                               << "p { z-index: blue(rgba(rgb("
+                               << r
+                               << ", "
+                               << g
+                               << ", "
+                               << b
+                               << "), "
+                               << alpha / 255.0
+                               << ")); }\n"
+                               << "i { z-index: alpha(rgba(rgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << "), "
+                               << alpha / 255.0
+                               << ")); }\n"
                                << "div { z-index: red(frgba("
                                << r / 255.0
                                << ", "
@@ -1776,6 +2033,70 @@ TEST_CASE("Expression red()/greeb()/blue()/alpha()", "[expression] [internal-fun
                                << b / 255.0
                                << ", "
                                << alpha / 255.0
+                               << ")); }\n"
+                               << "div { z-index: red(frgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << ")); }\n"
+                               << "span { z-index: green(frgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << ")); }\n"
+                               << "p { z-index: blue(frgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << ")); }\n"
+                               << "i { z-index: alpha(frgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << ")); }\n"
+                               << "div { z-index: red(frgba(frgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << "), "
+                               << alpha / 255.0
+                               << ")); }\n"
+                               << "span { z-index: green(frgba(frgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << "), "
+                               << alpha / 255.0
+                               << ")); }\n"
+                               << "p { z-index: blue(frgba(frgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << "), "
+                               << alpha / 255.0
+                               << ")); }\n"
+                               << "i { z-index: alpha(frgba(frgb("
+                               << r / 255.0
+                               << ", "
+                               << g / 255.0
+                               << ", "
+                               << b / 255.0
+                               << "), "
+                               << alpha / 255.0
                                << ")); }\n";
                             csspp::position pos("test.css");
                             csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
@@ -1802,6 +2123,7 @@ TEST_CASE("Expression red()/greeb()/blue()/alpha()", "[expression] [internal-fun
 
 "LIST\n"
 + csspp_test::get_default_variables() +
+// component(rgba())
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -1830,6 +2152,123 @@ TEST_CASE("Expression red()/greeb()/blue()/alpha()", "[expression] [internal-fun
 "      DECLARATION \"z-index\"\n"
 "        ARG\n"
 "          DECIMAL_NUMBER \"\" D:" + csspp::decimal_number_to_string(alpha / 255.0, false) + "\n"
+// component(rgb())
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(r) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(g) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(b) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"i\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:1\n"
+// component(rgba(rgb(), alpha))
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(r) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(g) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(b) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"i\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:" + csspp::decimal_number_to_string(alpha / 255.0, false) + "\n"
+// component(frgba())
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(r) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(g) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(b) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"i\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:" + csspp::decimal_number_to_string(alpha / 255.0, false) + "\n"
+// component(frgb())
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(r) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(g) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:" + std::to_string(b) + "\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"i\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:1\n"
+// component(frgba(frgb(), alpha))
 "  COMPONENT_VALUE\n"
 "    ARG\n"
 "      IDENTIFIER \"div\"\n"
@@ -1870,10 +2309,32 @@ TEST_CASE("Expression red()/greeb()/blue()/alpha()", "[expression] [internal-fun
 
                             REQUIRE(assembler_out.str() ==
 
+// rgba()
 std::string("div{z-index:") + std::to_string(r) + "}"
 "span{z-index:" + std::to_string(g) + "}"
 "p{z-index:" + std::to_string(b) + "}"
 "i{z-index:" + csspp::decimal_number_to_string(alpha / 255.0, true) + "}"
+// rbg()
+"div{z-index:" + std::to_string(r) + "}"
+"span{z-index:" + std::to_string(g) + "}"
+"p{z-index:" + std::to_string(b) + "}"
+"i{z-index:1}"
+// rgba(rgb(), alpha)
+"div{z-index:" + std::to_string(r) + "}"
+"span{z-index:" + std::to_string(g) + "}"
+"p{z-index:" + std::to_string(b) + "}"
+"i{z-index:" + csspp::decimal_number_to_string(alpha / 255.0, true) + "}"
+// frgba()
+"div{z-index:" + std::to_string(r) + "}"
+"span{z-index:" + std::to_string(g) + "}"
+"p{z-index:" + std::to_string(b) + "}"
+"i{z-index:" + csspp::decimal_number_to_string(alpha / 255.0, true) + "}"
+// frgb()
+"div{z-index:" + std::to_string(r) + "}"
+"span{z-index:" + std::to_string(g) + "}"
+"p{z-index:" + std::to_string(b) + "}"
+"i{z-index:1}"
+// frgba(frgb(), alpha)
 "div{z-index:" + std::to_string(r) + "}"
 "span{z-index:" + std::to_string(g) + "}"
 "p{z-index:" + std::to_string(b) + "}"
@@ -1888,6 +2349,455 @@ std::string("div{z-index:") + std::to_string(r) + "}"
                     }
                 }
             }
+        }
+    }
+
+    SECTION("rgb/rgba/frgb/frgba from #color")
+    {
+        std::stringstream ss;
+        ss << "div  { z-index: red(  rgba( darkolivegreen, 0.5)); }\n"
+           << "span { z-index: green(rgba( darkolivegreen, 0.5)); }\n"
+           << "p    { z-index: blue( rgba( darkolivegreen, 0.5)); }\n"
+           << "i    { z-index: alpha(rgba( darkolivegreen, 0.5)); }\n"
+           << "div  { z-index: red(  rgb(  deeppink)); }\n"
+           << "span { z-index: green(rgb(  deeppink)); }\n"
+           << "p    { z-index: blue( rgb(  deeppink)); }\n"
+           << "i    { z-index: alpha(rgb(  deeppink)); }\n"
+           << "div  { z-index: red(  frgba(ghostwhite, 0.5)); }\n"
+           << "span { z-index: green(frgba(ghostwhite, 0.5)); }\n"
+           << "p    { z-index: blue( frgba(ghostwhite, 0.5)); }\n"
+           << "i    { z-index: alpha(frgba(ghostwhite, 0.5)); }\n"
+           << "div  { z-index: red(  frgb( hotpink)); }\n"
+           << "span { z-index: green(frgb( hotpink)); }\n"
+           << "p    { z-index: blue( frgb( hotpink)); }\n"
+           << "i    { z-index: alpha(frgb( hotpink)); }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+// component(rgba(darkolivegreen, 0.5))
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:85\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:107\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:47\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"i\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:0.5\n"
+// component(rgb(deeppink))
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:255\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:20\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:147\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"i\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:1\n"
+// component(frgba(ghostwhite, 0.5))
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:248\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:248\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:255\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"i\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:0.5\n"
+// component(frgb(hotpink))
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:255\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"span\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:105\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"p\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:180\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"i\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+
+// rgba(darkolivegreen, 0.5)
+"div{z-index:85}"
+"span{z-index:107}"
+"p{z-index:47}"
+"i{z-index:.5}"
+// rbg(deeppink)
+"div{z-index:255}"
+"span{z-index:20}"
+"p{z-index:147}"
+"i{z-index:1}"
+// rgba(ghostwhite, 0.5)
+"div{z-index:248}"
+"span{z-index:248}"
+"p{z-index:255}"
+"i{z-index:.5}"
+// frgb(hotpink)
+"div{z-index:255}"
+"span{z-index:105}"
+"p{z-index:180}"
+"i{z-index:1}"
+"\n"
++ csspp_test::get_close_comment()
+
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
+TEST_CASE("Expression function_exists()/variable_exists()/global_variable_exists()", "[expression] [internal-functions] [decimal-number] [function-exists] [variable-exists] [global-variable-exists]")
+{
+    SECTION("check existance of internal functions")
+    {
+        // list of internal functions, they all must return true
+        // those that start with '*' are colors that are viewed
+        // as functions when followed by '(' but color otherwise
+        char const * internal_functions[] =
+        {
+            "abs",
+            "acos",
+            "alpha",
+            "asin",
+            "atan",
+            "*blue",
+            "ceil",
+            "cos",
+            "decimal_number",
+            "floor",
+            "frgb",
+            "frgba",
+            "function_exists",
+            "global_variable_exists",
+            "*green",
+            "hsl",
+            "hsla",
+            "hue",
+            "identifier",
+            "if",
+            "integer",
+            "inspect",
+            "lightness",
+            "log",
+            "max",
+            "min",
+            "not",
+            "random",
+            "*red",
+            "rgb",
+            "rgba",
+            "round",
+            "saturation",
+            "sign",
+            "sin",
+            "sqrt",
+            "string",
+            "str_length",
+            "*tan",
+            "type_of",
+            "unit",
+            "variable_exists"
+        };
+
+        for(size_t idx(0); idx < sizeof(internal_functions) / sizeof(internal_functions[0]); ++idx)
+        {
+            bool use_string(false);
+            char const *name = internal_functions[idx];
+            if(*name == '*')
+            {
+                use_string = true;
+                ++name;
+            }
+            std::stringstream ss;
+            ss << "div { z-index: function_exists("
+               << (use_string ? "\"" : "")
+               << name
+               << (use_string ? "\"" : "")
+               << ") ? decimal_number(\"3.14\") : 17 }\n"
+               << "div { z-index: function_exists(\""
+               << name
+               << "\") ? decimal_number(\"3.14\") : 17 }\n";
+//std::cerr << "*** input = [" << ss.str() << "]\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            // to verify that the result is still an INTEGER we have to
+            // test the root node here
+            std::stringstream compiler_out;
+            compiler_out << *n;
+            REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:3.14\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:3.14\n"
++ csspp_test::get_close_comment(true)
+
+                );
+
+            std::stringstream assembler_out;
+            csspp::assembler a(assembler_out);
+            a.output(n, csspp::output_mode_t::COMPRESSED);
+
+    //std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            REQUIRE(assembler_out.str() ==
+
+"div{z-index:3.14}div{z-index:3.14}\n"
++ csspp_test::get_close_comment()
+
+                    );
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
+    SECTION("check existance of system functions")
+    {
+        // list of system functions, they all must return true
+        // those that start with '*' are colors that are viewed
+        // as functions when followed by '(' but color otherwise
+        char const * internal_functions[] =
+        {
+            "adjust_hue",
+            "complement",
+            "darken",
+            "desaturate",
+            "fade_in",
+            "fade_out",
+            "grayscale",
+            "invert",
+            "lighten",
+            "mix",
+            "opacify",
+            "opacity",
+            "percentage",
+            "quote",
+            "remove_unit",
+            "saturate",
+            "set_unit",
+            "transparentize",
+            "unique_id",
+            "unitless",
+            "unquote"
+        };
+
+        for(size_t idx(0); idx < sizeof(internal_functions) / sizeof(internal_functions[0]); ++idx)
+        {
+            bool use_string(false);
+            char const *name = internal_functions[idx];
+            if(*name == '*')
+            {
+                use_string = true;
+                ++name;
+            }
+            std::stringstream ss;
+            ss << "div { z-index: function_exists("
+               << (use_string ? "\"" : "")
+               << name
+               << (use_string ? "\"" : "")
+               << ") ? decimal_number(\"3.14\") : 17 }\n"
+               << "div { z-index: function_exists(\""
+               << name
+               << "\") ? decimal_number(\"3.14\") : 17 }\n";
+//std::cerr << "*** input = [" << ss.str() << "]\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            // to verify that the result is still an INTEGER we have to
+            // test the root node here
+            std::stringstream compiler_out;
+            compiler_out << *n;
+            REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:3.14\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"\" D:3.14\n"
++ csspp_test::get_close_comment(true)
+
+                );
+
+            std::stringstream assembler_out;
+            csspp::assembler a(assembler_out);
+            a.output(n, csspp::output_mode_t::COMPRESSED);
+
+    //std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            REQUIRE(assembler_out.str() ==
+
+"div{z-index:3.14}div{z-index:3.14}\n"
++ csspp_test::get_close_comment()
+
+                    );
+
+            REQUIRE(c.get_root() == n);
         }
     }
 
@@ -2039,7 +2949,8 @@ TEST_CASE("Expression decimal_number()/integer()/string()/identifier()", "[expre
            << "q { z-index: integer(314%) }\n"
            << "s { z-index: integer(\" 123 \") }\n"
            << "b { z-index: integer(\"123\") }\n"
-           << "u { z-index: integer(1.23) }\n";
+           << "u { z-index: integer(1.23) }\n"
+           << "blockquote { z-index: integer('314%') }\n";
 //std::cerr << "*** from " << ss.str() << "\n";
         csspp::position pos("test.css");
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
@@ -2124,6 +3035,13 @@ TEST_CASE("Expression decimal_number()/integer()/string()/identifier()", "[expre
 "      DECLARATION \"z-index\"\n"
 "        ARG\n"
 "          INTEGER \"\" I:1\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"blockquote\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:3\n"
 + csspp_test::get_close_comment(true)
 
             );
@@ -2144,6 +3062,7 @@ TEST_CASE("Expression decimal_number()/integer()/string()/identifier()", "[expre
 "s{z-index:123}"
 "b{z-index:123}"
 "u{z-index:1}"
+"blockquote{z-index:3}"
 "\n"
 + csspp_test::get_close_comment()
 
@@ -2404,7 +3323,7 @@ TEST_CASE("Expression decimal_number()/integer()/string()/identifier()", "[expre
 
 TEST_CASE("Invalid sub-expression decimal_number()/integer()/string()/identifier()", "[expression] [internal-functions] [decimal-number] [integer] [string] [identifier] [invalid]")
 {
-    SECTION("check conversions to decimal number with  an invalid string")
+    SECTION("check conversions to decimal number with an invalid string")
     {
         std::stringstream ss;
         ss << "div { z-index: decimal_number(\"invalid\") }\n";
@@ -2427,7 +3346,65 @@ TEST_CASE("Invalid sub-expression decimal_number()/integer()/string()/identifier
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): error: decimal-number() expects a string parameter to represent a valid integer, decimal number, or percent value.\n");
+        REQUIRE_ERRORS("test.css(1): error: decimal_number() expects a string parameter to represent a valid integer, decimal number, or percent value.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("check decimal number without a parameter")
+    {
+        std::stringstream ss;
+        ss << "div { z-index: decimal_number() }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: decimal_number() expects exactly 1 parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("check conversions to decimal number with a unicode range")
+    {
+        std::stringstream ss;
+        ss << "div { z-index: decimal_number(U+1-5) }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
+                "test.css(1): error: decimal_number() expects one value as parameter.\n"
+            );
 
         REQUIRE(c.get_root() == n);
     }
@@ -2455,7 +3432,7 @@ TEST_CASE("Invalid sub-expression decimal_number()/integer()/string()/identifier
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): error: decimal-number() expects a string parameter to represent a valid integer, decimal number, or percent value.\n");
+        REQUIRE_ERRORS("test.css(1): error: decimal_number() expects a string parameter to represent a valid integer, decimal number, or percent value.\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -2485,6 +3462,36 @@ TEST_CASE("Invalid sub-expression decimal_number()/integer()/string()/identifier
 
         REQUIRE_ERRORS(
                 "test.css(1): error: unsupported type CONDITIONAL as a unary expression token.\n"
+                "test.css(1): error: integer() expects one value as parameter.\n"
+            );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("check conversions to integer with a unicode range")
+    {
+        std::stringstream ss;
+        ss << "div { z-index: integer(U+1-5) }\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS(
                 "test.css(1): error: integer() expects one value as parameter.\n"
             );
 
@@ -2731,6 +3738,188 @@ TEST_CASE("Expression calling functions with invalid parameters", "[expression] 
         REQUIRE(c.get_root() == n);
     }
 
+    SECTION("frgb(\"200\")")
+    {
+        std::stringstream ss;
+        ss << "div { width: frgb(\"200\"); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: frgb() expects exactly one color parameter or three numbers (Red, Green, Blue).\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("frgb(1, 2, 3, 4, 5)")
+    {
+        std::stringstream ss;
+        ss << "div { width: frgb(1, 2, 3, 4, 5); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: frgb() expects between 1 and 3 parameters.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("frgba(\"200\", 1.0)")
+    {
+        std::stringstream ss;
+        ss << "div { width: frgba(\"200\", 1.0); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: frgba() expects exactly one color parameter followed by one number (Color, Alpha), or four numbers (Red, Green, Blue, Alpha).\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("function_exists(200)")
+    {
+        std::stringstream ss;
+        ss << "div { width: function_exists(200); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: function_exists() expects a string or an identifier as parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("green(1 = 5)")
+    {
+        std::stringstream ss;
+        ss << "div { width: green(1 = 5); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: green() expects a color as parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("identifier(U+333)")
+    {
+        std::stringstream ss;
+        ss << "div { width: identifier(U+333); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: identifier() expects one value as parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("not(U+78-7F)")
+    {
+        std::stringstream ss;
+        ss << "div { width: not(U+78-7F); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: a boolean expression was expected.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
     SECTION("red(15)")
     {
         std::stringstream ss;
@@ -2753,6 +3942,84 @@ TEST_CASE("Expression calling functions with invalid parameters", "[expression] 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS("test.css(1): error: red() expects a color as parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("rgb(\"200\")")
+    {
+        std::stringstream ss;
+        ss << "div { width: rgb(\"200\"); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: rgb() expects exactly one color parameter (Color) or three numbers (Red, Green, Blue).\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("rgba(\"200\", 1.0)")
+    {
+        std::stringstream ss;
+        ss << "div { width: rgba(\"200\", 1.0); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: rgba() expects exactly one color parameter followed by alpha (Color, Alpha) or four numbers (Red, Green, Blue, Alpha).\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("round(false)")
+    {
+        std::stringstream ss;
+        ss << "div { width: round(false); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: round() expects a number as parameter.\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -2783,6 +4050,32 @@ TEST_CASE("Expression calling functions with invalid parameters", "[expression] 
         REQUIRE(c.get_root() == n);
     }
 
+    SECTION("string(U+110-11f)")
+    {
+        std::stringstream ss;
+        ss << "div { width: string(U+110-11f); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: string() expects one value as parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
     SECTION("tan(true)")
     {
         std::stringstream ss;
@@ -2805,6 +4098,32 @@ TEST_CASE("Expression calling functions with invalid parameters", "[expression] 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS("test.css(1): error: tan() expects an angle as parameter.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("tan(30px)")
+    {
+        std::stringstream ss;
+        ss << "div { width: tan(30px); }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: trigonometry functions expect an angle (deg, grad, rad, turn) as a parameter.\n");
 
         REQUIRE(c.get_root() == n);
     }

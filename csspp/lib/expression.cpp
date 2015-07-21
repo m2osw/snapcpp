@@ -61,6 +61,7 @@ void expression::compile_args(bool divide_font_metrics)
         || !f_node->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET))
         {
             expression arg_expr(f_node->get_child(a), true);
+            arg_expr.set_variable_handler(f_variable_handler);
             arg_expr.f_divide_font_metrics = divide_font_metrics;
             arg_expr.compile_list(f_node);
         }
@@ -2159,6 +2160,7 @@ node::pointer_t expression::post()
         {
             // compile the index expression
             expression index_expr(f_current, true);
+            index_expr.set_variable_handler(f_variable_handler);
             index_expr.next();
             node::pointer_t i(index_expr.expression_list());
             if(!i)
@@ -2348,6 +2350,7 @@ node::pointer_t expression::unary()
             && func->get_string() != "expression")
             {
                 expression args_expr(func, true);
+                args_expr.set_variable_handler(f_variable_handler);
                 args_expr.compile_args(false);
             }
             //else -- we may want to verify the calculations, but
@@ -2360,6 +2363,7 @@ node::pointer_t expression::unary()
         {
             // calculate the result of the sub-expression
             expression group(f_current, true);
+            group.set_variable_handler(f_variable_handler);
             group.next();
 
             // skip the '(' in the main expression
@@ -2453,6 +2457,8 @@ node::pointer_t expression::unary()
             next();
 
             std::string const identifier(result->get_string());
+
+            // an internally recognized identifier? (null, true, false)
             if(identifier == "null")
             {
                 return node::pointer_t(new node(node_type_t::NULL_TOKEN, result->get_position()));
@@ -2468,6 +2474,8 @@ node::pointer_t expression::unary()
                 // a boolean is false by default, so no need to set the value
                 return node::pointer_t(new node(node_type_t::BOOLEAN, result->get_position()));
             }
+
+            // a color?
             color col;
             if(col.set_color(identifier))
             {
@@ -2477,13 +2485,14 @@ node::pointer_t expression::unary()
                 return color_node;
             }
 
+            // an expression variable?
             auto var(f_variables.find(identifier));
             if(var != f_variables.end())
             {
                 return var->second;
             }
 
-            // it is not a color, return as is
+            // it is not a color or a variable, return as is
             return result;
         }
 
