@@ -1612,7 +1612,10 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
         }
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "[" << getpid() << "] retrieving PLUGIN permissions... [" << sets.get_action() << "]" << std::endl;
+        std::cout << "[" << getpid() << "] retrieving PLUGIN permissions... ["
+                  << sets.get_action() << "] / ["
+                  << sets.get_ipath().get_key() << "]"
+                  << std::endl;
 #endif
 #endif
         get_plugin_permissions(this, sets);

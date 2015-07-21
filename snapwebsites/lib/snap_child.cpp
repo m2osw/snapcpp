@@ -6670,9 +6670,9 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
                 {
                     specific_last_updated.setInt64Value(p->do_update(specific_last_updated.int64Value()));
                 }
-                catch(std::exception const &)
+                catch(std::exception const & e)
                 {
-                    SNAP_LOG_ERROR("Updating ")(plugin_name)(" failed with an exception.");
+                    SNAP_LOG_ERROR("Updating ")(plugin_name)(" failed with an exception: ")(e.what());
                 }
                 set_site_parameter(specific_param_name, specific_last_updated);
             }
