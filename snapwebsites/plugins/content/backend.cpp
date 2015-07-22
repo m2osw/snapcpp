@@ -240,7 +240,7 @@ void content::on_backend_process()
  */
 void content::backend_process_status()
 {
-    SNAP_LOG_TRACE() << "backend_process: Content status auto adjustments.";
+    SNAP_LOG_TRACE("content::backend_process_status(): Content status auto adjustments.");
 
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QtCassandra::QCassandraTable::pointer_t processing_table(get_processing_table());
@@ -367,7 +367,7 @@ void content::backend_process_status()
  */
 void content::backend_process_files()
 {
-    SNAP_LOG_TRACE() << "backend_process: Content file processing (check for viruses, etc.)";
+    SNAP_LOG_TRACE("content::backend_process_files(): Content file processing (check for viruses, etc.)");
 
     // TODO: look into a way to either handle all the files from
     //       all the sites all at once, or filter in a different

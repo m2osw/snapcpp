@@ -714,7 +714,7 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
  */
 void sitemapxml::on_backend_process()
 {
-    SNAP_LOG_TRACE() << "backend_process: process sitemap.xml content.";
+    SNAP_LOG_TRACE("sitemapxml::on_backend_process(): process sitemap.xml content.");
 
     uint64_t const start_date(f_snap->get_start_date());
 
