@@ -1483,7 +1483,7 @@ TEST_CASE("Node to string", "[node] [type] [output]")
             case csspp::node_type_t::PERCENT:
                 REQUIRE(n->to_string(flags) == "0%");
                 n->set_decimal_number(1.25);
-                REQUIRE(n->to_string(flags) == "1.25%");
+                REQUIRE(n->to_string(flags) == "125%");
                 break;
 
             case csspp::node_type_t::PERIOD:

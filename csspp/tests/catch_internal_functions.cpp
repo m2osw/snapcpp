@@ -3373,6 +3373,93 @@ TEST_CASE("Expression inspect()", "[expression] [internal-functions] [inspect]")
     REQUIRE_ERRORS("");
 }
 
+TEST_CASE("Expression random()", "[expression] [internal-functions] [random]")
+{
+    SECTION("check that the internal random() function \"works as expected\"")
+    {
+        std::stringstream ss;
+        ss << "div { width: random() * 1.0px }\n";
+//std::cerr << "*** input = [" << ss.str() << "]\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to check the compiler output we need to know what random
+        // value was generated; for that purpose, we need to retrieve
+        // it from the tree
+        csspp::decimal_number_t v(0);
+        // super ugly if() statement, note that in itself it is no
+        // different than the test below which compares the compiler
+        // output tree with what we expect said tree to be
+        if(n->is(csspp::node_type_t::LIST)
+        && n->size() > 0
+        && n->get_child(0)->is(csspp::node_type_t::COMPONENT_VALUE)
+        && n->get_child(0)->size() > 1
+        && n->get_child(0)->get_child(1)->is(csspp::node_type_t::OPEN_CURLYBRACKET)
+        && n->get_child(0)->get_child(1)->size() > 0
+        && n->get_child(0)->get_child(1)->get_child(0)->is(csspp::node_type_t::DECLARATION)
+        && n->get_child(0)->get_child(1)->get_child(0)->size() > 0
+        && n->get_child(0)->get_child(1)->get_child(0)->get_child(0)->is(csspp::node_type_t::ARG)
+        && n->get_child(0)->get_child(1)->get_child(0)->get_child(0)->size() > 0
+        && n->get_child(0)->get_child(1)->get_child(0)->get_child(0)->get_child(0)->is(csspp::node_type_t::DECIMAL_NUMBER))
+        {
+            v = n->get_child(0)->get_child(1)->get_child(0)->get_child(0)->get_child(0)->get_decimal_number();
+        }
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"width\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:" + csspp::decimal_number_to_string(v, false) + "\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+
+"div{width:" + csspp::decimal_number_to_string(v, true) + "px}\n"
++ csspp_test::get_close_comment()
+
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    // no error left over
+    REQUIRE_ERRORS("");
+}
+
 TEST_CASE("Expression min()/max()", "[expression] [internal-functions] [min] [max]")
 {
     SECTION("check the min()/max() functions against a list of random numbers")
@@ -3425,7 +3512,7 @@ TEST_CASE("Expression min()/max()", "[expression] [internal-functions] [min] [ma
                << "sub { height: max(" << em_out << ") }\n"
                << "div { width:  min(" << percent_out << ") }\n"
                << "sub { height: max(" << percent_out << ") }\n";
-std::cerr << "*** input = [" << ss.str() << "]\n";
+//std::cerr << "*** input = [" << ss.str() << "]\n";
             csspp::position pos("test.css");
             csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
@@ -3443,7 +3530,7 @@ std::cerr << "*** input = [" << ss.str() << "]\n";
 
             c.compile(false);
 
-std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
             // to verify that the result is still an INTEGER we have to
             // test the root node here
