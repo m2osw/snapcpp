@@ -766,8 +766,8 @@ node_type_t additive_operator(node::pointer_t n)
 node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
 {
     node_type_t type(node_type_t::UNKNOWN);
-    integer_t ai;
-    integer_t bi;
+    integer_t ai(0);
+    integer_t bi(0);
     decimal_number_t af;
     decimal_number_t bf;
 
