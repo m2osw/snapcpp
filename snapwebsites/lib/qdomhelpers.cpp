@@ -79,7 +79,7 @@ void insert_html_string_to_xml_doc(QDomNode& child, QString const& xml)
  * \param[in,out] child  The destination node.
  * \param[in] node  The source element node.
  */
-void insert_node_to_xml_doc(QDomNode& child, QDomNode const& node)
+void insert_node_to_xml_doc(QDomNode & child, QDomNode const & node)
 {
     // copy the result in a fragment of our document
     QDomDocumentFragment frag(child.ownerDocument().createDocumentFragment());

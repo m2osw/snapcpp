@@ -5053,7 +5053,8 @@ void inst_predicate()
     }
 
     context_vector_t::reference context(f_functions.back().f_contexts.back());
-    if(result)
+    if(context.f_position != -1
+    && result)
     {
         context.f_result.push_back(context.f_nodes[context.f_position]);
     }

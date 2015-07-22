@@ -4445,7 +4445,7 @@ void users::on_replace_token(content::path_info_t& ipath, QString const& plugin_
     if(token.is_token("users::email_anchor"))
     {
         // TODO: replace f_user_key with the user first/last names when
-        //       available and authorized
+        //       available AND authorized
         token.f_replacement = "<a href=\"mailto:" + f_user_key + "\">" + f_user_key + "</a>";
         return;
     }
