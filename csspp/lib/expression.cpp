@@ -945,8 +945,8 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
     bool test_dimensions(true);
     integer_t ai(0);
     integer_t bi(0);
-    decimal_number_t af;
-    decimal_number_t bf;
+    decimal_number_t af(0.0);
+    decimal_number_t bf(0.0);
     bool swapped(false);
 
     switch(mix_node_types(lhs->get_type(), rhs->get_type()))
