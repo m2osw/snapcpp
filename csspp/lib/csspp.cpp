@@ -15,6 +15,16 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/** \file
+ * \brief Implementation of the CSS Preprocessor library.
+ *
+ * This file represents the main implementation of the CSS Preprocessor
+ * library. It has only a few functions handling code that's common
+ * to all the other classes. It also has the library version information.
+ *
+ * \sa \ref lexer_rules
+ */
+
 #include "csspp/csspp.h"
 
 #include "csspp/exceptions.h"
@@ -25,6 +35,13 @@
 #include <sstream>
 #include <iostream>
 
+/** \brief The namespace of all the classes in the CSS Preprocessor.
+ *
+ * All the classes and many definitions appear under 'csspp'. It
+ * is strongly advised that you do not do a 'using csspp;' because
+ * some of the definitions are likely to spoil your namespace in
+ * a way you do not want it to.
+ */
 namespace csspp
 {
 
@@ -55,7 +72,7 @@ void set_precision(int precision)
     g_precision = precision;
 }
 
-std::string decimal_number_to_string(decimal_number_t d)
+std::string decimal_number_to_string(decimal_number_t d, bool remove_leading_zero)
 {
     // the std::setprecision() is a total number of digits when we
     // want a specific number of digits after the decimal point so
@@ -97,6 +114,26 @@ std::string decimal_number_to_string(decimal_number_t d)
         if(out.back() == '.')
         {
             out.erase(out.end() - 1);
+        }
+    }
+
+    // remove the leading zero when possible
+    if(remove_leading_zero)
+    {
+        if(out.length() >= 3
+        && out[0] == '0'
+        && out[1] == '.')
+        {
+            out.erase(out.begin());
+            // .33 is valid and equivalent to 0.33
+        }
+        else if(out.length() >= 4
+             && out[0] == '-'
+             && out[1] == '0'
+             && out[2] == '.')
+        {
+            out.erase(out.begin() + 1);
+            // -.33 is valid and equivalent to -0.33
         }
     }
 

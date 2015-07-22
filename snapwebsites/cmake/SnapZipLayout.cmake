@@ -29,14 +29,14 @@ endif()
 # Zip up each of the layout files.
 #
 function( snap_zip_layout )
-	set( options        )
-	set( oneValueArgs   LAYOUT_NAME )
-	set( multiValueArgs LAYOUT_FILES )
-	cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
-	#
-	if( NOT ARG_LAYOUT_NAME )
-		message( FATAL_ERROR "You must specify LAYOUT_NAME!" )
-	endif()
+    set( options        )
+    set( oneValueArgs   LAYOUT_NAME )
+    set( multiValueArgs LAYOUT_FILES )
+    cmake_parse_arguments( ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+    #
+    if( NOT ARG_LAYOUT_NAME )
+        message( FATAL_ERROR "You must specify LAYOUT_NAME!" )
+    endif()
     #
     if( NOT ARG_LAYOUT_FILES )
         message( FATAL_ERROR "You must provide LAYOUT_FILES to zip!" )

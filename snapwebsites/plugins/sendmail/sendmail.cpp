@@ -1623,7 +1623,7 @@ bool sendmail::on_path_execute(content::path_info_t & ipath)
     {
         content::path_info_t unsubscribe_ipath;
         unsubscribe_ipath.set_path("unsubscribe");
-        QStringList const segments(cpath.split("/"));
+        snap_string_list const segments(cpath.split("/"));
         unsubscribe_ipath.set_parameter("identifier", segments[1]);
         f_snap->output(layout::layout::instance()->apply_layout(unsubscribe_ipath, this));
         return true;
@@ -2268,7 +2268,7 @@ void sendmail::run_emails()
             if(!value.nullValue())
             {
                 QString const unique_keys(value.stringValue());
-                QStringList const list(unique_keys.split(","));
+                snap_string_list const list(unique_keys.split(","));
                 int const max_emails(list.size());
                 for(int i(0); i < max_emails; ++i)
                 {
@@ -2815,7 +2815,7 @@ void sendmail::on_generate_main_content(content::path_info_t & ipath, QDomElemen
             // save the priority as a value
             QDomElement priority(doc.createElement("priority"));
             sendmail_tag.appendChild(priority);
-            QStringList value_name(x_priority.split(" "));
+            snap_string_list value_name(x_priority.split(" "));
             QDomText priority_text(doc.createTextNode(value_name[0]));
             priority.appendChild(priority_text);
         }

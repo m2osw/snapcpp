@@ -202,12 +202,40 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
     // TODO: will other plugins check for their own extension schemes?
     //       (I would imagine that this plugin will support more than
     //       just the .gz extension...)
-    QString cpath(ipath.get_cpath());
-    if(!cpath.endsWith(".gz") || cpath.endsWith("/.gz"))
+    QString const cpath(ipath.get_cpath());
+
+    if((cpath.endsWith(".min.css")    && !cpath.endsWith("/.min.css"))
+    || (cpath.endsWith(".min.css.gz") && !cpath.endsWith("/.min.css.gz")))
     {
-        return;
+        if(check_for_minified_css(ipath, plugin_info))
+        {
+            return;
+        }
     }
 
+    if(cpath.endsWith(".gz") && !cpath.endsWith("/.gz"))
+    {
+        if(check_for_uncompressed_file(ipath, plugin_info))
+        {
+            return;
+        }
+    }
+}
+
+
+/** \brief Check whether we have an uncompressed version of the file.
+ *
+ * This entry allows us to return an uncompressed version of the file
+ * if it exists.
+ *
+ * \param[in] ipath  The path being checked.
+ * \param[in] plugin_info  The dynamic plugin information.
+ *
+ * \return true if this was a match.
+ */
+bool attachment::check_for_uncompressed_file(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+{
+    QString cpath(ipath.get_cpath());
     cpath = cpath.left(cpath.length() - 3);
     content::path_info_t attachment_ipath;
     attachment_ipath.set_path(cpath);
@@ -215,13 +243,13 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
     if(!revision_table->exists(attachment_ipath.get_revision_key())
     || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
     {
-        return;
+        return false;
     }
 
     QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
     if(attachment_key.nullValue())
     {
-        return;
+        return false;
     }
 
     QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
@@ -232,12 +260,88 @@ void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::d
         //       file on the fly (but we wouldd have to save it and
         //       that could cause problems with the backend if we
         //       were to not use the maximum compression?)
-        return;
+        return false;
     }
 
     // tell the path plugin that we know how to handle this one
     plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
     ipath.set_parameter("attachment_field", content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED));
+
+    return true;
+}
+
+
+/** \brief Check whether we have a minified version of the file.
+ *
+ * This entry allows us to return a minified version of a file
+ * if it exists, or even a minified compressed version.
+ *
+ * \param[in] ipath  The path being checked.
+ * \param[in] plugin_info  The dynamic plugin information.
+ *
+ * \return true if this was a match.
+ */
+bool attachment::check_for_minified_css(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+{
+    content::name_t name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED);
+    content::name_t fallback_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
+    QString cpath(ipath.get_cpath());
+    if(cpath.endsWith(".min.css"))
+    {
+        cpath = cpath.left(cpath.length() - 8) + ".css";
+    }
+    else //if(cpath.endsWith(".min.css.gz"))
+    {
+        cpath = cpath.left(cpath.length() - 11) + ".css";
+        name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_MINIFIED_GZIP_COMPRESSED;
+        fallback_name = content::name_t::SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED;
+    }
+
+    content::path_info_t attachment_ipath;
+    attachment_ipath.set_path(cpath);
+    QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
+    if(!revision_table->exists(attachment_ipath.get_revision_key())
+    || !revision_table->row(attachment_ipath.get_revision_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT)))
+    {
+        return false;
+    }
+
+    QtCassandra::QCassandraValue attachment_key(revision_table->row(attachment_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT))->value());
+    if(attachment_key.nullValue())
+    {
+        return false;
+    }
+
+    QtCassandra::QCassandraTable::pointer_t files_table(content::content::instance()->get_files_table());
+    if(files_table->exists(attachment_key.binaryValue()))
+    {
+        // check for the minified version
+        if(files_table->row(attachment_key.binaryValue())->exists(content::get_name(name)))
+        {
+            // tell the path plugin that we know how to handle this one
+            plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
+            ipath.set_parameter("attachment_field", content::get_name(name));
+            return true;
+        }
+
+        // TODO? we could offer an on the fly version minimized and compressed?
+
+        // if not minified yet, at least try the regular version
+        if(files_table->row(attachment_key.binaryValue())->exists(content::get_name(fallback_name)))
+        {
+            // tell the path plugin that we know how to handle this one
+            plugin_info.set_plugin_if_renamed(this, attachment_ipath.get_cpath());
+            ipath.set_parameter("attachment_field", content::get_name(fallback_name));
+
+            // NOTE: There is no need to reduce the caching of this file,
+            //       after all the file is genuine and will work just as
+            //       well and once we sent it, large or small, not having
+            //       to reload another file is definitely faster.
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
@@ -651,7 +755,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
 
     // the actual file data now; this is defined using the MIME type
     // (and the error code?)
-    QStringList const mime_type_parts(content_type.split('/'));
+    snap_string_list const mime_type_parts(content_type.split('/'));
     if(mime_type_parts.size() != 2)
     {
         // no recovery on that one for now

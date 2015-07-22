@@ -293,7 +293,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
     // removed by Apache2 (at least when you run mod_auth_basic and
     // similar modules)
     QString const authorization(f_snap->snapenv("HTTP_SNAP_AUTHORIZATION"));
-    QStringList const snap_base64(authorization.simplified().split(" "));
+    snap_string_list const snap_base64(authorization.simplified().split(" "));
     if(snap_base64.size() != 2
     || snap_base64[0].toUpper() != "SNAP")
     {
@@ -308,7 +308,7 @@ bool oauth2::on_path_execute(content::path_info_t& ipath)
 
     // Decrypt the buffer
     QByteArray const base64_buffer(QByteArray::fromBase64(snap_base64[1].toUtf8()));
-    QStringList const identifier_secret(QString::fromUtf8(base64_buffer.data()).split(":"));
+    snap_string_list const identifier_secret(QString::fromUtf8(base64_buffer.data()).split(":"));
     if(identifier_secret.size() != 2)
     {
         require_oauth2_login();
@@ -467,7 +467,7 @@ void oauth2::application_login()
     // and random
     QString const authorization(f_snap->snapenv("HTTP_SNAP_AUTHORIZATION"));
 
-    QStringList const session_id(authorization.simplified().split(" "));
+    snap_string_list const session_id(authorization.simplified().split(" "));
     if(session_id.size() != 2
     || session_id[0].toUpper() != "BEARER")
     {
@@ -480,7 +480,7 @@ void oauth2::application_login()
     }
 
     // is that session a valid "user" session?
-    QStringList const parameters(session_id[1].split("/"));
+    snap_string_list const parameters(session_id[1].split("/"));
     QString const session_key(parameters[0]);
 
     // Ignore the random key for applications
@@ -588,7 +588,7 @@ void oauth2::on_process_cookies()
     {
         f_snap->set_ignore_cookies();
 
-        QStringList const auth(authorization.simplified().split(" "));
+        snap_string_list const auth(authorization.simplified().split(" "));
         if(auth.size() == 2
         && auth[0].toUpper() != "SNAP")
         {

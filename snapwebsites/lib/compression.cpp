@@ -140,9 +140,9 @@ compressor_t::~compressor_t()
  *
  * \return A list of all the available compressors.
  */
-QStringList compressor_list()
+snap_string_list compressor_list()
 {
-    QStringList list;
+    snap_string_list list;
     for(compressor_map_t::const_iterator
             it(g_compressors->begin());
             it != g_compressors->end();

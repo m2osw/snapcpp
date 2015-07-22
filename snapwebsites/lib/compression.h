@@ -18,11 +18,12 @@
 
 #include "snap_exception.h"
 
+#include "snap_string_list.h"
+
 #include <controlled_vars/controlled_vars_limited_auto_init.h>
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
 #include <QString>
-#include <QStringList>
 
 #include <unistd.h>
 
@@ -144,12 +145,12 @@ protected:
 };
 
 //void register_compressor(compressor_t *compressor_name); -- automatic at this point
-QStringList compressor_list();
-QByteArray compress(QString & compressor_name, QByteArray const & input, level_t level, bool text);
-QByteArray decompress(QString & compressor_name, QByteArray const & input);
+snap_string_list    compressor_list();
+QByteArray          compress(QString & compressor_name, QByteArray const & input, level_t level, bool text);
+QByteArray          decompress(QString & compressor_name, QByteArray const & input);
 
-QStringList archiver_list();
-archiver_t * get_archiver(QString const & archiver_name);
+snap_string_list    archiver_list();
+archiver_t *        get_archiver(QString const & archiver_name);
 
 } // namespace snap
 } // namespace compression

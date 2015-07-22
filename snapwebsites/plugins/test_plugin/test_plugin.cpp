@@ -281,12 +281,12 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QString const& p
         doc.appendChild(root_tag);
 
         QString group; // current group
-        QStringList group_segments;
+        snap_string_list group_segments;
         int const max_keys(keys.size());
         for(int idx(0), count(1); idx < max_keys; ++idx, ++count)
         {
             QString const name(keys.at(idx));
-            QStringList segments(name.split("::"));
+            snap_string_list segments(name.split("::"));
             QString const test_name(segments.last());
             segments.pop_back();
             QString const group_name(segments.join("::"));
@@ -372,12 +372,12 @@ void test_plugin::on_replace_token(content::path_info_t& ipath, QString const& p
                     // ignore the special name "all" (TBD)
                     existing_group_name = "";
                 }
-                QStringList const existing_segments(existing_group_name.split("::", QString::SkipEmptyParts));
+                snap_string_list const existing_segments(existing_group_name.split("::", QString::SkipEmptyParts));
 
                 int const max_count(segments.size());
                 for(int j(existing_segments.size()); j < max_count; ++j)
                 {
-                    QStringList const new_group(segments.mid(0, j + 1));
+                    snap_string_list const new_group(segments.mid(0, j + 1));
                     QString const new_name(new_group.join("::"));
                     QDomElement new_group_tag(doc.createElement("group"));
                     new_group_tag.setAttribute("name", new_name);

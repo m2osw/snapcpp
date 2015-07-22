@@ -17,18 +17,7 @@
 
 #include "hashtag.h"
 
-//#include "../attachment/attachment.h"
 #include "../filter/filter.h"
-//#include "../list/list.h"
-//#include "../locale/snap_locale.h"
-//#include "../path/path.h"
-//
-//#include "log.h"
-//#include "not_reached.h"
-//#include "qdomhelpers.h"
-//#include "qdomxpath.h"
-//#include "qhtmlserializer.h"
-//#include "qxmlmessagehandler.h"
 
 #include "poison.h"
 

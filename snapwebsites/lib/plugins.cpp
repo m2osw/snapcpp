@@ -51,7 +51,7 @@ QString g_next_register_filename;
  *
  * \return A list of plugin names.
  */
-QStringList list_all(const QString& plugin_path)
+snap_string_list list_all(const QString& plugin_path)
 {
     // note that we expect the plugin directory to be clean
     // (we may later check the validity of each directory to make 100% sure
@@ -80,7 +80,7 @@ QStringList list_all(const QString& plugin_path)
  *
  * \return true if all the modules were loaded.
  */
-bool load(QString const& plugin_paths, plugin_ptr_t server, QStringList const& list_of_plugins)
+bool load(QString const& plugin_paths, plugin_ptr_t server, snap_string_list const& list_of_plugins)
 {
 // Doug;
 // "This defeats the purpose of a shared_ptr, but this is because all plugins are treated as barepointers. This needs to be fixed in another iteration..."
@@ -127,10 +127,10 @@ bool load(QString const& plugin_paths, plugin_ptr_t server, QStringList const& l
 //#pragma message("Please restore the plugin pointer to a non-shared pointer. (see detailed reason above this message)")
     g_plugins.insert("server", server.get());
 
-    QStringList const paths(plugin_paths.split(':'));
+    snap_string_list const paths(plugin_paths.split(':'));
 
     bool good = true;
-    for(QStringList::const_iterator it(list_of_plugins.begin());
+    for(snap_string_list::const_iterator it(list_of_plugins.begin());
                                     it != list_of_plugins.end();
                                     ++it)
     {
@@ -221,7 +221,7 @@ bool load(QString const& plugin_paths, plugin_ptr_t server, QStringList const& l
  *
  * \return The full path and filename of the plugin or empty if not found.
  */
-QString find_plugin_filename(QStringList const& plugin_paths, QString const& name)
+QString find_plugin_filename(snap_string_list const& plugin_paths, QString const& name)
 {
     int const max_paths(plugin_paths.size());
     for(int i(0); i < max_paths; ++i)

@@ -26,8 +26,7 @@ namespace javascript
 enum class name_t
 {
     SNAP_NAME_JAVASCRIPT_MINIMIZED,
-    SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED,
-    SNAP_NAME_JAVASCRIPT_ROW
+    SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED
 };
 char const *get_name(name_t name) __attribute__ ((const));
 
@@ -58,7 +57,7 @@ public:
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child * snap);
-    void                on_process_attachment(QByteArray const & key, content::attachment_file const & file);
+    void                on_process_attachment(QtCassandra::QCassandraRow::pointer_t file_row, content::attachment_file const & file);
     void                on_check_attachment_security(content::attachment_file const & file, content::permission_flag & secure, bool const fast);
 
     void                register_dynamic_plugin(javascript_dynamic_plugin *p);

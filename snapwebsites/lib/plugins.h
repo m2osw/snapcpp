@@ -18,6 +18,8 @@
 
 #include "snap_exception.h"
 
+#include <snap_string_list.h>
+
 #include <controlled_vars/controlled_vars_auto_init.h>
 #include <controlled_vars/controlled_vars_ptr_auto_init.h>
 
@@ -25,7 +27,6 @@
 #include <memory>
 
 #include <QString>
-#include <QStringList>
 
 
 namespace snap
@@ -84,9 +85,9 @@ typedef std::shared_ptr<plugin>                 plugin_ptr_t;
 typedef QMap<QString, plugin *>                 plugin_list_t;
 typedef controlled_vars::ptr_auto_init<plugin>  plugin_zptr_t;
 
-QStringList             list_all(QString const & plugin_path);
-bool                    load(QString const & plugin_path, plugin_ptr_t server, QStringList const & list_of_plugins);
-QString                 find_plugin_filename(QStringList const & plugin_paths, QString const & name);
+snap_string_list        list_all(QString const & plugin_path);
+bool                    load(QString const & plugin_path, plugin_ptr_t server, snap_string_list const & list_of_plugins);
+QString                 find_plugin_filename(snap_string_list const & plugin_paths, QString const & name);
 bool                    exists(QString const & name);
 void                    register_plugin(QString const & name, plugin * p);
 plugin *                get_plugin(QString const & name);

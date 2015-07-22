@@ -37,7 +37,7 @@ typedef double              decimal_number_t;
 char const *                csspp_library_version();
 int                         get_precision();
 void                        set_precision(int precision);
-std::string                 decimal_number_to_string(decimal_number_t d);
+std::string                 decimal_number_to_string(decimal_number_t d, bool remove_leading_zero);
 
 class safe_bool_t
 {

@@ -17,6 +17,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <csspp/color.h>
 #include <csspp/error.h>
 
 #include <map>
@@ -27,9 +28,9 @@ namespace csspp
 
 enum boolean_t
 {
-    INVALID = -1,
-    FALSE = 0,
-    TRUE = 1
+    BOOLEAN_INVALID = -1,
+    BOOLEAN_FALSE = 0,
+    BOOLEAN_TRUE = 1
 };
 
 enum class node_type_t
@@ -100,9 +101,11 @@ enum class node_type_t
     // composed tokens
     AN_PLUS_B,              // An+B for nth-child() functions
     ARG,                    // broken up comma separated elements end up in lists of arguments (for functions and qualified rule selectors)
+    ARRAY,                  // "value value value ...", like a map, only just indexed with integers
     COMPONENT_VALUE,        // "token token token ..." representing a component-value-list
     DECLARATION,            // <id> ':' ...
     LIST,                   // bare "token token token ..." until better qualified
+    MAP,                    // "index value index value ..." (a property list)
 
     max_type
 };
@@ -140,6 +143,8 @@ public:
     void                set_boolean(bool integer);
     decimal_number_t    get_decimal_number() const;
     void                set_decimal_number(decimal_number_t decimal_number);
+    color               get_color() const;
+    void                set_color(color c);
     decimal_number_t    get_font_size() const;
     void                set_font_size(decimal_number_t font_size);
     decimal_number_t    get_line_height() const;

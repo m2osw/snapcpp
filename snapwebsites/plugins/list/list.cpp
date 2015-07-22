@@ -503,7 +503,7 @@ void paging_t::process_query_string_info()
 
     // got such, retrieve it
     QString const variable(f_snap->get_uri().query_option(variable_name));
-    QStringList const params(variable.split(","));
+    snap_string_list const params(variable.split(","));
     bool defined_page(false);
     bool defined_size(false);
     bool defined_offset(false);
@@ -772,7 +772,7 @@ void paging_t::generate_list_navigation(QDomElement element, snap_uri uri, int32
     int32_t first(0);
     int32_t last(0);
     int32_t current_index(0);
-    QStringList qs;
+    snap_string_list qs;
     QString const current_page_query_string(generate_query_string_info(0));
     qs.push_back(current_page_query_string);
     for(int32_t i(-1); i >= -next_previous_count; --i)
@@ -2202,7 +2202,7 @@ int list::generate_new_list_for_hand_picked_pages(QString const& site_key, conte
 
     int did_work(0);
 
-    QStringList pages(hand_picked_pages.split("\n"));
+    snap_string_list pages(hand_picked_pages.split("\n"));
     int const max_pages(pages.size());
     for(int i(0); i < max_pages; ++i)
     {

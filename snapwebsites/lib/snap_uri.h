@@ -18,6 +18,8 @@
 
 #include "snap_parser.h"
 
+#include "snap_string_list.h"
+
 #include <controlled_vars/controlled_vars_limited_auto_enum_init.h>
 
 #include <QtSerialization/QSerializationReader.h>
@@ -25,7 +27,6 @@
 #include <QtSerialization/QSerializationWriter.h>
 
 #include <QString>
-#include <QStringList>
 #include <QMap>
 
 namespace snap
@@ -118,7 +119,7 @@ public:
     QString             sub_domains() const;
     int                 sub_domain_count() const;
     QString             sub_domain(int part) const;
-    QStringList const & sub_domains_list() const;
+    snap_string_list const & sub_domains_list() const;
 
     // port handling
     void                set_port(QString const & port);
@@ -130,7 +131,7 @@ public:
     QString             path(bool encoded = true) const;
     int                 path_count() const;
     QString             path_folder_name(int part) const;
-    QStringList const & path_list() const;
+    snap_string_list const & path_list() const;
 
     // option handling
     void                set_option(QString const & name, QString const & value);
@@ -168,7 +169,7 @@ public:
     static int          protocol_to_port(QString const & uri_protocol);
 
 private:
-    bool                process_domain(QString const & full_domain_name, QStringList & sub_domain_names, QString & domain_name, QString & tld);
+    bool                process_domain(QString const & full_domain_name, snap_string_list & sub_domain_names, QString & domain_name, QString & tld);
 
     // f_original is the unchanged source (from constructor or
     // last set_uri() call)
@@ -179,8 +180,8 @@ private:
     snap_uri_port_t                 f_port;
     QString                         f_domain;
     QString                         f_top_level_domain;
-    QStringList                     f_sub_domains;
-    QStringList                     f_path;
+    snap_string_list                f_sub_domains;
+    snap_string_list                f_path;
     snap_uri_options_t              f_options;
     snap_uri_options_t              f_query_strings;
     QString                         f_anchor;

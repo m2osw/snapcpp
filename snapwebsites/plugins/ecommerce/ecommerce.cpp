@@ -748,10 +748,10 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
             typedef controlled_vars::limited_auto_init<uint32_t, 0, 0x10FFFF, '*'> operation_t;
             typedef controlled_vars::fauto_init<double> quantity_t; // always initialized to 0.0 because a template parameter cannot be a double
 
-            QStringList     f_attributes;
-            QString         f_product;
-            operation_t     f_operation;
-            quantity_t      f_quantity;
+            snap_string_list    f_attributes;
+            QString             f_product;
+            operation_t         f_operation;
+            quantity_t          f_quantity;
         };
         product_t product;
         std::vector<product_t> product_list;

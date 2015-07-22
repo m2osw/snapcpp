@@ -26,10 +26,11 @@
 
 #include "csspp/expression.h"
 
-#include "csspp/color.h"
 #include "csspp/exceptions.h"
 #include "csspp/parser.h"
+#include "csspp/unicode_range.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -44,6 +45,11 @@ expression::expression(node::pointer_t n, bool skip_whitespace)
     {
         throw csspp_exception_logic("expression.cpp:expression(): contructor called with a null pointer.");
     }
+}
+
+void expression::set_variable_handler(expression_variables_interface * handler)
+{
+    f_variable_handler = handler;
 }
 
 void expression::compile_args(bool divide_font_metrics)
@@ -88,6 +94,10 @@ node::pointer_t expression::compile_list(node::pointer_t parent)
             // we remove the !<word> from the declaration and
             // setup a flag instead
             f_node->remove_child(f_current);
+            if(f_pos > 0)
+            {
+                --f_pos;
+            }
             parent->set_flag(f_current->get_string(), true);
         }
         else
@@ -219,7 +229,7 @@ node::pointer_t expression::current() const
 boolean_t expression::boolean(node::pointer_t n)
 {
     boolean_t const result(n->to_boolean());
-    if(result == boolean_t::INVALID)
+    if(result == boolean_t::BOOLEAN_INVALID)
     {
         error::instance() << n->get_position()
                 << "a boolean expression was expected."
@@ -255,25 +265,121 @@ node::pointer_t expression::argument_list()
     return result;
 }
 
+bool expression::is_label() const
+{
+    // we have a label if we have:
+    //    <identifier> <ws>* ':'
+    size_t pos(f_pos + 1);
+    if(!f_current->is(node_type_t::IDENTIFIER)
+    || pos >= f_node->size())
+    {
+        return false;
+    }
+
+    node::pointer_t n(f_node->get_child(pos));
+    if(n->is(node_type_t::WHITESPACE))
+    {
+        ++pos;
+        if(pos >= f_node->size())
+        {
+            return false;
+        }
+        n = f_node->get_child(pos);
+    }
+
+    return n->is(node_type_t::COLON);
+}
+
 node::pointer_t expression::expression_list()
 {
-    node::pointer_t result(assignment());
-    if(!result)
+    // expression-list: assignment
+    //                | list
+    //                | map
+    //
+    // list: assignment
+    //     | list ',' assignment
+    //
+    // map: IDENTIFIER ':' assignment
+    //    | map ',' IDENTIFIER ':' assignment
+    //
+    safe_bool_t safe_skip_whitespace(f_skip_whitespace);
+
+    if(is_label())
     {
-        return node::pointer_t();
-    }
+        node::pointer_t map(new node(node_type_t::ARRAY, f_current->get_position()));
+        while(is_label())
+        {
+            map->add_child(f_current);
 
-    // an expression list does NOT return a LIST, it just returns
-    // the result of the last expression (as in C/C++)
-    while(f_current->is(node_type_t::COMMA))
+            // skip the IDENTIFIER (f_current == ':')
+            next();
+
+            // skip the ':'
+            next();
+
+            node::pointer_t result;
+            if(f_current->is(node_type_t::COMMA))
+            {
+                // empty entries are viewed as valid and set to NULL
+                result.reset(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
+
+                // skip the ','
+                next();
+            }
+            else
+            {
+                result = assignment();
+                if(result)
+                {
+                    // maps need to have an even number of entries, but
+                    // the value of an entry does not need to be provided
+                    // in which case we want to put NULL in there
+                    result.reset(new node(node_type_t::NULL_TOKEN, f_current->get_position()));
+                    map->add_child(result);
+                    break;
+                }
+            }
+
+            map->add_child(result);
+        }
+        return map;
+    }
+    else
     {
-        // skip the ','
-        next();
+        node::pointer_t result(assignment());
 
-        result = assignment();
+        if(result
+        && f_current->is(node_type_t::COMMA))
+        {
+            node::pointer_t array(new node(node_type_t::ARRAY, f_current->get_position()));
+            array->add_child(result);
+
+            // an expression list does NOT return a LIST, it just returns
+            // the result of the last expression (as in C/C++)
+            while(f_current->is(node_type_t::COMMA))
+            {
+                // skip the ','
+                next();
+
+                if(f_current->is(node_type_t::IDENTIFIER)
+                && f_pos + 1 < f_node->size())
+                {
+                }
+
+                result = assignment();
+                if(!result)
+                {
+                    break;
+                }
+                array->add_child(result);
+            }
+
+            // the result is the array in this case
+            return array;
+        }
+
+        return result;
     }
-
-    return result;
 }
 
 node::pointer_t expression::assignment()
@@ -458,6 +564,13 @@ bool is_equal(node::pointer_t lhs, node::pointer_t rhs)
     case mix_node_types(node_type_t::STRING, node_type_t::STRING):
         return lhs->get_string() == rhs->get_string();
 
+    case mix_node_types(node_type_t::COLOR, node_type_t::COLOR):
+        {
+            color const lc(lhs->get_color());
+            color const rc(rhs->get_color());
+            return lc.get_color() == rc.get_color();
+        }
+
     }
 
     error::instance() << lhs->get_position()
@@ -572,20 +685,6 @@ node_type_t expression::equality_operator(node::pointer_t n)
     {
     // return type as is
     case node_type_t::EQUAL:
-        if(f_pos + 1 < f_node->size())
-        {
-            if(f_node->get_child(f_pos + 1)->is(node_type_t::EQUAL))
-            {
-                // we accept '==' with a warning (for SASS compatibility
-                // skip the first '=' here
-                next();
-                error::instance() << n->get_position()
-                        << "we accepted '==' instead of '=' in an expression, you probably want to change the operator to just '='."
-                        << error_mode_t::ERROR_WARNING;
-            }
-        }
-        return node_type_t::EQUAL;
-
     case node_type_t::NOT_EQUAL:
     case node_type_t::INCLUDE_MATCH:
     case node_type_t::PREFIX_MATCH:
@@ -766,42 +865,45 @@ node_type_t additive_operator(node::pointer_t n)
 node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
 {
     node_type_t type(node_type_t::UNKNOWN);
+    bool test_dimensions(true);
     integer_t ai(0);
     integer_t bi(0);
     decimal_number_t af;
     decimal_number_t bf;
+    bool swapped(false);
 
     switch(mix_node_types(lhs->get_type(), rhs->get_type()))
     {
     case mix_node_types(node_type_t::STRING, node_type_t::STRING):
+        if(!subtract)
         {
-            if(subtract)
-            {
-                error::instance() << lhs->get_position()
-                        << "incompatible types between "
-                        << lhs->get_type()
-                        << " and "
-                        << rhs->get_type()
-                        << " for operator '-'."
-                        << error_mode_t::ERROR_ERROR;
-                return node::pointer_t();
-            }
             // string concatenation
             node::pointer_t result(new node(node_type_t::STRING, lhs->get_position()));
             result->set_string(lhs->get_string() + rhs->get_string());
             return result;
         }
+        break;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-        // TODO: test that the dimensions are compatible
         ai = lhs->get_integer();
         bi = rhs->get_integer();
         type = node_type_t::INTEGER;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
+        bf = rhs->get_decimal_number();
+        type = node_type_t::DECIMAL_NUMBER;
+        break;
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
+        af = lhs->get_decimal_number();
+        bf = static_cast<decimal_number_t>(rhs->get_integer());
+        type = node_type_t::DECIMAL_NUMBER;
+        break;
+
+    case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
+        af = static_cast<decimal_number_t>(lhs->get_integer());
         bf = rhs->get_decimal_number();
         type = node_type_t::DECIMAL_NUMBER;
         break;
@@ -810,27 +912,146 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
         type = node_type_t::PERCENT;
+        test_dimensions = false;
         break;
 
-    default:
+    case mix_node_types(node_type_t::INTEGER, node_type_t::COLOR):
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::COLOR):
+        std::swap(lhs, rhs);
+        swapped = true;
+    case mix_node_types(node_type_t::COLOR, node_type_t::INTEGER):
+    case mix_node_types(node_type_t::COLOR, node_type_t::DECIMAL_NUMBER):
+        if(rhs->get_string() == "")
         {
-            node_type_t lt(lhs->get_type());
-            node_type_t rt(rhs->get_type());
+            decimal_number_t offset;
+            if(rhs->is(node_type_t::INTEGER))
+            {
+                offset = static_cast<decimal_number_t>(rhs->get_integer());
+            }
+            else
+            {
+                offset = rhs->get_decimal_number();
+            }
+            color c(lhs->get_color());
+            color_component_t red;
+            color_component_t green;
+            color_component_t blue;
+            color_component_t alpha;
+            c.get_color(red, green, blue, alpha);
+            if(subtract)
+            {
+                if(swapped)
+                {
+                    red   = offset - red;
+                    green = offset - green;
+                    blue  = offset - blue;
+                    alpha = offset - alpha;
+                }
+                else
+                {
+                    red   -= offset;
+                    green -= offset;
+                    blue  -= offset;
+                    alpha -= offset;
+                }
+            }
+            else
+            {
+                red   += offset;
+                green += offset;
+                blue  += offset;
+                alpha += offset;
+            }
+            c.set_color(red, green, blue, alpha);
+            node::pointer_t result(new node(node_type_t::COLOR, lhs->get_position()));
+            result->set_color(c);
+            return result;
+        }
+        error::instance() << rhs->get_position()
+                << "color offsets (numbers added with + or - operators) must be unit less values, "
+                << (rhs->is(node_type_t::INTEGER)
+                            ? static_cast<decimal_number_t>(rhs->get_integer())
+                            : rhs->get_decimal_number())
+                << rhs->get_string()
+                << " is not acceptable."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
 
+    case mix_node_types(node_type_t::COLOR, node_type_t::COLOR):
+        {
+            color lc(lhs->get_color());
+            color const rc(rhs->get_color());
+            color_component_t lred;
+            color_component_t lgreen;
+            color_component_t lblue;
+            color_component_t lalpha;
+            color_component_t rred;
+            color_component_t rgreen;
+            color_component_t rblue;
+            color_component_t ralpha;
+            lc.get_color(lred, lgreen, lblue, lalpha);
+            rc.get_color(rred, rgreen, rblue, ralpha);
+            if(subtract)
+            {
+                lred   -= rred;
+                lgreen -= rgreen;
+                lblue  -= rblue;
+                lalpha -= ralpha;
+            }
+            else
+            {
+                lred   += rred;
+                lgreen += rgreen;
+                lblue  += rblue;
+                lalpha += ralpha;
+            }
+            lc.set_color(lred, lgreen, lblue, lalpha);
+            node::pointer_t result(new node(node_type_t::COLOR, lhs->get_position()));
+            result->set_color(lc);
+            return result;
+        }
+
+    default:
+        break;
+
+    }
+
+    if(type == node_type_t::UNKNOWN)
+    {
+        node_type_t lt(lhs->get_type());
+        node_type_t rt(rhs->get_type());
+
+        error::instance() << lhs->get_position()
+                << "incompatible types between "
+                << lt
+                << (lt == node_type_t::IDENTIFIER || lt == node_type_t::STRING ? " (" + lhs->get_string() + ")" : "")
+                << " and "
+                << rt
+                << (rt == node_type_t::IDENTIFIER || rt == node_type_t::STRING ? " (" + rhs->get_string() + ")" : "")
+                << " for operator '"
+                << (subtract ? "-" : "+")
+                << "'."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+    }
+
+    if(test_dimensions)
+    {
+        std::string const ldim(lhs->get_string());
+        std::string const rdim(rhs->get_string());
+        if(ldim != rdim)
+        {
             error::instance() << lhs->get_position()
-                    << "incompatible types between "
-                    << lt
-                    << (lt == node_type_t::IDENTIFIER || lt == node_type_t::STRING ? " (" + lhs->get_string() + ")" : "")
-                    << " and "
-                    << rt
-                    << (rt == node_type_t::IDENTIFIER || rt == node_type_t::STRING ? " (" + rhs->get_string() + ")" : "")
-                    << " for operator '"
+                    << "incompatible dimensions: \""
+                    << ldim
+                    << "\" and \""
+                    << rdim
+                    << "\" cannot be used as is with operator '"
                     << (subtract ? "-" : "+")
                     << "'."
                     << error_mode_t::ERROR_ERROR;
             return node::pointer_t();
         }
-
     }
 
     node::pointer_t result(new node(type, lhs->get_position()));
@@ -866,23 +1087,7 @@ node::pointer_t add(node::pointer_t lhs, node::pointer_t rhs, bool subtract)
         break;
 
     default:
-        {
-            node_type_t lt(lhs->get_type());
-            node_type_t rt(rhs->get_type());
-
-            error::instance() << lhs->get_position()
-                    << "incompatible types between "
-                    << lt
-                    << (lt == node_type_t::IDENTIFIER || lt == node_type_t::STRING ? " (" + lhs->get_string() + ")" : "")
-                    << " and "
-                    << rt
-                    << (rt == node_type_t::IDENTIFIER || rt == node_type_t::STRING ? " (" + rhs->get_string() + ")" : "")
-                    << " for operator '"
-                    << (subtract ? "-" : "+")
-                    << "'."
-                    << error_mode_t::ERROR_ERROR;
-            return node::pointer_t();
-        }
+        throw csspp_exception_logic("expression.cpp:add(): 'type' set to a value which is not handled here."); // LCOV_EXCL_LINE
 
     }
 
@@ -926,7 +1131,7 @@ node::pointer_t expression::additive()
     return result;
 }
 
-node_type_t expression::multiplicative_operator(node::pointer_t n)
+node_type_t multiplicative_operator(node::pointer_t n)
 {
     switch(n->get_type())
     {
@@ -956,6 +1161,209 @@ node_type_t expression::multiplicative_operator(node::pointer_t n)
     }
 
     return node_type_t::UNKNOWN;
+}
+
+void expression::dimensions_to_vectors(position const & node_pos, std::string const & dimension, dimension_vector_t & dividend, dimension_vector_t & divisor)
+{
+    bool found_slash(false);
+    std::string::size_type pos(0);
+
+    // return early on empty otherwise we generate an error saying that
+    // the dimension is missing (when unitless numbers are valid)
+    if(dimension.empty())
+    {
+        return;
+    }
+
+    // we have a special case when there is no dividend in a dimension
+    // this is defined as a "1" with a slash
+    if(dimension.length() > 2
+    && dimension.substr(0, 2) == "1/") // user defined may not include the space
+    {
+        pos = 2;
+        found_slash = true;
+    }
+    else if(dimension.length() > 3
+         && dimension.substr(0, 3) == "1 /")
+    {
+        pos = 3;
+        found_slash = true;
+    }
+
+    // if it started with "1 /" then we may have yet another space: "1 / "
+    if(found_slash
+    && pos + 1 < dimension.size()
+    && dimension[pos] == ' ')
+    {
+        ++pos;
+    }
+
+    for(;;)
+    {
+        {
+            // get end of current dimension
+            std::string::size_type end(dimension.find_first_of(" */", pos));
+            if(end == std::string::npos)
+            {
+                end = dimension.size();
+            }
+
+            // add the dimension
+            if(end != pos)
+            {
+                std::string const dim(dimension.substr(pos, end - pos));
+                if(found_slash)
+                {
+                    divisor.push_back(dim);
+                }
+                else
+                {
+                    dividend.push_back(dim);
+                }
+            }
+            else
+            {
+                error::instance() << node_pos
+                        << "number dimension is missing a dimension name."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+
+            pos = end;
+            if(pos >= dimension.size())
+            {
+                return;
+            }
+        }
+
+        // check the separator(s)
+        if(pos < dimension.size()
+        && dimension[pos] == ' ')
+        {
+            // this should always be true, but user defined separators
+            // may not include the spaces
+            ++pos;
+        }
+        if(pos >= dimension.size())
+        {
+            // a user dimension may end with a space, just ignore it
+            return;
+        }
+        if(dimension[pos] == '/')
+        {
+            // second slash?!
+            if(found_slash)
+            {
+                // user defined dimensions could have invalid dimension definitions
+                error::instance() << node_pos
+                        << "a valid dimension can have any number of '*' operators and a single '/' operator, here we found a second '/'."
+                        << error_mode_t::ERROR_ERROR;
+                return;
+            }
+
+            found_slash = true;
+            ++pos;
+        }
+        else if(dimension[pos] == '*')
+        {
+            ++pos;
+        }
+        else
+        {
+            // what is that character?!
+            error::instance() << node_pos
+                    << "multiple dimensions can only be separated by '*' or '/' not '"
+                    << dimension.substr(pos, 1)
+                    << "'."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+        if(pos < dimension.size()
+        && dimension[pos] == ' ')
+        {
+            // this should always be true, but user defined separators
+            // may not include the spaces
+            ++pos;
+        }
+    }
+}
+
+std::string expression::multiplicative_dimension(position const & pos, std::string const & ldim, node_type_t const op, std::string const & rdim)
+{
+    dimension_vector_t dividend;
+    dimension_vector_t divisor;
+
+    // transform the string in one or two vectors
+    dimensions_to_vectors(pos, ldim, dividend, divisor);
+
+    if(op == node_type_t::MULTIPLY)
+    {
+        dimensions_to_vectors(pos, rdim, dividend, divisor);
+    }
+    else
+    {
+        // a division has the dividend / divisor inverted, simple trick
+        dimensions_to_vectors(pos, rdim, divisor, dividend);
+    }
+
+    // optimize the result
+    for(size_t idx(dividend.size()); idx > 0;)
+    {
+        --idx;
+        std::string const dim(dividend[idx]);
+        dimension_vector_t::iterator it(std::find(divisor.begin(), divisor.end(), dim));
+        if(it != divisor.end())
+        {
+            // present in both places? if so remove from both places
+            dividend.erase(dividend.begin() + idx);
+            divisor.erase(it);
+        }
+    }
+
+    // now we rebuild the resulting dimension
+    // if the dividend is empty, then we have to put 1 / ...
+    // if the divisor is empty, we do not put a '/ ...'
+
+    return rebuild_dimension(dividend, divisor);
+}
+
+std::string expression::rebuild_dimension(dimension_vector_t const & dividend, dimension_vector_t const & divisor)
+{
+    std::string result;
+
+    if(!dividend.empty() || !divisor.empty())
+    {
+        if(dividend.empty())
+        {
+            result += "1";
+        }
+        else
+        {
+            for(size_t idx(0); idx < dividend.size(); ++idx)
+            {
+                if(idx != 0)
+                {
+                    result += " * ";
+                }
+                result += dividend[idx];
+            }
+        }
+
+        for(size_t idx(0); idx < divisor.size(); ++idx)
+        {
+            if(idx == 0)
+            {
+                result += " / ";
+            }
+            else
+            {
+                result += " * ";
+            }
+            result += divisor[idx];
+        }
+    }
+
+    return result;
 }
 
 node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::pointer_t rhs)
@@ -1004,66 +1412,254 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
         return lhs;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-        // TODO: test that the dimensions are compatible
         ai = lhs->get_integer();
         bi = rhs->get_integer();
         type = node_type_t::INTEGER;
         break;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
-        // TODO: test that the dimensions are compatible
         af = static_cast<decimal_number_t>(lhs->get_integer());
         bf = rhs->get_decimal_number();
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = static_cast<decimal_number_t>(rhs->get_integer());
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::PERCENT):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
-        type = node_type_t::PERCENT;
+        type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::DECIMAL_NUMBER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
-        type = node_type_t::PERCENT;
+        type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
         type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::INTEGER, node_type_t::PERCENT):
-        // TODO: test that the dimensions are compatible
         af = static_cast<decimal_number_t>(lhs->get_integer());
         bf = rhs->get_decimal_number();
-        type = node_type_t::PERCENT;
+        type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::INTEGER):
-        // TODO: test that the dimensions are compatible
         af = lhs->get_decimal_number();
         bf = static_cast<decimal_number_t>(rhs->get_integer());
-        type = node_type_t::PERCENT;
+        type = node_type_t::DECIMAL_NUMBER;
         break;
 
     case mix_node_types(node_type_t::PERCENT, node_type_t::PERCENT):
         af = lhs->get_decimal_number();
         bf = rhs->get_decimal_number();
-        type = node_type_t::DECIMAL_NUMBER;
+        type = node_type_t::PERCENT;
         break;
+
+    case mix_node_types(node_type_t::NULL_TOKEN, node_type_t::NULL_TOKEN): // could this one support / and %?
+    case mix_node_types(node_type_t::NULL_TOKEN, node_type_t::UNICODE_RANGE):
+        if(op == node_type_t::MULTIPLY)
+        {
+            return lhs;
+        }
+        error::instance() << f_current->get_position()
+                << "unicode_range * unicode_range is the only multiplicative operator accepted with unicode ranges, '/' and '%' are not allowed."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+
+    case mix_node_types(node_type_t::UNICODE_RANGE, node_type_t::NULL_TOKEN):
+        if(op == node_type_t::MULTIPLY)
+        {
+            return rhs;
+        }
+        error::instance() << f_current->get_position()
+                << "unicode_range * unicode_range is the only multiplicative operator accepted with unicode ranges, '/' and '%' are not allowed."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+
+    case mix_node_types(node_type_t::UNICODE_RANGE, node_type_t::UNICODE_RANGE):
+        if(op == node_type_t::MULTIPLY)
+        {
+            unicode_range_t const lrange(static_cast<range_value_t>(lhs->get_integer()));
+            unicode_range_t const rrange(static_cast<range_value_t>(rhs->get_integer()));
+            range_value_t const start(std::max(lrange.get_start(), rrange.get_start()));
+            range_value_t const end  (std::min(lrange.get_end(),   rrange.get_end()));
+            node::pointer_t result;
+            if(start <= end)
+            {
+                result.reset(new node(node_type_t::UNICODE_RANGE, lhs->get_position()));
+                unicode_range_t range(start, end);
+                result->set_integer(range.get_range());
+            }
+            else
+            {
+                // range becomes null (not characters are in common)
+                result.reset(new node(node_type_t::NULL_TOKEN, lhs->get_position()));
+            }
+            return result;
+        }
+        error::instance() << f_current->get_position()
+                << "unicode_range * unicode_range is the only multiplicative operator accepted with unicode ranges, '/' and '%' are not allowed."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+
+    case mix_node_types(node_type_t::INTEGER, node_type_t::COLOR):
+        if(op != node_type_t::MULTIPLY)
+        {
+            error::instance() << f_current->get_position()
+                    << "'number / color' and 'number % color' are not available."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+        std::swap(lhs, rhs);
+    case mix_node_types(node_type_t::COLOR, node_type_t::INTEGER):
+        bf = static_cast<decimal_number_t>(rhs->get_integer());
+        goto color_multiplicative;
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::COLOR):
+    case mix_node_types(node_type_t::PERCENT, node_type_t::COLOR):
+        if(op != node_type_t::MULTIPLY)
+        {
+            error::instance() << f_current->get_position()
+                    << "'number / color' and 'number % color' are not available."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+        std::swap(lhs, rhs);
+    case mix_node_types(node_type_t::COLOR, node_type_t::DECIMAL_NUMBER):
+    case mix_node_types(node_type_t::COLOR, node_type_t::PERCENT):
+        bf = rhs->get_decimal_number();
+color_multiplicative:
+        if(rhs->is(node_type_t::PERCENT)
+        || rhs->get_string() == "")
+        {
+            color c(lhs->get_color());
+            color_component_t red;
+            color_component_t green;
+            color_component_t blue;
+            color_component_t alpha;
+            c.get_color(red, green, blue, alpha);
+            switch(op)
+            {
+            case node_type_t::MULTIPLY:
+                red   *= bf;
+                green *= bf;
+                blue  *= bf;
+                alpha *= bf;
+                break;
+
+            case node_type_t::DIVIDE:
+                red   /= bf;
+                green /= bf;
+                blue  /= bf;
+                alpha /= bf;
+                break;
+
+            case node_type_t::MODULO:
+                red   = fmod(red,   bf);
+                green = fmod(green, bf);
+                blue  = fmod(blue,  bf);
+                alpha = fmod(alpha, bf);
+                break;
+
+            default:
+                throw csspp_exception_logic("expression.cpp:multiply(): unexpected operator."); // LCOV_EXCL_LINE
+
+            }
+            c.set_color(red, green, blue, alpha);
+            node::pointer_t result(new node(node_type_t::COLOR, lhs->get_position()));
+            result->set_color(c);
+            return result;
+        }
+        error::instance() << f_current->get_position()
+                << "color factors must be unit less values, "
+                << bf
+                << rhs->get_string()
+                << " is not acceptable."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
+
+    case mix_node_types(node_type_t::COLOR, node_type_t::COLOR):
+        {
+            color lc(lhs->get_color());
+            color const rc(rhs->get_color());
+            color_component_t lred;
+            color_component_t lgreen;
+            color_component_t lblue;
+            color_component_t lalpha;
+            color_component_t rred;
+            color_component_t rgreen;
+            color_component_t rblue;
+            color_component_t ralpha;
+            lc.get_color(lred, lgreen, lblue, lalpha);
+            rc.get_color(rred, rgreen, rblue, ralpha);
+            switch(op)
+            {
+            case node_type_t::MULTIPLY:
+                lred   *= rred;
+                lgreen *= rgreen;
+                lblue  *= rblue;
+                lalpha *= ralpha;
+                break;
+
+            case node_type_t::DIVIDE:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(rred == 0.0
+                || rgreen == 0.0
+                || rblue == 0.0
+                || ralpha == 0.0)
+#pragma GCC diagnostic pop
+                {
+                    error::instance() << f_current->get_position()
+                            << "color division does not accept any color component set to zero."
+                            << error_mode_t::ERROR_ERROR;
+                    return node::pointer_t();
+                }
+                lred   /= rred;
+                lgreen /= rgreen;
+                lblue  /= rblue;
+                lalpha /= ralpha;
+                break;
+
+            case node_type_t::MODULO:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+                if(rred == 0.0
+                || rgreen == 0.0
+                || rblue == 0.0
+                || ralpha == 0.0)
+#pragma GCC diagnostic pop
+                {
+                    error::instance() << f_current->get_position()
+                            << "color modulo does not accept any color component set to zero."
+                            << error_mode_t::ERROR_ERROR;
+                    return node::pointer_t();
+                }
+                lred   = fmod(lred   , rred  );
+                lgreen = fmod(lgreen , rgreen);
+                lblue  = fmod(lblue  , rblue );
+                lalpha = fmod(lalpha , ralpha);
+                break;
+
+            default:
+                throw csspp_exception_logic("expression.cpp:multiply(): unexpected operator."); // LCOV_EXCL_LINE
+
+            }
+            lc.set_color(lred, lgreen, lblue, lalpha);
+            node::pointer_t result(new node(node_type_t::COLOR, lhs->get_position()));
+            result->set_color(lc);
+            return result;
+        }
 
     default:
         error::instance() << f_current->get_position()
@@ -1071,7 +1667,7 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
                 << lhs->get_type()
                 << " and "
                 << rhs->get_type()
-                << " for operators '*', '/', or '%'."
+                << " for operator '*', '/', or '%'."
                 << error_mode_t::ERROR_ERROR;
         return node::pointer_t();
 
@@ -1112,10 +1708,59 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
     }
 
     node::pointer_t result(new node(type, lhs->get_position()));
+
     if(type != node_type_t::PERCENT)
     {
-        // do not lose the dimension(s)
-        result->set_string(lhs->get_string());
+        // dimensions do not need to be equal
+        //
+        // a * b  results in a dimension such as 'px * em'
+        // a / b  results in a dimension such as 'px / em'
+        //
+        // multiple products/divisions can occur in which case the '/' becomes
+        // the separator as in:
+        //
+        // a * b / c / d  results in a dimension such as  'px * em / cm * vw'
+        //
+        // when the same dimension appears on the left and right of a /
+        // then it can be removed, allowing conversions from one type to
+        // another, so:
+        //
+        // 'px * em / px' == 'em'
+        //
+        // modulo, like additive operators, requires both dimensions to be
+        // exactly equal or both numbers to not have a dimension
+        //
+        std::string ldim(lhs->is(node_type_t::PERCENT) ? "" : lhs->get_string());
+        std::string rdim(rhs->is(node_type_t::PERCENT) ? "" : rhs->get_string());
+        switch(op)
+        {
+        case node_type_t::MODULO:
+            // modulo requires both dimensions to be equal
+            if(ldim != rdim)
+            {
+                error::instance() << lhs->get_position()
+                        << "incompatible dimensions (\""
+                        << ldim
+                        << "\" and \""
+                        << rdim
+                        << "\") cannot be used with operator '%'."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
+            // set ldim or rdim, they equal each other anyway
+            result->set_string(ldim);
+            break;
+
+        case node_type_t::MULTIPLY:
+        case node_type_t::DIVIDE:
+            result->set_string(multiplicative_dimension(lhs->get_position(), ldim, op, rdim));
+            break;
+
+        default:
+            // that should never happen
+            throw csspp_exception_logic("expression.cpp:multiply(): unexpected operator."); // LCOV_EXCL_LINE
+
+        }
     }
 
     switch(type)
@@ -1128,10 +1773,24 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
             break;
 
         case node_type_t::DIVIDE:
+            if(bi == 0)
+            {
+                error::instance() << lhs->get_position()
+                        << "division by zero."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
             result->set_integer(ai / bi);
             break;
 
         case node_type_t::MODULO:
+            if(bi == 0)
+            {
+                error::instance() << lhs->get_position()
+                        << "modulo by zero."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
             result->set_integer(ai % bi);
             break;
 
@@ -1150,10 +1809,30 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
             break;
 
         case node_type_t::DIVIDE:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(bf == 0.0)
+#pragma GCC diagnostic pop
+            {
+                error::instance() << lhs->get_position()
+                        << "division by zero."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
             result->set_decimal_number(af / bf);
             break;
 
         case node_type_t::MODULO:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(bf == 0.0)
+#pragma GCC diagnostic pop
+            {
+                error::instance() << lhs->get_position()
+                        << "modulo by zero."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
             result->set_decimal_number(fmod(af, bf));
             break;
 
@@ -1164,16 +1843,7 @@ node::pointer_t expression::multiply(node_type_t op, node::pointer_t lhs, node::
         break;
 
     default:
-        error::instance() << f_current->get_position()
-                << "incompatible types between "
-                << lhs->get_type()
-                << " and "
-                << rhs->get_type()
-                << " for operator "
-                << op
-                << "."
-                << error_mode_t::ERROR_ERROR;
-        return node::pointer_t();
+        throw csspp_exception_logic("expression.cpp:multiply(): 'type' set to a value which is not handled here."); // LCOV_EXCL_LINE
 
     }
 
@@ -1220,23 +1890,56 @@ node::pointer_t expression::multiplicative()
 
 node::pointer_t expression::apply_power(node::pointer_t lhs, node::pointer_t rhs)
 {
-    node::pointer_t result(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
+    node::pointer_t result;
 
+    if(rhs->is(node_type_t::INTEGER)
+    || rhs->is(node_type_t::DECIMAL_NUMBER))
+    {
+        if(rhs->get_string() != "")
+        {
+            error::instance() << f_current->get_position()
+                    << "the number representing the power cannot be a dimension ("
+                    << rhs->get_string()
+                    << "); it has to be unitless."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+    }
+
+    bool check_dimension(false);
     switch(mix_node_types(lhs->get_type(), rhs->get_type()))
     {
     case mix_node_types(node_type_t::INTEGER, node_type_t::INTEGER):
-        // TODO: how to handle dimension?
-        result->set_string(lhs->get_string());
-        result->set_decimal_number(pow(lhs->get_integer(), rhs->get_integer()));
+        result.reset(new node(node_type_t::INTEGER, lhs->get_position()));
+        result->set_integer(static_cast<integer_t>(pow(lhs->get_integer(), rhs->get_integer())));
+        check_dimension = true;
+        break;
+
+    case mix_node_types(node_type_t::INTEGER, node_type_t::DECIMAL_NUMBER):
+        result.reset(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
+        result->set_decimal_number(pow(lhs->get_integer(), rhs->get_decimal_number()));
+        check_dimension = true;
+        break;
+
+    case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::INTEGER):
+        result.reset(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
+        result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_integer()));
+        check_dimension = true;
         break;
 
     case mix_node_types(node_type_t::DECIMAL_NUMBER, node_type_t::DECIMAL_NUMBER):
-        // TODO: how to handle dimension?
-        result->set_string(lhs->get_string());
+        result.reset(new node(node_type_t::DECIMAL_NUMBER, lhs->get_position()));
         result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_decimal_number()));
+        check_dimension = true;
         break;
 
-    case mix_node_types(node_type_t::POWER, node_type_t::POWER):
+    case mix_node_types(node_type_t::PERCENT, node_type_t::INTEGER):
+        result.reset(new node(node_type_t::PERCENT, lhs->get_position()));
+        result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_integer()));
+        break;
+
+    case mix_node_types(node_type_t::PERCENT, node_type_t::DECIMAL_NUMBER):
+        result.reset(new node(node_type_t::PERCENT, lhs->get_position()));
         result->set_decimal_number(pow(lhs->get_decimal_number(), rhs->get_decimal_number()));
         break;
 
@@ -1252,6 +1955,83 @@ node::pointer_t expression::apply_power(node::pointer_t lhs, node::pointer_t rhs
 
     }
 
+    if(check_dimension
+    && lhs->get_string() != "")
+    {
+        integer_t the_power(0);
+        if(rhs->is(node_type_t::INTEGER))
+        {
+            // integers are fine if > 0
+            the_power = rhs->get_integer();
+        }
+        else
+        {
+            decimal_number_t p(rhs->get_decimal_number());
+            decimal_number_t integral_part(0.0);
+            decimal_number_t fractional_part(modf(p, &integral_part));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+            if(fractional_part != 0.0)
+#pragma GCC diagnostic pop
+            {
+                // the fractional part has to be exactly 0.0 otherwise we
+                // cannot determine the new dimension
+                error::instance() << f_current->get_position()
+                        << "a number with a dimension only supports integers as their power (i.e. 3px ** 2 is fine, 3px ** 2.1 is not supported)."
+                        << error_mode_t::ERROR_ERROR;
+                return node::pointer_t();
+            }
+            the_power = static_cast<integer_t>(integral_part);
+        }
+        if(the_power == 0)
+        {
+            error::instance() << f_current->get_position()
+                    << "a number with a dimension power zero cannot be calculated (i.e. 3px ** 0 = 1 what?)."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+        // impose a limit because otherwise we may have a bit of a memory
+        // problem...
+        if(labs(the_power) > 100)
+        {
+            error::instance() << f_current->get_position()
+                    << "a number with a dimension power 101 or more would generate a very large string so we refuse it at this time. You may use unitless numbers instead."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+
+        // calculate the new dimension, if power is negative, make sure
+        // to swap the existing dimension (i.e. px / em -> em / px)
+        dimension_vector_t org_dividend;
+        dimension_vector_t org_divisor;
+        dimension_vector_t dividend;
+        dimension_vector_t divisor;
+
+        if(the_power >= 0)
+        {
+            dimensions_to_vectors(lhs->get_position(), lhs->get_string(), org_dividend, org_divisor);
+        }
+        else
+        {
+            dimensions_to_vectors(lhs->get_position(), lhs->get_string(), org_divisor, org_dividend);
+        }
+
+        the_power = labs(the_power);
+        for(integer_t idx(0); idx < the_power; ++idx)
+        {
+            for(auto d : org_dividend)
+            {
+                dividend.push_back(d);
+            }
+            for(auto d : org_divisor)
+            {
+                divisor.push_back(d);
+            }
+        }
+
+        result->set_string(rebuild_dimension(dividend, divisor));
+    }
+
     return result;
 }
 
@@ -1260,18 +2040,12 @@ node::pointer_t expression::power()
     // power: post
     //      | post '**' post
 
+    // no loop because we do not allow 'a ** b ** c'
     node::pointer_t result(post());
-    if(!result)
+    if(result
+    && ((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "pow")
+      || f_current->is(node_type_t::POWER)))
     {
-        return node::pointer_t();
-    }
-
-    node_type_t op(multiplicative_operator(f_current));
-    while((f_current->is(node_type_t::IDENTIFIER) && f_current->get_string() == "pow")
-       || f_current->is(node_type_t::POWER))
-    {
-        position pos(f_current->get_position());
-
         // skip the power operator
         next();
 
@@ -1283,12 +2057,6 @@ node::pointer_t expression::power()
 
         // apply the power operation
         result = apply_power(result, rhs);
-        if(!result)
-        {
-            return node::pointer_t();
-        }
-
-        op = multiplicative_operator(f_current);
     }
 
     return result;
@@ -1299,6 +2067,8 @@ node::pointer_t expression::post()
     // post: unary
     //     | post '[' expression ']'
     //     | post '.' IDENTIFIER
+
+    // TODO: add support to access color members (i.e. $c.red <=> red($c))
 
     node::pointer_t result(unary());
     if(!result)
@@ -1325,11 +2095,12 @@ node::pointer_t expression::post()
 
             if(i->is(node_type_t::INTEGER))
             {
-                if(result->is(node_type_t::LIST))
+                if(result->is(node_type_t::ARRAY)
+                || result->is(node_type_t::LIST))
                 {
                     // index is 1 based (not like in C/C++)
-                    integer_t const idx(i->get_integer());
-                    if(static_cast<size_t>(idx - 1) >= result->size())
+                    integer_t const idx(i->get_integer() - 1);
+                    if(static_cast<size_t>(idx) >= result->size())
                     {
                         error::instance() << f_current->get_position()
                                 << "index "
@@ -1340,7 +2111,27 @@ node::pointer_t expression::post()
                                 << error_mode_t::ERROR_ERROR;
                         return node::pointer_t();
                     }
-                    result = result->get_child(idx - 1);
+                    result = result->get_child(idx);
+                }
+                else if(result->is(node_type_t::MAP))
+                {
+                    // index is 1 based (not like in C/C++)
+                    // maps are defined as <property name> ':' <property value>
+                    // so the numeric index being used to access the property
+                    // value it has to be x 2 + 1 (C index: 1, 3, 5...)
+                    integer_t const idx((i->get_integer() - 1) * 2 + 1);
+                    if(static_cast<size_t>(idx) >= result->size())
+                    {
+                        error::instance() << f_current->get_position()
+                                << "index "
+                                << idx
+                                << " is out of range. The allowed range is 1 to "
+                                << static_cast<int>(result->size())
+                                << "."
+                                << error_mode_t::ERROR_ERROR;
+                        return node::pointer_t();
+                    }
+                    result = result->get_child(idx);
                 }
                 else
                 {
@@ -1416,22 +2207,27 @@ node::pointer_t expression::unary()
     // unary: IDENTIFIER
     //      | INTEGER
     //      | DECIMAL_NUMBER
+    //      | EXCLAMATION
     //      | STRING
     //      | PERCENT
+    //      | BOOLEAN
     //      | HASH (-> COLOR)
     //      | UNICODE_RANGE
+    //      | URL
     //      | FUNCTION argument_list ')' -- including url()
     //      | '(' expression_list ')'
     //      | '+' power
     //      | '-' power
-    //      | '!' power
 
     switch(f_current->get_type())
     {
+    case node_type_t::ARRAY:
+    case node_type_t::BOOLEAN:
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::EXCLAMATION:  // this is not a BOOLEAN NOT operator...
-    case node_type_t::IDENTIFIER:
     case node_type_t::INTEGER:
+    case node_type_t::MAP:
+    case node_type_t::NULL_TOKEN:
     case node_type_t::PERCENT:
     case node_type_t::STRING:
     case node_type_t::UNICODE_RANGE:
@@ -1463,16 +2259,16 @@ node::pointer_t expression::unary()
 
             return excecute_function(func);
         }
-        break;
 
     case node_type_t::OPEN_PARENTHESIS:
         {
-            // skip the '('
-            next();
-
             // calculate the result of the sub-expression
             expression group(f_current, true);
             group.next();
+
+            // skip the '(' in the main expression
+            next();
+
             return group.expression_list();
         }
 
@@ -1511,7 +2307,6 @@ node::pointer_t expression::unary()
 
             }
         }
-        /*NOTREACHED*/
 
     // This is not too good, we actually transform the !important in
     // one 'EXCLAMATION + string' node; use the not(...) instead
@@ -1533,7 +2328,6 @@ node::pointer_t expression::unary()
     //        result->set_boolean(r == 0 ? true : false);
     //        return result;
     //    }
-    //    /*NOTREACHED*/
 
     case node_type_t::HASH:
         // a '#...' in an expression is expected to be a valid color
@@ -1552,13 +2346,47 @@ node::pointer_t expression::unary()
                 return node::pointer_t();
             }
             node::pointer_t color_node(new node(node_type_t::COLOR, f_current->get_position()));
-            color_node->set_integer(hash.get_color());
+            color_node->set_color(hash);
 
             // skip the HASH
             next();
             return color_node;
         }
-        /*NOTREACHED*/
+
+    case node_type_t::IDENTIFIER:
+        // an identifier may represent a color, null, true, or false
+        {
+            node::pointer_t result(f_current);
+            // skip the IDENTIFIER
+            next();
+
+            std::string const identifier(result->get_string());
+            if(identifier == "null")
+            {
+                return node::pointer_t(new node(node_type_t::NULL_TOKEN, result->get_position()));
+            }
+            if(identifier == "true")
+            {
+                node::pointer_t b(new node(node_type_t::BOOLEAN, result->get_position()));
+                b->set_boolean(true);
+                return b;
+            }
+            if(identifier == "false")
+            {
+                // a boolean is false by default, so no need to set the value
+                return node::pointer_t(new node(node_type_t::BOOLEAN, result->get_position()));
+            }
+            color col;
+            if(!col.set_color(identifier))
+            {
+                // it is not a color, return as is
+                return result;
+            }
+            node::pointer_t color_node(new node(node_type_t::COLOR, result->get_position()));
+            color_node->set_color(col);
+
+            return color_node;
+        }
 
     default:
         error::instance() << f_current->get_position()
@@ -1569,84 +2397,7 @@ node::pointer_t expression::unary()
         return node::pointer_t();
 
     }
-}
-
-node::pointer_t expression::excecute_function(node::pointer_t func)
-{
-    std::string const function_name(func->get_string());
-
-    if(function_name == "if")
-    {
-        // if(condition, if-true, if-false)
-        if(func->size() == 3)
-        {
-            node::pointer_t arg1(func->get_child(0));
-            if(arg1->size() != 1)
-            {
-                error::instance() << f_current->get_position()
-                        << "if() expects a boolean as its first argument."
-                        << error_mode_t::ERROR_ERROR;
-            }
-            else
-            {
-                int const r(boolean(arg1->get_child(0)));
-                if(r == 0 || r == 1)
-                {
-                    node::pointer_t result(func->get_child(r + 1));
-                    if(result->size() == 1)
-                    {
-                        return result->get_child(0);
-                    }
-                    node::pointer_t list(new node(node_type_t::LIST, result->get_position()));
-                    list->take_over_children_of(result);
-                    return list;
-                }
-            }
-        }
-        else
-        {
-            error::instance() << f_current->get_position()
-                    << "if() expects exactly 3 arguments."
-                    << error_mode_t::ERROR_ERROR;
-        }
-        return node::pointer_t();
-    }
-
-    if(function_name == "not")
-    {
-        if(func->size() == 1)
-        {
-            node::pointer_t arg1(func->get_child(0));
-            if(arg1->size() != 1)
-            {
-                error::instance() << f_current->get_position()
-                        << "not() expects a boolean as its first argument."
-                        << error_mode_t::ERROR_ERROR;
-            }
-            else
-            {
-                int const r(boolean(arg1->get_child(0)));
-                if(r == 0 || r == 1)
-                {
-                    node::pointer_t result(new node(node_type_t::BOOLEAN, func->get_position()));
-                    result->set_boolean(r == 0); // this is a not so false is true and vice versa
-                    return result;
-                }
-            }
-        }
-        else
-        {
-            error::instance() << f_current->get_position()
-                    << "not() expects exactly 1 argument."
-                    << error_mode_t::ERROR_ERROR;
-        }
-        return node::pointer_t();
-    }
-
-    // "unknown" functions have to be left alone since these maybe
-    // CSS functions that we do not want to transform (we already
-    // worked on their arguments.)
-    return func;
+    /*NOTREACHED*/
 }
 
 } // namespace csspp

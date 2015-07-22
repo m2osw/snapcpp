@@ -105,7 +105,7 @@ private:
 
     struct parameters_t
     {
-        QStringList                             f_params;
+        snap_string_list                        f_params;
         images_t                                f_image_stack;
         content::path_info_t::map_path_info_t   f_image_ipaths;
         QString                                 f_command; // mainly for errors

@@ -34,8 +34,31 @@
 ## Documentation
 ##
 AddDoxygenTarget(
-	csspp
-	${CSSPP_VERSION_MAJOR}
-	${CSSPP_VERSION_MINOR}
-	${CSSPP_VERSION_PATCH}
+    csspp
+    ${CSSPP_VERSION_MAJOR}
+    ${CSSPP_VERSION_MINOR}
+    ${CSSPP_VERSION_PATCH}
 )
+
+## Website front page is done manually here for now...
+## (At least until Snap! Websites works as expected for us.)
+
+execute_process(
+    COMMAND "date" "+%Y.%m.%d"
+    OUTPUT_VARIABLE NOW
+)
+
+# Win32 date would use something like this
+# execute_process(COMMAND "cmd" " /C date /T" OUTPUT_VARIABLE ${RESULT})
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/front-page.html.in
+    ${CMAKE_CURRENT_BINARY_DIR}/front-page.html
+)
+
+# Local Variables:
+# indent-tabs-mode: nil
+# tab-width: 4
+# End:
+
+# vim: ts=4 sw=4 et nocindent

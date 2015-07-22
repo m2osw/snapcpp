@@ -75,8 +75,8 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_JAVASCRIPT_MINIMIZED_COMPRESSED:
         return "javascript::minimized::compressed";
 
-    case name_t::SNAP_NAME_JAVASCRIPT_ROW:
-        return "javascripts";
+    //case name_t::SNAP_NAME_JAVASCRIPT_ROW: -- use SNAP_NAME_CONTENT_FILES_JAVASCRIPTS instead
+    //    return "javascripts";
 
     default:
         // invalid index
@@ -603,14 +603,14 @@ SNAP_LOG_TRACE() << "javascript: result = " << engine.hasUncaughtException() << 
  * The JavaScript plugin cannot depend on the content plugin (because
  * the layout depends on JavaScript and content depends on layout)
  *
- * \param[in] file_key  The row where the file is saved in \p files_table.
+ * \param[in] file_row  The row where the file is saved in \p files_table.
  * \param[in] file  The file to be processed.
  */
-void javascript::on_process_attachment(QByteArray const& file_key, content::attachment_file const& file)
+void javascript::on_process_attachment(QtCassandra::QCassandraRow::pointer_t file_row, content::attachment_file const& file)
 {
     // TODO: got to finish the as2js compiler...
-    (void)file_key;
-    (void)file;
+    static_cast<void>(file_row);
+    static_cast<void>(file);
 }
 
 

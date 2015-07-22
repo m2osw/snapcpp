@@ -43,7 +43,6 @@ enum class name_t
     SNAP_NAME_CONTENT_CHILDREN,
     SNAP_NAME_CONTENT_CLONE,
     SNAP_NAME_CONTENT_CLONED,
-    SNAP_NAME_CONTENT_COMPRESSOR_UNCOMPRESSED,
     SNAP_NAME_CONTENT_CONTENT_TYPES,
     SNAP_NAME_CONTENT_CONTENT_TYPES_NAME,
     SNAP_NAME_CONTENT_COPYRIGHTED,
@@ -55,12 +54,16 @@ enum class name_t
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
     SNAP_NAME_CONTENT_FILES_CREATED,
     SNAP_NAME_CONTENT_FILES_CREATION_TIME,
+    SNAP_NAME_CONTENT_FILES_CSS,
     SNAP_NAME_CONTENT_FILES_DATA,
     SNAP_NAME_CONTENT_FILES_DATA_GZIP_COMPRESSED,
+    SNAP_NAME_CONTENT_FILES_DATA_MINIFIED,
+    SNAP_NAME_CONTENT_FILES_DATA_MINIFIED_GZIP_COMPRESSED,
     SNAP_NAME_CONTENT_FILES_DEPENDENCY,
     SNAP_NAME_CONTENT_FILES_FILENAME,
     SNAP_NAME_CONTENT_FILES_IMAGE_HEIGHT,
     SNAP_NAME_CONTENT_FILES_IMAGE_WIDTH,
+    SNAP_NAME_CONTENT_FILES_JAVASCRIPTS,
     SNAP_NAME_CONTENT_FILES_MIME_TYPE,
     SNAP_NAME_CONTENT_FILES_ORIGINAL_MIME_TYPE,
     SNAP_NAME_CONTENT_FILES_MODIFICATION_TIME,
@@ -71,6 +74,8 @@ enum class name_t
     SNAP_NAME_CONTENT_FILES_SECURITY_REASON,
     SNAP_NAME_CONTENT_FILES_SIZE,
     SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED,
+    SNAP_NAME_CONTENT_FILES_SIZE_MINIFIED,
+    SNAP_NAME_CONTENT_FILES_SIZE_MINIFIED_GZIP_COMPRESSED,
     SNAP_NAME_CONTENT_FILES_TABLE,
     SNAP_NAME_CONTENT_FILES_UPDATED,
     SNAP_NAME_CONTENT_FINAL,
@@ -680,9 +685,9 @@ public:
     QtCassandra::QCassandraTable::pointer_t get_revision_table();
     QtCassandra::QCassandraTable::pointer_t get_processing_table();
     QtCassandra::QCassandraValue get_content_parameter(path_info_t & path, QString const & param_name, param_revision_t revision_type);
+    snap_child *        get_snap();
 
     // revision control
-    snap_child *        get_snap();
     void                invalid_revision_control(QString const & version);
     snap_version::version_number_t get_current_branch(QString const & key, bool working_branch);
     snap_version::version_number_t get_current_user_branch(QString const & key, QString const & locale, bool working_branch);
@@ -703,12 +708,14 @@ public:
     void                set_current_revision(QString const & key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const & locale, bool working_branch);
     QString             set_revision_key(QString const & key, snap_version::version_number_t branch, snap_version::version_number_t revision, QString const & locale, bool working_branch);
     QString             set_revision_key(QString const & key, snap_version::version_number_t branch, QString const & revision, QString const & locale, bool working_branch);
-    path_info_t         get_path_info(QString const & cpath, bool main_page);
+
+    // cloning
     virtual void        repair_link_of_cloned_page(QString const & clone, snap_version::version_number_t branch_number, links::link_info const & source, links::link_info const & destination, bool const cloning);
     bool                clone_page(clone_info_t & source, clone_info_t & destination);
     bool                move_page(path_info_t & ipath_source, path_info_t & ipath_destination);
     bool                trash_page(path_info_t & ipath);
 
+    // signal handling
     void                on_bootstrap(snap_child * snap);
     void                on_execute(QString const & uri_path);
     void                on_save_content();
@@ -718,12 +725,13 @@ public:
     void                on_load_file(snap_child::post_file_t & file, bool & found);
     void                on_cell_is_secure(QString const & table, QString const & row, QString const & cell, server::secure_field_flag_t & secure);
 
+    // content plugin signals
     SNAP_SIGNAL(new_content, (path_info_t & path), (path));
     SNAP_SIGNAL_WITH_MODE(create_content, (path_info_t & path, QString const & owner, QString const & type), (path, owner, type), START_AND_DONE);
     SNAP_SIGNAL(create_attachment, (attachment_file & file, snap_version::version_number_t branch_number, QString const & locale), (file, branch_number, locale));
     SNAP_SIGNAL(modified_content, (path_info_t & ipath), (ipath));
     SNAP_SIGNAL_WITH_MODE(check_attachment_security, (attachment_file const & file, permission_flag & secure, bool const fast), (file, secure, fast), NEITHER);
-    SNAP_SIGNAL(process_attachment, (QByteArray const & key, attachment_file const & file), (key, file));
+    SNAP_SIGNAL(process_attachment, (QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const & file), (file_row, file));
     SNAP_SIGNAL(page_cloned, (cloned_tree_t const & tree), (tree));
     SNAP_SIGNAL(copy_branch_cells, (QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
 
@@ -783,11 +791,15 @@ private:
     typedef QVector<javascript_ref_t> javascript_ref_map_t;
 
     void        initial_update(int64_t variables_timestamp);
+    void        remove_files_compressor(int64_t variables_timestamp);
     void        content_update(int64_t variables_timestamp);
+
     void        backend_action_reset_status(bool const force);
     void        backend_process_status();
     void        backend_process_files();
     void        backend_action_dir_resources();
+    void        backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
+    void        backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
 
     zpsnap_child_t                                  f_snap;
     QtCassandra::QCassandraTable::pointer_t         f_content_table;

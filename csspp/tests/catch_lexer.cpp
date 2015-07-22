@@ -596,6 +596,24 @@ TEST_CASE("Simple tokens", "[lexer] [basics] [delimiters]")
         REQUIRE_ERRORS("");
     }
 
+    // '==' -> EQUAL + warning
+    {
+        std::stringstream ss;
+        csspp::position pos("test.css");
+        csspp::lexer l(ss, pos);
+        ss << "==";
+
+        // so far, no error
+        REQUIRE_ERRORS("");
+
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EQUAL));
+        REQUIRE_ERRORS("test.css(1): warning: we accepted '==' instead of '=' in an expression, you probably want to change the operator to just '=', though.\n");
+        REQUIRE(l.next_token()->is(csspp::node_type_t::EOF_TOKEN));
+
+        // make sure we got the expected error
+        REQUIRE_ERRORS("");
+    }
+
     // ',' -> COMMA
     {
         std::stringstream ss;
@@ -3842,7 +3860,7 @@ TEST_CASE("Numbers", "[lexer] [number]")
     // (we limit those to 8 digits at this time)
     {
         std::stringstream ss;
-        ss << "decimal_part_too_long: 1.0000000000000000000";
+        ss << "decimal_part_too_long: 1.000000000000000000000";
         csspp::position pos("test.css");
         csspp::lexer l(ss, pos);
 

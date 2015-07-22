@@ -339,7 +339,7 @@ int process::run()
         //typedef controlled_vars::ptr_need_init<process> mpprocess_t;
         typedef controlled_vars::ptr_auto_init<FILE> zpfile_t;
 
-        raii_pipe(/*process *p,*/ const QString& command, const QStringList& arguments)
+        raii_pipe(/*process *p,*/ const QString& command, const snap_string_list& arguments)
             //: f_process(p)
             //, f_file(NULL) -- auto-init
         {

@@ -1,0 +1,18 @@
+
+Note: at this point we only support Linux. The library is likely to compile
+      and work under other OSes though.
+
+To generate csspp from its tarball, you need cmake and a C++ compiler,
+then run the following commands:
+
+   mkdir BUILD
+   cd BUILD
+   cmake ..
+   make
+
+The results will be under the "dist" directory. However, that is "installed"
+meaning that it won't know how to find shared libraries. You may, however,
+immediately test the binary "csspp/src/csspp".
+
+The dist directory is otherwise ready to be installed under /usr.
+

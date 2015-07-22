@@ -535,7 +535,7 @@ int permissions::sets_t::get_user_rights_count() const
  * \param[in] plugin  The plugin adding this permission.
  * \param[in] right  The right the plugin offers.
  */
-void permissions::sets_t::add_plugin_permission(const QString & plugin, QString right)
+void permissions::sets_t::add_plugin_permission(QString const & plugin, QString right)
 {
     // so the startsWith() works as is:
     if(right.right(1) != "/")
@@ -1046,12 +1046,14 @@ bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets
 {
     static_cast<void>(perms);
 
-    // the user plugin cannot include the permissions (since the
-    // permissions includes the user plugin) so we implement this
+    // the user plugin cannot include the permissions plugin (since the
+    // permissions plugin includes the user plugin) so we implement this
     // user plugin feature in the permissions
     content::path_info_t & ipath(sets.get_ipath());
     if(ipath.get_cpath().left(5) == "user/")
     {
+        // user/### cannot be a dynamic path so we do not need to checl
+        // for a possibly renamed ipath at this level
         QString const user_id(ipath.get_cpath().mid(5));
         QByteArray id_str(user_id.toUtf8());
         char const *s;
@@ -1063,9 +1065,6 @@ bool permissions::get_plugin_permissions_impl(permissions * perms, sets_t & sets
                 break;
             }
         }
-        // XXX: I changed "*s != '\0'" with '==', I think I made a mistake
-        //      before and used '!=' when I only wanted to add that page
-        //      if we are on it (i.e. add "user/123" to the permissions)
         if(*s == '\0')
         {
 #ifdef DEBUG
@@ -1085,51 +1084,73 @@ std::cerr << "from " << user_id << " -> ";
     // this very page may be assigned direct permissions
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
     QString const site_key(f_snap->get_site_key_with_slash());
-    QString key(ipath.get_key());
-    if(!content_table->exists(key)
-    || !content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+    QString key(ipath.get_parameter("renamed_path"));
+    if(!key.isEmpty())
     {
-        // if that page does not exist, it may be dynamic, try to go up
-        // until we have one name in the path then check that the page
-        // allows such, if so, we have a chance, otherwise no rights
-        // from here... (as an example see /verify in plugins/users/content.xml)
-        QStringList parts(ipath.get_cpath().split('/'));
-        int depth(0);
-        for(;;)
+        content::path_info_t renamed_ipath;
+        renamed_ipath.set_path(key);
+        key = renamed_ipath.get_key();
+        if(!content_table->exists(key)
+        || !content_table->row(key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
         {
-            parts.pop_back();
-            if(parts.isEmpty())
+            // we always immediately expect a valid path when a plugin
+            // marks a path calling the (see plugin/path/path.h):
+            //
+            //     dynamic_plugin_t::set_plugin_if_renamed()
+            //
+            // although really we let other plugins choose what to do next
+            return true;
+        }
+        ipath.set_real_path(key);
+    }
+    else
+    {
+        key = ipath.get_key();
+        if(!content_table->exists(key)
+        || !content_table->row(key)->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+        {
+            // if that page does not exist, it may be dynamic, try to go up
+            // until we have one name in the path then check that the page
+            // allows such, if so, we have a chance, otherwise no rights
+            // from here... (as an example see /verify in plugins/users/content.xml)
+            snap_string_list parts(ipath.get_cpath().split('/'));
+            int depth(0);
+            for(;;)
             {
-                // let other modules take over, we are done here
+                parts.pop_back();
+                if(parts.isEmpty())
+                {
+                    // let other modules take over, we are done here
+                    return true;
+                }
+                ++depth;
+                QString const parent_path(parts.join("/"));
+                key = site_key + parent_path;
+                if(content_table->exists(key))
+                {
+                    break;
+                }
+            }
+            QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
+            char const *dynamic(get_name(name_t::SNAP_NAME_PERMISSIONS_DYNAMIC));
+            if(!row->exists(dynamic))
+            {
+                // well, there is a page, but it does not authorize sub-pages
                 return true;
             }
-            ++depth;
-            QString const parent_path(parts.join("/"));
-            key = site_key + parent_path;
-            if(content_table->exists(key))
+            QtCassandra::QCassandraValue value(row->cell(dynamic)->value());
+            if(depth > value.signedCharValue())
             {
-                break;
+                // there is a page, it gives permissions, but this very
+                // page is too deep to be allowed
+                return true;
             }
+            // IMPORTANT NOTE: the ipath here is a reference to the ipath
+            //                 we used to call the permission function in
+            //                 the path plugin so it will get the real
+            //                 path info on return!
+            ipath.set_real_path(key);
         }
-        QtCassandra::QCassandraRow::pointer_t row(content_table->row(key));
-        char const *dynamic(get_name(name_t::SNAP_NAME_PERMISSIONS_DYNAMIC));
-        if(!row->exists(dynamic))
-        {
-            // well, there is a page, but it does not authorize sub-pages
-            return true;
-        }
-        QtCassandra::QCassandraValue value(row->cell(dynamic)->value());
-        if(depth > value.signedCharValue())
-        {
-            // there is a page, it gives permissions, but this very
-            // page is too deep to be allowed
-            return true;
-        }
-        // TODO: here we get the real path in an ipath that ephemerous
-        //       somehow we would need that real path to make it back
-        //       to the ipath we use in the path plugin when calling the
-        //       verify permission function
-        ipath.set_real_path(key);
     }
 
     content::path_info_t page_ipath;

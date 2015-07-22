@@ -1,110 +1,75 @@
-csspp (1.0.0.18~trusty) trusty; urgency=high
+csspp (1.0.4.4~trusty) trusty; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Fri, 26 Jun 2015 03:01:19 -0700
+ -- Build Server <build@m2osw.com>  Wed, 15 Jul 2015 03:01:45 -0700
 
-csspp (1.0.0.17~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 25 Jun 2015 03:01:41 -0700
-
-csspp (1.0.0.16~trusty) trusty; urgency=high
+csspp (1.0.4.3~trusty) trusty; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Tue, 23 Jun 2015 03:01:41 -0700
+ -- Build Server <build@m2osw.com>  Tue, 14 Jul 2015 03:01:46 -0700
 
-csspp (1.0.0.15~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Sun, 21 Jun 2015 03:01:37 -0700
-
-csspp (1.0.0.14~trusty) trusty; urgency=high
+csspp (1.0.4.2~trusty) trusty; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Sat, 20 Jun 2015 03:01:45 -0700
+ -- Build Server <build@m2osw.com>  Mon, 13 Jul 2015 14:45:50 -0700
 
-csspp (1.0.0.13~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 18 Jun 2015 03:01:41 -0700
-
-csspp (1.0.0.12~trusty) trusty; urgency=high
+csspp (1.0.4.1~trusty) trusty; urgency=high
 
   * Nightly build.
 
- -- Build Server <build@m2osw.com>  Wed, 17 Jun 2015 03:01:49 -0700
+ -- Build Server <build@m2osw.com>  Mon, 13 Jul 2015 12:57:26 -0700
 
-csspp (1.0.0.11~trusty) trusty; urgency=high
+csspp (1.0.4~trusty) trusty; urgency=high
 
-  * Nightly build.
+  * Added proper support for dimensions in various places.
+  * Wrote test to verify multiplicative expressions (100% coverage).
+  * Fixed the multiplicative operations according to the test results.
+  * Fixed the handling of expressions written between parenthesis.
+  * Added support for many color operations.
+  * Added support to multiply unicode range with NULL.
+  * Added a new page to list expressions by type of data.
+  * Fixed the get_color()/get_hsl() which were not const yet.
+  * Fixed compiler to handle component values that are not in a sub-list.
+  * Removed the special handling of '=' + '=' from expressions.
+  * Applied a fix to the handling of the power operator, not tested yet.
+  * Updated the additive test to cover 100% of the additions.
+  * Added a test for the power operator.
 
- -- Build Server <build@m2osw.com>  Tue, 16 Jun 2015 03:01:36 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Thu,  9 Jul 2015 19:00:00 -0700
 
-csspp (1.0.0.10~trusty) trusty; urgency=high
+csspp (1.0.3~trusty) trusty; urgency=high
 
-  * Nightly build.
+  * Added a --no-logo command line option.
+  * Allow comments to appear within { ... }, but still just by themselves
+    (this allows for conditionally adding @preserve comments.)
+  * Added BOOLEAN support as a unary expression.
+  * Added "border-radius" as a "font metric" field since it uses '/' to
+    separate vertical and horizontal lengths.
+  * Fixed a compiler test tags which were completely incorrect.
+  * Added a test to verify the --no-logo option.
+  * Changed the '[hide]' tag with '[hidden]' because '[hide]' is a
+    special catch tag which prevents such tests from being run by default.
+  * Updated the pack script to verify versions.
+  * Started test to verify the expression class.
 
- -- Build Server <build@m2osw.com>  Mon, 15 Jun 2015 03:01:44 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sun,  5 Jul 2015 19:58:31 -0700
 
-csspp (1.0.0.9~trusty) trusty; urgency=high
+csspp (1.0.2~trusty) trusty; urgency=high
 
-  * Nightly build.
+  * Fixed the TRUE and FALSE in the node header as these may be #define names.
+  * Scripts were not being added to the library package as expected.
+  * Various small enhancements.
 
- -- Build Server <build@m2osw.com>  Sun, 14 Jun 2015 03:01:49 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 10 Jun 2015 05:18:21 -0700
 
-csspp (1.0.0.8~trusty) trusty; urgency=high
+csspp (1.0.1~trusty) trusty; urgency=high
 
-  * Nightly build.
+  * First public release.
 
- -- Build Server <build@m2osw.com>  Sat, 13 Jun 2015 03:01:25 -0700
-
-csspp (1.0.0.7~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Fri, 12 Jun 2015 03:01:43 -0700
-
-csspp (1.0.0.6~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 11 Jun 2015 03:01:43 -0700
-
-csspp (1.0.0.5~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 11 Jun 2015 01:30:24 -0700
-
-csspp (1.0.0.4~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Thu, 11 Jun 2015 00:20:33 -0700
-
-csspp (1.0.0.3~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 10 Jun 2015 19:36:37 -0700
-
-csspp (1.0.0.2~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 10 Jun 2015 17:01:35 -0700
-
-csspp (1.0.0.1~trusty) trusty; urgency=high
-
-  * Nightly build.
-
- -- Build Server <build@m2osw.com>  Wed, 10 Jun 2015 05:18:21 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 10 Jun 2015 05:18:21 -0700
 
 csspp (1.0.0~trusty) trusty; urgency=high
 

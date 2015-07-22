@@ -20,7 +20,6 @@
 #include "csspp/csspp.h"
 
 #include <memory>
-#include <string>
 
 namespace csspp
 {

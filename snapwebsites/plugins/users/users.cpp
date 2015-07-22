@@ -535,7 +535,7 @@ void users::on_process_cookies()
     {
         // is that session a valid user session?
         QString const session_cookie(f_snap->cookie(user_cookie_name));
-        QStringList const parameters(session_cookie.split("/"));
+        snap_string_list const parameters(session_cookie.split("/"));
         QString const session_key(parameters[0]);
         QString random_key; // TODO: really support the case of "no random key"???
         if(parameters.size() > 1)
@@ -999,7 +999,7 @@ void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynami
     }
     else if(cpath.left(5) == "user/")       // show a user profile (user/ is followed by the user identifier or some edit page such as user/password)
     {
-        QStringList const user_segments(cpath.split("/"));
+        snap_string_list const user_segments(cpath.split("/"));
         if(user_segments.size() == 2)
         {
             plugin_info.set_plugin(this);
@@ -4062,12 +4062,12 @@ void users::set_referrer( QString path )
     path = ipath.get_key();  // make sure it is canonicalized
 
     QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
-    if(!content_table->exists(ipath.get_key()))
+    if(!content_table->exists(ipath.get_key())
+    && ipath.get_real_key().isEmpty())
     {
-        // TODO: this test fails when we hit dynamic pages!
-        //       we will have to test the real path once it is fixed to
-        //       see whether it is possible that a parent would accept
-        //       this page when we cannot find the page directly
+        // TODO: dynamic pages are expected to end up as a "real key" entry
+        //       we will need to do more tests to make sure this works as
+        //       expected, although this code should work already
         //
         SNAP_LOG_ERROR("path \"")(path)("\" was not found in the database?!");
         return;

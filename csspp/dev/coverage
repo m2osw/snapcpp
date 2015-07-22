@@ -46,16 +46,21 @@ then
     echo "                  (see list below, do NOT include the square brackets)"
     echo
     echo "To run specific tests, use one of the tags defined in the test suite."
+    echo "   '[additive]' (expressions sub-set)"
     echo "   '[assembler]'"
     echo "   '[color]'"
     echo "   '[compiler]'"
     echo "   '[csspp]'"
     echo "   '[error]'"
+    echo "   '[expression]' (all expressions)"
     echo "   '[lexer]'"
+    echo "   '[multiplicative]' (expressions sub-set)"
     echo "   '[node]'"
     echo "   '[nth-child]'"
     echo "   '[parser]'"
     echo "   '[position]'"
+    echo "   '[power]'"
+    echo "   '[unary]'"
     echo "   '[unicode-range]'"
     echo "You may use the list option to see the available tests and tags:"
     echo "   csspp_tests --list-tests"
@@ -69,7 +74,9 @@ then
     mkdir -p tmp/build
     echo "<html><head><title>Coverage</title></head><body><h1>Coverage</h1>" >tmp/build/index.html
     count=1
-    for t in assembler color compiler csspp error lexer node nth-child parser position unicode-range
+    for t in additive assembler color compiler coverage csspp error \
+             expression lexer multiplicative node nth-child parser \
+             position power unary unicode-range
     do
         echo -n "`date +'%D %T'`: Building: $t ... "
         echo "<h2>${count}. <a href='csspp_coverage_${t}_html/index.html'>$t<a/></h2>" >>tmp/build/index.html
@@ -212,14 +219,18 @@ end_date=`date`
 
 # Statistics
 echo "<html><head><title>csspp $FULL_VERSION statistics</title></head><body>" >${DIRNAME}_html/statistics.html
-echo "<h3>Statistics of the csspp $FULL_VERSION code</h3><pre>" >>${DIRNAME}_html/statistics.html
+echo "<h3>Statistics of the csspp $FULL_VERSION code</h3>" >>${DIRNAME}_html/statistics.html
+echo "<p>Back to <a href=\"..\">CSS Preprocessor Coverage Data</a>.</p>" >>${DIRNAME}_html/statistics.html
+echo "<pre>" >>${DIRNAME}_html/statistics.html
 cloc --autoconf --by-file-by-lang $SOURCE_PATH/include/ $SOURCE_PATH/lib/ $SOURCE_PATH/src/ >>${DIRNAME}_html/statistics.html
 echo "</pre><h3>Statistics of the csspp $FULL_VERSION tests</h3><pre>" >>${DIRNAME}_html/statistics.html
 cloc --autoconf --by-file-by-lang $SOURCE_PATH/tests/ >>${DIRNAME}_html/statistics.html
 echo "</pre></body></html>" >>${DIRNAME}_html/statistics.html
 
 # Test output (Logs)
-echo "<html><head><title>csspp $FULL_VERSION test logs</title></head><body><h3>Logs for the csspp $FULL_VERSION tests</h3><p>Tests started on $start_date and finished on $end_date</p><pre>" >${DIRNAME}_html/test_log.html
+echo "<html><head><title>csspp $FULL_VERSION test logs</title></head><body>" >${DIRNAME}_html/test_log.html
+echo "<p>Back to <a href=\"../..\">CSS Preprocessor Coverage Data</a>.</p>" >>${DIRNAME}_html/test_log.html
+echo "<h3>Logs for the csspp $FULL_VERSION tests</h3><p>Tests started on $start_date and finished on $end_date</p><pre>" >>${DIRNAME}_html/test_log.html
 if test -f $DIRNAME/test_log.txt
 then
     # If test_log.txt does not exist, the user got the logs in the
@@ -237,14 +248,19 @@ then
 
     # For publication, if that directory does not exist, you probably don't
     # have a website to display this data
-    if test -d /usr/clients/www/alexis.m2osw.com/public_html/csspp
+    if test -d /usr/clients/www/lcov.csspp.org/public_html
     then
-        mkdir -p /usr/clients/www/alexis.m2osw.com/public_html/csspp/documentation
-        cp -r $DIRNAME/doc/csspp-doc-*/* /usr/clients/www/alexis.m2osw.com/public_html/csspp/documentation/.
-        cp $SOURCE_PATH/dev/index.php /usr/clients/www/alexis.m2osw.com/public_html/csspp/.
-        mkdir -p /usr/clients/www/alexis.m2osw.com/public_html/csspp/csspp-$FULL_VERSION
-        cp -r ${DIRNAME}_html/* /usr/clients/www/alexis.m2osw.com/public_html/csspp/csspp-$FULL_VERSION/.
-        cp ${DIRNAME}_html/statistics.html /usr/clients/www/alexis.m2osw.com/public_html/csspp/csspp-$FULL_VERSION/.
+        mkdir -p /usr/clients/www/lcov.csspp.org/public_html/documentation
+        cp -r $DIRNAME/doc/csspp-doc-*/* /usr/clients/www/lcov.csspp.org/public_html/documentation/.
+        cp $SOURCE_PATH/dev/index.php /usr/clients/www/lcov.csspp.org/public_html/.
+        mkdir -p /usr/clients/www/lcov.csspp.org/public_html/csspp-$FULL_VERSION
+        cp -r ${DIRNAME}_html/* /usr/clients/www/lcov.csspp.org/public_html/csspp-$FULL_VERSION/.
+        cp ${DIRNAME}_html/statistics.html /usr/clients/www/lcov.csspp.org/public_html/csspp-$FULL_VERSION/.
+
+        scp ${DIRNAME}/doc/front-page.html build.m2osw.com:/var/www/csspp/public_html/index.html
+        scp ${SOURCE_PATH}/doc/favicon.ico build.m2osw.com:/var/www/csspp/public_html/favicon.ico
+        scp ${SOURCE_PATH}/doc/images/csspp-logo.png build.m2osw.com:/var/www/csspp/public_html/images/csspp-logo.png
+        scp ${SOURCE_PATH}/doc/images/open-source-initiative-logo.png build.m2osw.com:/var/www/csspp/public_html/images/open-source-initiative-logo.png
     fi
 fi
 

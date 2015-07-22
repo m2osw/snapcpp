@@ -531,7 +531,7 @@ QString layout::define_layout(content::path_info_t& ipath, QString const& name, 
     {
         // the layout name may have two entries: "row/cell" so we check
         // that first and cut the name in half if required
-        QStringList const names(layout_name.split("/"));
+        snap_string_list const names(layout_name.split("/"));
         if(names.size() > 2)
         {
             // can be one or two workds, no more
@@ -1059,7 +1059,7 @@ void layout::generate_boxes(content::path_info_t& ipath, QString const& layout_n
 
         if(!box_list.isEmpty() && box_list != ".")
         {
-            QStringList names(box_list.split(","));
+            snap_string_list names(box_list.split(","));
             QVector<QDomElement> dom_boxes;
             int const max_boxes(names.size());
             for(int i(0); i < max_boxes; ++i)
@@ -1725,7 +1725,7 @@ void layout::on_load_file(snap_child::post_file_t& file, bool& found)
             int i(7);
             for(; i < filename.length() && filename[i] == '/'; ++i);
             filename = filename.mid(i);
-            QStringList const parts(filename.split('/'));
+            snap_string_list const parts(filename.split('/'));
             if(parts.size() != 2)
             {
                 // wrong number of parts...

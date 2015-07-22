@@ -259,7 +259,7 @@ bool snap_uri::set_uri(QString const& uri)
     }
 
     // break-up the domain in sub-domains, base domain, and TLD
-    QStringList sub_domain_names;
+    snap_string_list sub_domain_names;
     QString domain_name;
     QString tld;
     if(!process_domain(full_domain_name, sub_domain_names, domain_name, tld))
@@ -268,7 +268,7 @@ bool snap_uri::set_uri(QString const& uri)
     }
 
     // now we're ready to parse further (i.e. path)
-    QStringList uri_path;
+    snap_string_list uri_path;
     if(!u->isNull())
     {
         // skip the '/'
@@ -796,7 +796,7 @@ QString const& snap_uri::protocol() const
  * \return true if the function succeeds, false otherwise
  */
 bool snap_uri::process_domain(QString const & full_domain_name,
-            QStringList & sub_domain_names, QString & domain_name, QString & tld)
+            snap_string_list & sub_domain_names, QString & domain_name, QString & tld)
 {
     // first we need to determine the TLD, we use the tld()
     // function from the libtld library for this purpose
@@ -898,7 +898,7 @@ bool snap_uri::process_domain(QString const & full_domain_name,
  */
 void snap_uri::set_domain(QString const& full_domain_name)
 {
-    QStringList sub_domain_names;
+    snap_string_list sub_domain_names;
     QString domain_name;
     QString tld;
     if(!process_domain(full_domain_name, sub_domain_names, domain_name, tld))
@@ -1014,7 +1014,7 @@ QString snap_uri::sub_domain(int part) const
  *
  * \return A list of strings representing the sub-domains.
  */
-QStringList const& snap_uri::sub_domains_list() const
+snap_string_list const& snap_uri::sub_domains_list() const
 {
     return f_sub_domains;
 }
@@ -1132,7 +1132,7 @@ void snap_uri::set_path(QString uri_path)
             uri_path = f_path.join("/") + "/" + uri_path;
         }
     }
-    QStringList p(uri_path.split('/'));
+    snap_string_list p(uri_path.split('/'));
     int max_parts(p.size());
     for(int i(0); i < max_parts; ++i)
     {
@@ -1187,7 +1187,7 @@ QString snap_uri::path(bool encoded) const
     {
         QString output;
         controlled_vars::tlbool_t first;
-        for(QStringList::const_iterator it(f_path.begin());
+        for(snap_string_list::const_iterator it(f_path.begin());
                     it != f_path.end(); ++it)
         {
             if(first)
@@ -1266,7 +1266,7 @@ QString snap_uri::path_folder_name(int part) const
  *
  * \return A constant reference to the list of string forming the path.
  */
-QStringList const& snap_uri::path_list() const
+snap_string_list const& snap_uri::path_list() const
 {
     return f_path;
 }
@@ -1464,8 +1464,8 @@ void snap_uri::unset_query_option(QString const& name)
  */
 void snap_uri::set_query_string(QString const& uri_query_string)
 {
-    QStringList value_pairs(uri_query_string.split('&', QString::SkipEmptyParts));
-    for(QStringList::iterator it = value_pairs.begin();
+    snap_string_list value_pairs(uri_query_string.split('&', QString::SkipEmptyParts));
+    for(snap_string_list::iterator it = value_pairs.begin();
                             it != value_pairs.end();
                             ++it)
     {
@@ -2534,7 +2534,7 @@ bool snap_uri_rules::parse_domain_rules(const QString& script, QByteArray& resul
         {
             QSharedPointer<domain_variable> var((*info)[j]);
             const QString& var_name(var->get_name());
-            const QStringList var_qualified_names(var_name.split("::"));
+            const snap_string_list var_qualified_names(var_name.split("::"));
             if(var_names.contains(var_qualified_names.last()))
             {
                 // the same domain variable name was defined twice
@@ -3286,7 +3286,7 @@ bool snap_uri_rules::parse_website_rules(QString const& script, QByteArray& resu
         for(int j = 0; j < info_max; ++j) {
             QSharedPointer<website_variable> var((*info)[j]);
             const QString& var_name(var->get_name());
-            const QStringList var_qualified_names(var_name.split("::"));
+            const snap_string_list var_qualified_names(var_name.split("::"));
             if(var_names.contains(var_qualified_names.last()))
             {
                 // the same website variable name was defined twice

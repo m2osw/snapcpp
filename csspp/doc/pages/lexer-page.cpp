@@ -70,7 +70,7 @@
  *
  * The lexer is composed of the following rules:
  *
- * \section input-stream Input Stream (CSS Preprocessor Detail)
+ * \section input_stream Input Stream (CSS Preprocessor Detail)
  *
  * Contrary to CSS 3 which allows for any encoding as long as the first 128
  * bytes match ASCII sufficiently, CSS Preprocessor only accepts UTF-8. This
@@ -161,7 +161,7 @@
  *
  * CSS 3 references ASCII and non-ASCII characters.
  *
- * \section non-ascii Non-ASCII Character "NON-ASCII" (CSS 3)
+ * \section non_ascii Non-ASCII Character "NON-ASCII" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -188,7 +188,7 @@
  * In CSS 2.x, characters between \80 and \9F were considered invalid
  * graphic controls.
  *
- * \section c-like-comment C-Like Comment "COMMENT" (CSS 3)
+ * \section c_like_comment C-Like Comment "COMMENT" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -239,7 +239,7 @@
  * Note that "anything" means any character that is not considered invalid
  * by the CSS Preprocessor implementation.
  *
- * \section cpp-comment C++ Comment "COMMENT" (CSS Preprocessor Extension)
+ * \section cpp_comment C++ Comment "COMMENT" (CSS Preprocessor Extension)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -290,8 +290,8 @@
  * Note that "anything" means any character that is not considered invalid
  * by the CSS Preprocessor implementation.
  *
- * The CSS Preprocessor returns a multiple C++ comment appearing on multiple
- * lines one after another as one C++ comment token. This is used that way
+ * The CSS Preprocessor returns a C++ comment appearing on multiple lines,
+ * one after another, as a single C++ comment token. This is used that way
  * because it is possible to mark a comment as \@preserve in order to keep
  * said comment in the output. In most cases this is used in the comment at
  * the top or bottom which includes the copyright notice about the document.
@@ -302,6 +302,10 @@
  * //
  * // @preserve
  * \endcode
+ *
+ * \note
+ * C++ comments are output as standard C-like comments so they are 100%
+ * compatible with CSS.
  * 
  * \section newline Newline "NEWLINE" (CSS 3)
  *
@@ -362,7 +366,7 @@
  *
  * Note that line counting also happens in C++ and C-like comments.
  *
- * \section non-printable Non-Printable "NON-PRINTABLE" (CSS 3)
+ * \section non_printable Non-Printable "NON-PRINTABLE" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -474,10 +478,10 @@
  * CSS 3 defines a whitespace, a whitespace-token, and a ws* to represents
  * all those possibilities.
  *
- * \code
+ * \code{.scss}
  *      a - b    // 'a' 'minus' 'b'
- *      a -b     // 'a' '-b'
- *      a-b      // 'a-b'
+ *      a -b     // 'a' '-b', which are two identifiers
+ *      a-b      // 'a-b', which is one identifier
  * \endcode
  *
  * \section digit Decimal Digit "DIGIT" (CSS 3)
@@ -726,7 +730,7 @@
  * characters. This allows for CSS to represent any character that can
  * be used in an attribute value in HTML.
  *
- * \code
+ * \code{.scss}
  *      .class [attribute] #id :state { ... }
  * \endcode
  *
@@ -762,11 +766,11 @@
  * parenthesis. No WHITESPACE is allowed between the IDENTIFIER and
  * the parenthesis.
  *
- * \code
+ * \code{.css}
  *      a { color: rgba(255, 255, 255, 0.3); }
  * \endcode
  *
- * \section at-keyword At Keyword (AT-KEYWORD) (CSS 3)
+ * \section at_keyword At Keyword "AT_KEYWORD" (CSS 3)
  *
  * \htmlonly
  *  <div class=railroad>
@@ -798,11 +802,55 @@
  * Our extensions generally make use of AT-KEYWORD commands to extend
  * the capabilities of CSS.
  *
- * \code
+ * \code{.css}
  *      @media { ... }
  * \endcode
  *
- * \section variable Variable (VARIABLE) (CSS Preprocessor Extension)
+ * \section placeholder Placeholder "PLACEHOLDER" (CSS Preprocessor Extension)
+ *
+ * \htmlonly
+ *  <div class=railroad>
+ *   <svg class=railroad-diagram height=62 viewbox="0 0 273 62" width="273">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height=22 rx=10 ry=10 width=28 x=50.0 y="20"/>
+ *      <text x=64.0 y=35>%</text>
+ *     </g>
+ *     <path d="M78 31h10"/>
+ *     <path d="M88 31h10"/>
+ *     <g>
+ *      <rect height=22 width=124 x=98.0 y="20"/>
+ *      <a xlink:href="#identifier"><text x=160.0 y=35>IDENTIFIER</text></a>
+ *     </g>
+ *     <path d="M222 31h10"/>
+ *     <path d="M 232 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * The PLACEHOLDER is a CSS Preprocessor extension allowing for
+ * the definition of rules that do not get included in your CSS
+ * unless they get referenced.
+ *
+ * \code{.scss}
+ *      // a simple rule with a placeholder
+ *      rule%one { ... }
+ *
+ *      // a reference to such a rule
+ *      .extended
+ *      {
+ *          @extend %one;
+ *      }
+ * \endcode
+ *
+ * \warning
+ * The placeholder token and rules are supported as expected. The @extend
+ * is not yet supported in version 1.0.0 of CSS Preprocessor.
+ *
+ * \section variable Variable "VARIABLE" (CSS Preprocessor Extension)
  *
  * \htmlonly
  *  <div class=railroad>
@@ -832,10 +880,65 @@
  *
  * The name of a variable is very limited on purpose.
  *
- * \code
+ * \code{.scss}
  *      $text_color = #ff00ff;
  *
  *      font-color: $text_color;
+ * \endcode
+ *
+ * \warning
+ * The '-' character is allowed to be backward compatible with SASS, but
+ * you are expected to use '_' instead. The lexer automatically transforms
+ * all the '-' characters into '_' when reading the input stream.
+ *
+ * \section variable_function Variable Function "VARIABLE_FUNCTION" (CSS Preprocessor Extension)
+ *
+ * \htmlonly
+ *  <div class=railroad>
+ *   <svg class=railroad-diagram height=62 viewbox="0 0 341 62" width="341">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="28" x="50" y="20"/>
+ *      <text x="64" y="35">$</text>
+ *     </g>
+ *
+ *     <!--path d="M78 31h20"/>
+ *
+ *     <g>
+ *      <rect height="22" width="104" x="98" y="20"/>
+ *      <a xlink:href="#whitespace"><text x="150" y="35">WHITESPACE*</text></a>
+ *     </g-->
+ *
+ *     <path d="M78 31h20"/>
+ *     <g>
+ *      <rect height="22" width="144" x="98" y="20"/>
+ *      <text x="170" y="35">a-z A-Z 0-9 - _</text>
+ *     </g>
+ *     <path d="M242 31h20"/>
+ *
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="28" x="262" y="20"/>
+ *      <text x="276" y="35">(</text>
+ *     </g>
+ *
+ *     <path d="M290 31h10"/>
+ *     <path d="M 300 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * Just like regular identifiers followed by a '(', we view variables
+ * immediately followed by a '(' as Variable Functions.
+ *
+ * The name of a variable function is very limited on purpose.
+ *
+ * \code{.scss}
+ *      $text_color($color): desaturate($color, 10%);
+ *
+ *      font-color: $text_color(#334699);
  * \endcode
  *
  * \warning
@@ -1053,7 +1156,7 @@
  * a quote if properly escaped. You may either escape the quote itself
  * or use the corresponding hexadecimal encoding:
  *
- * \code
+ * \code{.scss}
  *      '... \' or \27 ...'
  *      "... \" or \22 ..."
  * \endcode
@@ -1157,12 +1260,12 @@
  * to be able to cancel a previous URL definition (overwrite a background
  * image with nothing.)
 *
- * \code
+ * \code{.css}
  *      url(/images/background.png)
  *      url('images/background.png')
  * \endcode
  *
- * \section url-unquoted URL Unquoted "URL-UNQUOTED" (CSS 3)
+ * \section url_unquoted URL Unquoted "URL-UNQUOTED" (CSS 3)
  *
  * \htmlonly
  *  <div class=railroad>
@@ -1209,12 +1312,12 @@
  * quotes, and the backslash. To include such character you may either
  * ESCAPE them or use quotes.
  *
- * \code
+ * \code{.css}
  *      url( It\'s\ the\ same\ as... )
  *      url( "It's the same as..." )
  * \endcode
  *
- * \section number Number "NUMBER", "INTEGER", "DECIMAL_NUMBER" (CSS 3, except sign)
+ * \section number Number "NUMBER", "INTEGER", "DECIMAL_NUMBER" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1223,26 +1326,25 @@
  *     <path d="M 20 50 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
  *     <g>
  *
- *      <!--path d="M40.0 60a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"/>
+ *      <path d="M40.0 60a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"/>
  *      <g>
  *       <rect height="22" rx="10" ry="10" width="28" x="60" y="29"/>
  *       <text x="74" y="44">+</text>
  *      </g>
- *      <path d="M88 40a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"/-->
+ *      <path d="M88 40a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"/>
  *
- *      <!-- this should be shorten, and everything else shifted left -->
  *      <path d="M40 60h20"/>
  *      <g>
  *       <path d="M60 60h28"/>
  *      </g>
  *      <path d="M88 60h20"/>
  *
- *      <!--path d="M40 60a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"/>
+ *      <path d="M40 60a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"/>
  *      <g>
  *       <rect height="22" rx="10" ry="10" width="28" x="60" y="69"/>
  *       <text x="74" y="84">-</text>
  *      </g>
- *      <path d="M88.0 80a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"/-->
+ *      <path d="M88.0 80a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"/>
  *
  *     </g>
  *     <g>
@@ -1400,28 +1502,59 @@
  *
  * CSS 3 distinguishes between integers and floating points, only the
  * definition of an integer is just a floating point with no decimal
- * digits after the period with an exponent of zero.
+ * digits after the period and no exponent.
  *
  * The CSS Preprocessor lexer returns two different types of tokens:
- * INTEGER or DECIMAL_NUMBER. The various grammar will use one or
- * the other to specify whether the NUMBER must specifically be
- * an INTEGER or a DECIMAL_NUMBER. For example, a PERCENT number
- * is always a DECIMAL_NUMBER.
+ * INTEGER and DECIMAL_NUMBER. The compiler may force the use of one
+ * or the other in a few places where the type has to be an INTEGER
+ * or a DECIMAL_NUMBER. For example, a PERCENT number always uses a
+ * DECIMAL_NUMBER.
  *
  * The CSS 3 lexer is expected to include the signs as part of a
- * number (to simplify the rest of the grammar.) However, we want
- * CSS Preprocessor to be able to do some math for us so instead
- * we allow the '+' and '-' to always appear as operators.
+ * number (to simplify the rest of the grammar.) This is important
+ * because otherwise rules such as a background field would look
+ * like expressions:
  *
- * \code
+ * \code{.css}
+ *      background: transparent url(images/example.png) +3px -5px;
+ * \endcode
+ *
+ * Here the +3px and -5px are viewed as two distinct numbers. If
+ * we were to make the + and - operators instead of part of the
+ * numbers, these two numbers would look like a subtraction
+ * (3px - 5px). When you write expressions, you should anyway always
+ * add spaces around your operators. Another one that may get you
+ * is negating the result of a function call. Without the space the
+ * dash becomes part of the function name. In the following, you
+ * are calling a function named 'color-saturate' instead of
+ * subtracting 'saturate($color, -33%)' from '$color':
+ *
+ * \code{.scss}
+ *      background-color: $color-saturate($color, -33%);
+ * \endcode
+ *
+ * The correct expression would be:
+ *
+ * \code{.scss}
+ *      background-color: $color - saturate($color, -33%);
+ * \endcode
+ *
+ * Example of numbers:
+ *
+ * \code{.css}
  *      0
- *      1.3
+ *      -1.3
  *      .55
- *      801
+ *      +801
  *      9e3
- *      1.001e+4
+ *      -1.001e+4
  *      .45e-7
  * \endcode
+ *
+ * \note
+ * The number of decimal digits is limited to 20. If you write a number
+ * with more decimal digits after the decimal point, then an error is
+ * generated.
  *
  * \warning
  * When a number includes a decimal point or an exponent, it is
@@ -1465,11 +1598,19 @@
  * Note that "-" by itself is not a valid identifier. This means a number
  * followed by a dash and another number is clearly a subtraction.
  *
- * \code
+ * \code{.css}
  *      font-size: 12pt;
  *      height: 13px;
  *      width: 3em;
  * \endcode
+ *
+ * The lexer let you enter any dimension. At some point the compiler will
+ * make sure that all dimensions are understood by CSS. That being said,
+ * the CSS Proprocessor is likely to understand many other dimensions and
+ * convert to on that CSS 3 understands.
+ *
+ * You may find a complete list of supported CSS 3 dimmensions here:
+ * http://www.w3.org/TR/css3-values/
  *
  * \section percent Percent "PERCENT" (CSS 3)
  *
@@ -1501,7 +1642,7 @@
  * even if the number was an integer (integers are automatically
  * converted as required.)
  *
- * \code
+ * \code{.css}
  *      33.33%
  *      100%
  *      2.25%
@@ -1511,13 +1652,13 @@
  * character. In that case, it is viewed as a dimension which will
  * fail validation.
  *
- * \code
+ * \code{.scss}
  *      // the following two numbers are DIMENSIONs, not PERCENT
  *      33.33\%
  *      100\25
  * \endcode
  *
- * \section unicode-range Unicode Range "UNICODE_RANGE" (CSS 3)
+ * \section unicode_range Unicode Range "UNICODE_RANGE" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1673,7 +1814,7 @@
  * only it replaces the '?' character with '0' for the start code point
  * and with 'f' for the end code point.
  *
- * \code
+ * \code{.scss}
  *      U+ff            // characters from 0xFF to 0xFF
  *      U+3??           // characters from 0x300 to 0x3FF
  *      U+320-34F       // characters from 0x320 to 0x34F explicitly
@@ -1687,7 +1828,7 @@
  * A Unicode range is used by @font-face definitions to limit the number
  * of characters to be loaded for a page.
  *
- * \section include-match Include Match "INCLUDE_MATCH" (CSS 3)
+ * \section include_match Include Match "INCLUDE_MATCH" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1710,11 +1851,11 @@
  * parameters found on the left. The value on the left is a list of
  * whitespace separated words (i.e. a list of classes).
  *
- * \code
+ * \code{.scss}
  *      a[class ~= "green"]   // equivalent to a.green
  * \endcode
  *
- * \section dash-match Dash Match "DASH_MATCH" (CSS 3)
+ * \section dash_match Dash Match "DASH_MATCH" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1736,11 +1877,11 @@
  * Match when the first element of the hyphen separated list of words on
  * the left is equal to the value on the right.
  *
- * \code
+ * \code{.scss}
  *      [lang |= "en"]   // match lang="en-US"
  * \endcode
  *
- * \section prefix-match Prefix Match "PREFIX_MATCH" (CSS 3)
+ * \section prefix_match Prefix Match "PREFIX_MATCH" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1761,11 +1902,11 @@
  *
  * Match when the value on the left starts with the value on the right.
  *
- * \code
+ * \code{.scss}
  *      a[entity ^= 'blue']  // match entity="blue-laggoon"
  * \endcode
  *
- * \section suffix-match Suffix Match "SUFFIX_MATCH" (CSS 3)
+ * \section suffix_match Suffix Match "SUFFIX_MATCH" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1786,11 +1927,11 @@
  *
  * Match when the value on the left ends with the value on the right.
  *
- * \code
+ * \code{.scss}
  *      a[entity $= 'laggoon']  // match entity="blue-laggoon"
  * \endcode
  *
- * \section substring-match Substring Match "SUBSTRING_MATCH" (CSS 3)
+ * \section substring_match Substring Match "SUBSTRING_MATCH" (CSS 3)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1811,11 +1952,11 @@
  *
  * Match when the value on the right is found in the value on the left.
  *
- * \code
+ * \code{.scss}
  *      a[entity *= '-lag']  // match entity="blue-laggoon"
  * \endcode
  *
- * \section column Colunm Match "COLUMN" (CSS 3)
+ * \section column Colunm Match "COLUMN" (CSS 3 Token, CSS Preprocessor Extension)
  *
  * \htmlonly
  *  <div class="railroad">
@@ -1836,11 +1977,233 @@
  *
  * The CSS 3 documentation says:
  *
+ * \par
  * \<column-token> has been added, to keep Selectors parsing in
  * single-token lookahead. 
  *
  * At this point I am not too sure whether that means it is only a lexer
  * artifact or whether it would be an operator people can use.
+ *
+ * \sa http://stackoverflow.com/questions/30702971/how-is-the-operator-used-in-css
+ *
+ * All of that being said, since we support the \ref logical_and, we accept
+ * this operator as the Logical OR in our expressions.
+ *
+ * The OR operator takes two boolean value. If at least one of these
+ * boolean value is true, then the result is true, otherwise it is false.
+ *
+ * You may also use the 'or' identifier.
+ *
+ * \code{.scss}
+ *      width: $bool1 || $bool2 ? $left-column : $right-column;
+ *          // or
+ *      width: $bool1 or $bool2 ? $left-column : $right-column;
+ * \endcode
+ *
+ * \section logical_and Logical AND "AND" (CSS Preprocessor extension)
+ *
+ * \htmlonly
+ *  <div class="railroad">
+ *   <svg class="railroad-diagram" height="62" viewbox="0 0 137 62" width="137">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="36" x="50" y="20"/>
+ *      <text x="68.0" y="35">&amp;&amp;</text>
+ *     </g>
+ *     <path d="M86 31h10"/>
+ *     <path d="M 96 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * The '&&' operator is the logical AND operator. It returns true when
+ * its left and right handsides are both set to true.
+ *
+ * You may also use the 'and' identifier.
+ *
+ * \code{.scss}
+ *      width: $bool1 && $bool2 ? $left-column : $right-column;
+ *          // or
+ *      width: $bool1 and $bool2 ? $left-column : $right-column;
+ * \endcode
+ *
+ * \sa \ref column
+ *
+ * \section double_equal Double Equal "EQUAL" (CSS Preprocessor extension)
+ *
+ * \htmlonly
+ *  <div class="railroad">
+ *   <svg class="railroad-diagram" height="62" viewbox="0 0 137 62" width="137">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="36" x="50" y="20"/>
+ *      <text x="68.0" y="35">==</text>
+ *     </g>
+ *     <path d="M86 31h10"/>
+ *     <path d="M 96 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * CSS 3 clearly uses '=' to test for equality. Somehow, SASS added '=='
+ * which is really not consistent. To be more compatible with SASS, we
+ * support both. At this point we do not warn or anything when '==' is
+ * found. We may do so later. Internally, we immediately convert '=='
+ * to the exact same token as '='.
+ *
+ * \section not_equal Not Equal "NOT_EQUAL" (CSS Preprocessor extension)
+ *
+ * \htmlonly
+ *  <div class="railroad">
+ *   <svg class="railroad-diagram" height="62" viewbox="0 0 137 62" width="137">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="36" x="50" y="20"/>
+ *      <text x="68.0" y="35">!=</text>
+ *     </g>
+ *     <path d="M86 31h10"/>
+ *     <path d="M 96 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * We offer a 'not equal' operator for our expressions and also attributes.
+ *
+ * \code{.scss}
+ *      color: $var != 3 ? red : blue;
+ *         and
+ *      p[book!='family'] { display: none; }
+ * \endcode
+ *
+ * The attribute extension is converted by the compiler to valid CSS as
+ * in:
+ *
+ * \code{.css}
+ *      p:not([book='family']) { display: none; }
+ * \endcode
+ *
+ * \section assignment Assignment "ASSIGNMENT" (CSS Preprocessor extension)
+ *
+ * \htmlonly
+ *  <div class="railroad">
+ *   <svg class="railroad-diagram" height="62" viewbox="0 0 137 62" width="137">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="36" x="50" y="20"/>
+ *      <text x="68.0" y="35">:=</text>
+ *     </g>
+ *     <path d="M86 31h10"/>
+ *     <path d="M 96 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * We added the ':=' operator to allow one to set a variable within an
+ * expression. For example, you could write an assignment of a long
+ * expression, then reuse that value many times in the rest of the
+ * expression:
+ *
+ * \code{.scss}
+ *      (value := rather + complicated * expression ** here,
+ *       display(value * value), enlarge(value))
+ * \endcode
+ *
+ * \section less_equal Less or Equal To "LESS_EQUAL" (CSS Preprocessor extension)
+ *
+ * \htmlonly
+ *  <div class="railroad">
+ *   <svg class="railroad-diagram" height="62" viewbox="0 0 137 62" width="137">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="36" x="50" y="20"/>
+ *      <text x="68.0" y="35">&lt;=</text>
+ *     </g>
+ *     <path d="M86 31h10"/>
+ *     <path d="M 96 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * We added the '\<=' operator to allow one to compare values in an
+ * expression between each others.
+ *
+ * \code{.scss}
+ *      width: $left-column <= $right-column ? $left-column : $right-column;
+ *
+ *      // which in this case is equivalent to:
+ *      width: min($left-column, $right-column);
+ * \endcode
+ *
+ * \section greater_equal Greater or Equal To "GREATER_EQUAL" (CSS Preprocessor extension)
+ *
+ * \htmlonly
+ *  <div class="railroad">
+ *   <svg class="railroad-diagram" height="62" viewbox="0 0 137 62" width="137">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="36" x="50" y="20"/>
+ *      <text x="68.0" y="35">&gt;=</text>
+ *     </g>
+ *     <path d="M86 31h10"/>
+ *     <path d="M 96 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * We added the '>=' operator to allow one to compare values in an
+ * expression between each others.
+ *
+ * \code{.scss}
+ *      width: $left-column >= $right-column ? $left-column : $right-column;
+ *
+ *      // which in this case is equivalent to:
+ *      width: max($left-column, $right-column);
+ * \endcode
+ *
+ * \section power Power "POWER" (CSS Preprocessor extension)
+ *
+ * \htmlonly
+ *  <div class="railroad">
+ *   <svg class="railroad-diagram" height="62" viewbox="0 0 137 62" width="137">
+ *    <g transform="translate(.5 .5)">
+ *     <path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"/>
+ *     <path d="M40 31h10"/>
+ *     <g>
+ *      <rect height="22" rx="10" ry="10" width="36" x="50" y="20"/>
+ *      <text x="68.0" y="35">**</text>
+ *     </g>
+ *     <path d="M86 31h10"/>
+ *     <path d="M 96 31 h 20 m -10 -10 v 20 m 10 -20 v 20"/>
+ *    </g>
+ *   </svg>
+ *  </div>
+ * \endhtmlonly
+ *
+ * The '**' operator is an extension that allow you to caculate the power
+ * of a number (left hand side) by another (right hand side). Note that
+ * dimensions (numbers with a unit) cannot be used with the '**' operator.
+ *
+ * \code{.scss}
+ *      width: 1px * 2 ** 5;
+ * \endcode
  *
  * \section cdo Comment Document Open "CDO" (CSS 3)
  *
@@ -1919,7 +2282,8 @@
  * \li , -- COMMA
  * \li : -- COLON
  * \li ; -- SEMICOLON
- * \li ! -- IMPORTANT
+ * \li ! -- EXCLAMATION
+ * \li ? -- CONDITIONAL
  * \li &gt; -- GREATER_THAN
  * \li ( -- OPEN_PARENTHESIS
  * \li ) -- CLOSE_PARENTHESIS
@@ -1929,16 +2293,54 @@
  * \li } -- CLOSE_CURVLYBRACKET
  * \li . -- PERIOD
  * \li & -- REFERENCE
+ * \li &lt; -- LESS
  * \li + -- ADD
- * \li - -- SUBTRACT
+ * \li - -- SUBTRACT (if by itself or at least not followed by an identifier)
  * \li $ -- DOLLAR
  * \li ~ -- PRECEDED
  * \li * -- MULTIPLY
  * \li | -- SCOPE
  * \li / -- DIVIDE
+ * \li % -- MODULO
  *
  * Any character that does not match one of these DELIMITER characters,
  * or another lexer token, generates an immediate lexer error.
+ *
+ * \note
+ * The EXCLAMATION is returned as a simple token by the lexer. The
+ * parser will convert it to a form of identifier unless it is not
+ * followed by an identifier in which case an error is generated.
+ * The parser will also take care of removing whitespaces.
+ *
+ * \note
+ * The DIVIDE character is viewed as a \em standard CSS 3 separator when
+ * used in the font field (actually, any field that match as defined in
+ * the scripts/validation/has-font-metrics.scss script) as in:
+ *
+ * \code{.scss}
+ *      font: 17px/1.3em helvetica;
+ * \endcode
+ *
+ * \note
+ * The lexer cannot know what to do with the DIVIDE. The compiler,
+ * however, knows at the time it runs the expression since it
+ * has the name of the field name 'font'. In that case it tells the
+ * expression class to handle the DIVIDE as a CSS 3 separator. That
+ * mean the sequence \<number> / \<number> will generate the token
+ * FONT_METRICS.
+ *
+ * \note
+ * In any other field, that do not have a name that matches, the slash
+ * is viewed as a regular DIVIDE operator, so \<number> / \<number> is
+ * calculated and the result of the operation is returned.
+ *
+ * \note
+ * In order to issue a division in a font field, one can use parenthesis:
+ *
+ * \code
+ *      $height: 480px;
+ *      font: ($height / 32) / 1.3em helvetica;
+ * \endcode
  */
 
 // Local Variables:
@@ -1948,4 +2350,4 @@
 // tab-width: 4
 // End:
 
-// vim: ts=4 sw=4 et
+// vim: ts=4 sw=4 et syntax=doxygen

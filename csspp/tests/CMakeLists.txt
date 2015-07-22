@@ -45,6 +45,10 @@ add_executable( ${PROJECT_NAME}
     catch_compiler.cpp
     catch_csspp.cpp
     catch_error.cpp
+    catch_expr_additive.cpp
+    catch_expr_multiplicative.cpp
+    catch_expr_power.cpp
+    catch_expr_unary.cpp
     catch_lexer.cpp
     catch_node.cpp
     catch_nth_child.cpp

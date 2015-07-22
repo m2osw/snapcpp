@@ -510,7 +510,7 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
         }
 
         // check the sitemap number
-        QStringList sitemap_number(re.capturedTexts());
+        snap_string_list sitemap_number(re.capturedTexts());
         if(sitemap_number.size() == 1)
         {
             // send sitemap listing all the available sitemaps

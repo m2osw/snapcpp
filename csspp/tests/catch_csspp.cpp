@@ -48,7 +48,7 @@ TEST_CASE("Version string", "[csspp] [version]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Safe Boolean", "[csspp] [output]")
+TEST_CASE("Safe boolean", "[csspp] [output]")
 {
     {
         bool flag(false);
@@ -133,26 +133,48 @@ TEST_CASE("Safe Boolean", "[csspp] [output]")
     }
 }
 
-TEST_CASE("Decimal Number Output", "[csspp] [output]")
+TEST_CASE("Decimal number output", "[csspp] [output]")
 {
-    REQUIRE(csspp::decimal_number_to_string(1.0) == "1");
-    REQUIRE(csspp::decimal_number_to_string(1.2521) == "1.252");
-    REQUIRE(csspp::decimal_number_to_string(1.2526) == "1.253");
+    REQUIRE(csspp::decimal_number_to_string(1.0, false) == "1");
+    REQUIRE(csspp::decimal_number_to_string(1.2521, false) == "1.252");
+    REQUIRE(csspp::decimal_number_to_string(1.2526, false) == "1.253");
+    REQUIRE(csspp::decimal_number_to_string(0.0, false) == "0");
+    REQUIRE(csspp::decimal_number_to_string(0.2521, false) == "0.252");
+    REQUIRE(csspp::decimal_number_to_string(0.2526, false) == "0.253");
     {
         csspp::safe_precision_t precision(2);
-        REQUIRE(csspp::decimal_number_to_string(1.2513) == "1.25");
-        REQUIRE(csspp::decimal_number_to_string(1.2561) == "1.26");
+        REQUIRE(csspp::decimal_number_to_string(1.2513, false) == "1.25");
+        REQUIRE(csspp::decimal_number_to_string(1.2561, false) == "1.26");
     }
-    REQUIRE(csspp::decimal_number_to_string(-1.2526) == "-1.253");
-    REQUIRE(csspp::decimal_number_to_string(-0.9) == "-0.9");
-    REQUIRE(csspp::decimal_number_to_string(-0.0009) == "-0.001");
-    REQUIRE(csspp::decimal_number_to_string(-1000.0) == "-1000");
-    REQUIRE(csspp::decimal_number_to_string(1000.0) == "1000");
-    REQUIRE(csspp::decimal_number_to_string(100.0) == "100");
-    REQUIRE(csspp::decimal_number_to_string(10.0) == "10");
+    REQUIRE(csspp::decimal_number_to_string(-1.2526, false) == "-1.253");
+    REQUIRE(csspp::decimal_number_to_string(-0.9, false) == "-0.9");
+    REQUIRE(csspp::decimal_number_to_string(-0.0009, false) == "-0.001");
+    REQUIRE(csspp::decimal_number_to_string(-1000.0, false) == "-1000");
+    REQUIRE(csspp::decimal_number_to_string(1000.0, false) == "1000");
+    REQUIRE(csspp::decimal_number_to_string(100.0, false) == "100");
+    REQUIRE(csspp::decimal_number_to_string(10.0, false) == "10");
+
+    REQUIRE(csspp::decimal_number_to_string(1.0, true) == "1");
+    REQUIRE(csspp::decimal_number_to_string(1.2521, true) == "1.252");
+    REQUIRE(csspp::decimal_number_to_string(1.2526, true) == "1.253");
+    REQUIRE(csspp::decimal_number_to_string(0.0, true) == "0");
+    REQUIRE(csspp::decimal_number_to_string(0.2521, true) == ".252");
+    REQUIRE(csspp::decimal_number_to_string(0.2526, true) == ".253");
+    {
+        csspp::safe_precision_t precision(2);
+        REQUIRE(csspp::decimal_number_to_string(1.2513, true) == "1.25");
+        REQUIRE(csspp::decimal_number_to_string(1.2561, true) == "1.26");
+    }
+    REQUIRE(csspp::decimal_number_to_string(-1.2526, true) == "-1.253");
+    REQUIRE(csspp::decimal_number_to_string(-0.9, true) == "-.9");
+    REQUIRE(csspp::decimal_number_to_string(-0.0009, true) == "-.001");
+    REQUIRE(csspp::decimal_number_to_string(-1000.0, true) == "-1000");
+    REQUIRE(csspp::decimal_number_to_string(1000.0, true) == "1000");
+    REQUIRE(csspp::decimal_number_to_string(100.0, true) == "100");
+    REQUIRE(csspp::decimal_number_to_string(10.0, true) == "10");
 }
 
-TEST_CASE("Invalid Precision", "[csspp] [invalid]")
+TEST_CASE("Invalid precision", "[csspp] [invalid]")
 {
     // we want to keep the default precision in place
     csspp::safe_precision_t precision;

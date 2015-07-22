@@ -215,19 +215,22 @@ TEST_CASE("Default color", "[color] [default]")
     csspp::color_component_t cb;
     csspp::color_component_t ca;
     c.get_color(cr, cg, cb, ca);
-    REQUIRE(cr == 0);
-    REQUIRE(cg == 0);
-    REQUIRE(cb == 0);
-    REQUIRE(ca == 255);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+    REQUIRE(cr == 0.0);
+    REQUIRE(cg == 0.0);
+    REQUIRE(cb == 0.0);
+    REQUIRE(ca == 1.0);
+#pragma GCC diagnostic pop
 }
 
 TEST_CASE("Verify #XXX colors", "[color] [parse]")
 {
     for(int i(0); i < 0x1000; ++i)
     {
-        csspp::color_component_t const r((i >> 0) & 15);
-        csspp::color_component_t const g((i >> 4) & 15);
-        csspp::color_component_t const b((i >> 8) & 15);
+        csspp::byte_component_t const r((i >> 0) & 15);
+        csspp::byte_component_t const g((i >> 4) & 15);
+        csspp::byte_component_t const b((i >> 8) & 15);
 
         std::stringstream ss;
         ss << std::hex << static_cast<int>(r) << static_cast<int>(g) << static_cast<int>(b);
@@ -244,10 +247,13 @@ TEST_CASE("Verify #XXX colors", "[color] [parse]")
         csspp::color_component_t cb;
         csspp::color_component_t ca;
         c.get_color(cr, cg, cb, ca);
-        REQUIRE(cr == r * 0x11);
-        REQUIRE(cg == g * 0x11);
-        REQUIRE(cb == b * 0x11);
-        REQUIRE(ca == 255);
+        REQUIRE((fabs(cr - (r * 0x11) / 255.0) < 0.0001));
+        REQUIRE((fabs(cg - (g * 0x11) / 255.0) < 0.0001));
+        REQUIRE((fabs(cb - (b * 0x11) / 255.0) < 0.0001));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        REQUIRE(ca == 1.0);
+#pragma GCC diagnostic pop
     }
 }
 
@@ -255,9 +261,9 @@ TEST_CASE("Verify #XXXXXX colors", "[color] [parse]")
 {
     for(int i(0); i < 0x1000000; i += rand() % 2000 + 1)
     {
-        csspp::color_component_t const r((i >>  0) & 255);
-        csspp::color_component_t const g((i >>  8) & 255);
-        csspp::color_component_t const b((i >> 16) & 255);
+        csspp::byte_component_t const r((i >>  0) & 255);
+        csspp::byte_component_t const g((i >>  8) & 255);
+        csspp::byte_component_t const b((i >> 16) & 255);
 
         std::stringstream ss;
         ss << std::hex << std::setfill('0')
@@ -277,10 +283,13 @@ TEST_CASE("Verify #XXXXXX colors", "[color] [parse]")
         csspp::color_component_t cb;
         csspp::color_component_t ca;
         c.get_color(cr, cg, cb, ca);
-        REQUIRE(cr == r);
-        REQUIRE(cg == g);
-        REQUIRE(cb == b);
-        REQUIRE(ca == 255);
+        REQUIRE((fabs(cr - r / 255.0) < 0.0001));
+        REQUIRE((fabs(cg - g / 255.0) < 0.0001));
+        REQUIRE((fabs(cb - b / 255.0) < 0.0001));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        REQUIRE(ca == 1.0);
+#pragma GCC diagnostic pop
     }
 }
 
@@ -312,9 +321,9 @@ TEST_CASE("Verify named colors", "[color] [parse]")
         }
 
         // covert the hash to a color
-        csspp::color_component_t const r(csspp::lexer::hex_to_dec(hash[0]) * 16 + csspp::lexer::hex_to_dec(hash[1]));
-        csspp::color_component_t const g(csspp::lexer::hex_to_dec(hash[2]) * 16 + csspp::lexer::hex_to_dec(hash[3]));
-        csspp::color_component_t const b(csspp::lexer::hex_to_dec(hash[4]) * 16 + csspp::lexer::hex_to_dec(hash[5]));
+        csspp::byte_component_t const r(csspp::lexer::hex_to_dec(hash[0]) * 16 + csspp::lexer::hex_to_dec(hash[1]));
+        csspp::byte_component_t const g(csspp::lexer::hex_to_dec(hash[2]) * 16 + csspp::lexer::hex_to_dec(hash[3]));
+        csspp::byte_component_t const b(csspp::lexer::hex_to_dec(hash[4]) * 16 + csspp::lexer::hex_to_dec(hash[5]));
 
         // skip to the next line (or EOS)
         for(; *s != '\n'; ++s);
@@ -331,10 +340,13 @@ TEST_CASE("Verify named colors", "[color] [parse]")
         csspp::color_component_t cb;
         csspp::color_component_t ca;
         c.get_color(cr, cg, cb, ca);
-        REQUIRE(cr == r);
-        REQUIRE(cg == g);
-        REQUIRE(cb == b);
-        REQUIRE(ca == 255);
+        REQUIRE((fabs(cr - r / 255.0) < 0.0001));
+        REQUIRE((fabs(cg - g / 255.0) < 0.0001));
+        REQUIRE((fabs(cb - b / 255.0) < 0.0001));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        REQUIRE(ca == 1.0);
+#pragma GCC diagnostic pop
     }
 
     // verify the transparent color
@@ -350,10 +362,13 @@ TEST_CASE("Verify named colors", "[color] [parse]")
         csspp::color_component_t cb;
         csspp::color_component_t ca;
         c.get_color(cr, cg, cb, ca);
-        REQUIRE(cr == 0);
-        REQUIRE(cg == 0);
-        REQUIRE(cb == 0);
-        REQUIRE(ca == 0);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        REQUIRE(cr == 0.0);
+        REQUIRE(cg == 0.0);
+        REQUIRE(cb == 0.0);
+        REQUIRE(ca == 0.0);
+#pragma GCC diagnostic pop
     }
 }
 
@@ -361,10 +376,10 @@ TEST_CASE("Direct colors", "[color]")
 {
     for(int i(0); i < 1000; ++i)
     {
-        csspp::color_component_t const r(rand() & 255);
-        csspp::color_component_t const g(rand() & 255);
-        csspp::color_component_t const b(rand() & 255);
-        csspp::color_component_t const a(rand() & 255);
+        csspp::byte_component_t const r(rand() & 255);
+        csspp::byte_component_t const g(rand() & 255);
+        csspp::byte_component_t const b(rand() & 255);
+        csspp::byte_component_t const a(rand() & 255);
 
         csspp::color c;
         c.set_color(r, g, b, a);
@@ -392,10 +407,10 @@ TEST_CASE("Direct colors", "[color]")
         csspp::color_component_t cb;
         csspp::color_component_t ca;
         c.get_color(cr, cg, cb, ca);
-        REQUIRE(cr == r);
-        REQUIRE(cg == g);
-        REQUIRE(cb == b);
-        REQUIRE(ca == a);
+        REQUIRE((fabs(cr - r / 255.0) < 0.0001));
+        REQUIRE((fabs(cg - g / 255.0) < 0.0001));
+        REQUIRE((fabs(cb - b / 255.0) < 0.0001));
+        REQUIRE((fabs(ca - a / 255.0) < 0.0001));
 
         // try again with one uint32_t value
         c.set_color((r * 0x1) + (g * 0x100) + (b * 0x10000) + (a * 0x1000000));
@@ -419,10 +434,40 @@ TEST_CASE("Direct colors", "[color]")
         }
 
         c.get_color(cr, cg, cb, ca);
-        REQUIRE(cr == r);
-        REQUIRE(cg == g);
-        REQUIRE(cb == b);
-        REQUIRE(ca == a);
+        REQUIRE((fabs(cr - r / 255.0) < 0.0001));
+        REQUIRE((fabs(cg - g / 255.0) < 0.0001));
+        REQUIRE((fabs(cb - b / 255.0) < 0.0001));
+        REQUIRE((fabs(ca - a / 255.0) < 0.0001));
+
+        // try again with component values
+        c.set_color(static_cast<csspp::color_component_t>(r / 255.0),
+                    static_cast<csspp::color_component_t>(g / 255.0),
+                    static_cast<csspp::color_component_t>(b / 255.0),
+                    static_cast<csspp::color_component_t>(a / 255.0));
+        REQUIRE(c.get_color() == (r * 0x1) + (g * 0x100) + (b * 0x10000) + (a * 0x1000000));
+
+        if(a == 255)
+        {
+            REQUIRE(c.is_solid());
+        }
+        else
+        {
+            REQUIRE(!c.is_solid());
+        }
+        if(a == 0)
+        {
+            REQUIRE(c.is_transparent());
+        }
+        else
+        {
+            REQUIRE(!c.is_transparent());
+        }
+
+        c.get_color(cr, cg, cb, ca);
+        REQUIRE((fabs(cr - r / 255.0) < 0.0001));
+        REQUIRE((fabs(cg - g / 255.0) < 0.0001));
+        REQUIRE((fabs(cb - b / 255.0) < 0.0001));
+        REQUIRE((fabs(ca - a / 255.0) < 0.0001));
 
         // try again with doubles
         c.set_color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
@@ -446,12 +491,12 @@ TEST_CASE("Direct colors", "[color]")
         }
 
         c.get_color(cr, cg, cb, ca);
-        REQUIRE(cr == r);
-        REQUIRE(cg == g);
-        REQUIRE(cb == b);
-        REQUIRE(ca == a);
+        REQUIRE((fabs(cr - r / 255.0) < 0.0001));
+        REQUIRE((fabs(cg - g / 255.0) < 0.0001));
+        REQUIRE((fabs(cb - b / 255.0) < 0.0001));
+        REQUIRE((fabs(ca - a / 255.0) < 0.0001));
 
-        // try double clamping
+        // make sure no clamping happens on the floating point numbers
         c.set_color(r / -255.0, g + 265.0, b / 255.0, a / 255.0);
         REQUIRE(c.get_color() == (0 * 0x1) + (0xFF00) + (b * 0x10000) + (a * 0x1000000));
 
@@ -473,10 +518,10 @@ TEST_CASE("Direct colors", "[color]")
         }
 
         c.get_color(cr, cg, cb, ca);
-        REQUIRE(cr == 0);
-        REQUIRE(cg == 255);
-        REQUIRE(cb == b);
-        REQUIRE(ca == a);
+        REQUIRE((fabs(cr - r / -255.0) < 0.0001));
+        REQUIRE((fabs(cg - (g + 265.0)) < 0.0001));
+        REQUIRE((fabs(cb - b / 255.0) < 0.0001));
+        REQUIRE((fabs(ca - a / 255.0) < 0.0001));
     }
 }
 
@@ -542,6 +587,139 @@ TEST_CASE("HSLA colors", "[color]")
     // ...
     c.set_hsl(-251.1, 0.832, 0.511, 0.75);
     REQUIRE(c.get_color() == 0xBF1B1B1B);
+    {
+        csspp::color_component_t hue;
+        csspp::color_component_t saturation;
+        csspp::color_component_t lightness;
+        csspp::color_component_t alpha;
+        c.get_hsl(hue, saturation, lightness, alpha);
+    }
+
+    for(int i(0); i < 20000; ++i)
+    {
+        int red;
+        int green;
+        int blue;
+        int alpha(rand() & 255);
+        // to make sure we hit all the lines we check the get_hsl()
+        // with a few specific colors
+        switch(i)
+        {
+        case 0:
+            // check black
+            red   = 0;
+            green = 0;
+            blue  = 0;
+            break;
+
+        case 1:
+            // check white
+            red   = 255;
+            green = 255;
+            blue  = 255;
+            break;
+
+        case 2:
+            // check red
+            red   = 255;
+            green = 0;
+            blue  = 0;
+            break;
+
+        case 3:
+            // check green
+            red   = 0;
+            green = 255;
+            blue  = 0;
+            break;
+
+        case 4:
+            // check blue
+            red   = 0;
+            green = 0;
+            blue  = 255;
+            break;
+
+        case 5:
+            // check gray
+            red   = 128;
+            green = 128;
+            blue  = 128;
+            break;
+
+        default:
+            red   = rand() & 255;
+            green = rand() & 255;
+            blue  = rand() & 255;
+            break;
+
+        }
+        c.set_color(red, green, blue, alpha);
+
+        csspp::color_component_t hue;
+        csspp::color_component_t saturation;
+        csspp::color_component_t lightness;
+        csspp::color_component_t hsl_alpha;
+        c.get_hsl(hue, saturation, lightness, hsl_alpha);
+        REQUIRE(fabs(hsl_alpha - alpha / 255.0) < 0.00001);
+
+        // setting those values back must resolve to the
+        // exact same RGBA as what we defined earlier
+        c.set_hsl(hue, saturation, lightness, hsl_alpha);
+
+        csspp::rgba_color_t col(c.get_color());
+        csspp::byte_component_t r((col >>  0) & 255);
+        csspp::byte_component_t g((col >>  8) & 255);
+        csspp::byte_component_t b((col >> 16) & 255);
+        csspp::byte_component_t a((col >> 24) & 255);
+        REQUIRE(r == red  );
+        REQUIRE(g == green);
+        REQUIRE(b == blue );
+        REQUIRE(a == alpha);
+
+        if(red - green >= 10
+        || red - blue >= 10
+        || green - blue >= 10)
+        {
+            c.adjust_hue(180.0);// * M_PI / 180.0);
+            csspp::color_component_t new_hue;
+            csspp::color_component_t new_saturation;
+            csspp::color_component_t new_lightness;
+            c.get_hsl(new_hue, new_saturation, new_lightness, hsl_alpha);
+            REQUIRE(fabs(hsl_alpha - alpha / 255.0) < 0.00001);
+
+            // hue is not considered valid when RGB are equal
+            double hue_diff(fabs(fabs(hue - new_hue) - 180.0));
+//if(hue_diff > 3.0)
+//{
+//std::cerr << "rgb: " << static_cast<int>(r) << ", " << static_cast<int>(g) << ", " << static_cast<int>(b)
+//          << " old hue: " << hue << " & new hue: " << new_hue << " diff = " << fabs(new_hue - hue) << " delta " << fabs(fabs(new_hue - hue) - 180.0) << "\n";
+//}
+            REQUIRE(hue_diff <= 0.0001);
+
+            // restore the color to test the adjust_hue() function
+            c.set_hsl(hue, saturation, lightness, hsl_alpha);
+            c.adjust_saturation(0.2); // +20%
+            c.get_hsl(new_hue, new_saturation, new_lightness, hsl_alpha);
+            double saturation_diff(fabs(fabs(saturation - new_saturation) - 0.2));
+//if(saturation_diff > 0.0001)
+//{
+//std::cerr << "old saturation: " << saturation << " -> " << new_saturation << " diff = " << fabs(new_saturation - saturation) << "\n";
+//}
+            REQUIRE(saturation_diff < 0.0001);
+
+            // restore the color to test the adjust_lightness() function
+            c.set_hsl(hue, saturation, lightness, hsl_alpha);
+            c.adjust_lightness(0.2); // +20%
+            c.get_hsl(new_hue, new_saturation, new_lightness, hsl_alpha);
+            double lightness_diff(fabs(fabs(lightness - new_lightness) - 0.2));
+//if(lightness_diff > 0.0001)
+//{
+//std::cerr << "old lightness: " << lightness << " -> " << new_lightness << " diff = " << fabs(new_lightness - lightness) << "\n";
+//}
+            REQUIRE(lightness_diff < 0.0001);
+        }
+    }
 }
 
 TEST_CASE("Color to string", "[color] [output]")
@@ -550,86 +728,86 @@ TEST_CASE("Color to string", "[color] [output]")
 
     // a few special cases
     {
-        c.set_color(static_cast<csspp::color_component_t>(0xC0),
-                    static_cast<csspp::color_component_t>(0xC0),
-                    static_cast<csspp::color_component_t>(0xC0),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0xC0),
+                    static_cast<csspp::byte_component_t>(0xC0),
+                    static_cast<csspp::byte_component_t>(0xC0),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "silver");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "gray");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "maroon");
 
-        c.set_color(static_cast<csspp::color_component_t>(0xFF),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0xFF),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "red");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "purple");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "green");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0xFF),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0xFF),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "lime");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "olive");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "navy");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0xFF),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0xFF),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "blue");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0x80),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0x80),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "teal");
 
-        c.set_color(static_cast<csspp::color_component_t>(0x00),
-                    static_cast<csspp::color_component_t>(0xFF),
-                    static_cast<csspp::color_component_t>(0xFF),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(0x00),
+                    static_cast<csspp::byte_component_t>(0xFF),
+                    static_cast<csspp::byte_component_t>(0xFF),
+                    static_cast<csspp::byte_component_t>(0xFF));
         REQUIRE(c.to_string() == "aqua");
     }
 
     // #XXX cases -- none are special cases
     for(uint32_t i(0); i < 0x1000; ++i)
     {
-        c.set_color(static_cast<csspp::color_component_t>(((i >> 0) & 15) * 0x11),
-                    static_cast<csspp::color_component_t>(((i >> 4) & 15) * 0x11),
-                    static_cast<csspp::color_component_t>(((i >> 8) & 15) * 0x11),
-                    static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(static_cast<csspp::byte_component_t>(((i >> 0) & 15) * 0x11),
+                    static_cast<csspp::byte_component_t>(((i >> 4) & 15) * 0x11),
+                    static_cast<csspp::byte_component_t>(((i >> 8) & 15) * 0x11),
+                    static_cast<csspp::byte_component_t>(0xFF));
         switch(c.get_color())
         {
         case (255 << 0) | (0 << 8) | (0 << 16) | (255 << 24):
@@ -665,8 +843,8 @@ TEST_CASE("Color to string", "[color] [output]")
     // #XXXXXX cases -- make sure to skip the special cases
     for(uint32_t i(0); i < 10000; ++i)
     {
-        csspp::color_component_t r, g, b;
-        
+        csspp::byte_component_t r, g, b;
+
         bool valid(false);
         do
         {
@@ -687,8 +865,8 @@ TEST_CASE("Color to string", "[color] [output]")
             case 0x0000ff:
             case 0x008080:
             case 0x00ffff:
-                // since we randomize the colors we test this is rather
-                // unlikely (we could test all the colors too, but that
+                // since we randomize the colors we hit these very few case
+                // rather rarely (we could test all the colors too, but that
                 // 16 million so a tad bit slow, that being said, I tried
                 // once just in case)
                 valid = false; // LCOV_EXCL_LINE
@@ -704,7 +882,7 @@ TEST_CASE("Color to string", "[color] [output]")
         }
         while(!valid);
 
-        c.set_color(r, g, b, static_cast<csspp::color_component_t>(0xFF));
+        c.set_color(r, g, b, static_cast<csspp::byte_component_t>(0xFF));
 
         std::stringstream ss;
         ss << "#" << std::hex << std::setfill('0')
@@ -716,20 +894,20 @@ TEST_CASE("Color to string", "[color] [output]")
 
     // transparent special case
     {
-        c.set_color(static_cast<csspp::color_component_t>(0),
-                    static_cast<csspp::color_component_t>(0),
-                    static_cast<csspp::color_component_t>(0),
-                    static_cast<csspp::color_component_t>(0));
+        c.set_color(static_cast<csspp::byte_component_t>(0),
+                    static_cast<csspp::byte_component_t>(0),
+                    static_cast<csspp::byte_component_t>(0),
+                    static_cast<csspp::byte_component_t>(0));
         REQUIRE(c.to_string() == "transparent");
     }
 
     // rgba()
     for(uint32_t i(0); i < 0x1000000; i += rand() % 500 + 1)
     {
-        csspp::color_component_t const r((i >>  0) & 255);
-        csspp::color_component_t const g((i >>  0) & 255);
-        csspp::color_component_t const b((i >>  0) & 255);
-        csspp::color_component_t const a((rand() % 254) + 1);  // avoid 0 and 255
+        csspp::byte_component_t const r((i >>  0) & 255);
+        csspp::byte_component_t const g((i >>  0) & 255);
+        csspp::byte_component_t const b((i >>  0) & 255);
+        csspp::byte_component_t const a((rand() % 254) + 1);  // avoid 0 and 255
 
         c.set_color(r, g, b, a);
         csspp::safe_precision_t precision(2);
@@ -737,7 +915,7 @@ TEST_CASE("Color to string", "[color] [output]")
         ss << "rgba(" << static_cast<int>(r)
                << "," << static_cast<int>(g)
                << "," << static_cast<int>(b)
-               << "," << csspp::decimal_number_to_string(static_cast<int>(a) / 255.0)
+               << "," << csspp::decimal_number_to_string(static_cast<int>(a) / 255.0, true)
                << ")";
         REQUIRE(c.to_string() == ss.str());
     }

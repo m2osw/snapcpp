@@ -17,7 +17,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "csspp/node.h"
+#include "csspp/expression.h"
 
 namespace csspp
 {
@@ -30,7 +30,9 @@ public:
     node::pointer_t         get_root() const;
     void                    set_root(node::pointer_t root);
 
+    void                    set_date_time_variables(time_t now);
     void                    set_empty_on_undefined_variable(bool const empty_on_undefined_variable);
+    void                    set_no_logo(bool no_logo = true);
 
     void                    clear_paths();
     void                    add_path(std::string const & path);
@@ -46,7 +48,7 @@ private:
     typedef std::vector<std::string>                string_vector_t;
     typedef std::map<std::string, node::pointer_t>  validator_script_vector_t;
 
-    class compiler_state_t
+    class compiler_state_t : public expression_variables_interface
     {
     public:
         void                        set_root(node::pointer_t root);
@@ -56,7 +58,7 @@ private:
         void                        pop_parent();
         bool                        empty_parents() const;
         node::pointer_t             get_previous_parent() const;
-        node::pointer_t             get_variable(std::string const & variable_name) const;
+        node::pointer_t             get_variable(std::string const & variable_name, bool global_only = false) const;
         void                        set_variable(node::pointer_t variable, node::pointer_t value, bool global) const;
 
     private:
@@ -92,7 +94,7 @@ private:
     void                    expand_nested_rules(node::pointer_t parent, node::pointer_t root, node::pointer_t & last, node::pointer_t n);
     void                    expand_nested_declarations(std::string const & name, node::pointer_t parent, node::pointer_t & root, node::pointer_t n);
 
-    bool                    selector_attribute_check(node::pointer_t n);
+    bool                    selector_attribute_check(node::pointer_t parent, size_t & parent_pos, node::pointer_t n);
     bool                    selector_simple_term(node::pointer_t n, size_t & pos);
     bool                    selector_term(node::pointer_t n, size_t & pos);
     bool                    selector_list(node::pointer_t n, size_t & pos);
@@ -110,6 +112,7 @@ private:
     validator_script_vector_t   f_validator_scripts;            // caching scripts
     node::pointer_t             f_current_validation_script;    // last script selected by set_validator_script()
     bool                        f_compiler_validating = false;
+    bool                        f_no_logo = false;
 };
 
 } // namespace csspp

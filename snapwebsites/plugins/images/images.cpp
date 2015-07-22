@@ -1033,7 +1033,7 @@ Magick::Image images::apply_image_script(QString const& script, content::path_in
 {
     QString s(script);
     s.replace("\r", "\n");
-    QStringList commands(s.split("\n"));
+    snap_string_list commands(s.split("\n"));
 
     parameters_t params;
     params.f_image_ipaths = image_ipaths;

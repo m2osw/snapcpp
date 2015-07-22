@@ -23,7 +23,7 @@
  * our lexer as a reference to the outter selectors in order to write an
  * expression such as:
  *
- * \code
+ * \code{.scss}
  *      a {
  *          color: #00f;  // blue when not hovered
  *
@@ -33,26 +33,13 @@
  *      }
  * \endcode
  *
- * There are a few other extensions too such as support for C++ comments.
- *
- * Some tokens are also managed in a slightly different way. For example,
- * CSS 3 handles the '+' and '-' signs as being part of numbers. In our
- * lexer, these are separate operator so we can use them in operations
- * without too much trouble. In the following, -25px is a dimension with
- * value -25 in CSS 3. For us, it is a DASH followed by a DIMENSION.
- *
- * \code
- *      div.box {
- *          box: 1000px/3-25px;
- *      }
- * \endcode
+ * There are a few other extensions too, such as support for C++ comments.
  *
  * \sa \ref lexer_rules
  */
 
 #include "csspp/lexer.h"
 
-#include "csspp/error.h"
 #include "csspp/exceptions.h"
 #include "csspp/unicode_range.h"
 
@@ -85,7 +72,22 @@ node::pointer_t lexer::next_token()
             return node::pointer_t(new node(node_type_t::EOF_TOKEN, f_start_position));
 
         case '=':
-            return node::pointer_t(new node(node_type_t::EQUAL, f_start_position));
+            {
+                wide_char_t const n(getc());
+                if(n != '=')
+                {
+                    ungetc(n);
+                }
+                else
+                {
+                    // really warn about it?
+                    error::instance() << f_position
+                            << "we accepted '==' instead of '=' in an expression, you probably want to change the operator to just '=', though."
+                            << error_mode_t::ERROR_WARNING;
+                }
+
+                return node::pointer_t(new node(node_type_t::EQUAL, f_start_position));
+            }
 
         case ',':
             return node::pointer_t(new node(node_type_t::COMMA, f_start_position));
@@ -1020,7 +1022,7 @@ node::pointer_t lexer::number(wide_char_t c)
     }
 
     // we can have a decimal part
-    integer_t decimal_part(0);
+    decimal_number_t decimal_part(0);
     decimal_number_t decimal_frac(1.0);
     if(c == '.')
     {
@@ -1031,12 +1033,9 @@ node::pointer_t lexer::number(wide_char_t c)
             {
                 break;
             }
-            decimal_part = decimal_part * 10 + c - '0';
             decimal_frac *= 10.0;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(decimal_frac == 100000000.0)
-#pragma GCC diagnostic pop
+            decimal_part += (c - '0') / decimal_frac;
+            if(decimal_frac >= 1e21 && decimal_frac < 1e22)
             {
                 error::instance() << f_start_position << "fraction too large for a decimal number." << error_mode_t::ERROR_ERROR;
             }
@@ -1177,8 +1176,7 @@ node::pointer_t lexer::number(wide_char_t c)
 //std::cerr << "+++ integer = [" << integer << "]\n"
 //          << "+++ decimal_part = [" << decimal_part << "] / [" << decimal_frac << "]\n"
 //          << "+++ exponent = [" << exponent << "]\n";
-        n->set_decimal_number(sign * (static_cast<decimal_number_t>(integer)
-                            + static_cast<decimal_number_t>(decimal_part) / decimal_frac)
+        n->set_decimal_number(sign * (static_cast<decimal_number_t>(integer) + decimal_part)
                             * pow(10.0, static_cast<decimal_number_t>(exponent)));
         if(c == '%')
         {

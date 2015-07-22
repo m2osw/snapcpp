@@ -16,11 +16,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "qdomhelpers.h"
+
 #include "qstring_stream.h"
+#include "snap_string_list.h"
 
 #include <iostream>
 
-#include <QStringList>
 #include <QTextStream>
 
 #include "poison.h"
@@ -328,7 +329,7 @@ QDomElement get_child_element(QDomNode parent, QString const& path)
     //    return parent.toElement();
     //}
 
-    QStringList const p(path.split('/'));
+    snap_string_list const p(path.split('/'));
 
     int const max_children(p.size());
     for(int i(0); i < max_children && !parent.isNull(); ++i)
@@ -391,7 +392,7 @@ QDomElement create_element(QDomNode parent, QString const& path)
         return parent.toElement();
     }
 
-    QStringList p(path.split('/'));
+    snap_string_list p(path.split('/'));
 
     QDomDocument doc(parent.ownerDocument());
 
