@@ -1646,13 +1646,15 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
         csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
 
         std::string name;
-        csspp::wide_char_t special;
+        csspp::wide_char_t special(L'\0');
         int const size(rand() % 20 + 1);
         for(int j(0); j < size; ++j)
         {
             csspp::wide_char_t c;
             if(j == size / 2)
             {
+                // this happens only once and is mandatiry since 'size > 0'
+                // is always true
                 c = special = "'\"()"[rand() % 4];
             }
             else
