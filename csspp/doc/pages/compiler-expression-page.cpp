@@ -937,6 +937,13 @@
  *
  * Calculate the natural (or neperian) logarithm value of number.
  *
+ * There is no exp() function because you may just use the power operator
+ * as in:
+ *
+ * \code{.scss}
+ *      $_csspp_e ** number
+ * \endcode
+ *
  * \subsection max_function max()
  *
  * \code{.scss}

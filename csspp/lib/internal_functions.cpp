@@ -633,7 +633,7 @@ node::pointer_t expression::internal_function__function_exists(node::pointer_t f
             node::pointer_t var(f_variable_handler->get_variable(name, true));
             if(var
             && var->is(node_type_t::LIST)
-            && var->size() > 0
+            && !var->empty()
             && (var->get_child(0)->is(node_type_t::VARIABLE_FUNCTION) // $<name>()
             || var->get_child(0)->is(node_type_t::FUNCTION)))         // @mixin <name>()
             {
@@ -691,8 +691,10 @@ node::pointer_t expression::internal_function__global_variable_exists(node::poin
         {
             node::pointer_t var(f_variable_handler->get_variable(name, true));
             if(var
-            && (var->is(node_type_t::VARIABLE)      // $<name>
-            || var->is(node_type_t::IDENTIFIER)))   // @mixin <name>
+            && var->is(node_type_t::LIST)
+            && !var->empty()
+            && (var->get_child(0)->is(node_type_t::VARIABLE)      // $<name>
+            || var->get_child(0)->is(node_type_t::IDENTIFIER)))   // @mixin <name>
             {
                 result->set_boolean(true);
             }
@@ -703,7 +705,7 @@ node::pointer_t expression::internal_function__global_variable_exists(node::poin
     }
 
     error::instance() << f_current->get_position()
-            << "global-variable_exists() expects a number as parameter."
+            << "global_variable_exists() expects a string or an identifier as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -844,44 +846,41 @@ node::pointer_t expression::internal_function__if(node::pointer_t func)
         error::instance() << f_current->get_position()
                 << "if() expects a boolean as its first argument."
                 << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
     }
     else
     {
-        // if boolean() returns something else than 0 or 1 then it
-        // generated an error
-        int const r(boolean(arg1->get_child(0)));
-        if(r == 0 || r == 1)
+        // if boolean() returns true when arg1 is considered true
+        //
+        // Note:
+        // It generates an error and returns false if the node passed in
+        // is not considered to be a valid boolean node.
+        //
+        bool const r(boolean(arg1->get_child(0)));
+        node::pointer_t result(func->get_child(r ? 1 : 2));
+        if(result->size() == 1)
         {
-            node::pointer_t result(func->get_child(r + 1));
-            if(result->size() == 1)
-            {
-                return result->get_child(0);
-            }
-            node::pointer_t list(new node(node_type_t::LIST, result->get_position()));
-            list->take_over_children_of(result);
-            return list;
+            // very simple result, return as is
+            return result->get_child(0);
         }
+        // complex result (multiple nodes), return in a list
+        node::pointer_t list(new node(node_type_t::LIST, result->get_position()));
+        list->take_over_children_of(result); // TBD: should we use clone() instead?
+        return list;
     }
-
-    return node::pointer_t();
 }
 
 node::pointer_t expression::internal_function__inspect(node::pointer_t func)
 {
     // inspect(expression)
-    node::pointer_t any(internal_function__get_any(func, 0));
-    if(any)
-    {
-        node::pointer_t result(new node(node_type_t::STRING, any->get_position()));
-        result->set_string(any->to_string(node::g_to_string_flag_show_quotes));
-        return result;
-    }
-
-    error::instance() << f_current->get_position()
-            << "inspect() expects one value as parameter."
-            << error_mode_t::ERROR_ERROR;
-
-    return node::pointer_t();
+    //
+    // no need to check whether child 0 exists since we get called only
+    // if the function has exactly 1 argument
+    //
+    node::pointer_t any(func->get_child(0));
+    node::pointer_t result(new node(node_type_t::STRING, any->get_position()));
+    result->set_string(any->to_string(node::g_to_string_flag_show_quotes));
+    return result;
 }
 
 node::pointer_t expression::internal_function__integer(node::pointer_t func)
@@ -997,6 +996,22 @@ node::pointer_t expression::internal_function__log(node::pointer_t func)
     node::pointer_t number(internal_function__get_number(func, 0, n));
     if(number)
     {
+        if(!number->get_string().empty())
+        {
+            error::instance() << f_current->get_position()
+                    << "log() expects a unit less number as parameter."
+                    << error_mode_t::ERROR_ERROR;
+
+            return node::pointer_t();
+        }
+        if(n <= 0.0)
+        {
+            error::instance() << f_current->get_position()
+                    << "log() expects a positive number as parameter."
+                    << error_mode_t::ERROR_ERROR;
+
+            return node::pointer_t();
+        }
         if(number->is(node_type_t::INTEGER))
         {
             number.reset(new node(node_type_t::DECIMAL_NUMBER, number->get_position()));
@@ -1017,16 +1032,55 @@ node::pointer_t expression::internal_function__max(node::pointer_t func)
     // max(n1, n2, ...)
     node::pointer_t number;
     decimal_number_t maximum(0.0);
+    std::string dimension;
     size_t const max_children(func->size());
     for(size_t idx(0); idx < max_children; ++idx)
     {
         decimal_number_t r;
         node::pointer_t n(internal_function__get_number_or_percent(func, idx, r));
-        if(n
-        && (idx == 0 || r > maximum))
+        if(n)
         {
-            number = n;
-            maximum = r;
+            if(idx == 0)
+            {
+                if(n->is(node_type_t::PERCENT))
+                {
+                    dimension = "%";
+                }
+                else
+                {
+                    dimension = n->get_string();
+                }
+            }
+            else
+            {
+                bool valid_dimension(true);
+                if(n->is(node_type_t::PERCENT))
+                {
+                    valid_dimension = dimension == "%";
+                }
+                else
+                {
+                    valid_dimension = dimension == n->get_string();
+                }
+                if(!valid_dimension)
+                {
+                    // all dimensions must be the same
+                    error::instance() << f_current->get_position()
+                            << "max() expects all numbers to have the same dimension."
+                            << error_mode_t::ERROR_ERROR;
+                }
+            }
+            if(idx == 0 || r > maximum)
+            {
+                number = n;
+                maximum = r;
+            }
+        }
+        else
+        {
+            error::instance() << f_current->get_position()
+                    << "max() expects any number of numbers."
+                    << error_mode_t::ERROR_ERROR;
         }
     }
     return number;
@@ -1037,16 +1091,55 @@ node::pointer_t expression::internal_function__min(node::pointer_t func)
     // min(n1, n2, ...)
     node::pointer_t number;
     decimal_number_t minimum(0.0);
+    std::string dimension;
     size_t const max_children(func->size());
     for(size_t idx(0); idx < max_children; ++idx)
     {
         decimal_number_t r;
         node::pointer_t n(internal_function__get_number_or_percent(func, idx, r));
-        if(n
-        && (idx == 0 || r < minimum))
+        if(n)
         {
-            number = n;
-            minimum = r;
+            if(idx == 0)
+            {
+                if(n->is(node_type_t::PERCENT))
+                {
+                    dimension = "%";
+                }
+                else
+                {
+                    dimension = n->get_string();
+                }
+            }
+            else
+            {
+                bool valid_dimension(true);
+                if(n->is(node_type_t::PERCENT))
+                {
+                    valid_dimension = dimension == "%";
+                }
+                else
+                {
+                    valid_dimension = dimension == n->get_string();
+                }
+                if(!valid_dimension)
+                {
+                    // all dimensions must be the same
+                    error::instance() << f_current->get_position()
+                            << "min() expects all numbers to have the same dimension."
+                            << error_mode_t::ERROR_ERROR;
+                }
+            }
+            if(idx == 0 || r < minimum)
+            {
+                number = n;
+                minimum = r;
+            }
+        }
+        else
+        {
+            error::instance() << f_current->get_position()
+                    << "min() expects any number of numbers."
+                    << error_mode_t::ERROR_ERROR;
         }
     }
     return number;
@@ -1058,12 +1151,10 @@ node::pointer_t expression::internal_function__not(node::pointer_t func)
     node::pointer_t arg1(func->get_child(0));
     if(arg1->size() != 1)
     {
-        // the get_child(0) will always work since we do not call this
-        // function when the number of parameters is not exactly 1
-        error::instance() << f_current->get_position()                  // LCOV_EXCL_LINE
-                << "not() expects a boolean as its first argument."     // LCOV_EXCL_LINE
-                << error_mode_t::ERROR_ERROR;                           // LCOV_EXCL_LINE
-        return node::pointer_t();                                       // LCOV_EXCL_LINE
+        error::instance() << f_current->get_position()
+                << "not() expects a boolean as its first argument."
+                << error_mode_t::ERROR_ERROR;
+        return node::pointer_t();
     }
     else
     {
@@ -1572,7 +1663,14 @@ node::pointer_t expression::internal_function__unit(node::pointer_t func)
     if(number)
     {
         node::pointer_t unit(new node(node_type_t::STRING, func->get_position()));
-        unit->set_string(number->get_string());
+        if(number->is(node_type_t::PERCENT))
+        {
+            unit->set_string("%");
+        }
+        else
+        {
+            unit->set_string(number->get_string());
+        }
         return unit;
     }
 
@@ -1596,10 +1694,12 @@ node::pointer_t expression::internal_function__variable_exists(node::pointer_t f
         // defined when we reach these lines of code
         if(f_variable_handler)
         {
-            node::pointer_t var(f_variable_handler->get_variable(name, true));
+            node::pointer_t var(f_variable_handler->get_variable(name, false));
             if(var
-            && (var->is(node_type_t::VARIABLE)      // $<name>
-            || var->is(node_type_t::IDENTIFIER)))   // @mixin <name>
+            && var->is(node_type_t::LIST)
+            && !var->empty()
+            && (var->get_child(0)->is(node_type_t::VARIABLE)      // $<name>
+            || var->get_child(0)->is(node_type_t::IDENTIFIER)))   // @mixin <name>
             {
                 result->set_boolean(true);
             }
@@ -1610,7 +1710,7 @@ node::pointer_t expression::internal_function__variable_exists(node::pointer_t f
     }
 
     error::instance() << f_current->get_position()
-            << "unit() expects a number as parameter."
+            << "variable_exists() expects a string or an identifier as parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -1904,7 +2004,8 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
                 if(function_name == "function_exists")
                 {
                     // first check whether the user is checking for an
-                    // internal function!
+                    // internal function! (because the list of internal
+                    // functions is not available anywhere else)
                     std::string name;
                     node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
                     if(id && !name.empty())
