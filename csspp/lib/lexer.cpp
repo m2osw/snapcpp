@@ -1012,15 +1012,13 @@ node::pointer_t lexer::number(wide_char_t c)
             {
                 break;
             }
-            integer = integer * 10 + c - '0';
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-overflow"
-            if(integer < 0)
-#pragma GCC diagnostic pop
+            uint64_t ni(static_cast<uint64_t>(integer) * 10 + c - '0');
+            if(ni >= 0x8000000000000000LL)
             {
                 // we accept all up to the time it goes negative
                 error::instance() << f_start_position << "integral part too large for a number." << error_mode_t::ERROR_ERROR;
             }
+            integer = static_cast<integer_t>(ni);
         }
     }
 

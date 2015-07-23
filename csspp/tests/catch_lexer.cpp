@@ -1762,14 +1762,14 @@ TEST_CASE("C-like comments", "[lexer] [comment]")
 
             std::stringstream ss;
             char mb[6];
+            csspp::position pos("test.css");
+            csspp::lexer l(ss, pos);
+            l.wctomb(i, mb, sizeof(mb) / sizeof(mb[0]));
 //std::cerr << "testing with " << i << "\n";
 //for(int j(0); mb[j] != '\0'; ++j) std::cerr << " " << j << ". " << std::hex << static_cast<int>(static_cast<unsigned char>(mb[j])) << std::dec << "\n";
             std::string cmt("character: ");
             cmt += mb;
             ss << "/* " << cmt << " @preserve */";
-            csspp::position pos("test.css");
-            csspp::lexer l(ss, pos);
-            l.wctomb(i, mb, sizeof(mb) / sizeof(mb[0]));
 
             // comment
             {
@@ -2104,14 +2104,14 @@ TEST_CASE("C++ comments", "[lexer] [comment]")
 
             std::stringstream ss;
             char mb[6];
+            csspp::position pos("test.css");
+            csspp::lexer l(ss, pos);
+            l.wctomb(i, mb, sizeof(mb) / sizeof(mb[0]));
 //std::cerr << "testing with " << i << "\n";
 //for(int j(0); mb[j] != '\0'; ++j) std::cerr << " " << j << ". " << std::hex << static_cast<int>(static_cast<unsigned char>(mb[j])) << std::dec << "\n";
             std::string cmt("character: ");
             cmt += mb;
             ss << "// " << cmt << " @preserve";
-            csspp::position pos("test.css");
-            csspp::lexer l(ss, pos);
-            l.wctomb(i, mb, sizeof(mb) / sizeof(mb[0]));
 
             // comment
             {
@@ -3839,7 +3839,7 @@ TEST_CASE("Numbers", "[lexer] [number]")
             REQUIRE(npos.get_total_line() == 1);
         }
 
-        // decimal number
+        // integer
         {
             csspp::node::pointer_t integer(l.next_token());
             REQUIRE(integer->is(csspp::node_type_t::INTEGER));

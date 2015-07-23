@@ -68,11 +68,16 @@ echo "***"
 echo "*** compile (`date`)"
 echo "***"
 VERBOSE=1 make
+
+
+# Run the tests once in release mode too (some optimization could break
+# the preprocessor in some way.)
 echo
 echo "***"
-echo "*** run (`date`)"
+echo "*** run tests (`date`)"
 echo "***"
-cd ..
+tests/csspp_tests --scripts $SOURCE_PATH/scripts --version-script scripts
+
 
 end_date=`date`
 

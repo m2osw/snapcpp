@@ -3397,7 +3397,7 @@ TEST_CASE("Expression random()", "[expression] [internal-functions] [random]")
 
         c.compile(false);
 
-std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         // to check the compiler output we need to know what random
         // value was generated; for that purpose, we need to retrieve
