@@ -337,6 +337,127 @@ TEST_CASE("Assemble rules", "[assembler]")
         REQUIRE(c.get_root() == n);
     }
 
+    // with many spaces
+    SECTION("identifier with unicode characters and starting with a digit and including a period")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            // word "e'te'" (summer in French)
+            ss << "\xc3\xa9t\xc3\xa9 { color: gold; }\n"
+               << "\\33 21 { color: tan; }\n"
+               << "\\36 face { color: orchid; }\n"
+               << "\\30 BLUR { color: thistle; }\n"
+               << "this\\.and\\.that { color: honeydew; }\n"
+               << "\xe4\x96\x82 { color: dimgray; }\n"
+               << "\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb { color: darkred; }\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"\xc3\xa9t\xc3\xa9 { color: #ffd700 }\n"
+"\\33 21 { color: #d2b48c }\n"
+"\\36 face { color: #da70d6 }\n"
+"\\30 blur { color: #d8bfd8 }\n"
+"this\\.and\\.that { color: #f0fff0 }\n"
+"\xe4\x96\x82 { color: #696969 }\n"
+"\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb { color: #8b0000 }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"\xc3\xa9t\xc3\xa9{color:#ffd700}"
+"\\33 21{color:#d2b48c}"
+"\\36 face{color:#da70d6}"
+"\\30 blur{color:#d8bfd8}"
+"this\\.and\\.that{color:#f0fff0}"
+"\xe4\x96\x82{color:#696969}"
+"\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb{color:#8b0000}"
+"\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"\xc3\xa9t\xc3\xa9\n"
+"{\n"
+"  color: #ffd700;\n"
+"}\n"
+"\\33 21\n"
+"{\n"
+"  color: #d2b48c;\n"
+"}\n"
+"\\36 face\n"
+"{\n"
+"  color: #da70d6;\n"
+"}\n"
+"\\30 blur\n"
+"{\n"
+"  color: #d8bfd8;\n"
+"}\n"
+"this\\.and\\.that\n"
+"{\n"
+"  color: #f0fff0;\n"
+"}\n"
+"\xe4\x96\x82\n"
+"{\n"
+"  color: #696969;\n"
+"}\n"
+"\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb\n"
+"{\n"
+"  color: #8b0000;\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"\xc3\xa9t\xc3\xa9{color:#ffd700}\n"
+"\\33 21{color:#d2b48c}\n"
+"\\36 face{color:#da70d6}\n"
+"\\30 blur{color:#d8bfd8}\n"
+"this\\.and\\.that{color:#f0fff0}\n"
+"\xe4\x96\x82{color:#696969}\n"
+"\xf0\x90\x90\x94\xf0\x90\x90\xa9\xf0\x90\x91\x85\xf0\x90\x90\xaf\xf0\x90\x91\x89\xf0\x90\x90\xaf\xf0\x90\x90\xbb{color:#8b0000}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+}
+
     // no error left over
     REQUIRE_ERRORS("");
 }
@@ -1653,7 +1774,7 @@ TEST_CASE("Assemble URI", "[assembler] [uri]")
             csspp::wide_char_t c;
             if(j == size / 2)
             {
-                // this happens only once and is mandatiry since 'size > 0'
+                // this happens only once and is mandatory since 'size > 0'
                 // is always true
                 c = special = "'\"()"[rand() % 4];
             }

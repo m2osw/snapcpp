@@ -80,7 +80,7 @@ node::pointer_t expression::internal_function__get_any(node::pointer_t func, siz
 {
     if(argn >= func->size())
     {
-        return node::pointer_t();
+        return node::pointer_t();  // LCOV_EXCL_LINE
     }
 
     node::pointer_t arg(func->get_child(argn));
@@ -96,7 +96,7 @@ node::pointer_t expression::internal_function__get_color(node::pointer_t func, s
 {
     if(argn >= func->size())
     {
-        return node::pointer_t();
+        return node::pointer_t();  // LCOV_EXCL_LINE
     }
 
     node::pointer_t arg(func->get_child(argn));
@@ -148,7 +148,7 @@ node::pointer_t expression::internal_function__get_number_or_percent(node::point
 {
     if(argn >= func->size())
     {
-        return node::pointer_t();
+        return node::pointer_t();  // LCOV_EXCL_LINE
     }
 
     node::pointer_t arg(func->get_child(argn));
@@ -183,7 +183,7 @@ node::pointer_t expression::internal_function__get_string(node::pointer_t func, 
 {
     if(argn >= func->size())
     {
-        return node::pointer_t();
+        return node::pointer_t();  // LCOV_EXCL_LINE
     }
 
     node::pointer_t arg(func->get_child(argn));
@@ -206,7 +206,7 @@ node::pointer_t expression::internal_function__get_string_or_identifier(node::po
 {
     if(argn >= func->size())
     {
-        return node::pointer_t();
+        return node::pointer_t();   // LCOV_EXCL_LINE
     }
 
     node::pointer_t arg(func->get_child(argn));
@@ -678,7 +678,7 @@ node::pointer_t expression::internal_function__green(node::pointer_t func)
 
 node::pointer_t expression::internal_function__global_variable_exists(node::pointer_t func)
 {
-    // variable_exists(name)
+    // global_variable_exists(name)
     std::string name;
     node::pointer_t id(internal_function__get_string_or_identifier(func, 0, name));
     if(id && !name.empty())
@@ -724,6 +724,10 @@ node::pointer_t expression::internal_function__hsl(node::pointer_t func)
 
     if(col1 && col2 && col3)
     {
+        // transform the angle from whatever dimension it is defined as to
+        // radians as expected by set_hsl()
+        h = dimension_to_radians(func->get_position(), h, col1->get_string());
+
         // force alpha to 1.0
         color c;
         c.set_hsl(h, s, l, 1.0);
@@ -733,7 +737,7 @@ node::pointer_t expression::internal_function__hsl(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "hsl() expects exactly three numbers represent Hue (angle), Saturation (%), and Lightness (%)."
+            << "hsl() expects exactly three numbers: Hue (angle), Saturation (%), and Lightness (%)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -754,6 +758,10 @@ node::pointer_t expression::internal_function__hsla(node::pointer_t func)
 
     if(col1 && col2 && col3 && col4)
     {
+        // transform the angle from whatever dimension it is defined as to
+        // radians as expected by set_hsl()
+        h = dimension_to_radians(func->get_position(), h, col1->get_string());
+
         // set color with alpha
         color c;
         c.set_hsl(h, s, l, a);
@@ -763,7 +771,7 @@ node::pointer_t expression::internal_function__hsla(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "hsla() expects exactly four numbers: Hue (angle), saturation (%), lightness (%), alpha (0.0 to 1.0)."
+            << "hsla() expects exactly four numbers: Hue (angle), Saturation (%), Lightness (%), and Alpha (0.0 to 1.0)."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();
@@ -782,7 +790,7 @@ node::pointer_t expression::internal_function__hue(node::pointer_t func)
         color_component_t a;
         c.get_hsl(hue, saturation, lightness, a);
         node::pointer_t component(new node(node_type_t::DECIMAL_NUMBER, func->get_position()));
-        component->set_decimal_number(hue);
+        component->set_decimal_number(hue * 180.0 / M_PI);
         component->set_string("deg");
         return component;
     }
@@ -1342,7 +1350,7 @@ node::pointer_t expression::internal_function__sign(node::pointer_t func)
 {
     // sign(number)
     decimal_number_t n;
-    node::pointer_t number(internal_function__get_number(func, 0, n));
+    node::pointer_t number(internal_function__get_number_or_percent(func, 0, n));
     if(number)
     {
         if(number->is(node_type_t::INTEGER))
@@ -1399,6 +1407,15 @@ node::pointer_t expression::internal_function__sqrt(node::pointer_t func)
     node::pointer_t number(internal_function__get_number(func, 0, n));
     if(number)
     {
+        if(n < 0.0)
+        {
+            // an error occured, we cannot handle those dimensions
+            error::instance() << f_current->get_position()
+                    << "sqrt() expects zero or a positive number."
+                    << error_mode_t::ERROR_ERROR;
+
+            return node::pointer_t();
+        }
         std::string dimension(number->get_string());
         if(!dimension.empty())
         {
@@ -1409,8 +1426,8 @@ node::pointer_t expression::internal_function__sqrt(node::pointer_t func)
             dimension_vector_t divisor;
             dimensions_to_vectors(number->get_position(), dimension, dividend, divisor);
 
-            if((dividend.size() & 1 == 0)
-            && (divisor.size() & 1 == 0))
+            if(((dividend.size() & 1) == 0)
+            && ((divisor.size() & 1) == 0))
             {
                 dimension_vector_t new_dividend;
                 while(dividend.size() > 0)
@@ -1457,7 +1474,7 @@ node::pointer_t expression::internal_function__sqrt(node::pointer_t func)
 
                 if(!dimension.empty())
                 {
-                    dimension = rebuild_dimension(dividend, divisor);
+                    dimension = rebuild_dimension(new_dividend, new_divisor);
                 }
             }
             else
@@ -1469,7 +1486,7 @@ node::pointer_t expression::internal_function__sqrt(node::pointer_t func)
             {
                 // an error occured, we cannot handle those dimensions
                 error::instance() << f_current->get_position()
-                        << "sqrt() expects a number as parameter."
+                        << "sqrt() expects dimensions to be squarely defined (i.e. 'px * px')."
                         << error_mode_t::ERROR_ERROR;
 
                 return node::pointer_t();
@@ -1649,7 +1666,7 @@ node::pointer_t expression::internal_function__type_of(node::pointer_t func)
     }
 
     error::instance() << f_current->get_position()
-            << "type_of() expects one parameter with one value."
+            << "type_of() expects one value as a parameter."
             << error_mode_t::ERROR_ERROR;
 
     return node::pointer_t();

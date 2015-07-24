@@ -270,7 +270,7 @@ bool expression::is_label() const
 {
     // we have a label if we have:
     //    <identifier> <ws>* ':'
-    size_t pos(f_pos + 1);
+    size_t pos(f_pos);
     if(!f_current->is(node_type_t::IDENTIFIER)
     || pos >= f_node->size())
     {
@@ -443,7 +443,7 @@ node::pointer_t expression::conditional()
         next();
 
         // TODO: avoid calculating both sides.
-        node::pointer_t result_true(expression_list());
+        node::pointer_t result_true(conditional());
         if(!result_true)
         {
             return node::pointer_t();

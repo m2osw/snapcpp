@@ -339,7 +339,7 @@ void color::set_hsl(color_component_t hue, color_component_t saturation, color_c
 {
     // see: http://en.wikipedia.org/wiki/HSL_and_HSV
     double const chroma = (1.0 - fabs(2.0 * lightness - 1.0)) * saturation;
-    double const h1 = fmod(hue, 360.0) / 60.0;
+    double const h1 = 6.0 * fmod(hue, M_PI * 2.0) / (M_PI * 2.0);
     double const x = chroma * (1.0 - fabs(fmod(h1, 2) - 1.0));
     double r, g, b;
 
@@ -373,7 +373,7 @@ void color::set_hsl(color_component_t hue, color_component_t saturation, color_c
         g = 0.0;
         b = chroma;
     }
-    else if(h1 >= 5 && h1 < 6)
+    else if(h1 >= 5.0 && h1 < 6.0)
     {
         r = chroma;
         g = 0;
@@ -431,7 +431,7 @@ void color::get_hsl(color_component_t & hue, color_component_t & saturation, col
     {
         hue += 6.0;
     }
-    hue = fmod(hue, 6.0) * 60.0;
+    hue = fmod(hue, 6.0) / 6.0 * M_PI * 2.0;
 
     lightness = (minimum + maximum) / 2.0;
 
@@ -446,68 +446,6 @@ void color::get_hsl(color_component_t & hue, color_component_t & saturation, col
 
     alpha = f_alpha;
 #pragma GCC diagnostic pop
-}
-
-void color::adjust_hue(float change)
-{
-    // Although that other computation works, it can get way off so
-    // we just use the get_hsl() and set_hsl() calls; that's a lot
-    // safer and easier to maintain
-
-    // source: http://stackoverflow.com/questions/8507885/shift-hue-of-an-rgb-color
-    // hue is expected to already be in radian (0 to pi x 2)
-    //float const U(cos(change));
-    //float const W(sin(change));
-
-    //color_component_t const r((0.299f + 0.701f * U + 0.168f * W) * f_red
-    //                        + (0.587f - 0.587f * U + 0.330f * W) * f_green
-    //                        + (0.114f - 0.114f * U - 0.497f * W) * f_blue);
-    //color_component_t const g((0.299f - 0.299f * U - 0.328f * W) * f_red
-    //                        + (0.587f + 0.413f * U + 0.035f * W) * f_green
-    //                        + (0.114f - 0.114f * U + 0.292f * W) * f_blue);
-    //color_component_t const b((0.299f - 0.300f * U + 1.250f * W) * f_red
-    //                        + (0.587f - 0.588f * U - 1.050f * W) * f_green
-    //                        + (0.114f + 0.886f * U - 0.203f * W) * f_blue);
-
-    //f_red   = r;
-    //f_green = g;
-    //f_blue  = b;
-
-    color_component_t hue;
-    color_component_t saturation;
-    color_component_t lightness;
-    color_component_t alpha;
-    get_hsl(hue, saturation, lightness, alpha);
-    set_hsl(hue + change, saturation, lightness, alpha);
-}
-
-void color::adjust_saturation(float change)
-{
-    // source: http://alienryderflex.com/saturation.html
-    //float const p(sqrtf(
-    //          f_red   * f_red   * 0.299
-    //        + f_green * f_green * 0.587
-    //        + f_blue  * f_blue  * 0.114));
-    //f_red   = p + (f_red   - p) * change;
-    //f_green = p + (f_green - p) * change;
-    //f_blue  = p + (f_blue  - p) * change;
-
-    color_component_t hue;
-    color_component_t saturation;
-    color_component_t lightness;
-    color_component_t alpha;
-    get_hsl(hue, saturation, lightness, alpha);
-    set_hsl(hue, saturation + change, lightness, alpha);
-}
-
-void color::adjust_lightness(float change)
-{
-    color_component_t hue;
-    color_component_t saturation;
-    color_component_t lightness;
-    color_component_t alpha;
-    get_hsl(hue, saturation, lightness, alpha);
-    set_hsl(hue, saturation, lightness + change, alpha);
 }
 
 rgba_color_t color::get_color() const

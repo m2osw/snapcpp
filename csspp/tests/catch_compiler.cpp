@@ -508,10 +508,10 @@ TEST_CASE("Compile simple stylesheets", "[compiler] [stylesheet] [attribute]")
 
         c.compile(false);
 
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
         // no error left over
         REQUIRE_ERRORS("");
-
-//std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
         std::stringstream out;
         out << *n;

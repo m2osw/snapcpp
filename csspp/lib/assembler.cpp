@@ -253,33 +253,69 @@ std::string assembler::escape_id(std::string const & id)
 {
     std::string result;
 
+    // create a temporary lexer to apply the conversion
+    std::stringstream ss;
+    position pos("assembler.css");
+    lexer l(ss, pos);
+
     bool first_char(true);
-    for(char const *s(id.c_str()); *s != '\0'; ++s)
+    for(char const *s(id.c_str()); *s != '\0'; )
     {
-        if((first_char && lexer::is_start_identifier(*s))
-        || (!first_char && lexer::is_identifier(*s)))
+        char mb[5];
+        unsigned char c(static_cast<unsigned char>(*s));
+        size_t len(1);
+        if(c >= 0xF0)
         {
-            result += *s;
+            len = 4;
+        }
+        else if(c >= 0xE0)
+        {
+            len = 3;
+        }
+        else if(c >= 0xC0)
+        {
+            len = 2;
+        }
+        //else len = 1 -- already set to 1 by default
+        for(size_t i(0); i < len; ++i, ++s)
+        {
+            if(*s == '\0')
+            {
+                // UTF-8 should be perfect when we reach the assembler
+                throw csspp_exception_logic("assembler.cpp: assembler::escape_id(): invalid UTF-8 character found."); // LCOV_EXCL_LINE
+            }
+            mb[i] = *s;
+        }
+        mb[len] = '\0';
+
+        wide_char_t wc(l.mbtowc(mb));
+
+        if((first_char && lexer::is_start_identifier(wc))
+        || (!first_char && lexer::is_identifier(wc)))
+        {
+            result += mb;
         }
         else
         {
             result += '\\';
-            if(*s >= '0' && *s <= '9')
+            if(wc >= '0' && wc <= '9')
             {
                 // digits need to be defined as hexa
                 result += '3';
-                result += *s;
+                result += wc;
                 // add a space if the next character requires us to do so
-                if((s[1] >= '0' && s[1] <= '9')
-                || (s[1] >= 'a' && s[1] <= 'f')
-                || (s[1] >= 'A' && s[1] <= 'F'))
+                // (by now identifier letters should all be lower case so
+                // the 'A' to 'F' should never match)
+                if((s[0] >= '0' && s[0] <= '9')
+                || (s[0] >= 'a' && s[0] <= 'f')
+                || (s[0] >= 'A' && s[0] <= 'F')) // LCOV_EXCL_LINE
                 {
                     result += ' ';
                 }
             }
             else
             {
-                result += *s;
+                result += mb;
             }
         }
         first_char = false;
