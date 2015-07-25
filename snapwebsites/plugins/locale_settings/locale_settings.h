@@ -71,6 +71,8 @@ public:
     void                        on_bootstrap(snap_child * snap);
     void                        on_set_locale();
     void                        on_set_timezone();
+    void                        on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
+
 
 private:
     void                        content_update(int64_t variables_timestamp);

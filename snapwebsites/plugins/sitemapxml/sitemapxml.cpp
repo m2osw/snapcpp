@@ -449,6 +449,9 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
     {
         // this is the XSL file used to transform the XML sitemap to HTML
         // and thus make it human readable (outside of the text version)
+        //
+        // TODO: store a pre-compressed version
+        //
         QFile xsl(":/plugins/sitemapxml/sitemapxml-to-html.xsl");
         if(!xsl.open(QIODevice::ReadOnly))
         {

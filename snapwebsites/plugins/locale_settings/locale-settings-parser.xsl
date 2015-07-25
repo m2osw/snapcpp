@@ -39,9 +39,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 					<a class="settings-save-button" href="#">Save Changes</a>
 					<a class="settings-cancel-button right-aligned" href="{/snap/head/metadata/desc[@type='page_uri']/data}">Cancel</a>
 				</xsl:if-->
-				<h2>Selection of the Default Timezone for your Website</h2>
+				<h3>Selection of the Default Timezone for your Website</h3>
 				<div>
 					<xsl:attribute name="class">test<!--xsl:if test="$action = 'edit'"> editing</xsl:if--></xsl:attribute>
+
+					<p><a href="locale/info">More information</a> about the locale library used by this instance of Snap!</p>
 
 					<fieldset class="timezone-selection">
 						<legend>Timezone</legend>

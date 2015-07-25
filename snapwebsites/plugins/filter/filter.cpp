@@ -875,7 +875,7 @@ void filter::on_token_filter(content::path_info_t& ipath, QDomDocument& xml)
             }
         }
 
-        void ungets(QString const& s)
+        void ungets(QString const & s)
         {
             f_extra_input.remove(0, f_extra_index);
             f_extra_input.insert(0, s);

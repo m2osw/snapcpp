@@ -105,6 +105,7 @@ public:
                                 locale();
                                 ~locale();
 
+    // plugin implementation
     static locale *             instance();
     virtual QString             description() const;
     virtual int64_t             do_update(int64_t last_updated);

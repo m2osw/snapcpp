@@ -108,9 +108,11 @@ public:
     void                    on_bootstrap(::snap::snap_child *snap);
     void                    on_generate_robotstxt(robotstxt::robotstxt *r);
     void                    on_backend_process();
-    virtual bool            on_path_execute(content::path_info_t & ipath);
     void                    on_allow_shorturl(content::path_info_t & ipath, QString const & owner, QString const & type, bool & allow);
     void                    on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
+
+    // class path_execute
+    virtual bool            on_path_execute(content::path_info_t & ipath);
 
     SNAP_SIGNAL(generate_sitemapxml, (sitemapxml *sitemap), (sitemap));
 

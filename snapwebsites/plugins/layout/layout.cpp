@@ -786,7 +786,7 @@ out.write(doc.toString(-1).toUtf8());
 
     // Somehow binding crashes everything at this point?! (Qt 4.8.1)
 //std::cerr << "*** Generate output...\n";
-    QString doc_str(doc.toString(-1));
+    QString const doc_str(doc.toString(-1));
     if(doc_str.isEmpty())
     {
         throw snap_logic_exception("somehow the memory XML document for the body XSLT is empty");
