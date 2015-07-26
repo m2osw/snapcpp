@@ -191,18 +191,34 @@ char const test_colors[] =
 TEST_CASE("Invalid colors", "[color] [invalid]")
 {
     csspp::color c;
-    REQUIRE(!c.set_color(""));
-    REQUIRE(!c.set_color("1"));
-    REQUIRE(!c.set_color("12"));
-    REQUIRE(!c.set_color("1234"));
-    REQUIRE(!c.set_color("12345"));
-    REQUIRE(!c.set_color("1234567"));
-    REQUIRE(!c.set_color("12345G"));
-    REQUIRE(!c.set_color("/01234"));
-    REQUIRE(!c.set_color("/05"));
-    REQUIRE(!c.set_color("44G"));
-    REQUIRE(!c.set_color("#333"));
-    REQUIRE(!c.set_color("unknown"));
+
+    REQUIRE(!c.set_color("", false));
+    REQUIRE(!c.set_color("1", false));
+    REQUIRE(!c.set_color("12", false));
+    REQUIRE(!c.set_color("1234", false));
+    REQUIRE(!c.set_color("12345", false));
+    REQUIRE(!c.set_color("1234567", false));
+    REQUIRE(!c.set_color("12345G", false));
+    REQUIRE(!c.set_color("/01234", false));
+    REQUIRE(!c.set_color("/05", false));
+    REQUIRE(!c.set_color("44G", false));
+    REQUIRE(!c.set_color("#333", false));
+    REQUIRE(!c.set_color("unknown", false));
+
+    REQUIRE(!c.set_color("", true));
+    REQUIRE(!c.set_color("1", true));
+    REQUIRE(!c.set_color("12", true));
+    REQUIRE(!c.set_color("123", true)); // this would work with false
+    REQUIRE(!c.set_color("1234", true));
+    REQUIRE(!c.set_color("12345", true));
+    REQUIRE(!c.set_color("123456", true)); // this would work with false
+    REQUIRE(!c.set_color("1234567", true));
+    REQUIRE(!c.set_color("12345G", true));
+    REQUIRE(!c.set_color("/01234", true));
+    REQUIRE(!c.set_color("/05", true));
+    REQUIRE(!c.set_color("44G", true));
+    REQUIRE(!c.set_color("#333", true));
+    REQUIRE(!c.set_color("unknown", true));
 }
 
 TEST_CASE("Default color", "[color] [default]")
@@ -236,7 +252,7 @@ TEST_CASE("Verify #XXX colors", "[color] [parse]")
         ss << std::hex << static_cast<int>(r) << static_cast<int>(g) << static_cast<int>(b);
 
         csspp::color c;
-        REQUIRE(c.set_color(ss.str()));
+        REQUIRE(c.set_color(ss.str(), false));
 
         REQUIRE(c.get_color() == (r * 0x11) + (g * 0x1100) + (b * 0x110000) + 0xFF000000);
         REQUIRE(c.is_solid());
@@ -272,7 +288,7 @@ TEST_CASE("Verify #XXXXXX colors", "[color] [parse]")
                        << std::setw(2) << static_cast<int>(b);
 
         csspp::color c;
-        REQUIRE(c.set_color(ss.str()));
+        REQUIRE(c.set_color(ss.str(), false));
 
         REQUIRE(c.get_color() == (r * 0x1) + (g * 0x100) + (b * 0x10000) + 0xFF000000);
         REQUIRE(c.is_solid());
@@ -330,7 +346,7 @@ TEST_CASE("Verify named colors", "[color] [parse]")
         ++s; // skip the '\n'
 
         csspp::color c;
-        REQUIRE(c.set_color(name));
+        REQUIRE(c.set_color(name, false));
         REQUIRE(c.is_solid());
         REQUIRE(!c.is_transparent());
         REQUIRE(c.get_color() == (r << 0) + (g << 8) + (b << 16) + 0xFF000000);
@@ -352,7 +368,7 @@ TEST_CASE("Verify named colors", "[color] [parse]")
     // verify the transparent color
     {
         csspp::color c;
-        REQUIRE(c.set_color("transparent"));
+        REQUIRE(c.set_color("transparent", false));
         REQUIRE(!c.is_solid());
         REQUIRE(c.is_transparent());
         REQUIRE(c.get_color() == 0);

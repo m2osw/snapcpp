@@ -449,8 +449,7 @@ TEST_CASE("Invalid unary expressions", "[expression] [unary]")
     SECTION("improper initialization of an expression object")
     {
         csspp::node::pointer_t null_node;
-        REQUIRE_THROWS_AS(new csspp::expression(null_node, true), csspp::csspp_exception_logic);
-        REQUIRE_THROWS_AS(new csspp::expression(null_node, false), csspp::csspp_exception_logic);
+        REQUIRE_THROWS_AS(new csspp::expression(null_node), csspp::csspp_exception_logic);
     }
 
     SECTION("important width, wrong order")

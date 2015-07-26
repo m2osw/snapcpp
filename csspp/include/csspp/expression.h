@@ -33,7 +33,7 @@ public:
 class expression
 {
 public:
-                        expression(node::pointer_t n, bool skip_whitespace);
+                        expression(node::pointer_t n);
 
     void                set_variable_handler(expression_variables_interface * handler);
 
@@ -49,10 +49,7 @@ private:
     void                mark_start();
     node::pointer_t     replace_with_result(node::pointer_t result);
     void                next();
-    //node::pointer_t     look_ahead() const;
-    //node::pointer_t     current() const;
     node::pointer_t     conditional();
-    //node::pointer_t     argument_list();
 
     bool                is_label() const;
     node::pointer_t     compile_list(node::pointer_t parent);
@@ -133,7 +130,6 @@ private:
     size_t                              f_start = static_cast<size_t>(-1);
     node::pointer_t                     f_current;
     variable_vector_t                   f_variables;
-    bool                                f_skip_whitespace = false;
     bool                                f_divide_font_metrics = false;
     expression_variables_interface *    f_variable_handler = nullptr;
 };

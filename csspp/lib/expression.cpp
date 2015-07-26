@@ -37,9 +37,8 @@
 namespace csspp
 {
 
-expression::expression(node::pointer_t n, bool skip_whitespace)
+expression::expression(node::pointer_t n)
     : f_node(n)
-    , f_skip_whitespace(skip_whitespace)
 {
     if(!f_node)
     {
@@ -60,7 +59,7 @@ void expression::compile_args(bool divide_font_metrics)
         if(a + 1 < max_children
         || !f_node->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET))
         {
-            expression arg_expr(f_node->get_child(a), true);
+            expression arg_expr(f_node->get_child(a));
             arg_expr.set_variable_handler(f_variable_handler);
             arg_expr.f_divide_font_metrics = divide_font_metrics;
             arg_expr.compile_list(f_node);
@@ -203,29 +202,13 @@ void expression::next()
     {
         f_current = f_node->get_child(f_pos);
         ++f_pos;
-        while(f_skip_whitespace
-           && f_pos < f_node->size()
+        while(f_pos < f_node->size()
            && f_node->get_child(f_pos)->is(node_type_t::WHITESPACE))
         {
             ++f_pos;
         }
     }
 }
-
-//node::pointer_t expression::look_ahead() const
-//{
-//    if(f_pos < f_node->size())
-//    {
-//        return f_node->get_child(f_pos);
-//    }
-//
-//    return node::pointer_t();
-//}
-//
-//node::pointer_t expression::current() const
-//{
-//    return f_current;
-//}
 
 bool expression::boolean(node::pointer_t n)
 {
@@ -239,73 +222,32 @@ bool expression::boolean(node::pointer_t n)
     return result == boolean_t::BOOLEAN_TRUE;
 }
 
-// expression parsing
-//node::pointer_t expression::argument_list()
-//{
-//    node::pointer_t result(assignment());
-//    if(!result)
-//    {
-//        return node::pointer_t();
-//    }
-//
-//    {
-//        node::pointer_t item(result);
-//        result.reset(new node(node_type_t::LIST, item->get_position()));
-//        result->add_child(item);
-//    }
-//
-//    while(f_current->is(node_type_t::COMMA))
-//    {
-//        // skip the ','
-//        next();
-//
-//        // read the next expression
-//        result->add_child(assignment());
-//    }
-//
-//    return result;
-//}
-
 bool expression::is_label() const
 {
     // we have a label if we have:
     //    <identifier> <ws>* ':'
-    size_t pos(f_pos);
     if(!f_current->is(node_type_t::IDENTIFIER)
-    || pos >= f_node->size())
+    || f_pos >= f_node->size())
     {
         return false;
     }
 
-    node::pointer_t n(f_node->get_child(pos));
-    if(n->is(node_type_t::WHITESPACE))
-    {
-        ++pos;
-        if(pos >= f_node->size())
-        {
-            // this should not happen since lists of tokens cannot end
-            // with a WHITESPACE
-            return false;
-        }
-        n = f_node->get_child(pos);
-    }
-
-    return n->is(node_type_t::COLON);
+    return f_node->get_child(f_pos)->is(node_type_t::COLON);
 }
 
 node::pointer_t expression::expression_list()
 {
-    // expression-list: assignment
-    //                | list
+    // expression-list: array
     //                | map
     //
-    // list: assignment
-    //     | list ',' assignment
+    // array: assignment
+    //      | array ',' assignment
     //
     // map: IDENTIFIER ':' assignment
+    //    | IDENTIFIER ':'
     //    | map ',' IDENTIFIER ':' assignment
+    //    | map ',' IDENTIFIER ':'
     //
-    safe_bool_t safe_skip_whitespace(f_skip_whitespace);
 
     if(is_label())
     {
@@ -329,6 +271,11 @@ node::pointer_t expression::expression_list()
 
                 // skip the ','
                 next();
+            }
+            else if(f_current->is(node_type_t::EOF_TOKEN))
+            {
+                // map ends with just a label, make sure we add a NULL too
+                result.reset();
             }
             else
             {
@@ -366,20 +313,15 @@ node::pointer_t expression::expression_list()
         if(result
         && f_current->is(node_type_t::COMMA))
         {
+            // in CSS Preprocessor, a list of expressions is an ARRAY
+            // (contrary to C/C++ which just return the last expression)
             node::pointer_t array(new node(node_type_t::ARRAY, f_current->get_position()));
             array->add_child(result);
 
-            // an expression list does NOT return a LIST, it just returns
-            // the result of the last expression (as in C/C++)
             while(f_current->is(node_type_t::COMMA))
             {
                 // skip the ','
                 next();
-
-                if(f_current->is(node_type_t::IDENTIFIER)
-                && f_pos + 1 < f_node->size())
-                {
-                }
 
                 result = assignment();
                 if(!result)
@@ -427,7 +369,7 @@ node::pointer_t expression::assignment()
 node::pointer_t expression::conditional()
 {
     // conditional: logical_or
-    //            | conditional '?' expression_list ':' logical_or
+    //            | conditional '?' conditional ':' logical_or
 
     // note: we also support if(expr, expr, expr)
 
@@ -2159,7 +2101,7 @@ node::pointer_t expression::post()
         if(f_current->is(node_type_t::OPEN_SQUAREBRACKET))
         {
             // compile the index expression
-            expression index_expr(f_current, true);
+            expression index_expr(f_current);
             index_expr.set_variable_handler(f_variable_handler);
             index_expr.next();
             node::pointer_t i(index_expr.expression_list());
@@ -2191,7 +2133,7 @@ node::pointer_t expression::post()
                     {
                         error::instance() << f_current->get_position()
                                 << "index "
-                                << idx
+                                << i->get_integer()
                                 << " is out of range. The allowed range is 1 to "
                                 << static_cast<int>(result->size())
                                 << "."
@@ -2211,7 +2153,7 @@ node::pointer_t expression::post()
                     if(idx < 0)
                     {
                         // negative numbers get items from the item
-                        idx = result->size() + idx;
+                        idx = result->size() / 2 + idx;
                     }
                     else
                     {
@@ -2222,9 +2164,9 @@ node::pointer_t expression::post()
                     {
                         error::instance() << f_current->get_position()
                                 << "index "
-                                << idx
+                                << i->get_integer()
                                 << " is out of range. The allowed range is 1 to "
-                                << static_cast<int>(result->size())
+                                << static_cast<int>(result->size()) / 2
                                 << "."
                                 << error_mode_t::ERROR_ERROR;
                         return node::pointer_t();
@@ -2236,12 +2178,13 @@ node::pointer_t expression::post()
                     error::instance() << f_current->get_position()
                             << "unsupported type "
                             << result->get_type()
-                            << " for the 'list[<index>]' operation."
+                            << " for the 'array[<index>]' operation."
                             << error_mode_t::ERROR_ERROR;
                     return node::pointer_t();
                 }
             }
-            else if(i->is(node_type_t::STRING))
+            else if(i->is(node_type_t::STRING)
+                 || i->is(node_type_t::IDENTIFIER))
             {
                 // nothing more to skip, the string is a child in
                 // a separate list
@@ -2250,6 +2193,11 @@ node::pointer_t expression::post()
             }
             else
             {
+                error::instance() << f_current->get_position()
+                        << "an integer, an identifier, or a string was expected as the index (defined in '[ ... ]'). A "
+                        << i->get_type()
+                        << " was not expected."
+                        << error_mode_t::ERROR_ERROR;
                 return node::pointer_t();
             }
         }
@@ -2271,22 +2219,47 @@ node::pointer_t expression::post()
             next();
 
 field_index:
-            if(result->is(node_type_t::LIST))
+            if(result->is(node_type_t::MAP))
             {
-                // in this case the index is a string/identifier
+                // in this case the index is a string or an identifier
                 std::string const idx(index->get_string());
-                // TODO: what are we indexing against?
-                error::instance() << f_current->get_position()
-                        << "'map[<string|identifier>]' not yet supported."
-                        << error_mode_t::ERROR_ERROR;
-                return node::pointer_t();
+                size_t const max_item(result->size());
+                if((max_item & 1) != 0)
+                {
+                    throw csspp_exception_logic("expression.cpp:expression::post(): number of items in a map has to be even."); // LCOV_EXCL_LINE
+                }
+                bool found(false);
+                for(size_t j(0); j < max_item; j += 2)
+                {
+                    node::pointer_t item_name(result->get_child(j));
+                    if(!item_name->is(node_type_t::IDENTIFIER))
+                    {
+                        throw csspp_exception_logic("expression.cpp:expression::post(): a map has the name of an entry which is not an identifier."); // LCOV_EXCL_LINE
+                    }
+                    if(item_name->get_string() == idx)
+                    {
+                        result = result->get_child(j + 1);
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found)
+                {
+                    // TBD: should this be acceptable and we return NULL instead?
+                    error::instance() << f_current->get_position()
+                            << "'map[\""
+                            << idx
+                            << "\"]' is not set."
+                            << error_mode_t::ERROR_ERROR;
+                    return node::pointer_t();
+                }
             }
             else
             {
                 error::instance() << f_current->get_position()
                         << "unsupported left handside type "
                         << result->get_type()
-                        << " for the 'map[<string|identifier>]' operation."
+                        << " for the '<map>.<identifier>' operation."
                         << error_mode_t::ERROR_ERROR;
                 return node::pointer_t();
             }
@@ -2349,7 +2322,7 @@ node::pointer_t expression::unary()
             if(func->get_string() != "calc"
             && func->get_string() != "expression")
             {
-                expression args_expr(func, true);
+                expression args_expr(func);
                 args_expr.set_variable_handler(f_variable_handler);
                 args_expr.compile_args(false);
             }
@@ -2362,7 +2335,7 @@ node::pointer_t expression::unary()
     case node_type_t::OPEN_PARENTHESIS:
         {
             // calculate the result of the sub-expression
-            expression group(f_current, true);
+            expression group(f_current);
             group.set_variable_handler(f_variable_handler);
             group.next();
 
@@ -2429,7 +2402,7 @@ node::pointer_t expression::unary()
         // a '#...' in an expression is expected to be a valid color
         {
             color hash;
-            if(!hash.set_color(f_current->get_string()))
+            if(!hash.set_color(f_current->get_string(), false))
             {
                 error::instance() << f_current->get_position()
                         << "the color in #"
@@ -2477,7 +2450,7 @@ node::pointer_t expression::unary()
 
             // a color?
             color col;
-            if(col.set_color(identifier))
+            if(col.set_color(identifier, true))
             {
                 node::pointer_t color_node(new node(node_type_t::COLOR, result->get_position()));
                 color_node->set_color(col);

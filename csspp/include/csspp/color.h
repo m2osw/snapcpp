@@ -50,7 +50,7 @@ public:
     void                    adjust_hue(float hue);
     void                    adjust_saturation(float change);
     void                    adjust_lightness(float change);
-    bool                    set_color(std::string const & name);
+    bool                    set_color(std::string const & name, bool name_only);
     rgba_color_t            get_color() const;
     void                    get_color(color_component_t & red, color_component_t & green, color_component_t & blue, color_component_t & alpha) const;
 

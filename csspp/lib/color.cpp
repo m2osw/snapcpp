@@ -262,7 +262,7 @@ void color::set_color(double red, double green, double blue, double alpha)
     f_alpha = alpha;
 }
 
-bool color::set_color(std::string const & name)
+bool color::set_color(std::string const & name, bool name_only)
 {
     // we assume that the color name was written as an identifier and thus
     // it is already in lowercase and can be compared directly
@@ -300,36 +300,41 @@ bool color::set_color(std::string const & name)
         }
     }
 
-    // if not a direct name, it has to be a valid hexadecimal string
-    // of 3 or 6 digits
-    if(name.length() == 3)
+    if(!name_only)
     {
-        if(lexer::is_hex(name[0])
-        && lexer::is_hex(name[1])
-        && lexer::is_hex(name[2]))
+
+        // if not a direct name, it has to be a valid hexadecimal string
+        // of 3 or 6 digits
+        if(name.length() == 3)
         {
-            set_color(lexer::hex_to_dec(name[0]) * 0x11,
-                      lexer::hex_to_dec(name[1]) * 0x11,
-                      lexer::hex_to_dec(name[2]) * 0x11,
-                      255);
-            return true;
+            if(lexer::is_hex(name[0])
+            && lexer::is_hex(name[1])
+            && lexer::is_hex(name[2]))
+            {
+                set_color(lexer::hex_to_dec(name[0]) * 0x11,
+                          lexer::hex_to_dec(name[1]) * 0x11,
+                          lexer::hex_to_dec(name[2]) * 0x11,
+                          255);
+                return true;
+            }
         }
-    }
-    else if(name.length() == 6)
-    {
-        if(lexer::is_hex(name[0])
-        && lexer::is_hex(name[1])
-        && lexer::is_hex(name[2])
-        && lexer::is_hex(name[3])
-        && lexer::is_hex(name[4])
-        && lexer::is_hex(name[5]))
+        else if(name.length() == 6)
         {
-            set_color(lexer::hex_to_dec(name[0]) * 16 + lexer::hex_to_dec(name[1]),
-                      lexer::hex_to_dec(name[2]) * 16 + lexer::hex_to_dec(name[3]),
-                      lexer::hex_to_dec(name[4]) * 16 + lexer::hex_to_dec(name[5]),
-                      255);
-            return true;
+            if(lexer::is_hex(name[0])
+            && lexer::is_hex(name[1])
+            && lexer::is_hex(name[2])
+            && lexer::is_hex(name[3])
+            && lexer::is_hex(name[4])
+            && lexer::is_hex(name[5]))
+            {
+                set_color(lexer::hex_to_dec(name[0]) * 16 + lexer::hex_to_dec(name[1]),
+                          lexer::hex_to_dec(name[2]) * 16 + lexer::hex_to_dec(name[3]),
+                          lexer::hex_to_dec(name[4]) * 16 + lexer::hex_to_dec(name[5]),
+                          255);
+                return true;
+            }
         }
+
     }
 
     return false;

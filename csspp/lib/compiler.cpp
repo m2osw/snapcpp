@@ -855,7 +855,7 @@ void compiler::compile_declaration(node::pointer_t n)
             bool const slash_separators(run_validation(true));
 
             parser::argify(declaration, slash_separators ? node_type_t::DIVIDE : node_type_t::COMMA);
-            expression args_expr(declaration, true);
+            expression args_expr(declaration);
             args_expr.set_variable_handler(&f_state);
             args_expr.compile_args(divide_font_metrics);
         }
@@ -2147,7 +2147,7 @@ node::pointer_t compiler::at_keyword_expression(node::pointer_t n)
     // calculate the expression if present
     if(!n->empty() && !n->get_child(0)->is(node_type_t::OPEN_CURLYBRACKET))
     {
-        expression expr(n, true);
+        expression expr(n);
         expr.set_variable_handler(&f_state);
         return expr.compile();
     }
