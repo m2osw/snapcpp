@@ -570,15 +570,6 @@ bool is_equal(node::pointer_t lhs, node::pointer_t rhs)
 
     // the is_comparable() function prevents us from reaching this line
     throw csspp_exception_logic("expression.cpp:include_match(): called with an invalid set of node types."); // LCOV_EXCL_LINE
-
-    //error::instance() << lhs->get_position()
-    //        << "incompatible types between "
-    //        << lhs->get_type()
-    //        << " and "
-    //        << rhs->get_type()
-    //        << " for operator '=', '!=', '<', '<=', '>', or '>='."
-    //        << error_mode_t::ERROR_ERROR;
-    //return false;
 }
 
 bool is_less_than(node::pointer_t lhs, node::pointer_t rhs)
