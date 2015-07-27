@@ -2,9 +2,19 @@
 To be closer to what SASS supports, we shall implement the following
 additional features:
 
-. variable named when calling a function (to allow any order):
 
-     $func($name: value, $arg2: value2, ...)
+. Break up the expression.cpp file in a set of files to match the
+  tests so it is easy that each covers 100% of what it is expected
+  to cover.
+
+
+. Variable named when calling a function (to allow any order):
+
+     $func(name: $var_name, arg2: value2, ...)
+
+
+. Implement @return so the external system functions actually do what
+  they are expected to do
 
 
 . Implement @extend
