@@ -40,6 +40,15 @@ AddDoxygenTarget(
     ${CSSPP_VERSION_PATCH}
 )
 
+add_dependencies(csspp_Documentation
+    sample.css
+)
+
+add_custom_target(sample.css
+    DEPENDS csspp
+    COMMAND ../src/csspp -I ${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/scripts --debug --style expanded --output sample.css ${CMAKE_CURRENT_SOURCE_DIR}/sample.scss
+)
+
 ## Website front page is done manually here for now...
 ## (At least until Snap! Websites works as expected for us.)
 

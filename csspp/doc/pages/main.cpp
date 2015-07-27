@@ -35,7 +35,30 @@
  * at a later time and then replace the assembler to output the objects
  * as valid and minified CSS instead of keeping the tree as we do now.
  *
- * \section csspreprocess_references CSS Preprocessor References
+ * \section csspreprocessor_example CSS Preprocessor Example
+ *
+ * The following is an example of input data to the CSS Preprocessor.
+ * The sample shows the use of two variables, and of nested rules
+ * which I think is one of the most powerful feature of the CSS
+ * Preprocessor.
+ *
+ * \include doc/sample.scss
+ *
+ * First there is the command line used to process the file (assuming
+ * you installed the package as expected by default). As we can see,
+ * I use the "expanded" style to show a beautified version. To generate
+ * a CSS as compressed as possible, use the compressed style (which is
+ * the default).
+ *
+ * \code
+ * csspp --style expanded --output sample.css sample.scss
+ * \endcode
+ *
+ * The following is the resulting output:
+ *
+ * \include doc/sample.css
+ *
+ * \section csspreprocessor_references CSS Preprocessor References
  *
  * The command line tool is documented in src/csspp.cpp (make sure to click
  * on the More... link to see all the details.)
