@@ -44,6 +44,7 @@
 #include "csspp/unicode_range.h"
 
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 
 namespace csspp

@@ -232,6 +232,7 @@
 
 #include <advgetopt/advgetopt.h>
 
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 
@@ -483,7 +484,7 @@ int pp::compile()
     csspp::node::pointer_t root(p.stylesheet());
     if(error_tracker.error_happened())
     {
-        exit(1);
+        return 1;
     }
 
     csspp::node::pointer_t csspp_args(new csspp::node(csspp::node_type_t::LIST, root->get_position()));
@@ -589,7 +590,8 @@ int pp::compile()
     }
     csspp::assembler a(*out);
     a.output(c.get_root(), output_mode);
-    if(f_opt->is_defined("output"))
+    if(f_opt->is_defined("output")
+    && f_opt->get_string("output") != "-")
     {
         delete out;
     }
@@ -597,7 +599,7 @@ int pp::compile()
     {
         // this should be rare as the assembler generally does not generate
         // errors (it may throw though.)
-        exit(1);
+        return 1;
     }
 
     return 0;

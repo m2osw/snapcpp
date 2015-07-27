@@ -40,14 +40,19 @@ AddDoxygenTarget(
     ${CSSPP_VERSION_PATCH}
 )
 
-add_dependencies(csspp_Documentation
-    sample.css
-)
+# At this point this may not work on all platform, so to make it easier
+# I specialize it to Linux only; that just means one doxygen \include
+# will fail.
+if( ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" )
+    add_dependencies(csspp_Documentation
+        sample.css
+    )
 
-add_custom_target(sample.css
-    DEPENDS csspp
-    COMMAND ../src/csspp -I ${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/scripts --debug --style expanded --output sample.css ${CMAKE_CURRENT_SOURCE_DIR}/sample.scss
-)
+    add_custom_target(sample.css
+        DEPENDS csspp
+        COMMAND ../src/csspp -I ${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/scripts --debug --style expanded --output sample.css ${CMAKE_CURRENT_SOURCE_DIR}/sample.scss
+    )
+endif()
 
 ## Website front page is done manually here for now...
 ## (At least until Snap! Websites works as expected for us.)

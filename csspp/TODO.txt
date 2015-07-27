@@ -89,4 +89,7 @@ additional features:
     {margin:5px 3px;}
 
 
+. Design a test which checks the csspp command line itself.
+
+
 vim: tw=2 sw=2 et
