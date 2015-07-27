@@ -1295,19 +1295,19 @@ node::pointer_t lexer::comment(bool c_comment)
 {
     std::string str;
 
-    // skip leading spaces
-    for(;;)
-    {
-        wide_char_t c(getc());
-        if(!is_space(c))
-        {
-            ungetc(c);
-            break;
-        }
-    }
-
     if(c_comment)
     {
+        // skip leading spaces
+        for(;;)
+        {
+            wide_char_t const c(getc());
+            if(!is_space(c))
+            {
+                ungetc(c);
+                break;
+            }
+        }
+
         // read up to the next "*/" sequence
         for(;;)
         {
@@ -1333,6 +1333,18 @@ node::pointer_t lexer::comment(bool c_comment)
     }
     else
     {
+        // skip leading spaces, but not newlines!
+        for(;;)
+        {
+            wide_char_t const c(getc());
+            if(c != ' '
+            && c != '\t')
+            {
+                ungetc(c);
+                break;
+            }
+        }
+
         // read up to the next "\n" character, however, we also
         // save the following lines if these also are C++ like
         // comments because it certainly represents one block
@@ -1377,18 +1389,18 @@ node::pointer_t lexer::comment(bool c_comment)
         }
     }
 
-    // remove ending spaces
-    while(!str.empty() && is_space(str.back()))
-    {
-        str.pop_back();
-    }
-
     //
     // comments are kept only if marked with the special @-keyword:
     //   @preserve
     //
     if(str.find("@preserve") != std::string::npos)
     {
+        // remove ending spaces
+        while(!str.empty() && is_space(str.back()))
+        {
+            str.pop_back();
+        }
+
         node::pointer_t n(new node(node_type_t::COMMENT, f_start_position));
         n->set_string(str);
         n->set_integer(c_comment ? 1 : 0); // make sure to keep the type of comment

@@ -456,7 +456,190 @@ TEST_CASE("Assemble rules", "[assembler]")
 
             REQUIRE(c.get_root() == n);
         }
-}
+    }
+
+    // with spaces before comments, which means our rule starts with a WHITESPACE
+    SECTION("whitespace at the beginning of a rule")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "  // spaces before a comment will produce problems\n"
+               << "  // and such comments are not preserved as expected\n"
+               << "  // @preserve this comment\n"
+               << "\n"
+               << ".face { content: \"\xe4\x96\x82\"; }\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            REQUIRE_ERRORS("test.css(3): warning: C++ comments should not be preserved as they are not supported by most CSS parsers.\n");
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"/* @preserve this comment */\n"
+".face { content: \"\xe4\x96\x82\" }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"/* @preserve this comment */\n"
+".face{content:\"\xe4\x96\x82\"}"
+"\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"/* @preserve this comment */\n"
+".face\n"
+"{\n"
+"  content: \"\xe4\x96\x82\";\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"/* @preserve this comment */\n"
+".face{content:\"\xe4\x96\x82\"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
+
+    // with spaces before comments, which means our variable starts with
+    // a WHITESPACE
+    SECTION("whitespace at the beginning of a variable")
+    {
+        for(int i(static_cast<int>(csspp::output_mode_t::COMPACT));
+            i <= static_cast<int>(csspp::output_mode_t::TIDY);
+            ++i)
+        {
+            std::stringstream ss;
+            ss << "  // an empty comment was creating trouble!\n"
+               << "  //\n"
+               << "\n"
+               << "$color: #329182;\n"
+               << "$image: url(\"images/ladybug.jpeg\");\n"
+               << "\n"
+               << "  p\n"
+               << "  {\n"
+               << "    // background color defined in variable\n"
+               << "    background-color: $color;\n"
+               << "\n"
+               << "    // this is like \"body div.flowers\"\n"
+               << "    div.flowers\n"
+               << "    {\n"
+               << "      background-image: $image;\n"
+               << "    }\n"
+               << "  }\n"
+               << "\n";
+            csspp::position pos("test.css");
+            csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+            csspp::parser p(l);
+
+            csspp::node::pointer_t n(p.stylesheet());
+
+//std::cerr << "Parser result is: [" << *n << "]\n";
+
+            csspp::compiler c;
+            c.set_root(n);
+            c.set_date_time_variables(csspp_test::get_now());
+            c.add_path(csspp_test::get_script_path());
+            c.add_path(csspp_test::get_version_script_path());
+
+            c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+            std::stringstream out;
+            csspp::assembler a(out);
+            a.output(n, static_cast<csspp::output_mode_t>(i));
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+            REQUIRE_ERRORS("");
+
+            switch(static_cast<csspp::output_mode_t>(i))
+            {
+            case csspp::output_mode_t::COMPACT:
+                REQUIRE(out.str() ==
+"p { background-color: #329182 }\n"
+"p div.flowers { background-image: url( images/ladybug.jpeg ) }\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::COMPRESSED:
+                REQUIRE(out.str() ==
+"p{background-color:#329182}"
+"p div.flowers{background-image:url(images/ladybug.jpeg)}"
+"\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::EXPANDED:
+                REQUIRE(out.str() ==
+"p\n"
+"{\n"
+"  background-color: #329182;\n"
+"}\n"
+"p div.flowers\n"
+"{\n"
+"  background-image: url( images/ladybug.jpeg );\n"
+"}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            case csspp::output_mode_t::TIDY:
+                REQUIRE(out.str() ==
+"p{background-color:#329182}\n"
+"p div.flowers{background-image:url(images/ladybug.jpeg)}\n"
++ csspp_test::get_close_comment()
+                    );
+                break;
+
+            }
+
+            REQUIRE(c.get_root() == n);
+        }
+    }
 
     // no error left over
     REQUIRE_ERRORS("");
