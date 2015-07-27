@@ -289,6 +289,10 @@
 				color: #f80;
 				font-variant: none;
 			}
+			.download-button
+			{
+				text-align: center;
+			}
 		</style>
 	</head>
 	<body>
@@ -417,6 +421,9 @@
 				</li>
 			</ul>
 			<div style="clear: both;"></div>
+			<p class="download-button">
+			  <a href="https://sourceforge.net/projects/csspp/files/latest/download" rel="nofollow"><img alt="Download CSS Preprocessor" src="https://a.fsdn.com/con/app/sf-download-button"></a>
+			</p>
 		</div>
 		<div class="transparent-copyright-placeholder"></div>
 		<div class="copyright">
