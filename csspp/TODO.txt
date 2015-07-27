@@ -13,13 +13,6 @@ additional features:
 . Support the placeholder in the assembler
 
 
-. Support for lists / maps in expressions
-
-
-. Full coverage for expressions, also look into adding many still missing
-  operations (i.e. color + color, color * 3, int * flt, etc.)
-
-
 . Add !important in variables, preventing further definitions of that variable
 
       $var-final: 3px !important;
@@ -39,6 +32,7 @@ additional features:
         attribute-values: ???; -- would we really want to support that one?!
       }
 
+
 . Add proper support for -moz-, -ms-, etc. with selector (pseudo-classes, etc.)
 
     At this point I am thinking that a good way could be to test
@@ -54,10 +48,35 @@ additional features:
     other IE special features (many filters, expression() and probably more
     as time passes.)
 
+
 . Validations generate errors printing out their own position, we would
   need to show the position in the user source, not the validation SCSS file.
 
+
 . Implement the @import loop detection (i.e. if A imports itself through
   other @imports or not)
+
+
+. Implement a better compression method by converting all the rules in
+  structures and then spiting out those structures back as CSS. For
+  example, the following:
+
+    {
+      margin-top: 5px;
+      margin-bottom: 5px;
+      margin-left: 3px;
+      margin-right: 3px;
+    }
+
+   will currently be optimized by removing the spaces and the last ';' as
+   in the following;
+
+    {margin-top:5px;margin-bottom:5px;margin-left:3px;margin-right:3px}
+
+   When we could compress this better by knowing that margin can be
+   optimized in this way:
+
+    {margin:5px 3px;}
+
 
 vim: tw=2 sw=2 et

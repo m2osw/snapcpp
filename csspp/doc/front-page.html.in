@@ -107,6 +107,15 @@
 			{
 				padding: 10px 5%;
 			}
+			p.notice
+			{
+				padding: 10px;
+				font-size: 80%;
+				font-style: italic;
+				color: #666666;
+				background-color: #f0f0e0;
+				border: 1px solid #ddddb8;
+			}
 			ul.tiled
 			{
 				padding: 0;
@@ -287,8 +296,8 @@
 			<a href="/"><strong>CSS Preprocessor</strong></a>
 			<a href="http://snapwebsites.org/project/csspp">Project</a>
 			<a href="https://sourceforge.net/projects/csspp">Downloads</a>
-			<a href="https://sourceforge.net/p/csspp/link/">Source Repository</a>
-			<a href="https://sourceforge.net/p/csspp/tickets/">Support</a>
+			<a rel="nofollow" href="https://sourceforge.net/p/csspp/link/">Source Repository</a>
+			<a rel="nofollow" href="https://sourceforge.net/p/csspp/tickets/">Support</a>
 			<a href="/documentation/csspp-doc-1.0/">Documentation</a>
 		</div>
 		<div class="transparent-menu-placeholder"></div>
@@ -314,6 +323,14 @@
 			Current CSS Preprocessor Version @CSSPP_VERSION_MAJOR@.@CSSPP_VERSION_MINOR@.@CSSPP_VERSION_PATCH@ <span class="version-and-date-separator">&mdash;</span> Last Updated on @NOW@
 		</div>
 		<div class="content">
+			<p class="notice">
+				CSS 1.0.5 is ready, but no tarball is available on SourceForge.net
+				yet because I cannot upload them there at this time. They had a little
+				hiccup, as you may have heard, and it looks like that feature is still
+				not restored. You may still get the source code from the
+				<a href="http://snapwebsites.org/">Snap! Websites</a>
+				<a rel="nofollow" href="https://sourceforge.net/p/snapcpp/code/ci/master/tree/csspp/">git repository</a>.
+			</p>
 			<ul class="tiled">
 				<li class="item one">
 					<h3>CSS Compatible</h3>
@@ -339,13 +356,13 @@
 				<li class="item three">
 					<h3>Maturity</h3>
 					<p>
-						Version 1.0.0 of <b>CSS Preprocessor</b> library has 100%
+						Version 1.0.5 of <b>CSS Preprocessor</b> library has 100%
 						<a href="http://lcov.csspp.org/">coverage</a> of all its
-						classes (except the expression) making
-						it already very stable. It also supports most of the functions
-						and capabilities found in <a href="http://sass-lang.com">SASS</a>
-						and <a href="http://lesscss.org">{less}</a>, two other quite
-						advanced CSS preprocessors.
+						classes making it very stable. It also supports most
+						of the functions and capabilities found in
+						<a rel="nofollow" href="http://sass-lang.com">SASS</a>
+						and <a rel="nofollow" href="http://lesscss.org">{less}</a>,
+						two other quite advanced CSS preprocessors.
 					</p>
 				</li>
 				<li class="item four">
@@ -382,16 +399,19 @@
 					<h3>License</h3>
 					<p>
 						<b>CSS Preprocessor</b> is licensed under the GPL version 2.
-						This means you can use it your open source projects or with
+						This means you can use it in your open source projects or with
 						your company commercial products. Note that if you make
 						modifications to the csspp project, you must make those
 						changes available to your users / customers. We would also
-						dearly appreciate you sharing with us so we can continue
+						dearly appreciate you sharing them with us so we can continue
 						to improve the library much faster.
 					</p>
 					<div class="license-logos">
-						<div class="license-item gpl"><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html">GNU<br/>GPL v2</a></div>
-						<div class="license-item"><a href="http://opensource.org/"><img src="images/open-source-initiative-logo.png" width="72" height="82"/></a></div>
+						<div class="license-item gpl"><a rel="nofollow"
+							href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html">GNU<br/>GPL v2</a></div>
+						<div class="license-item"><a rel="nofollow"
+							href="http://opensource.org/"><img
+							src="images/open-source-initiative-logo.png" width="72" height="82"/></a></div>
 						<div style="clear: both;"></div>
 					</div>
 				</li>
