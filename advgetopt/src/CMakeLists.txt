@@ -48,7 +48,9 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES
 
 install(
     TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
 )
 install(
     FILES advgetopt.h
