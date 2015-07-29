@@ -53,7 +53,6 @@ add_executable(${PROJECT_NAME}
     snapserver.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
@@ -78,7 +77,6 @@ add_executable(${PROJECT_NAME}
     snapbackend.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
@@ -103,7 +101,6 @@ add_executable(${PROJECT_NAME}
     snap_uuencode_basic_auth.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     ${QTCASSANDRA_LIBRARIES}
     ${QTSERIALIZATION_LIBRARIES}
@@ -151,7 +148,6 @@ add_executable(${PROJECT_NAME}
     snapsiteinfo.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${ADVGETOPT_LIBRARIES}
@@ -175,7 +171,6 @@ add_executable(${PROJECT_NAME}
     snapdb.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${ADVGETOPT_LIBRARIES}
@@ -199,7 +194,6 @@ add_executable(${PROJECT_NAME}
     snapsignal.cpp
 )
 
-# while developing you may need to set LD_LIBRARY_PATH
 target_link_libraries(${PROJECT_NAME}
     snapwebsites
     ${QTCASSANDRA_LIBRARIES}
@@ -364,6 +358,25 @@ target_link_libraries(${PROJECT_NAME}
     ${QTSERIALIZATION_LIBRARIES}
 )
 
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
+#################################################################################
+## Build CGI
+##
+project(snapbuild)
+
+add_executable(${PROJECT_NAME}
+    build.cpp
+)
+
+set_property( TARGET ${PROJECT_NAME} PROPERTY OUTPUT_NAME build.cgi )
+
+# We install the binary so that way the linking is finalized, but
+# we do not install that in a pacakage for now (maybe later if we
+# do a build system for snap, although I don't think we need such.)
 install(
     TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 )
