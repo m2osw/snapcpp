@@ -482,9 +482,14 @@ void set_log_output_level( log_level_t level )
  */
 bool is_loggingserver_available ( QString const & logserver )
 {
-    // Note: if logserver is an empty string, then the properties will
-    //       end up being an empty set; if the file cannot be open,
-    //       the result is the same, no exceptions, just an empty set
+    // Note: if logserver is an empty string we assume that the logging
+    //       server was not setup; otherwise the following may actually
+    //       return true which is wrong in this case
+
+    if( logserver.isEmpty() )
+    {
+        return false;
+    }
 
     // get the address and port from the logserver.properties file
     log4cplus::helpers::Properties logserver_properties(logserver.toUtf8().data());
