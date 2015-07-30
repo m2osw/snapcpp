@@ -154,6 +154,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CORE_HTTP_USER_AGENT:
         return "HTTP_USER_AGENT";
 
+    case name_t::SNAP_NAME_CORE_LAST_DYNAMIC_UPDATE:
+        return "core::last_dynamic_update";
+
     case name_t::SNAP_NAME_CORE_LAST_UPDATED:
         return "core::last_updated";
 

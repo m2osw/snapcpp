@@ -6598,6 +6598,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
 {
     // system updates run at most once every 10 minutes
     QString const core_last_updated(get_name(name_t::SNAP_NAME_CORE_LAST_UPDATED));
+    QString const core_last_dynamic_update(get_name(name_t::SNAP_NAME_CORE_LAST_DYNAMIC_UPDATE));
     QString const param_name(core_last_updated);
     QtCassandra::QCassandraValue last_updated(get_site_parameter(param_name));
     if(last_updated.nullValue())
@@ -6678,7 +6679,45 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
             }
         }
 
+        // this finishes the content.xml updates
         finish_update();
+
+        // now allow plugins to have a more dynamic set of updates
+        for(snap_string_list::const_iterator it(list_of_plugins.begin());
+                it != list_of_plugins.end();
+                ++it)
+        {
+            QString plugin_name(*it);
+            plugins::plugin *p(plugins::get_plugin(plugin_name));
+            if(p != nullptr)
+            {
+                trace(QString("Dynamically update plugin \"%1\"\n").arg(plugin_name));
+
+                // run the updates as required
+                // we have a date/time for each plugin since each has
+                // its own list of date/time checks
+                QString const specific_param_name(QString("%1::%2").arg(core_last_dynamic_update).arg(plugin_name));
+                QtCassandra::QCassandraValue specific_last_updated(get_site_parameter(specific_param_name));
+                if(specific_last_updated.nullValue())
+                {
+                    // use an "old" date (631152000)
+                    specific_last_updated.setInt64Value(SNAP_UNIX_TIMESTAMP(1990, 1, 1, 0, 0, 0) * 1000000LL);
+                }
+                // IMPORTANT: Note that we save the newest date found in the
+                //            do_update() to make 100% sure we catch all the
+                //            updates every time (using "now" would often mean
+                //            missing many updates!)
+                try
+                {
+                    specific_last_updated.setInt64Value(p->do_dynamic_update(specific_last_updated.int64Value()));
+                }
+                catch(std::exception const & e)
+                {
+                    SNAP_LOG_ERROR("Dynamically updating ")(plugin_name)(" failed with an exception: ")(e.what());
+                }
+                set_site_parameter(specific_param_name, specific_last_updated);
+            }
+        }
 
         // avoid a write to the DB if the value did not change
         // (i.e. most of the time!)

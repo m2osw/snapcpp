@@ -515,6 +515,34 @@ int64_t plugin::do_update(int64_t last_updated)
 }
 
 
+/** \brief Run a dynamic update.
+ *
+ * This function is called after the do_update(). This very version is
+ * a stub that does nothing. It can be overloaded to create content in
+ * the database after the content.xml was installed fully. In other
+ * words, the dynamic update can make use of data that the content.xml
+ * will be adding ahead of time.
+ *
+ * At this time the function ignores the \p last_updated parameter and 
+ * it always returns the same date: Jan 1, 1990 at 00:00:00.
+ *
+ * \param[in] last_updated  The UTC Unix date when this plugin was last updated (in micro seconds).
+ *
+ * \return The UTC Unix date of the last update of this plugin.
+ */
+int64_t plugin::do_dynamic_update(int64_t last_updated)
+{
+    static_cast<void>(last_updated);
+
+    SNAP_PLUGIN_UPDATE_INIT();
+
+    // in a complete implementation you'd have entries like this one:
+    //SNAP_PLUGIN_UPDATE(2012, 1, 1, 0, 0, 0, dynamic_update);
+
+    SNAP_PLUGIN_UPDATE_EXIT();
+}
+
+
 /** \brief Retrieve a pointer to an existing plugin.
  *
  * This function returns a pointer to a plugin that was previously loaded

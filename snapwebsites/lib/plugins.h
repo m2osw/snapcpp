@@ -72,6 +72,7 @@ public:
     int64_t                             last_modification() const;
     virtual QString                     description() const = 0;
     virtual int64_t                     do_update(int64_t last_updated);
+    virtual int64_t                     do_dynamic_update(int64_t last_updated);
 
 private:
     QString const                       f_name;
