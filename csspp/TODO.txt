@@ -3,11 +3,6 @@ To be closer to what SASS supports, we shall implement the following
 additional features:
 
 
-. Break up the expression.cpp file in a set of files to match the
-  tests so it is easy that each covers 100% of what it is expected
-  to cover.
-
-
 . Variable named when calling a function (to allow any order):
 
      $func(name: $var_name, arg2: value2, ...)

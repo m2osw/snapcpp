@@ -170,6 +170,70 @@ TEST_CASE("Expression arrays", "[expression] [list] [array]")
         }
     }
 
+    SECTION("use list to do some computation and retrieve the last result")
+    {
+        std::stringstream ss;
+        ss << "div {\n"
+           << "  border: (v := 3px, w := 51px, x := v + w, x / 2.7)[-1] solid #f1a932;\n"
+           << "}\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        // to verify that the result is still an INTEGER we have to
+        // test the root node here
+        std::stringstream compiler_out;
+        compiler_out << *n;
+        REQUIRE_TREES(compiler_out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"div\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"border\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"px\" D:20\n"
+"          WHITESPACE\n"
+"          IDENTIFIER \"solid\"\n"
+"          WHITESPACE\n"
+"          COLOR H:ff32a9f1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        std::stringstream assembler_out;
+        csspp::assembler a(assembler_out);
+        a.output(n, csspp::output_mode_t::COMPRESSED);
+
+//std::cerr << "----------------- Result is " << static_cast<csspp::output_mode_t>(i) << "\n[" << out.str() << "]\n";
+
+        REQUIRE(assembler_out.str() ==
+
+"div{"
+  "border:20px solid #f1a932"
+"}\n"
++ csspp_test::get_close_comment()
+
+                );
+
+        REQUIRE(c.get_root() == n);
+    }
+
     // no error left over
     REQUIRE_ERRORS("");
 }

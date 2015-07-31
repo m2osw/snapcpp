@@ -49,26 +49,40 @@ private:
     void                mark_start();
     node::pointer_t     replace_with_result(node::pointer_t result);
     void                next();
+
+    node::pointer_t     compile_list(node::pointer_t parent);
+
     node::pointer_t     conditional();
 
     bool                is_label() const;
-    node::pointer_t     compile_list(node::pointer_t parent);
     node::pointer_t     expression_list();
+
     node::pointer_t     assignment();
+
     node::pointer_t     logical_or();
+
     node::pointer_t     logical_and();
-    node_type_t         equality_operator(node::pointer_t n);
+
+    bool                is_comparable(node::pointer_t lhs, node::pointer_t rhs);
+    bool                is_equal(node::pointer_t lhs, node::pointer_t rhs);
     node::pointer_t     equality();
+
+    bool                is_less_than(node::pointer_t lhs, node::pointer_t rhs);
     node::pointer_t     relational();
+
     node::pointer_t     additive();
+
     void                dimensions_to_vectors(position const & pos, std::string const & dimension, dimension_vector_t & dividend, dimension_vector_t & divisor);
     std::string         multiplicative_dimension(position const & pos, std::string const & dim1, node_type_t const op, std::string const & dim2);
     std::string         rebuild_dimension(dimension_vector_t const & dividend, dimension_vector_t const & divisor);
     node::pointer_t     multiply(node_type_t op, node::pointer_t lhs, node::pointer_t rhs);
     node::pointer_t     multiplicative();
+
     node::pointer_t     apply_power(node::pointer_t lhs, node::pointer_t rhs);
     node::pointer_t     power();
+
     node::pointer_t     post();
+
     node::pointer_t     unary();
 
     // in internal_functions.cpp
