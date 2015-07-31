@@ -3461,7 +3461,7 @@ SNAP_LOG_INFO() << " f_files[\"" << f_name << "\"] = \"...\" (Filename: \"" << f
                 else if(c == '\n')
                 {
 #ifdef DEBUG
-                    //SNAP_LOG_DEBUG("f_name=")(f_name.toUtf8().data());
+                    //SNAP_LOG_DEBUG("f_name=")(f_name)(", f_value=\"")(f_value)("\"");
 #endif
                     process_line();
 

@@ -356,23 +356,28 @@ int snap_cgi::process()
             int c(getchar());
             if(c == break_char || c == EOF)
             {
-                if(!is_multipart || c != EOF)
+                // a POST without variables most often ends up with
+                // one empty line which we ignore
+                if(!var.empty())
                 {
-                    var += "\n";
-                }
-                if(socket.write(var.c_str(), var.length()) != static_cast<int>(var.length()))
-                {
-                    return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str());
-                }
+                    if(!is_multipart || c != EOF)
+                    {
+                        var += "\n";
+                    }
+                    if(socket.write(var.c_str(), var.length()) != static_cast<int>(var.length()))
+                    {
+                        return error("504 Gateway Timeout", ("error while writing POST variable \"" + var + "\" to the child process.").c_str());
+                    }
 #ifdef _DEBUG
-                SNAP_LOG_DEBUG("wrote var=")(var.c_str());
+                    SNAP_LOG_DEBUG("wrote var=")(var.c_str());
 #endif
+                    var.clear();
+                }
                 if(c == EOF)
                 {
                     // this was the last variable
                     break;
                 }
-                var.clear();
             }
             else
             {
