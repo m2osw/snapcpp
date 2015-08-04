@@ -457,6 +457,7 @@ private:
     header_map_t                                f_header;
     cookie_map_t                                f_cookies;
     controlled_vars::flbool_t                   f_ignore_cookies;
+    controlled_vars::flbool_t                   f_died; // die() was already called once
     QString                                     f_language;
     QString                                     f_country;
     QString                                     f_language_key;

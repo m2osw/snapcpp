@@ -27,12 +27,14 @@ namespace permissions
 enum class name_t
 {
     SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER,
+    SNAP_NAME_PERMISSIONS_ACTION_DELETE,
     SNAP_NAME_PERMISSIONS_ACTION_EDIT,
     SNAP_NAME_PERMISSIONS_ACTION_NAMESPACE,
     SNAP_NAME_PERMISSIONS_ACTION_PATH,
     SNAP_NAME_PERMISSIONS_ACTION_VIEW,
     SNAP_NAME_PERMISSIONS_ADMINISTER_NAMESPACE,
     SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER,
+    SNAP_NAME_PERMISSIONS_DIRECT_ACTION_DELETE,
     SNAP_NAME_PERMISSIONS_DIRECT_ACTION_EDIT,
     SNAP_NAME_PERMISSIONS_DIRECT_ACTION_VIEW,
     SNAP_NAME_PERMISSIONS_DIRECT_GROUP,
@@ -44,6 +46,7 @@ enum class name_t
     //SNAP_NAME_PERMISSIONS_GROUPS,
     SNAP_NAME_PERMISSIONS_GROUPS_PATH,
     SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER,
+    SNAP_NAME_PERMISSIONS_LINK_BACK_DELETE,
     SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT,
     SNAP_NAME_PERMISSIONS_LINK_BACK_GROUP,
     SNAP_NAME_PERMISSIONS_LINK_BACK_NAMESPACE,
@@ -137,7 +140,7 @@ public:
     virtual QString         description() const;
     virtual int64_t         do_update(int64_t last_updated);
 
-    void                    on_bootstrap(snap_child *snap);
+    void                    on_bootstrap(snap_child * snap);
     void                    on_generate_header_content(content::path_info_t & path, QDomElement & hader, QDomElement & metadata, QString const & ctemplate);
     virtual void            on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate);
     void                    on_validate_action(content::path_info_t & path, QString const & action, permission_error_callback & err_callback);

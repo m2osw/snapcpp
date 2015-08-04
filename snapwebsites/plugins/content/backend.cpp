@@ -78,14 +78,23 @@ SNAP_PLUGIN_EXTENSION_START(content)
  * \li dirresources -- show a directory of the resources; this is done here
  *                     so you can see the available resources once all the
  *                     plugins of a given website are
+ * \li destroypage -- completely eliminate a page; this is considered VERY
+ *                    DANGEROUS; use at your own risk! That being said,
+ *                    quite practical for programmers so they don't have to
+ *                    reset their database all the time. The page to be
+ *                    destroyed MUST be specified as the parameter PAGE_URL.
+ *                    We did not try, but you certainly can destroy "/"
+ *                    which means the entire website will go away and not
+ *                    function at all anymore.
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void content::on_register_backend_action(server::backend_action_map_t& actions)
+void content::on_register_backend_action(server::backend_action_map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS)] = this;
     actions[get_name(name_t::SNAP_NAME_CONTENT_FORCERESETSTATUS)] = this;
     actions[get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES)] = this;
+    actions[get_name(name_t::SNAP_NAME_CONTENT_DESTROYPAGE)] = this;
 }
 
 
@@ -98,7 +107,7 @@ void content::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * \li Check new attachements as those files may be or include viruses.
  */
-void content::on_backend_action(QString const& action)
+void content::on_backend_action(QString const & action)
 {
     if(action == get_name(name_t::SNAP_NAME_CONTENT_RESETSTATUS))
     {
@@ -111,6 +120,10 @@ void content::on_backend_action(QString const& action)
     else if(action == get_name(name_t::SNAP_NAME_CONTENT_DIRRESOURCES))
     {
         backend_action_dir_resources();
+    }
+    else if(action == get_name(name_t::SNAP_NAME_CONTENT_DESTROYPAGE))
+    {
+        backend_action_destroy_page();
     }
 }
 
@@ -199,6 +212,21 @@ void content::backend_action_reset_status(bool const force)
 void content::backend_action_dir_resources()
 {
     f_snap->show_resources(std::cout);
+}
+
+
+/** \brief Destroy the specified page.
+ *
+ * This action lets a programmer or administrator destroy a page
+ * completely. This actual blows up the page right there and
+ * should NOT be used, ever, except by programmers who made small
+ * mistakes and want to remove a page or two once in a while.
+ */
+void content::backend_action_destroy_page()
+{
+    path_info_t ipath;
+    ipath.set_path(f_snap->get_server_parameter("PAGE_URL"));
+    destroy_page(ipath);
 }
 
 
@@ -526,7 +554,7 @@ void content::backend_process_files()
  * \param[in] file_row  The row to the new file being processed.
  * \param[in] file  The file being processed.
  */
-bool content::process_attachment_impl(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file)
+bool content::process_attachment_impl(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const & file)
 {
     backend_compressed_file(file_row, file);
     backend_minify_css_file(file_row, file);
@@ -556,7 +584,7 @@ bool content::process_attachment_impl(QtCassandra::QCassandraRow::pointer_t file
  * \param[in] file_row  The row to the new file being processed.
  * \param[in] file  The file being processed.
  */
-void content::backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file)
+void content::backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const & file)
 {
     if(!file_row->exists(get_name(name_t::SNAP_NAME_CONTENT_FILES_SIZE_GZIP_COMPRESSED)))
     {
@@ -597,7 +625,7 @@ void content::backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file
  * \param[in] file_row  The row to the new file being processed.
  * \param[in] file  The file being processed.
  */
-void content::backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file)
+void content::backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const & file)
 {
     bool const is_css(file.get_parent_cpath().startsWith("css/"));
     if(is_css)

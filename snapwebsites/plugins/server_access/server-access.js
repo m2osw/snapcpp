@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.26
+ * Version: 0.0.1.27
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -696,7 +696,7 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
         {
             type: "POST",
             processData: this.dataType_ === snapwebsites.ServerAccess.OBJECT_,
-            data: this.data_,
+            data: this.data_ ? this.data_ : { _ajax: 1 },
             error: function(jqxhr, result_status, error_msg)
             {
                 result.jqxhr = jqxhr;

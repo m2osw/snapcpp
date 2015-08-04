@@ -61,6 +61,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_PERMISSIONS_ACTION_ADMINISTER:
         return "permissions::action::administer";
 
+    case name_t::SNAP_NAME_PERMISSIONS_ACTION_DELETE:
+        return "permissions::action::delete";
+
     case name_t::SNAP_NAME_PERMISSIONS_ACTION_EDIT:
         return "permissions::action::edit";
 
@@ -78,6 +81,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER:
         return "permissions::direct::action::administer";
+
+    case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_DELETE:
+        return "permissions::direct::action::delete";
 
     case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_EDIT:
         return "permissions::direct::action::edit";
@@ -108,6 +114,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_ADMINISTER:
         return "permissions::link_back::administer";
+
+    case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_DELETE:
+        return "permissions::link_back::delete";
 
     case name_t::SNAP_NAME_PERMISSIONS_LINK_BACK_EDIT:
         return "permissions::link_back::edit";
@@ -823,7 +832,7 @@ int64_t permissions::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 5, 22, 21, 25, 40, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 8, 1, 23, 0, 40, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -1612,7 +1621,7 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
         }
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "[" << getpid() << "] retrieving PLUGIN permissions... ["
+        std::cout << "[" << getpid() << "]: retrieving PLUGIN permissions... ["
                   << sets.get_action() << "] / ["
                   << sets.get_ipath().get_key() << "]"
                   << std::endl;
@@ -1621,7 +1630,7 @@ void permissions::on_access_allowed(QString const & user_path, content::path_inf
         get_plugin_permissions(this, sets);
 #ifdef DEBUG
 #ifdef SHOW_RIGHTS
-        std::cout << "[" << getpid() << "] now compute the intersection!" << std::endl;
+        std::cout << "[" << getpid() << "]: now compute the intersection!" << std::endl;
 #endif
 #endif
         if(sets.allowed())

@@ -16,91 +16,81 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma once
 
-#include <tcp_client_server.h>
+#include "snap_exception.h"
+
+#include <event.h>
 
 
 namespace snap
 {
 
-class snap_communicator_parameter_error : public tcp_client_server_logic_error
+class snap_communicator_parameter_error : public snap_logic_exception
 {
 public:
-    snap_communicator_parameter_error(std::string const & whatmsg) : tcp_client_server_logic_error(whatmsg) {}
+    snap_communicator_parameter_error(std::string const & whatmsg) : snap_logic_exception(whatmsg) {}
 };
 
-class snap_communicator_initialization_error : public tcp_client_server_runtime_error
+class snap_communicator_initialization_error : public snap_exception
 {
 public:
-    snap_communicator_initialization_error(std::string const & whatmsg) : tcp_client_server_runtime_error(whatmsg) {}
-};
-
-
-
-
-
-// TODO: implement a bio_server then like with the client remove
-//       this basic tcp_server if it was like the bio version
-class tcp_server
-{
-public:
-    typedef std::shared_ptr<tcp_server>     pointer_t;
-
-    static int const    MAX_CONNECTIONS = 50;
-
-                        tcp_server(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
-                        ~tcp_server();
-
-    int                 get_socket() const;
-    int                 get_max_connections() const;
-    int                 get_port() const;
-    std::string         get_addr() const;
-    bool                get_keepalive() const;
-
-    void                keepalive(bool yes = true);
-    int                 accept( int const max_wait_ms = -1 );
-    int                 get_last_accepted_socket() const;
-
-private:
-    int                 f_max_connections;
-    int                 f_socket;
-    int                 f_port;
-    std::string         f_addr;
-    int                 f_accepted_socket;
-    bool                f_keepalive;
-    bool                f_auto_close;
+    snap_communicator_initialization_error(std::string const & whatmsg) : snap_exception(whatmsg) {}
 };
 
 
-class bio_client
+
+
+class snap_communicator
 {
 public:
-    typedef std::shared_ptr<bio_client>     pointer_t;
-
-    enum class mode_t
+    class snap_connection
     {
-        MODE_PLAIN,             // avoid SSL/TLS
-        MODE_SECURE,            // WARNING: may return a non-secure connection
-        MODE_ALWAYS_SECURE      // fails if cannot be secure
+    public:
+        typedef std::shared_ptr<snap_connection>    pointer_t;
+        typedef std::vector<pointer_t>              vector_t;
+
+        // virtual classes must have a virtual destructor
+        virtual                     ~snap_connection() {}
+
+        virtual int                 get_socket() const;
+
+        virtual void                process_signal() = 0;
+
+    private:
     };
 
-                        bio_client(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
-                        ~bio_client();
+    class snap_client_connection
+            : public bio_client
+            , public snap_connection
+    {
+    public:
+                                    snap_client_connection(std::string const & addr, int port, mode_t mode = mode_t::MODE_PLAIN);
 
-    int                 get_socket() const;
-    int                 get_port() const;
-    int                 get_client_port() const;
-    std::string         get_addr() const;
-    std::string         get_client_addr() const;
+        virtual int                 get_socket() const;
+    };
 
-    int                 read(char * buf, size_t size);
-    int                 read_line(std::string & line);
-    int                 write(char const *buf, size_t size);
+    // TODO: switch the tcp_server to a bio_server once available
+    class snap_server_connection
+            : public tcp_server
+            , public snap_connection
+    {
+    public:
+                                    snap_server_connection(std::string const & addr, int port, int max_connections = -1, bool reuse_addr = false, bool auto_close = false);
+
+        virtual int                 get_socket() const;
+    };
+
+                                snap_communicator();
+
+    void                        reinit(); // after a fork()
+
+    void                        add_connection(snap_connection::pointer_t connection);
 
 private:
-    std::shared_ptr<BIO>        f_bio;
-    std::shared_ptr<SSL_CTX>    f_ssl_ctx;
+    struct event_base *         f_event_base;
+    snap_connection::vector_t   f_connections;
 };
 
 
-} // namespace tcp_client_server
+
+} // namespace snap
 // vim: ts=4 sw=4 et

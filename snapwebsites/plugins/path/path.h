@@ -75,7 +75,10 @@ public:
     void                            on_execute(QString const & uri_path);
     plugin *                        get_plugin(content::path_info_t & uri_path, permission_error_callback & err_callback);
     void                            verify_permissions(content::path_info_t & ipath, permission_error_callback & err_callback);
-    QString                         default_action(content::path_info_t & ipath);
+    QString                         define_action(content::path_info_t & ipath);
+    void                            on_improve_signature(QString const & url_path, QString & signature);
+
+    void                            add_restore_link_to_signature_for(QString const page_path);
 
     SNAP_SIGNAL(access_allowed, (QString const & user_path, content::path_info_t & ipath, QString const & action, QString const & login_status, content::permission_flag & result), (user_path, ipath, action, login_status, result));
     SNAP_SIGNAL_WITH_MODE(can_handle_dynamic_path, (content::path_info_t & ipath, dynamic_plugin_t & plugin_info), (ipath, plugin_info), NEITHER);
@@ -89,6 +92,7 @@ public:
 private:
     zpsnap_child_t                  f_snap;
     controlled_vars::zint64_t       f_last_modified;
+    snap_string_list                f_add_restore_link_to_signature;
 };
 
 } // namespace path

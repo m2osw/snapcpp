@@ -18,7 +18,7 @@
 #include "links.h"
 
 // TODO: remove dependency on content (because content includes links...)
-//       it may be that content and links should be merged (yuck!) TBD
+//       it may be that content and links should be merged (oh well!) TBD
 #include "../content/content.h"
 
 #include "log.h"
@@ -46,6 +46,9 @@ char const *get_name(name_t name)
 {
     switch(name)
     {
+    case name_t::SNAP_NAME_LINKS_CLEANUPLINKS:
+        return "cleanuplinks";
+
     case name_t::SNAP_NAME_LINKS_CREATELINK:
         return "createlink";
 
@@ -418,6 +421,60 @@ void link_info::from_data(QString const& db_data)
 
 
 
+
+/** \brief Memorize two link_info structures.
+ *
+ * This class is used to memorize two link structures: a source and a
+ * destination.
+ *
+ * The source and destination structures must be complete when this
+ * constructor is called because once copied in, they cannot be
+ * modified anymore.
+ *
+ * \param[in] src  The source to memorize.
+ * \param[in] dst  The destination to memorize.
+ */
+link_info_pair::link_info_pair(link_info const & src, link_info const & dst)
+    : f_source(src)
+    , f_destination(dst)
+{
+}
+
+
+/** \brief Return the source information.
+ *
+ * This function returns a copy of the source branch.
+ *
+ * This information generally comes from the data gathered on our
+ * side of the tree.
+ *
+ * \return A reference to the link_info representing the source.
+ */
+link_info const & link_info_pair::source()
+{
+    return f_source;
+}
+
+
+/** \brief Return the destination information.
+ *
+ * This function returns a copy of the destination branch.
+ *
+ * This information generally comes from the data of the cell value
+ * used for a link.
+ *
+ * \return A reference to the link_info representing the destination.
+ */
+link_info const & link_info_pair::destination()
+{
+    return f_destination;
+}
+
+
+
+
+
+
 /** \brief Initialize a link context to read links.
  *
  * This object is used to read links from the database.
@@ -506,8 +563,7 @@ bool link_context::next_link(link_info& info)
     // special case of a unique link
     if(f_info.is_unique())
     {
-        // return the f_link entry once, then an empty string
-        // if the link did not exist, the caller only gets an empty string
+        // return the f_link entry once, then return false (no more data)
         if(f_link.isEmpty())
         {
             return false;
@@ -945,7 +1001,7 @@ void links::create_link(const link_info& src, const link_info& dst)
  * links.
  *
  * \param[in] info  The link key and name.
- * \param[in] count Row count to fetch.
+ * \param[in] count  Row count to fetch.
  *
  * \return A shared pointer to a link context, it will always exist.
  */
@@ -954,6 +1010,105 @@ QSharedPointer<link_context> links::new_link_context(const link_info& info, cons
     QSharedPointer<link_context> context(new link_context(f_snap, info, count));
     return context;
 }
+
+
+/** \brief Read the list of existing links on this page.
+ *
+ * This function reads the list of links defined on this page.
+ *
+ * In most cases, you should not need to call this function because you
+ * show already know what links are present on your page and thus be
+ * able to access them without first having to list them. Also this
+ * function is considered SLOW.
+ *
+ * \param[in] path  The path to the list to be read.
+ *
+ * \return An array of names with each one of the links.
+ */
+link_info_pair::vector_t links::list_of_links(QString const & path)
+{
+    link_info_pair::vector_t results;
+
+    content::path_info_t ipath;
+    ipath.set_path(path);
+
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+
+    QtCassandra::QCassandraRow::pointer_t row(branch_table->row(ipath.get_branch_key()));
+
+    QString const links_namespace_start(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    QString const links_namespace_end(QString("%1:;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    int const start_pos(links_namespace_start.length());
+
+    QtCassandra::QCassandraColumnRangePredicate column_predicate;
+    column_predicate.setCount(100);
+    column_predicate.setIndex(); // behave like an index
+    column_predicate.setStartColumnName(links_namespace_start); // limit the loading to links at least
+    column_predicate.setEndColumnName(links_namespace_end);
+
+    // loop until all cells are handled
+    for(;;)
+    {
+        row->clearCache();
+        row->readCells(column_predicate);
+        QtCassandra::QCassandraCells const cells(row->cells());
+        if(cells.isEmpty())
+        {
+            // no more cells
+            break;
+        }
+
+        // handle one batch
+        for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                c != cells.end();
+                ++c)
+        {
+            QtCassandra::QCassandraCell::pointer_t cell(*c);
+
+            link_info src;
+            src.set_key(ipath.get_key());
+
+            QString const cell_name(cell->columnName());
+            int const hash(cell_name.indexOf('#'));
+            if(hash == -1)
+            {
+                throw links_exception_invalid_name("cell name includes no '-' and no '#' which is not valid for a link");
+            }
+            int pos(hash);
+            int const dash(cell_name.indexOf('-'));
+            if(dash != -1)
+            {
+                pos = dash;
+            }
+            QString const link_name(cell_name.mid(start_pos, pos - start_pos));
+            src.set_name(link_name, dash == -1);
+
+            // the multiple link number cannot be saved in the link_info
+            // at this point... so we ignore it. For what we need links
+            // for, it is fine.
+            //if(dash != -1)
+            //{
+            //    QString const unique_number(cell_name.mid(dash + 1, hash - dash - 1));
+            //    ... // nothing we can do with this one for now
+            //}
+
+            // the branch is defined after the '#'
+            QString const branch_number(cell_name.mid(hash + 1));
+            src.set_branch(branch_number.toLong());
+
+            // this one we have all the data in the cell's value
+            link_info dst;
+            dst.from_data(cell->value().stringValue());
+
+            link_info_pair pair(src, dst);
+            results.push_back(pair);
+        }
+    }
+
+    return results;
+}
+
 
 
 /** \brief Make sure that the specified link is deleted.
@@ -1576,6 +1731,7 @@ void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
  */
 void links::on_register_backend_action(server::backend_action_map_t& actions)
 {
+    actions[get_name(name_t::SNAP_NAME_LINKS_CLEANUPLINKS)] = this;
     actions[get_name(name_t::SNAP_NAME_LINKS_CREATELINK)] = this;
     actions[get_name(name_t::SNAP_NAME_LINKS_DELETELINK)] = this;
 }
@@ -1711,6 +1867,119 @@ void links::on_backend_action(QString const& action)
         {
             SNAP_LOG_FATAL("invalid mode \"")(mode)("\", two or more commas.");
             exit(1);
+        }
+    }
+    else if(action == get_name(name_t::SNAP_NAME_LINKS_CLEANUPLINKS))
+    {
+        cleanup_links();
+    }
+}
+
+
+void links::cleanup_links()
+{
+    // this function goes through all pages to clean up links
+    //
+    // it searches all the links (i.e. fields that start with "links::")
+    // and check whether the name includes a dash, if so, it is a
+    // multi-link and this it may need to be removed;
+    //
+    // this is checked by searching for the link in the "links" table;
+    // if not there then it simply gets removed
+    //
+    // to check all the branches, we actuall read from the branch table
+    // directly instead of the page + branch
+    //
+    QString const links_namespace_start(QString("%1::").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    QString const links_namespace_end(QString("%1:;").arg(get_name(name_t::SNAP_NAME_LINKS_NAMESPACE)));
+    QString const site_key(f_snap->get_site_key_with_slash());
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
+    QtCassandra::QCassandraTable::pointer_t links_table(get_links_table());
+    QtCassandra::QCassandraRowPredicate row_predicate;
+    row_predicate.setCount(1000);
+    for(;;)
+    {
+        branch_table->clearCache();
+        uint32_t const count(branch_table->readRows(row_predicate));
+        if(count == 0)
+        {
+            // no more branches to process
+            break;
+        }
+        QtCassandra::QCassandraRows const rows(branch_table->rows());
+        for(QtCassandra::QCassandraRows::const_iterator o(rows.begin());
+                o != rows.end(); ++o)
+        {
+            // within each row, check all the columns
+            QtCassandra::QCassandraRow::pointer_t row(*o);
+            QString const key(QString::fromUtf8(o.key().data()));
+            if(!key.startsWith(site_key))
+            {
+                // not this website, try another key
+                continue;
+            }
+
+            QtCassandra::QCassandraColumnRangePredicate column_predicate;
+            column_predicate.setCount(100);
+            column_predicate.setIndex(); // behave like an index
+            column_predicate.setStartColumnName(links_namespace_start); // limit the loading to links at least
+            column_predicate.setEndColumnName(links_namespace_end);
+
+            // loop until all cells are handled
+            for(;;)
+            {
+                row->clearCache();
+                row->readCells(column_predicate);
+                QtCassandra::QCassandraCells const cells(row->cells());
+                if(cells.isEmpty())
+                {
+                    // no more rows here
+                    break;
+                }
+
+                // handle one batch
+                for(QtCassandra::QCassandraCells::const_iterator c(cells.begin());
+                        c != cells.end();
+                        ++c)
+                {
+                    QtCassandra::QCassandraCell::pointer_t cell(*c);
+
+                    QString const cell_name(cell->columnName());
+                    int pos(cell_name.indexOf('-'));
+                    if(pos != -1)
+                    {
+                        // okay, this looks like a multi-link
+                        // now check for the corresponding entry in the
+                        // links table
+                        QString const link_name(cell_name.mid(links_namespace_start.length(), pos - links_namespace_start.length()));
+                        QString const link_key(QString("%1/%2").arg(key).arg(link_name));
+
+                        bool exists(false);
+                        if(links_table->exists(link_key))
+                        {
+                            // the row exists, is there an entry for this link?
+                            QtCassandra::QCassandraRow::pointer_t link_row(links_table->row(link_key));
+
+                            // the column name in that row is the value of 'k'
+                            // in the current cell value
+                            link_info info;
+                            info.from_data(cell->value().stringValue());
+                            if(link_row->exists(info.key()))
+                            {
+                                QString const expected_name(link_row->cell(info.key())->value().stringValue());
+                                exists = cell_name == expected_name;
+                            }
+                        }
+
+                        if(!exists)
+                        {
+                            // this is a spurius cell, get rid of it
+                            row->dropCell(cell_name);
+                        }
+                    }
+                }
+            }
         }
     }
 }

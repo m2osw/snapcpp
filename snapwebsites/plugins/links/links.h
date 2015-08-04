@@ -28,6 +28,7 @@ namespace links
 
 enum class name_t
 {
+    SNAP_NAME_LINKS_CLEANUPLINKS,
     SNAP_NAME_LINKS_CREATELINK,
     SNAP_NAME_LINKS_DELETELINK,
     SNAP_NAME_LINKS_TABLE,         // Cassandra Table used for links
@@ -89,6 +90,8 @@ public:
 class link_info
 {
 public:
+    typedef std::vector<link_info>      vector_t;
+
     link_info()
         //: f_unique(false)
         //, f_name("")
@@ -210,6 +213,21 @@ private:
     snap_version::version_number_t  f_branch;
 };
 
+class link_info_pair
+{
+public:
+    typedef std::vector<link_info_pair>      vector_t;
+
+                                link_info_pair(link_info const & src, link_info const & dst);
+
+    link_info const &           source();
+    link_info const &           destination();
+
+private:
+    link_info                   f_source;
+    link_info                   f_destination;
+};
+
 class link_context
 {
 public:
@@ -256,6 +274,8 @@ public:
     void                adjust_links_after_cloning(QString const & source_key, QString const & destination_key);
     void                fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch_number);
 
+    link_info_pair::vector_t list_of_links(QString const & path);
+
     // TBD should those be events? (they do trigger the modified_link() event already...)
     void                create_link(link_info const & src, link_info const & dst);
     void                delete_link(link_info const & info, int const delete_record_count = DELETE_RECORD_COUNT);
@@ -271,6 +291,7 @@ public:
 private:
     void                initial_update(int64_t variables_timestamp);
     void                init_tables();
+    void                cleanup_links();
 
     // tests
     SNAP_TEST_PLUGIN_TEST_DECL(test_unique_unique_create_delete)

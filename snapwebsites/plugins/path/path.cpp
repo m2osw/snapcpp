@@ -76,12 +76,12 @@ public:
         f_plugin = p;
     }
 
-    void on_error(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
+    virtual void on_error(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & err_details, bool const err_by_mime_type)
     {
         if(err_by_mime_type && f_plugin)
         {
             // will this plugin handle that error?
-            permission_error_callback::error_by_mime_type *handle_error(dynamic_cast<permission_error_callback::error_by_mime_type *>(f_plugin.get()));
+            permission_error_callback::error_by_mime_type * handle_error(dynamic_cast<permission_error_callback::error_by_mime_type *>(f_plugin.get()));
             if(handle_error)
             {
                 // attempt to inform the user using the proper type of data
@@ -122,7 +122,7 @@ public:
         NOTREACHED();
     }
 
-    void on_redirect(
+    virtual void on_redirect(
             /* message::set_error() */ QString const & err_name, QString const & err_description, QString const & err_details, bool err_security,
             /* snap_child::page_redirect() */ QString const & path, snap_child::http_code_t const http_code)
     {
@@ -156,7 +156,7 @@ public:
 
 private:
     zpsnap_child_t          f_snap;
-    content::path_info_t&   f_ipath;
+    content::path_info_t &  f_ipath;
     plugins::plugin_zptr_t  f_plugin;
 };
 
@@ -319,6 +319,7 @@ void path::on_bootstrap(::snap::snap_child * snap)
     f_snap = snap;
 
     SNAP_LISTEN(path, "server", server, execute, _1);
+    SNAP_LISTEN(path, "server", server, improve_signature, _1, _2);
 }
 
 
@@ -334,25 +335,62 @@ void path::on_bootstrap(::snap::snap_child * snap)
  */
 plugins::plugin *path::get_plugin(content::path_info_t & ipath, permission_error_callback & err_callback)
 {
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+
     // get the name of the plugin that owns this URL 
     plugins::plugin *owner_plugin(nullptr);
 
-    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    QString const primary_owner(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER));
+
+    // define the primary owner
     if(content_table->exists(ipath.get_key())
-    && content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER)))
+    && content_table->row(ipath.get_key())->exists(primary_owner))
+    //&& content_table->row(ipath.get_key())->exists(content::get_name(content::name_t::SNAP_NAME_CONTENT_STATUS)))
     {
+        QString const action(define_action(ipath));
+
+        // I don't think this is smart, instead I pass the action to the
+        // on_path_execute() function (within the ipath, really) which
+        // has to react accordingly...
+        // (That way a plugin may completely forbid a delete, for example.)
+        //
+        // That being said, it probably should use the action to determine
+        // the plugin that understands that action, but I think the
+        // implementation shown below is incorrect because we probably don't
+        // want that information to be saved in every single page... (i.e.
+        // old pages would miss the information of a new action and also
+        // that would many many more fields which in most cases would
+        // probably not be useful)
+        //
+        // we may have a specific owner with a specific action
+        // (TBD: we may want a signal on that one and have a dynamic owner)
+        //
+        //QString const owner_with_action(QString("%1::%2").arg(primary_owner).arg(action));
+        //if(content_table->row(ipath.get_key())->exists(owner_with_action))
+        //{
+        //    owner = content_table->row(ipath.get_key())->cell(owner_with_action)->value().stringValue();
+        //}
+        //else if(content_table->row(ipath.get_key())->exists(primary_owner))
+        //{
+        //    owner = content_table->row(ipath.get_key())->cell(primary_owner)->value().stringValue();
+        //}
+
         // verify that the status is good for displaying this page
         content::path_info_t::status_t status(ipath.get_status());
         switch(status.get_state())
         {
+        case content::path_info_t::status_t::state_t::CREATE:
+            err_callback.on_error(snap_child::http_code_t::HTTP_CODE_LOCKED,
+                        "Page Locked",
+                        "This page is currently locked. You may try again at a later time.",
+                        QString("User tried to access page \"%1\" but its status state is CREATE.")
+                                .arg(ipath.get_key()),
+                        false);
+            return nullptr;
+
         case content::path_info_t::status_t::state_t::UNKNOWN_STATE:
             // TBD: should we throw instead when unknown (because get_state()
             //      is not expected to ever return that value)
-        case content::path_info_t::status_t::state_t::CREATE:
-        case content::path_info_t::status_t::state_t::DELETED:
-            // TODO: for administrators who can undelete pages, the DELETED
-            //       will need special handling at some point
-            // TBD: maybe we should use 403 instead of 404?
             err_callback.on_error(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                         "Unknow Page Status",
                         "An internal error occured and this page cannot properly be displayed at this time.",
@@ -365,6 +403,7 @@ plugins::plugin *path::get_plugin(content::path_info_t & ipath, permission_error
         case content::path_info_t::status_t::state_t::NORMAL:
         case content::path_info_t::status_t::state_t::HIDDEN:   // TBD -- probably requires special handling to know whether we can show those pages
         case content::path_info_t::status_t::state_t::MOVED:    // MOVED pages will redirect a little later (if allowed)
+        case content::path_info_t::status_t::state_t::DELETED:  // DELETED pages are handled below, after we determined the plugin
             break;
 
         }
@@ -372,7 +411,7 @@ plugins::plugin *path::get_plugin(content::path_info_t & ipath, permission_error
         // get the modified date so we can setup the Last-Modified HTTP header field
         // it is also another way to determine that a path is valid
         QtCassandra::QCassandraValue const value(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_CREATED))->value());
-        QString const owner(content_table->row(ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+        QString const owner(content_table->row(ipath.get_key())->cell(primary_owner)->value().stringValue());
         if(value.nullValue() || owner.isEmpty())
         {
             err_callback.on_error(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
@@ -385,10 +424,15 @@ plugins::plugin *path::get_plugin(content::path_info_t & ipath, permission_error
                         false);
             return nullptr;
         }
-        // TODO: this is not correct anymore! (we're getting the creation date, not last mod.)
+        // TODO: this is not correct anymore! (we're getting the creation
+        //       date, not last mod.)
+        //
+        //       only we probably need to get the last modification date
+        //       from the last revision...
+        //
         f_last_modified = value.int64Value();
 
-        // get the primary owner (plugin name) and retrieve the plugin pointer
+        // retrieve the plugin pointer
 //std::cerr << "Execute [" << ipath.get_key() << "] with plugin [" << owner << "]\n";
         owner_plugin = plugins::get_plugin(owner);
         if(owner_plugin == nullptr)
@@ -402,6 +446,125 @@ plugins::plugin *path::get_plugin(content::path_info_t & ipath, permission_error
                                 .arg(ipath.get_cpath())
                                 .arg(owner));
             NOTREACHED();
+        }
+
+        if(status.get_state() == content::path_info_t::status_t::state_t::DELETED)
+        {
+            // TODO: these are rather complicated business rules which
+            //       may need to be somewhere else than the get_plugin()
+            //       function?
+            //
+            // See: http://webmasters.stackexchange.com/questions/42252/whats-the-best-http-code-for-dynamically-deleted-pages
+            // According to that question/answer, the best practice is:
+            //
+            //        404 -- may come back one day
+            //        410 -- gone "forever"
+            //        301 or 308 -- moved permanently (see MOVED below)
+            //
+            // TODO: for administrators who can undelete pages, the DELETED
+            //       status will need special handling at some point
+            //
+            // if the action is "delete" then we reply positively that the
+            // page was deleted;
+
+            // got a valid plugin, check whether this user could restore
+            // the page because if so we want to offer a button for that
+            // purpose; otherwise we just return a 2XX answer
+            //
+            quiet_error_callback restore_error_callback(f_snap, true);
+            // the quiet_error_callback does not offer a plugin pointer
+            //path_error_callback * pec(dynamic_cast<path_error_callback *>(&restore_error_callback));
+            //if(pec)
+            //{
+            //    pec->set_plugin(owner_plugin);
+            //}
+            if(action == "delete")
+            {
+                // user was trying to delete the page...
+                verify_permissions(ipath, restore_error_callback);
+                if(restore_error_callback.has_error())
+                {
+                    // user does not have permission to delete the page
+                    // we return a 403
+                    err_callback.on_error(snap_child::http_code_t::HTTP_CODE_FORBIDDEN,
+                                "Action Forbidden",
+                                "You are not permitted to delete this page.",
+                                QString("User tried to delete page \"%1\" but has no such permission (even though the page is already deleted!).")
+                                        .arg(ipath.get_key()),
+                                false);
+                    return nullptr;
+                }
+
+                // check whether the restore is valid for the link
+                add_restore_link_to_signature_for(ipath.get_key());
+
+                // TODO: this result is positive but will not be caught
+                //       by the AJAX process which is a problem since
+                //       we could end up sending HTML instead of a quick
+                //       XML response.
+                //
+                //       Also, the error code should most certainly be
+                //       a 404, even if we have a link saying "Restore Page"
+                //
+                err_callback.on_error(snap_child::http_code_t::HTTP_CODE_OK,
+                            "Page Deleted",
+                            "This page was deleted.",
+                            QString("User accessed already deleted page \"%1\" with action \"%2\".")
+                                    .arg(ipath.get_key())
+                                    .arg(action),
+                            false);
+                return nullptr;
+            }
+
+            // force the action to "restore" to test permission and see
+            // whether the user could restore this page
+            ipath.set_parameter("action", "restore");
+            verify_permissions(ipath, restore_error_callback);
+            if(restore_error_callback.has_error())
+            {
+                // restore is not allowed for that user so the error is a
+                // simple 404 (i.e. search engines would see this page)
+                err_callback.on_error(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
+                            "Page Not Found",
+                            "This page does not exist on this website.",
+                            QString("User tried to access deleted page \"%1\" but has no such permission.")
+                                    .arg(ipath.get_key()),
+                            false);
+                return nullptr;
+            }
+
+            // only administrators come this far
+
+            if(action != "restore")
+            {
+                // action is not restore and the page is deleted so the only
+                // thing we can show the user is an error with a button
+                // offering him/her to restore the page
+                //
+                // The restore will appear as a link in the signature
+                f_add_restore_link_to_signature.push_back(ipath.get_cpath());
+
+                err_callback.on_error(snap_child::http_code_t::HTTP_CODE_GONE,
+                            "Page Was Deleted",
+                            "This page was deleted. There is a link below you can click to restore it. Until then, it will appear as a \"Page Not Found\" to users who do not have permission to restore it.",
+                            QString("User accessed deleted page \"%1\" with action \"%2\".")
+                                    .arg(ipath.get_key())
+                                    .arg(action),
+                            false);
+                return nullptr;
+            }
+
+            // user is trying to restore a page and he has such a
+            // permission so let him do so
+            //
+            // just not implemented yet...
+            err_callback.on_error(snap_child::http_code_t::HTTP_CODE_NOT_IMPLEMENTED,
+                        "Restore Not Implemented",
+                        "This page was deleted and could be restored once that functionality gets implemented.",
+                        QString("User tried to restore deleted page \"%1\", which is a function to be implemented still.")
+                                .arg(ipath.get_key()),
+                        false);
+            return nullptr;
         }
     }
     else
@@ -441,6 +604,22 @@ plugins::plugin *path::get_plugin(content::path_info_t & ipath, permission_error
 }
 
 
+void path::add_restore_link_to_signature_for(QString const page_path)
+{
+    content::path_info_t ipath;
+
+    // verify that the user could restore that page
+    ipath.set_path(page_path);
+    ipath.set_parameter("action", "restore");
+    quiet_error_callback restore_error_callback(f_snap, true);
+    verify_permissions(ipath, restore_error_callback);
+    if(restore_error_callback.has_error())
+    {
+        f_add_restore_link_to_signature.push_back(ipath.get_cpath());
+    }
+}
+
+
 /** \brief Verify for permissions.
  *
  * This function calculates the permissions of the user to access the
@@ -457,25 +636,7 @@ plugins::plugin *path::get_plugin(content::path_info_t & ipath, permission_error
  */
 void path::verify_permissions(content::path_info_t & ipath, permission_error_callback & err_callback)
 {
-    QString action(ipath.get_parameter("action"));
-    if(action.isEmpty())
-    {
-        QString const qs_action(f_snap->get_server_parameter("qs_action"));
-        snap_uri const & uri(f_snap->get_uri());
-        if(uri.has_query_option(qs_action))
-        {
-            // the user specified an action
-            action = uri.query_option(qs_action);
-        }
-        if(action.isEmpty())
-        {
-            // use the default
-            action = default_action(ipath);
-        }
-
-        // save the action in the path
-        ipath.set_parameter("action", action);
-    }
+    QString const action(define_action(ipath));
 
     SNAP_LOG_TRACE("verify_permissions(): ipath=") << ipath.get_key() << ", action=" << action;
 
@@ -527,26 +688,65 @@ bool path::access_allowed_impl(QString const& user_path, content::path_info_t& i
 
 
 
-/** \brief Dynamically compute the default action.
+/** \brief Dynamically compute the action for a path.
  *
  * Depending on the path and method (GET, POST, DELETE, PUT...) the system
  * reacts with a default action.
+ *
+ * Note that a path is automatically assigned the action as a parameter.
+ * If the parameter named "action" is already defined, then that value
+ * is returned and no other heuristic is used to determine the action.
+ *
+ * End users can force the action by using the qs_action string ("a"
+ * by default) as in the following where the action is set to "edit":
+ *
+ * http://snapwebsites.com/terms-and-conditions?a=edit
+ *
+ * \todo
+ * Really support all methods.
+ *
+ * \param[in] ipath  The path for which an action is to be determined.
+ *                   (It is expected to be the main path though)
+ *
+ * \return The named action.
  */
-QString path::default_action(content::path_info_t& ipath)
+QString path::define_action(content::path_info_t & ipath)
 {
-    if(f_snap->has_post())
+    QString action(ipath.get_parameter("action"));
+    if(action.isEmpty())
     {
-        // this could also be "edit" or "create"...
-        // but "administer" is more restrictive at this point
-        return "administer";
+        QString const qs_action(f_snap->get_server_parameter("qs_action"));
+        snap_uri const & uri(f_snap->get_uri());
+        if(uri.has_query_option(qs_action))
+        {
+            // the user specified an action
+            action = uri.query_option(qs_action);
+        }
+
+        if(action.isEmpty())
+        {
+            // use the default
+            if(f_snap->has_post())
+            {
+                // this could also be "edit" or "create"...
+                // but "administer" is more restrictive at this point
+                action = "administer";
+            }
+            else if(ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/"))
+            {
+                action = "administer";
+            }
+            else
+            {
+                action = "view";
+            }
+        }
+
+        // save the action in the path
+        ipath.set_parameter("action", action);
     }
 
-    if(ipath.get_cpath() == "admin" || ipath.get_cpath().startsWith("admin/"))
-    {
-        return "administer";
-    }
-
-    return "view";
+    return action;
 }
 
 
@@ -562,7 +762,7 @@ QString path::default_action(content::path_info_t& ipath)
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void path::on_execute(QString const& uri_path)
+void path::on_execute(QString const & uri_path)
 {
     content::path_info_t ipath;
     ipath.set_path(uri_path);
@@ -573,6 +773,7 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
 
     // allow modules to redirect now, it has to be really early, note
     // that it will be BEFORE the path module verifies the permissions
+    // AND before the POST data was managed
     check_for_redirect(ipath);
 
     path_error_callback main_page_error_callback(f_snap, ipath);
@@ -580,12 +781,16 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
     f_last_modified = 0;
     plugins::plugin *path_plugin(get_plugin(ipath, main_page_error_callback));
 
-    preprocess_path(ipath, path_plugin);
-
-    // save the main page action found in the URI so that way any plugin
-    // can access that information at any point, not just the
+    // make a copy of the action in the snap child class URI so we can
+    // easily access that information at any point, not just the
     // verify_rights() function
+    //
+    // WARNING: the get_plugin() defines the "action" parameter in ipath
+    //          so we cannot check it before then
+    //
     f_snap->set_action(ipath.get_parameter("action"));
+
+    preprocess_path(ipath, path_plugin);
 
     // The last modification date is saved in the get_plugin()
     // It's a bit ugly but that way we test there that the page is valid and
@@ -610,7 +815,8 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
         page_not_found(ipath);
         if(f_snap->empty_output())
         {
-            // no page_not_found() plugin support...
+            // no page_not_found() support and no error generated so far,
+            // generate a default error now:
             if(path_plugin != nullptr)
             {
                 // if the page exists then
@@ -618,7 +824,7 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
                 f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
                             "Plugin Missing",
                             "This page is not currently available as its plugin is not currently installed.",
-                            "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + owner + ") does not yet implement the path_execute");
+                            "User tried to access page \"" + ipath.get_cpath() + "\" but its plugin (" + owner + ") does not yet implement the path_execute() function.");
             }
             else
             {
@@ -718,6 +924,24 @@ bool path::check_for_redirect_impl(content::path_info_t& ipath)
     }
 
     return true;
+}
+
+
+/** \brief Improves the error signature.
+ *
+ * This function adds the search page to the brief signature of die()
+ * errors.
+ *
+ * \param[in] path  The path to the page that generated the error.
+ * \param[in,out] signature  The HTML signature to improve.
+ */
+void path::on_improve_signature(QString const & url_path, QString & signature)
+{
+    if(f_add_restore_link_to_signature.contains(url_path))
+    {
+        QString const qs_action(f_snap->get_server_parameter("qs_action"));
+        signature += " <a href=\"?" + qs_action + "=restore\">Restore Deleted Page</a>";
+    }
 }
 
 

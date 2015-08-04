@@ -5533,7 +5533,7 @@ QString snap_child::get_server_parameter(QString const & name)
  * \param[in] path  The path to the page that is being generated.
  * \param[out] signature  The signature string, the result is saved here.
  */
-void snap_child::improve_signature(QString const& path, QString& signature)
+void snap_child::improve_signature(QString const & path, QString & signature)
 {
     server::pointer_t server(f_server.lock());
     if(!server)
@@ -5833,6 +5833,13 @@ void snap_child::trace(char const *data)
  */
 void snap_child::die(http_code_t err_code, QString err_name, QString const& err_description, QString const& err_details)
 {
+    if(f_died)
+    {
+        // avoid loops
+        return;
+    }
+    f_died = true;
+
     try
     {
         // define a default error name if undefined
@@ -7137,7 +7144,7 @@ void snap_child::output_result(header_mode_t modes, QByteArray output_data)
             float const identity_level(encodings.get_level("identity"));
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-            if(identity_level == 0.0f)
+            if(!f_died && identity_level == 0.0f)
 #pragma GCC diagnostic pop
             {
                 die(http_code_t::HTTP_CODE_NOT_ACCEPTABLE, "No Acceptable Compression Encoding",

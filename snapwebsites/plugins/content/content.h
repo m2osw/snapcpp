@@ -49,6 +49,7 @@ enum class name_t
     SNAP_NAME_CONTENT_CREATED,
     SNAP_NAME_CONTENT_CURRENT_VERSION,
     SNAP_NAME_CONTENT_DESCRIPTION,
+    SNAP_NAME_CONTENT_DESTROYPAGE,
     SNAP_NAME_CONTENT_DIRRESOURCES,
     SNAP_NAME_CONTENT_ERROR_FILES,
     SNAP_NAME_CONTENT_FILES_COMPRESSOR,
@@ -734,6 +735,7 @@ public:
     SNAP_SIGNAL(process_attachment, (QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const & file), (file_row, file));
     SNAP_SIGNAL(page_cloned, (cloned_tree_t const & tree), (tree));
     SNAP_SIGNAL(copy_branch_cells, (QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch), (source_cells, destination_row, destination_branch));
+    SNAP_SIGNAL_WITH_MODE(destroy_page, (path_info_t & ipath), (ipath), START_AND_DONE);
 
     // add content for addition to the database
     void                add_xml(QString const & plugin_name);
@@ -798,6 +800,7 @@ private:
     void        backend_process_status();
     void        backend_process_files();
     void        backend_action_dir_resources();
+    void        backend_action_destroy_page();
     void        backend_compressed_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
     void        backend_minify_css_file(QtCassandra::QCassandraRow::pointer_t file_row, attachment_file const& file);
 

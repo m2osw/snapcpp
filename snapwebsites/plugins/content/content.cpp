@@ -139,6 +139,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_CONTENT_DESCRIPTION:
         return "content::description";
 
+    case name_t::SNAP_NAME_CONTENT_DESTROYPAGE:
+        return "destroypage";
+
     case name_t::SNAP_NAME_CONTENT_FILES_COMPRESSOR: // NOT USED -- we actually may compress the file with many different compressors instead of just one so this is useless
         return "content::files::compressor";         // I keep the field because I have an update that deletes them in all files
 

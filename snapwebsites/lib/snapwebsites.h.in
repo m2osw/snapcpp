@@ -108,7 +108,7 @@ public:
     public:
         virtual                 ~error_by_mime_type() {}
 
-        virtual void            on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const& err_name, QString const & err_description, QString const & path) = 0;
+        virtual void            on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path) = 0;
     };
 
     virtual                 ~permission_error_callback() {}

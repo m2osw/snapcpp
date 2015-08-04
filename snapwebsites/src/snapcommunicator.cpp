@@ -117,6 +117,9 @@ snap_communicator_server::~snap_communicator_server()
 
 snap_communicator_server::run()
 {
+// TODO: actually implement that thing (most of the code will be in the
+//       library, though)
+
 std::string const& tcp_addr, int tcp_port, std::string const& udp_addr, int udp_port)
     : f_tcp_server(tcp_addr, tcp_port)
     , f_udp_server(udp_addr, udp_port)
@@ -140,52 +143,7 @@ int main(int argc, char *argv[])
         //
         s->prepare_qtapp( argc, argv );
 
-// TODO: actually implement that thing (most of the code will be in the
-//       library, though)
-
-        // // get the proper message (Excuse the naming convension...)
-        // QString msg(s->get_parameter("__BACKEND_URI"));
-        // if(msg.isEmpty())
-        // {
-        //     msg = "PING";
-        // }
-
-        // // determine UDP server name
-        // if(s->get_parameter("__BACKEND_ACTION") == "sendmail")
-        // {
-        //     s->udp_ping("sendmail_udp_signal", msg.toUtf8().data());
-        // }
-        // else if(s->get_parameter("__BACKEND_ACTION") == "pagelist")
-        // {
-        //     s->udp_ping("pagelist_udp_signal", msg.toUtf8().data());
-        // }
-        // else if(s->get_parameter("__BACKEND_ACTION") == "snapserver"
-        //      || s->get_parameter("__BACKEND_ACTION") == "server")
-        // {
-        //     s->udp_ping("snapserver_udp_signal", msg.toUtf8().data());
-        // }
-        // else if(s->get_parameter("__BACKEND_ACTION") == "images")
-        // {
-        //     s->udp_ping("images_udp_signal", msg.toUtf8().data());
-        // }
-        // else if(s->get_parameter("__BACKEND_ACTION") == "snapwatchdog")
-        // {
-        //     // here is why we probably want to have one file with all the UDP info
-        //     snap::snap_config wc;
-        //     // TODO: hard coded path is totally WRONG!
-        //     wc.read_config_file( "/etc/snapwebsites/snapwatchdog.conf" );
-        //     if(wc.contains("snapwatchdog_udp_signal"))
-        //     {
-        //         s->set_parameter("snapwatchdog_udp_signal", wc["snapwatchdog_udp_signal"]);
-        //     }
-        //     s->udp_ping("snapwatchdog_udp_signal", msg.toUtf8().data());
-        // }
-        // else
-        // {
-        //     std::cerr << "error: unknown/unsupported action \"" << s->get_parameter("__BACKEND_ACTION") << "\"." << std::endl;
-        //     s->exit(1);
-        //     snap::NOTREACHED();
-        // }
+        s->run();
 
         // exit via the server so the server can clean itself up properly
         s->exit(0);
@@ -195,7 +153,7 @@ int main(int argc, char *argv[])
     }
     catch(std::exception const& e)
     {
-        // clean error on exception
+        // clean error and exit on exception
         std::cerr << "snapcommunicator: exception: " << e.what() << std::endl;
         return 1;
     }

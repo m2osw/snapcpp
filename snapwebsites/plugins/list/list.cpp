@@ -2517,6 +2517,11 @@ int list::generate_list_for_page(content::path_info_t& page_ipath, content::path
         }
 
     }
+    catch(std::exception const & e)
+    {
+        SNAP_LOG_ERROR("exception \"")(e.what())("\" occured while attempting to create the list for page \"")(page_ipath.get_key())("\".");
+        did_work = 1;
+    }
     catch(...)
     {
         did_work = 1;
@@ -2883,10 +2888,10 @@ void list::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         list_ipath.set_parameter("action", "view"); // we are just viewing this list
 
         quiet_error_callback list_error_callback(f_snap, true);
-        plugin *list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
+        plugin * list_plugin(path::path::instance()->get_plugin(list_ipath, list_error_callback));
         if(!list_error_callback.has_error() && list_plugin)
         {
-            layout::layout_content *list_content(dynamic_cast<layout::layout_content *>(list_plugin));
+            layout::layout_content * list_content(dynamic_cast<layout::layout_content *>(list_plugin));
             if(list_content == nullptr)
             {
                 f_snap->die(snap_child::http_code_t::HTTP_CODE_INTERNAL_SERVER_ERROR,

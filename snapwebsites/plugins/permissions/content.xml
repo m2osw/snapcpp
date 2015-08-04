@@ -154,13 +154,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   <content path="/types/permissions/rights/edit">
     <param name="content::title" revision="revision">Edit Right</param>
     <param name="content::body" revision="revision">
-      <![CDATA[<p>Edit content.</p><p>The main edit is only assigned to a root user. The edit allows the root user to edit anything that is not locked internally. Note that does not allow the root user to delete something without putting it in a trashcan first.</p>]]>
+      <![CDATA[<p>Edit content.</p><p>The main edit is only assigned to a root user. The edit allows the root user to edit anything that is not locked internally.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/delete">
     <param name="content::title" revision="revision">Delete Right</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Delete content.</p><p>The main delete is only assigned to a root user. The delete allows the root user to delete anything that is not locked internally. Note that does not allow the root user to delete something without putting it in a trashcan first.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/rights/restore">
+    <param name="content::title" revision="revision">Restore Right</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Restore content.</p><p>The main restore is only assigned to a root user. The restore allows the root user to restore a page that was previously deleted.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/rights/view">
@@ -206,6 +212,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     <param name="content::title" revision="revision">Delete Action</param>
     <param name="content::body" revision="revision">
       <![CDATA[<p>Delete content. Deletion requires rights by all the concerned plugins since that's a pretty dramatic action. For example, a scheduler plugin could prevent the deletion until the page was published for a while and automatically unpublished. Before then the deletion is forbidden.</p>]]>
+    </param>
+  </content>
+  <content path="/types/permissions/actions/restore">
+    <param name="content::title" revision="revision">Restore Action</param>
+    <param name="content::body" revision="revision">
+      <![CDATA[<p>Restore content. Restore allows an administrator to restore a page that was previously deleted. Often an "Undelete Page" button appears in a deleted page to allow users to easily restore a page.</p>]]>
     </param>
   </content>
   <content path="/types/permissions/actions/edit">
@@ -273,6 +285,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     </param>
     <link name="permissions::action::view" to="permissions::link_back" mode="*:*">/types/permissions/rights/view/page/administrator</link>
     <link name="permissions::action::administer" to="permissions::link_back" mode="*:*">/types/permissions/rights/administer/website</link>
+    <link name="permissions::action::restore" to="permissions::link_back" mode="*:*">/types/permissions/rights/restore</link>
   </content>
   <content path="/types/permissions/groups/root/administrator/editor">
     <param name="content::title" revision="revision">Editor Group</param>

@@ -794,13 +794,13 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                     else
                     {
                         // this is the path to the product, it has to be
-                        // written between colons
+                        // written between exclamation marks
                         if(code->unicode() != '!')
                         {
                             messages::messages::instance()->set_error(
                                 "Invalid Product Path",
-                                QString("e-Commerce product paths in the cart=... option must be written between exclamation points (!)."),
-                                "invalid numbers are not accepted as quantities and no product gets added.",
+                                QString("e-Commerce product paths in the cart=... option must be written between exclamation marks (!)."),
+                                "unquoted names are not accepted as product paths.",
                                 false
                             );
                             valid = false;
@@ -818,7 +818,7 @@ void ecommerce::on_preprocess_path(content::path_info_t& ipath, plugins::plugin 
                                 messages::messages::instance()->set_error(
                                     "Invalid Product Path",
                                     QString("e-Commerce product paths in the cart=... option must be written between exclamation points (!)."),
-                                    "invalid numbers are not accepted as quantities and no product gets added.",
+                                    "unquoted names are not accepted as product paths.",
                                     false
                                 );
                                 valid = false;

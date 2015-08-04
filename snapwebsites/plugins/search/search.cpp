@@ -157,7 +157,7 @@ void search::content_update(int64_t variables_timestamp)
  * \param[in] path  The path to the page that generated the error.
  * \param[in,out] signature  The HTML signature to improve.
  */
-void search::on_improve_signature(QString const& path, QString& signature)
+void search::on_improve_signature(QString const & path, QString & signature)
 {
     // TODO: we probably want translations? (in which case we
     //       want the signature to be in an XML document.)

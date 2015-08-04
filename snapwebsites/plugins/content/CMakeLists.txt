@@ -57,6 +57,7 @@ add_library(content SHARED
     # various parts of the content plugin
     backend.cpp
     clone.cpp
+    destroy.cpp
     revision.cpp
 
     # sub-classes offered by the content plugin

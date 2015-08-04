@@ -19,6 +19,7 @@
 
 #include "../locale/snap_locale.h"
 #include "../messages/messages.h"
+#include "../server_access/server_access.h"
 
 #include "not_reached.h"
 
@@ -181,11 +182,60 @@ void output::content_update(int64_t variables_timestamp)
  *
  * \return true if the content is properly generated, false otherwise.
  */
-bool output::on_path_execute(content::path_info_t& ipath)
+bool output::on_path_execute(content::path_info_t & ipath)
 {
-    f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
+    QString const action(ipath.get_parameter("action"));
 
-    return true;
+    if(action == "view"
+    || action == "edit"
+    || action == "administer")
+    {
+        f_snap->output(layout::layout::instance()->apply_layout(ipath, this));
+        return true;
+    }
+    else if(action == "delete")
+    {
+        // actually delete the page
+        content::content::instance()->trash_page(ipath);
+
+        // if the command was send with AJAX, make sure to answer
+        // using AJAX
+        server_access::server_access * server_access_plugin(server_access::server_access::instance());
+        if(server_access_plugin->is_ajax_request())
+        {
+//f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND,
+//                    "Page Deleted",
+//                    "This page was deleted.",
+//                    QString("User accessed already deleted page \"%1\" with action \"delete\".")
+//                            .arg(ipath.get_key()));
+//NOTREACHED();
+            messages::messages::instance()->set_info(
+                "Page Deleted",
+                QString("Page \"%1\" was successfully deleted.").arg(ipath.get_key())
+            );
+
+            server_access_plugin->create_ajax_result(ipath, true);
+            server_access_plugin->ajax_output();
+            return true;
+        }
+
+        // TBD: should we NOT use the die() function? (Especially with the OK
+        //      "error" code.)
+        //
+        // no AJAX, use the die() function because there is no content to
+        // return (unless we decide to use HTTP_CODE_NO_CONTENT? but then
+        // we cannot get the "restore page" link)
+        path::path::instance()->add_restore_link_to_signature_for(ipath.get_cpath());
+        f_snap->die(snap_child::http_code_t::HTTP_CODE_OK,
+                    "Page Deleted",
+                    "This page was deleted.",
+                    QString("User accessed already deleted page \"%1\" with action \"delete\".")
+                            .arg(ipath.get_key()));
+        NOTREACHED();
+    }
+
+    // we did not handle the page, so return false
+    return false;
 }
 
 

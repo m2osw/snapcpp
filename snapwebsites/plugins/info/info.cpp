@@ -18,6 +18,7 @@
 #include "info.h"
 
 #include "../messages/messages.h"
+#include "../permissions/permissions.h"
 #include "../users/users.h"
 #include "../output/output.h"
 
@@ -325,13 +326,25 @@ void info::on_process_form_post(content::path_info_t& ipath, sessions::sessions:
  * \param[in] path  The path on which the error occurs.
  * \param[in,out] signature  The HTML signature to improve.
  */
-void info::on_improve_signature(QString const& path, QString& signature)
+void info::on_improve_signature(QString const & path, QString & signature)
 {
-    (void)path;
-    if(!users::users::instance()->get_user_key().isEmpty())
+    static_cast<void>(path);
+
+    // only check if user is logged in
+    if(users::users::instance()->user_is_logged_in())
     {
-        // TODO: translate
-        signature += " <a href=\"/admin\">Administration</a>";
+        // only show the /admin link if the user can go there
+        permissions::permissions *permissions_plugin(permissions::permissions::instance());
+        QString const& login_status(permissions_plugin->get_login_status());
+        content::path_info_t page_ipath;
+        page_ipath.set_path("/admin");
+        content::permission_flag allowed;
+        path::path::instance()->access_allowed(permissions_plugin->get_user_path(), page_ipath, "administer", login_status, allowed);
+        if(allowed.allowed())
+        {
+            // TODO: translate
+            signature += " <a href=\"/admin\">Administration</a>";
+        }
     }
 }
 
