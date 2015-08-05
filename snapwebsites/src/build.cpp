@@ -111,6 +111,9 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    // this doesn't work as expected, instead we use `su -l build ...`
+    // which gives us everything needed (i.e. HOME, PATH, etc.)
+    //
     // become build:build
     // (group first)
     //if(setegid(g->gr_gid) == -1)
@@ -145,13 +148,13 @@ int main(int argc, char *argv[])
         // the std::cerr are visible in the apache2 error.log if necessary
         if(setgid(0) == -1)
         {
-            // if we cannot become group "build"
+            // if we cannot become group "root"
             std::cerr << "error: cannot become the \"root\" group on this computer.\n";
             exit(0);
         }
         if(setuid(0) == -1)
         {
-            // if we cannot become user "build"
+            // if we cannot become user "root"
             std::cerr << "error: cannot become the \"root\" user on this computer.\n";
             exit(0);
         }
@@ -185,12 +188,21 @@ int main(int argc, char *argv[])
         static_cast<void>(freopen("/var/log/build-error.log", "a", stderr));
         static_cast<void>(freopen("/dev/null", "r", stdin));
 
+        std::string command("bin/build.sh");
+        std::string const qs(getenv("QUERY_STRING"));
+        size_t pos(qs.find("finball")); // ameliorate at some point (i.e. projects=
+        if(pos != std::string::npos)
+        {
+            // we have to use --noclean for a partial update
+            command += " --noclean --projects finball";
+        }
+
         // become the 'build' user with 'su' to make sure it works as expected
         execl("/bin/su"
             , "-l"
             , "build"
             , "-c"
-            , "bin/build.sh"
+            , command.c_str()
             , (char *) NULL);
 
         // it should never fail, unless the installation is "broken"

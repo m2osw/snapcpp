@@ -719,7 +719,7 @@ QDomDocument layout::create_document(content::path_info_t& ipath, plugin *conten
  *
  * \return The resulting body in an XML document.
  */
-void layout::create_body(QDomDocument& doc, content::path_info_t& ipath, QString const& xsl, layout_content *content_plugin, QString const& ctemplate, bool handle_boxes, QString const& layout_name)
+void layout::create_body(QDomDocument & doc, content::path_info_t & ipath, QString const & xsl, layout_content * content_plugin, QString const & ctemplate, bool handle_boxes, QString const & layout_name)
 {
 #ifdef DEBUG
 SNAP_LOG_TRACE() << "layout::create_body() ... cpath = [" << ipath.get_cpath() << "] name = [" << layout_name << "]";

@@ -21,6 +21,7 @@
 #include "../messages/messages.h"
 #include "../server_access/server_access.h"
 
+#include "log.h"
 #include "not_reached.h"
 
 #include <iostream>
@@ -196,6 +197,11 @@ bool output::on_path_execute(content::path_info_t & ipath)
     else if(action == "delete")
     {
         // actually delete the page
+        //
+        // TODO: put that in the background and return a 202
+        //       (this is especially important if someone wants to delete
+        //       a large tree!)
+        //
         content::content::instance()->trash_page(ipath);
 
         // if the command was send with AJAX, make sure to answer

@@ -382,4 +382,21 @@ install(
 )
 
 
+#################################################################################
+## Build CGI
+##
+project(build-service)
+
+add_executable(${PROJECT_NAME}
+    build-service.cpp
+)
+
+# We install the binary so that way the linking is finalized, but
+# we do not install that in a pacakage for now (maybe later if we
+# do a build system for snap, although I don't think we need such.)
+install(
+    TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
+)
+
+
 # vim: ts=4 sw=4 et
