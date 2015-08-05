@@ -1,3 +1,9 @@
+libqtserialization (0.1.16.287~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Tue, 04 Aug 2015 20:40:00 -0700
+
 libqtserialization (0.1.16.286~trusty) trusty; urgency=high
 
   * Nightly build.
