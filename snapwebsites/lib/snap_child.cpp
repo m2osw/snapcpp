@@ -5887,12 +5887,12 @@ void snap_child::die(http_code_t err_code, QString err_name, QString const& err_
                 //       (only for some 4XX errors though)
 
                 QtCassandra::QCassandraValue site_name(get_site_parameter(get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
-                signature = QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue());
+                signature = QString("<a href=\"%1\" target=\"_top\">%2</a>").arg(site_key).arg(site_name.stringValue());
                 server->improve_signature(f_uri.path(), signature);
             }
             else if(!site_key.isEmpty())
             {
-                signature = QString("<a href=\"%1\">%1</a>").arg(site_key);
+                signature = QString("<a href=\"%1\" target=\"_top\">%1</a>").arg(site_key);
                 server->improve_signature(f_uri.path(), signature);
             }
             // else -- no signature...

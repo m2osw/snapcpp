@@ -343,7 +343,7 @@ void info::on_improve_signature(QString const & path, QString & signature)
         if(allowed.allowed())
         {
             // TODO: translate
-            signature += " <a href=\"/admin\">Administration</a>";
+            signature += " <a href=\"/admin\" target=\"_top\">Administration</a>";
         }
     }
 }

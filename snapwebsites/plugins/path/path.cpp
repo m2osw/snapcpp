@@ -940,6 +940,7 @@ void path::on_improve_signature(QString const & url_path, QString & signature)
     if(f_add_restore_link_to_signature.contains(url_path))
     {
         QString const qs_action(f_snap->get_server_parameter("qs_action"));
+        // should we have a target="_top" in this one?
         signature += " <a href=\"?" + qs_action + "=restore\">Restore Deleted Page</a>";
     }
 }

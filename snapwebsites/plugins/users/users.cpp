@@ -4562,7 +4562,7 @@ void users::on_improve_signature(QString const& path, QString& signature)
         QString const link(get_user_path());
 
         // TODO: translate
-        signature += " <a href=\"/" + link + "\">My Account</a>";
+        signature += " <a href=\"/" + link + "\" target=\"_top\">My Account</a>";
     }
 }
 

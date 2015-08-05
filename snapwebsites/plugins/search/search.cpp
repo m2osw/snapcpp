@@ -168,6 +168,7 @@ void search::on_improve_signature(QString const & path, QString & signature)
     if(!query.isEmpty())
     {
         query.replace(" ", "%20");
+        // should we have a target="_top" in this one?
         signature += " <a href=\"/search?search=" + query + "\">Search Our Website</a>";
     }
 }
