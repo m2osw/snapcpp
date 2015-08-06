@@ -270,9 +270,11 @@ public:
     void                on_bootstrap(::snap::snap_child *snap);
     void                on_add_snap_expr_functions(snap_expr::functions_t & functions);
     void                on_register_backend_action(server::backend_action_map_t & actions);
-    virtual void        on_backend_action(QString const & action);
     void                adjust_links_after_cloning(QString const & source_key, QString const & destination_key);
     void                fix_branch_copy_link(QtCassandra::QCassandraCell::pointer_t source_cell, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch_number);
+
+    // server::backend_action implementation
+    virtual void        on_backend_action(QString const & action);
 
     link_info_pair::vector_t list_of_links(QString const & path);
 
