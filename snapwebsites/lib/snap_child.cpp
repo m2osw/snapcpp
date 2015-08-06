@@ -33,6 +33,7 @@
 #include "qstring_stream.h"
 #include "snap_exception.h"
 
+#include <QtCassandra/QCassandraLock.h>
 #include <QtSerialization/QSerialization.h>
 #include <libtld/tld.h>
 
@@ -6618,6 +6619,14 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
     if(is_debug() // force update in debug mode so we don't have to wait 10 min.!
     || f_start_date - static_cast<int64_t>(last_update_timestamp) > static_cast<int64_t>(10 * 60 * 1000000))
     {
+        // this can be called more than once in debug mode whenever multiple
+        // files are being loaded for a page being accessed (i.e. the main
+        // page and then the .js, .css, .jpg, etc.)
+        //
+        // if is_debug() returns false, it should be useless unless the
+        // process takes over 10 minutes
+        QtCassandra::QCassandraLock lock(f_context, get_site_key_with_slash());
+
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);
         QString const core_plugin_threshold(get_name(name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
