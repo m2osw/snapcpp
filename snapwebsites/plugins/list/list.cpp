@@ -2442,8 +2442,13 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
 
     // check whether we already updated that page
     // (because the same page may be listed many times in the list table)
+    // we allow a 1 minute gap because right now we do not yet have the
+    // correct way to create pages (i.e. create a finilized page before
+    // we move forward; today we create a basic entry, send the signal
+    // to the list then add content and links... which could take some
+    // time which is not otherwise taken in account)
     int64_t const last_updated(list_row->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value().safeInt64Value());
-    if(last_updated > update_request_time)
+    if(last_updated - 60 * 1000000 > update_request_time)
     {
         return did_work;
     }
