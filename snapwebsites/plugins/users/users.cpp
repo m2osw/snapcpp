@@ -3257,7 +3257,7 @@ int64_t users::get_user_identifier() const
  *
  * \return The status of the user.
  */
-users::status_t users::user_status(QString const& email, QString& status_key)
+users::status_t users::user_status(QString const & email, QString & status_key)
 {
     status_key.clear();
 
