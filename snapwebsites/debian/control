@@ -2,16 +2,16 @@ Source: snapwebsites
 Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake,
-    libqt4-dev (>= 4.8.3), doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.60~trusty),
+    libqt4-dev (>= 4.8.3), doxygen, graphviz, liblog4cplus-dev (>= 1.2.0.61~trusty),
     libssl-dev, libmagic-dev, libmagick++-dev (>= 6.7.7.10-6ubuntu3), libicu-dev,
     libqtwebkit-dev, libboost-dev, libxml2-utils, python-pip (>= 1.4.1-2),
     libprocps3-dev, libzipios++-dev (>= 0.1.5.10m2osw1~saucy), zip, uuid-dev,
     libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.23.231~trusty),
     libcontrolledvars-dev (>= 1.4.15.231~trusty), libadvgetopt-dev (>= 1.0.15.231~trusty),
-    libtld-dev (>= 1.4.22.23~trusty), libqtcassandra-dev (>= 0.5.21.80~trusty),
-    libqtserialization-dev (>= 0.1.16.291~trusty), closure-linter (>= 2.3.13),
-    libas2js-dev (>= 0.1.13.291~trusty), libssl-dev (>= 1.0.1),
-    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.5.19~trusty)
+    libtld-dev (>= 1.4.22.24~trusty), libqtcassandra-dev (>= 0.5.21.81~trusty),
+    libqtserialization-dev (>= 0.1.16.292~trusty), closure-linter (>= 2.3.13),
+    libas2js-dev (>= 0.1.13.292~trusty), libssl-dev (>= 1.0.1),
+    libqrencode-dev (>= 3.4), libcsspp-dev (>= 1.0.5.20~trusty)
 Standards-Version: 3.9.4
 Section: libs
 Homepage: http://www.snapwebsites.org/
