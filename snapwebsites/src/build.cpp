@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
                        "<h1>Build Log</h1>"
                        // no need for the Home Page link in an IFRAME
                        //"<p>Go back to the <a href=\"/\">Home Page</a></p>"
-                       "<p>If not yet complete, use Ctrl-R to reload once in a while. We do not have an auto-refresh in this page.</p>"
+                       "<p>If not yet complete, click the \"Current/Last Build Status\" link to reload once in a while. We do not have an auto-refresh in this page.</p>"
                        "<p>Build started on: %s</p>"
                      "<pre>", date);
         fflush(stdout);
