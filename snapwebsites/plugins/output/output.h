@@ -87,6 +87,7 @@ public:
     void                on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token);
 
     static QString      phone_to_uri(QString const phone, phone_number_type_t const type);
+    void                breadcrumb(content::path_info_t & ipath, QDomElement parent);
 
     // dynamic javascript property support
     virtual int         js_property_count() const;

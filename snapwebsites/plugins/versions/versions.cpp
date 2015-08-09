@@ -22,6 +22,7 @@
 
 #include "not_reached.h"
 
+#include <csspp/csspp.h>
 #include <libtld/tld.h>
 #include <QtSerialization/QSerialization.h>
 
@@ -248,18 +249,22 @@ bool versions::versions_libraries_impl(filter::filter::token_info_t& token)
     token.f_replacement += "<li>libtld v";
     token.f_replacement += tld_version();
     token.f_replacement += " (compiled with " LIBTLD_VERSION ")</li>";
+        // libcsspp (content is always included and cannot listen for on_versions_libraries())
+    token.f_replacement += "<li>libcsspp v";
+    token.f_replacement += csspp::csspp_library_version();
+    token.f_replacement += " (compiled with " CSSPP_VERSION ")</li>";
 
     return true;
 }
 
 
-void versions::versions_libraries_done(filter::filter::token_info_t& token)
+void versions::versions_libraries_done(filter::filter::token_info_t & token)
 {
     token.f_replacement += "</ul>";
 }
 
 
-bool versions::versions_tools_impl(filter::filter::token_info_t& token)
+bool versions::versions_tools_impl(filter::filter::token_info_t & token)
 {
     token.f_replacement += "<h3>Tools</h3><ul>";
 
@@ -267,7 +272,7 @@ bool versions::versions_tools_impl(filter::filter::token_info_t& token)
 }
 
 
-void versions::versions_tools_done(filter::filter::token_info_t& token)
+void versions::versions_tools_done(filter::filter::token_info_t & token)
 {
     token.f_replacement += "</ul>";
 }

@@ -1926,6 +1926,11 @@ void permissions::on_backend_action(QString const & action)
         links::link_info destination(link_name, destination_multi, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
     }
+    else
+    {
+        // unknown action (we should not have been called with that name!)
+        throw snap_logic_exception(QString("permissions.cpp:on_backend_action(): permissions::on_backend_action(\"%1\") called with an unknown action...").arg(action));
+    }
 }
 
 

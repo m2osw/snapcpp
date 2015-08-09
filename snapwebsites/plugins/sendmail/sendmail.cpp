@@ -1759,7 +1759,7 @@ void sendmail::on_finish_editor_form_processing(content::path_info_t & ipath, bo
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
+void sendmail::on_register_backend_action(server::backend_action_map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_SENDMAIL)] = this;
 }
@@ -1774,7 +1774,7 @@ void sendmail::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * \return The name of the UDP signal used by sendmail.
  */
-char const *sendmail::get_signal_name(QString const& action) const
+char const * sendmail::get_signal_name(QString const & action) const
 {
     if(action == get_name(name_t::SNAP_NAME_SENDMAIL))
     {
@@ -1819,8 +1819,14 @@ char const *sendmail::get_signal_name(QString const& action) const
  *
  * \param[in] action  The action this function is being called with.
  */
-void sendmail::on_backend_action(QString const& action)
+void sendmail::on_backend_action(QString const & action)
 {
+    if(action != get_name(name_t::SNAP_NAME_SENDMAIL))
+    {
+        // unknown action (we should not have been called with that name!)
+        throw snap_logic_exception(QString("sendmail.cpp:on_backend_action(): sendmail::on_backend_action(\"%1\") called with an unknown action...").arg(action));
+    }
+
     try
     {
         f_backend = dynamic_cast<snap_backend *>(f_snap.get());

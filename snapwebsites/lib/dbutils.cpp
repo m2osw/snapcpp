@@ -445,6 +445,7 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
          || n == "content::modified"
          || n == "content::updated"
          || n == "content::status_changed"
+         || n.startsWith("core::last_dynamic_update")
          || n.startsWith("core::last_updated")
          || n == "core::plugin_threshold"
          || n == "core::site_ready"

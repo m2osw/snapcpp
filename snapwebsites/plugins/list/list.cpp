@@ -28,6 +28,9 @@
 #include "log.h"
 #include "snap_backend.h"
 
+#include <csspp/csspp.h>
+#include <QtCassandra/QCassandraLock.h>
+
 #include <iostream>
 
 #include <sys/time.h>
@@ -1168,6 +1171,8 @@ void list::on_bootstrap(snap_child * snap)
     SNAP_LISTEN(list, "content", content::content, copy_branch_cells, _1, _2, _3);
     SNAP_LISTEN(list, "links", links::links, modified_link, _1, _2);
     SNAP_LISTEN(list, "filter", filter::filter, replace_token, _1, _2, _3, _4);
+
+    SNAP_TEST_PLUGIN_SUITE_LISTEN(list);
 }
 
 
@@ -1430,6 +1435,12 @@ void list::on_create_content(content::path_info_t & ipath, QString const & owner
  * adding a link or removing a link. By now the page should be quite
  * complete, outside of other links still missing.
  *
+ * \warning
+ * As a limitation, a list script that checks the links of another list
+ * will likely not update properly. This is because this function will
+ * no mark a page as modified when the link being created is a link
+ * from the list to a page that the list includes.
+ *
  * \param[in] link  The link that was just created or deleted.
  * \param[in] created  Whether the link was created (true) or deleted (false).
  */
@@ -1437,9 +1448,15 @@ void list::on_modified_link(links::link_info const & link, bool const created)
 {
     static_cast<void>(created);
 
-    content::path_info_t ipath;
-    ipath.set_path(link.key());
-    on_modified_content(ipath); // same as on_modified_content()
+    // no need to record the fact that we added a link in a list
+    // (that is, at this point a list script cannot depend on the
+    // links of another list...)
+    if(!f_list_link)
+    {
+        content::path_info_t ipath;
+        ipath.set_path(link.key());
+        on_modified_content(ipath); // same as on_modified_content()
+    }
 }
 
 
@@ -1468,50 +1485,66 @@ void list::on_modified_content(content::path_info_t & ipath)
 {
     // if the same page is modified multiple times then we overwrite the
     // same entry multiple times
-    QString site_key(f_snap->get_site_key_with_slash());
+    QString const site_key(f_snap->get_site_key_with_slash());
     QtCassandra::QCassandraTable::pointer_t list_table(get_list_table());
     QtCassandra::QCassandraTable::pointer_t listref_table(get_listref_table());
     int64_t const start_date(f_snap->get_start_date());
     QByteArray key;
     QtCassandra::appendInt64Value(key, start_date);
     QtCassandra::appendStringValue(key, ipath.get_key());
+
+    // we can insert before the eventual delete below because
+    // when 'key' does not change, we skip the delete!
+    // however, we assume 100% that all computers have the exact
+    // same clock
     bool const modified(true);
     list_table->row(site_key)->cell(key)->setValue(modified);
 
-    // handle a reference so it is possible to delete the old key for that
-    // very page later (i.e. if the page changes multiple times before the
-    // list processes have time to catch up)
-    QString const ref_key(QString("%1#ref").arg(site_key));
-    QtCassandra::QCassandraValue existing_entry(listref_table->row(ref_key)->cell(ipath.get_key())->value());
-    if(!existing_entry.nullValue())
-    {
-        QByteArray old_key(existing_entry.binaryValue());
-        if(old_key != key)
-        {
-            // drop only if the key changed (i.e. if the code modifies the
-            // same page over and over again within the same child process,
-            // then the key will not change.)
-            list_table->row(site_key)->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
-        }
-    }
-    //
-    // TBD: should we really time these rows? at this point we cannot
-    //      safely delete them so the best is certainly to do that
-    //      (unless we use the start_date time to create/delete these
-    //      entries safely) -- the result if these row disappear too
-    //      soon is that duplicates will appear in the main content
-    //      which is not a big deal (XXX I really think we can delete
-    //      those using the start_date saved in the cells to sort them!)
-    //
+    // prepare before lock
     QtCassandra::QCassandraValue timed_key;
     timed_key.setBinaryValue(key);
     timed_key.setTtl(86400 * 3); // 3 days--the list should be updated within 5 min. so 3 days is in case it crashed or did not start, maybe?
-    listref_table->row(ref_key)->cell(ipath.get_key())->setValue(timed_key);
+
+    // compute ref_key early
+    QString const ref_key(QString("%1#ref").arg(site_key));
+
+    {
+        // we need to have this run by a single process at a time
+        // otherwise we'll miss some dropCell() calls
+        QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("%1#list-reference").arg(ipath.get_key()));
+
+        // handle a reference so it is possible to delete the old key for that
+        // very page later (i.e. if the page changes multiple times before the
+        // list processes have time to catch up)
+        QtCassandra::QCassandraValue existing_entry(listref_table->row(ref_key)->cell(ipath.get_key())->value());
+        if(!existing_entry.nullValue())
+        {
+            QByteArray old_key(existing_entry.binaryValue());
+            if(old_key != key)
+            {
+                // drop only if the key changed (i.e. if the code modifies the
+                // same page over and over again within the same child process,
+                // then the key will not change.)
+                list_table->row(site_key)->dropCell(old_key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
+            }
+        }
+
+        //
+        // TBD: should we really time these rows? at this point we cannot
+        //      safely delete them so the best is certainly to do that
+        //      (unless we use the start_date time to create/delete these
+        //      entries safely) -- the result if these row disappear too
+        //      soon is that duplicates will appear in the main content
+        //      which is not a big deal (XXX I really think we can delete
+        //      those using the start_date saved in the cells to sort them!)
+        //
+        listref_table->row(ref_key)->cell(ipath.get_key())->setValue(timed_key);
+    }
 
     // just in case the row changed, we delete the pre-compiled (cached)
     // scripts (this could certainly be optimized but really the scripts
     // are compiled so quickly that it won't matter.)
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
     QString const branch_key(ipath.get_branch_key());
     branch_table->row(branch_key)->dropCell(get_name(name_t::SNAP_NAME_LIST_TEST_SCRIPT), QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, start_date);
@@ -2296,9 +2329,9 @@ int list::generate_all_lists(QString const & site_key)
             // the key starts with the "start date" and it is followed by a
             // string representing the row key in the content table
             QByteArray const& key(cell->columnKey());
-            if(key.size() < 8)
+            if(static_cast<size_t>(key.size()) < sizeof(int64_t))
             {
-                // drop any invalid entries, not need to keep them here
+                // drop any invalid entries, no need to keep them here
                 list_row->dropCell(key, QtCassandra::QCassandraValue::TIMESTAMP_MODE_DEFINED, QtCassandra::QCassandra::timeofday());
                 continue;
             }
@@ -2447,11 +2480,16 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     // we move forward; today we create a basic entry, send the signal
     // to the list then add content and links... which could take some
     // time which is not otherwise taken in account)
-    int64_t const last_updated(list_row->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value().safeInt64Value());
-    if(last_updated - 60 * 1000000 > update_request_time)
-    {
-        return did_work;
-    }
+    //
+    // this does not seem to do what I was hoping it would do...
+    // maybe we can debug this later
+    //
+    //int64_t const last_updated(list_row->cell(get_name(name_t::SNAP_NAME_LIST_LAST_UPDATED))->value().safeInt64Value());
+    static_cast<void>(update_request_time);
+    //if(last_updated - 60 * 1000000 > update_request_time)
+    //{
+    //    return did_work;
+    //}
 
     try
     {
@@ -2517,7 +2555,10 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 bool const destination_unique(false);
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
                 links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
-                links::links::instance()->create_link(source, destination);
+                {
+                    csspp::safe_bool_t save_list_link(*f_list_link.ptr());
+                    links::links::instance()->create_link(source, destination);
+                }
 
                 // create the ordered list
                 list_row->cell(new_item_key_full)->setValue(page_ipath.get_key());
@@ -2546,6 +2587,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
                 bool const destination_unique(false);
                 links::link_info source(link_name, source_unique, list_ipath.get_key(), list_ipath.get_branch());
                 links::link_info destination(link_name, destination_unique, page_ipath.get_key(), page_ipath.get_branch());
+                csspp::safe_bool_t save_list_link(*f_list_link.ptr());
                 links::links::instance()->delete_this_link(source, destination);
 
                 did_work = 1;
@@ -2590,7 +2632,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     //
     if(did_work != 0)
     {
-        char const *ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
+        char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
 
         int32_t count(0);
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
@@ -2619,7 +2661,7 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
 }
 
 
-/** \brief Retrieve the test script of a list.
+/** \brief Execute the test script of a list.
  *
  * This function is used to run the test script of a list object against a
  * page. It returns whether it is a match.

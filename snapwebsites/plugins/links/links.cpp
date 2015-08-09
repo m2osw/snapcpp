@@ -1873,6 +1873,11 @@ void links::on_backend_action(QString const& action)
     {
         cleanup_links();
     }
+    else
+    {
+        // unknown action (we should not have been called with that name!)
+        throw snap_logic_exception(QString("links.cpp:on_backend_action(): links::on_backend_action(\"%1\") called with an unknown action...").arg(action));
+    }
 }
 
 

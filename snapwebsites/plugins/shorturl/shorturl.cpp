@@ -433,7 +433,7 @@ bool shorturl::allow_shorturl_impl(content::path_info_t& ipath, QString const& o
  * \param[in] owner  The owner of the new page (a plugin name).
  * \param[in] type  The type of page.
  */
-void shorturl::on_create_content(content::path_info_t& ipath, QString const& owner, QString const& type)
+void shorturl::on_create_content(content::path_info_t & ipath, QString const& owner, QString const & type)
 {
     // allow this path to have a short URI?
     bool allow(true);
@@ -452,13 +452,14 @@ void shorturl::on_create_content(content::path_info_t& ipath, QString const& own
 
     // first generate a site wide unique identifier for that page
     uint64_t identifier(0);
-    QString const id_key(f_snap->get_website_key() + "/" + get_name(name_t::SNAP_NAME_SHORTURL_ID_ROW));
+    QString const id_key(QString("%1/%2").arg(f_snap->get_website_key()).arg(get_name(name_t::SNAP_NAME_SHORTURL_ID_ROW)));
     QString const identifier_key(get_name(name_t::SNAP_NAME_SHORTURL_IDENTIFIER));
     QtCassandra::QCassandraValue new_identifier;
     new_identifier.setConsistencyLevel(QtCassandra::CONSISTENCY_LEVEL_QUORUM);
 
     {
-        QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("shorturl"));
+        // the lock only needs to be unique on a per website basis
+        QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("%1/shorturl").arg(f_snap->get_website_key()));
 
         // In order to register a unique URI contents we want a
         // unique identifier for each URI, for that purpose we use

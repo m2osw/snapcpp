@@ -125,6 +125,11 @@ void content::on_backend_action(QString const & action)
     {
         backend_action_destroy_page();
     }
+    else
+    {
+        // unknown action (we should not have been called with that name!)
+        throw snap_logic_exception(QString("content.cpp:on_backend_action(): content::on_backend_action(\"%1\") called with an unknown action...").arg(action));
+    }
 }
 
 

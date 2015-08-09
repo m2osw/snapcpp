@@ -2809,7 +2809,7 @@ void content::on_save_content()
     // lock the entire website (this does not prevent others from accessing
     // the site, however, it prevents them from upgrading the database at the
     // same time... note that this is one lock per website)
-    QtCassandra::QCassandraLock lock(f_snap->get_context(),  QString("%1#updating").arg(site_key));
+    QtCassandra::QCassandraLock lock(f_snap->get_context(), QString("%1#updating").arg(site_key));
 
     QtCassandra::QCassandraTable::pointer_t content_table(get_content_table());
     QtCassandra::QCassandraTable::pointer_t branch_table(get_branch_table());

@@ -19,6 +19,8 @@
 #include "../layout/layout.h"
 #include "../filter/filter.h"
 
+#include "../test_plugin_suite/test_plugin_suite.h"
+
 #include "snap_expr.h"
 
 
@@ -212,6 +214,9 @@ public:
 
     list_item_vector_t  read_list(content::path_info_t & ipath, int start, int count);
 
+    // links test suite
+    SNAP_TEST_PLUGIN_SUITE_SIGNALS()
+
 private:
     void                initial_update(int64_t variables_timestamp);
     void                content_update(int64_t variables_timestamp);
@@ -229,12 +234,16 @@ private:
     bool                run_list_check(content::path_info_t & list_ipath, content::path_info_t & page_ipath);
     QString             run_list_item_key(content::path_info_t & list_ipath, content::path_info_t & page_ipath);
 
+    // tests
+    SNAP_TEST_PLUGIN_TEST_DECL(test_add_page_twice)
+
     zpsnap_child_t                          f_snap;
     QtCassandra::QCassandraTable::pointer_t f_list_table;
     QtCassandra::QCassandraTable::pointer_t f_listref_table;
     snap_expr::expr::expr_map_t             f_check_expressions;
     snap_expr::expr::expr_map_t             f_item_key_expressions;
     controlled_vars::fbool_t                f_ping_backend;
+    controlled_vars::fbool_t                f_list_link;
 };
 
 

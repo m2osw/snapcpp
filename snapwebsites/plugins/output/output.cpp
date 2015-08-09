@@ -90,7 +90,7 @@ output::~output()
  *
  * \param[in] snap  The child handling this request.
  */
-void output::on_bootstrap(snap_child *snap)
+void output::on_bootstrap(snap_child * snap)
 {
     f_snap = snap;
 
@@ -108,7 +108,7 @@ void output::on_bootstrap(snap_child *snap)
  *
  * \return A pointer to the output plugin.
  */
-output *output::instance()
+output * output::instance()
 {
     return g_plugin_output_factory.instance();
 }
@@ -146,7 +146,7 @@ int64_t output::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 7, 3, 21, 53, 23, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 8, 8, 17, 23, 23, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -352,7 +352,7 @@ void output::on_generate_boxes_content(content::path_info_t& page_cpath, content
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The body being generated.
  */
-void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void output::on_generate_page_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
     static_cast<void>(page);
     static_cast<void>(ctemplate);
@@ -467,12 +467,11 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
     // IMPORTANT NOTE: we handle the output of the messages in the output
     //                 plugin because the messages cannot depend on the
     //                 layout plugin (circular dependencies)
+    QDomDocument doc(page.ownerDocument());
     messages::messages *messages_plugin(messages::messages::instance());
     int const max_messages(messages_plugin->get_message_count());
     if(max_messages > 0)
     {
-        QDomDocument doc(page.ownerDocument());
-
         QDomElement messages_tag(doc.createElement("messages"));
         int const errcnt(messages_plugin->get_error_count());
         messages_tag.setAttribute("error-count", errcnt);
@@ -540,6 +539,12 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
         content::content::instance()->add_javascript(page.ownerDocument(), "output");
     }
+
+    {
+        QDomElement breadcrumb_tag(doc.createElement("breadcrumb"));
+        body.appendChild(breadcrumb_tag);
+        breadcrumb(ipath, breadcrumb_tag);
+    }
 }
 
 
@@ -558,9 +563,8 @@ void output::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
  * \param[in,out] xml  The XML document used with the layout.
  * \param[in,out] token  The token object, with the token name and optional parameters.
  */
-void output::on_replace_token(content::path_info_t& ipath, QString const& plugin_owner, QDomDocument& xml, filter::filter::token_info_t& token)
+void output::on_replace_token(content::path_info_t & ipath, QString const & plugin_owner, QDomDocument & xml, filter::filter::token_info_t & token)
 {
-    static_cast<void>(ipath);
     static_cast<void>(plugin_owner);
     static_cast<void>(xml);
 
@@ -607,6 +611,73 @@ void output::on_replace_token(content::path_info_t& ipath, QString const& plugin
             token.f_replacement = locale::locale::instance()->format_date(unix_time, date_format, true);
         }
         return;
+    }
+
+    // For now breadcrumbs are created as a DOM so we skip this part
+    // since anyway it should not be too useful
+    //if(token.is_token("content::breadcrumb"))
+    //{
+    //    token.f_replacement = breadcrumb(ipath);
+    //    return;
+    //}
+}
+
+
+void output::breadcrumb(content::path_info_t & ipath, QDomElement parent)
+{
+    QDomDocument doc(parent.ownerDocument());
+    QString const cpath(ipath.get_cpath());
+
+    // the breadcrumb is a list of paths from this page back to
+    // the home:
+    content::content * content(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t revision_table(content->get_revision_table());
+    snap_string_list const segments(cpath.split('/'));
+    int const max_segments(segments.size());
+    for(int i(0); i <= max_segments; ++i)
+    {
+        QString label;
+        QDomElement anchor(doc.createElement("a"));
+        if(i == 0)
+        {
+            // special case for the Home page
+            // TODO: add a parameter to the token to define the name
+            //       of this first entry
+            anchor.setAttribute("href", "/");
+            label = "Home";
+        }
+        else
+        {
+            // add a separator
+            // TODO: allow the theme to define the separator
+            QDomText separator(doc.createTextNode(QString(" %1 ").arg(QChar(0xBB))));
+            parent.appendChild(separator);
+
+            QString const path(static_cast<QStringList>(segments.mid(0, i)).join("/"));
+            content::path_info_t page_ipath;
+            page_ipath.set_path(path);
+            label = revision_table->row(page_ipath.get_revision_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_TITLE))->value().stringValue();
+            if(i != max_segments)
+            {
+                // TBD: should we look into using ".." and "../..", etc.
+                //      instead of full paths? the parent paths would be
+                //      shorter!
+                //
+                anchor.setAttribute("href", "/" + page_ipath.get_cpath());
+            }
+        }
+        QDomText text(doc.createTextNode(label));
+        if(i != max_segments)
+        {
+            anchor.appendChild(text);
+            parent.appendChild(anchor);
+        }
+        else
+        {
+            // in this case we do not have an anchor
+            // (last entry is the current page)
+            parent.appendChild(text);
+        }
     }
 }
 

@@ -6625,7 +6625,7 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
         //
         // if is_debug() returns false, it should be useless unless the
         // process takes over 10 minutes
-        QtCassandra::QCassandraLock lock(f_context, get_site_key_with_slash());
+        QtCassandra::QCassandraLock lock(f_context, QString("%1#snap-child-updating").arg(get_site_key_with_slash()));
 
         // save that last time we checked for an update
         last_updated.setInt64Value(f_start_date);
@@ -6646,8 +6646,8 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
                 it != list_of_plugins.end();
                 ++it)
         {
-            QString plugin_name(*it);
-            plugins::plugin *p(plugins::get_plugin(plugin_name));
+            QString const plugin_name(*it);
+            plugins::plugin * p(plugins::get_plugin(plugin_name));
             // TODO: Verify whether I'm correct here, but the plugin_threshold
             //       is not actually a valid test here... The fact is that the
             //       last modification time of a plugin may end up being less
@@ -6703,8 +6703,8 @@ void snap_child::update_plugins(snap_string_list const& list_of_plugins)
                 it != list_of_plugins.end();
                 ++it)
         {
-            QString plugin_name(*it);
-            plugins::plugin *p(plugins::get_plugin(plugin_name));
+            QString const plugin_name(*it);
+            plugins::plugin * p(plugins::get_plugin(plugin_name));
             if(p != nullptr)
             {
                 trace(QString("Dynamically update plugin \"%1\"\n").arg(plugin_name));
