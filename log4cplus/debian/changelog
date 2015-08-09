@@ -1,3 +1,9 @@
+log4cplus (1.2.0.64~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 09 Aug 2015 03:01:23 -0700
+
 log4cplus (1.2.0.63~trusty) trusty; urgency=high
 
   * Nightly build.
