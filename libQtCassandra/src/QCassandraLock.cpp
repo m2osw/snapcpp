@@ -722,7 +722,7 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     }
 
     // get the name of the row holding our hosts information
-    QString hosts_key(f_context->lockHostsKey());
+    const QString hosts_key(f_context->lockHostsKey());
     if(!f_table->exists(hosts_key)) {
         throw std::runtime_error(("the hosts row in the lock table does not exist, you must add your computer hosts to the table before you can use a lock. See the tests/cassandra_lock tools. This computer name is \"" + hosts_key + "\"").toStdString());
     }
@@ -734,15 +734,15 @@ bool QCassandraLock::lock(const QByteArray& object_name)
     hosts_row->clearCache();
 
     // get our identifier
-    QString host_name(f_context->hostName());
+    const QString host_name(f_context->hostName());
     QCassandraCell::pointer_t cell_host_id(hosts_row->cell(host_name));
     cell_host_id->setConsistencyLevel(f_consistency);
     QCassandraValue my_host_id(cell_host_id->value());
     if(my_host_id.nullValue()) {
         throw std::runtime_error("this host doesn't seem to be defined");
     }
-    uint32_t host_id(my_host_id.uint32Value());
-    pid_t pid(getpid());
+    const uint32_t host_id(my_host_id.uint32Value());
+    const pid_t pid(getpid());
 
     QByteArray my_id;
     appendUInt32Value(my_id, host_id);
