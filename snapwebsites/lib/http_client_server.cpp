@@ -103,7 +103,7 @@ std::string http_request::get_body() const
 }
 
 
-std::string http_request::get_request() const
+std::string http_request::get_request(bool keep_alive) const
 {
     std::stringstream request;
 
@@ -177,7 +177,8 @@ std::string http_request::get_request() const
         std::transform(name.begin(), name.end(), name.begin(), ::tolower);
         if((content_type.empty() || name != "content-type")
         && name != "content-length"
-        && name != "host")
+        && name != "host"
+        && name != "connection")
         {
             if(name == "user-agent")
             {
@@ -200,12 +201,21 @@ std::string http_request::get_request() const
         request << "User-Agent: snapwebsites/" SNAPWEBSITES_VERSION_STRING "\r\n";
     }
 
+    // force the connection valid to what the programmer asked (keep-alive by
+    // default though)
+    //
+    // WARNING: according to HTTP/1.1, servers only expect "close" and not
+    //          "keep-alive"; however, it looks like many implementations
+    //          understand both (there is also an "upgrade" which we do not
+    //          support)
+    request << "Connection: " << (keep_alive ? "keep-alive" : "close") << "\r\n";
+
     // end the list with the fields we control:
     //
     // Content-Length is the size of the body
     request << "Content-Length: " << body.length() << "\r\n\r\n";
 
-    // TBD: will this work if f_body includes a '\0'
+    // TBD: will this work if 'body' includes a '\0'?
     request << body;
 
     return request.str();
@@ -499,7 +509,7 @@ void http_response::read_response(tcp_client_server::bio_client::pointer_t conne
 {
     struct reader
     {
-        reader(http_response *response, tcp_client_server::bio_client::pointer_t connection)
+        reader(http_response * response, tcp_client_server::bio_client::pointer_t connection)
             : f_response(response)
             , f_connection(connection)
         {
@@ -530,7 +540,7 @@ void http_response::read_response(tcp_client_server::bio_client::pointer_t conne
         void read_protocol()
         {
             // first check that the protocol is HTTP and get the answer code
-SNAP_LOG_ERROR("*** read the protocol line: ");
+SNAP_LOG_ERROR("*** read the protocol line");
             std::string protocol;
             int const r(read_line(protocol));
             if(r < 0)
@@ -613,12 +623,14 @@ SNAP_LOG_ERROR("got a header field: ")(field);
                 }
                 // get the name and make it lowercase so we can search for
                 // it with ease (HTTP field names are case insensitive)
-                std::string name(field.substr(0, e - f));
+                std::string name(f, e - f);
                 std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
                 // skip the ':' and then left trimming of spaces
                 for(++e; isspace(*e); ++e);
-                std::string const value(e);
+                char const *end(f + field.length());
+                for(; end > e && isspace(end[-1]); --end);
+                std::string const value(e, end - e);
 
                 f_response->set_header(name, value);
             }
@@ -651,7 +663,7 @@ SNAP_LOG_ERROR("got a header field: ")(field);
                 {
                     std::vector<char> buffer;
                     buffer.resize(content_length);
-SNAP_LOG_ERROR("reading ")(content_length)(" bytes...\n");
+SNAP_LOG_ERROR("reading ")(content_length)(" bytes...");
                     int const r(f_connection->read(&buffer[0], content_length));
                     if(r < 0)
                     {
@@ -664,7 +676,7 @@ SNAP_LOG_ERROR("reading ")(content_length)(" bytes...\n");
                         throw http_client_exception_io_error("read returned before the entire content buffer was read");
                     }
                     f_response->set_response(std::string(&buffer[0], content_length));
-SNAP_LOG_ERROR("body [")(f_response->get_response())("]...\n");
+SNAP_LOG_ERROR("body [")(f_response->get_response())("]...");
                 }
             }
             else
@@ -707,7 +719,7 @@ void http_client::set_keep_alive(bool keep_alive)
 }
 
 
-http_response::pointer_t http_client::send_request(http_request const& request)
+http_response::pointer_t http_client::send_request(http_request const & request)
 {
     // we can keep a connection alive, but the host and port cannot
     // change between calls... if you need to make such changes, you
@@ -735,7 +747,7 @@ http_response::pointer_t http_client::send_request(http_request const& request)
     }
 
     // build and send the request to the server
-    std::string const data(request.get_request());
+    std::string const data(request.get_request(f_keep_alive));
 //std::cerr << "***\n*** request = [" << data << "]\n***\n";
     f_connection->write(data.c_str(), data.length());
 
@@ -744,7 +756,8 @@ http_response::pointer_t http_client::send_request(http_request const& request)
     p->read_response(f_connection);
 
     // keep connection for further calls?
-    if(!f_keep_alive)
+    if(!f_keep_alive
+    || p->get_header("connection") == "close")
     {
         f_connection.reset();
     }

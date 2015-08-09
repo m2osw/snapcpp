@@ -134,7 +134,7 @@ public:
 
     QtCassandra::QCassandraTable::pointer_t     get_epayment_paypal_table();
 
-    void                        on_bootstrap(snap_child *snap);
+    void                        on_bootstrap(snap_child * snap);
     void                        on_generate_header_content(content::path_info_t & path, QDomElement & header, QDomElement & metadata, QString const & ctemplate);
     void                        on_process_post(QString const & uri_path);
     virtual bool                on_path_execute(content::path_info_t & ipath);
@@ -147,7 +147,7 @@ private:
     void                        content_update(int64_t variables_timestamp);
     void                        cancel_invoice(QString const & token);
     bool                        get_oauth2_token(http_client_server::http_client & http, std::string & token_type, std::string & access_token);
-    QString                     get_product_plan(http_client_server::http_client http, std::string const & token_type, std::string const & access_token, epayment::epayment_product const & recurring_product, double const recurring_fee, QString & plan_id);
+    QString                     get_product_plan(http_client_server::http_client & http, std::string const & token_type, std::string const & access_token, epayment::epayment_product const & recurring_product, double const recurring_fee, QString & plan_id);
     bool                        get_debug();
     int8_t                      get_maximum_repeat_failures();
     std::string                 create_unique_request_id(QString const  & main_id);

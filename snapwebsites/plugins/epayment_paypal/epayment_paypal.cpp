@@ -716,7 +716,7 @@ std::cerr << "*** paymentId is [" << id << "] [" << main_uri.full_domain() << "]
             QString const execute_url(secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_PAYMENT))->value().stringValue());
 
             http_client_server::http_client http;
-            http.set_keep_alive(true);
+            //http.set_keep_alive(true); -- this is the default
 
             std::string token_type;
             std::string access_token;
@@ -1038,7 +1038,7 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
             QString const execute_url(secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_EXECUTE_AGREEMENT))->value().stringValue());
 
             http_client_server::http_client http;
-            http.set_keep_alive(true);
+            //http.set_keep_alive(true) -- this is the default;
 
             std::string token_type;
             std::string access_token;
@@ -1354,7 +1354,7 @@ int8_t epayment_paypal::get_maximum_repeat_failures()
  *
  * \return true if the OAuth2 token is valid; false in all other cases.
  */
-bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, std::string& token_type, std::string& access_token)
+bool epayment_paypal::get_oauth2_token(http_client_server::http_client & http, std::string & token_type, std::string & access_token)
 {
     // make sure token data is as expected by default
     token_type.clear();
@@ -1385,7 +1385,7 @@ bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, st
     && (secret_debug_value.signedCharValue() != 0) == debug) // if debug flag changed, it's toasted
     {
         QtCassandra::QCassandraValue expires_value(secret_row->cell(get_name(name_t::SNAP_SECURE_NAME_EPAYMENT_PAYPAL_OAUTH2_EXPIRES))->value());
-        int64_t current_date(f_snap->get_current_date());
+        int64_t const current_date(f_snap->get_current_date());
         if(expires_value.size() == sizeof(int64_t)
         && expires_value.int64Value() > current_date) // we do not use 'start date' here because it could be wrong if the process was really slow
         {
@@ -1574,8 +1574,8 @@ bool epayment_paypal::get_oauth2_token(http_client_server::http_client& http, st
  *
  * \return The URL to the PayPal plan.
  */
-QString epayment_paypal::get_product_plan(http_client_server::http_client http, std::string const& token_type, std::string const& access_token,
-                                          epayment::epayment_product const& recurring_product, double const recurring_setup_fee, QString& plan_id)
+QString epayment_paypal::get_product_plan(http_client_server::http_client & http, std::string const & token_type, std::string const & access_token,
+                                          epayment::epayment_product const & recurring_product, double const recurring_setup_fee, QString & plan_id)
 {
     // if the product GUID was not defined, then the function throws
     QString const guid(recurring_product.get_string_property(epayment::get_name(epayment::name_t::SNAP_NAME_EPAYMENT_PRODUCT)));
@@ -2152,10 +2152,10 @@ std::cerr << "***\n*** answer is [" << QString::fromUtf8(response->get_response(
  *
  * \param[in] uri_path  The path received from the HTTP server.
  */
-void epayment_paypal::on_process_post(QString const& uri_path)
+void epayment_paypal::on_process_post(QString const & uri_path)
 {
     // make sure this is a cart post
-    char const *clicked_post_field(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_CLICKED_POST_FIELD));
+    char const * clicked_post_field(get_name(name_t::SNAP_NAME_EPAYMENT_PAYPAL_CLICKED_POST_FIELD));
     if(!f_snap->postenv_exists(clicked_post_field))
     {
         return;
@@ -2175,7 +2175,7 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         //               we start a payment with PayPal
         uint64_t invoice_number(0);
         content::path_info_t invoice_ipath;
-        epayment::epayment *epayment_plugin(epayment::epayment::instance());
+        epayment::epayment * epayment_plugin(epayment::epayment::instance());
         epayment::epayment_product_list plist;
         epayment_plugin->generate_invoice(invoice_ipath, invoice_number, plist);
         success = invoice_number != 0;
@@ -2214,7 +2214,7 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         // first we need to "log in", which PayPal calls
         //     "an authorization token"
         http_client_server::http_client http;
-        http.set_keep_alive(true);
+        //http.set_keep_alive(true); -- this is the default
 
         std::string token_type;
         std::string access_token;
@@ -2241,7 +2241,7 @@ void epayment_paypal::on_process_post(QString const& uri_path)
         bool recurring_defined(false);
         bool recurring_fee_defined(false);
         epayment::recurring_t recurring;
-        epayment::epayment_product const *recurring_product(nullptr);
+        epayment::epayment_product const * recurring_product(nullptr);
         bool other_items(false);
         double recurring_setup_fee(0.0);
         for(size_t idx(0); idx < max_products; ++idx)
@@ -3325,7 +3325,7 @@ void epayment_paypal::on_repeat_payment(content::path_info_t& first_invoice_ipat
 
     // keep connection alive as long as possible
     http_client_server::http_client http;
-    http.set_keep_alive(true);
+    //http.set_keep_alive(true); -- this is the default
 
     // get an access token
     std::string token_type;

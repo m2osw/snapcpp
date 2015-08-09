@@ -70,7 +70,7 @@ public:
     std::string     get_header(std::string const& name) const;
     std::string     get_post(std::string const& name) const;
     std::string     get_body() const; // also returns data
-    std::string     get_request() const;
+    std::string     get_request(bool keep_alive) const;
 
     void            set_uri(std::string const& uri);
     void            set_host(std::string const& host);
@@ -150,6 +150,11 @@ private:
 class http_client
 {
 public:
+                                http_client() {}
+
+                                http_client(http_client const &) = delete;
+    http_client &               operator = (http_client const &) = delete;
+
     bool                        get_keep_alive() const;
 
     void                        set_keep_alive(bool keep_alive);
@@ -159,7 +164,7 @@ public:
 private:
     typedef controlled_vars::auto_init<int32_t, -1>     m1port_t;
 
-    controlled_vars::flbool_t                   f_keep_alive;
+    controlled_vars::tlbool_t                   f_keep_alive;
     tcp_client_server::bio_client::pointer_t    f_connection;
     std::string                                 f_host;
     m1port_t                                    f_port;
