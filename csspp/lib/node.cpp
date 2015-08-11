@@ -251,10 +251,7 @@ node::pointer_t node::clone() const
         result->f_children.push_back(c->clone());
     }
 
-    for(auto v : f_variables)
-    {
-        result->f_variables[v.first] = v.second->clone();
-    }
+    result->copy_variable(const_cast<node *>(this)->shared_from_this());
 
     return result;
 }
@@ -690,6 +687,17 @@ void node::clear_variables()
 void node::set_variable(std::string const & name, pointer_t value)
 {
     f_variables[name] = value;
+}
+
+void node::copy_variable(node::pointer_t source)
+{
+    if(source)
+    {
+        for(auto v : source->f_variables)
+        {
+            f_variables[v.first] = v.second->clone();
+        }
+    }
 }
 
 node::pointer_t node::get_variable(std::string const & name)

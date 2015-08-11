@@ -327,14 +327,6 @@
 			Current CSS Preprocessor Version @CSSPP_VERSION_MAJOR@.@CSSPP_VERSION_MINOR@.@CSSPP_VERSION_PATCH@ <span class="version-and-date-separator">&mdash;</span> Last Updated on @NOW@
 		</div>
 		<div class="content">
-			<p class="notice">
-				CSS 1.0.5 is ready, but no tarball is available on SourceForge.net
-				yet because I cannot upload them there at this time. They had a little
-				hiccup, as you may have heard, and it looks like that feature is still
-				not restored. You may still get the source code from the
-				<a href="http://snapwebsites.org/">Snap! Websites</a>
-				<a rel="nofollow" href="https://sourceforge.net/p/snapcpp/code/ci/master/tree/csspp/">git repository</a>.
-			</p>
 			<ul class="tiled">
 				<li class="item one">
 					<h3>CSS Compatible</h3>

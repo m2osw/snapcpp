@@ -82,7 +82,7 @@ node::pointer_t expression::replace_with_result(node::pointer_t result)
         // expression; expressions may be separated by WHITESPACE tokens
         // too so we have to restore them if they appear at the end of
         // the epxression we just worked on (i.e. we cannot eat a WHITESPACE
-        // in an expression.)
+        // at the end of an expression.)
         if(!f_current->is(node_type_t::EOF_TOKEN) && f_pos > 0)
         {
             while(f_pos > 0)
@@ -118,7 +118,8 @@ void expression::next()
 {
     if(f_pos >= f_node->size())
     {
-        if(!f_current || !f_current->is(node_type_t::EOF_TOKEN))
+        if(!f_current
+        || !f_current->is(node_type_t::EOF_TOKEN))
         {
             f_current.reset(new node(node_type_t::EOF_TOKEN, f_node->get_position()));
         }

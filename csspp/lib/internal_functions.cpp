@@ -40,6 +40,8 @@ namespace csspp
 namespace
 {
 
+int g_unique_id_counter = 0;
+
 decimal_number_t dimension_to_radians(position const & pos, decimal_number_t n, std::string const & dimension)
 {
     if(dimension == "rad")
@@ -75,6 +77,16 @@ decimal_number_t dimension_to_radians(position const & pos, decimal_number_t n, 
 }
 
 } // no name namespace
+
+void expression::set_unique_id_counter(int counter)
+{
+    g_unique_id_counter = counter;
+}
+
+int expression::get_unique_id_counter()
+{
+    return g_unique_id_counter;
+}
 
 node::pointer_t expression::internal_function__get_any(node::pointer_t func, size_t argn)
 {
@@ -779,7 +791,7 @@ node::pointer_t expression::internal_function__hsla(node::pointer_t func)
 
 node::pointer_t expression::internal_function__hue(node::pointer_t func)
 {
-    // lightness(color)
+    // hue(color)
     color c;
     node::pointer_t col(internal_function__get_color(func, 0, c));
     if(col)
@@ -1171,6 +1183,86 @@ node::pointer_t expression::internal_function__not(node::pointer_t func)
         result->set_boolean(!r); // this is 'not()' so false is true and vice versa
         return result;
     }
+}
+
+node::pointer_t expression::internal_function__percentage(node::pointer_t func)
+{
+    // percentage(expr)
+    node::pointer_t any(internal_function__get_any(func, 0));
+    if(any)
+    {
+        switch(any->get_type())
+        {
+        case node_type_t::DECIMAL_NUMBER:
+            {
+                node::pointer_t number(new node(node_type_t::PERCENT, any->get_position()));
+                number->set_decimal_number(any->get_decimal_number());
+                return number;
+            }
+
+        case node_type_t::PERCENT:
+            // already a percentage, return as is
+            return any;
+
+        case node_type_t::INTEGER:
+            {
+                node::pointer_t number(new node(node_type_t::PERCENT, any->get_position()));
+                number->set_decimal_number(any->get_integer());
+                return number;
+            }
+
+        case node_type_t::IDENTIFIER:
+        case node_type_t::STRING:
+        case node_type_t::URL:
+            {
+                std::stringstream ss;
+                ss << any->get_string();
+                lexer l(ss, any->get_position());
+                node::pointer_t number(l.next_token());
+                if(number->is(node_type_t::WHITESPACE))
+                {
+                    number = l.next_token();
+                }
+                switch(number->get_type())
+                {
+                case node_type_t::DECIMAL_NUMBER:
+                    {
+                        node::pointer_t result(new node(node_type_t::PERCENT, any->get_position()));
+                        result->set_decimal_number(number->get_decimal_number());
+                        return result;
+                    }
+
+                case node_type_t::PERCENT:
+                    return number;
+
+                case node_type_t::INTEGER:
+                    {
+                        node::pointer_t result(new node(node_type_t::PERCENT, any->get_position()));
+                        result->set_decimal_number(number->get_integer());
+                        return result;
+                    }
+
+                default:
+                    break;
+
+                }
+            }
+            error::instance() << f_current->get_position()
+                    << "percentage() expects a string parameter to represent a valid integer, decimal number, or percent value."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+
+        default:
+            break;
+
+        }
+    }
+
+    error::instance() << f_current->get_position()
+            << "percentage() expects one value as parameter."
+            << error_mode_t::ERROR_ERROR;
+
+    return node::pointer_t();
 }
 
 node::pointer_t expression::internal_function__red(node::pointer_t func)
@@ -1609,6 +1701,40 @@ node::pointer_t expression::internal_function__tan(node::pointer_t func)
     return node::pointer_t();
 }
 
+node::pointer_t expression::internal_function__unique_id(node::pointer_t func)
+{
+    // unique_id()
+    // unique_id(identifier)
+    std::string id;
+    if(func->size() == 1)
+    {
+        node::pointer_t user_id(internal_function__get_string_or_identifier(func, 0, id));
+        if(!user_id)
+        {
+            error::instance() << f_current->get_position()
+                    << "unique_id() expects a string or an identifier as its optional parameter."
+                    << error_mode_t::ERROR_ERROR;
+            return node::pointer_t();
+        }
+        id = user_id->get_string();
+    }
+    if(id.empty())
+    {
+        id = "_csspp_unique";
+    }
+
+    // counter increases on each call
+    // (this is not too good if the library is used by a GUI)
+    ++g_unique_id_counter;
+
+    id += std::to_string(g_unique_id_counter);
+
+    node::pointer_t identifier(new node(node_type_t::IDENTIFIER, func->get_position()));
+    identifier->set_string(id);
+
+    return identifier;
+}
+
 node::pointer_t expression::internal_function__type_of(node::pointer_t func)
 {
     // type_of(expression)
@@ -1913,6 +2039,12 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__not
         },
         {
+            "percentage",
+            1,
+            1,
+            &expression::internal_function__percentage
+        },
+        {
             "random",
             0,
             0,
@@ -1991,6 +2123,12 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
             &expression::internal_function__type_of
         },
         {
+            "unique_id",
+            0,
+            1,
+            &expression::internal_function__unique_id
+        },
+        {
             "unit",
             1,
             1,
@@ -2067,10 +2205,20 @@ node::pointer_t expression::excecute_function(node::pointer_t func)
         }
     }
 
+    // if we have a handler then allow the handler to run to execute
+    // user defined functions (@mixin func() ...)
+    if(f_variable_handler)
+    {
+        return f_variable_handler->execute_user_function(func);
+    }
+
     // "unknown" functions have to be left alone since these may be
     // CSS functions that we do not want to transform (we already
     // worked on their arguments, that's the extend of it at this point.)
-    return func;
+    //
+    // For now I mark it as unreachable because we should always be
+    // using expression objects with a variable handler.
+    return func;   // LCOV_EXCL_LINE
 }
 
 } // namespace csspp

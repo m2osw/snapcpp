@@ -239,6 +239,34 @@
  *
  * To be more SASS compatible, we also support the \ref at_include "\@include".
  *
+ * \section at_return @return \<expression> ;
+ *
+ * When defining \ref at_mixin functions, the result of the function
+ * can be returned using the \@return keyword.
+ *
+ * The \@return keyword is expected to be used last in the list of commands
+ * in the function block. It immediately ends the processing of the function
+ * and makes the final expression the returned result to the caller.
+ *
+ * The call is like an internal function. System defined functions are
+ * found in the scripts/system/functions.scss. For example, the
+ * \ref opacity_function function is an overload of the
+ * \ref alpha_function function. We define it as an
+ * external function as follow:
+ *
+ * \code
+ *  @mixin opacity($color)
+ *  {
+ *      @return alpha($color);
+ *  }
+ * \endcode
+ *
+ * One can use the \ref opacity_function function in a rule such as:
+ *
+ * \code
+ *  div { z-index: opacity($color); }
+ * \endcode
+ *
  * \section at_warning @warning \<string> ;
  *
  * Print out a warning message (i.e. \<string>). If the message is

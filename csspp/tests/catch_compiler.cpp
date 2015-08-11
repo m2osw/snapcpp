@@ -434,7 +434,10 @@ TEST_CASE("Compile simple stylesheets", "[compiler] [stylesheet] [attribute]")
         c.compile(false);
 
         // no error left over
-        REQUIRE_ERRORS("test.css(5): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n");
+        REQUIRE_ERRORS(
+                "test.css(4): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n"
+                "test.css(5): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n"
+            );
 
 //std::cerr << "Result is: [" << *c.get_root() << "]\n";
 
@@ -462,10 +465,12 @@ TEST_CASE("Compile simple stylesheets", "[compiler] [stylesheet] [attribute]")
 "              INTEGER \"\" I:4\n"
 "      LIST\n"
 "        DECLARATION \"filter\"\n"
-"          ARG\n"
-"            FUNCTION \"opacity\"\n"
-"              ARG\n"
-"                DECIMAL_NUMBER \"\" D:0.2\n"
+"          FUNCTION \"opacity\"\n"
+"            PERCENT D:0.05\n"
+"            WHITESPACE\n"
+"            MULTIPLY\n"
+"            WHITESPACE\n"
+"            INTEGER \"\" I:4\n"
 "        DECLARATION \"filter\"\n"
 "          FUNCTION \"alpha\"\n"
 "            IDENTIFIER \"opacity\"\n"
@@ -536,6 +541,456 @@ TEST_CASE("Compile simple stylesheets", "[compiler] [stylesheet] [attribute]")
 
         REQUIRE(c.get_root() == n);
     }
+}
+
+TEST_CASE("Compile user defined functions", "[compiler] [function]")
+{
+    SECTION("deg2rad() function and translate() CSS function")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "body { angle : deg2rad( 32deg ) }\n"
+           << "a b { transform: translate(12%, 0); }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"angle\"\n"
+"        ARG\n"
+"          DECIMAL_NUMBER \"rad\" D:0.559\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"a\"\n"
+"      WHITESPACE\n"
+"      IDENTIFIER \"b\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"transform\"\n"
+"        ARG\n"
+"          FUNCTION \"translate\"\n"
+"            ARG\n"
+"              PERCENT D:0.12\n"
+"            ARG\n"
+"              INTEGER \"\" I:0\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("define an $undefined variable but no undefined() function")
+    {
+        // this is not invalid, until we check for all the CSS function names
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "$zzzundefined: 12%;\n"
+           << "body { angle : zzzundefined( 3rad ) }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"    V:zzzundefined\n"
+"      LIST\n"
+"        VARIABLE \"zzzundefined\"\n"
+"        PERCENT D:0.12\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"angle\"\n"
+"        ARG\n"
+"          FUNCTION \"zzzundefined\"\n"
+"            ARG\n"
+"              INTEGER \"rad\" I:3\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("function with default parameters")
+    {
+        // this is not invalid, until we check for all the CSS function names
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "body { color : mix(lightgrey, moccasin) }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"color\"\n"
+"        ARG\n"
+"          COLOR H:ffc4dce9\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("function with *complex* default parameter")
+    {
+        // this is not invalid, until we check for all the CSS function names
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin zzz_my_func($normal, $complex: 3px 7% #ff39af) { @return 3; }\n"
+           << "body { z-index : zzz_my_func('fromage') }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"    V:zzz_my_func\n"
+"      LIST\n"
+"        FUNCTION \"zzz_my_func\"\n"
+"          ARG\n"
+"            VARIABLE \"normal\"\n"
+"          ARG\n"
+"            VARIABLE \"complex\"\n"
+"            INTEGER \"px\" I:3\n"
+"            WHITESPACE\n"
+"            PERCENT D:0.07\n"
+"            WHITESPACE\n"
+"            HASH \"ff39af\"\n"
+"        OPEN_CURLYBRACKET B:true\n"
+"          COMPONENT_VALUE\n"
+"            AT_KEYWORD \"return\" I:0\n"
+"              INTEGER \"\" I:3\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:3\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("function called with a *complex* parameter")
+    {
+        // this is not invalid, until we check for all the CSS function names
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin zzz_my_func($complex) { @return 3; }\n"
+           << "body { z-index : zzz_my_func('fromage' 3px rational) }\n"
+           << "/* @preserver test \"Compile User Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        std::stringstream out;
+        out << *n;
+        REQUIRE_TREES(out.str(),
+
+"LIST\n"
++ csspp_test::get_default_variables() +
+"    V:zzz_my_func\n"
+"      LIST\n"
+"        FUNCTION \"zzz_my_func\"\n"
+"          ARG\n"
+"            VARIABLE \"complex\"\n"
+"        OPEN_CURLYBRACKET B:true\n"
+"          COMPONENT_VALUE\n"
+"            AT_KEYWORD \"return\" I:0\n"
+"              INTEGER \"\" I:3\n"
+"  COMPONENT_VALUE\n"
+"    ARG\n"
+"      IDENTIFIER \"body\"\n"
+"    OPEN_CURLYBRACKET B:true\n"
+"      DECLARATION \"z-index\"\n"
+"        ARG\n"
+"          INTEGER \"\" I:3\n"
+"  COMMENT \"@preserver test \"Compile User Functions\"\" I:1\n"
++ csspp_test::get_close_comment(true)
+
+            );
+
+        // no error left over
+        REQUIRE_ERRORS("");
+
+        REQUIRE(c.get_root() == n);
+    }
+}
+
+TEST_CASE("Compile invalid declaration in link with user defined functions", "[compiler] [invalid] [function]")
+{
+    SECTION("attempt to call a function with an invalid definition")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin my_func($good, bad) { @return 3; }\n"
+           << "body { angle : my_func( 32deg, -3px ) }\n"
+           << "/* @preserver test \"Compile Invalid Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("test.css(2): error: function declarations expect variables for each of their arguments, not a IDENTIFIER.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("attempt to call a function with a missing argument")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "body { color : desaturate( white ) }\n"
+           << "/* @preserver test \"Compile Invalid Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("scripts/system/functions.scss(39): error: missing function variable named \"percent\" when calling desaturate();.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("@return is empty")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin zzz_my_func() { @return { nothing; } }\n"
+           << "body { color : zzz_my_func( ) }\n"
+           << "/* @preserver test \"Compile Invalid Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("test.css(2): error: @return must be followed by a valid expression.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("@return with an invalid expression")
+    {
+        std::stringstream ss;
+        ss << "/* testing user defined functions */\n"
+           << "@mixin zzz_my_func() { @return -; }\n"
+           << "body { color : zzz_my_func( ) }\n"
+           << "/* @preserver test \"Compile Invalid Functions\" */\n";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        // no errors so far
+        REQUIRE_ERRORS("");
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.clear_paths();
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Result is: [" << *c.get_root() << "]\n";
+
+        // no error left over
+        REQUIRE_ERRORS("test.css(2): error: unsupported type EOF_TOKEN as a unary expression token.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    REQUIRE_ERRORS("");
 }
 
 TEST_CASE("Check all argify", "[compiler] [stylesheet]")
@@ -3434,7 +3889,7 @@ TEST_CASE("Complex terms", "[compiler] [stylesheet]")
     //     | ':' FUNCTION (="not") component-value-list ')'
     //     | ':' ':' IDENTIFIER
 
-    // test a placeholder
+    SECTION("test a placeholder")
     {
         std::stringstream ss;
         ss << "div p%image"
@@ -3491,7 +3946,7 @@ TEST_CASE("Complex terms", "[compiler] [stylesheet]")
         REQUIRE(c.get_root() == n);
     }
 
-    // test a reference
+    SECTION("test a reference")
     {
         std::stringstream ss;
         ss << "div a"
@@ -3558,7 +4013,7 @@ TEST_CASE("Complex terms", "[compiler] [stylesheet]")
         REQUIRE(c.get_root() == n);
     }
 
-    // test the not() function
+    SECTION("test the not() function")
     {
         std::stringstream ss;
         ss << "div a:not(:hover)"
@@ -3616,7 +4071,7 @@ TEST_CASE("Complex terms", "[compiler] [stylesheet]")
         REQUIRE(c.get_root() == n);
     }
 
-    // test the not() function + a sub-function
+    SECTION("test the not() function + a sub-function")
     {
         std::stringstream ss;
         ss << "div a:not(:nth-last-of-type(5n+3))"
@@ -3675,7 +4130,7 @@ TEST_CASE("Complex terms", "[compiler] [stylesheet]")
         REQUIRE(c.get_root() == n);
     }
 
-    // check all pseudo-elements
+    SECTION("check all pseudo-elements")
     {
         char const * pseudo_name_table[] =
         {
@@ -3737,7 +4192,7 @@ TEST_CASE("Complex terms", "[compiler] [stylesheet]")
         REQUIRE_ERRORS("");
     }
 
-    // check pseudo-elements not at the end
+    SECTION("check filter with alpha() function")
     {
         std::stringstream ss;
         ss << "div {\n"
@@ -3795,7 +4250,7 @@ TEST_CASE("Complex terms", "[compiler] [stylesheet]")
         REQUIRE_ERRORS("");
     }
 
-    // check pseudo-elements not at the end
+    SECTION("check \"-filter\" with alpha() function")
     {
         std::stringstream ss;
         ss << "div {\n"
@@ -3853,7 +4308,7 @@ TEST_CASE("Complex terms", "[compiler] [stylesheet]")
         REQUIRE_ERRORS("");
     }
 
-    // check progid:...
+    SECTION("check progid:...")
     {
         std::stringstream ss;
         ss << "div {\n"
@@ -4263,6 +4718,7 @@ TEST_CASE("Invalid complex terms", "[compiler] [invalid]")
         REQUIRE_ERRORS(
                 "test.css(2): warning: the '[*|.|!]<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks.\n"
                 "test.css(3): warning: the '[*|.|!]<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks.\n"
+                "test.css(3): warning: the alpha(), chroma() and similar functions of the filter field are Internet Explorer specific extensions which are not supported across browsers.\n"
                 "test.css(4): warning: the '#<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks.\n"
                 "test.css(5): warning: the '#<field-name>: ...' syntax is not allowed in csspp, we offer other ways to control field names per browser and do not allow such tricks.\n"
             );
@@ -4285,10 +4741,8 @@ TEST_CASE("Invalid complex terms", "[compiler] [invalid]")
 "            WHITESPACE\n"
 "            COLOR H:ffffffff\n"
 "        DECLARATION \"filter\"\n"
-"          ARG\n"
-"            FUNCTION \"opacity\"\n"
-"              ARG\n"
-"                DECIMAL_NUMBER \"\" D:0.2\n"
+"          FUNCTION \"opacity\"\n"
+"            DECIMAL_NUMBER \"\" D:0.2\n"
 "        DECLARATION \"color\"\n"
 "          ARG\n"
 "            COLOR H:ff1e69d2\n"

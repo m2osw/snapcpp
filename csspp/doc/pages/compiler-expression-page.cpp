@@ -106,15 +106,14 @@
  * \subsection expression_assignment CSS Preprocessor Assignment Expression
  *
  * The inline assignment operator (:=) can be used to set a variable
- * within an expression. These are always viewed as local variables.
+ * within an expression. These are always viewed as \em local variables.
+ * These are really only available within the very expression being
+ * computed.
  *
  * \warning
- * At this point these variables do not work because we pre-process
- * the tree of nodes and variables were already assigned and replaced
- * in the tree. At the point expressions get executed, they do not
- * support variables anymore... we will wait some more to see whether
- * we can integrate this notation or not, but the likelihood is that
- * we will delete this rule.
+ * These work, but only when written between parenthesis. This requires
+ * a post expression to retrieve the result, though, because parenthesis
+ * are viewed as definitions of arrays or maps.
  *
  * \code{.y}
  *  assignment: conditional
@@ -357,17 +356,17 @@
  * Say you have a value \em result calculated as follow:
  *
  * \f[
- * result = lhs \bmod rhs
+ * result = lhs \bmod rhs \tag{modulo}
  * \f]
  *
  * You may rewrite this expression as:
  *
  * \f[
- * lhs = rhs \cdot k + result
+ * lhs = rhs \cdot k + result \tag{k factor}
  * \f]
  *
  * where k is a dimension less factor. As we can see, for the math to
- * work in this other expression, lhs, rhs, and result must all have
+ * work in the \b k \b factor expression, lhs, rhs, and result must all have
  * the same dimension.
  *
  * \sa http://math.stackexchange.com/questions/1353284/how-do-we-deal-with-units-when-using-the-modulo-operation
@@ -623,11 +622,17 @@
  * The \b alpha() function retrieves the current alpha value of the
  * specified color.
  *
+ * \f[
+ *  result = color_a
+ * \f]
+ *
  * The color components are not clamped so the alpha value may be
  * out of range. However, the default range is from 0.0 to 1.0 inclusive.
  *
  * We also offer a user defined function named \ref opacity_function
  * which also returns the alpha channel of a color.
+ *
+ * \sa \ref opacity_function
  *
  * \subsection asin_function asin()
  *
@@ -661,6 +666,10 @@
  *
  * The \b blue() function retrieves the current blue value of the
  * specified color.
+ *
+ * \f[
+ *  result = color_b
+ * \f]
  *
  * The color components are not clamped so the blue value may be
  * out of range. However, the default range is from 0.0 to 255.0
@@ -697,17 +706,21 @@
  *
  * The function is useful to force an integer in a decimal number.
  *
- * Note that a percent value remains a percent value.
+ * Note that a percentage becomes a decimal number without dimensions.
  *
  * The function also attempts to transform strings into numbers
  * returned as decimal numbers. Those strings may also include
  * a dimension:
  *
  * \code{.scss}
- *      @mixin set_unit($value, $unit): {
- *          @return decimal_number($value + $unit);
+ *      @mixin my_set_unit($value, $unit): {
+ *          @return decimal_number(string($value) + string($unit));
  *      }
  * \endcode
+ *
+ * \sa \ref integer_function
+ * \sa \ref percentage_function
+ * \sa \ref string_function
  *
  * \subsection floor_function floor()
  *
@@ -792,6 +805,10 @@
  * The \b green() function retrieves the current green value of the
  * specified \p color.
  *
+ * \f[
+ *  result = color_g
+ * \f]
+ *
  * The color components are not clamped so the green value may be
  * out of range. However, the default range is from 0.0 to 255.0
  * inclusive. The value is returned as a decimal number.
@@ -831,6 +848,10 @@
  * as RGBA floats so extracting the hue includes a step calculating
  * the HSL value out of which we return the hue.
  *
+ * \f[
+ *  result = color_h
+ * \f]
+ *
  * \subsection identifier_function identifier()
  *
  * \code{.scss}
@@ -840,10 +861,6 @@
  * This function is a \em cast that transforms its parameter in an
  * identifier. This can be useful to convert a command line argument,
  * which is a string, into something that's legal in CSS.
- *
- * The SASS way to do this conversion is to use a concatenation. Only
- * that can prove difficult because you cannot have an empty identifer
- * to concatenate and transform the string in an identifier.
  *
  * \code{.scss}
  *      // this would put "solid" or "dashed" in the rule
@@ -857,7 +874,6 @@
  *
  * \li color
  * \li decimal_number
- * \li exclamation
  * \li integer
  * \li percent
  * \li placeholder
@@ -865,6 +881,15 @@
  * \li url
  *
  * All of these may not always work exactly as expected.
+ *
+ * Note that integers and decimal numbers are converted to a string
+ * including a minus sign when negative and their dimension if they
+ * have one.
+ *
+ * So in other words, it is possible to create an identifier that
+ * starts with a digit. This is possible in CSS with the backslash
+ * as well (\\31 23 is the valid identifier "123" starting with the
+ * character 1 writen as an escape character.)
  *
  * \subsection if_function if()
  *
@@ -880,6 +905,9 @@
  * parameter as the result. When the first parameter is false, the
  * function returns its third parameter as the result.
  *
+ * The true and false expressions do not need to represent the same
+ * type of data.
+ *
  * \subsection integer_function integer()
  *
  * \code{.scss}
@@ -891,19 +919,26 @@
  *
  * The function is useful to force a decimal number in an integer.
  * This will compute the floor() of the decimal number when the
- * number is positive and the ceil() of the decimal number when
- * the number is negative.
+ * number is positive or zero and the ceil() of the decimal number
+ * when the number is negative.
+ *
+ * \f[
+ * result = \begin{cases}\lfloor expression \rfloor & , expression >= 0
+ * \\ \lceil expression \rceil & , expression < 0\end{cases}
+ * \f]
  *
  * Note that a percent value loses its dimension specification since
- * percent values must otherwise be decimal numbers.
+ * percent values must otherwise be decimal numbers. Also in most
+ * cases percentages are numbers between 0 and 1 so the result is
+ * likely going to be 0.
  *
  * The function also attempts to transform strings into numbers
  * returned as decimal numbers. Those strings may also include
  * a dimension:
  *
  * \code{.scss}
- *      @mixin set_unit($value, $unit) {
- *          @return integer($value + $unit);
+ *      @mixin my_set_unit($value, $unit) {
+ *          @return integer(string($value) + string($unit));
  *      }
  * \endcode
  *
@@ -929,6 +964,10 @@
  * as RGBA floats so extracting the lightness includes a step calculating
  * the HSL value out of which we return the lightness.
  *
+ * \f[
+ *  result = color_l
+ * \f]
+ *
  * \subsection log_function log()
  *
  * \code{.scss}
@@ -937,7 +976,7 @@
  *
  * Calculate the natural (or neperian) logarithm value of number.
  *
- * There is no exp() function because you may just use the power operator
+ * There is no \b exp() function because you may just use the power operator
  * as in:
  *
  * \code{.scss}
@@ -969,10 +1008,10 @@
  * \subsection not_function not()
  *
  * \code{.scss}
- *      not(boolean-expression)
+ *      not(boolean)
  * \endcode
  *
- * The \b not() function returns true if the boolean-expression represents
+ * The \b not() function returns true if the \p boolean expression represents
  * false and vice versa.
  *
  * \note
@@ -980,8 +1019,8 @@
  * the '!important' and other similar flags. Note that in CSS 3 (and most
  * certainly ealier versions too), the \b !important flag could be written
  * with spaces ('! important') and thus we cannot be sure whether it is a
- * flag or a boolean not. For that reason we decided to simply offer a
- * not() function.
+ * flag or a boolean \b not. For that reason we decided to simply offer a
+ * \b not() function.
  *
  * \subsection random_function random()
  *
@@ -1058,6 +1097,10 @@
  * as RGBA floats so extracting the saturation includes a step calculating
  * the HSL value out of which we return the saturation.
  *
+ * \f[
+ *      result = color_s
+ * \f]
+ *
  * \subsection sign_function sign()
  *
  * \code{.scss}
@@ -1068,10 +1111,12 @@
  * 0 for zero, and 1 for positive numbers.
  *
  * \f[
- * result = \begin{cases} -1 & , if number < 0
- * \\ 0 & , if number = 0
- * \\ 1 & , if number > 0\end{cases}
+ * result = \begin{cases} -1 & , number < 0
+ * \\ 0 & , number = 0
+ * \\ 1 & , number > 0\end{cases}
  * \f]
+ *
+ * Note that the function returns 0 for the decimal number -0.0.
  *
  * \subsection sin_function sin()
  *
@@ -1087,9 +1132,9 @@
  *      sqrt(number)
  * \endcode
  *
- * Calculate the square root value of number.
+ * Calculate the square root value of \p number.
  *
- * If number has a dimension, it has to be squared. For example, "cm * cm"
+ * If \p number has a dimension, it has to be squared. For example, "cm * cm"
  * (for \f$cm^2\f$) and the resulting value will be "cm". If a dimension is
  * defined but not squared, then an error results.
  *
@@ -1110,14 +1155,18 @@
  *
  * \li color
  * \li decimal_number
- * \li exclamation
  * \li integer
  * \li percent
  * \li placeholder
  * \li string
  * \li url
  *
- * All of these may not always work exactly as expected.
+ * All of these may not always work exactly as expected. If the input
+ * is a string, no transformation is performed.
+ *
+ * Note that integers and decimal numbers are converted to a string
+ * including a minus sign when negative and their dimension if they
+ * have one.
  *
  * \subsection str_length_function str_length()
  *
@@ -1171,6 +1220,41 @@
  * \li type_of((hello: "world", thank: "you")) => "map"
  * \li type_of((32px, 55px, 172px)) => "array"
  *
+ * Note that this function does not tell you whether a number
+ * is a specific dimension or is dimension less.
+ *
+ * The \ref unit_function function returns the dimension of a
+ * number. For a percentage, unit() returns "%". For a dimension
+ * less number, it returns an empty string.
+ *
+ * The \ref unitless_function function returns true if the
+ * number has no unit (i.e. is a plain integer or decimal number).
+ *
+ * \subsection unique_id_function unique_id()
+ *
+ * \code{.scss}
+ *      unique_id()
+ *      or
+ *      unique_id(identifier)
+ * \endcode
+ *
+ * The \b unique_id() function generates a unique identifier. At this
+ * point the identifier looks like: "_csspp_unique<number>". The
+ * number is incremented by one each time the function is called.
+ *
+ * The identifier name may be changed by specifying a different
+ * identifier or string as the first parameter of the command.
+ * Note that the function uses a single counter so the number
+ * continues to increment just the same whatever the string
+ * passed in (or no string passed in). If you pass an empty
+ * string, the default string (\c _csspp_unique) is used.
+ *
+ * \code
+ *      unique_id()         // returns "_csspp_unique1"
+ *      unique_id(my_id)    // returns "my_id2"
+ *      unique_id('alpha')  // returns "alpha3"
+ * \endcode
+ *
  * \subsection unit_function unit()
  *
  * \code{.scss}
@@ -1178,7 +1262,8 @@
  * \endcode
  *
  * The \b unit() function extracts the unit of a dimension. A number
- * without a unit returns the empty string.
+ * without a unit returns the empty string. A percentage returns
+ * the special dimension, "%".
  *
  * The function returns the current unit as is. So if you multiply two
  * dimensions with each others, the unit returned is the product of
@@ -1187,6 +1272,11 @@
  * \code{.scss}
  *      unit(4px * 3px) = "px * px"
  * \endcode
+ *
+ * Note that the \ref type_of_function function tells you whether
+ * a number is an "integer" or a decimal "number", including
+ * percentages. However, it does not tell you the unit so you
+ * cannot distinguish between various dimensions or percentages.
  *
  * \subsection variable_exists_function variable_exists()
  *
@@ -1247,12 +1337,19 @@
  * \subsection adjust_hue_function adjust_hue()
  *
  * \code{.scss}
- *      adjust_hue(color, adjustment-angle)
+ *      adjust_hue(color, adjustment)
  * \endcode
  *
  * The \b adjust_hue() function expects two parameters: a color and
- * a number representing an angle. That number is added to the current
- * hue of the color.
+ * an adjustment representing an angle. That number is added to the current
+ * hue of the color. The adjustment may be a negative number.
+ *
+ * \f[
+ *  result_h = color_h + adjustment
+ * \f]
+ *
+ * The other components do not get modified, although since we save
+ * colors in RGB, obviously, they may be affected slightly.
  *
  * Since the color is kept as RGB components, the computation uses the
  * get_hsl() and the set_hsl() color functions.
@@ -1264,7 +1361,15 @@
  * \endcode
  *
  * The \b complement() function turns the hue of a color by 180&deg;.
- * It is equivalent to:
+ *
+ * \f[
+ *  result_h = color_h + \pi
+ * \f]
+ *
+ * The other components do not get modified, although since we save
+ * colors in RGB, obviously, they may be affected slightly.
+ *
+ * In SCSS, this is equivalent to:
  *
  * \code{.scss}
  *      adjust_hue(color, 180deg)
@@ -1279,6 +1384,13 @@
  * The \b darken() function subtracts the specified \p adjustment from the
  * lightness parameter of \p color.
  *
+ * \f[
+ * result_l = color_l - adjustment
+ * \f]
+ *
+ * The other components do not get modified, although since we save
+ * colors in RGB, obviously, they may be affected slightly.
+ *
  * \subsection desaturate_function desaturate()
  *
  * \code{.scss}
@@ -1288,6 +1400,13 @@
  * The \b desaturate() function subtracts the specified \p adjustment from
  * the saturation parameter of \p color.
  *
+ * \f[
+ * result_s = color_s - adjustment
+ * \f]
+ *
+ * The other components do not get modified, although since we save
+ * colors in RGB, obviously, they may be affected slightly.
+ *
  * \subsection grayscale_function grayscale()
  *
  * \code{.scss}
@@ -1296,6 +1415,13 @@
  *
  * The \b grayscale() function removes all the saturation from a color,
  * which means the color becomes black, gray, or white.
+ *
+ * \f[
+ *  result_s = 0
+ * \f]
+ *
+ * The other components do not get modified, although since we save
+ * colors in RGB, obviously, they may be affected slightly.
  *
  * \subsection invert_function invert()
  *
@@ -1307,9 +1433,9 @@
  * is (1.0 - component). It only affects the red, green, and blue components.
  *
  * \f[
- * \begin{cases} result_r = 1.0 - $color_r
- * \\ result_g = 1.0 - $color_g
- * \\ result_b = 1.0 - $color_b\end{cases}
+ * \begin{cases} result_r = 1.0 - color_r
+ * \\ result_g = 1.0 - color_g
+ * \\ result_b = 1.0 - color_b\end{cases}
  * \f]
  *
  * \note
@@ -1327,6 +1453,13 @@
  * The \b lighten() function adds the specified \p adjustment to the
  * lightness parameter of \p color.
  *
+ * \f[
+ * result_l = color_l + adjustment
+ * \f]
+ *
+ * The other components do not get modified, although since we save
+ * colors in RGB, obviously, they may be affected slightly.
+ *
  * \subsection mix_function mix()
  *
  * \code{.scss}
@@ -1336,7 +1469,7 @@
  * The \b mix() function adds two colors together using a weight.
  *
  * \f[
- * color_r = color_1 \, weight + color_2 \, (1 - weight)
+ * color_{result} = color_1 \, weight + color_2 \, (1 - weight)
  * \f]
  *
  * By default the weight is 0.5 which is equivalent to adding two
@@ -1349,7 +1482,7 @@
  * This means:
  *
  * \f[
- * \large color_r = \frac{color_1 + color_2}{2}
+ * \large color_{result} = \frac{color_1 + color_2}{2}
  * \f]
  *
  * If you want to mix more colors, you may write that in one statement
@@ -1362,7 +1495,7 @@
  * This means:
  *
  * \f[
- * \large color_r = \frac{\sum\limits_{i=0}^n color_{i} \, weight_{i}}{\sum\limits_{i=0}^n weight_{i}}
+ * \large color_{result} = \frac{\sum\limits_{i=0}^n color_{i} \, weight_{i}}{\sum\limits_{i=0}^n weight_{i}}
  * \f]
  *
  * Assuming you know that the total of all the weights is equal to one, the
@@ -1390,7 +1523,12 @@
  *      opacity(color)
  * \endcode
  *
- * The \b opacity() function is an overload of the \ref alpha_function.
+ * The \b opacity() function is an overload of the \ref alpha_function
+ * function.
+ *
+ * \f[
+ *  result = color_a
+ * \f]
  *
  * \subsection percentage_function percentage()
  *
@@ -1400,10 +1538,13 @@
  *
  * The \b percentage() function transforms a number in a percentage.
  *
- * This is equivalent to using \ref set_unit_function with "%" as the unit:
+ * The \ref set_unit_function function calls the \b percentage()
+ * function when it is called with "%" as the unit:
  *
  * \code
  *      set_unit($number, "%")
+ *  or
+ *      percentage($number)
  * \endcode
  *
  * \subsection quote_function quote()
@@ -1415,8 +1556,8 @@
  * The \b quote() function transforms an \p identifier in a string.
  *
  * This function is based on the \ref string_function function so
- * any token that represents a string in an expression will be transformed
- * to a quoted string.
+ * any token that represents a string in an expression will be
+ * transformed to a quoted string.
  *
  * \subsection remove_unit_function remove_unit()
  *
@@ -1429,8 +1570,19 @@
  * a plain number, then nothing happens. If the number was an integer
  * it remains an integer.
  *
+ * The function also removes the % of a percentage. Remember that a
+ * percentage is a fraction. So <tt>remove_unit(30%)</tt> returns \c 0.3
+ * and not 30.
+ *
  * The \b remove_unit() function uses a trick: it divides the number
- * by "1\<unit>" of the number.
+ * by "1<unit>" of the number.
+ *
+ * For example, if the number is in pixels (px), the operation would
+ * look like this:
+ *
+ * \f[
+ * result = { number \over 1px }
+ * \f]
  *
  * \subsection saturate_function saturate()
  *
@@ -1439,24 +1591,52 @@
  * \endcode
  *
  * The \b saturate() function adds the specified \p adjustment to the
- * saturation parameter of \p color.
+ * saturation parameter of \p color and return the new color.
+ * The \p adjustment is expected to be a percentage. It can be negative.
+ *
+ * \f[
+ * result_s = color_s + adjustment
+ * \f]
+ *
+ * The other components do not get modified, although since we save
+ * colors in RGB, obviously, they may be affected slightly.
  *
  * \subsection set_unit_function set_unit()
  *
  * \code{.scss}
- *      set_unit(number)
+ *      set_unit(number, unit)
  * \endcode
  *
- * The \b set_unit() function replace the existing the unit of the number making
- * it a plain number instead of a dimension. If the number was already
- * a plain number, then nothing happens. If the number was an integer
- * it remains an integer.
+ * The \b set_unit() function replace the existing unit of number
+ * with a new unit. The existing unit is removed using the
+ * \ref remove_unit_function function. Then the new unit is added
+ * to that plain number. The unit can be specified as a string
+ * ("px") or directly as an identifier (em). If the number was
+ * an integer it remains an integer.
  *
  * The \b set_unit() function uses a trick: it divides the number
- * by "1\<unit>" of the number.
+ * by "1<existing-unit>" and multiply the number by "1<new-unit>".
  *
- * To define a number as a percentage, you may instead use the function
- * \ref percentage_function.
+ * For example, if the new unit is 'em' and the old one was 'px',
+ * the following expression is applied:
+ *
+ * \f[
+ * result = { { number \over 1px } \times 1em }
+ * \f]
+ *
+ * Note that in most cases the math is probably wrong. In this
+ * example, 1em is probably something like 12px or so. So the
+ * correct math would be to divide by 12px instead of 1px.
+ *
+ * You may achieve a better result with an operation such as
+ * this one:
+ *
+ * \code
+ *      $pixels: $number / 12px * 1em;
+ * \endcode
+ *
+ * To define a number as a percentage, use "%". Although you may instead
+ * use the \ref percentage_function function.
  *
  * \subsection transparentize_function transparentize() or fade_out()
  *
@@ -1474,24 +1654,21 @@
  *
  * It is the same as calling \ref opacify_function with \b -adjustment.
  *
- * \subsection unique_id_function unique_id()
- *
- * \code{.scss}
- *      unique_id()
- * \endcode
- *
- * The \b unique_id() function generates a unique identifier. At this
- * point the identifier looks like: "_csspp_unique\<number>". The
- * number is incremented by one each time the function is called.
- *
  * \subsection unitless_function unitless()
  *
  * \code{.scss}
  *      unitless(number)
  * \endcode
  *
- * The \b unitless() function returns true if \p number is unit_less
- * (i.e. is not a dimension, was not assigned a unit.)
+ * The \b unitless() function returns true if \p number is
+ * \em unit \em less
+ * (i.e. is not a dimension, was not assigned a unit, and is not
+ * a percentage either.)
+ *
+ * Note that the \ref type_of_function function tells you whether
+ * a number is an "integer" or a decimal "number", including
+ * percentages. However, it does not tell you the unit so you
+ * cannot distinguish between various dimensions or percentages.
  *
  * \subsection unquote_function unquote()
  *

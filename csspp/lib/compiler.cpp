@@ -96,6 +96,22 @@ node::pointer_t compiler::compiler_state_t::get_root() const
     return f_root;
 }
 
+void compiler::compiler_state_t::clear_paths()
+{
+    f_paths.clear();
+}
+
+void compiler::compiler_state_t::add_path(std::string const & path)
+{
+    f_paths.push_back(path);
+}
+
+void compiler::compiler_state_t::set_paths(compiler_state_t const & state)
+{
+    // replace out paths with another set
+    f_paths = state.f_paths;
+}
+
 void compiler::compiler_state_t::push_parent(node::pointer_t parent)
 {
     f_parents.push_back(parent);
@@ -120,6 +136,36 @@ node::pointer_t compiler::compiler_state_t::get_previous_parent() const
 
     // return the parent before last
     return f_parents[f_parents.size() - 2];
+}
+
+void compiler::compiler_state_t::set_variable(node::pointer_t name, node::pointer_t value, bool global) const
+{
+    // the name is used in a map to quickly save/retrieve variables
+    // so we save the variable / mixin definitions in a list saved
+    // along the value of this variable
+    std::string const variable_name(name->get_string());
+    node::pointer_t v(new node(node_type_t::LIST, value->get_position()));
+    v->add_child(name);
+    v->add_child(value);
+
+    if(!global)
+    {
+        size_t pos(f_parents.size());
+        while(pos > 0)
+        {
+            --pos;
+            node::pointer_t s(f_parents[pos]);
+            if(s->is(node_type_t::OPEN_CURLYBRACKET)
+            && s->get_boolean())
+            {
+                s->set_variable(variable_name, v);
+                return;
+            }
+        }
+    }
+
+    // if nothing else make it a global variable
+    f_root->set_variable(variable_name, v);
 }
 
 node::pointer_t compiler::compiler_state_t::get_variable(std::string const & variable_name, bool global_only) const
@@ -154,40 +200,211 @@ node::pointer_t compiler::compiler_state_t::get_variable(std::string const & var
     return f_root->get_variable(variable_name);
 }
 
-void compiler::compiler_state_t::set_variable(node::pointer_t name, node::pointer_t value, bool global) const
+node::pointer_t compiler::compiler_state_t::execute_user_function(node::pointer_t func)
 {
-    // the name is used in a map to quickly save/retrieve variables
-    // so we save the variable / mixin definitions in a list saved
-    // along the value of this variable
-    std::string const variable_name(name->get_string());
-    node::pointer_t v(new node(node_type_t::LIST, value->get_position()));
-    v->add_child(name);
-    v->add_child(value);
-
-    if(!global)
+    // search the parents for the node where the function will be set
+    node::pointer_t value(get_variable(func->get_string()));
+    if(!value)
     {
-        size_t pos(f_parents.size());
-        while(pos > 0)
+        // no function (or variables) with that name found, return the
+        // input function as is
+        return func;
+    }
+
+    // internal validity check
+    if(!value->is(node_type_t::LIST)
+    || value->size() != 2)
+    {
+        throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::execute_user_function(): all functions must be two sub-values in a LIST, the first item being the variable."); // LCOV_EXCL_LINE
+    }
+
+    node::pointer_t var(value->get_child(0));
+    node::pointer_t val(value->get_child(1));
+
+    if(!var->is(node_type_t::FUNCTION))
+    //&& !var->is(node_type_t::VARIABLE_FUNCTION)) -- TBD
+    {
+        // found something, but that is not a @mixin function...
+        return func;
+    }
+
+    // the function was already argified in expression::unary()
+    //parser::argify(func);
+
+    // define value of each argument
+    node::pointer_t root(new node(node_type_t::LIST, val->get_position()));
+    if(!val->is(node_type_t::OPEN_CURLYBRACKET))
+    {
+        throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::execute_user_function(): @mixin function is not defined inside a {}-block."); // LCOV_EXCL_LINE
+    }
+
+    // make sure we get a copy of the current global variables
+    root->copy_variable(f_root);
+
+    size_t max_val_children(val->size());
+    for(size_t j(0); j < max_val_children; ++j)
+    {
+        root->add_child(val->get_child(j)->clone());
+    }
+
+    size_t const max_children(var->size());
+    size_t const max_input(func->size());
+    for(size_t i(0); i < max_children; ++i)
+    {
+        node::pointer_t arg(var->get_child(i));
+        if(!arg->is(node_type_t::ARG))
         {
-            --pos;
-            node::pointer_t s(f_parents[pos]);
-            if(s->is(node_type_t::OPEN_CURLYBRACKET)
-            && s->get_boolean())
+            // function declaration is invalid!
+            throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::execute_user_function(): FUNCTION children are not all ARG nodes."); // LCOV_EXCL_LINE
+        }
+        if(arg->empty())
+        {
+            throw csspp_exception_logic("compiler.cpp:compiler::compiler_state_t::execute_user_function(): ARG is empty."); // LCOV_EXCL_LINE
+        }
+        node::pointer_t arg_name(arg->get_child(0));
+        if(!arg_name->is(node_type_t::VARIABLE))
+        {
+            // this was already erred when we created the variable
+            //error::instance() << val->get_position()
+            //        << "function declaration requires all parameters to be variables, "
+            //        << arg_name->get_type()
+            //        << " is not acceptable."
+            //        << error_mode_t::ERROR_ERROR;
+            return func;
+        }
+        if(i >= max_input)
+        {
+            // user did not specify this value, check whether we have
+            // an optional value
+            if(arg->size() > 1)
             {
-                s->set_variable(variable_name, v);
-                return;
+                // use default value
+                node::pointer_t default_param(arg->clone());
+                default_param->remove_child(0);  // remove the variable name
+                if(default_param->size() == 1)
+                {
+                    default_param = default_param->get_child(0);
+                }
+                else
+                {
+                    node::pointer_t value_list(new node(node_type_t::LIST, arg->get_position()));
+                    value_list->take_over_children_of(default_param);
+                    default_param = value_list;
+                }
+                node::pointer_t param_value(new node(node_type_t::LIST, arg->get_position()));
+                param_value->add_child(arg_name);
+                param_value->add_child(default_param);
+                root->set_variable(arg_name->get_string(), param_value);
             }
+            else
+            {
+                // value is missing
+                error::instance() << val->get_position()
+                        << "missing function variable named \""
+                        << arg_name->get_string()
+                        << "\" when calling "
+                        << func->get_string()
+                        << "();."
+                        << error_mode_t::ERROR_ERROR;
+                return func;
+            }
+        }
+        else
+        {
+            // copy user provided value
+            node::pointer_t user_param(func->get_child(i));
+            if(!user_param->is(node_type_t::ARG))
+            {
+                throw csspp_exception_logic("compiler.cpp:compiler::replace_variable(): user parameter is not an ARG."); // LCOV_EXCL_LINE
+            }
+            if(user_param->size() == 1)
+            {
+                user_param = user_param->get_child(0);
+            }
+            else
+            {
+                // is that really correct?
+                // we may need a component_value instead...
+                node::pointer_t list(new node(node_type_t::LIST, user_param->get_position()));
+                list->take_over_children_of(user_param);
+                user_param = list;
+            }
+            node::pointer_t param_value(new node(node_type_t::LIST, user_param->get_position()));
+            param_value->add_child(arg_name);
+            param_value->add_child(user_param->clone());
+            root->set_variable(arg_name->get_string(), param_value);
         }
     }
 
-    // if nothing else make it a global variable
-    f_root->set_variable(variable_name, v);
+    compiler c(this);
+    c.set_root(root);
+    c.f_state.f_paths = f_paths;
+    c.f_state.f_empty_on_undefined_variable = f_empty_on_undefined_variable;
+    // use 'true' here otherwise it would reload the header/footer each time!
+    c.compile(true);
+
+    return c.get_result();
+}
+
+void compiler::compiler_state_t::set_empty_on_undefined_variable(bool empty_on_undefined_variable)
+{
+    f_empty_on_undefined_variable = empty_on_undefined_variable;
+}
+
+bool compiler::compiler_state_t::get_empty_on_undefined_variable() const
+{
+    return f_empty_on_undefined_variable;
+}
+
+std::string compiler::compiler_state_t::find_file(std::string const & script_name)
+{
+    // no name?!
+    if(script_name.empty())
+    {
+        return std::string();
+    }
+
+    // an absolute path?
+    if(script_name[0] == '/')
+    {
+        if(access(script_name.c_str(), R_OK) == 0)
+        {
+            return script_name;
+        }
+        // absolute does not mean we can find the file
+        return std::string();
+    }
+
+    // no paths at all???
+    if(f_paths.empty())
+    {
+        // should this be "." here instead of the default?
+        f_paths.push_back("/usr/lib/csspp/scripts");
+    }
+
+    // check with each path and return the first match
+    for(auto it : f_paths)
+    {
+        std::string const name(it == "" ? script_name : it + "/" + script_name);
+        if(access(name.c_str(), R_OK) == 0)
+        {
+            return name;
+        }
+    }
+
+    // in case we cannot find a file
+    return std::string();
 }
 
 compiler::compiler(bool validating)
     : f_compiler_validating(validating)
 {
-    f_paths.push_back("/usr/lib/csspp/scripts");
+    f_state.add_path("/usr/lib/csspp/scripts");
+}
+
+void compiler::set_root(node::pointer_t root)
+{
+    f_state.set_root(root);
 }
 
 node::pointer_t compiler::get_root() const
@@ -195,9 +412,9 @@ node::pointer_t compiler::get_root() const
     return f_state.get_root();
 }
 
-void compiler::set_root(node::pointer_t root)
+node::pointer_t compiler::get_result() const
 {
-    f_state.set_root(root);
+    return f_return_result;
 }
 
 void compiler::set_date_time_variables(time_t now)
@@ -276,7 +493,7 @@ void compiler::set_date_time_variables(time_t now)
 
 void compiler::set_empty_on_undefined_variable(bool empty_on_undefined_variable)
 {
-    f_empty_on_undefined_variable = empty_on_undefined_variable;
+    f_state.set_empty_on_undefined_variable(empty_on_undefined_variable);
 }
 
 void compiler::set_no_logo(bool no_logo)
@@ -286,12 +503,12 @@ void compiler::set_no_logo(bool no_logo)
 
 void compiler::clear_paths()
 {
-    f_paths.clear();
+    f_state.clear_paths();
 }
 
 void compiler::add_path(std::string const & path)
 {
-    f_paths.push_back(path);
+    f_state.add_path(path);
 }
 
 void compiler::compile(bool bare)
@@ -394,7 +611,7 @@ void compiler::compile(node::pointer_t n)
         // transparent item, just compile all the children
         {
             size_t idx(0);
-            while(idx < n->size())
+            while(idx < n->size() && !f_return_result)
             {
                 node::pointer_t child(n->get_child(idx));
                 compile(child);
@@ -508,7 +725,7 @@ void compiler::compile_component_value(node::pointer_t n)
         // this happens when we add elements from a sub {}-block
         // for example, a verbatim:
         //
-        //     @if (true) { foo { a: b; } blah { c: d; }
+        //     @if (true) { foo { a: b; } blah { c: d; } }
         //
         node::pointer_t parent(f_state.get_previous_parent());
         size_t pos(parent->child_position(n));
@@ -811,7 +1028,7 @@ void compiler::compile_declaration(node::pointer_t n)
 
         bool const ignore(
                   (child->is(node_type_t::FUNCTION)
-                && (child->get_string() == "alpha" || child->get_string() == "chroma" || child->get_string() == "gray")
+                && (child->get_string() == "alpha" || child->get_string() == "chroma" || child->get_string() == "gray" || child->get_string() == "opacity")
                 && (declaration->get_string() == "filter" || declaration->get_string() == "-filter"))
             ||
                   (child->is(node_type_t::IDENTIFIER)
@@ -1100,6 +1317,33 @@ void compiler::compile_at_keyword(node::pointer_t n)
                 }
             }
         }
+        return;
+    }
+
+    if(at == "return")
+    {
+        if(!expr)
+        {
+            error::instance() << n->get_position()
+                    << "@return must be followed by a valid expression."
+                    << error_mode_t::ERROR_ERROR;
+            return;
+        }
+
+        // transform the @return <expr> in a one node result
+        expression return_expr(n);
+        return_expr.set_variable_handler(&f_state);
+        f_return_result = return_expr.compile();
+        if(!f_return_result)
+        {
+            // the expression was erroneous but we cannot return
+            // without a valid node otherwise we could end up
+            // returning another value "legally"
+            //
+            // return a NULL as the result
+            f_return_result.reset(new node(node_type_t::NULL_TOKEN, n->get_position()));
+        }
+
         return;
     }
 }
@@ -1563,7 +1807,7 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
     if(!value)
     {
         // no variable with that name found, generate an error?
-        if(!f_empty_on_undefined_variable)
+        if(!f_state.get_empty_on_undefined_variable())
         {
             error::instance() << n->get_position()
                     << "variable named \""
@@ -1693,10 +1937,10 @@ void compiler::replace_variable(node::pointer_t parent, node::pointer_t n, size_
             }
         }
 
-        compiler c;
+        compiler c(&c.f_state);
         c.set_root(root);
-        c.f_paths = f_paths;
-        c.f_empty_on_undefined_variable = f_empty_on_undefined_variable;
+        c.f_state.set_paths(f_state);
+        c.f_state.set_empty_on_undefined_variable(f_state.get_empty_on_undefined_variable());
         c.mark_selectors(root);
         c.replace_variables(root);
 
@@ -2418,7 +2662,7 @@ void compiler::replace_variables_in_comment(node::pointer_t n)
                 }
                 else
                 {
-                    if(!f_empty_on_undefined_variable)
+                    if(!f_state.get_empty_on_undefined_variable())
                     {
                         error::instance() << n->get_position()
                                 << "variable named \""
@@ -3188,42 +3432,7 @@ bool compiler::parse_selector(node::pointer_t n)
 
 std::string compiler::find_file(std::string const & script_name)
 {
-    // no name?!
-    if(script_name.empty())
-    {
-        return std::string();
-    }
-
-    // an absolute path?
-    if(script_name[0] == '/')
-    {
-        if(access(script_name.c_str(), R_OK) == 0)
-        {
-            return script_name;
-        }
-        // absolute does not mean we can find the file
-        return std::string();
-    }
-
-    // no paths at all???
-    if(f_paths.empty())
-    {
-        // should this be "." here instead of the default?
-        f_paths.push_back("/usr/lib/csspp/scripts");
-    }
-
-    // check with each path and return the first match
-    for(auto it : f_paths)
-    {
-        std::string const name(it == "" ? script_name : it + "/" + script_name);
-        if(access(name.c_str(), R_OK) == 0)
-        {
-            return name;
-        }
-    }
-
-    // in case we cannot find a file
-    return std::string();
+    return f_state.find_file(script_name);
 }
 
 void compiler::set_validation_script(std::string const & script_name)

@@ -290,7 +290,7 @@ TEST_CASE("Expression invalid ? invalid : invalid", "[expression] [conditional] 
 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
-        REQUIRE_ERRORS("test.css(1): error: unsupported type CONDITIONAL as a unary expression token.\n");
+        REQUIRE_ERRORS("test.css(1): error: unsupported type EOF_TOKEN as a unary expression token.\n");
 
         REQUIRE(c.get_root() == n);
     }
@@ -343,6 +343,32 @@ TEST_CASE("Expression invalid ? invalid : invalid", "[expression] [conditional] 
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS("test.css(1): error: a boolean expression was expected.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("' false ? 3em : ' is invalid, something's missing")
+    {
+        std::stringstream ss;
+        ss << "div { width: false ? 3em : ; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: unsupported type EOF_TOKEN as a unary expression token.\n");
 
         REQUIRE(c.get_root() == n);
     }

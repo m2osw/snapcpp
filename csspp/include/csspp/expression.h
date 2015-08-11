@@ -28,6 +28,7 @@ public:
     virtual                 ~expression_variables_interface() {}
 
     virtual node::pointer_t get_variable(std::string const & variable_name, bool global_only = false) const = 0;
+    virtual node::pointer_t execute_user_function(node::pointer_t func) = 0;
 };
 
 class expression
@@ -39,7 +40,10 @@ public:
 
     void                compile_args(bool divide_font_metrics);
     node::pointer_t     compile();
+
     static bool         boolean(node::pointer_t n);
+    static void         set_unique_id_counter(int counter);
+    static int          get_unique_id_counter();
 
 private:
     typedef std::map<std::string, node::pointer_t>  variable_vector_t;
@@ -121,6 +125,7 @@ private:
     node::pointer_t     internal_function__max(node::pointer_t func);
     node::pointer_t     internal_function__min(node::pointer_t func);
     node::pointer_t     internal_function__not(node::pointer_t func);
+    node::pointer_t     internal_function__percentage(node::pointer_t func);
     node::pointer_t     internal_function__random(node::pointer_t func);
     node::pointer_t     internal_function__red(node::pointer_t func);
     node::pointer_t     internal_function__rgb(node::pointer_t func);
@@ -134,6 +139,7 @@ private:
     node::pointer_t     internal_function__str_length(node::pointer_t func);
     node::pointer_t     internal_function__tan(node::pointer_t func);
     node::pointer_t     internal_function__type_of(node::pointer_t func);
+    node::pointer_t     internal_function__unique_id(node::pointer_t funct);
     node::pointer_t     internal_function__unit(node::pointer_t func);
     node::pointer_t     internal_function__variable_exists(node::pointer_t func);
 

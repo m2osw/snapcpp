@@ -18,6 +18,27 @@ additional features:
 . Support the placeholder in the assembler
 
 
+. Change the expression implementation to do it in two steps to avoid
+  problems with ?: operator (and maybe others); the current version
+  forces us to calculate everything which means if something goes wrong
+  we may end up with what looks like an invalid expression even if it is
+  not. By first parsing everything and creating a tree, we could 100%
+  avoid calculating what is going to be simplified in the first place.
+  In the case of the ?: oeprator, that means only the true or false
+  tree is taken in account. The other tree is completely ignored.
+
+
+. @mixin functions have access to globals (read) but cannot modify globals
+  even with the !global flag as in:
+
+      @mixin func()
+      {
+        $var: 33 !global;
+      }
+
+  $var outside of func() is unchanged...
+
+
 . Add !important in variables, preventing further definitions of that variable
 
       $var-final: 3px !important;

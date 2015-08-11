@@ -601,6 +601,44 @@ TEST_CASE("HSLA colors", "[color]")
     REQUIRE(c.get_color() == 0xBFEA1B41);
 
     // ...
+    // helper computation to make sure the assembler tests work as expected
+    c.set_color(0xf7, 0xd0, 0xcf, 0xff);
+    {
+        csspp::color_component_t hue;
+        csspp::color_component_t saturation;
+        csspp::color_component_t lightness;
+        csspp::color_component_t alpha;
+        c.get_hsl(hue, saturation, lightness, alpha);
+
+        // add 180deg to the hue
+        c.set_hsl(hue + M_PI, saturation, lightness, alpha);
+        REQUIRE(c.get_color() == 0xFFF7F6CF);
+
+        // darken by 3%
+        c.set_hsl(hue, saturation, lightness - 0.03, alpha);
+        REQUIRE(c.get_color() == 0xFFC2C3F5);
+
+        // desaturate by 5%
+        c.set_hsl(hue, saturation - 0.05, lightness, alpha);
+        REQUIRE(c.get_color() == 0xFFD0D1F6);
+    }
+
+    // ...
+    // helper computation to make sure the unary expression tests work as expected
+    c.set_color(0x56, 0xaf, 0x9b, 0xff);
+    {
+        csspp::color_component_t hue;
+        csspp::color_component_t saturation;
+        csspp::color_component_t lightness;
+        csspp::color_component_t alpha;
+        c.get_hsl(hue, saturation, lightness, alpha);
+
+        // add 180deg to the hue
+        c.set_hsl(hue + M_PI, saturation, lightness, alpha);
+        REQUIRE(c.get_color() == 0xFF6A56AF);
+    }
+
+    // ...
     c.set_hsl(-251.1 * M_PI / 180.0, 0.832, 0.511, 0.75);
     REQUIRE(c.get_color() == 0xBF1B1B1B);
     {

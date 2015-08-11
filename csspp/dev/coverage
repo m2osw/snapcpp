@@ -235,6 +235,13 @@ lcov --capture --no-external --directory $DIRNAME --base-directory $SOURCE_PATH 
 mkdir -p ${DIRNAME}_html
 genhtml --legend --demangle-cpp --no-branch-coverage --show-details coverage.info --output-directory ${DIRNAME}_html
 
+# gprof -q -I ../../../include -I ../../../lib -I ../../../src -I ../../../tests ../csspp_coverage_assembler/tests/csspp_tests | less -S
+#   only gprof does NOT profile anything outside of the binary (so csspp_test but not the library!) So unless we link statically
+# sprof would normally work on .so but that's complicated (by default it fails loading)
+# oprofile would work on the entire system, but that requires a peculiar setup of the machine...
+#   http://smackerelofopinion.blogspot.com/2013/05/getting-started-with-oprofile-on-ubuntu.html
+
+
 
 end_date=`date`
 

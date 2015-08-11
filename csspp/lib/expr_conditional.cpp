@@ -52,14 +52,28 @@ node::pointer_t expression::conditional()
 
     while(f_current->is(node_type_t::CONDITIONAL))
     {
+        bool const r(boolean(result));
+
         // skip the '?'
         next();
 
         // TODO: avoid calculating both sides.
-        node::pointer_t result_true(conditional());
-        if(!result_true)
+        if(r)
         {
-            return node::pointer_t();
+            result = conditional();
+            if(!result)
+            {
+                return node::pointer_t();
+            }
+        }
+        else
+        {
+            // we will ignore this entry, so ignore the eventual errors
+            csspp::safe_error_t safe_errors;
+            std::stringstream ignore;
+            safe_error_stream_t safe_output(ignore);
+
+            static_cast<void>(conditional());
         }
 
         if(!f_current->is(node_type_t::COLON))
@@ -73,15 +87,23 @@ node::pointer_t expression::conditional()
         // skip the ':'
         next();
 
-        node::pointer_t result_false(logical_or());
-        if(!result_false)
+        if(!r)
         {
-            return node::pointer_t();
+            result = conditional();
+            if(!result)
+            {
+                return node::pointer_t();
+            }
         }
+        else
+        {
+            // we will ignore this entry, so ignore the eventual errors
+            csspp::safe_error_t safe_errors;
+            std::stringstream ignore;
+            safe_error_stream_t safe_output(ignore);
 
-        // select the correct result
-        bool const r(boolean(result));
-        result = r ? result_true : result_false;
+            static_cast<void>(conditional());
+        }
     }
 
     return result;

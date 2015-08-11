@@ -17,7 +17,7 @@
 
 @mixin adjust_hue($color, $angle)
 {
-    @return hsla(hue($color) + $angle, saturation($color), lightness($color), alpha($color));
+    @return hsla(deg2rad(hue($color)) + $angle, saturation($color), lightness($color), alpha($color));
 }
 
 @mixin complement($color)
@@ -28,6 +28,11 @@
 @mixin darken($color, $percent)
 {
     @return lighten($color, - $percent);
+}
+
+@mixin deg2rad($angle)
+{
+    @return $angle * $_csspp_pi_rad / 180deg;
 }
 
 @mixin desaturate($color, $percent)
@@ -60,7 +65,7 @@
 
 @mixin lighten($color, $percent)
 {
-    @return hsla(hue($color), saturation($color), lightness($color) + $precent, alpha($color));
+    @return hsla(hue($color), saturation($color), lightness($color) + $percent, alpha($color));
 }
 
 @mixin mix($color1, $color2, $weight: 0.5)
@@ -78,31 +83,32 @@
     @return alpha($color);
 }
 
-@mixin percentage($value)
+@mixin quote($identifier)
 {
-    @return decimal_number(remove_unit($value) + "%");
-}
-
-@mixin quote($string)
-{
-    @return string($string);
+    @return string($identifier);
 }
 
 @mixin remove_unit($value)
 {
-    @return $value / integer("1" + unit($value));
+    @return unit($value) = "%"
+                ? decimal_number($value)
+                : type_of($value) = "integer"
+                    ? $value / integer("1" + unit($value))
+                    : $value / decimal_number("1" + unit($value));
 }
 
 @mixin saturate($color, $percent)
 {
-    @return hsla(hue($color), saturation($color) + $precent, lightness($color), alpha($color));
+    @return hsla(hue($color), saturation($color) + $percent, lightness($color), alpha($color));
 }
 
 @mixin set_unit($value, $unit)
 {
-    @return type_of($value) = "integer" && $unit != "%"
-                ? integer(remove_unit($value) + $unit)
-                : decimal_number(remove_unit($value) + $unit);
+    @return string($unit) = "%"
+                ? percentage($value)
+                : type_of($value) = "integer"
+                    ? integer(string(remove_unit($value)) + string($unit))
+                    : decimal_number(string(remove_unit($value)) + string($unit));
 }
 
 @mixin transparentize($color, $number)
@@ -110,20 +116,14 @@
     @return rgba($color, alpha($color) - $number);
 }
 
-@mixin unique_id()
-{
-    $_csspp_id: $_csspp_id + 1 !global;
-    @return identifier("_csspp_unique" + $_csspp_id);
-}
-
 @mixin unitless($number)
 {
     @return unit($number) = "";
 }
 
-@mixin unquote($identifier)
+@mixin unquote($string)
 {
-    @return identifier($identifier);
+    @return identifier($string);
 }
 
 // Local Variables:

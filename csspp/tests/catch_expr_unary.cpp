@@ -42,13 +42,14 @@
 
 TEST_CASE("Unary expressions", "[expression] [unary]")
 {
-    SECTION("integer, identifier, hash color")
+    SECTION("integer, identifier, hash color, color")
     {
         std::stringstream ss;
         ss << "$zzzrv: $_csspp_major > 0;\n"
            << "$zzzempty: null;\n"
            << "div {\n"
-           << "  border: 3px solid #f1a932;\n"
+           << "  border: 3px solid #f1a932;\n"          // unary hash color
+           << "  z-index: red(complement(#56af9b));\n"  // direct unary color
            << "  content: \"\\201c\";\n" // open quotation
            << "  width: 13%;\n"
            << "  height: 12.5px;\n"
@@ -115,6 +116,9 @@ TEST_CASE("Unary expressions", "[expression] [unary]")
 "            IDENTIFIER \"solid\"\n"
 "            WHITESPACE\n"
 "            COLOR H:ff32a9f1\n"
+"        DECLARATION \"z-index\"\n"
+"          ARG\n"
+"            INTEGER \"\" I:175\n"
 "        DECLARATION \"content\"\n"
 "          ARG\n"
 "            STRING \"\xe2\x80\x9c\"\n"
@@ -185,6 +189,7 @@ TEST_CASE("Unary expressions", "[expression] [unary]")
         REQUIRE(assembler_out.str() ==
 "div{"
   "border:3px solid #f1a932;"
+  "z-index:175;"
   "content:\"\xe2\x80\x9c\";"
   "width:13%;height:12.5px;"
   "color:#341109;"
@@ -366,7 +371,7 @@ TEST_CASE("Variables in expressions", "[expression] [unary] [variable]")
     REQUIRE_ERRORS("");
 }
 
-TEST_CASE("Invalid unary expressions", "[expression] [unary]")
+TEST_CASE("Invalid unary expressions", "[expression] [unary] [invalid]")
 {
     SECTION("not a unary token")
     {
@@ -474,6 +479,32 @@ TEST_CASE("Invalid unary expressions", "[expression] [unary]")
 //std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
 
         REQUIRE_ERRORS("test.css(1): warning: A special flag, !important in this case, must only appear at the end of a declaration.\n");
+
+        REQUIRE(c.get_root() == n);
+    }
+
+    SECTION("minus by itself")
+    {
+        std::stringstream ss;
+        ss << "div { width: -; }";
+        csspp::position pos("test.css");
+        csspp::lexer::pointer_t l(new csspp::lexer(ss, pos));
+
+        csspp::parser p(l);
+
+        csspp::node::pointer_t n(p.stylesheet());
+
+        csspp::compiler c;
+        c.set_root(n);
+        c.set_date_time_variables(csspp_test::get_now());
+        c.add_path(csspp_test::get_script_path());
+        c.add_path(csspp_test::get_version_script_path());
+
+        c.compile(false);
+
+//std::cerr << "Compiler result is: [" << *c.get_root() << "]\n";
+
+        REQUIRE_ERRORS("test.css(1): error: unsupported type EOF_TOKEN as a unary expression token.\n");
 
         REQUIRE(c.get_root() == n);
     }

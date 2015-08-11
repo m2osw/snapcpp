@@ -116,7 +116,7 @@ int32_t constexpr mix_node_types(node_type_t a, node_type_t b)
     return static_cast<int32_t>(a) * 65536 + static_cast<int32_t>(b);
 }
 
-class node
+class node : public std::enable_shared_from_this<node>
 {
 public:
     typedef std::shared_ptr<node>   pointer_t;
@@ -170,6 +170,7 @@ public:
     void                clear_variables();
     void                set_variable(std::string const & name, pointer_t value);
     pointer_t           get_variable(std::string const & name);
+    void                copy_variable(node::pointer_t source);
 
     void                clear_flags();
     void                set_flag(std::string const & name, bool value);

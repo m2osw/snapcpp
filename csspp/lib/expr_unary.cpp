@@ -39,11 +39,11 @@ namespace csspp
 
 void expression::compile_args(bool divide_font_metrics)
 {
-    size_t const max_children(f_node->size());
-    for(size_t a(0); a < max_children; ++a)
+    if(!f_node->empty())
     {
-        if(a + 1 < max_children
-        || !f_node->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET))
+        bool const end_with_bracket(f_node->get_last_child()->is(node_type_t::OPEN_CURLYBRACKET));
+        size_t const max_children(f_node->size() - (end_with_bracket ? 1 : 0));
+        for(size_t a(0); a < max_children; ++a)
         {
             expression arg_expr(f_node->get_child(a));
             arg_expr.set_variable_handler(f_variable_handler);
@@ -133,6 +133,7 @@ node::pointer_t expression::unary()
     {
     case node_type_t::ARRAY:
     case node_type_t::BOOLEAN:
+    case node_type_t::COLOR:
     case node_type_t::DECIMAL_NUMBER:
     case node_type_t::EXCLAMATION:  // this is not a BOOLEAN NOT operator...
     case node_type_t::INTEGER:
@@ -198,6 +199,10 @@ node::pointer_t expression::unary()
             next();
 
             node::pointer_t result(power());
+            if(!result)
+            {
+                return node::pointer_t();
+            }
             switch(result->get_type())
             {
             case node_type_t::INTEGER:

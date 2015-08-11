@@ -796,8 +796,10 @@ bool parser::argify(node::pointer_t n, node_type_t const separator)
 
     }
 
+    // make sure there are items and these are not already arguments
     size_t const max_children(n->size());
-    if(max_children > 0)
+    if(max_children > 0
+    && !n->get_child(0)->is(node_type_t::ARG))
     {
         node::pointer_t temp(new node(node_type_t::LIST, n->get_position()));
         temp->take_over_children_of(n);
