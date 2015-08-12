@@ -74,6 +74,7 @@ tar xf ../../sources-repo/controlledvars_*.tar.gz
 tar xf ../../sources-repo/advgetopt_*.tar.gz
 tar xf ../../sources-repo/csspp_*.tar.gz
 cp csspp/dev/MasterCMakeLists.txt CMakeLists.txt
+cp csspp/dev/INSTALL INSTALL
 cd csspp
 VERSION=`dpkg-parsechangelog --show-field Version`
 cd ../..
