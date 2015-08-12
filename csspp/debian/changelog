@@ -8,7 +8,7 @@ csspp (1.0.6~trusty) trusty; urgency=high
   * Made it possible to compile CSS Preprocessor under cygwin.
   * Updated the tests and documentation accordingly.
 
- -- Build Server <build@m2osw.com>  Mon, 27 Jul 2015 03:01:38 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 27 Jul 2015 03:01:38 -0700
 
 csspp (1.0.5~trusty) trusty; urgency=high
 
@@ -30,7 +30,7 @@ csspp (1.0.5~trusty) trusty; urgency=high
   * Fixed the lexer integer part overflow test so it works in all cases.
   * Updated the node output so it can easily be checked in more cases.
 
- -- Build Server <build@m2osw.com>  Mon, 13 Jul 2015 12:57:26 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 13 Jul 2015 12:57:26 -0700
 
 csspp (1.0.4~trusty) trusty; urgency=high
 
