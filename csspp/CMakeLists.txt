@@ -35,7 +35,7 @@
 ##
 set(CSSPP_VERSION_MAJOR 1)
 set(CSSPP_VERSION_MINOR 0)
-set(CSSPP_VERSION_PATCH 5)
+set(CSSPP_VERSION_PATCH 6)
 
 cmake_minimum_required(VERSION 2.8.4)
 
