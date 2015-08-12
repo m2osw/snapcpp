@@ -90,6 +90,8 @@
  * * http://www.w3.org/TR/css3-color/ (colors)
  * * http://www.w3.org/TR/css3-values/ (dimensions and calc(), toggle(), attr() functions)
  * * http://www.w3.org/TR/selectors/ (rule selectors)
+ *
+ * \image html csspp-logo.png "CSS Preprocessor Logo"
  */
 
 // Local Variables:
