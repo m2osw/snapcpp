@@ -36,6 +36,12 @@ public:
     snap_communicator_initialization_error(std::string const & whatmsg) : snap_exception(whatmsg) {}
 };
 
+class snap_communicator_parameter_error : public snap_exception
+{
+public:
+    snap_communicator_parameter_error(std::string const & whatmsg) : snap_exception(whatmsg) {}
+};
+
 
 
 

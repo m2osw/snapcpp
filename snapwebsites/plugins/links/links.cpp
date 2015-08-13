@@ -482,11 +482,17 @@ link_info const & link_info_pair::destination()
  * to call the function multiple times before you read all the
  * links.
  *
+ * \note
+ * The order in which links are returned is not always
+ * the order in which links were created. This is because the
+ * counter used to create links may get a new digit at which
+ * point the order should be considered quite random.
+ *
  * \param[in] snap  The snap_child object pointer.
  * \param[in] info  The link information about this link context.
  * \param[in] count  Row count to select from the row table.
  */
-link_context::link_context(snap_child *snap, link_info const& info, int const count)
+link_context::link_context(snap_child * snap, link_info const & info, int const count)
     : f_snap(snap)
     , f_info(info)
     //, f_row() -- auto-init
@@ -549,14 +555,22 @@ link_context::link_context(snap_child *snap, link_info const& info, int const co
  * If no more links are available, then the function returns false
  * and the info parameter is not modified.
  *
+ * \note
+ * The order in which links are returned is not always
+ * the order in which links were created. This is because the
+ * counter used to create links may get a new digit at which
+ * point the order should be considered quite random.
+ *
  * \todo
  * The result does not return the unique flag as defined in the database.
  * The unique flag is likely going to be set to false and stay false all
  * along whether or not the link on the other side is unique.
  *
- * \param[out] info  The structure where the result is saved if available.
+ * \param[in,out] info  The structure where the result is saved if available,
+ *                      unchanged otherwise.
  *
- * \return true if info is set with the next link, false if no more links are available.
+ * \return true if info is set with the next link, false if no more
+ *         links are available.
  */
 bool link_context::next_link(link_info& info)
 {
