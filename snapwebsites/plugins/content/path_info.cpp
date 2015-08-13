@@ -148,7 +148,7 @@ void path_info_t::set_path(QString const & path)
         {
             // add an error so we can get more information about the full key
             // that created an exception
-            SNAP_LOG_ERROR("error: URI \"")(f_key)("\" was no accepted.");
+            SNAP_LOG_ERROR("error: URI \"")(f_key)("\" was not accepted.");
             throw;
         }
 

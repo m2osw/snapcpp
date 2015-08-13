@@ -37,6 +37,41 @@
 SNAP_PLUGIN_START(permissions, 1, 0)
 
 
+
+namespace details
+{
+
+name_t login_status_from_string(QString const & status)
+{
+    if(status == "spammer")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER;
+    }
+    else if(status == "visitor")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR;
+    }
+    else if(status == "returning_visitor")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR;
+    }
+    else if(status == "returning_registered")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED;
+    }
+    else if(status == "registered")
+    {
+        return name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED;
+    }
+    else
+    {
+        throw snap_expr::snap_expr_exception_invalid_parameter_value("invalid parameter value to for status expected one of: spammer, visitory, returning_visitor, returning_registered, or registered");
+    }
+}
+
+}
+
+
 /** \enum name_t
  * \brief Names used by the permissions plugin.
  *
@@ -78,6 +113,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_PERMISSIONS_ADMINISTER_NAMESPACE:
         return "administer";
+
+    case name_t::SNAP_NAME_PERMISSIONS_CHECK_PERMISSIONS:
+        return "checkpermissions";
 
     case name_t::SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER:
         return "permissions::direct::action::administer";
@@ -507,6 +545,54 @@ void permissions::sets_t::add_user_right(QString right)
 int permissions::sets_t::get_user_rights_count() const
 {
     return f_user_rights.size();
+}
+
+
+/** \brief Retrieve the vector of user rights.
+ *
+ * This function lets you check out the list of user rights. This is
+ * used by the check_permission() function to display the list of user
+ * rights to the administrator.
+ *
+ * The returned value is a vector to the user rights.
+ *
+ * \return The right at the specified index.
+ */
+permissions::sets_t::set_t const & permissions::sets_t::get_user_rights() const
+{
+    return f_user_rights;
+}
+
+
+/** \brief Return the number of plugin rights.
+ *
+ * This function returns the number of rights plugins offer. Note that
+ * plugin rights are added only if those rights match the specified
+ * action. So for example we do not add "view" rights for a plugin if
+ * the action is "delete". This means the number of a plugin rights
+ * represents the intersection between all the plugin rights and the
+ * action specified in this sets_t object. If empty, then the plugins
+ * do not even offer that very permission at all.
+ *
+ * \return The number of rights the plugins have for this action.
+ */
+int permissions::sets_t::get_plugin_rights_count() const
+{
+    return f_plugin_permissions.size();
+}
+
+
+/** \brief Retrieve the plugin rights.
+ *
+ * This function lets you check out the list of plugin rights. This is
+ * used by the check_permission() function to display the list of plugin
+ * rights to the administrator.
+ *
+ * \return The permissions added by the plugins.
+ */
+permissions::sets_t::req_sets_t const & permissions::sets_t::get_plugin_rights() const
+{
+    return f_plugin_permissions;
 }
 
 
@@ -1824,30 +1910,39 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
 }
 
 
-/** \brief Register the permissions action.
+/** \brief Register the permissions actions.
  *
- * This function registers this plugin as supporting the "makeadministrator"
- * and the "makeroot" actions.
+ * This function registers this plugin as supporting the following
+ * actions:
+ *
+ * \li "makeroot" and "makeadministrator"
  *
  * After an installation and a user was created on the website, the server
  * is ready to create a root user. The "makeroot" action is used for that
  * purpose. The root user can do pretty much anything he wants on the
  * entire cluster of websites defined in a Snap database.
  *
- * Once a website is created and an administrator user is created on that
+ * Once a website is created and an administrator user is registered on that
  * website, one can use the "makeadministrator" action to mark that user
  * as a Snap administrator. An administrator is limited to working on a
- * specific website.
+ * specific website, but he can generally change anything that appears on
+ * that website.
+ *
+ * The user is specified by his email address defined with a parameter.
+ * The parameter name is ROOT_USER_EMAIL.
  *
  * The backend command line looks something like one of these:
  *
  * \code
- * snapbackend [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeadministrator
- * snapbackend [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeroot
+ * # For an administrator, make sure to specify the website
+ * snapbackend http://www.example.com [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeadministrator
+ * # For a root user, you do not need to specify the website, but probably should too
+ * snapbackend [http://www.example.com] [--config snapserver.conf] --param ROOT_USER_EMAIL=joe@example.com --action makeroot
  * \endcode
  *
- * If you have problems with it (it does not seem to work,) try with --debug
- * and make sure to look in the snapserver.log and syslog output files.
+ * If you have problems with it (it does not seem to work,) try with
+ * --debug and make sure to look in the snapserver.log and syslog
+ * output files.
  *
  * \note
  * These should be user actions, unfortunately that would add a 
@@ -1855,29 +1950,57 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  * which we cannot have (i.e. "permissions" need to know about
  * "users"... so we would end up with a looping dependency.)
  *
+ * \li "checkpermissions"
+ *
+ * Once a user created an account on a website, it can be difficult to
+ * know what permissions that user has. The snapbackend can be used for
+ * the purpose to verify whether a user has or does not have access to
+ * a page given a certain action.
+ *
+ * The "checkpermission" action expects four parameters to be
+ * defined. If one of these is not defined, it is likely that the
+ * function will generate an error.
+ *
+ * ** USER_EMAIL -- the email address of the user whom the permissions
+ * are ot be checked;
+ * ** PAGE_URI -- the URI to the page being checked for that user;
+ * ** CHECK_ACTION -- the action being checked (view, administer, edit,
+ * delete, etc.);
+ * ** LOGIN_STATUS -- run the check assuming this user status (one of:
+ * "spammer", "visitor", "returning_visitor", "returning_registered",
+ * "registered").
+ *
+ * The USER_EMAIL parameter can be set to an empty string in which case
+ * it is viewed as the anonymous visitor. In that case the status should
+ * not be set to "returning_registered" or "registered" since those two
+ * statuses do not make sense for an anonymous (unregistered) visitor.
+ *
+ * \note
+ * The login status names are the same as when you write a script
+ * for a list in need of a permissions check.
+ *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
 void permissions::on_register_backend_action(server::backend_action_map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ADMINISTRATOR)] = this;
     actions[get_name(name_t::SNAP_NAME_PERMISSIONS_MAKE_ROOT)] = this;
+    actions[get_name(name_t::SNAP_NAME_PERMISSIONS_CHECK_PERMISSIONS)] = this;
 }
 
 
-/** \brief Create a root or administrator user.
+/** \brief Execute a permission action.
  *
- * This function marks a user as a root or an administrator user.
- * The user email address has to be specified on the command line.
+ * Mark a user as a root or administrator user;
  *
- * The root user has access to the entire database (i.e. ALL websites.)
- * An administrator has access to an entire website, but he is cutoff from
- * editing system pages.
+ * Check permissions for a user.
  *
- * \note
- * This should be a users plugin callback, but it requires access to the
- * permissions plugin so it has to be here instead.
+ * See the on_register_backend_action() function for details about the
+ * parameters and available actions.
  *
  * \param[in] action  The action the user wants to execute.
+ *
+ * \sa on_register_backend_action()
  */
 void permissions::on_backend_action(QString const & action)
 {
@@ -1926,11 +2049,193 @@ void permissions::on_backend_action(QString const & action)
         links::link_info destination(link_name, destination_multi, dpath.get_key(), dpath.get_branch());
         links::links::instance()->create_link(source, destination);
     }
+    else if(action == get_name(name_t::SNAP_NAME_PERMISSIONS_CHECK_PERMISSIONS))
+    {
+        // used to debug permissions from a console (later we may want to
+        // allow for such a check in a GUI tool as well)
+        QString const email(f_snap->get_server_parameter("USER_EMAIL"));
+        QString const page(f_snap->get_server_parameter("PAGE_URI"));
+        QString const permission_action(f_snap->get_server_parameter("CHECK_ACTION"));
+        QString const status(f_snap->get_server_parameter("LOGIN_STATUS"));
+        check_permissions(email, page, permission_action, status);
+    }
     else
     {
         // unknown action (we should not have been called with that name!)
         throw snap_logic_exception(QString("permissions.cpp:on_backend_action(): permissions::on_backend_action(\"%1\") called with an unknown action...").arg(action));
     }
+}
+
+
+/** \brief Check what the user permissions are (show the sets).
+ *
+ * This function gathers the list of URLs that the user has access to
+ * and the list of URLs for the specified page. Both lists are shown
+ * in full. This is what is used in the on_access_allowed() function.
+ *
+ * Process:
+ *
+ * \li Calculate all the URIs for the user and prints those.
+ * \li Calculate all the URIs for the page and prints those.
+ * \li Calculate the intersection and print the result.
+ *
+ * \param[in] email  The email to the user being checked.
+ * \param[in] page  The URI to the page being checked.
+ * \param[in] action  The action being applied.
+ */
+void permissions::check_permissions(QString const & email, QString const & page, QString const & action, QString const & status)
+{
+    // check that the action is defined in the database (i.e. valid)
+    QtCassandra::QCassandraTable::pointer_t content_table(content::content::instance()->get_content_table());
+    QString const site_key(f_snap->get_site_key_with_slash());
+    QString const key(QString("%1%2/%3").arg(site_key).arg(get_name(name_t::SNAP_NAME_PERMISSIONS_ACTION_PATH)).arg(action));
+    if(!content_table->exists(key))
+    {
+        // TODO it is rather easy to get here so we need to test whether
+        //      the same IP does it over and over again and block them if so
+        std::cerr << "error: " << action << " is not a known action.\n";
+        return;
+    }
+
+    // define the path to the user data from his email
+    QString user_path(users::users::instance()->get_user_path(email));
+    if(user_path == users::get_name(users::name_t::SNAP_NAME_USERS_ANONYMOUS_PATH)) // anonymous?
+    {
+        user_path.clear();
+    }
+
+    // define the path to the page as a content::path_info_t
+    content::path_info_t ipath;
+    ipath.set_path(page);
+
+    char const * login_status(get_name(details::login_status_from_string(status)));
+
+    // setup a 'sets' object
+    sets_t sets(user_path, ipath, action, login_status);
+
+    // first we get the user rights for that action because in most cases
+    // that's a lot smaller and if empty we do not have to get anything else
+    // (intersection of an empty set with anything else is the empty set)
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+    std::cout << std::endl << "[" << getpid() << "]: permissions::check_permissions(): retrieving USER rights from all plugins... ["
+            << sets.get_action() << "] [" << login_status << "] ["
+            << ipath.get_cpath() << "]" << std::endl;
+#endif
+#endif
+    // get all of user's rights
+    get_user_rights(this, sets);
+
+    // present user rights to administrator
+    int const user_right_count(sets.get_user_rights_count());
+    if(user_right_count == 0)
+    {
+        std::cout << "user \""
+                  << email
+                  << "\" has no rights for action \""
+                  << action
+                  << "\"."
+                  << std::endl;
+    }
+    else
+    {
+        std::cout << "user \""
+                  << email
+                  << "\""
+                  << (sets.is_root() ? " is considered a root user and" : "")
+                  << " has "
+                  << user_right_count
+                  << " rights:"
+                  << std::endl;
+        permissions::sets_t::set_t const & rights(sets.get_user_rights());
+        for(int idx(0); idx < user_right_count; ++idx)
+        {
+            std::cout << "  "
+                      << idx + 1
+                      << ". "
+                      << rights[idx]
+                      << std::endl;
+        }
+    }
+    std::cout << std::endl;
+
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+    std::cout << "[" << getpid() << "]: permissions::check_permissions(): retrieving PLUGIN permissions... ["
+              << sets.get_action() << "] / ["
+              << sets.get_ipath().get_key() << "]"
+              << std::endl;
+#endif
+#endif
+    get_plugin_permissions(this, sets);
+
+    // present user rights to administrator
+    int const plugin_right_count(sets.get_plugin_rights_count());
+    if(plugin_right_count == 0)
+    {
+        std::cout << "page \""
+                  << page
+                  << "\" has no rights for action \""
+                  << action
+                  << "\"."
+                  << std::endl;
+    }
+    else
+    {
+        std::cout << "page \""
+                  << page
+                  << "\" has "
+                  << plugin_right_count
+                  << " rights:"
+                  << std::endl;
+        permissions::sets_t::req_sets_t const & plugins(sets.get_plugin_rights());
+        int count(0);
+        // auto does not work here because we want to have access to the
+        // key which QMap does not give us when using auto
+        for(permissions::sets_t::req_sets_t::const_iterator it(plugins.begin());
+                it != plugins.end();
+                ++it)
+        {
+            ++count;
+            std::cout << "  "
+                      << count
+                      << ". Permissions offered by plugin: "
+                      << it.key()
+                      << std::endl;
+            permissions::sets_t::set_t const & plugin_permissions(it.value());
+            int const max_rights(plugin_permissions.size());
+            for(int idx(0); idx < max_rights; ++idx)
+            {
+                std::cout << "    "
+                          << count
+                          << "."
+                          << idx + 1
+                          << ". "
+                          << plugin_permissions[idx]
+                          << std::endl;
+            }
+        }
+    }
+    std::cout << std::endl;
+
+#ifdef DEBUG
+#ifdef SHOW_RIGHTS
+    std::cout << "[" << getpid() << "]: now compute the intersection!" << std::endl;
+#endif
+#endif
+
+    std::cout << "The result is that "
+              << (sets.is_root() ? "root " : "")
+              << "user \""
+              << email
+              << "\" "
+              << (sets.allowed() ? "can" : "CANNOT")
+              << " access page \""
+              << page
+              << "\" with action \""
+              << action
+              << "\"."
+              << std::endl;
 }
 
 
@@ -2110,33 +2415,7 @@ void call_perms(snap_expr::variable_t & result, snap_expr::variable_t::variable_
     quiet_error_callback err_callback(content::content::instance()->get_snap(), false);
     path::path::instance()->validate_action(ipath, action, err_callback);
 
-    name_t status_name(name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER);
-    if(status == "spammer")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_SPAMMER;
-    }
-    else if(status == "visitor")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_VISITOR;
-    }
-    else if(status == "returning_visitor")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_VISITOR;
-    }
-    else if(status == "returning_registered")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_RETURNING_REGISTERED;
-    }
-    else if(status == "registered")
-    {
-        status_name = name_t::SNAP_NAME_PERMISSIONS_LOGIN_STATUS_REGISTERED;
-    }
-    else
-    {
-        throw snap_expr::snap_expr_exception_invalid_parameter_value("invalid parameter value to for status expected one of: spammer, visitory, returning_visitor, returning_registered, or registered");
-    }
-
-    char const *login_status(get_name(status_name));
+    char const * login_status(get_name(login_status_from_string(status)));
 
     // check whether that user is allowed that action with that path and given status
     content::permission_flag allowed;

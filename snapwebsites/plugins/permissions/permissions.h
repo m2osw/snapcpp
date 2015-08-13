@@ -33,6 +33,7 @@ enum class name_t
     SNAP_NAME_PERMISSIONS_ACTION_PATH,
     SNAP_NAME_PERMISSIONS_ACTION_VIEW,
     SNAP_NAME_PERMISSIONS_ADMINISTER_NAMESPACE,
+    SNAP_NAME_PERMISSIONS_CHECK_PERMISSIONS,
     SNAP_NAME_PERMISSIONS_DIRECT_ACTION_ADMINISTER,
     SNAP_NAME_PERMISSIONS_DIRECT_ACTION_DELETE,
     SNAP_NAME_PERMISSIONS_DIRECT_ACTION_EDIT,
@@ -118,8 +119,11 @@ public:
 
         void                    add_user_right(QString right);
         int                     get_user_rights_count() const;
+        set_t const &           get_user_rights() const;
 
         void                    add_plugin_permission(QString const & plugin, QString right);
+        int                     get_plugin_rights_count() const;
+        req_sets_t const &      get_plugin_rights() const;
 
         bool                    is_root() const;
         bool                    allowed() const;
@@ -164,6 +168,7 @@ private:
     void                    content_update(int64_t variables_timestamp);
     void                    recursive_add_user_rights(QString const & key, sets_t & sets);
     void                    recursive_add_plugin_permissions(QString const & plugin_name, QString const & key, sets_t & sets);
+    void                    check_permissions(QString const & email, QString const & page, QString const & action, QString const & status);
 
     zpsnap_child_t              f_snap;
     QString                     f_login_status;
