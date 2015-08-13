@@ -1975,6 +1975,15 @@ void permissions::recursive_add_plugin_permissions(QString const & plugin_name, 
  * not be set to "returning_registered" or "registered" since those two
  * statuses do not make sense for an anonymous (unregistered) visitor.
  *
+ * \code
+ * snapbackend http://www.example.com \
+ *          -p USER_EMAIL=john@example.com \
+ *          -p PAGE_URI=http://www.example.com/journal/2015/08/13/beautiful-weather \
+ *          -p CHECK_ACTION=view \
+ *          -p LOGIN_STATUS=registered \
+ *          -a checkpermissions
+ * \endcode
+ *
  * \note
  * The login status names are the same as when you write a script
  * for a list in need of a permissions check.
