@@ -4,7 +4,7 @@ Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: debhelper, cmake, zip, libqt4-dev (>= 4.8.3), libprocps3-dev, libboost-dev,
     snapcmakemodules (>= 1.0.23.36~trusty), libcontrolledvars-dev (>= 1.4.15.44~trusty),
     libadvgetopt-dev (>= 1.0.15.43~trusty), libqtserialization-dev (>= 0.1.16.43~trusty),
-    libqtcassandra-dev (>= 0.5.20.43~trusty), libsnapwebsites-dev (>= 0.1.71.64~trusty),
+    libqtcassandra-dev (>= 0.5.20.43~trusty), libsnapwebsites-dev (>= 0.1.71.65~trusty),
     libtld-dev (>= 1.4.21.92~trusty), liblog4cplus-dev (>= 1.2.0)
 Standards-Version: 3.9.4
 Section: libs
