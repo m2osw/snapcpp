@@ -18,7 +18,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
 <snap-form name="users__login_box" session_id="user/2" owner="users" processor="login">
-  <auto-reset minutes="30"/>
+  <auto-reset minutes="5"/>
+  <timeout minutes="180"/>
   <focus refid="email"/>
   <default-button refid="login"/>
   <taborder>

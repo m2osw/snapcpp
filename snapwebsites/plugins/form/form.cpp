@@ -178,7 +178,7 @@ int64_t form::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 6, 10, 18, 32, 8, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 8, 14, 3, 31, 8, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -215,7 +215,7 @@ void form::content_update(int64_t variables_timestamp)
  *
  * \return The resulting HTML document.
  */
-QDomDocument form::form_to_html(sessions::sessions::session_info& info, QDomDocument& xml_form)
+QDomDocument form::form_to_html(sessions::sessions::session_info & info, QDomDocument & xml_form)
 {
     static int64_t g_unique_id(0);
 
@@ -2220,21 +2220,46 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
         return;
     }
 
-    // 3. Get form timeout
+    // 3. Get form auto-reset
     //
-    // The timeout defaults to 1h (in minutes)
-    int timeout(60);
+    // The auto-reset timeout defaults to 1h (in minutes)
+    //
+    // Note: we don't need this parameter for the session, we probably
+    // could remove the code although this verifies that if the
+    // auto-reset is defined that it is correct
+    int auto_reset_timeout(60);
     QDomElement auto_reset(form_doc.firstChildElement("auto-reset"));
     if(!auto_reset.isNull())
     {
         QString const minutes(auto_reset.attribute("minutes"));
         if(!minutes.isEmpty())
         {
-            timeout = minutes.toInt(&ok);
+            auto_reset_timeout = minutes.toInt(&ok);
             if(!ok)
             {
                 token.f_error = true;
                 token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session auto-reset minutes attribute (" + minutes + ") is not a valid decimal number.</span>";
+                SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + minutes + "\" as a auto-reset timeout in minutes.");
+                return;
+            }
+        }
+    }
+
+    // 4. Get form timeout
+    //
+    // The timeout defaults to 8h (in minutes)
+    int timeout(8 * 60);
+    QDomElement timeout_tag(form_doc.firstChildElement("timeout"));
+    if(!timeout_tag.isNull())
+    {
+        QString const minutes(timeout_tag.attribute("minutes"));
+        if(!minutes.isEmpty())
+        {
+            timeout = minutes.toInt(&ok);
+            if(!ok)
+            {
+                token.f_error = true;
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> Session timeout minutes attribute (" + minutes + ") is not a valid decimal number.</span>";
                 SNAP_LOG_ERROR("form::on_replace_token() could not parse \"" + minutes + "\" as a timeout in minutes.");
                 return;
             }
@@ -2242,7 +2267,7 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     }
     info.set_time_to_live(timeout * 60);  // time to live is in seconds, timeout is in minutes
 
-    // 4. Define the owner of the form
+    // 5. Define the owner of the form
     //
     // In many cases the owner is not defined in the form in which
     // case it comes from the page; however, if defined in the form
@@ -2252,13 +2277,13 @@ void form::on_replace_token(content::path_info_t& ipath, QString const& plugin_o
     // I think the owner in a form is authoritative, period.
     info.set_plugin_owner(owner);
 
-    // 5. Define the path of the form from the XML document
+    // 6. Define the path of the form from the XML document
     //
     // If not empty then it was already defined in the previous step
     // (when retrieving the form:: from the page)
     info.set_page_path(ipath);
 
-    // 6. Run the XSLT against the form and save the result
+    // 7. Run the XSLT against the form and save the result
     //
     QDomDocument result(form_to_html(info, form_doc));
     token.f_replacement = result.toString(-1);
