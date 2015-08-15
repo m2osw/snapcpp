@@ -1,6 +1,6 @@
 /** @preserve
  * Name: form
- * Version: 0.0.2.30
+ * Version: 0.0.2.39
  * Browsers: all
  * Depends: output (>= 0.1.5)
  * Copyright: Copyright 2012-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -59,7 +59,6 @@ snapwebsites.Form = function()
         .on("keyup cut paste", function()
             {
                 that.restartAutoReset_(this);
-                that.restartTimeout_(this);
             })
         .each(function(i, e)
             {
@@ -130,9 +129,7 @@ snapwebsites.Form = function()
             {
                 var w = jQuery(widget),
                     focus_id = w.attr("focus"),
-                    auto_reset = w.attr("auto-reset"),
-                    auto_reset_id,
-                    timeout = w.attr("timeout"),
+                    timeout = parseFloat(w.attr("timeout")),
                     timeout_id;
 
                 // this is very problematic, we can really only have one widget with
@@ -145,21 +142,28 @@ snapwebsites.Form = function()
                         .focus()
                         .select();
                 }
-
-                // the auto-reset is a number of minutes to wait before
-                // canceling the form completely
-                if(auto_reset > 0) // form times out?
+                else
                 {
-                    auto_reset_id = setTimeout(function()
-                        {
-                            that.autoReset_(w);
-                        },
-                        auto_reset * 60000); // minutes to ms
-                    w.attr("auto-reset-id", auto_reset_id);
+                    // the .focus() has the side effect of calling the
+                    // restartAutoReset_() function so this way we avoid
+                    // doing it twice
+                    that.restartAutoReset_(w.find("input,textarea").first());
                 }
 
+                // the timeout should always be set; it represents the
+                // amount of time until a session ends; it is a fixed
+                // time and therefore never gets reset once setup
                 if(timeout > 0) // form times out?
                 {
+                    // we remove a few minutes because the clocks may
+                    // not be properly synchronized
+                    //
+                    // (also we expect timeout to be at least 3 minutes)
+                    timeout -= 3;
+                    if(timeout < 3)
+                    {
+                        timeout = 3;
+                    }
                     timeout_id = setTimeout(function()
                         {
                             that.timedOut_(w);
@@ -245,7 +249,6 @@ snapwebsites.Form.prototype.focus_ = function(widget)
     }
 
     this.restartAutoReset_(widget);
-    this.restartTimeout_(widget);
 };
 
 
@@ -267,7 +270,6 @@ snapwebsites.Form.prototype.change_ = function(widget)
     w.data("edited", w.val() !== "");
 
     this.restartAutoReset_(widget);
-    this.restartTimeout_(widget);
 };
 
 
@@ -377,7 +379,7 @@ snapwebsites.Form.prototype.setVal = function(widget, value)
  * the corresponding form timer has to be restarted (i.e. we extend the
  * timeout back to the full amount.)
  *
- * @param {Element} widget  The widget that just got activated.
+ * @param {Element|jQuery|null} widget  The widget that just got activated.
  *
  * @private
  */
@@ -386,7 +388,7 @@ snapwebsites.Form.prototype.restartAutoReset_ = function(widget)
     var w = jQuery(widget),
         f = w.parents("form"),
         auto_reset_id = parseFloat(f.attr("auto-reset-id")),
-        auto_reset = f.attr("auto-reset"),
+        auto_reset = parseFloat(f.attr("auto-reset")),
         that = this;
 
     // clear the old one
@@ -395,51 +397,18 @@ snapwebsites.Form.prototype.restartAutoReset_ = function(widget)
         clearTimeout(auto_reset_id);
     }
 
-    // setup a new one
-    auto_reset_id = setTimeout(function()
-        {
-            that.autoReset_(f);
-        },
-        auto_reset * 60000); // minutes to ms
-
-    // save the new id back in the form
-    w.attr("auto-reset-id", auto_reset_id);
-};
-
-
-/** \brief Restart the timer of this form.
- *
- * Each time the user enters a key or clicks a checkbox or radio button,
- * the corresponding form timer has to be restarted (i.e. we extend the
- * timeout back to the full amount.)
- *
- * @param {Element} widget  The widget that just got activated.
- *
- * @private
- */
-snapwebsites.Form.prototype.restartTimeout_ = function(widget)
-{
-    var w = jQuery(widget),
-        f = w.parents("form"),
-        timeout_id = parseFloat(f.attr("timeout-id")),
-        timeout = f.attr("timeout"),
-        that = this;
-
-    // clear the old one
-    if(!isNaN(timeout_id))
+    if(auto_reset > 0)
     {
-        clearTimeout(timeout_id);
+        // setup a new one
+        auto_reset_id = setTimeout(function()
+            {
+                that.autoReset_(f);
+            },
+            auto_reset * 60000); // minutes to ms
+
+        // save the new id back in the form
+        f.attr("auto-reset-id", auto_reset_id);
     }
-
-    // setup a new one
-    timeout_id = setTimeout(function()
-        {
-            that.timedOut_(f);
-        },
-        timeout * 60000); // minutes to ms
-
-    // save the new id back in the form
-    w.attr("timeout-id", timeout_id);
 };
 
 
@@ -466,6 +435,9 @@ snapwebsites.Form.prototype.autoReset_ = function(w)
             minutes: w.attr("auto-reset")
         });
 
+    // it triggered, so the ID is not valid anymore
+    w.removeAttr("auto-reset-id");
+
     // TBD: should we send the existing data to a "draft" like
     //      store, so we can restore it if the user logs back in?
     //      (but not if the data is considered secret)
@@ -486,6 +458,12 @@ snapwebsites.Form.prototype.autoReset_ = function(w)
  * After a certain amount of time, this function gets called to reset
  * the form. This is quite important for forms that hold data such
  * a user name, password, credit card number, etc.
+ *
+ * \note
+ * Contrary to the auto-reset feature, the timeout counter is never
+ * reset since the time on a timeout is fixed. Also there should
+ * always be a timeout call for all forms since all forms have a
+ * timed session.
  *
  * @param {jQuery} w  The from which timed out.
  *
