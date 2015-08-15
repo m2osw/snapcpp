@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.355
+ * Version: 0.0.3.365
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -1642,7 +1642,7 @@ snapwebsites.EditorToolbar.prototype.height_ = -1;
  *
  * @private
  */
-snapwebsites.EditorToolbar.prototype.toolbarTimeoutID_ = -1;
+snapwebsites.EditorToolbar.prototype.toolbarTimeoutID_ = NaN;
 
 
 /** \brief Call this function whenever the toolbar is about to be accessed.
@@ -2025,11 +2025,11 @@ snapwebsites.EditorToolbar.prototype.callbackLinkDialog_ = function(cmd, title, 
  */
 snapwebsites.EditorToolbar.prototype.cancelToolbarHide = function()
 {
-    if(this.toolbarTimeoutID_ != -1)
+    if(!isNaN(this.toolbarTimeoutID_))
     {
         // prevent hiding of the toolbar
         clearTimeout(this.toolbarTimeoutID_);
-        this.toolbarTimeoutID_ = -1;
+        this.toolbarTimeoutID_ = NaN;
     }
 };
 
@@ -2045,12 +2045,15 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
 {
     var that = this;
 
-    this.toolbarTimeoutID_ = setTimeout(
-        function()
-        {
-            that.toggleToolbar(false);
-        },
-        200);
+    if(isNaN(this.toolbarTimeoutID_))
+    {
+        this.toolbarTimeoutID_ = setTimeout(
+            function()
+            {
+                that.toggleToolbar(false);
+            },
+            200);
+    }
 };
 
 
@@ -2092,9 +2095,10 @@ snapwebsites.EditorToolbar.prototype.startToolbarHide = function()
  *      var editorBase_: EditorBase = null;
  *      var editorForm_: EditorForm = null;
  *      var widget_: jQuery = null;
- *      var widgetContent_ : jQuery = null;
+ *      var widgetContent_: jQuery = null;
  *      var name_: string;
  *      var originalData_: string = "";
+ *      var originalValue_: string = undefined;
  *      var modified_: boolean = false;
  *      var widgetType_: EditorWidgetTypeBase = null;
  * };
@@ -2208,7 +2212,7 @@ snapwebsites.EditorWidget.prototype.waitWidget_ = null;
  * @type {number}
  * @private
  */
-snapwebsites.EditorWidget.prototype.waitWidgetTimerID_ = -1;
+snapwebsites.EditorWidget.prototype.waitWidgetTimerID_ = NaN;
 
 
 /** \brief A jQuery wait widget current rotation position.
@@ -2257,6 +2261,24 @@ snapwebsites.EditorWidget.prototype.name_;
  * @private
  */
 snapwebsites.EditorWidget.prototype.originalData_ = "";
+
+
+/** \brief The original value of the widget.
+ *
+ * Some widgets use a value="..." parameter to save their value.
+ * For example, the dropdown widget shows a label to the user
+ * and uses a value for its result.
+ *
+ * By default, the original value is undefined.
+ *
+ * This is particularly important when you call the restoreValue()
+ * function which has to remove a value if present when the original
+ * was undefined.
+ *
+ * @type {!string}
+ * @private
+ */
+snapwebsites.EditorWidget.prototype.originalValue_;
 
 
 /** \brief Whether the system detected that the widget was modified.
@@ -2398,6 +2420,7 @@ snapwebsites.EditorWidget.prototype.saving = function()
 snapwebsites.EditorWidget.prototype.saved = function(data)
 {
     this.originalData_ = data.html;
+    this.originalValue_ = data.result;
     return this.wasModified(true);
 };
 
@@ -2413,6 +2436,11 @@ snapwebsites.EditorWidget.prototype.saved = function(data)
 snapwebsites.EditorWidget.prototype.discard = function()
 {
     this.originalData_ = snapwebsites.castToString(this.widgetContent_.html(), "widgetContent HTML in EditorWidget constructor for " + this.name_);
+
+    // we do NOT want a "real" castToString() call on the value attribute
+    // because we expect "undefined" to be returned in some cases
+    this.originalValue_ = /** @type {string} */ (this.widgetContent_.attr("value"));
+
     this.wasModified(true);
 };
 
@@ -2716,6 +2744,14 @@ snapwebsites.EditorWidget.prototype.restoreValue = function()
     // and then retrieve the resulting value and reapply that to
     // make sure we are on the right wave length.
     this.widgetContent_.html(this.originalData_);
+    if(typeof this.originalValue_ !== "undefined")
+    {
+        this.widgetContent_.attr("value", this.originalValue_);
+    }
+    else
+    {
+        this.widgetContent_.removeAttr("value");
+    }
 
     // generate a setValue() which handles all the necessary
     // special cases
@@ -2851,7 +2887,7 @@ snapwebsites.EditorWidget.prototype.showWaitImage = function()
         this.waitWidget_ = w.children(".widget-wait-image");
     }
 
-    if(this.waitWidgetTimerID_ === -1)
+    if(isNaN(this.waitWidgetTimerID_))
     {
         this.waitWidget_.fadeIn(1000);
         this.waitWidgetTimerID_ = setInterval(
@@ -2896,10 +2932,10 @@ snapwebsites.EditorWidget.prototype.showWaitImage = function()
  */
 snapwebsites.EditorWidget.prototype.hideWaitImage = function()
 {
-    if(this.waitWidgetTimerID_ !== -1)
+    if(!isNaN(this.waitWidgetTimerID_))
     {
         clearTimeout(this.waitWidgetTimerID_);
-        this.waitWidgetTimerID_ = -1;
+        this.waitWidgetTimerID_ = NaN;
         this.waitWidget_.fadeOut(200);
     }
 };
@@ -3424,8 +3460,12 @@ snapwebsites.EditorSaveDialog.prototype.setStatus = function(new_status)
  *      function setSaving(new_status: boolean, will_redirect: boolean);
  *      function changed();
  *      function getSaveDialog() : EditorSaveDialog;
+ *      function resetTimeout();
  *      function formTimedout();
  *      function setTimedoutCallback(f: function(EditorForm));
+ *      function resetAutoReset(force: boolean);
+ *      function formAutoReset();
+ *      function setAutoResetCallback(f: function(EditorForm));
  *      function newTypeRegistered();
  *      function wasModified(recheck: boolean) : boolean;
  *      function earlyClose() : boolean;
@@ -3707,14 +3747,50 @@ snapwebsites.EditorForm.prototype.formTimedoutCallback_ = null;
 /** \brief The identifier of the timeout used to listen to.
  *
  * This number represents the identifier of the timeout object
- * in use to timeout the form.
+ * in use to timeout the form. The function gets called once
+ * and only if it times out.
  *
  * If the timer is not setup, then the value is NaN.
+ *
+ * This number should always get set in the form initialization
+ * process since all form sessions time out at some point.
  *
  * @type {number}
  * @private
  */
 snapwebsites.EditorForm.prototype.formTimeoutId_ = NaN;
+
+
+/** \brief A callback to call when the auto-reset feature times out.
+ *
+ * This variable holds a reference to a function that the
+ * formAutoReset() function calls whenever the auto-reset times
+ * out. This may happen multiple times.
+ *
+ * The function called receives no parameters and returns nothing.
+ * You can only define one such function per form.
+ *
+ * @type {?function(snapwebsites.EditorForm)}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.formAutoResetCallback_ = null;
+
+
+/** \brief The identifier of the auto-reset used to listen to.
+ *
+ * This number represents the identifier of the auto-reset object
+ * (i.e. timer) in use to reset the form back to its default
+ * values.
+ *
+ * If the timer is not setup, then the value is NaN.
+ *
+ * Most forms should not define the auto-reset parameter, especially
+ * forms that require the user to be logged in to be accessible.
+ *
+ * @type {number}
+ * @private
+ */
+snapwebsites.EditorForm.prototype.formAutoResetId_ = NaN;
 
 
 /** \brief Retrieve the editor form name.
@@ -4198,57 +4274,86 @@ snapwebsites.EditorForm.prototype.readyWidgets_ = function()
  * This function finishes up the global form initialization.
  * It includes the following:
  *
- * \li Setup the form auto-reset timeout feature.
+ * \li Setup a general timeout of the form. This timeout corresponds to
+ *     the timeout of the form session.
+ * \li Setup the form auto-reset feature. This is a timer that is used
+ *     to automatically reset the form after a timeout delay.
  *
  * @private
  */
 snapwebsites.EditorForm.prototype.readyForm_ = function()
 {
-    this.resetTimeout(true);
+    this.resetTimeout();
+    this.resetAutoReset(true);
 };
 
 
-/** \brief Reset the timer of this form.
+/** \brief Setup the timer to auto-disable this form.
  *
- * This function resets the timer of this form if one is setup.
- * If the \p force flag is set to true, the timer is setup
- * either way.
+ * This function setups the timer used to know when to form session
+ * times out. One the session of a form times out, sending the form
+ * to the server fails. So there is no real need to send said form.
  *
- * @param {boolean} force  Whether the timer should always be set.
+ * This timeout is set once since the session duration does not
+ * magically change. In other words, typing or moving things around
+ * will not extend the session time out.
+ *
+ * Calling this function more than once has no effect on the second
+ * call.
  */
-snapwebsites.EditorForm.prototype.resetTimeout = function(force)
+snapwebsites.EditorForm.prototype.resetTimeout = function()
 {
-    var minutes,
+    var minutes = parseFloat(this.formWidget_.attr("timeout")),
         that = this;
 
+    // already setup?
     if(!isNaN(this.formTimeoutId_))
     {
-        clearTimeout(this.formTimeoutId_);
-        this.formTimeoutId_ = NaN;
-        force = true;
+        return;
     }
 
-    if(force)
+    if(minutes <= 0 || isNaN(minutes))
     {
-        // check whether we have a widget named editor::auto_reset, if so, then
-        // setup the auto-reset feature of this form (by default we assume that
-        // the form does not timeout
-        minutes = parseFloat(this.formWidget_.attr("auto-reset"));
-        if(minutes > 0)
-        {
-            this.formTimeoutId_ = setTimeout(function()
-                {
-                    that.formTimedout();
-                },
-                minutes * 60000); // convert minutes to ms
-        }
+        // if undefined or invalid, use 24 hours, which is the
+        // default session time defined in editor.cpp
+        minutes = 1440;
     }
+
+    // reduce by 3 minutes because the timing is always a bit off
+    // between the client and the server
+    minutes -= 3;
+    if(minutes < 3)
+    {
+        // make sure we have a minimum
+        minutes = 3;
+    }
+
+    this.formTimeoutId_ = setTimeout(function()
+        {
+            that.formTimedout();
+        },
+        minutes * 60000); // convert minutes to ms
 };
 
 
-/** \brief The form just timed out.
+/** \brief The form timed out.
  *
- * This function is called whenever the form times out.
+ * This function is called whenever the form timer is triggered.
+ * The function makes sure to clear the timer (in case it gets
+ * called before the timer itself is triggered,) and then clears
+ * the contents and disable the widgets so end users cannot
+ * edit the form anymore. It would be useless to let the users
+ * still edit the content since the session timed out and
+ * sending that content to the server would fail with a
+ * session timed out error.
+ *
+ * You may call this function early to mark the form
+ * as timed out, whether or not the timer event was
+ * triggered.
+ *
+ * This function may be called more than once, although it
+ * probably should not. There is no logic within this function
+ * to know whether it was already called.
  */
 snapwebsites.EditorForm.prototype.formTimedout = function()
 {
@@ -4263,9 +4368,12 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
         this.formTimeoutId_ = NaN;
     }
 
-    // first we disable all the widgets, although that does not
-    // disable buttons that the user may have created with
-    // an anchor outside of the editor supported widgets...
+    // disable and restore all the widgets
+    //
+    // Note: that does not disable buttons that the user may have
+    //       created with anchors outside of the editor supported
+    //       widgets... this can be done with the callback though
+    //
     for(key in this.editorWidgets_)
     {
         if(this.editorWidgets_.hasOwnProperty(key))
@@ -4274,6 +4382,10 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
             this.editorWidgets_[key].restoreValue();
         }
     }
+
+    // make sure the form is marked as unmodified
+    // (since we just restored it all!)
+    this.wasModified(true);
 
     // then, if we have a user callback, call it
     if(this.formTimedoutCallback_)
@@ -4286,25 +4398,153 @@ snapwebsites.EditorForm.prototype.formTimedout = function()
 /** \brief Set the timed out callback for this form.
  *
  * This function is used to setup the timed out callback function.
- * This function gets called once whenever the form times out.
- * It gives you a chance to act on your form in a different way
- * than the default which is to just disable the widgets.
+ * Function which is called once whenever the form session times out.
+ * It gives you a chance to act on your form in an additional way
+ * since the default is just disabling and resetting the form widgets.
  *
  * This is particularly useful if you use buttons that are direct
  * anchors or if you want to close the popup in which you presented
  * the form to the end user.
  *
  * You may remove the current callback by setting this parameter to
- * null.
+ * \c null.
  *
- * If it is necessary to trigger more than on event, your function
- * can generate the necessary event.
+ * If it is necessary to trigger more than one event, your function
+ * is in charge of generating the necessary events.
+ *
+ * \note
+ * Your function may also want to redirect the user. But note that
+ * the form is still in memory and accessible via a tool such as
+ * FireBug. So you could use your callback to completely delete
+ * the form from your HTML tree. We may want to offer such a
+ * function here, at some point.
  *
  * @param {function(snapwebsites.EditorForm)} f  The function to be called.
  */
 snapwebsites.EditorForm.prototype.setTimedoutCallback = function(f)
 {
     this.formTimedoutCallback_ = f;
+};
+
+
+/** \brief Reset the timer to auto-reset this form.
+ *
+ * This function resets the timer used to know when to auto-reset
+ * this form. The auto-reset may not be setup in which case nothing
+ * happens.
+ *
+ * If the \p force flag is set to true, the timer is set. When
+ * set to false, it gets reset only if it was already set.
+ *
+ * \note
+ * If the form has no attribute named auto-reset with a value large
+ * than zero, then no auto-reset timer is setup by this function.
+ *
+ * @param {boolean} force  Whether the timer should be set if possible.
+ */
+snapwebsites.EditorForm.prototype.resetAutoReset = function(force)
+{
+    var minutes,
+        that = this;
+
+    if(!isNaN(this.formAutoResetId_))
+    {
+        clearTimeout(this.formAutoResetId_);
+        this.formAutoResetId_ = NaN;
+        force = true;
+    }
+
+    if(force)
+    {
+        // check whether we have an attribute named auto-reset, if so, then
+        // setup the auto-reset feature of this form (by default we assume
+        // that the form does not need to be auto-resetted)
+        minutes = parseFloat(this.formWidget_.attr("auto-reset"));
+        if(minutes > 0)
+        {
+            this.formAutoResetId_ = setTimeout(function()
+                {
+                    that.formAutoReset();
+                },
+                minutes * 60000); // convert minutes to ms
+        }
+    }
+};
+
+
+/** \brief The form auto-reset timer just timed out.
+ *
+ * This function is called whenever the form auto-reset timer
+ * times out. The function makes sure to clear the timer
+ * (in case it gets called before the auto-reset happens)
+ * and then clears any new content the user added.
+ *
+ * This function does not disable the widgets since these
+ * can still be used and submitted, if only the user can
+ * enter the data quickly enough and submit it as soon
+ * as one is done...
+ *
+ * \note
+ * This function does not setup another auto-reset timer
+ * since it would not be useful until the end user starts
+ * typing again. That's done then from the changed event.
+ */
+snapwebsites.EditorForm.prototype.formAutoReset = function()
+{
+    var key;
+
+    // reset the timer if it is still considered active
+    // (because this function is public and it may be called by a different
+    // mechanism than out internal timer)
+    if(!isNaN(this.formAutoResetId_))
+    {
+        clearTimeout(this.formAutoResetId_);
+        this.formAutoResetId_ = NaN;
+    }
+
+    // restore the value of each widget; note that in most cases
+    // only forms that come out empty should use this feature
+    // because using such a feature on a widget that was edited
+    // earlier is not useful (i.e. the content is not going to
+    // be secret...)
+    //
+    for(key in this.editorWidgets_)
+    {
+        if(this.editorWidgets_.hasOwnProperty(key))
+        {
+            this.editorWidgets_[key].restoreValue();
+        }
+    }
+
+    // then, if we have a user callback, call it
+    if(this.formAutoResetCallback_)
+    {
+        this.formAutoResetCallback_(this);
+    }
+};
+
+
+/** \brief Set the auto-reset callback for this form.
+ *
+ * This function is used to setup the auto-reset callback function.
+ * This function is called whenever the form auto-reset timer
+ * times out. It gives you a chance to act on your form in a different
+ * way than the default which is to reset the content of the form widgets.
+ *
+ * This is particularly useful if you have additional work that needs
+ * to happen when such a time out occurs.
+ *
+ * You may remove the current callback by setting this parameter to
+ * null.
+ *
+ * If it is necessary to trigger more than on event, it is your function
+ * responsibility to generate the necessary events.
+ *
+ * @param {function(snapwebsites.EditorForm)} f  The function to be called.
+ */
+snapwebsites.EditorForm.prototype.setAutoResetCallback = function(f)
+{
+    this.formAutoResetCallback_ = f;
 };
 
 
@@ -4380,7 +4620,7 @@ snapwebsites.EditorForm.prototype.newTypeRegistered = function()
                 name = widget_content.attr("field_name"),
                 widget = that.editorWidgets_[name];
 
-            // reset the originalData_ field
+            // reset the originalData_ & originalValue_ fields
             // TBD: we may want (need) to move this in another loop instead
             widget.discard();
         });
@@ -4454,6 +4694,7 @@ snapwebsites.EditorForm.prototype.wasModified = function(recheck)
         }
     }
 
+    this.modified_ = false;
     return false;
 };
 
@@ -4712,7 +4953,7 @@ snapwebsites.Editor.prototype.initUserActivity_ = function()
     jQuery("body")
         .on("keyup keydown cut paste", function()
             {
-                that.resetFormsTimeout();
+                that.resetFormsAutoReset();
             });
 };
 
@@ -4734,12 +4975,10 @@ snapwebsites.Editor.prototype.initUserActivity_ = function()
  * because the increment is 1 minute.
  *
  * \todo
- * The idea is that we have two timers: one is the total session lifetime
- * and the other is the form auto-reset, but this is not yet implemented
- * this way. At this time we just extend the lifetime of the form as if
- * the session was also being extended.
+ * This function resets all the forms. I wonder whether only the current
+ * form should be reset?
  */
-snapwebsites.Editor.prototype.resetFormsTimeout = function()
+snapwebsites.Editor.prototype.resetFormsAutoReset = function()
 {
     var key = null;
 
@@ -4747,7 +4986,7 @@ snapwebsites.Editor.prototype.resetFormsTimeout = function()
     {
         if(this.editorForms_.hasOwnProperty(key))
         {
-            this.editorForms_[key].resetTimeout(false);
+            this.editorForms_[key].resetAutoReset(false);
         }
     }
 };

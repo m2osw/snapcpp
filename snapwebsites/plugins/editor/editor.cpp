@@ -49,6 +49,31 @@
 SNAP_PLUGIN_START(editor, 1, 0)
 
 
+
+namespace
+{
+
+/** \brief Default timeout in minutes.
+ *
+ * A form is attached to a session. That way we make sure that a client
+ * does not send us a form which content is days, weeks, months old,
+ * or worst, a client who never accessed the server to retrieve a valid
+ * form (i.e. web form spam where robots send data without first having
+ * to load a form from a website.)
+ *
+ * This timeout represents the number of minutes an editor session is
+ * created for. At this time we set it up to 24 hours (1 whole day.)
+ *
+ * \todo
+ * At some point we want to add a way for the client browser to
+ * auto-submit. At that point, the client will not lose his data
+ * to a session that times out.
+ */
+int const g_default_timeout = 1440;
+
+} // no name namespace
+
+
 /** \brief Get a fixed editor plugin name.
  *
  * The editor plugin makes use of different names in the database. This
@@ -79,6 +104,9 @@ char const *get_name(name_t name)
 
     case name_t::SNAP_NAME_EDITOR_SESSION:
         return "editor::session";
+
+    case name_t::SNAP_NAME_EDITOR_TIMEOUT:
+        return "editor::timeout";
 
     case name_t::SNAP_NAME_EDITOR_TYPE_FORMAT_PATH: // a format to generate the path of a page
         return "editor::type_format_path";
@@ -395,7 +423,7 @@ int64_t editor::do_update(int64_t last_updated)
 {
     SNAP_PLUGIN_UPDATE_INIT();
 
-    SNAP_PLUGIN_UPDATE(2015, 7, 17, 1, 26, 0, content_update);
+    SNAP_PLUGIN_UPDATE(2015, 8, 15, 2, 51, 0, content_update);
 
     SNAP_PLUGIN_UPDATE_EXIT();
 }
@@ -459,12 +487,17 @@ void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement
     //       (it may already be done! search on add_javascript() for info.)
     content::content::instance()->add_javascript(doc, "editor");
 
+    // The following creates a session for editing the page.
+    // This code is NOT used if the page is an editor form (i.e.
+    // when the editor has widgets on this page).
+    //
     // TODO: change the following behavior to allow editing in various
     //       other ways than when the action is edit or administer
     //
     // TODO: change the way the session ID gets in the page?
     //       (i.e. it would be better to have it go there
     //       using an AJAX request)
+    //
     QDomDocument editor_widgets(get_editor_widgets(ipath));
     if(editor_widgets.isNull())
     {
@@ -4142,6 +4175,19 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         metadata.appendChild(editor_tag);
     }
 
+    int timeout_int(g_default_timeout); // 24h in minutes
+    {
+        QDomElement timeout_tag(snap_dom::get_element(editor_widgets, "timeout", false));
+        QString const timeout_str(timeout_tag.attribute("minutes", "-1"));
+        bool ok;
+        int const timeout_temp(timeout_str.toInt(&ok));
+        if(ok && timeout_temp > 0)
+        {
+            // save user defined value
+            timeout_int = timeout_temp;
+        }
+    }
+
     QString auto_reset; // no default value
     {
         QDomElement auto_reset_tag(snap_dom::get_element(editor_widgets, "auto-reset", false));
@@ -4167,7 +4213,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
         info.set_page_path(main_ipath.get_key());
         info.set_object_path(ipath.get_key());
         info.set_user_agent(f_snap->snapenv(snap::get_name(snap::name_t::SNAP_NAME_CORE_HTTP_USER_AGENT)));
-        info.set_time_to_live(86400);  // 24 hours
+        info.set_time_to_live(timeout_int * 60);  // minutes to seconds
         QString const session(sessions::sessions::instance()->create_session(info));
         int32_t const random(info.get_session_random());
 
@@ -4220,6 +4266,7 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
     // check a few things and setup the <value> or <post> and a few other
     // tags in each widget
+    bool found_timeout_widget(false);
     for(int i(0); i < max_widgets; ++i)
     {
         QDomElement w(widgets.at(i).toElement());
@@ -4260,9 +4307,10 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
 
         // get the current value from the database if it exists
         bool const is_editor_session_field(field_name == get_name(name_t::SNAP_NAME_EDITOR_SESSION));
+        bool const is_editor_timeout(field_name == get_name(name_t::SNAP_NAME_EDITOR_TIMEOUT));
         bool const is_editor_auto_reset(field_name == get_name(name_t::SNAP_NAME_EDITOR_AUTO_RESET));
         if(!field_name.isEmpty()
-        && (is_editor_session_field || is_editor_auto_reset || data_row->exists(field_name)))
+        && (is_editor_session_field || is_editor_timeout || is_editor_auto_reset || data_row->exists(field_name)))
         {
             QtCassandra::QCassandraValue const value(data_row->cell(field_name)->value());
             QString current_value;
@@ -4271,6 +4319,11 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             {
                 // special case of the "editor::session" value
                 current_value = session_identification;
+            }
+            else if(is_editor_timeout)
+            {
+                found_timeout_widget = true;
+                current_value = QString("%1").arg(timeout_int);
             }
             else if(is_editor_auto_reset)
             {
@@ -4360,6 +4413,14 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
             }
         }
         init_editor_widget(ipath, field_id, field_type, w, data_row);
+    }
+
+    // a form without a timeout widget, but a declaration of a timeout
+    // other than the default is not considered valid
+    if(!found_timeout_widget
+    && timeout_int != g_default_timeout)
+    {
+        throw editor_exception_invalid_argument(QString("Editor form \"%1\" includes a timeout tag, but no timeout widget").arg(ipath.get_key()));
     }
 
     // now process the XML data with the plugin specialized data for

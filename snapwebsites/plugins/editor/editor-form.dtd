@@ -16,11 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<!ELEMENT editor-form (auto-reset|focus|immediate|mode|on-save|drop|no-toolbar|taborder|widget)+>
+<!ELEMENT editor-form (timeout|auto-reset|focus|immediate|mode|on-save|drop|no-toolbar|taborder|widget)+>
 <!ATTLIST editor-form owner CDATA #REQUIRED
                       content-modified CDATA #REQUIRED>
 
-<!ENTITY % html-data "a|b|br|div|em|i|img|p|small|strong|table|tbody|td|tr|u|ul|ol|li" >
+<!ENTITY % html-data "a|b|br|div|em|i|img|p|small|strong|table|tbody|td|tr|u|ul|ol|li">
+
+<!ELEMENT timeout EMPTY>
+<!ATTLIST timeout minutes CDATA #REQUIRED>
 
 <!ELEMENT auto-reset EMPTY>
 <!ATTLIST auto-reset minutes CDATA #REQUIRED>
