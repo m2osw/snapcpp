@@ -694,11 +694,15 @@ bool sitemapxml::generate_sitemapxml_impl(sitemapxml *r)
 
             // TODO: add support for images, this can work by looking at
             //       the attachments of a page and any images there get
-            //       added here
+            //       added here; maybe only images with a valid caption
+            //       or something of the sort if we want to limit the
+            //       list
+            //
             //<image:image>
             //    <image:loc>http://example.com/image.jpg</image:loc>
             //</image:image>
             // http://googlewebmastercentral.blogspot.com/2010/04/adding-images-to-your-sitemaps.html
+            // https://support.google.com/webmasters/answer/178636
 
             add_url(url);
         }
