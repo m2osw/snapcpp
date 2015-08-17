@@ -1,6 +1,6 @@
 /** @preserve
  * Name: editor
- * Version: 0.0.3.365
+ * Version: 0.0.3.366
  * Browsers: all
  * Depends: output (>= 0.1.4), popup (>= 0.1.0.1), server-access (>= 0.0.1.11), mimetype-basics (>= 0.0.3)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -3967,12 +3967,15 @@ snapwebsites.EditorForm.prototype.serverAccessSuccess = function(result) // virt
 
     // in case the manager of the form wants to know that a save was
     // successful (but only if we're not going to redirect the user)
-    if(!result.will_redirect && this.saveFunctionOnSuccess_)
+    if(this.saveFunctionOnSuccess_
+    && !snapwebsites.ServerAccess.willRedirect(result))
     {
         this.saveFunctionOnSuccess_(this, result);
     }
 
-    this.setSaving(false, result.will_redirect);
+    // WARNING: the result of willRedirect() CANNOT be cached since
+    //          the saveFunctionOnSuccess_() call may change it
+    this.setSaving(false, snapwebsites.ServerAccess.willRedirect(result));
 };
 
 
@@ -4146,6 +4149,9 @@ snapwebsites.EditorForm.prototype.setSaving = function(new_status, will_redirect
     this.getFormWidget().toggleClass("editor-saving", new_status);
     this.saveDialog_.setStatus(!new_status);
 
+    // TODO: we already have an undarken feature in the ServerAccess object
+    //       which may very well be in conflict with this code...
+    //
     // TODO: add a condition coming from the DOM (i.e. we don't want
     //       to gray out the screen if the user is expected to be
     //       able to continue editing while saving)

@@ -1,6 +1,6 @@
 /** @preserve
  * Name: server-access
- * Version: 0.0.1.27
+ * Version: 0.0.1.29
  * Browsers: all
  * Depends: output (>= 0.1.5), popup (>= 0.1.0.30)
  * Copyright: Copyright 2013-2015 (c) Made to Order Software Corporation  All rights reverved.
@@ -94,14 +94,11 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  * * [E] ajax_error_message -- The raw AJAX system error message.
  * * [ESC] jqxhr -- the original XHR plus a few things adjusted by jQuery.
  * * [S] result_data -- raw AJAX result string.
- * * [S] will_redirect -- whether the response includes a redirect request.
- *                        You may set this to false in your callback to
- *                        avoid the redirect.
  * * [C] undarken -- set to snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER
  *                   by default; may be changed in your serverAccessComplete()
  *                   function before calling the super version; set to:
  * ** snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS -- always undarken
- *    unless the will_redirect flag is true
+ *    unless the willRedirect() function returns true
  * ** snapwebsites.ServerAccessCallbacks.UNDARKEN_ERROR -- undarken if we
  *    received messages; should be used when you redirect the user when
  *    no error occurred
@@ -126,7 +123,6 @@ snapwebsites.base(snapwebsites.ServerAccessCallbacks);
  *            ajax_error_message: string,
  *            jqxhr: (Object|null),
  *            result_data: string,
- *            will_redirect: boolean,
  *            undarken: number,
  *            userdata: (Object|null|undefined)}}
  */
@@ -309,8 +305,9 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessError = function(result
  *
  * The default function should be called to display messages. The
  * function skips on displaying the messages in the event the
- * will_redirect flag is true since the messages will be displayed
- * on the resulting page instead.
+ * willRedirect() function returns true since the messages will
+ * instead be displayed on the page where the user is going to be
+ * redirected.
  *
  * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The
  *          resulting data with information about the error(s).
@@ -324,7 +321,7 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
 
     var undarken = result.undarken == snapwebsites.ServerAccessCallbacks.UNDARKEN_ALWAYS;
 
-    if(!result.will_redirect && result.messages && result.messages.length > 0)
+    if(!snapwebsites.ServerAccess.willRedirect(result) && result.messages && result.messages.length > 0)
     {
         snapwebsites.OutputInstance.displayMessages(result.messages);
 
@@ -338,7 +335,7 @@ snapwebsites.ServerAccessCallbacks.prototype.serverAccessComplete = function(res
         snapwebsites.OutputInstance.displayOneMessage("Error", result.error_message);
     }
 
-    if(!result.will_redirect && undarken)
+    if(!snapwebsites.ServerAccess.willRedirect(result) && undarken)
     {
         snapwebsites.PopupInstance.darkenPage(-150, false);
     }
@@ -507,6 +504,33 @@ snapwebsites.ServerAccess.prototype.dataType_ = "object";
  * @private
  */
 snapwebsites.ServerAccess.prototype.data_ = null;
+
+
+/** \brief Check whether the user will be redirected.
+ *
+ * This function is checks the response for a redirect tag. If the
+ * tag exists, then the function returns true.
+ *
+ * The redirect tag is set by the server when the editor or other
+ * plugin says there is a need for a redirect after sending data
+ * to the server.
+ *
+ * The code handling the success or error case of such a request
+ * may call the setRedirect() function to change the redirect, or
+ * by setting it to an empty URL, prevent the redirect altogether.
+ *
+ * @param {snapwebsites.ServerAccessCallbacks.ResultData} result  The data
+ *                                       the server access passes around.
+ *
+ * @return {boolean}  true if there is a redirect in the request.
+ */
+snapwebsites.ServerAccess.willRedirect = function(result) // static
+{
+    // TODO: find a way to cache that information?
+    var redirect = result.jqxhr.responseXML.getElementsByTagName("redirect");
+
+    return redirect.length === 1;
+};
 
 
 /** \brief Set the URI used to send the data.
@@ -680,9 +704,6 @@ snapwebsites.ServerAccess.prototype.send = function(opt_userdata)
             // [S] The resulting data (raw format)
             result_data: "",
 
-            // [S] Whether a redirect will be done on success
-            will_redirect: false,
-
             // [C] What to do in serverAccessComplete() about darken screens
             undarken: snapwebsites.ServerAccessCallbacks.UNDARKEN_NEVER,
 
@@ -835,7 +856,6 @@ snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
         {
             // success!
             redirect = result.jqxhr.responseXML.getElementsByTagName("redirect");
-            result.will_redirect = redirect.length === 1;
 
             this.callback_.serverAccessSuccess(result);
 
@@ -844,11 +864,10 @@ snapwebsites.ServerAccess.prototype.onSuccess_ = function(result)
             // of tweaking the XML directly? -- actually ResultData
             // should be a class with functions...)
             redirect = result.jqxhr.responseXML.getElementsByTagName("redirect");
-            result.will_redirect = redirect.length === 1;
 
             // test the object flag so the callback could set it to
             // false if applicable
-            if(result.will_redirect)
+            if(snapwebsites.ServerAccess.willRedirect(result))
             {
                 // server asked to redirect the user after a
                 // successful save

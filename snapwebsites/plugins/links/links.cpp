@@ -1701,7 +1701,7 @@ void links::on_add_snap_expr_functions(snap_expr::functions_t& functions)
  * author of the front page.
  *
  * \code
- * snapbackend [--config snapserver.conf] --action createlink \
+ * snapbackend [--config snapserver.conf] [website-url] --action createlink \
  *      --param SOURCE_LINK_NAME=users::author \
  *              SOURCE_LINK=http://csnap.example.com/ \
  *              DESTINATION_LINK_NAME=users::authored_pages \
