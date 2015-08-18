@@ -25,11 +25,11 @@ namespace attachment
 {
 
 
-//enum class name_t
-//{
-//    SNAP_NAME_ATTACHMENT_...
-//};
-//char const * get_name(name_t name) __attribute__ ((const));
+enum class name_t
+{
+    SNAP_NAME_ATTACHMENT_ACTION_EXTRACTFILE
+};
+char const * get_name(name_t name) __attribute__ ((const));
 
 
 class attachment_exception : public snap_exception
@@ -54,28 +54,40 @@ public:
 
 
 
-class attachment : public plugins::plugin,
-                   public path::path_execute,
-                   public permission_error_callback::error_by_mime_type
+class attachment : public plugins::plugin
+                 , public path::path_execute
+                 , public server::backend_action
+                 , public permission_error_callback::error_by_mime_type
 {
 public:
                         attachment();
                         ~attachment();
 
     static attachment * instance();
+
+    // plugins::plugin
     virtual QString     description() const;
     virtual int64_t     do_update(int64_t last_updated);
 
     void                on_bootstrap(snap_child * snap);
     void                on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info);
-    virtual bool        on_path_execute(content::path_info_t & ipath);
     void                on_page_cloned(content::content::cloned_tree_t const & tree);
     void                on_copy_branch_cells(QtCassandra::QCassandraCells & source_cells, QtCassandra::QCassandraRow::pointer_t destination_row, snap_version::version_number_t const destination_branch);
-    virtual void        on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path);
     void                on_permit_redirect_to_login_on_not_allowed(content::path_info_t & ipath, bool & redirect_to_login);
+    void                on_register_backend_action(server::backend_action_map_t & actions);
+
+    // path::path_execute
+    virtual bool        on_path_execute(content::path_info_t & ipath);
+
+    // permission_error_callback::error_by_mime_type
+    virtual void        on_handle_error_by_mime_type(snap_child::http_code_t err_code, QString const & err_name, QString const & err_description, QString const & path);
+
+    // server::backend_action
+    virtual void        on_backend_action(QString const & action);
 
 private:
     void                content_update(int64_t variables_timestamp);
+    void                backend_action_extract_file();
 
     bool                check_for_uncompressed_file(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);
     bool                check_for_minified_css(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info);

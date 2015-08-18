@@ -17,6 +17,7 @@
 
 #include "attachment.h"
 
+#include "../content/content.h"
 #include "../messages/messages.h"
 #include "../permissions/permissions.h"
 
@@ -42,20 +43,20 @@ SNAP_PLUGIN_START(attachment, 1, 0)
  *
  * \return A pointer to the name.
  */
-//char const * get_name(name_t name)
-//{
-//    switch(name)
-//    {
-//    case name_t::SNAP_NAME_ATTACHMENT_...:
-//        return "attachment::...";
-//
-//    default:
-//        // invalid index
-//        throw snap_logic_exception("invalid name_t::SNAP_NAME_ATTACHMENT_...");
-//
-//    }
-//    NOTREACHED();
-//}
+char const * get_name(name_t name)
+{
+    switch(name)
+    {
+    case name_t::SNAP_NAME_ATTACHMENT_ACTION_EXTRACTFILE:
+        return "extractfile";
+
+    default:
+        // invalid index
+        throw snap_logic_exception("invalid name_t::SNAP_NAME_ATTACHMENT_...");
+
+    }
+    NOTREACHED();
+}
 
 
 
@@ -95,6 +96,7 @@ void attachment::on_bootstrap(snap_child *snap)
 {
     f_snap = snap;
 
+    SNAP_LISTEN(attachment, "server", server, register_backend_action, _1);
     SNAP_LISTEN(attachment, "path", path::path, can_handle_dynamic_path, _1, _2);
     SNAP_LISTEN(attachment, "content", content::content, page_cloned, _1);
     SNAP_LISTEN(attachment, "content", content::content, copy_branch_cells, _1, _2, _3);
@@ -372,10 +374,11 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
     QString field_name;
     content::path_info_t attachment_ipath;
     QString const renamed(ipath.get_parameter("renamed_path"));
+    char const * files_data(content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA));
     if(renamed.isEmpty())
     {
         attachment_ipath = ipath;
-        field_name = content::get_name(content::name_t::SNAP_NAME_CONTENT_FILES_DATA);
+        field_name = files_data;
     }
     else
     {
@@ -383,6 +386,21 @@ bool attachment::on_path_execute(content::path_info_t& ipath)
         //       needs to offer it... how do we do that?!
         attachment_ipath.set_path(renamed);
         field_name = ipath.get_parameter("attachment_field");
+
+        // verify that this field is acceptable as a field name to access
+        // the data
+        QString const starts_with(QString("%1::").arg(files_data));
+        if(field_name != files_data
+        && !field_name.startsWith(starts_with))
+        {
+            // field name not acceptable
+            f_snap->die(snap_child::http_code_t::HTTP_CODE_NOT_FOUND, "Unacceptable Attachment Field Name",
+                    QString("Field name \"%1\" is not acceptable to access the file data.").arg(field_name),
+                    QString("Field name is not \"%1\" and does not start with \"%2\".")
+                            .arg(field_name)
+                            .arg(starts_with));
+            NOTREACHED();
+        }
     }
 
     QtCassandra::QCassandraTable::pointer_t revision_table(content::content::instance()->get_revision_table());
@@ -585,12 +603,12 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
             }
 
             // force header to text/html anywa
-            f_snap->set_header(get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", snap_child::HEADER_MODE_EVERYWHERE);
+            f_snap->set_header(get_name(::snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER), "text/html; charset=utf8", snap_child::HEADER_MODE_EVERYWHERE);
 
             // get signature, if we are here, we have Cassandra so directly
             // get that value
             QString const site_key(f_snap->get_site_key());
-            QtCassandra::QCassandraValue site_name(f_snap->get_site_parameter(snap::get_name(name_t::SNAP_NAME_CORE_SITE_NAME)));
+            QtCassandra::QCassandraValue site_name(f_snap->get_site_parameter(snap::get_name(::snap::name_t::SNAP_NAME_CORE_SITE_NAME)));
             QString signature(QString("<a href=\"%1\">%2</a>").arg(site_key).arg(site_name.stringValue()));
             f_snap->improve_signature(f_path, signature);
 
@@ -602,7 +620,7 @@ void attachment::on_handle_error_by_mime_type(snap_child::http_code_t err_code, 
                             "<title>Snap Server Error</title>"
                             "</head>"
                             "<body><h1>%2 %3</h1><p>%4</p><p>%5</p></body></html>\n")
-                    .arg(snap::get_name(name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
+                    .arg(snap::get_name(::snap::name_t::SNAP_NAME_CORE_CONTENT_TYPE_HEADER))
                     .arg(static_cast<int>(f_err_code))
                     .arg(f_err_name)
                     .arg(f_err_description)

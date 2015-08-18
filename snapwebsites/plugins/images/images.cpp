@@ -1263,7 +1263,7 @@ bool images::func_pop(parameters_t& params)
 }
 
 
-bool images::func_read(parameters_t& params)
+bool images::func_read(parameters_t & params)
 {
     // param 1 is the ipath (key)
     // param 2 is the name used to load the file from the files table
@@ -1315,7 +1315,7 @@ bool images::func_read(parameters_t& params)
 }
 
 
-bool images::func_resize(parameters_t& params)
+bool images::func_resize(parameters_t & params)
 {
     Magick::Geometry size(params.f_params[0].toUtf8().data());
     params.f_image_stack.back().resize(size);

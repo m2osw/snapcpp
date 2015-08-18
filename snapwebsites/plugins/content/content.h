@@ -598,7 +598,9 @@ private:
 
 
 
-class content : public plugins::plugin, public server::backend_action, public links::links_cloned
+class content : public plugins::plugin
+              , public server::backend_action
+              , public links::links_cloned
 {
 public:
     enum class param_type_t
