@@ -3,7 +3,7 @@ Priority: extra
 Maintainer: R. Douglas Barbieri <doug@dooglio.net>
 Build-Depends: debhelper, cmake, doxygen, graphviz, libqt4-dev (>= 4.8.3),
     libboost1.49-dev | libboost-dev, libssl-dev,
-    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.24.45~trusty), libcontrolledvars-dev (>= 1.4.16.45~trusty),
+    libthrift-dev (>= 0.9.0), snapcmakemodules (>= 1.0.24.46~trusty), libcontrolledvars-dev (>= 1.4.16.46~trusty),
     libadvgetopt-dev (>= 1.0.2), libqtserialization-dev, libtld-dev
 Standards-Version: 3.9.4
 Section: libs
