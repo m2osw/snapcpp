@@ -399,6 +399,8 @@ dbutils::column_type_t dbutils::get_column_type( QCassandraCell::pointer_t c ) c
         return column_type_t::CT_uint32_value;
     }
     else if(n == "sessions::check_flags"
+         || n == "cookie_consent_silktide::javascript_version"
+         || n == "cookie_consent_silktide::consent_duration"
          )
     {
         return column_type_t::CT_int64_value;

@@ -3192,7 +3192,7 @@ void content::on_save_content()
  * \param[in,out] doc  The XML document receiving the javascript.
  * \param[in] name  The name of the script.
  */
-void content::add_javascript(QDomDocument doc, QString const& name)
+void content::add_javascript(QDomDocument doc, QString const & name)
 {
     // TBD: it may make sense to move to the javascript plugin since it now
     //      can include the content plugin; the one advantage would be that

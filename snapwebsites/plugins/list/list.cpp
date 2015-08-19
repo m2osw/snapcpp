@@ -2624,16 +2624,17 @@ int list::generate_list_for_page(content::path_info_t & page_ipath, content::pat
     // if we did work, the list size changed so we have to recalculate the
     // length (list::number_of_items) -- since we cannot be totally sure that
     // something was added or removed, we recalculate the size each time for
-    // now but this is very slow so we will want to fix the optimize that
+    // now but this is very slow so we will want to optimize that
     // at a later time to make sure we do not take forever to build lists
     //
     // on the other hand, once a list is complete and we just add an
-    // entry every now and then, this is not an overhead at all
+    // entry every now and then, this is not much of an overhead at all
     //
     if(did_work != 0)
     {
         char const * ordered_pages(get_name(name_t::SNAP_NAME_LIST_ORDERED_PAGES));
 
+        // count the new total number of ordered pages
         int32_t count(0);
         QtCassandra::QCassandraColumnRangePredicate column_predicate;
         column_predicate.setStartColumnName(QString("%1::").arg(ordered_pages));
@@ -2890,7 +2891,7 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
         if(path_param.f_value.isEmpty())
         {
             token.f_error = true;
-            token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list path (first parameter) of the list::theme() function cannot be an empty string.</span>";
+            token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list 'path' (first parameter) of the list::theme() function cannot be an empty string.</span>";
             return;
         }
 
@@ -2953,13 +2954,13 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
             if(!ok)
             {
                 token.f_error = true;
-                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list count (forth parameter) of the list::theme() function must be a valid integer.</span>";
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list 'count' (forth parameter) of the list::theme() function must be a valid integer.</span>";
                 return;
             }
             if(count != -1 && count <= 0)
             {
                 token.f_error = true;
-                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list count (forth parameter) of the list::theme() function must be a valid integer large than zero or -1.</span>";
+                token.f_replacement = "<span class=\"filter-error\"><span class=\"filter-error-word\">ERROR:</span> list 'count' (forth parameter) of the list::theme() function must be a valid integer large than zero or -1.</span>";
                 return;
             }
         }
@@ -3120,16 +3121,18 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
                         // retrieve names of all the boxes
                         ;
 
-                    layout_content *l(dynamic_cast<layout_content *>(item_plugin));
+                    layout_content * l(dynamic_cast<layout_content *>(item_plugin));
                     if(!l)
                     {
                         throw snap_logic_exception("the item_plugin pointer was not a layout_content");
                     }
+//SNAP_LOG_WARNING("create body for item ")(i)(" with index ")(index);
                     layout_plugin->create_body(item_doc, item_ipath, item_body_xsl, l);
 //std::cerr << "source to be parsed [" << item_doc.toString(-1) << "]\n";
                     QDomElement item_body(snap_dom::get_element(item_doc, "body"));
                     item_body.setAttribute("index", index);
-                    QString themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
+//SNAP_LOG_WARNING("apply theme to item ")(i)(" with index ")(index);
+                    QString const themed_item(layout_plugin->apply_theme(item_doc, item_theme_xsl, theme));
 //std::cerr << "themed item [" << themed_item << "]\n";
 
                     // add that result to the list document
@@ -3144,6 +3147,7 @@ void list::on_replace_token(content::path_info_t & ipath, QString const & plugin
 
             // now theme the list as a whole
             // we add a wrapper so we can use /node()/* in the final theme
+//SNAP_LOG_WARNING("apply list theme");
             token.f_replacement = layout_plugin->apply_theme(list_doc, list_theme_xsl, theme);
         }
         // else list is not accessible (permission "problem")

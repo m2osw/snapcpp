@@ -454,7 +454,7 @@ void editor::content_update(int64_t variables_timestamp)
  * \param[in,out] body  The body being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
-void editor::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void editor::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
     // a regular page
     output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
@@ -476,7 +476,7 @@ void editor::on_generate_main_content(content::path_info_t& ipath, QDomElement& 
  * \param[in,out] metadata  The metadata being generated.
  * \param[in] ctemplate  The template in case path does not exist.
  */
-void editor::on_generate_header_content(content::path_info_t& ipath, QDomElement& header, QDomElement& metadata, QString const& ctemplate)
+void editor::on_generate_header_content(content::path_info_t & ipath, QDomElement & header, QDomElement & metadata, QString const & ctemplate)
 {
     static_cast<void>(ipath);
     static_cast<void>(ctemplate);
@@ -1110,6 +1110,14 @@ bool editor::value_to_string_impl(value_to_string_info_t & value_info)
         return false;
     }
 
+    if(value_info.get_data_type() == "int64")
+    {
+        int64_t const v(value_info.get_value().safeInt64Value());
+        value_info.result() = QString("%1").arg(v);
+        value_info.set_status(value_to_string_info_t::status_t::DONE);
+        return false;
+    }
+
     if(value_info.get_data_type() == "double"
     || value_info.get_data_type() == "float64")
     {
@@ -1184,6 +1192,25 @@ bool editor::string_to_value_impl(string_to_value_info_t & value_info)
         }
 
         value_info.result().setSignedCharValue(c);
+        value_info.set_status(string_to_value_info_t::status_t::DONE);
+        return false;
+    }
+
+    // integer of 64 bits
+    if(value_info.get_data_type() == "int64")
+    {
+        value_info.set_type_name("decimal integer");
+
+        int64_t v;
+        bool ok(false);
+        v = value_info.get_data().toLongLong(&ok);
+        if(!ok)
+        {
+            value_info.set_status(string_to_value_info_t::status_t::ERROR);
+            return false;
+        }
+
+        value_info.result().setInt64Value(v);
         value_info.set_status(string_to_value_info_t::status_t::DONE);
         return false;
     }
@@ -1930,7 +1957,7 @@ QString editor::clean_post_value(QString const & widget_type, QString value)
  * \param[in,out] info  The session information, for the validation, just in case.
  * \param[in,out] server_access_plugin  The plugin used to build the output data for the AJAX request.
  */
-void editor::editor_save_attachment(content::path_info_t& ipath, sessions::sessions::session_info& info, server_access::server_access *server_access_plugin)
+void editor::editor_save_attachment(content::path_info_t & ipath, sessions::sessions::session_info & info, server_access::server_access * server_access_plugin)
 {
     static_cast<void>(info);
 
@@ -2187,7 +2214,14 @@ QDomDocument editor::get_editor_widgets(content::path_info_t& ipath)
  *
  * \return Always return true so other plugins have a chance to validate too.
  */
-bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, sessions::sessions::session_info& info, QDomElement const& widget, QString const& widget_name, QString const& widget_type, QString const& value, bool const is_secret)
+bool editor::validate_editor_post_for_widget_impl(
+            content::path_info_t & ipath,
+            sessions::sessions::session_info & info,
+            QDomElement const & widget,
+            QString const & widget_name,
+            QString const & widget_type,
+            QString const & value,
+            bool const is_secret)
 {
     messages::messages * messages(messages::messages::instance());
     locale::locale * locale_plugin(locale::locale::instance());
@@ -2925,6 +2959,87 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                 }
             }
 
+            // minimum/maximum value (integers / floats)
+            {
+                QDomElement min_value(filters.firstChildElement("min-value"));
+                QDomElement max_value(filters.firstChildElement("max-value"));
+                if(!min_value.isNull()
+                || !max_value.isNull())
+                {
+                    // first test whether the user entry was valid, if not
+                    // just skip this test 100% -- here we assume double
+                    // numbers; to force integers, use the integer regex
+                    //
+                    bool ok(false);
+                    double const v(value.toDouble(&ok));
+                    if(ok)
+                    {
+                        QString min_str("-1");
+                        QString max_str("-1");
+                        double min_bound(std::numeric_limits<double>::quiet_NaN());
+                        double max_bound(std::numeric_limits<double>::quiet_NaN());
+
+                        if(!min_value.isNull())
+                        {
+                            min_str = min_value.text();
+                            min_bound = min_str.toDouble(&ok);
+                            if(!ok)
+                            {
+                                throw editor_exception_invalid_editor_form_xml(QString("the minimum value \"%1\" must be a valid number").arg(min_str));
+                            }
+                        }
+
+                        if(!max_value.isNull())
+                        {
+                            max_str = max_value.text();
+                            max_bound = max_str.toDouble(&ok);
+                            if(!ok)
+                            {
+                                throw editor_exception_invalid_editor_form_xml(QString("the maximum value \"%1\" must be a valid number").arg(max_str));
+                            }
+                        }
+
+                        if(!std::isnan(min_bound)
+                        && !std::isnan(max_bound)
+                        && max_bound < min_bound)
+                        {
+                            throw editor_exception_invalid_editor_form_xml(QString("the minimum number \"%1\" is not smaller than the maximum number \"%2\"").arg(min_str).arg(max_str));
+                        }
+
+                        // Note: if 'value' is not a valid date, we ignore the error
+                        //       at this point, we catch it below if the user asked
+                        //       for the format to be checked with a regex filter
+                        //       named 'date' or 'datetime'.
+                        //  
+                        if(!std::isnan(min_bound) && v < min_bound)
+                        {
+                            // number is too small
+                            messages->set_error(
+                                "Too Small",
+                                QString("\"%1\" is too small for \"%2\". The widget requires a minimum value of \"%3\".")
+                                        .arg(form::form::html_64max(value, is_secret)).arg(label).arg(min_str),
+                                QString("unexpected number in \"%1\"").arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                        }
+
+                        if(!std::isnan(max_bound) && v > max_bound)
+                        {
+                            // number is too large
+                            messages->set_error(
+                                "Too Large",
+                                QString("\"%1\" is too large for \"%2\". The widget requires a maximum value of \"%3\".")
+                                        .arg(form::form::html_64max(value, is_secret)).arg(label).arg(max_str),
+                                QString("unexpected number in \"%1\"").arg(widget_name),
+                                false
+                            ).set_widget_name(widget_name);
+                            info.set_session_type(sessions::sessions::session_info::session_info_type_t::SESSION_INFO_INCOMPATIBLE);
+                        }
+                    }
+                }
+            }
+
             // minimum/maximum date
             {
                 QDomElement min_date(filters.firstChildElement("min-date"));
@@ -2935,7 +3050,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                     // first test whether the user entry was valid, if not
                     // just skip this test 100% -- if the programmer wants
                     // a valid date every time, he has to use the regex
-                    // tag with the name attribute set to date:
+                    // tag with the name attribute set to date or datetime:
                     //
                     //     <regex name="date"/>
                     //
@@ -2993,7 +3108,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
 
                         if(max_time != -1 && date_value > max_time)
                         {
-                            // date is too small
+                            // date is too large
                             messages->set_error(
                                 "Too Recent",
                                 QString("\"%1\" is too far in the future for \"%2\". The widget requires a date ending on \"%3\".")
@@ -3016,8 +3131,8 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                 {
                     // first test whether the user entry was valid, if not
                     // just skip this test 100% -- if the programmer wants
-                    // a valid date every time, he has to use the regex
-                    // tag with the name attribute set to date:
+                    // a valid time every time, he has to use the regex
+                    // tag with the name attribute set to time or datetime:
                     //
                     //     <regex name="time"/>
                     //
@@ -3056,7 +3171,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                             // tested slightly differently
                             if(time_value < max_time_value || time_value > min_time_value)
                             {
-                                // date is too large or too small... out of range for sure
+                                // time is too large or too small... out of range for sure
                                 messages->set_error(
                                     "Time Out of Range",
                                     QString("\"%1\" is out of range for \"%2\". The widget requires a time starting on \"%3\" and ending on \"%4\".")
@@ -3069,14 +3184,14 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                         }
                         else
                         {
-                            // Note: if 'value' is not a valid date, we ignore the error
+                            // Note: if 'value' is not a valid time, we ignore the error
                             //       at this point, we catch it below if the user asked
                             //       for the format to be checked with a regex filter
-                            //       named 'date'.
+                            //       named 'time' or 'datetime'.
                             //  
                             if(min_time_value != -1 && time_value < min_time_value)
                             {
-                                // date is too small
+                                // time is too small
                                 messages->set_error(
                                     "Too Old",
                                     QString("\"%1\" is too far in the past for \"%2\". The widget requires a time starting on \"%3\".")
@@ -3089,7 +3204,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
 
                             if(max_time_value != -1 && time_value > max_time_value)
                             {
-                                // date is too small
+                                // time is too large
                                 messages->set_error(
                                     "Too Recent",
                                     QString("\"%1\" is too far in the future for \"%2\". The widget requires a time ending on \"%3\".")
@@ -3109,7 +3224,7 @@ bool editor::validate_editor_post_for_widget_impl(content::path_info_t& ipath, s
                 QDomElement uri_tag(filters.firstChildElement("uri"));
                 if(!uri_tag.isNull())
                 {
-                    // the text may include allowed or forbidden extensions
+                    // the text may include allowed or forbidden TLDs
                     QString const uri_tlds(uri_tag.text());
                     snap_string_list tld_list(uri_tlds.split(",", QString::SkipEmptyParts));
                     bool const match(uri_tag.attribute("match") != "no");
@@ -4355,6 +4470,14 @@ void editor::on_generate_page_content(content::path_info_t& ipath, QDomElement& 
                     {
                         current_value = QString("%1").arg(v);
                     }
+                }
+            }
+            else if(widget_auto_save == "int64")
+            {
+                if(static_cast<size_t>(value.size()) >= sizeof(double))
+                {
+                    int64_t const v(value.int64Value());
+                    current_value = QString("%1").arg(v);
                 }
             }
             else if(widget_auto_save == "double"

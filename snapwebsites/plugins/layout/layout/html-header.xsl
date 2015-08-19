@@ -344,6 +344,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 			<xsl:variable name="submitted" select="page/body/submitted"/>
 			<meta name="dcterms.dateSubmitted" content="{$submitted}"/>
 		</xsl:if>
+
 		<!-- robots -->
 		<xsl:if test="page/body/robots/tracking">
 			<xsl:variable name="tracking" select="page/body/robots/tracking"/>

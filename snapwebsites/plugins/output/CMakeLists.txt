@@ -75,6 +75,8 @@ add_library(output SHARED
     close-button.png
     progress.gif
     wait.gif
+    wait-rotate.png
+    wait-rotate-64x64.png
     jquery.js
     jquery-extensions.js
     output.js

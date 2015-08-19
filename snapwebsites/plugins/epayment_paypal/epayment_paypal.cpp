@@ -48,7 +48,7 @@ SNAP_PLUGIN_START(epayment_paypal, 1, 0)
  *
  * \return A pointer to the name.
  */
-char const *get_name(name_t name)
+char const * get_name(name_t name)
 {
     switch(name)
     {
@@ -1156,11 +1156,11 @@ std::cerr << "*** token is [" << token << "] [" << main_uri.full_domain() << "]\
                 throw epayment_paypal_exception_io_error("agreement links missing");
             }
             QString agreement_url;
-            as2js::JSON::JSONValue::array_t const& links(object.at("links")->get_array());
+            as2js::JSON::JSONValue::array_t const & links(object.at("links")->get_array());
             size_t const max_links(links.size());
             for(size_t idx(0); idx < max_links; ++idx)
             {
-                as2js::JSON::JSONValue::object_t const& link_object(links[idx]->get_object());
+                as2js::JSON::JSONValue::object_t const & link_object(links[idx]->get_object());
                 if(link_object.find("rel") != link_object.end())
                 {
                     as2js::String const rel(link_object.at("rel")->get_string());
