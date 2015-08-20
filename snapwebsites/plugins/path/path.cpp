@@ -766,7 +766,12 @@ void path::on_execute(QString const & uri_path)
 {
     content::path_info_t ipath;
     ipath.set_path(uri_path);
+
+    // WARNING: the set_main_page() has the side effect of clearing out
+    //          all the other parameters
+    //
     ipath.set_main_page(true);
+
 #ifdef DEBUG
 SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get_cpath() << "] [" << ipath.get_branch() << "] [" << ipath.get_revision() << "]";
 #endif
@@ -774,12 +779,20 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
     // allow modules to redirect now, it has to be really early, note
     // that it will be BEFORE the path module verifies the permissions
     // AND before the POST data was managed
-    check_for_redirect(ipath);
+    {
+        QString const original_cpath(ipath.get_cpath());
+        check_for_redirect(ipath);
+        if(original_cpath != ipath.get_cpath())
+        {
+            // change the path in main_ipath too
+            f_snap->set_uri_path(QString("/%1").arg(ipath.get_cpath()));
+        }
+    }
 
     path_error_callback main_page_error_callback(f_snap, ipath);
 
     f_last_modified = 0;
-    plugins::plugin *path_plugin(get_plugin(ipath, main_page_error_callback));
+    plugins::plugin * path_plugin(get_plugin(ipath, main_page_error_callback));
 
     // make a copy of the action in the snap child class URI so we can
     // easily access that information at any point, not just the
@@ -877,9 +890,41 @@ SNAP_LOG_TRACE() << "path::on_execute(\"" << uri_path << "\") -> [" << ipath.get
  * This signal is used to allow plugins to redirect before we hit anything
  * else. Note that this happens BEFORE we check for permissions.
  *
+ * Note that the ipath parameter can be changed to a new path. This
+ * means, internally, you may switch between one page and another.
+ * In other words, you can send the user to a page such as /cute
+ * and show the contents of page /ugly. This effect is done by
+ * doing this:
+ *
+ * \code
+ *      if(ipath.get_cpath() == "cute")
+ *      {
+ *          // "soft redirect"
+ *          ipath.set_path("ugly");
+ *          return;
+ *      }
+ * \endcode
+ *
+ * Note that means the f_snap->get_uri() will return the old ("cute")
+ * path until the signal returns. Then the path plugin fixes it
+ * accordingly. This is a way you have to check whether someone already
+ * did a soft redirect when entering your on_check_for_redirect()
+ * implementation:
+ *
+ * \code
+ *      // path is returned without a starting "/" from a snap_uri object
+ *      if(ipath.get_cpath() != f_snap->get_uri().path())
+ *      {
+ *          // someone already did a "soft redirect"
+ *          return;
+ *      }
+ * \endcode
+ *
  * \param[in,out] ipath  The path the client is trying to access.
+ *
+ * \return true if the message is to be propagated.
  */
-bool path::check_for_redirect_impl(content::path_info_t& ipath)
+bool path::check_for_redirect_impl(content::path_info_t & ipath)
 {
     // check whether the page mode is currently MOVED
     content::path_info_t::status_t status(ipath.get_status());

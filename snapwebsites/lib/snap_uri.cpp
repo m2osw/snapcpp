@@ -1092,51 +1092,70 @@ int snap_uri::get_port() const
  *
  * This function can be used to replace the entire path of
  * the URI by starting the new path with a slash (/something).
- * If the \p path parameter doesn't start with a slash, then
+ * If the \p path parameter does not start with a slash, then
  * it is used as a relative path from the existing path.
  *
- * A relative path can include one or more ".." to remove
- * one or more folders from the existing path. The ".." are
- * accepted in any path, however, it must be correct in that
- * it is not possible to use them without at least one folder
- * name just before them (i.e. "/this/one/../other/one" is
- * valid, but "/../that/one/is/not" since .. from / doesn't
+ * A path includes parts separated by one or more slashes (/).
+ * The function removes parts that are just "." since these
+ * mean "this directory" and they would not be valid in a
+ * canonicalized path.
+ *
+ * A path may include one or more ".." as a path part. These
+ * mean remove one part prior.
+ *
+ * The ".." are accepted in any path, however, it must be
+ * correct in that it is not possible to use ".." without at
+ * least one part just before that (i.e. "/this/one/../other/one" is
+ * valid, but "/../that/one/is/not" since ".." from / does not
  * exist. This is not how Unix usually manages paths since
  * in Unix / and /.. are one and the same folder.)
  *
  * Note that if you wanted to make use of the hash bang feature,
- * you'd still make use of this function to setup your path in
+ * you would still make use of this function to setup your path in
  * the Snap URI object. The hash bang feature determines how
  * the path is handled when you get the URI with get_uri().
  *
+ * \exception snap_uri_exception_invalid_path
+ * The function raises this exception if the path includes more
+ * ".." than there are "normal" parts on the left side of the "..".
+ *
  * \param[in] uri_path  The new path for this URI.
+ *
+ * \sa path()
  */
 void snap_uri::set_path(QString uri_path)
 {
-    bool append(true);
-    if(!uri_path.isEmpty())
-    {
-        if(uri_path[0] == '/')
-        {
-            // remove the first '/'
-            uri_path = uri_path.mid(1);
-            append = false;
-        }
-    }
-    if(append)
+    // check whether the path starts with a '/':
+    // if so, then we replace the existing path;
+    // if not, then we append uri_path to the existing path.
+    //
+    if((uri_path.isEmpty() || uri_path[0] != '/')
+    && !f_path.empty())
     {
         // append unless the user passed a path starting with "/"
         // or the current path is empty
-        if(!f_path.empty())
-        {
-            uri_path = f_path.join("/") + "/" + uri_path;
-        }
+        uri_path = f_path.join("/") + "/" + uri_path;
     }
-    snap_string_list p(uri_path.split('/'));
+
+    // if the path starts with a '/' or includes a double '/'
+    // within itself, it will be removed because of the SkipEmptyParts
+    snap_string_list p(uri_path.split('/', QString::SkipEmptyParts));
+
+    // next we remove all ".." (and the previous part); if ".." was
+    // at the start of the path, then an exception is raised
+    //
     int max_parts(p.size());
     for(int i(0); i < max_parts; ++i)
     {
-        if(p[i] == "..")
+        if(p[i] == ".")
+        {
+            // canonalization includes removing "." parts which are
+            // viewed exactly as empty parts
+            p.removeAt(i);
+            --i;
+            --max_parts;
+        }
+        else if(p[i] == "..")
         {
             // note: max should not be less than 2 if i != 0
             if(i == 0 || max_parts < 2)

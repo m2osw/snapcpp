@@ -3874,6 +3874,25 @@ void snap_child::setup_uri()
 }
 
 
+/** \brief Change the main path.
+ *
+ * This function allows a plugin to change the main path. This is very
+ * practical to allow one to redirect without changing the path the
+ * user sees in his browser. Such has to be done in the
+ * on_check_for_redirect() signal of your module, very early on before
+ * the path gets used (except in other redirect functions).
+ *
+ * The path change should not modified anything else in the URI (i.e.
+ * options, query string, etc.)
+ *
+ * \param[in] path  The new path to save in f_uri.
+ */
+void snap_child::set_uri_path(QString const & path)
+{
+    f_uri.set_path(path);
+}
+
+
 /** \brief Get a copy of the URI information.
  *
  * This function returns a constant reference (i.e. a read-only "copy")
@@ -3882,7 +3901,7 @@ void snap_child::setup_uri()
  *
  * \return The URI reference.
  */
-snap_uri const& snap_child::get_uri() const
+snap_uri const & snap_child::get_uri() const
 {
     return f_uri;
 }

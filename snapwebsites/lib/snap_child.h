@@ -306,6 +306,7 @@ public:
     status_t                    check_status();
 
     snap_uri const &            get_uri() const;
+    void                        set_uri_path(QString const & path);
     bool                        has_post() const { return f_has_post; }
     QString                     get_action() const;
     void                        set_action(QString const & action);
