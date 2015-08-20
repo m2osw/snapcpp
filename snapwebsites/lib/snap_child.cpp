@@ -2633,7 +2633,7 @@ pid_t snap_child::fork_child()
 
         if(count != 1)
         {
-            SNAP_LOG_WARNING("The number of thread before the fork() to create a snap_child is ")(count)(" when it should be 1.");
+            SNAP_LOG_WARNING("The number of threads before the fork() to create a snap_child is ")(count)(" when it should be 1.");
         }
     }
     else
