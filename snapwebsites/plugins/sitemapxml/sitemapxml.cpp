@@ -540,8 +540,8 @@ bool sitemapxml::on_path_execute(content::path_info_t& ipath)
         }
     }
 
-    QString xml(sitemap_data.stringValue());
-    QString extension(f_snap->get_uri().option("extension"));
+    QString const xml(sitemap_data.stringValue());
+    QString const extension(f_snap->get_uri().option("extension"));
     if(extension == ".txt")
     {
         f_snap->set_header("Content-type", "text/plain; charset=utf-8");

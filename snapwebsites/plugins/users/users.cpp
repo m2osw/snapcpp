@@ -673,7 +673,7 @@ void users::on_process_cookies()
  *
  * \return true if the user gets authenticated, false in all other cases
  */
-bool users::authenticated_user(QString const& key, sessions::sessions::session_info *info)
+bool users::authenticated_user(QString const & key, sessions::sessions::session_info * info)
 {
     // called with a seemingly valid key?
     if(key.isEmpty())
@@ -692,7 +692,7 @@ bool users::authenticated_user(QString const& key, sessions::sessions::session_i
 
     // is the user/application trying to log out
     QString const uri_path(f_snap->get_uri().path());
-    if(uri_path == "/logout" || uri_path.left(8) == "/logout/")
+    if(uri_path == "logout" || uri_path.left(8) == "logout/")
     {
         // the user is requesting to be logged out, here we avoid
         // dealing with all the session information again this
@@ -958,7 +958,7 @@ bool users::load_user_parameter(QString const & email, QString const & field_nam
  * \param[in,out] ipath  The path being handled dynamically.
  * \param[in,out] plugin_info  If you understand that cpath, set yourself here.
  */
-void users::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+void users::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     // is that path already going to be handled by someone else?
     // (avoid wasting time if that is the case)
@@ -1049,61 +1049,99 @@ bool users::on_path_execute(content::path_info_t& ipath)
 }
 
 
-void users::on_generate_main_content(content::path_info_t& ipath, QDomElement& page, QDomElement& body, QString const& ctemplate)
+void users::on_generate_main_content(content::path_info_t & ipath, QDomElement & page, QDomElement & body, QString const & ctemplate)
 {
-    if(ipath.get_cpath() == "user")
+    QString const cpath(ipath.get_cpath());
+    if(!cpath.isEmpty())
     {
-        // TODO: write user listing
-        //list_users(body);
-        return;
-    }
-    else if(ipath.get_cpath() == "user/password/replace")
-    {
-        // this is a very special form that is accessible by users who
-        // requested to change the password with the "forgot password"
-        prepare_replace_password_form(body);
-    }
-    else if(ipath.get_cpath().left(5) == "user/")
-    {
-        show_user(ipath, page, body);
-        return;
-    }
-    //else if(ipath.get_cpath() == "profile")
-    //{
-    //    // TODO: write user profile editor
-    //    //       this is /user, /user/###, and /user/me at this point
-    //    //user_profile(body);
-    //    return;
-    //}
-    else if(ipath.get_cpath() == "login")
-    {
-        prepare_login_form();
-    }
-    else if(ipath.get_cpath() == "verify-credentials")
-    {
-        prepare_verify_credentials_form();
-    }
-    else if(ipath.get_cpath() == "logout")
-    {
-        // closing current session if any and show the logout page
-        logout_user(ipath, page, body);
-        return;
-    }
-    else if(ipath.get_cpath() == "register"
-         || ipath.get_cpath() == "verify"
-         || ipath.get_cpath() == "verify/resend")
-    {
-        prepare_basic_anonymous_form();
-    }
-    else if(ipath.get_cpath() == "forgot-password")
-    {
-        prepare_forgot_password_form();
-    }
-    else if(ipath.get_cpath() == "new-password")
-    {
-        prepare_new_password_form();
-    }
+        // the switch() optimization is worth it because all user pages
+        // hit this test, so saving a few ms is always worth the trouble!
+        // (i.e. at the moment, we already have 11 tests; any one cpath
+        // would be checked 11 times for any page other than one of those
+        // 11 pages... with the new scheme, we compare between 0 and 3 times
+        // instead)
+        switch(cpath[0].unicode())
+        {
+        case 'f':
+            if(cpath == "forgot-password")
+            {
+                prepare_forgot_password_form();
+            }
+            break;
 
+        case 'l':
+            if(cpath == "login")
+            {
+                prepare_login_form();
+            }
+            else if(cpath == "logout")
+            {
+                // closing current session if any and show the logout page
+                logout_user(ipath, page, body);
+                return;
+            }
+            break;
+
+        case 'n':
+            if(cpath == "new-password")
+            {
+                prepare_new_password_form();
+            }
+            break;
+
+        //case 'p':
+        //  if(cpath == "profile")
+        //  {
+        //      // TODO: write user profile editor
+        //      //       this is /user, /user/###, and /user/me at this point
+        //      //user_profile(body);
+        //      return;
+        //  }
+        //  break;
+
+        case 'r':
+            // "register" is the same form as "verify" and "verify/resend"
+            if(cpath == "register")
+            {
+                prepare_basic_anonymous_form();
+            }
+            break;
+
+        case 'u':
+            if(cpath == "user")
+            {
+                // TODO: write user listing (similar to the /admin page
+                //       in gathering the info)
+                //list_users(body);
+                return;
+            }
+            else if(cpath == "user/password/replace")
+            {
+                // this is a very special form that is accessible by users who
+                // requested to change the password with the "forgot password"
+                prepare_replace_password_form(body);
+            }
+            else if(cpath.left(5) == "user/")
+            {
+                show_user(ipath, page, body);
+                return;
+            }
+            break;
+
+        case 'v':
+            if(cpath == "verify-credentials")
+            {
+                prepare_verify_credentials_form();
+            }
+            else if(cpath == "verify"
+                 || cpath == "verify/resend")
+            {
+                prepare_basic_anonymous_form();
+            }
+            break;
+
+        }
+    }
     // any other user page is just like regular content
     output::output::instance()->on_generate_main_content(ipath, page, body, ctemplate);
 }
