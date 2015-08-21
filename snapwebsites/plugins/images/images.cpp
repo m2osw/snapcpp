@@ -1309,7 +1309,19 @@ bool images::func_read(parameters_t & params)
     }
 
     Magick::Blob blob(image_data.data(), image_data.length());
-    params.f_image_stack.back().read(blob);
+    try
+    {
+        params.f_image_stack.back().read(blob);
+    }
+    catch(std::exception const & e)
+    {
+        messages::messages msg;
+        msg.set_error("Invalid Image File",
+                QString("Image in \"%1\" could not be read.").arg(ipath.get_revision_key()),
+                "Somehow loading this image file failed with an exception.",
+                false);
+        return false;
+    }
 
     return true;
 }
