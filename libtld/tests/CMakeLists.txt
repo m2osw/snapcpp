@@ -88,34 +88,45 @@ target_link_libraries(${PROJECT_NAME}
     tld
     ${QT_LIBRARIES}
 )
+# Test versions validity
+project(tld_test_versions)
+add_executable(${PROJECT_NAME}
+    tld_test_versions.c
+)
+target_link_libraries(${PROJECT_NAME}
+    tld
+    ${QT_LIBRARIES}
+)
 
 ##
 ## Run all the tests
 ##
 project(run_libtld_tests)
 add_custom_target(run_libtld_tests
-	COMMAND echo "*** tld_internal_test"
-	COMMAND tld_internal_test
-	COMMAND echo "*** tld_test"
-	COMMAND tld_test
-	COMMAND echo "*** tld_test_full_uri"
-	COMMAND tld_test_full_uri
-	COMMAND echo "*** tld_test_object"
-	COMMAND tld_test_object
-	COMMAND echo "*** tld_test_tld_names"
-	COMMAND tld_test_tld_names
-	COMMAND echo "*** tld_test_emails"
-	COMMAND tld_test_emails
-	COMMAND echo "*** tld_test_xml.sh"
-	COMMAND ./tld_test_xml.sh
-	COMMAND echo "*** TLD tests all ran"
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	DEPENDS
-		tld_internal_test
-		tld_test
-		tld_test_full_uri
-		tld_test_object
-		tld_test_tld_names
+    COMMAND echo "*** tld_internal_test"
+    COMMAND tld_internal_test
+    COMMAND echo "*** tld_test"
+    COMMAND tld_test
+    COMMAND echo "*** tld_test_full_uri"
+    COMMAND tld_test_full_uri
+    COMMAND echo "*** tld_test_object"
+    COMMAND tld_test_object
+    COMMAND echo "*** tld_test_tld_names"
+    COMMAND tld_test_tld_names
+    COMMAND echo "*** tld_test_emails"
+    COMMAND tld_test_emails
+    COMMAND echo "*** tld_test_versions"
+    COMMAND tld_test_versions ${CMAKE_SOURCE_DIR}
+    COMMAND echo "*** tld_test_xml.sh"
+    COMMAND ./tld_test_xml.sh
+    COMMAND echo "*** TLD tests all ran"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS
+        tld_internal_test
+        tld_test
+        tld_test_full_uri
+        tld_test_object
+        tld_test_tld_names
 )
 
 # vim: ts=4 sw=4 et

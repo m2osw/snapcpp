@@ -40,11 +40,6 @@ int err_count = 0;
 int verbose = 0;
 
 
-void error(const char *msg)
-{
-    fprintf(stderr, "%s\n", msg);
-}
-
 
 /// \brief Structure used to define many tests to run against the tld_check_uri() function
 struct test_info
@@ -519,13 +514,13 @@ int main(int argc, char *argv[])
 {
     fprintf(stderr, "testing tld full URI version %s: tld_valid_uri() function\n", tld_version());
 
-	if(argc > 1)
-	{
-		if(strcmp(argv[1], "-v") == 0)
-		{
-			verbose = 1;
-		}
-	}
+    if(argc > 1)
+    {
+        if(strcmp(argv[1], "-v") == 0)
+        {
+            verbose = 1;
+        }
+    }
 
     /* call all the tests, one by one
      * failures are "recorded" in the err_count global variable
