@@ -250,19 +250,24 @@ void check_changelog(const char *path, const char *version)
 
     // the debian version is likely to include a build number and platform name
     i = 0;
-    for(str = debian_version; str != '\0' && i < 2; ++str)
+    for(str = debian_version; str != '\0'; ++str)
     {
         if(*str == '~')
         {
             // stop immediately
-            i = 3;
+            break;
         }
         else if(*str == '.')
         {
             ++i;
+            if(i >= 3)
+            {
+                // stop at the 3rd '.' (i.e. build number)
+                break;
+            }
         }
     }
-    str[i] = '\0'; // remove extra stuff
+    *str = '\0'; // remove extra stuff
 
     if(verbose)
     {

@@ -8,6 +8,9 @@ It is also important in the event you wanted to check an SSL certificate
 
 # Notes:
 
+* Version 1.5.0 offers a function to fold the characters of a domain
+  to lowercase; including support for %XX encoding and UTF-8.
+
 * Version 1.4.17 and following version includes even more new
   global TLD entries.
   
