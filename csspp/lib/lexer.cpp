@@ -491,15 +491,15 @@ wide_char_t lexer::mbtowc(char const * s)
         // ASCII is the same in UTF-8
         return c;
     }
-    if(c >= 0xF8)
-    {
-        error::instance() << f_start_position << "byte U+" << error_mode_t::ERROR_HEX << c << " not valid in a UTF-8 stream." << error_mode_t::ERROR_ERROR;
-        return 0xFFFD;
-    }
     wide_char_t wc(0);
     size_t cnt(0);
     if(c >= 0xF0)
     {
+        if(c >= 0xF8)
+        {
+            error::instance() << f_start_position << "byte U+" << error_mode_t::ERROR_HEX << c << " not valid in a UTF-8 stream." << error_mode_t::ERROR_ERROR;
+            return 0xFFFD;
+        }
         wc = c & 0x07;
         cnt = 3;
     }
