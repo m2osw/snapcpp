@@ -29,7 +29,7 @@
 
 set(LIBTLD_VERSION_MAJOR 1)
 set(LIBTLD_VERSION_MINOR 5)
-set(LIBTLD_VERSION_PATCH 0)
+set(LIBTLD_VERSION_PATCH 1)
 
 cmake_minimum_required(VERSION 2.8.4)
 project(tld)
@@ -50,6 +50,7 @@ include_directories(
 add_library(${PROJECT_NAME} SHARED
     src/tld.c
     src/tld_data.c
+    src/tld_domain_to_lowercase.c
     src/tld_emails.cpp
     src/tld_object.cpp
 )
@@ -76,6 +77,7 @@ include_directories(
 add_library(${PROJECT_NAME} STATIC
     src/tld.c
     src/tld_data.c
+    src/tld_domain_to_lowercase.c
     src/tld_emails.cpp
     src/tld_object.cpp
 )

@@ -1,8 +1,8 @@
-libtld (1.5.0.1~trusty) trusty; urgency=high
+libtld (1.5.1~trusty) trusty; urgency=high
 
-  * Nightly build.
+  * Added the new .cpp file to dev/libtld-only-CMakeLists.txt
 
- -- Build Server <build@m2osw.com>  Sat, 22 Aug 2015 03:01:32 -0700
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 22 Aug 2015 14:14:32 -0700
 
 libtld (1.5.0~trusty) trusty; urgency=high
 
