@@ -66,6 +66,8 @@
  *
  * \li tld_version() -- return a string representing the TLD library version
  * \li tld() -- find the position of the TLD of any URI
+ * \li tld_domain_to_lowercase() -- force lowercase on the domain name before
+ *                                  calling other tld function
  * \li tld_check_uri() -- verify a full URI, with scheme, path, etc.
  * \li tld_clear_info() -- reset a tld_info structure for use with tld()
  * \li tld_email_alloc() -- allocate a tld_email_list object
@@ -228,6 +230,15 @@
  * internal function directly. This test checks the cmp() and
  * search() functions, with full coverage.
  *
+ * \li tld_test_domain_lowercase.c
+ *
+ * \par
+ * This test runs 100% coverage of the tld_domain_to_lowercase() function.
+ * This includes conversion of %XX encoded characters and UTF-8 to wide
+ * characters that can be case folded and saved back as encoded %XX
+ * characters. The test verifies that all characters are properly
+ * supported and that errors are properly handled.
+ *
  * \li tld_test_tld_names.cpp
  *
  * \par
@@ -269,6 +280,13 @@
  * emails with control characters, invalid domain name, missing parts,
  * etc.)
  *
+ * \li tld_test_versions.c
+ *
+ * \par
+ * This test checks that the versions in all the files (two
+ * CMakeLists.txt and the changelog) are equal. If one of those
+ * does not match, then the test fails.
+ *
  * \li tld_test_xml.sh
  *
  * \par
@@ -305,7 +323,7 @@
  *
  * \return -1 if a < b, 0 when a == b, and 1 when a > b
  */
-int cmp(const char *a, const char *b, int n)
+static int cmp(const char *a, const char *b, int n)
 {
     /* n represents the maximum number of characters to check in b */
     while(n > 0 && *a != '\0')
@@ -326,6 +344,7 @@ int cmp(const char *a, const char *b, int n)
     {
         if(n > 0)
         {
+            /* in this case n > 0 so b is larger */
             return -1;
         }
         return 0;
@@ -333,6 +352,7 @@ int cmp(const char *a, const char *b, int n)
     /* in this case n == 0 so a is larger */
     return 1;
 }
+
 
 /** \brief Search for the specified domain.
  * \internal
@@ -438,13 +458,33 @@ void tld_clear_info(struct tld_info *info)
  * returned and the info parameter is set to \em unknown.
  *
  * When found, the function checks whether that TLD (".uk" in our
- * previous example) accepts sub-TLDs (second, third, forth level
- * TLDs.) If so, it extracts the next TLD entry (the ".co" in our
- * previous example) and searches for that second level TLD. If
- * found, we again try with the third level, etc. until all the
- * possible TLDs were exhausted. At that point, we return the
- * last TLD we have found. In case of ".co.uk", we return the
- * information of the ".co" TLD, second-level domain name.
+ * previous example) accepts sub-TLDs (second, third, forth and
+ * fifth level TLDs.) If so, it extracts the next TLD entry (the
+ * ".co" in our previous example) and searches for that second
+ * level TLD. If found, it again tries with the third level, etc.
+ * until all the possible TLDs were exhausted. At that point, it
+ * returns the last TLD it found. In case of ".co.uk", it returns
+ * the information of the ".co" TLD, second-level domain name.
+ *
+ * All the comparisons are done in lowercase. This is because
+ * all the data is saved in lowercase and we expect the input
+ * of the tld() function to already be in lowercase. If you
+ * have a doubt and your input may actually be in uppercase,
+ * make sure to call the tld_domain_to_lowercase() function
+ * first. That function makes a duplicate of your domain name
+ * in lowercase. It understands the %XX characters (since the
+ * URI is expected to still be encoded) and properly handles
+ * UTF-8 characters in order to define the lowercase characters
+ * of the input. Note that the function returns a newly
+ * allocated pointer that you are responsible to free once
+ * you are done with it.
+ *
+ * \warning
+ * If you call tld() with the pointer return by
+ * tld_domain_to_lowercase(), keep in mind that the tld()
+ * function saves pointers of the input string directly in
+ * the tld_info structure. In other words, you want to free()
+ * that string AFTER you are done with the tld_info structure.
  *
  * The \p info structure includes:
  *
@@ -469,11 +509,13 @@ void tld_clear_info(struct tld_info *info)
  *
  * \note
  * In our previous example, the ".uk" TLD is properly used: it includes
- * a second level domain name (".co".) The URI "example.uk" should return
- * TLD_RESULT_INVALID since .uk by itself is supposed to be acceptable.
- * However, in that special case, there are still some companies using
- * second level domain names, so we would accept "example.uk". However,
- * the ".bd" is not accepted at second level, so "example.bd" returns
+ * a second level domain name (".co".) The URI "example.uk" should have
+ * returned TLD_RESULT_INVALID since .uk by itself was not supposed to be
+ * acceptable. This changed a few years ago. The good thing is that it
+ * resolves some problems as some companies were given a simple ".uk"
+ * TLD and these were exceptions the library does not need to support
+ * anymore. There are still some countries, such as ".bd", which do not
+ * accept second level names, so "example.bd" does return
  * an \em error (TLD_RESULT_INVALID).
  *
  * Assuming that you always get valid URIs, you should get one of those
@@ -485,50 +527,16 @@ void tld_clear_info(struct tld_info *info)
  * \li TLD_RESULT_INVALID -- known TLD, but not currently valid; this
  * result is returned when we know that the TLD is not to be accepted
  *
- * Other results are return when the input string is considered invalid.
+ * Other results are returned when the input string is considered invalid.
  *
  * \note
  * The function only accepts a bare URI, in other words: no protocol, no
- * path, no anchor, no query string. Also, it should not start and/or
- * end with a period or you are likely to get an invalid response.
- * (i.e. don't use ".example.co.uk.")
+ * path, no anchor, no query string, and still URI encoded. Also, it
+ * should not start and/or end with a period or you are likely to get
+ * an invalid response. (i.e. don't use any of ".example.co.uk.",
+ * "example.co.uk.", nor ".example.co.uk")
  *
- * \code
- * // from example.c
- * #include "tld.h"
- * #include <stdio.h>
- *
- * int main()
- * {
- *   char *uri = "www.example.co.uk";
- *   struct tld_info info;
- *   enum tld_result r;
- *
- *   r = tld(uri, &info);
- *   if(r == TLD_RESULT_SUCCESS) {
- *     const char *tld = info.f_tld;
- *     const char *s = uri + info.f_offset - 1;
- *     while(s > uri) {
- *       if(*s == '.') {
- *         ++s;
- *         break;
- *       }
- *       --s;
- *     }
- *     // here uri points to your sub-domains, the length is "s - uri"
- *     // if uri == s then there are no sub-domains
- *     // s points to the domain name, the length is "info.f_tld - s"
- *     // and info.f_tld points to the TLD
- *     //
- *     // When TLD_RESULT_SUCCESS is returned the domain cannot be an
- *     // empty string; also the TLD cannot be empty, however, there
- *     // may be no sub-domains.
- *     printf("Sub-domain(s): \"%.*s\"\n", (int)(s - uri), uri);
- *     printf("Domain: \"%.*s\"\n", (int)(info.f_tld - s), s);
- *     printf("TLD: \"%s\"\n", info.f_tld);
- *   }
- * }
- * \endcode
+ * \include example.c
  *
  * \param[in] uri  The URI to be checked.
  * \param[out] info  A pointer to a tld_info structure to save the result.
@@ -955,6 +963,20 @@ enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char
     }
 
     /* check the domain */
+
+/** \todo
+ * The following is WRONG:
+ * \li the domain \%XX are not being checked properly, as it stands the
+ *     characters following % can be anything!
+ * \li the tld() function must be called with the characters still
+ *     encoded; if you look at the data, you will see that I kept
+ *     the data encoded (i.e. with the \%XX characters)
+ * \li what could be checked (which I guess could be for the entire
+ *     domain name) is whether the entire string represents valid
+ *     UTF-8; I don't think I'm currently doing so here. (I have
+ *     such functions in the tld_domain_to_lowercase() now)
+ */
+
     length = (int) (port - host);
     if(length >= (int) (sizeof(domain) / sizeof(domain[0])))
     {
@@ -982,7 +1004,7 @@ enum tld_result tld_check_uri(const char *uri, struct tld_info *info, const char
         {
             domain[j] = host[i];
         }
-        /* TODO: check that all characters are acceptable in a domain name */
+        /* TODO: check that characters are acceptable in a domain name */
     }
     domain[j] = '\0';
     result = tld(domain, info);
@@ -1183,6 +1205,15 @@ const char *tld_version()
  *
  * cannot share their cookies. Yet, ".com" by itself is also a
  * top-level domain name that anyone can use.
+ */
+
+/** \var TLD_CATEGORY_BRAND
+ * \brief The TLD is owned and represents a brand.
+ *
+ * This category is used to mark top level domain names that are
+ * specific to one company. Note that certain TLDs are owned by
+ * companies now, but they are not automatically marked as a
+ * brand (i.e. ".lol").
  */
 
 /** \var TLD_CATEGORY_UNDEFINED

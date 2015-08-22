@@ -21,6 +21,14 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/** \file
+ * \brief Test the tld_domain_to_lowercase() function.
+ *
+ * This file implements various test to verify that the
+ * tld() function works as expected with valid and
+ * invalid names.
+ */
+
 // Qt headers make use of long long which is not considered a valid type
 #pragma GCC diagnostic ignored "-Wlong-long"
 

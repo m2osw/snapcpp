@@ -21,11 +21,22 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* We want to directly test the library functions, including all the private
- * functions so we include the source directly.
+/** \file
+ * \brief Test the tld.c, tld_data.c, and tld_domain_to_lowercase.c functions.
+ *
+ * This file implements various tests that can directly access the internal
+ * functions of the tld.c, tld_data.c, and tld_domain_to_lowercase.c
+ * files.
+ *
+ * For that purpose we directly include those files in this test. This
+ * is why the test is not actually linked against the library, it
+ * includes it within itself.
  */
+
 #include "tld.c"
 #include "tld_data.c"
+#include "tld_domain_to_lowercase.c"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -71,6 +82,7 @@ void test_compare()
 		{ "uk333", "uk", 2, 1 },
 	};
 	int i, r, max;
+	char *s, *vd, *u;
 
 	max = sizeof(d) / sizeof(d[0]);
 	for(i = 0; i < max; ++i)
@@ -81,6 +93,25 @@ void test_compare()
 					d[i].a, d[i].b, d[i].r, r);
 			++err_count;
 		}
+
+		// create a version with uppercase and try again
+		s = strdup(d[i].b);
+		for(u = s; *u != '\0'; ++u)
+		{
+			if(*u >= 'a' && *u <= 'z')
+			{
+				*u &= 0x5F;
+			}
+		}
+		vd = tld_domain_to_lowercase(s);
+		r = cmp(d[i].a, d[i].b, d[i].n);
+		if(r != d[i].r) {
+			fprintf(stderr, "error: cmp() failed with \"%s\" / \"%s\", expected %d and got %d (with domain to lowercase)\n",
+					d[i].a, d[i].b, d[i].r, r);
+			++err_count;
+		}
+		free(vd);
+		free(s);
 	}
 }
 

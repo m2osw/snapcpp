@@ -1526,6 +1526,60 @@ int tld_email_next(struct tld_email_list *list, struct tld_email *e)
  * as this field is a pointer to that other field.
  */
 
+/** \enum tld_email_field_type
+ * \brief Type of email as determined by the email_field_type() function.
+ *
+ * A string may represent various types of email data which are represented
+ * by the type in this enumeration.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_INVALID
+ * \brief The input of email_field_type() was not valid.
+ *
+ * An email field is expected to be valid ASCII characters. This
+ * error is returned if invalid characters are found.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_UNKNOWN
+ * \brief The input does not represent valid emails.
+ *
+ * The email_field_type() function returns this value if the input
+ * field does not represent what is considered a field with email
+ * addresses. If you are parsing many email fields, you probably
+ * want to see this as a soft error (i.e. an error saying that
+ * the field can be skip as far as the TLD library is concerned.)
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_MAILBOX_LIST
+ * \brief The input represents a mailbox list.
+ *
+ * The fields FROM and RESENT-FROM are viewed as mailbox lists.
+ * These fields may include a list of email addresses.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_MAILBOX
+ * \brief The input represents a mailbox.
+ *
+ * The fields SENDER and RESENT-SENDER are viewed as mailbox fields.
+ * These are expected to include only one email address.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST
+ * \brief The input represents a mandatory list of mailboxes.
+ *
+ * The fields TO, CC, REPLY-TO, RESENT-TO, and RESENT-CC are
+ * viewed as mailbox fields. These are expected to include
+ * any number of email addresses.
+ */
+
+/** \var TLD_EMAIL_FIELD_TYPE_ADDRESS_LIST_OPT
+ * \brief The input represents an optional list of email addresses.
+ *
+ * The fields BBC and RESENT-BBC are viewed as optional
+ * mailbox fields. These may not exist, be empty, or have
+ * one or more email addresses.
+ */
+
 /** \class tld_email_list
  * \brief The C++ side of the email list implementation.
  *

@@ -21,6 +21,13 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/** \file
+ * \brief Test the tld() function through the C++ object.
+ *
+ * This file implements various test to verify that the
+ * tld() function functions as expected in C++.
+ */
+
 #include "libtld/tld.h"
 #include <string.h>
 #include <stdlib.h>

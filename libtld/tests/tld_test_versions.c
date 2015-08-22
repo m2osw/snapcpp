@@ -21,6 +21,18 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/** \file
+ * \brief Test the tld library versions.
+ *
+ * This file implements various test to verify that the
+ * version is properly defined in all the files as expected.
+ *
+ * In the compiled data, the version gets copied using the
+ * configure_file() from cmake. Other files, such as the changelog,
+ * require manual labor and thus the version could end up
+ * being wrong (humans are notorious to forget stuff like that).
+ */
+
 #include "libtld/tld.h"
 #include <string.h>
 #include <stdlib.h>

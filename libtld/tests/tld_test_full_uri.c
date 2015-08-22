@@ -21,6 +21,13 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/** \file
+ * \brief Test a full URI with tld_check_uri() function.
+ *
+ * This file implements various tests to verify that the
+ * tld_check_uri() function works as expected.
+ */
+
 #include "libtld/tld.h"
 #include <string.h>
 #include <stdlib.h>

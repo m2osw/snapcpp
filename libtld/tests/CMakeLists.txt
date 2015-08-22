@@ -88,6 +88,15 @@ target_link_libraries(${PROJECT_NAME}
     tld
     ${QT_LIBRARIES}
 )
+# Test tld_domain_to_lowercase() validity
+project(tld_test_domain_lowercase)
+add_executable(${PROJECT_NAME}
+    tld_test_domain_lowercase.c
+)
+target_link_libraries(${PROJECT_NAME}
+    tld
+    ${QT_LIBRARIES}
+)
 # Test versions validity
 project(tld_test_versions)
 add_executable(${PROJECT_NAME}
@@ -117,6 +126,8 @@ add_custom_target(run_libtld_tests
     COMMAND tld_test_emails
     COMMAND echo "*** tld_test_versions"
     COMMAND tld_test_versions ${CMAKE_SOURCE_DIR}
+    COMMAND echo "*** tld_test_domain_lowercase"
+    COMMAND tld_test_domain_lowercase
     COMMAND echo "*** tld_test_xml.sh"
     COMMAND ./tld_test_xml.sh
     COMMAND echo "*** TLD tests all ran"

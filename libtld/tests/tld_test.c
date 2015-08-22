@@ -21,6 +21,14 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/** \file
+ * \brief Test the tld() function like an end user.
+ *
+ * This file implements various tests verifying the tld() function.
+ * The tests defined here are not for coverage but rather edge
+ * cases which could be hard to expect in a full coverage test.
+ */
+
 #include "libtld/tld.h"
 #include <string.h>
 #include <stdlib.h>

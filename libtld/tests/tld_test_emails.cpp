@@ -21,6 +21,13 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/** \file
+ * \brief Test the tld_email_list class.
+ *
+ * This file implements various tests to verify that the
+ * tld_email_list functions as expected.
+ */
+
 #include "libtld/tld.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -779,11 +786,23 @@ void test_direct_email()
 
 
 
+/** \brief Structure used to define a set of fields to test.
+ *
+ * This structure is used in this test to define a list of fields
+ * to test against the library.
+ */
 struct email_field_types
 {
     const char *            f_field;
     tld_email_field_type    f_type;
 };
+
+/** \var email_field_types::f_field
+ * \brief The name of the field to be tested.
+ */
+/** \var email_field_types::f_type
+ * \brief The type we expect the library to return for that field.
+ */
 
 const email_field_types list_of_email_field_types[] =
 {

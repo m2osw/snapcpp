@@ -33,6 +33,8 @@ BUILD/tests/tld_test_full_uri
 BUILD/tests/tld_test_object
 cp ../../tests/effective_tld_names.dat .
 BUILD/tests/tld_test_tld_names
+BUILD/tests/tld_test_domain_lowercase
+BUILD/tests/tld_test_versions $SOURCE
 (cd ../../tests; ./tld_test_xml.sh)
 if BUILD/src/tld_parser
 then
