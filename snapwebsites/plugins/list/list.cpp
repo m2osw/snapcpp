@@ -1707,12 +1707,32 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
 
 /** \brief Register the pagelist and standalonelist actions.
  *
- * This function registers this plugin as supporting the "pagelist" and
- * the "standalonelist" actions.
+ * This function registers this plugin as supporting the actions:
  *
- * This is used by the backend to continuously and as fast as possible build
- * lists of pages. It understands PINGs so one can wake this backend up as
- * soon as required.
+ * \li pagelist
+ * \li processlist
+ * \li standalonelist
+ * \li resetlists
+ *
+ * The "pagelist" is used by the backend to continuously and as fast as
+ * possible build lists of pages. It understands PINGs so one can wake
+ * this backend up as soon as required.
+ *
+ * The "standalonelist" is similar to the "pagelist", only it processes
+ * a single website.
+ *
+ * The "processlist" expects a URI and is used to simulate a change to
+ * that specified page. This is useful to get the system to re-build
+ * that list as soon as possible. That being said, it appends it to the
+ * existing list of pages to be processed and that list could be (very)
+ * long so it may still take a moment before it gets processed. That
+ * being said, it will get processed way sooner than without doing
+ * such.
+ *
+ * The "resetlists" goes through the pages marked as lists and delete
+ * the existing list scripts (but not the content of the lists.) This
+ * will force the list process to recalculate the entire list instead
+ * of just a few changes.
  *
  * \note
  * At this time there is a 10 seconds delay between a PING and the

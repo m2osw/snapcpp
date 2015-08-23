@@ -166,4 +166,21 @@ target_link_libraries(test_snap_exception
 file( INSTALL test_snap_exception.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
 
 
+##
+## String Speed (testing a Qt feature)
+##
+add_executable( string_speed
+	string_speed.cpp
+)
+target_link_libraries(string_speed
+	#snapwebsites
+	#${QTCASSANDRA_LIBRARIES}
+	#${LIBTLD_LIBRARIES}
+	${QT_LIBRARIES}
+	#${THRIFT_LIBRARIES}
+	#dl
+)
+
+
+
 # vim: ts=4 sw=4 et

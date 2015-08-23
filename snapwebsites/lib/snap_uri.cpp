@@ -107,7 +107,7 @@ snap_uri::snap_uri()
  *
  * \sa set_uri()
  */
-snap_uri::snap_uri(const QString& uri)
+snap_uri::snap_uri(QString const & uri)
 {
     set_uri(uri);
     // TBD: should we throw if set_uri() returns false?
@@ -128,7 +128,7 @@ snap_uri::snap_uri(const QString& uri)
  *
  * \return false if the URI could not be parsed (in which case nothing's changed in the object); true otherwise
  */
-bool snap_uri::set_uri(QString const& uri)
+bool snap_uri::set_uri(QString const & uri)
 {
     QChar const * u(uri.constData());
 
