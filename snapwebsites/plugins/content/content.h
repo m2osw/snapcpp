@@ -341,6 +341,7 @@ public:
     QString                         get_key() const;
     QString                         get_real_key() const;
     QString                         get_cpath() const;
+    snap_string_list                get_segments() const;
     QString                         get_real_cpath() const;
     bool                            is_main_page() const;
     QString                         get_parameter(QString const & name) const;
@@ -373,6 +374,7 @@ private:
     QString                         f_key;
     QString                         f_real_key;
     QString                         f_cpath;
+    mutable snap_string_list        f_segments;
     QString                         f_real_cpath;
     controlled_vars::fbool_t        f_main_page;
     parameters_t                    f_parameters;

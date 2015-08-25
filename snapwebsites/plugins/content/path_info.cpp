@@ -366,6 +366,17 @@ QString path_info_t::get_cpath() const
 }
 
 
+snap_string_list path_info_t::get_segments() const
+{
+    if(!f_cpath.isEmpty()
+    && f_segments.isEmpty())
+    {
+        f_segments = f_cpath.split('/');
+    }
+    return f_segments;
+}
+
+
 QString path_info_t::get_real_cpath() const
 {
     return f_real_cpath;

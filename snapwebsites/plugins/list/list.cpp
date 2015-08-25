@@ -1721,13 +1721,18 @@ list_item_vector_t list::read_list(content::path_info_t & ipath, int start, int 
  * The "standalonelist" is similar to the "pagelist", only it processes
  * a single website.
  *
- * The "processlist" expects a URI and is used to simulate a change to
- * that specified page. This is useful to get the system to re-build
- * that list as soon as possible. That being said, it appends it to the
- * existing list of pages to be processed and that list could be (very)
- * long so it may still take a moment before it gets processed. That
- * being said, it will get processed way sooner than without doing
- * such.
+ * The "processlist" expects a URL parameter set to the page to be
+ * checked, in other words, the URL to simulate a change to
+ * that specific page. This is useful to get the system to re-build
+ * lists that may include that page as soon as possible. That being said,
+ * it appends it to the existing list of pages to be processed and that
+ * list could be (very) long so it may still take a moment before it
+ * gets processed. That being said, it will get processed way sooner than
+ * without doing such. The URL may just include the path.
+ *
+ * \code
+ * sendbackend http://example.com -a processlist -p URL=journal/201508
+ * \endcode
  *
  * The "resetlists" goes through the pages marked as lists and delete
  * the existing list scripts (but not the content of the lists.) This
@@ -2074,14 +2079,16 @@ void list::on_backend_process()
  * The available selectors are:
  *
  * \li all -- all the pages of this site
- * \li children -- children of the list itself
- * \li children=cpath -- children of the specified canonicalized path
+ * \li children -- direct children of the list itself
+ * \li children=path -- direct children of the specified specified path
+ * \li descendants -- children, children of children, etc. of the list itself
+ * \li descendants=path -- descendants starting at the specified path
  * \li public -- use the list of public pages (a shortcut for
  *               type=types/taxonomy/system/content-types/page/public
  * \li type=cpath -- pages of that the specified type as a canonicalized path
- * \li hand-picked=cpath-list -- a hand defined list of paths that represent
- *                               the pages to put in the list, the cpaths are
- *                               separated by new-line (\n) characters
+ * \li hand-picked=path-list -- a hand defined list of paths that represent
+ *                              the pages to put in the list, the cpaths are
+ *                              separated by new-line (\n) characters
  *
  * \param[in] site_key  The site we want to process.
  *
@@ -2122,6 +2129,16 @@ int list::generate_new_lists(QString const & site_key)
                 content::path_info_t root_ipath;
                 root_ipath.set_path(selector.mid(9));
                 did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, false);
+            }
+            else if(selector == "descendants")
+            {
+                did_work |= generate_new_list_for_descendants(site_key, list_ipath);
+            }
+            else if(selector.startsWith("descendants="))
+            {
+                content::path_info_t root_ipath;
+                root_ipath.set_path(selector.mid(12));
+                did_work |= generate_new_list_for_all_descendants(list_ipath, root_ipath, true);
             }
             else if(selector == "public")
             {
@@ -2175,7 +2192,7 @@ int list::generate_new_list_for_all_pages(QString const & site_key, content::pat
 }
 
 
-int list::generate_new_list_for_descendant(QString const & site_key, content::path_info_t & list_ipath)
+int list::generate_new_list_for_descendants(QString const & site_key, content::path_info_t & list_ipath)
 {
     static_cast<void>(site_key);
     return generate_new_list_for_all_descendants(list_ipath, list_ipath, true);

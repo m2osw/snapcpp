@@ -225,7 +225,7 @@ private:
     int                 generate_list_for_page(content::path_info_t & page_key, content::path_info_t & list_ipath, int64_t update_request_time);
     int                 generate_new_lists(QString const & site_key);
     int                 generate_new_list_for_all_pages(QString const & site_key, content::path_info_t & list_ipath);
-    int                 generate_new_list_for_descendant(QString const & site_key, content::path_info_t & list_ipath);
+    int                 generate_new_list_for_descendants(QString const & site_key, content::path_info_t & list_ipath);
     int                 generate_new_list_for_children(QString const & site_key, content::path_info_t & list_ipath);
     int                 generate_new_list_for_all_descendants(content::path_info_t & list_ipath, content::path_info_t & parent, bool const descendants);
     int                 generate_new_list_for_public(QString const & site_key, content::path_info_t & list_ipath);
