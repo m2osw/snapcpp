@@ -148,7 +148,7 @@ void path_info_t::set_path(QString const & path)
         {
             // add an error so we can get more information about the full key
             // that created an exception
-            SNAP_LOG_ERROR("error: URI \"")(f_key)("\" was not accepted.");
+            SNAP_LOG_ERROR("URI \"")(f_key)("\" was not accepted.");
             throw;
         }
 
@@ -871,6 +871,7 @@ void path_info_t::clear(bool keep_parameters)
     f_locale.clear();
     f_branch_key.clear();
     f_revision_key.clear();
+    f_segments.clear();
 
     // in case of a set_real_path() we do not want to lose the parameters
     if(!keep_parameters)

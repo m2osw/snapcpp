@@ -1856,6 +1856,7 @@ void list::on_backend_action(QString const & action)
                 revision_table->clearCache();
 
                 // work as long as there is work to do
+                bool worked(false);
                 int did_work(1);
                 while(did_work != 0)
                 {
@@ -1882,6 +1883,7 @@ void list::on_backend_action(QString const & action)
                                 QString const key(QString::fromUtf8(o.key().data()));
                                 if(key.startsWith(site_key))
                                 {
+                                    worked = true;
                                     did_work |= generate_new_lists(key);
                                     did_work |= generate_all_lists(key);
                                 }
@@ -1897,6 +1899,22 @@ void list::on_backend_action(QString const & action)
                             }
                         }
                     }
+                }
+
+                // if nothing happened (i.e. the list table was empty), we
+                // still want to run the process once with the site_key as
+                // the function parameters
+                if(!worked)
+                {
+                    // here we do not need did_work anymore
+                    generate_new_lists(site_key);
+                    generate_all_lists(site_key);
+
+                    // TBD -- really required?
+                    // note that also these last 2 calls should not be required
+                    // (since nothing changed in the lists, there is no need
+                    // for it to be checked) -- yet once in a while we miss
+                    // something and having such will probably help
                 }
             }
 
