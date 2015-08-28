@@ -58,6 +58,9 @@ char const *get_name(name_t name)
     case name_t::SNAP_NAME_IMAGES_MODIFIED:
         return "images::modified";
 
+    case name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE:
+        return "processimage";
+
     case name_t::SNAP_NAME_IMAGES_ROW:
         return "images";
 
@@ -95,6 +98,11 @@ images::func_t const images::g_commands[] =
         "density",
         1, 2, 1,
         &images::func_density
+    },
+    {
+        "on_error",
+        1, 1, 0,
+        &images::func_on_error
     },
     {
         "pop",
@@ -295,6 +303,7 @@ void images::content_update(int64_t variables_timestamp)
  * and generate a high quality image of 648x838 pixels called preview.jpg:
  *
  * \code
+ * on_error "create\nread /images/default-preview.jpg\nwrite ${INPUT} previous.jpg"
  * create
  * density 300
  * read ${INPUT} data
@@ -598,7 +607,7 @@ void images::on_create_content(content::path_info_t& ipath, QString const& owner
  *
  * \param[in,out] ipath  The path to the page being modified.
  */
-void images::on_modified_content(content::path_info_t& ipath)
+void images::on_modified_content(content::path_info_t & ipath)
 {
     // check whether an image script is linked to this object
     links::link_info info(get_name(name_t::SNAP_NAME_IMAGES_SCRIPT), false, ipath.get_key(), ipath.get_branch());
@@ -700,9 +709,10 @@ void images::on_attach_to_session()
  *
  * \param[in,out] actions  The list of supported actions where we add ourselves.
  */
-void images::on_register_backend_action(server::backend_action_map_t& actions)
+void images::on_register_backend_action(server::backend_action_map_t & actions)
 {
     actions[get_name(name_t::SNAP_NAME_IMAGES_ACTION)] = this;
+    actions[get_name(name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE)] = this;
 }
 
 
@@ -714,7 +724,7 @@ void images::on_register_backend_action(server::backend_action_map_t& actions)
  *
  * \param[in] token  The token being worked on.
  */
-void images::on_versions_libraries(filter::filter::token_info_t& token)
+void images::on_versions_libraries(filter::filter::token_info_t & token)
 {
     token.f_replacement += "<li>";
     size_t ignore;
@@ -731,7 +741,7 @@ void images::on_versions_libraries(filter::filter::token_info_t& token)
  *
  * \return The name of the UDP signal for the image plugin.
  */
-char const *images::get_signal_name(QString const& action) const
+char const * images::get_signal_name(QString const & action) const
 {
     if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
     {
@@ -755,8 +765,11 @@ char const *images::get_signal_name(QString const& action) const
  *
  * \param[in] action  The action this function is being called with.
  */
-void images::on_backend_action(QString const& action)
+void images::on_backend_action(QString const & action)
 {
+    content::content * content_plugin(content::content::instance());
+    QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
+
     if(action == get_name(name_t::SNAP_NAME_IMAGES_ACTION))
     {
         f_backend = dynamic_cast<snap_backend *>(f_snap.get());
@@ -765,9 +778,6 @@ void images::on_backend_action(QString const& action)
             throw images_exception_no_backend("could not determine the snap_backend pointer");
         }
         f_backend->create_signal( get_signal_name(action) );
-
-        content::content *content_plugin(content::content::instance());
-        QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
         QString const core_plugin_threshold(get_name(snap::name_t::SNAP_NAME_CORE_PLUGIN_THRESHOLD));
         // loop until stopped
@@ -811,6 +821,13 @@ void images::on_backend_action(QString const& action)
                 exit(0);
             }
         }
+    }
+    else if(action == get_name(name_t::SNAP_NAME_IMAGES_PROCESS_IMAGE))
+    {
+        QString const url(f_snap->get_server_parameter("URL"));
+        content::path_info_t ipath;
+        ipath.set_path(url);
+        on_modified_content(ipath);
     }
     else
     {
@@ -874,7 +891,7 @@ int64_t images::transform_images()
             QtCassandra::QCassandraCell::pointer_t cell(*c);
             // the key starts with the "start date" and it is followed by a
             // string representing the row key in the content table
-            QByteArray const& key(cell->columnKey());
+            QByteArray const & key(cell->columnKey());
 
             int64_t const page_start_date(QtCassandra::int64Value(key, 0));
             if(page_start_date > start_date)
@@ -939,9 +956,9 @@ int64_t images::transform_images()
  *
  * \return true if all the transformations were applied.
  */
-bool images::do_image_transformations(QString const& image_key)
+bool images::do_image_transformations(QString const & image_key)
 {
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     content_table->clearCache();
     QtCassandra::QCassandraTable::pointer_t branch_table(content_plugin->get_branch_table());
@@ -1029,157 +1046,239 @@ bool images::do_image_transformations(QString const& image_key)
  * \return The resulting image (whatever is current on the stack at the time
  *         the script ends.)
  */
-Magick::Image images::apply_image_script(QString const& script, content::path_info_t::map_path_info_t image_ipaths)
+Magick::Image images::apply_image_script(QString const & script, content::path_info_t::map_path_info_t image_ipaths)
 {
     QString s(script);
-    s.replace("\r", "\n");
-    snap_string_list commands(s.split("\n"));
 
     parameters_t params;
-    params.f_image_ipaths = image_ipaths;
-
-    int max_commands(commands.size());
-    for(int idx(0); idx < max_commands; ++idx)
+    bool repeat;
+    do
     {
-        params.f_command = commands[idx].simplified();
-        if(params.f_command.isEmpty())
-        {
-            // skip empty lines (could be many if script lines ended with \r\n)
-            continue;
-        }
-        if(params.f_command[0] == '#')
-        {
-            // line commented out are also skipped
-            continue;
-        }
+        repeat = false;
+        f_on_error.clear();
 
-        // find the first parameter
-        // (remember that we already simplified the string)
-        int pos(params.f_command.indexOf(" "));
-        if(pos < 0)
-        {
-            pos = params.f_command.length();
-        }
-        QString const cmd(params.f_command.mid(0, pos));
+        s.replace("\r", "\n");
+        snap_string_list commands(s.split("\n"));
 
-        // search for this command using a fast binary search
-        QByteArray const name(cmd.toUtf8());
-        char const *n(name.data());
+        params.f_image_ipaths = image_ipaths;
+        params.f_image_stack.clear();
 
-        size_t p(static_cast<size_t>(-1));
-        size_t i(0);
-        size_t j(g_commands_size);
-        while(i < j)
+        int max_commands(commands.size());
+        for(int idx(0); idx < max_commands; ++idx)
         {
-            // get the center position of the current range
-            p = i + (j - i) / 2;
-            int const r(strcmp(n, g_commands[p].f_command_name));
-            if(r == 0)
+            params.f_command = commands[idx].simplified();
+            if(params.f_command.isEmpty())
             {
-                break;
+                // skip empty lines (could be many if script lines ended with \r\n)
+                continue;
             }
-            if(r > 0)
+            if(params.f_command[0] == '#')
             {
-                // move the range up (we already checked p so use p + 1)
-                i = p + 1;
+                // line commented out are also skipped
+                continue;
             }
-            else
+
+            // find the first parameter
+            // (remember that we already simplified the string)
+            int pos(params.f_command.indexOf(" "));
+            if(pos < 0)
             {
-                // move the range down (we never check an item at position j)
-                j = p;
+                pos = params.f_command.length();
             }
-        }
+            QString const cmd(params.f_command.mid(0, pos));
 
-        // found?
-        if(i >= j)
-        {
-            messages::messages msg;
-            msg.set_error("Unknown Command",
-                    QString("Command \"%1\" is not known.").arg(cmd),
-                    QString("Command in \"%1\" was not found in our list of commands.").arg(params.f_command),
-                    false);
-            continue;
-        }
+            // search for this command using a fast binary search
+            QByteArray const name(cmd.toUtf8());
+            char const *n(name.data());
 
-        // found it! verify the number of arguments
-        if(params.f_command.length() <= static_cast<int>(pos + 1))
-        {
-            params.f_params.clear();
-        }
-        else
-        {
-            params.f_params = params.f_command.mid(pos + 1).split(" ");
-        }
-        size_t const max_params(params.f_params.size());
-        if(max_params < g_commands[p].f_min_params || max_params > g_commands[p].f_max_params)
-        {
-            // we create a message but this is run by a backend so
-            // the end users won't see those; we'll need to find
-            // a way, probably use the author of the script page
-            // to send that information to someone
-            messages::messages msg;
-            msg.set_error("Invalid Number of Parameters",
-                    QString("Invalid number of parameters for images.density (%1, expected 1 or 2)").arg(max_params),
-                    QString("Invalid number of parameters in \"%1\"").arg(params.f_command),
-                    false);
-            continue;
-        }
-
-        // verify the minimum stack size
-        if(params.f_image_stack.size() < g_commands[p].f_min_stack)
-        {
-            // we create a message but this is run by a backend so
-            // the end users won't see those; we'll need to find
-            // a way, probably use the author of the script page
-            // to send that information to someone
-            messages::messages msg;
-            msg.set_error("Invalid Number of Images",
-                    QString("Invalid number of images for %1 (expected %2, need %3)").arg(cmd).arg(static_cast<int>(g_commands[p].f_min_stack)).arg(params.f_image_stack.size()),
-                    QString("Invalid number of images in the stack at this point for \"%1\"").arg(params.f_command),
-                    false);
-            continue;
-        }
-
-        // transform variables (if any) to actual paths
-// for now keep a log to see what is happening
-SNAP_LOG_INFO() << " ++ [" << params.f_command << "]";
-        for(int k(0); k < params.f_params.size(); ++k)
-        {
-            int start_pos(0);
-            for(;;)
+            size_t p(static_cast<size_t>(-1));
+            size_t i(0);
+            size_t j(g_commands_size);
+            while(i < j)
             {
-                QString const param(params.f_params[k]);
-                start_pos = param.indexOf("${", start_pos);
-                if(start_pos < 0)
+                // get the center position of the current range
+                p = i + (j - i) / 2;
+                int const r(strcmp(n, g_commands[p].f_command_name));
+                if(r == 0)
                 {
                     break;
                 }
-                // there is a variable start point ("${")
-                start_pos += 2;
-                int const end_pos(param.indexOf("}", start_pos));
-                if(start_pos < end_pos )
+                if(r > 0)
                 {
-                    // variable name is not empty
-                    QString var_name(param.mid(start_pos, end_pos - start_pos));
-                    content::path_info_t::map_path_info_t::const_iterator var(params.f_image_ipaths.find(var_name.toUtf8().data()));
-                    if(var != params.f_image_ipaths.end())
-                    {
-                        start_pos -= 2;
-                        QString var_value(var->second->get_key());
-                        params.f_params[k].replace(start_pos, end_pos + 1 - start_pos, var_value);
-                    }
+                    // move the range up (we already checked p so use p + 1)
+                    i = p + 1;
+                }
+                else
+                {
+                    // move the range down (we never check an item at position j)
+                    j = p;
                 }
             }
-SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
-        }
 
-        // call the command
-        if(!(this->*g_commands[p].f_command)(params))
-        {
-            // the command failed, return a default image instead
-            return Magick::Image();
+            // found?
+            if(i >= j)
+            {
+                messages::messages msg;
+                msg.set_error("Unknown Command",
+                        QString("Command \"%1\" is not known.").arg(cmd),
+                        QString("Command in \"%1\" was not found in our list of commands.").arg(params.f_command),
+                        false);
+                continue;
+            }
+
+            // need to clear (previous command parameters are still
+            // defined in that array!)
+            params.f_params.clear();
+
+            // found it! verify the number of arguments
+            if(params.f_command.length() > static_cast<int>(pos + 1))
+            {
+                QString const cmd_params(params.f_command.mid(pos + 1));
+                QString ps;
+                int const cmd_params_max(cmd_params.length());
+                for(int pidx(0); pidx < cmd_params_max; ++pidx)
+                {
+                    if(cmd_params[pidx].unicode() == ' ')
+                    {
+                        // separator
+                        params.f_params << ps;
+                        ps.clear();
+                    }
+                    else if(cmd_params[pidx].unicode() == '"'
+                         || cmd_params[pidx].unicode() == '\'')
+                    {
+                        // this parameter is a string, parse up to the next
+                        // quote; quotes are not included in the result
+                        short const quote(cmd_params[pidx].unicode());
+                        bool found(false);
+                        for(++pidx; pidx < cmd_params_max; ++pidx)
+                        {
+                            if(cmd_params[pidx].unicode() == quote)
+                            {
+                                // skip the closing quote
+                                ++pidx;
+                                found = true;
+                                break;
+                            }
+                            ps += cmd_params[pidx];
+                        }
+                        if(!found)
+                        {
+                            messages::messages msg;
+                            msg.set_warning("Invalid String Parameter",
+                                    QString("String parameters must have matching opening and closing quotes."),
+                                    QString("Invalid string in \"%1\" (position %2).").arg(params.f_command).arg(params.f_params.size()));
+                        }
+
+                        // strings get auto added, only if followed by a space
+                        // we want to remove that space to avoid getting an
+                        // empty parameter added!
+                        for(; pidx < cmd_params_max && cmd_params[pidx].unicode() == ' '; ++pidx);
+
+                        // did we reach the end of the input string?
+                        // if so, then we're done and have to exit this
+                        // loop now without adding the last parameter here
+                        // (it is done after the for() loop we are in)
+                        if(pidx >= cmd_params_max)
+                        {
+                            break;
+                        }
+
+                        params.f_params << ps;
+                        ps.clear();
+                    }
+                    else
+                    {
+                        ps += cmd_params[pidx];
+                    }
+                }
+                // last part added here since we won't hit a ' ' before the end
+                params.f_params << ps;
+            }
+            size_t const max_params(params.f_params.size());
+            if(max_params < g_commands[p].f_min_params || max_params > g_commands[p].f_max_params)
+            {
+                // we create a message but this is run by a backend so
+                // the end users won't see those; we'll need to find
+                // a way, probably use the author of the script page
+                // to send that information to someone
+                messages::messages msg;
+                msg.set_error("Invalid Number of Parameters",
+                        QString("Invalid number of parameters for images.density (%1, expected 1 or 2)").arg(max_params),
+                        QString("Invalid number of parameters in \"%1\"").arg(params.f_command),
+                        false);
+                continue;
+            }
+
+            // verify the minimum stack size
+            if(params.f_image_stack.size() < g_commands[p].f_min_stack)
+            {
+                // we create a message but this is run by a backend so
+                // the end users won't see those; we'll need to find
+                // a way, probably use the author of the script page
+                // to send that information to someone
+                messages::messages msg;
+                msg.set_error("Invalid Number of Images",
+                        QString("Invalid number of images for %1 (expected %2, need %3)").arg(cmd).arg(static_cast<int>(g_commands[p].f_min_stack)).arg(params.f_image_stack.size()),
+                        QString("Invalid number of images in the stack at this point for \"%1\"").arg(params.f_command),
+                        false);
+                continue;
+            }
+
+            // transform variables (if any) to actual paths
+// for now keep a log to see what is happening
+SNAP_LOG_INFO() << " ++ [" << params.f_command << "]";
+            for(int k(0); k < params.f_params.size(); ++k)
+            {
+                int start_pos(0);
+                for(;;)
+                {
+                    QString const param(params.f_params[k]);
+                    start_pos = param.indexOf("${", start_pos);
+                    if(start_pos < 0)
+                    {
+                        break;
+                    }
+                    // there is a variable start point ("${")
+                    start_pos += 2;
+                    int const end_pos(param.indexOf("}", start_pos));
+                    if(start_pos < end_pos )
+                    {
+                        // variable name is not empty
+                        QString var_name(param.mid(start_pos, end_pos - start_pos));
+                        content::path_info_t::map_path_info_t::const_iterator var(params.f_image_ipaths.find(var_name.toUtf8().data()));
+                        if(var != params.f_image_ipaths.end())
+                        {
+                            start_pos -= 2;
+                            QString const var_value(var->second->get_key());
+                            params.f_params[k].replace(start_pos, end_pos + 1 - start_pos, var_value);
+                        }
+                    }
+                }
+SNAP_LOG_INFO() << " -- param[" << k << "] = [" << params.f_params[k] << "]";
+            }
+
+            // call the command
+            if(!(this->*g_commands[p].f_command)(params))
+            {
+                // the command failed, return a default image instead
+                if(f_on_error.isEmpty())
+                {
+                    return Magick::Image();
+                }
+
+                // the user defined a fallback on error, execute it
+                //
+                // the on error string cannot appear on multiple lines
+                // so we replace and escaped 'n' or 'r' (i.e. \n
+                // and \r in the input string) to actual '\n' and '\r'.
+                s = f_on_error.replace("\\n", "\n").replace("\\r", "\r");
+                repeat = true;
+                break;
+            }
         }
     }
+    while(repeat);
 
     if(params.f_image_stack.empty())
     {
@@ -1256,7 +1355,16 @@ bool images::func_density(parameters_t& params)
 }
 
 
-bool images::func_pop(parameters_t& params)
+bool images::func_on_error(parameters_t & params)
+{
+    // this is quite peculiar, it saves a string that becomes the script
+    // in the event an error occurs in another function
+    f_on_error = params.f_params[0];
+    return true;
+}
+
+
+bool images::func_pop(parameters_t & params)
 {
     params.f_image_stack.pop_back();
     return true;
@@ -1269,7 +1377,7 @@ bool images::func_read(parameters_t & params)
     // param 2 is the name used to load the file from the files table
     // param 3 is the image number, zero by default (optional -- currently unused)
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 
@@ -1281,7 +1389,7 @@ bool images::func_read(parameters_t & params)
         // there is no file in this page so we have to skip it
         messages::messages msg;
         msg.set_error("Missing Image File",
-                QString("Loading of image in \"%1\" failed (no md5 found).").arg(ipath.get_revision_key()),
+                QString("Loading of image in \"%1\" failed (no valid md5 found).").arg(ipath.get_revision_key()),
                 "Somehow the specified page has no image",
                 false);
         return false;
@@ -1347,7 +1455,7 @@ bool images::func_write(parameters_t& params)
     // param 1 is the ipath (key)
     // param 2 is the name used to save the file in the files table
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t revision_table(content_plugin->get_revision_table());
     QtCassandra::QCassandraTable::pointer_t files_table(content_plugin->get_files_table());
 

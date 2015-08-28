@@ -35,6 +35,7 @@ enum class name_t
 {
     SNAP_NAME_IMAGES_ACTION,
     SNAP_NAME_IMAGES_MODIFIED,
+    SNAP_NAME_IMAGES_PROCESS_IMAGE,
     SNAP_NAME_IMAGES_ROW,
     SNAP_NAME_IMAGES_SCRIPT,
     SNAP_NAME_IMAGES_SIGNAL_NAME
@@ -128,6 +129,7 @@ private:
     bool                func_alpha(parameters_t & params);
     bool                func_create(parameters_t & params);
     bool                func_density(parameters_t & params);
+    bool                func_on_error(parameters_t & params);
     bool                func_pop(parameters_t & params);
     bool                func_read(parameters_t & params);
     bool                func_resize(parameters_t & params);
@@ -137,6 +139,7 @@ private:
     zpsnap_child_t                  f_snap;
     snap_backend::zpsnap_backend_t  f_backend;
     controlled_vars::fbool_t        f_ping_backend;
+    QString                         f_on_error; // execute this script on errors
 
     static images::func_t const     g_commands[];
     static int const                g_commands_size;
