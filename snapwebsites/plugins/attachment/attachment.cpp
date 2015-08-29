@@ -191,7 +191,7 @@ void attachment::content_update(int64_t variables_timestamp)
  * \param[in] ipath  The path being checked.
  * \param[in] plugin_info  The current information about this path plugin.
  */
-void attachment::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+void attachment::on_can_handle_dynamic_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     // is that path already going to be handled by someone else?
     // (avoid wasting time if that's the case)

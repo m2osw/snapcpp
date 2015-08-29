@@ -326,21 +326,21 @@ void images::on_can_handle_dynamic_path(content::path_info_t& ipath, path::dynam
 }
 
 
-images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, path::dynamic_plugin_t& plugin_info)
+images::virtual_path_t images::check_virtual_path(content::path_info_t & ipath, path::dynamic_plugin_t & plugin_info)
 {
     // is that path already going to be handled by someone else?
-    // (avoid wasting time if that's the case)
+    // (avoid wasting time if that is the case)
     if(plugin_info.get_plugin()
     || plugin_info.get_plugin_if_renamed())
     {
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
 
-    content::content *content_plugin(content::content::instance());
+    content::content * content_plugin(content::content::instance());
     QtCassandra::QCassandraTable::pointer_t content_table(content_plugin->get_content_table());
     if(content_table->exists(ipath.get_key()))
     {
-        // if it exists, it's not dynamic so ignore it (this should
+        // if it exists, it is not dynamic so ignore it (this should
         // never happen because it is tested in the path plugin!)
         return virtual_path_t::VIRTUAL_PATH_INVALID;
     }
@@ -366,7 +366,7 @@ images::virtual_path_t images::check_virtual_path(content::path_info_t& ipath, p
     }
 
     // is the parent an attachment?
-    QString owner(content_table->row(parent_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
+    QString const owner(content_table->row(parent_ipath.get_key())->cell(content::get_name(content::name_t::SNAP_NAME_CONTENT_PRIMARY_OWNER))->value().stringValue());
     if(owner != content::get_name(content::name_t::SNAP_NAME_CONTENT_ATTACHMENT_PLUGIN))
     {
         // something is dearly wrong if empty... and if not the attachment
@@ -1476,12 +1476,12 @@ bool images::func_write(parameters_t& params)
     int const ext_pos(output_name.lastIndexOf("."));
     if(ext_pos > 0 && ext_pos + 1 < output_name.length())
     {
-        QString ext(output_name.mid(ext_pos + 1));
+        QString const ext(output_name.mid(ext_pos + 1));
         try
         {
             params.f_image_stack.back().magick(ext.toUtf8().data());
         }
-        catch(Magick::Exception const& e)
+        catch(Magick::Exception const e)
         {
             // TODO: ignore the error...
             //       we may need to force a default format or report the
