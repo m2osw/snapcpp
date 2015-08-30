@@ -1,3 +1,9 @@
+csspp (1.0.6.26~trusty) trusty; urgency=high
+
+  * Nightly build.
+
+ -- Build Server <build@m2osw.com>  Sun, 30 Aug 2015 03:02:18 -0700
+
 csspp (1.0.6.25~trusty) trusty; urgency=high
 
   * Nightly build.
