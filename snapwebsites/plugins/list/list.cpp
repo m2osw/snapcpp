@@ -558,7 +558,7 @@ void paging_t::process_query_string_info()
             }
             break;
 
-        case '0': // the page number
+        case '0': // the page number (like "p123")
         case '1':
         case '2':
         case '3':
