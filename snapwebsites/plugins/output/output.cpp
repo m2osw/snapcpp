@@ -204,7 +204,7 @@ bool output::on_path_execute(content::path_info_t & ipath)
         //
         content::content::instance()->trash_page(ipath);
 
-        // if the command was send with AJAX, make sure to answer
+        // if the command was sent with AJAX, make sure to answer
         // using AJAX
         server_access::server_access * server_access_plugin(server_access::server_access::instance());
         if(server_access_plugin->is_ajax_request())
