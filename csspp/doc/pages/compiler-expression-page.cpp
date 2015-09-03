@@ -1501,6 +1501,39 @@
  * Assuming you know that the total of all the weights is equal to one, the
  * division is not necessary.
  *
+ * Note that RGB colors are actually square roots of the real (physical)
+ * color. Therefore, the \ref mix_function function does not calculate a correct
+ * mixing of colors. We keep it that way to be compatible with the function
+ * in SASS, however.
+ *
+ * There is a talk about this on this page:
+ *
+ * http://scottsievert.github.io/blog/2015/04/23/image-sqrt/
+ *
+ * The correct math would be to calculate the squares of the components,
+ * multiply them by their weight, divide by the sum of the weights,
+ * and finally compute the square root of that result:
+ *
+ * \f[
+ * \large component_{result} = \sqrt\frac{copoment_{a}^{2} \, weight_{a} + component_{b}^{2} \, weight_{b}}{weight_{a} + weight_{b}}
+ * \f]
+ *
+ * When the weights are 0.5, we find the special case of a \em perfect
+ * mix:
+ *
+ * \f[
+ * \large component_{result} = \sqrt\frac{copoment_{a}^{2} + component_{b}^{2}}{2}
+ * \f]
+ *
+ * One could use the following code (once power and sqrt() apply to colors):
+ *
+ * \code
+ *  @mixin physical_mix($color1, $color2, $weight: 0.5)
+ *  {
+ *    @return sqrt($color1 ** 2 * $weight + $color2 ** 2 * (1.0 - $weight));
+ *  }
+ * \endcode
+ *
  * \subsection opacify_function opacify() or fade_in()
  *
  * \code{.scss}
