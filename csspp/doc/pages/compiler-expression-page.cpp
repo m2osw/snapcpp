@@ -1515,14 +1515,14 @@
  * and finally compute the square root of that result:
  *
  * \f[
- * \large component_{result} = \sqrt\frac{copoment_{a}^{2} \, weight_{a} + component_{b}^{2} \, weight_{b}}{weight_{a} + weight_{b}}
+ * \large component_{result} = \sqrt\frac{compoment_{a}^{2} \, weight_{a} + component_{b}^{2} \, weight_{b}}{weight_{a} + weight_{b}}
  * \f]
  *
  * When the weights are 0.5, we find the special case of a \em perfect
  * mix:
  *
  * \f[
- * \large component_{result} = \sqrt\frac{copoment_{a}^{2} + component_{b}^{2}}{2}
+ * \large component_{result} = \sqrt\frac{compoment_{a}^{2} + component_{b}^{2}}{2}
  * \f]
  *
  * One could use the following code (once power and sqrt() apply to colors):
